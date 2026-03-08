@@ -87,7 +87,11 @@ export default function SignupModal() {
             closeSignupModal()
             resetForm()
         } catch (error) {
-            toast.error(error.message || 'Authentication failed.')
+            let msg = error.message || 'Authentication failed.';
+            if (msg.includes('Database error saving new user')) {
+                msg = 'Username is already taken by another patron. Choose another.';
+            }
+            toast.error(msg)
         } finally {
             setIsLoading(false)
         }
@@ -280,7 +284,9 @@ export default function SignupModal() {
                             autoComplete="on"
                         >
                             <input className="input" placeholder="Email address" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-                            <input className="input" placeholder="Username / Handle" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                            {!isLogin && (
+                                <input className="input" placeholder="Username / Handle" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                            )}
                             <input className="input" placeholder="Password" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} />
 
                             {/* Persona pick (cinephile signup) */}

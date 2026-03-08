@@ -10,7 +10,7 @@ import LogModal from './components/LogModal'
 import SignupModal from './components/SignupModal'
 import Preloader from './components/Preloader'
 import CustomCursor from './components/CustomCursor'
-import { useFilmStore, useUIStore } from './store'
+import { useFilmStore, useUIStore, initRealtime, initAuthSync } from './store'
 import Soundscape from './components/Soundscape'
 import CommandPalette from './components/CommandPalette'
 import InstallPrompt from './components/InstallPrompt'
@@ -132,6 +132,12 @@ export default function App() {
       return () => clearTimeout(id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Elite Backend: Initialize Live global data stream
+  useEffect(() => {
+    initAuthSync()
+    initRealtime()
   }, [])
 
   return (

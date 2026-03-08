@@ -78,12 +78,88 @@ alter table public.logs enable row level security;
 create policy "Logs are viewable by everyone." on logs for select using (true);
 create policy "Users can manage their logs." on logs for all using (auth.uid() = user_id);
 
+-- 6. WATCHLISTS (Films to watch)
+create table public.watchlists (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id) not null,
+  film_id integer not null,
+  film_title text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(user_id, film_id)
+);
+alter table public.watchlists enable row level security;
+create policy "Watchlists are viewable by everyone." on watchlists for select using (true);
+create policy "Users can manage their watchlists." on watchlists for all using (auth.uid() = user_id);
+
+-- 7. VAULTS (Physical media collection)
+create table public.vaults (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id) not null,
+  film_id integer not null,
+  film_title text not null,
+  format text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(user_id, film_id, format)
+);
+alter table public.vaults enable row level security;
+create policy "Vaults are viewable by everyone." on vaults for select using (true);
+create policy "Users can manage their vaults." on vaults for all using (auth.uid() = user_id);
+
+-- 8. CUSTOM LISTS
+create table public.lists (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id) not null,
+  title text not null,
+  description text,
+  is_ranked boolean default false,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+alter table public.lists enable row level security;
+create policy "Lists are viewable by everyone." on lists for select using (true);
+create policy "Users can manage their lists." on lists for all using (auth.uid() = user_id);
+
+create table public.list_items (
+  id uuid default uuid_generate_v4() primary key,
+  list_id uuid references public.lists(id) on delete cascade not null,
+  film_id integer not null,
+  film_title text not null,
+  rank_position integer,
+  notes text,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null,
+  unique(list_id, film_id)
+);
+alter table public.list_items enable row level security;
+create policy "List items are viewable by everyone." on list_items for select using (true);
+create policy "Users can manage list items" on list_items for all using (
+  auth.uid() in (select user_id from lists where id = list_id)
+);
+
+-- 9. INTERACTIONS (Follows, Endorsements)
+create table public.interactions (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references public.profiles(id) not null,
+  target_user_id uuid references public.profiles(id),
+  target_log_id uuid references public.logs(id),
+  target_list_id uuid references public.lists(id),
+  type text not null check (type in ('follow', 'endorse_log', 'endorse_list')),
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+alter table public.interactions enable row level security;
+create policy "Interactions viewable by everyone." on interactions for select using (true);
+create policy "Users can manage their interactions." on interactions for all using (auth.uid() = user_id);
+
 -- Setup Auth trigger to auto-create profile on signup
 create function public.handle_new_user() 
 returns trigger as $$
+declare
+  _username text;
+  _role text;
 begin
+  _username := coalesce(new.raw_user_meta_data->>'username', split_part(new.email, '@', 1));
+  _role := coalesce(new.raw_user_meta_data->>'role', 'cinephile');
+
   insert into public.profiles (id, username, role)
-  values (new.id, split_part(new.email, '@', 1), 'cinephile');
+  values (new.id, _username, _role);
   return new;
 end;
 $$ language plpgsql security definer;
@@ -91,3 +167,7 @@ $$ language plpgsql security definer;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- 10. ENABLE REALTIME ACROSS FEED TABLES
+alter publication supabase_realtime add table public.logs;
+alter publication supabase_realtime add table public.interactions;

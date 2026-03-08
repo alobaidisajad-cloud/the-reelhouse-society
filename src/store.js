@@ -33,6 +33,7 @@ export const useAuthStore = create(
                     user: { ...data.user, ...profile },
                     isAuthenticated: true
                 })
+                useFilmStore.getState().fetchLogs()
                 return data
             },
 
@@ -57,6 +58,7 @@ export const useAuthStore = create(
                         user: { ...data.user, ...profile },
                         isAuthenticated: true
                     })
+                    useFilmStore.getState().fetchLogs()
                 }
 
                 return data
@@ -114,19 +116,77 @@ export const useFilmStore = create(
             stubs: [],       // digital tickets: { id, filmId, title, date, venue, seat }
             interactions: [], // Social Graph: { type: 'endorse' | 'note', targetId: string, timestamp: string }
 
-            toggleEndorse: (targetId) => set((state) => {
-                const exists = state.interactions.find(i => i.targetId === targetId && i.type === 'endorse')
-                return {
-                    interactions: exists
-                        ? state.interactions.filter(i => !(i.targetId === targetId && i.type === 'endorse'))
-                        : [...state.interactions, { type: 'endorse', targetId, timestamp: new Date().toISOString() }]
+            toggleEndorse: async (targetId) => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+
+                const exists = get().interactions.find(i => i.targetId === targetId && i.type === 'endorse');
+
+                if (exists) {
+                    const { error } = await supabase.from('interactions').delete().eq('user_id', user.id).eq('target_log_id', targetId).eq('type', 'endorse_log');
+                    if (!error) set(state => ({ interactions: state.interactions.filter(i => !(i.targetId === targetId && i.type === 'endorse')) }));
+                } else {
+                    const { error } = await supabase.from('interactions').insert([
+                        { user_id: user.id, target_log_id: targetId, type: 'endorse_log' }
+                    ]);
+                    if (!error) set(state => ({ interactions: [...state.interactions, { type: 'endorse', targetId, timestamp: new Date().toISOString() }] }));
                 }
-            }),
+            },
 
             hasEndorsed: () => false, // Handled via selector in components for reactivity
 
-            addLog: (log) => {
-                const newLog = { ...log, id: Date.now(), createdAt: new Date().toISOString() }
+            fetchLogs: async () => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+
+                const { data, error } = await supabase
+                    .from('logs')
+                    .select('*')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false });
+
+                if (!error && data) {
+                    const formattedLogs = data.map(dbLog => ({
+                        id: dbLog.id,
+                        filmId: dbLog.film_id,
+                        title: dbLog.film_title,
+                        rating: dbLog.rating,
+                        review: dbLog.review,
+                        watchedDate: dbLog.watched_date,
+                        createdAt: dbLog.created_at
+                    }));
+                    set({ logs: formattedLogs });
+                }
+            },
+
+            addLog: async (log) => {
+                const user = useAuthStore.getState().user;
+                if (!user) {
+                    console.error("You must be logged in to save logs to the database.");
+                    return;
+                }
+
+                // 1. Save to live Supabase backend
+                const dbLog = {
+                    user_id: user.id,
+                    film_id: log.filmId,
+                    film_title: log.title,
+                    rating: log.rating || 0,
+                    review: log.review || '',
+                    watched_date: log.watchedDate || new Date().toISOString(),
+                    format: 'Digital'
+                };
+
+                const { data, error } = await supabase.from('logs').insert([dbLog]).select().single();
+
+                if (error) {
+                    console.error("Supabase insert failed:", error.message);
+                    return; // Fail gracefully
+                }
+
+                // 2. Update local UI state
+                const newLog = { ...log, id: data.id, createdAt: data.created_at };
+
                 set((state) => ({
                     logs: [newLog, ...state.logs],
                     // Auto-award stub for every 1st log of a movie
@@ -137,10 +197,10 @@ export const useFilmStore = create(
                             filmId: log.filmId,
                             title: log.title,
                             date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                            venue: 'The Oracle Palace', // Default demo venue
+                            venue: 'The Oracle Palace',
                             seat: Math.floor(Math.random() * 20 + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 8))
                         }, ...state.stubs]
-                }))
+                }));
             },
 
             // Derived helper (not stored but accessible)
@@ -157,45 +217,92 @@ export const useFilmStore = create(
                 return { count, level, color, progress: (count % 20) * 5 }
             },
 
-            updateLog: (id, updates) => set((state) => ({
-                logs: state.logs.map((l) => l.id === id ? { ...l, ...updates } : l),
-            })),
+            updateLog: async (id, updates) => {
+                const { error } = await supabase.from('logs').update(updates).eq('id', id);
+                if (!error) set((state) => ({ logs: state.logs.map((l) => l.id === id ? { ...l, ...updates } : l) }));
+            },
 
-            removeLog: (id) => set((state) => ({
-                logs: state.logs.filter((l) => l.id !== id),
-            })),
+            removeLog: async (id) => {
+                const { error } = await supabase.from('logs').delete().eq('id', id);
+                if (!error) set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }));
+            },
 
-            addToWatchlist: (film) => set((state) => ({
-                watchlist: state.watchlist.find((f) => f.id === film.id)
-                    ? state.watchlist
-                    : [...state.watchlist, film],
-            })),
+            addToWatchlist: async (film) => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
 
-            removeFromWatchlist: (filmId) => set((state) => ({
-                watchlist: state.watchlist.filter((f) => f.id !== filmId),
-            })),
+                const { error } = await supabase.from('watchlists').insert([
+                    { user_id: user.id, film_id: film.id, film_title: film.title || film.name || 'Unknown' }
+                ]);
 
-            addToVault: (film) => set((state) => ({
-                vault: state.vault.find((f) => f.id === film.id)
-                    ? state.vault
-                    : [...state.vault, film],
-            })),
+                if (!error) {
+                    set((state) => ({
+                        watchlist: state.watchlist.find((f) => f.id === film.id) ? state.watchlist : [...state.watchlist, film],
+                    }));
+                }
+            },
 
-            removeFromVault: (filmId) => set((state) => ({
-                vault: state.vault.filter((f) => f.id !== filmId),
-            })),
+            removeFromWatchlist: async (filmId) => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
 
-            createList: (list) => set((state) => ({
-                lists: [{ ...list, id: Date.now(), films: [], createdAt: new Date().toISOString() }, ...state.lists],
-            })),
+                const { error } = await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId);
+                if (!error) set((state) => ({ watchlist: state.watchlist.filter((f) => f.id !== filmId) }));
+            },
 
-            addFilmToList: (listId, film) => set((state) => ({
-                lists: state.lists.map((l) =>
-                    l.id === listId
-                        ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, film] }
-                        : l
-                ),
-            })),
+            addToVault: async (film) => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+
+                const { error } = await supabase.from('vaults').insert([
+                    { user_id: user.id, film_id: film.id, film_title: film.title || film.name || 'Unknown', format: 'Digital' }
+                ]);
+
+                if (!error) {
+                    set((state) => ({
+                        vault: state.vault.find((f) => f.id === film.id) ? state.vault : [...state.vault, film],
+                    }));
+                }
+            },
+
+            removeFromVault: async (filmId) => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+
+                const { error } = await supabase.from('vaults').delete().eq('user_id', user.id).eq('film_id', filmId);
+                if (!error) set((state) => ({ vault: state.vault.filter((f) => f.id !== filmId) }));
+            },
+
+            createList: async (list) => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+
+                const { data, error } = await supabase.from('lists').insert([
+                    { user_id: user.id, title: list.title, description: list.description || '' }
+                ]).select().single();
+
+                if (!error && data) {
+                    set((state) => ({
+                        lists: [{ ...list, id: data.id, films: [], createdAt: data.created_at }, ...state.lists],
+                    }));
+                }
+            },
+
+            addFilmToList: async (listId, film) => {
+                const { error } = await supabase.from('list_items').insert([
+                    { list_id: listId, film_id: film.id, film_title: film.title || film.name || 'Unknown' }
+                ]);
+
+                if (!error) {
+                    set((state) => ({
+                        lists: state.lists.map((l) =>
+                            l.id === listId
+                                ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, film] }
+                                : l
+                        ),
+                    }));
+                }
+            },
         }),
         {
             name: 'reelhouse-films',
@@ -429,3 +536,47 @@ export const useSoundscape = create((set) => ({
         }
     }
 }))
+
+// â”€â”€ ELITE REALTIME SUBSCRIPTIONS â”€â”€
+export const initAuthSync = () => {
+    supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session) {
+            const currentUser = useAuthStore.getState().user;
+            if (!currentUser || currentUser.id !== session.user.id) {
+                const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+                useAuthStore.setState({ user: { ...session.user, ...profile }, isAuthenticated: true });
+                useFilmStore.getState().fetchLogs();
+            }
+        } else {
+            // Keep the community array alive, just wipe active user
+            useAuthStore.setState({ user: null, isAuthenticated: false });
+        }
+    });
+};
+
+export const initRealtime = () => {
+    // Listen for live film logs dropped globally by any user
+    supabase
+        .channel('global_logs_channel')
+        .on(
+            'postgres_changes',
+            { event: 'INSERT', schema: 'public', table: 'logs' },
+            (payload) => {
+                const currentLogs = useFilmStore.getState().logs;
+                // Ensure we don't duplicate logs that this client just inserted optimistically
+                if (!currentLogs.find(l => l.id === payload.new.id)) {
+                    const newLog = {
+                        id: payload.new.id,
+                        filmId: payload.new.film_id,
+                        title: payload.new.film_title,
+                        rating: payload.new.rating,
+                        review: payload.new.review,
+                        watchedDate: payload.new.watched_date,
+                        createdAt: payload.new.created_at
+                    };
+                    useFilmStore.setState({ logs: [newLog, ...currentLogs] });
+                }
+            }
+        )
+        .subscribe();
+};
