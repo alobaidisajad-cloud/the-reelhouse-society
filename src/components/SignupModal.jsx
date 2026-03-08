@@ -45,6 +45,7 @@ export default function SignupModal() {
         }
     }, [signupModalOpen])
 
+    const [isLoading, setIsLoading] = useState(false)
     const toggleVibe = (v) => setVibes((prev) =>
         prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
     )
@@ -65,48 +66,35 @@ export default function SignupModal() {
         }, 1200)
     }
 
-    const handleSubmit = () => {
-        if (!email || !password || !username) {
+    const handleSubmit = async () => {
+        if (!email || !password || (!isLogin && !username)) {
             toast.error('Please fill all fields')
             return
         }
 
         playShutter()
-        const userData = {
-            id: Date.now(),
-            email,
-            username: username.trim().toLowerCase().replace(/\s+/g, '_'),
-            role,
-            persona: role === 'cinephile' ? persona : null,
-            bio: '',
-            avatar: null,
-            venueName: role === 'venue_owner' ? venueName : null,
-            vibes: role === 'venue_owner' ? vibes : [],
-            createdAt: new Date().toISOString(),
-        }
+        setIsLoading(true)
 
-        login(userData)
-        toast.success(`Welcome to The ReelHouse Society, ${username}! 🎬`)
-        closeSignupModal()
-        resetForm()
+        try {
+            if (isLogin) {
+                await login(email, password)
+                toast.success('Welcome back to the House.')
+            } else {
+                const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '_')
+                await useAuthStore.getState().signup(email, password, formattedUsername, role)
+                toast.success(`Welcome to The ReelHouse Society, ${formattedUsername}! 🎬`)
+            }
+            closeSignupModal()
+            resetForm()
+        } catch (error) {
+            toast.error(error.message || 'Authentication failed.')
+        } finally {
+            setIsLoading(false)
+        }
     }
 
-    const handleDemoLogin = (demoRole) => {
-        playShutter()
-        const demos = {
-            cinephile: {
-                id: 999, email: 'demo@reelhouse.com', username: 'midnight_devotee',
-                role: 'cinephile', persona: 'The Midnight Devotee', bio: 'I watch films that no one else does.',
-            },
-            venue_owner: {
-                id: 998, email: 'palace@reelhouse.com', username: 'the_oracle_palace',
-                role: 'venue_owner', persona: null, venueName: 'The Oracle Palace',
-                vibes: ['Arthouse', 'Midnight Palace'],
-            },
-        }
-        login(demos[demoRole])
-        toast.success(`Demo mode — exploring as ${demoRole === 'cinephile' ? 'a Cinephile' : 'a Cinema Owner'}`, { icon: demoRole === 'cinephile' ? '🎬' : '🎞️' })
-        closeSignupModal()
+    const handleDemoLogin = () => {
+        toast.error('Demo mode disabled while connected to live Supabase backend.')
     }
 
     const resetForm = () => {

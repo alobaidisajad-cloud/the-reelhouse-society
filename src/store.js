@@ -1,21 +1,15 @@
 ﻿import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-// â”€â”€ AUTH STORE â”€â”€
+import { supabase } from './supabaseClient'
+
+// ── AUTH STORE ──
 export const useAuthStore = create(
     persist(
         (set) => ({
-            user: {
-                username: 'sajjadsalel',
-                bio: 'Cinematic preservationist. Witness to the flicker.',
-                followers: ['midnight_devotee', 'the_archivist_84', 'contrarian_rex'],
-                following: ['weeper_in_the_dark'],
-                avatar: null, // Can be a mood string or a base64 image
-                isSocialPrivate: false,
-                hasCompletedBootcamp: false,
-                membershipTier: 'free', // 'free', 'archivist', 'auteur'
-            },
-            isAuthenticated: true,
+            user: null, // Will hold actual Supabase auth user + profile data
+            isAuthenticated: false,
+            // Keeping mock community for UI purposes until fully migrated
             community: [
                 { username: 'midnight_devotee', bio: 'I only watch films after 12:00 AM. Noir is my oxygen.', followers: ['sajjadsalel'], following: ['sajjadsalel'], isSocialPrivate: false },
                 { username: 'the_archivist_84', bio: 'Collecting every frame since 1984. 35mm only.', followers: [], following: ['sajjadsalel'], isSocialPrivate: true },
@@ -23,14 +17,60 @@ export const useAuthStore = create(
                 { username: 'contrarian_rex', bio: 'Your favorite masterpiece is actually mid.', followers: ['sajjadsalel'], following: [], isSocialPrivate: false }
             ],
 
-            login: (userData) => set((state) => ({
-                user: { ...state.user, ...userData },
-                isAuthenticated: true
-            })),
-            logout: () => set({ isAuthenticated: false }),
+            // Real authentication actions
+            login: async (email, password) => {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+                if (error) throw error
+
+                // Fetch full profile info
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single()
+
+                set({
+                    user: { ...data.user, ...profile },
+                    isAuthenticated: true
+                })
+                return data
+            },
+
+            signup: async (email, password, username, role = 'cinephile') => {
+                const { data, error } = await supabase.auth.signUp({
+                    email,
+                    password,
+                    options: {
+                        data: {
+                            username: username,
+                            role: role
+                        }
+                    }
+                })
+                if (error) throw error
+
+                if (data?.session) {
+                    await supabase.from('profiles').update({ username, role }).eq('id', data.user.id)
+
+                    const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
+                    set({
+                        user: { ...data.user, ...profile },
+                        isAuthenticated: true
+                    })
+                }
+
+                return data
+            },
+
+            logout: async () => {
+                await supabase.auth.signOut()
+                set({ user: null, isAuthenticated: false })
+            },
+
             updateUser: (updates) => set((state) => ({
                 user: state.user ? { ...state.user, ...updates } : null,
             })),
+
             followUser: (targetUsername) => set((state) => {
                 const following = state.user?.following || [];
                 if (following.includes(targetUsername)) return state;
@@ -42,7 +82,7 @@ export const useAuthStore = create(
                     // Also update the community object to show the follower count increase
                     community: state.community.map(u =>
                         u.username === targetUsername
-                            ? { ...u, followers: [...(u.followers || []), state.user.username] }
+                            ? { ...u, followers: [...(u.followers || []), state.user?.username] }
                             : u
                     )
                 }
@@ -54,7 +94,7 @@ export const useAuthStore = create(
                 },
                 community: state.community.map(u =>
                     u.username === targetUsername
-                        ? { ...u, followers: (u.followers || []).filter(f => f !== state.user.username) }
+                        ? { ...u, followers: (u.followers || []).filter(f => f !== state.user?.username) }
                         : u
                 )
             })),
