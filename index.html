@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/reel-icon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <!-- Critical: prevents mobile zoom, enables proper scaling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description"
+    content="The ReelHouse Society — Where Cinema Lives Between Life and Death. Log movies, write reviews, discover screenings, and connect with the underground film community." />
+  <meta name="theme-color" content="#0E0B08" />
+  <!-- Mobile web app -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="The ReelHouse Society" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <!-- Tells iOS/Android not to detect phone numbers as links -->
+  <meta name="format-detection" content="telephone=no" />
+  <title>The ReelHouse Society — Where Cinema Lives Between Life and Death</title>
+
+  <!-- Font preconnect for faster DNS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- font-display=swap: text shows in fallback font immediately, swaps when loaded.
+       Prevents invisible text (FOIT) — critical for mobile perceived performance -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bungee&family=Bungee+Shade&display=swap"
+    rel="stylesheet" />
+
+  <!-- Critical inline CSS: prevents flash of unstyled background on mobile -->
+  <style>
+    html,
+    body {
+      background: #0E0B08;
+      margin: 0;
+      padding: 0;
+    }
+
+    #root {
+      min-height: 100dvh;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((error) => {
+          console.error('ServiceWorker registration failed: ', error);
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>

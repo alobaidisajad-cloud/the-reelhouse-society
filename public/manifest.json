@@ -1,0 +1,23 @@
+{
+    "name": "The ReelHouse Society",
+    "short_name": "ReelHouse Society",
+    "description": "Where Cinema Lives Between Life and Death. Log films, write reviews, discover screenings.",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0A0703",
+    "theme_color": "#0A0703",
+    "orientation": "portrait-primary",
+    "icons": [
+        {
+            "src": "/reel-icon.svg",
+            "sizes": "any",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": [
+        "entertainment",
+        "lifestyle"
+    ],
+    "lang": "en-US"
+}

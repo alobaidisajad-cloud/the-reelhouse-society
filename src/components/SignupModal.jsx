@@ -1,0 +1,358 @@
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Film, Building, Lock, Terminal } from 'lucide-react'
+import { useUIStore, useAuthStore, useSoundscape } from '../store'
+import toast from 'react-hot-toast'
+
+const PERSONAS = [
+    { id: 'The Midnight Devotee', desc: 'Haunts 3AM screenings. Darkness is your element.' },
+    { id: 'The Archivist', desc: 'Catalogues everything. Every film deserves a record.' },
+    { id: 'The Weeper', desc: 'Films hit you where it hurts. You enjoy it.' },
+    { id: 'The Contrarian', desc: 'Loved by critics? You\'re suspicious. Hated? Intrigued.' },
+    { id: 'The Completionist', desc: 'A director\'s filmography is a mission, not a suggestion.' },
+]
+
+const VIBE_TAGS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace', 'Repertory', 'Horror House', 'Indie']
+const VALID_CODES = ['NITRATE', 'OMEN', 'REELHOUSE', 'AUTEUR', 'GHOST']
+
+export default function SignupModal() {
+    const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
+    const { login } = useAuthStore()
+    const { playShutter } = useSoundscape()
+
+    const [role, setRole] = useState(signupRole || 'cinephile')
+    const [step, setStep] = useState(0)
+    const [email, setEmail] = useState('')
+    const [password, setPassword] = useState('')
+    const [username, setUsername] = useState('')
+    const [persona, setPersona] = useState('')
+    const [venueName, setVenueName] = useState('')
+    const [venueDesc, setVenueDesc] = useState('')
+    const [vibes, setVibes] = useState([])
+    const [isLogin, setIsLogin] = useState(false)
+
+    // Velvet Rope State
+    const [hasClearance, setHasClearance] = useState(false)
+    const [clearanceCode, setClearanceCode] = useState('')
+    const [clearanceStatus, setClearanceStatus] = useState('idle') // idle, checking, granted, denied
+
+    useEffect(() => {
+        // Reset state when modal opens
+        if (signupModalOpen) {
+            setHasClearance(false)
+            setClearanceCode('')
+            setClearanceStatus('idle')
+        }
+    }, [signupModalOpen])
+
+    const toggleVibe = (v) => setVibes((prev) =>
+        prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
+    )
+
+    const handleClearanceSubmit = (e) => {
+        e.preventDefault()
+        if (!clearanceCode.trim()) return
+
+        setClearanceStatus('checking')
+        setTimeout(() => {
+            if (VALID_CODES.includes(clearanceCode.toUpperCase().trim())) {
+                setClearanceStatus('granted')
+                setTimeout(() => setHasClearance(true), 1500)
+            } else {
+                setClearanceStatus('denied')
+                setTimeout(() => setClearanceStatus('idle'), 2000)
+            }
+        }, 1200)
+    }
+
+    const handleSubmit = () => {
+        if (!email || !password || !username) {
+            toast.error('Please fill all fields')
+            return
+        }
+
+        playShutter()
+        const userData = {
+            id: Date.now(),
+            email,
+            username: username.trim().toLowerCase().replace(/\s+/g, '_'),
+            role,
+            persona: role === 'cinephile' ? persona : null,
+            bio: '',
+            avatar: null,
+            venueName: role === 'venue_owner' ? venueName : null,
+            vibes: role === 'venue_owner' ? vibes : [],
+            createdAt: new Date().toISOString(),
+        }
+
+        login(userData)
+        toast.success(`Welcome to The ReelHouse Society, ${username}! 🎬`)
+        closeSignupModal()
+        resetForm()
+    }
+
+    const handleDemoLogin = (demoRole) => {
+        playShutter()
+        const demos = {
+            cinephile: {
+                id: 999, email: 'demo@reelhouse.com', username: 'midnight_devotee',
+                role: 'cinephile', persona: 'The Midnight Devotee', bio: 'I watch films that no one else does.',
+            },
+            venue_owner: {
+                id: 998, email: 'palace@reelhouse.com', username: 'the_oracle_palace',
+                role: 'venue_owner', persona: null, venueName: 'The Oracle Palace',
+                vibes: ['Arthouse', 'Midnight Palace'],
+            },
+        }
+        login(demos[demoRole])
+        toast.success(`Demo mode — exploring as ${demoRole === 'cinephile' ? 'a Cinephile' : 'a Cinema Owner'}`, { icon: demoRole === 'cinephile' ? '🎬' : '🎞️' })
+        closeSignupModal()
+    }
+
+    const resetForm = () => {
+        setStep(0); setEmail(''); setPassword(''); setUsername('')
+        setPersona(''); setVenueName(''); setVenueDesc(''); setVibes([])
+        setHasClearance(false); setClearanceCode(''); setClearanceStatus('idle')
+    }
+
+    if (!signupModalOpen) return null
+
+    // VELVET ROPE: TERMINAL UI
+    if (!isLogin && !hasClearance) {
+        return (
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5, 3, 1, 0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                >
+                    <motion.div
+                        initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                        className="scanlines"
+                        style={{ width: '100%', maxWidth: 500, background: 'var(--ink)', border: '1px solid var(--sepia)', borderRadius: '2px', padding: '3rem 2rem', position: 'relative', overflow: 'hidden', boxShadow: '0 0 40px rgba(139,105,20,0.1)' }}
+                    >
+                        <button onClick={closeSignupModal} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', opacity: 0.5 }}>
+                            <X size={16} />
+                        </button>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
+                            <Lock size={18} color="var(--blood-reel)" />
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.3em', color: 'var(--blood-reel)' }}>RESTRICTED ACCESS</div>
+                        </div>
+
+                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '1rem', lineHeight: 1.1 }}>
+                            The Archives are currently closed to the public.
+                        </h2>
+                        <p style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--fog)', letterSpacing: '0.1em', lineHeight: 1.6, marginBottom: '2.5rem' }}>
+                            REELHOUSE IS AN INVITE-ONLY SOCIETY.<br />PLEASE ENTER YOUR CLASSIFIED DOSSIER CLEARANCE CODE TO PROCEED.
+                        </p>
+
+                        <form onSubmit={handleClearanceSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', borderBottom: `2px solid ${clearanceStatus === 'denied' ? 'var(--blood-reel)' : clearanceStatus === 'granted' ? 'var(--sepia)' : 'var(--ash)'}`, transition: 'border-color 0.3s' }}>
+                                <Terminal size={16} color="var(--fog)" style={{ marginRight: '0.75rem', opacity: 0.5 }} />
+                                <input
+                                    autoFocus
+                                    placeholder="Enter Access Key..."
+                                    value={clearanceCode}
+                                    onChange={e => setClearanceCode(e.target.value.toUpperCase())}
+                                    style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--bone)', fontFamily: 'var(--font-ui)', fontSize: '1.2rem', letterSpacing: '0.2em', padding: '0.75rem 0' }}
+                                    disabled={clearanceStatus !== 'idle' && clearanceStatus !== 'denied'}
+                                />
+                            </div>
+
+                            <div style={{ height: 20, fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', marginTop: '0.5rem' }}>
+                                {clearanceStatus === 'checking' && <span style={{ color: 'var(--fog)', animation: 'pulse 1s infinite' }}>DECRYPTING CIPHER...</span>}
+                                {clearanceStatus === 'granted' && <span style={{ color: 'var(--sepia)' }}>CLEARANCE GRANTED. INITIATING PROTOCOL.</span>}
+                                {clearanceStatus === 'denied' && <span style={{ color: 'var(--blood-reel)' }}>ACCESS DENIED. INVALID CREDENTIALS.</span>}
+                            </div>
+                        </form>
+
+                        <div style={{ marginTop: '3rem', borderTop: '1px dashed rgba(139,105,20,0.2)', paddingTop: '1.5rem', textAlign: 'center' }}>
+                            <button onClick={() => setIsLogin(true)} style={{ background: 'none', border: 'none', color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', textDecoration: 'underline', cursor: 'pointer' }}>
+                                ALREADY A MEMBER? SIGN IN
+                            </button>
+                        </div>
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>
+        )
+    }
+
+    // NORMAL SIGNUP / LOGIN FORM
+    return (
+        <AnimatePresence>
+            <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={closeSignupModal}
+                style={{
+                    position: 'fixed', inset: 0, zIndex: 10000,
+                    background: 'rgba(10,7,3,0.95)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '1rem',
+                }}
+            >
+                <motion.div
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.9, opacity: 0 }}
+                    transition={{ type: 'spring', damping: 20, stiffness: 280 }}
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                        background: 'var(--soot)',
+                        border: '1px solid var(--ash)',
+                        borderRadius: 'var(--radius-card)',
+                        width: 'calc(100% - 2rem)',
+                        maxWidth: 480,
+                        maxHeight: 'calc(100vh - 2rem)',
+                        overflow: 'auto',
+                        margin: 'auto auto'
+                    }}
+                >
+                    {/* Header */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--ash)',
+                    }}>
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.2rem' }}>
+                                {isLogin ? 'RETURNING PATRON' : 'CHOOSE YOUR ROLE'}
+                            </div>
+                            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem' }}>
+                                {isLogin ? 'Sign Back In' : 'Enter The House'}
+                            </h3>
+                        </div>
+                        <button onClick={closeSignupModal} style={{ background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}>
+                            <X size={20} />
+                        </button>
+                    </div>
+
+                    <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        {/* Demo buttons */}
+                        <div style={{ borderBottom: '1px solid var(--ash)', paddingBottom: '1.25rem' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--fog)', marginBottom: '0.75rem', textAlign: 'center' }}>
+                                INSTANT DEMO ACCESS
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button
+                                    className="btn btn-ghost"
+                                    style={{ flex: 1, fontSize: '0.6rem', justifyContent: 'center', gap: '0.3rem' }}
+                                    onClick={() => handleDemoLogin('cinephile')}
+                                >
+                                    <Film size={12} /> Cinephile Demo
+                                </button>
+                                <button
+                                    className="btn btn-ghost"
+                                    style={{ flex: 1, fontSize: '0.6rem', justifyContent: 'center', gap: '0.3rem' }}
+                                    onClick={() => handleDemoLogin('venue_owner')}
+                                >
+                                    <Building size={12} /> Cinema Demo
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Role selection (signup only) */}
+                        {!isLogin && (
+                            <div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
+                                    I AM A...
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                    {[
+                                        { val: 'cinephile', label: 'Cinephile', sub: 'Film lover & critic', icon: <Film size={20} /> },
+                                        { val: 'venue_owner', label: 'Cinema Owner', sub: 'I run a venue', icon: <Building size={20} /> },
+                                    ].map(({ val, label, sub, icon }) => (
+                                        <button
+                                            key={val}
+                                            onClick={() => setRole(val)}
+                                            style={{
+                                                background: role === val ? 'rgba(139,105,20,0.15)' : 'var(--ink)',
+                                                border: `1px solid ${role === val ? 'var(--sepia)' : 'var(--ash)'}`,
+                                                borderRadius: 'var(--radius-card)',
+                                                padding: '1rem',
+                                                textAlign: 'center', cursor: 'pointer',
+                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem',
+                                                color: role === val ? 'var(--flicker)' : 'var(--fog)',
+                                                transition: 'all 0.2s',
+                                            }}
+                                        >
+                                            {icon}
+                                            <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: role === val ? 'var(--parchment)' : 'var(--bone)' }}>{label}</span>
+                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{sub}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Fields */}
+                        <form
+                            onSubmit={(e) => { e.preventDefault(); handleSubmit() }}
+                            style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
+                            autoComplete="on"
+                        >
+                            <input className="input" placeholder="Email address" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                            <input className="input" placeholder="Username / Handle" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                            <input className="input" placeholder="Password" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} />
+
+                            {/* Persona pick (cinephile signup) */}
+                            {!isLogin && role === 'cinephile' && (
+                                <div>
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
+                                        YOUR CINEMA PERSONA
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        {PERSONAS.map((p) => (
+                                            <button
+                                                key={p.id}
+                                                type="button"
+                                                onClick={() => setPersona(p.id)}
+                                                style={{
+                                                    background: persona === p.id ? 'rgba(139,105,20,0.12)' : 'transparent',
+                                                    border: `1px solid ${persona === p.id ? 'var(--sepia)' : 'var(--ash)'}`,
+                                                    borderRadius: 'var(--radius-wobbly)',
+                                                    padding: '0.6rem 0.75rem', cursor: 'pointer',
+                                                    textAlign: 'left', transition: 'all 0.2s',
+                                                }}
+                                            >
+                                                <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: persona === p.id ? 'var(--flicker)' : 'var(--parchment)' }}>{p.id}</div>
+                                                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', marginTop: '0.15rem' }}>{p.desc}</div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Venue fields */}
+                            {!isLogin && role === 'venue_owner' && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <input className="input" placeholder="Venue name" value={venueName} onChange={(e) => setVenueName(e.target.value)} />
+                                    <textarea className="input" placeholder="Describe your venue..." value={venueDesc} onChange={(e) => setVenueDesc(e.target.value)} style={{ minHeight: 80 }} />
+                                    <div>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>VIBE TAGS</div>
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                            {VIBE_TAGS.map((v) => (
+                                                <button key={v} type="button" className={`tag ${vibes.includes(v) ? 'tag-flicker' : 'tag-vibe'}`} onClick={() => toggleVibe(v)} style={{ cursor: 'pointer' }}>{v}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <button className="btn btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center', padding: '0.7em' }}>
+                                {isLogin ? 'Enter the House' : 'Claim Your Seat'}
+                            </button>
+                        </form>
+
+                        <button
+                            onClick={() => setIsLogin((v) => !v)}
+                            style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', background: 'none', border: 'none', textDecoration: 'underline', textAlign: 'center', cursor: 'pointer' }}
+                        >
+                            {isLogin ? "Don't have an account? Enter Clearance Code" : 'Already a member? Sign in'}
+                        </button>
+                    </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    )
+}

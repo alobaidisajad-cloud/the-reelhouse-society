@@ -1,0 +1,223 @@
+import { Suspense, lazy, useEffect, useState, useMemo } from 'react'
+import { Routes, Route, useLocation, Link } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useQueryClient } from '@tanstack/react-query'
+import { tmdb } from './tmdb'
+import Navbar from './components/Navbar'
+import BootcampModal from './components/BootcampModal'
+import PaywallModal from './components/PaywallModal'
+import LogModal from './components/LogModal'
+import SignupModal from './components/SignupModal'
+import Preloader from './components/Preloader'
+import CustomCursor from './components/CustomCursor'
+import { useFilmStore, useUIStore } from './store'
+import Soundscape from './components/Soundscape'
+import CommandPalette from './components/CommandPalette'
+import InstallPrompt from './components/InstallPrompt'
+import QualityOfLife from './components/QualityOfLife'
+
+// Detect touch once — controls which desktop-only effects to mount
+const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+
+// ── Route-level code splitting — pages load on demand, not all at once ──
+const HomePage = lazy(() => import('./pages/HomePage'))
+const FilmDetailPage = lazy(() => import('./pages/FilmDetailPage'))
+const UserProfilePage = lazy(() => import('./pages/UserProfilePage'))
+const DiscoverPage = lazy(() => import('./pages/DiscoverPage'))
+const FeedPage = lazy(() => import('./pages/FeedPage'))
+const ListsPage = lazy(() => import('./pages/ListsPage'))
+const ListDetailPage = lazy(() => import('./pages/ListDetailPage'))
+const VenuePage = lazy(() => import('./pages/VenuePage'))
+const VenueDashboard = lazy(() => import('./pages/VenueDashboard'))
+const CinemasPage = lazy(() => import('./pages/CinemasPage'))
+const PersonPage = lazy(() => import('./pages/PersonPage'))
+const DispatchPage = lazy(() => import('./pages/DispatchPage'))
+const MembershipPage = lazy(() => import('./pages/MembershipPage'))
+const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+
+// Desktop: full iris transition. Mobile: simple fade (no clip-path GPU thrash)
+const pageVariantsDesktop = {
+  initial: { opacity: 1, clipPath: 'circle(150% at 50% 50%)' },
+  in: { opacity: 1, clipPath: 'circle(150% at 50% 50%)' },
+  out: { opacity: 1, clipPath: 'circle(0% at 50% 50%)' },
+}
+
+const pageVariantsMobile = {
+  initial: { opacity: 0 },
+  in: { opacity: 1 },
+  out: { opacity: 0 },
+}
+
+const pageTransitionDesktop = { type: 'tween', ease: 'easeInOut', duration: 0.45 }
+const pageTransitionMobile = { type: 'tween', ease: 'easeOut', duration: 0.2 }
+
+// Static — defined once, never re-created on each render
+const FOOTER_FILMSTRIP = Array.from({ length: 20 })
+
+function PageFallback() {
+  return <div style={{ minHeight: '100vh', background: 'var(--ink)' }} />
+}
+
+function PageWrapper({ children }) {
+  if (IS_TOUCH) {
+    // Mobile: no clip-path, no aperture flash — just cheap opacity fade
+    return (
+      <motion.div
+        initial="initial"
+        animate="in"
+        exit="out"
+        variants={pageVariantsMobile}
+        transition={pageTransitionMobile}
+        style={{ position: 'relative', background: 'var(--ink)' }}
+      >
+        {children}
+      </motion.div>
+    )
+  }
+
+  return (
+    <motion.div
+      initial="initial"
+      animate="in"
+      exit="out"
+      variants={pageVariantsDesktop}
+      transition={pageTransitionDesktop}
+      style={{ position: 'relative', background: 'var(--ink)' }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+export default function App() {
+  const location = useLocation()
+  // Granular selector — only re-renders App when logs.length changes, not on every store write
+  const logCount = useFilmStore(state => state.logs.length)
+  const { openLogModal, showPaywall, paywallFeature, closePaywall } = useUIStore()
+
+  const degradationClass = useMemo(() => {
+    if (logCount > 40) return 'level-obsessed'
+    if (logCount > 15) return 'level-degrade'
+    return ''
+  }, [logCount])
+
+  // Mobile: skip preloader entirely — show content instantly
+  // Desktop: show 3-count clapperboard preloader
+  const [showPreloader, setShowPreloader] = useState(!IS_TOUCH)
+
+  // Persistent scroll position — save on leave, restore on return
+  useEffect(() => {
+    const savedPos = sessionStorage.getItem(`scroll:${location.pathname}`)
+    const scrollY = savedPos ? parseInt(savedPos, 10) : 0
+    const id = requestAnimationFrame(() => window.scrollTo(0, scrollY))
+    return () => {
+      sessionStorage.setItem(`scroll:${location.pathname}`, String(window.scrollY))
+      cancelAnimationFrame(id)
+    }
+  }, [location.pathname])
+
+  // Idle prefetch — load key data while browser is idle
+  const queryClient = useQueryClient()
+  useEffect(() => {
+    const prefetch = () => {
+      queryClient.prefetchQuery({ queryKey: ['trending'], queryFn: () => tmdb.trending('week') })
+      queryClient.prefetchQuery({ queryKey: ['top-rated'], queryFn: () => tmdb.topRated() })
+      queryClient.prefetchQuery({ queryKey: ['now-playing'], queryFn: () => tmdb.nowPlaying() })
+    }
+    if ('requestIdleCallback' in window) {
+      const id = requestIdleCallback(prefetch, { timeout: 3000 })
+      return () => cancelIdleCallback(id)
+    } else {
+      const id = setTimeout(prefetch, 2000)
+      return () => clearTimeout(id)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return (
+    <div className={degradationClass}>
+      {/* Preloader: desktop only, skipped on mobile for instant first paint */}
+      {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
+
+      <CustomCursor />
+
+      <BootcampModal />
+      {showPaywall && <PaywallModal featureName={paywallFeature} onClose={closePaywall} />}
+      <Navbar />
+
+      {/* Soundscape: desktop only — audio context on mobile wastes battery & memory */}
+      {!IS_TOUCH && <Soundscape />}
+
+      <CommandPalette />
+      <InstallPrompt />
+      <QualityOfLife />
+      <LogModal />
+      <SignupModal />
+
+      {/* Floating Action Button — mobile only */}
+      <button
+        className="mobile-fab"
+        onClick={() => openLogModal()}
+        aria-label="Log a Film"
+      >
+        +
+      </button>
+
+      <Suspense fallback={<PageFallback />}>
+        <AnimatePresence mode="wait" initial={false}>
+          <Routes location={location} key={location.pathname}>
+            <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+            <Route path="/film/:id" element={<PageWrapper><FilmDetailPage /></PageWrapper>} />
+            <Route path="/user/:username" element={<PageWrapper><UserProfilePage /></PageWrapper>} />
+            <Route path="/discover" element={<PageWrapper><DiscoverPage /></PageWrapper>} />
+            <Route path="/feed" element={<PageWrapper><FeedPage /></PageWrapper>} />
+            <Route path="/lists" element={<PageWrapper><ListsPage /></PageWrapper>} />
+            <Route path="/lists/:id" element={<PageWrapper><ListDetailPage /></PageWrapper>} />
+            <Route path="/venue/:venueId" element={<PageWrapper><VenuePage /></PageWrapper>} />
+            <Route path="/venue-dashboard" element={<PageWrapper><VenueDashboard /></PageWrapper>} />
+            <Route path="/cinemas" element={<PageWrapper><CinemasPage /></PageWrapper>} />
+            <Route path="/person/:id" element={<PageWrapper><PersonPage /></PageWrapper>} />
+            <Route path="/dispatch" element={<PageWrapper><DispatchPage /></PageWrapper>} />
+            <Route path="/patronage" element={<PageWrapper><MembershipPage /></PageWrapper>} />
+            <Route path="*" element={<PageWrapper><NotFoundPage /></PageWrapper>} />
+          </Routes>
+        </AnimatePresence>
+      </Suspense>
+
+      {/* Footer */}
+      <footer style={{ borderTop: '1px solid var(--ash)', background: 'var(--soot)', padding: '2rem 0' }}>
+        <div className="container" style={{ textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginBottom: '1rem', opacity: 0.15 }}>
+            {FOOTER_FILMSTRIP.map((_, i) => (
+              <div key={i} style={{ width: 20, height: 14, border: '1px solid var(--sepia)', borderRadius: 1 }} />
+            ))}
+          </div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--sepia)', marginBottom: '0.4rem', animation: 'flicker-text 8s ease-in-out infinite' }}>
+            The ReelHouse Society
+          </div>
+          <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--fog)', marginBottom: '0.75rem' }}>
+            Where Cinema Lives Between Life and Death
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+            {[
+              { to: '/', label: 'The Lobby' },
+              { to: '/discover', label: 'Dark Room' },
+              { to: '/feed', label: 'The Reel' },
+              { to: '/lists', label: 'The Stacks' },
+            ].map(({ to, label }) => (
+              <Link key={to} to={to} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--fog)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseOver={(e) => e.target.style.color = 'var(--flicker)'}
+                onMouseOut={(e) => e.target.style.color = 'var(--fog)'}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
+          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--ash)' }}>
+            Film data provided by TMDB · Built with nitrate &amp; obsession
+          </div>
+        </div>
+      </footer>
+    </div>
+  )
+}

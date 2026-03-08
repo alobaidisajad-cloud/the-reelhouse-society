@@ -1,0 +1,416 @@
+import { useState, memo, useCallback, useRef } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
+import { tmdb } from '../tmdb'
+
+// Film reel rating — 5 segments, half-reels allowed
+export const ReelRating = memo(function ReelRating({ value = 0, onChange = null, size = 'md' }) {
+    const [hovered, setHovered] = useState(null)
+    const display = hovered !== null ? hovered : value
+
+    const sizes = { sm: 16, md: 22, lg: 30 }
+    const s = sizes[size] || 22
+
+    return (
+        <div
+            style={{ display: 'flex', gap: 3, alignItems: 'center', userSelect: 'none' }}
+            onMouseLeave={() => setHovered(null)}
+        >
+            {[1, 2, 3, 4, 5].map((reel) => {
+                const full = display >= reel
+                const half = !full && display >= reel - 0.5
+                return (
+                    <div
+                        key={reel}
+                        style={{ position: 'relative', width: s, height: s, cursor: onChange ? 'none' : 'default' }}
+                        onMouseMove={onChange ? (e) => {
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            const x = e.clientX - rect.left
+                            setHovered(x < rect.width / 2 ? reel - 0.5 : reel)
+                        } : undefined}
+                        onClick={onChange ? () => onChange(hovered !== null ? hovered : reel) : undefined}
+                    >
+                        <ReelSegmentSVG size={s} filled={full ? 'full' : half ? 'half' : 'empty'} />
+                    </div>
+                )
+            })}
+        </div>
+    )
+})
+
+function ReelSegmentSVG({ size, filled }) {
+    const colors = {
+        full: { outer: '#8B6914', inner: '#F2E8A0', hub: '#F2E8A0' },
+        half: { outer: '#8B6914', inner: '#8B6914', hub: '#F2E8A0' },
+        empty: { outer: '#3A3228', inner: '#1C1710', hub: '#3A3228' },
+    }
+    const c = colors[filled]
+
+    return (
+        <svg width={size} height={size} viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="11" cy="11" r="10" stroke={c.outer} strokeWidth="1.5" fill="#0A0703" />
+            {/* Film holes */}
+            <circle cx="11" cy="4" r="1.8" fill={c.inner} />
+            <circle cx="11" cy="18" r="1.8" fill={c.inner} />
+            <circle cx="4" cy="11" r="1.8" fill={c.inner} />
+            <circle cx="18" cy="11" r="1.8" fill={c.inner} />
+            <circle cx="6.5" cy="6.5" r="1.5" fill={c.inner} opacity="0.7" />
+            <circle cx="15.5" cy="6.5" r="1.5" fill={c.inner} opacity="0.7" />
+            <circle cx="6.5" cy="15.5" r="1.5" fill={c.inner} opacity="0.7" />
+            <circle cx="15.5" cy="15.5" r="1.5" fill={c.inner} opacity="0.7" />
+            {/* Center hub */}
+            <circle cx="11" cy="11" r="4" fill={filled === 'full' ? '#8B6914' : '#1C1710'} stroke={c.outer} strokeWidth="1" />
+            <circle cx="11" cy="11" r="2" fill={c.hub} />
+        </svg>
+    )
+}
+
+// Obscurity badge
+export function ObscurityBadge({ score }) {
+    const label = score > 80 ? 'GHOST REEL' : score > 60 ? 'OBSCURE' : score > 40 ? 'CULT' : score > 20 ? 'KNOWN' : 'MAINSTREAM'
+    const opacity = score > 60 ? 1 : score > 30 ? 0.6 : 0.3
+
+    return (
+        <div className="obscurity-meter">
+            <svg width="16" height="16" viewBox="0 0 16 16" style={{ opacity }}>
+                <path
+                    d="M8 2 Q12 2 14 6 Q16 10 12 13 L8 15 L4 13 Q0 10 2 6 Q4 2 8 2Z"
+                    fill="var(--fog)"
+                />
+                <circle cx="6" cy="8" r="1.5" fill="var(--ink)" />
+                <circle cx="10" cy="8" r="1.5" fill="var(--ink)" />
+            </svg>
+            <span style={{ fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--fog)' }}>
+                {score}/100 · {label}
+            </span>
+        </div>
+    )
+}
+
+// Film poster card
+export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', showRating = false }) {
+    const posterUrl = tmdb.poster(film.altPoster || film.poster_path, size === 'lg' ? 'w342' : 'w185')
+    const queryClient = useQueryClient()
+    const [isLoaded, setIsLoaded] = useState(false)
+
+    const hoverTimeout = useRef(null)
+
+    const handleMouseEnter = useCallback(() => {
+        hoverTimeout.current = setTimeout(() => {
+            if (!film?.id) return
+            // movieDetails already includes credits via append_to_response
+            queryClient.prefetchQuery({
+                queryKey: ['film', film.id.toString()],
+                queryFn: () => tmdb.movieDetails(film.id),
+                staleTime: 1000 * 60 * 10
+            })
+        }, 300) // 300ms debounce prevents API hammering
+    }, [film?.id, queryClient])
+
+    const handleMouseLeave = useCallback(() => {
+        if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+    }, [])
+
+    return (
+        <div
+            className="card-film"
+            style={{ aspectRatio: '2/3', cursor: 'none' }}
+            onClick={onClick}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            {posterUrl ? (
+                <img
+                    src={posterUrl}
+                    alt={film.title}
+                    loading="lazy"
+                    decoding="async"
+                    onLoad={() => setIsLoaded(true)}
+                    className={isLoaded ? 'developing-poster' : ''}
+                    style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        opacity: isLoaded ? 0.95 : 0,
+                        transition: 'opacity 0.3s ease-in',
+                        background: 'var(--ink)'
+                    }}
+                />
+            ) : (
+                <div style={{
+                    width: '100%', height: '100%',
+                    background: 'var(--soot)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexDirection: 'column', gap: '0.5rem',
+                }}>
+                    <FilmReelIcon />
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', textAlign: 'center', padding: '0 0.5rem' }}>
+                        NO POSTER ON FILE
+                    </span>
+                </div>
+            )}
+            <div className="card-film-overlay">
+                <div style={{ fontFamily: 'var(--font-sub)', fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', color: 'var(--parchment)', lineHeight: 1.3 }}>
+                    {film.title}
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em', marginTop: '0.2rem' }}>
+                    {film.release_date?.slice(0, 4) || '—'}
+                </div>
+                {showRating && film.vote_average > 0 && (
+                    <div style={{ marginTop: '0.3rem' }}>
+                        <ReelRating value={film.vote_average / 2} size="sm" />
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+})
+
+// ── NEW: PREMIUM PERSON PLACEHOLDER ──
+export function PersonPlaceholder({ size = '100%' }) {
+    return (
+        <div style={{
+            width: size, height: '100%',
+            background: 'var(--soot)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            position: 'relative', overflow: 'hidden'
+        }}>
+            <svg width="60%" height="60%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.2 }}>
+                <path d="M12 2C6.48 2 2 6.48 2 12C2 17.52 6.48 22 12 22C17.52 22 22 17.52 22 12C22 6.48 17.52 2 12 2ZM12 6C13.66 6 15 7.34 15 9C15 10.66 13.66 12 12 12C10.34 12 9 10.66 9 9C9 7.34 10.34 6 12 6ZM12 19.2C9.5 19.2 7.29 17.92 6 15.98C6.03 13.99 10 12.9 12 12.9C13.99 12.9 17.97 13.99 18 15.98C16.71 17.92 14.5 19.2 12 19.2Z" fill="var(--sepia)" />
+            </svg>
+            <div style={{
+                position: 'absolute', inset: 0,
+                background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139,105,20,0.03) 3px)',
+                pointerEvents: 'none'
+            }} />
+        </div>
+    )
+}
+
+function FilmReelIcon() {
+    return (
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+            <circle cx="16" cy="16" r="14" stroke="#3A3228" strokeWidth="1.5" fill="#1C1710" />
+            <circle cx="16" cy="16" r="5" stroke="#3A3228" strokeWidth="1.5" />
+            <circle cx="16" cy="16" r="2" fill="#3A3228" />
+            <circle cx="16" cy="7" r="2.5" fill="#3A3228" />
+            <circle cx="16" cy="25" r="2.5" fill="#3A3228" />
+            <circle cx="7" cy="16" r="2.5" fill="#3A3228" />
+            <circle cx="25" cy="16" r="2.5" fill="#3A3228" />
+        </svg>
+    )
+}
+
+// Genre tag cloud
+const GENRE_MAP = {
+    28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
+    80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family',
+    14: 'Fantasy', 36: 'History', 27: 'Horror', 10402: 'Music',
+    9648: 'Mystery', 10749: 'Romance', 878: 'Sci-Fi', 10770: 'TV Movie',
+    53: 'Thriller', 10752: 'War', 37: 'Western',
+}
+
+export function GenreTags({ genreIds = [], genres = [] }) {
+    const display = genres.length > 0
+        ? genres.slice(0, 3).map((g) => g.name)
+        : genreIds.slice(0, 3).map((id) => GENRE_MAP[id]).filter(Boolean)
+
+    return (
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+            {display.map((g) => (
+                <span key={g} className="tag">{g}</span>
+            ))}
+        </div>
+    )
+}
+
+// Persona stamp
+const PERSONAS = {
+    'The Midnight Devotee': { color: '#5C1A0B', symbol: '🕛' },
+    'The Archivist': { color: '#8B6914', symbol: '📜' },
+    'The Weeper': { color: '#4A6B8A', symbol: '💧' },
+    'The Contrarian': { color: '#6B4A8A', symbol: '⚡' },
+    'The Completionist': { color: '#1C5C1A', symbol: '✓' },
+}
+
+export function PersonaStamp({ persona }) {
+    const p = PERSONAS[persona] || { color: 'var(--sepia)', symbol: '✦' }
+    return (
+        <span className="persona-stamp" style={{ color: p.color, borderColor: p.color }}>
+            {p.symbol} {persona}
+        </span>
+    )
+}
+
+// Section header
+export function SectionHeader({ label, title, action, className = '', style = {} }) {
+    return (
+        <div className={`section-header ${className}`} style={{ ...style }}>
+            <span className="section-label">{label}</span>
+            <h2>{title}</h2>
+            {action && <div style={{ marginLeft: 'auto' }}>{action}</div>}
+        </div>
+    )
+}
+
+// Marquee ticker
+export function Ticker({ items = [] }) {
+    if (!items.length) return null
+    const content = items.join(' ✦ ')
+    return (
+        <div className="ticker-wrap">
+            <div className="ticker-content">{content} ✦ {content}</div>
+        </div>
+    )
+}
+
+// ── DARKROOM SKELETON — Perceived-speed skeleton loaders ──
+function SkeletonPulse({ style = {} }) {
+    return (
+        <div style={{
+            background: 'linear-gradient(90deg, var(--soot) 25%, var(--ash) 50%, var(--soot) 75%)',
+            backgroundSize: '200% 100%',
+            animation: 'skeleton-shimmer 1.4s ease-in-out infinite',
+            borderRadius: 'var(--radius-card)',
+            ...style
+        }} />
+    )
+}
+
+// Film strip poster grid skeleton
+export function PosterGridSkeleton({ count = 6 }) {
+    return (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <SkeletonPulse style={{ aspectRatio: '2/3', width: '100%', animationDelay: `${i * 0.08}s` }} />
+                    <SkeletonPulse style={{ height: '0.75rem', width: '80%', animationDelay: `${i * 0.08 + 0.1}s` }} />
+                    <SkeletonPulse style={{ height: '0.5rem', width: '50%', animationDelay: `${i * 0.08 + 0.2}s` }} />
+                </div>
+            ))}
+        </div>
+    )
+}
+
+// Horizontal film strip row skeleton
+export function FilmStripSkeleton({ count = 8 }) {
+    return (
+        <div style={{ display: 'flex', gap: '1rem', overflow: 'hidden', padding: '0.5rem 0 1rem' }}>
+            {Array.from({ length: count }).map((_, i) => (
+                <div key={i} style={{ flexShrink: 0, width: 130, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                    <SkeletonPulse style={{ width: 130, height: 195, animationDelay: `${i * 0.06}s` }} />
+                    <SkeletonPulse style={{ height: '0.6rem', width: '75%', animationDelay: `${i * 0.06 + 0.1}s` }} />
+                </div>
+            ))}
+        </div>
+    )
+}
+
+// Legacy spinner fallback (used in detail pages)
+export function LoadingReel() {
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', padding: '4rem 0' }}>
+            <svg className="loading-reel" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="30" cy="30" r="28" stroke="#8B6914" strokeWidth="2" fill="#0A0703" />
+                <circle cx="30" cy="30" r="10" stroke="#8B6914" strokeWidth="2" fill="#1C1710" />
+                <circle cx="30" cy="30" r="4" fill="#F2E8A0" />
+                <circle cx="30" cy="7" r="5" fill="#3A3228" stroke="#8B6914" strokeWidth="1.5" />
+                <circle cx="30" cy="53" r="5" fill="#3A3228" stroke="#8B6914" strokeWidth="1.5" />
+                <circle cx="7" cy="30" r="5" fill="#3A3228" stroke="#8B6914" strokeWidth="1.5" />
+                <circle cx="53" cy="30" r="5" fill="#3A3228" stroke="#8B6914" strokeWidth="1.5" />
+            </svg>
+            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
+                LOADING REEL...
+            </span>
+        </div>
+    )
+}
+
+// Film stat card
+export function StatCard({ label, value, icon }) {
+    return (
+        <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
+            {icon && <div style={{ marginBottom: '0.5rem', color: 'var(--sepia)' }}>{icon}</div>}
+            <div style={{ fontFamily: 'var(--font-display-alt)', fontSize: '1.8rem', color: 'var(--flicker)' }}>
+                {value}
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)', marginTop: '0.25rem' }}>
+                {label}
+            </div>
+        </div>
+    )
+}
+
+// ── THE AUTOPSY (CELLULOID GAUGE) ──
+export function RadarChart({ autopsy }) {
+    if (!autopsy) return null;
+
+    // Data mapping uses the new precise architectural constraints while maintaining backwards compatibility with legacy logs
+    const data = [
+        { key: 'story', label: 'STORY', value: autopsy.story !== undefined ? autopsy.story : autopsy.screenplay || 0 },
+        { key: 'script', label: 'SCRIPT / DIALOGUE', value: autopsy.script !== undefined ? autopsy.script : autopsy.screenplay || 0 },
+        { key: 'acting', label: 'ACTING & CHARACTER', value: autopsy.acting || autopsy.direction || 0 },
+        { key: 'cinematography', label: 'CINEMATOGRAPHY', value: autopsy.cinematography || 0 },
+        { key: 'editing', label: 'EDITING & PACING', value: autopsy.editing !== undefined ? autopsy.editing : autopsy.pacing || 0 },
+        { key: 'sound', label: 'SOUND DESIGN & SCORE', value: autopsy.sound || 0 },
+    ];
+
+    return (
+        <div className="card" style={{ padding: '2rem', margin: '2rem 0', display: 'flex', flexDirection: 'column', gap: '2rem', position: 'relative', overflow: 'hidden', background: 'var(--ink)' }}>
+
+            {/* Deep vintage vignette - completely removing any bright ambient light */}
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%)', pointerEvents: 'none' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid var(--ash)', paddingBottom: '1rem', position: 'relative', zIndex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--bone)', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <span style={{ color: 'var(--blood-reel)' }}>✦</span>
+                    THE AUTOPSY
+                </div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--fog)', textTransform: 'uppercase' }}>
+                    Confidential
+                </div>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.6rem', position: 'relative', zIndex: 1 }}>
+                {data.map((item, i) => (
+                    <div key={item.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.7rem' }}>
+
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '0.1rem' }}>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
+                                {item.label}
+                            </span>
+                            {/* Using the core cinematic font to perfectly match the Nitrate Noir aesthetic */}
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', lineHeight: 1, color: 'var(--parchment)', opacity: 0.85, letterSpacing: '0.05em' }}>
+                                {item.value === 10 ? '10.0' : `${parseFloat(item.value).toFixed(1)}`}
+                            </span>
+                        </div>
+
+                        {/* Physical Brass/Metal Notch Track */}
+                        <div style={{ display: 'flex', gap: '4px', width: '100%', height: '8px' }}>
+                            {Array.from({ length: 10 }).map((_, idx) => {
+                                const active = item.value >= idx + 1;
+                                const partial = !active && item.value > idx;
+
+                                return (
+                                    <div key={idx} style={{
+                                        flex: 1,
+                                        borderRadius: '1px',
+                                        background: active ? 'linear-gradient(to bottom, var(--sepia), #5a430d)' : partial ? 'var(--ash)' : 'var(--soot)',
+                                        boxShadow: active
+                                            ? '0 1px 3px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)'
+                                            : 'inset 0 2px 4px rgba(0,0,0,0.9)',
+                                        border: active || partial ? '1px solid rgba(232, 223, 200, 0.1)' : '1px solid rgba(10, 7, 3, 0.8)',
+                                        opacity: active ? 1 : partial ? 0.8 : 0.4,
+                                        // No willChange here — promoting 60 elements to compositor layers kills GPU memory
+                                        // No transform scale — box-shadow + transform together = full repaint on each frame
+                                    }} />
+                                )
+                            })}
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className="scanlines" style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }} />
+        </div>
+    )
+}
