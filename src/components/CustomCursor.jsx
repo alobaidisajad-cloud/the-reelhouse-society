@@ -64,8 +64,8 @@ export default function CustomCursor() {
     const onOut = (e) => { if (isInteractive(e.target)) outer.classList.remove('cursor-hover') }
 
     const animate = () => {
-      ox += (mx - ox) * 0.6
-      oy += (my - oy) * 0.6
+      ox += (mx - ox) * 0.92
+      oy += (my - oy) * 0.92
       const rx = Math.round(ox * 100) / 100
       const ry = Math.round(oy * 100) / 100
       outer.style.transform = 'translate3d(' + rx + 'px,' + ry + 'px,0) translate(-50%,-50%)'
@@ -99,15 +99,12 @@ export default function CustomCursor() {
         pointer-events: none; z-index: 999998;
         width: 40px; height: 40px;
         will-change: transform;
-        transition: width 0.2s cubic-bezier(0.34,1.56,0.64,1),
-                    height 0.2s cubic-bezier(0.34,1.56,0.64,1),
-                    opacity 0.2s ease;
+        transition: width 0.15s ease, height 0.15s ease, opacity 0.15s ease;
       }
       .cursor-outer svg {
         width: 100%; height: 100%;
-        transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+        transition: transform 0.15s ease;
         will-change: transform;
-        filter: drop-shadow(0 0 2px rgba(194,155,56,0.5));
       }
 
       /* HOVER — aperture opens + rotates 22.5deg */
