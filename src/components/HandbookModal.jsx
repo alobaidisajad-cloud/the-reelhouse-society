@@ -67,7 +67,7 @@ export default function HandbookModal() {
 
                             <div className="hb-item">
                                 <h3>The Dispatch</h3>
-                                <p>The official newsletter of the Underground. Read original dossiers filed by our premium Auteur members.</p>
+                                <p>The official newsletter of the Society. Read original dossiers filed by our premium Auteur members.</p>
                             </div>
 
                             <div className="hb-item">

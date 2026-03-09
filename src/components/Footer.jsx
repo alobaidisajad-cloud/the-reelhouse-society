@@ -29,7 +29,7 @@ export default function Footer() {
                         </span>
                     </div>
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', lineHeight: 1.6, maxWidth: '220px' }}>
-                        Where cinema lives between life and death. A society for the devoted.
+                        A society for those who live and breathe cinema.
                     </p>
                 </div>
 

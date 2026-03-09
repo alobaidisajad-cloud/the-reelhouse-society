@@ -10,7 +10,7 @@ import toast from 'react-hot-toast'
 const STEPS = [
     { label: 'PICK YOUR FIVE', sub: 'Choose 5 films that define your taste.' },
     { label: 'LOG YOUR FIRST', sub: 'Record your last watched film.' },
-    { label: 'JOIN THE SOCIETY', sub: "You're in. Welcome to the underground." },
+    { label: 'JOIN THE SOCIETY', sub: "You're in. Welcome to the society." },
 ]
 
 export default function OnboardingModal() {

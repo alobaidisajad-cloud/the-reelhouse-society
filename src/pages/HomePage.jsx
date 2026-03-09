@@ -654,7 +654,7 @@ export default function HomePage() {
                             }}>
                                 <span style={{ display: 'block' }}>Track every film you watch.</span>
                                 <span style={{ display: 'block', color: 'var(--bone)', opacity: 0.85 }}>Discover cinema you've never heard of.</span>
-                                <span style={{ display: 'block', color: 'var(--sepia)' }}>Join the underground.</span>
+                                <span style={{ display: 'block', color: 'var(--sepia)' }}>Join the society.</span>
                             </div>
                             {/* Decorative rule */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '1.25rem 0' : '1.75rem 0', opacity: 0.4 }}>

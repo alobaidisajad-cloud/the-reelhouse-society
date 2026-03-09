@@ -12,7 +12,7 @@ import { tmdb } from '../tmdb'
 export function useSEOSync(customTitle, description, ogImage) {
     useEffect(() => {
         // Build Base Title
-        const base = "The ReelHouse Society — Where Cinema Lives Between Life and Death"
+        const base = "The ReelHouse Society — Track, Discover, and Live Cinema"
         document.title = customTitle ? `${customTitle} | The ReelHouse Society` : base
 
         // Safely update Meta Tags
