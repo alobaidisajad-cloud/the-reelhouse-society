@@ -70,6 +70,12 @@ export const useAuthStore = create(
             followUser: (targetUsername) => set((state) => {
                 const following = state.user?.following || [];
                 if (following.includes(targetUsername)) return state;
+                // Push notification
+                useNotificationStore.getState().push({
+                    type: 'follow',
+                    from: state.user?.username,
+                    message: `${state.user?.username || 'Someone'} followed you`,
+                });
                 return {
                     user: {
                         ...state.user,
@@ -607,7 +613,6 @@ export const useDispatchStore = create(
     )
 );
 
-// ── NIGHTLY PROGRAMMES STORE ──
 export const useProgrammeStore = create(
     persist(
         (set, get) => ({
@@ -623,5 +628,33 @@ export const useProgrammeStore = create(
             })),
         }),
         { name: 'reelhouse-programmes' }
+    )
+);
+
+// ── NOTIFICATION STORE ──
+export const useNotificationStore = create(
+    persist(
+        (set, get) => ({
+            notifications: [],
+            // Push a notification: { type: 'follow'|'reaction'|'endorse'|'system', from: string, message: string, filmTitle?: string, timestamp: string }
+            push: (notif) => set(state => ({
+                notifications: [
+                    { id: 'n-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), read: false, timestamp: new Date().toISOString(), ...notif },
+                    ...state.notifications
+                ].slice(0, 50)  // Keep max 50 notifications
+            })),
+            markRead: (id) => set(state => ({
+                notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
+            })),
+            markAllRead: () => set(state => ({
+                notifications: state.notifications.map(n => ({ ...n, read: true }))
+            })),
+            dismiss: (id) => set(state => ({
+                notifications: state.notifications.filter(n => n.id !== id)
+            })),
+            clearAll: () => set({ notifications: [] }),
+            unreadCount: () => get().notifications.filter(n => !n.read).length,
+        }),
+        { name: 'reelhouse-notifications' }
     )
 );

@@ -4,6 +4,7 @@ import { useFilmStore, useAuthStore, useUIStore, useVenueStore } from '../store'
 import { ReelRating, SectionHeader, RadarChart, PersonPlaceholder } from '../components/UI'
 import { tmdb } from '../tmdb'
 import { Heart, MessageSquare, Bookmark } from 'lucide-react'
+import ReactionBar from '../components/ReactionBar'
 
 // Community logs and venue events are now powered dynamically by Zustand stores.
 
@@ -11,6 +12,7 @@ function ActivityCard({ log }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
     const isEndorsed = useFilmStore(state => state.interactions.some(i => i.targetId === log.id && i.type === 'endorse'))
     const [endorsementCount, setEndorsementCount] = useState(Math.floor(Math.random() * 40) + (isEndorsed ? 3 : 2))
+    const [reactions, setReactions] = useState({})
 
     const handleEndorse = () => {
         toggleEndorse(log.id)
@@ -150,6 +152,17 @@ function ActivityCard({ log }) {
                     <button style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'none', transition: 'color 0.2s', marginLeft: 'auto' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
                         <Bookmark size={12} /> RE-TRANSMIT
                     </button>
+                </div>
+
+                {/* Emoji Reactions */}
+                <div style={{ marginTop: '0.75rem' }}>
+                    <ReactionBar
+                        logId={log.id}
+                        logAuthor={log.user}
+                        filmTitle={log.film?.title}
+                        reactions={reactions}
+                        onReact={(id, newReactions) => setReactions(newReactions)}
+                    />
                 </div>
             </div>
         </div>

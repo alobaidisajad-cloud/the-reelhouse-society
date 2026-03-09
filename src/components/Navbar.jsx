@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Film, BookOpen, Compass, User, Menu, X, LogIn, Star, Crown, FileText, MapPin } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from './Buster'
+import NotificationBell from './NotificationBell'
 
 const NAV_LINKS = [
     { path: '/', label: 'The Lobby', icon: Film },
@@ -143,6 +144,7 @@ export default function Navbar() {
                                 >
                                     + <span className="hide-mobile">LOG FILM</span>
                                 </button>
+                                <NotificationBell />
                                 {user?.role === 'venue_owner' && (
                                     <Link
                                         to="/venue-dashboard"

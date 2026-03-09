@@ -19,6 +19,7 @@ const LogModal = lazy(() => import('./components/LogModal'))
 const SignupModal = lazy(() => import('./components/SignupModal'))
 const HandbookModal = lazy(() => import('./components/HandbookModal'))
 const CommandPalette = lazy(() => import('./components/CommandPalette'))
+const OnboardingModal = lazy(() => import('./components/OnboardingModal'))
 
 // Detect touch once — controls which desktop-only effects to mount
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
@@ -183,6 +184,7 @@ export default function App() {
           <LogModal />
           <SignupModal />
           <HandbookModal />
+          <OnboardingModal />
 
           <AnimatePresence mode="wait" initial={false}>
             <Routes location={location} key={location.pathname}>
