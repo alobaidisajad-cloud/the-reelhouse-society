@@ -173,7 +173,7 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }) {
                                         position: 'absolute',
                                         bottom: 'calc(100% + 6px)',
                                         left: '50%',
-                                        transformtate: 'translateX(-50%)',
+                                        transform: 'translateX(-50%)',
                                         background: 'var(--soot)',
                                         border: '1px solid var(--ash)',
                                         borderRadius: '4px',

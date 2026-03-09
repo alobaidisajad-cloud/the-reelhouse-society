@@ -592,6 +592,7 @@ export const useSoundscape = create((set) => ({
 
 // â”€â”€ ELITE REALTIME SUBSCRIPTIONS â”€â”€
 export const initAuthSync = () => {
+    if (!isSupabaseConfigured) return  // Don't attempt auth sync with placeholder credentials
     supabase.auth.onAuthStateChange(async (event, session) => {
         if (session) {
             const currentUser = useAuthStore.getState().user;
