@@ -13,6 +13,13 @@ class ErrorBoundary extends React.Component {
 
     componentDidCatch(error, errorInfo) {
         console.error("Film Breakage Detected:", error, errorInfo)
+        // Log to Supabase error_logs for production monitoring
+        import('../errorLogger').then(m => m.logError({
+            type: 'react_boundary',
+            message: error?.message,
+            stack: error?.stack,
+            component: errorInfo?.componentStack?.slice(0, 2000),
+        })).catch(() => { })
     }
 
     render() {

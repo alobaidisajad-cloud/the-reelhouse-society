@@ -144,10 +144,12 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Elite Backend: Initialize Live global data stream
+  // Elite Backend: Initialize Live global data stream + error logging
   useEffect(() => {
     initAuthSync()
     initRealtime()
+    // Log unhandled errors to Supabase for production monitoring
+    import('./errorLogger').then(m => m.initGlobalErrorLogging())
   }, [])
 
   return (
