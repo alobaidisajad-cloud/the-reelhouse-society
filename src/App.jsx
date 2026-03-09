@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from './tmdb'
 import Navbar from './components/Navbar'
+import Footer from './components/Footer'
 import Preloader from './components/Preloader'
 import CustomCursor from './components/CustomCursor'
 import { useFilmStore, useUIStore, initRealtime, initAuthSync } from './store'
@@ -55,9 +56,6 @@ const pageVariantsMobile = {
 
 const pageTransitionDesktop = { type: 'tween', ease: 'easeInOut', duration: 0.45 }
 const pageTransitionMobile = { type: 'tween', ease: 'easeOut', duration: 0.2 }
-
-// Static — defined once, never re-created on each render
-const FOOTER_FILMSTRIP = Array.from({ length: 20 })
 
 function PageFallback() {
   return <div style={{ minHeight: '100vh', background: 'var(--ink)' }} />
@@ -209,51 +207,7 @@ export default function App() {
         </ErrorBoundary>
       </Suspense>
 
-      {/* Footer */}
-      <footer style={{ borderTop: '1px solid var(--ash)', background: 'var(--soot)', padding: '2rem 0' }}>
-        <div className="container" style={{ textAlign: 'center' }}>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginBottom: '1rem', opacity: 0.15 }}>
-            {FOOTER_FILMSTRIP.map((_, i) => (
-              <div key={i} style={{ width: 20, height: 14, border: '1px solid var(--sepia)', borderRadius: 1 }} />
-            ))}
-          </div>
-          <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--sepia)', marginBottom: '0.4rem', animation: 'flicker-text 8s ease-in-out infinite' }}>
-            The ReelHouse Society
-          </div>
-          <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--fog)', marginBottom: '0.75rem' }}>
-            Where Cinema Lives Between Life and Death
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
-            {[
-              { to: '/', label: 'The Lobby' },
-              { to: '/discover', label: 'Dark Room' },
-              { to: '/feed', label: 'The Reel' },
-              { to: '/dispatch', label: 'The Dispatch' },
-              { to: '/lists', label: 'The Stacks' },
-              { to: '/cinemas', label: 'Cinemas' },
-              { to: '/patronage', label: 'The Society' },
-            ].map(({ to, label }) => (
-              <Link key={to} to={to} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--fog)', textDecoration: 'none', transition: 'color 0.2s' }}
-                onMouseOver={(e) => e.target.style.color = 'var(--flicker)'}
-                onMouseOut={(e) => e.target.style.color = 'var(--fog)'}
-              >
-                {label}
-              </Link>
-            ))}
-            <button
-              onClick={openHandbook}
-              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--sepia)', textDecoration: 'none', transition: 'filter 0.2s', fontWeight: 'bold' }}
-              onMouseOver={(e) => e.target.style.filter = 'brightness(1.5)'}
-              onMouseOut={(e) => e.target.style.filter = 'brightness(1)'}
-            >
-              Society Handbook
-            </button>
-          </div>
-          <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--ash)' }}>
-            Film data provided by TMDB · Built with nitrate &amp; obsession
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

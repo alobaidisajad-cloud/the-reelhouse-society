@@ -7,10 +7,75 @@ import { tmdb, obscurityScore, formatRuntime, getYear } from '../tmdb'
 import { ReelRating, ObscurityBadge, GenreTags, FilmCard, LoadingReel, SectionHeader } from '../components/UI'
 import { useSEOSync } from '../components/useSEOSync'
 import { useUIStore, useFilmStore } from '../store'
+import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 
 const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+
+// ── COMMUNITY REVIEWS (Dynamic from Supabase) ──
+function CommunityReviews({ filmId }) {
+    const { logs } = useFilmStore()
+    const { data: dbReviews } = useQuery({
+        queryKey: ['film-reviews', filmId],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('logs')
+                .select('user_id, review, rating, created_at, profiles(username, role)')
+                .eq('film_id', filmId)
+                .not('review', 'is', null)
+                .neq('review', '')
+                .order('created_at', { ascending: false })
+                .limit(6)
+            return data || []
+        },
+        staleTime: 1000 * 60 * 5,
+    })
+
+    // Local user's review for this film (immediate feedback)
+    const localReview = logs.find(l => (l.filmId === filmId || String(l.filmId) === String(filmId)) && l.review)
+
+    const reviews = []
+    if (localReview) {
+        reviews.push({
+            author: 'you', persona: 'Your Review',
+            rating: localReview.rating, text: localReview.review, isLocal: true,
+        })
+    }
+    if (dbReviews) {
+        dbReviews.forEach(r => {
+            if (!localReview || r.user_id !== localReview.userId) {
+                reviews.push({
+                    author: r.profiles?.username || 'anonymous',
+                    persona: r.profiles?.role === 'auteur' ? 'Auteur' : r.profiles?.role === 'archivist' ? 'Archivist' : 'Cinephile',
+                    rating: r.rating, text: r.review,
+                })
+            }
+        })
+    }
+
+    if (reviews.length === 0) {
+        reviews.push({ author: 'the_society', persona: 'The ReelHouse Society', rating: 0, text: 'No reviews yet. Be the first to share your thoughts on this film.' })
+    }
+
+    return (
+        <div>
+            <SectionHeader label="FROM THE CRITICS" title="Community Reviews" />
+            {reviews.map((r, i) => (
+                <div key={r.author + i} className="review-manuscript" style={{ marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
+                        <div>
+                            <Link to={r.isLocal ? '#' : `/user/${r.author}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>@{r.author}</Link>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '0.15rem' }}>{r.persona}</div>
+                        </div>
+                        {r.rating > 0 && <ReelRating value={r.rating} size="sm" />}
+                    </div>
+                    <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', color: 'var(--bone)', lineHeight: 1.7, position: 'relative', zIndex: 1 }}>{r.text}</p>
+                </div>
+            ))}
+        </div>
+    )
+}
 
 // ── VIRAL EXPORT MODAL ──
 function DossierExportModal({ film, log, onClose }) {
@@ -519,25 +584,8 @@ function FilmDetails({ film }) {
                     </div>
                 )}
 
-                {/* Reviews */}
-                <div>
-                    <SectionHeader label="FROM THE CRITICS" title="Community Reviews" />
-                    {[
-                        { author: 'midnight_devotee', persona: 'The Midnight Devotee', rating: 5, text: "A film that exists in the space between waking and dream. Every frame feels like a decision made under duress — and somehow all the right ones." },
-                        { author: 'the_archivist_84', persona: 'The Archivist', rating: 4, text: "Technically impeccable. The direction is assured without being showy. This is filmmaking that trusts its audience — a rare thing these days." },
-                    ].map(r => (
-                        <div key={r.author} className="review-manuscript" style={{ marginBottom: '1rem' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
-                                <div>
-                                    <Link to={`/user/${r.author}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>@{r.author}</Link>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '0.15rem' }}>{r.persona}</div>
-                                </div>
-                                <ReelRating value={r.rating} size="sm" />
-                            </div>
-                            <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', color: 'var(--bone)', lineHeight: 1.7, position: 'relative', zIndex: 1 }}>{r.text}</p>
-                        </div>
-                    ))}
-                </div>
+                {/* Reviews — Dynamic from Supabase, fallback to curated */}
+                <CommunityReviews filmId={film.id} />
             </div>
 
             {/* Sidebar */}

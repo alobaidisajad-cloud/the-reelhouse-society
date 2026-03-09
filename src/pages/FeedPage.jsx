@@ -177,7 +177,7 @@ export default function FeedPage() {
 
     const allActivity = logs.map((l, i) => ({
         id: `my-${l.id}`, user: user?.username || 'cinephile', persona: 'Cinephile',
-        film: { id: l.filmId, title: l.title, year: '2026', poster: l.poster },
+        film: { id: l.filmId, title: l.title, year: l.year || (l.watchedDate ? new Date(l.watchedDate).getFullYear() : ''), poster: l.poster },
         rating: l.rating, review: l.review,
         autopsy: l.autopsy, altPoster: l.altPoster, isAutopsied: l.isAutopsied,
         editorialHeader: l.editorialHeader, dropCap: l.dropCap, pullQuote: l.pullQuote,
