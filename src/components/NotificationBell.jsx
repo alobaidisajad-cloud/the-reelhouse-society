@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, Check } from 'lucide-react'
 import { useNotificationStore, useAuthStore } from '../store'
-import { supabase } from '../supabaseClient'
+import { supabase, isSupabaseConfigured } from '../supabaseClient'
 
 const NOTIF_ICONS = {
     follow: '👤',
@@ -36,7 +36,7 @@ export default function NotificationBell() {
 
     // Fetch notifications from Supabase on mount
     useEffect(() => {
-        if (!user?.id) return
+        if (!user?.id || !isSupabaseConfigured) return
         let cancelled = false
 
         const fetchNotifs = async () => {

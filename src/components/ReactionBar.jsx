@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore, useNotificationStore } from '../store'
-import { supabase } from '../supabaseClient'
+import { supabase, isSupabaseConfigured } from '../supabaseClient'
 
 const REACTIONS = [
     { emoji: '🎬', label: 'Masterpiece' },
@@ -21,7 +21,7 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }) {
 
     // Fetch existing reactions for this log from Supabase
     useEffect(() => {
-        if (!logId) return
+        if (!logId || !isSupabaseConfigured) return
         let cancelled = false
 
         const fetchReactions = async () => {

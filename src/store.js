@@ -1,7 +1,7 @@
 ﻿import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-import { supabase } from './supabaseClient'
+import { supabase, isSupabaseConfigured } from './supabaseClient'
 
 // ── AUTH STORE ──
 export const useAuthStore = create(
@@ -608,6 +608,7 @@ export const initAuthSync = () => {
 };
 
 export const initRealtime = () => {
+    if (!isSupabaseConfigured) return  // Don't attempt WS connections with placeholder credentials
     // Listen for live film logs dropped globally by any user
     supabase
         .channel('global_logs_channel')
