@@ -1,6 +1,6 @@
-const CACHE_NAME = 'reelhouse-shell-v2';
-const API_CACHE = 'reelhouse-tmdb-api-v2';
-const IMAGE_CACHE = 'reelhouse-tmdb-images-v2';
+const CACHE_NAME = 'reelhouse-shell-v3';
+const API_CACHE = 'reelhouse-tmdb-api-v3';
+const IMAGE_CACHE = 'reelhouse-tmdb-images-v3';
 
 const STATIC_ASSETS = [
     '/',
