@@ -1,73 +1,107 @@
 import { useEffect } from 'react'
 
-// ── ENTERPRISE FIX: Vanilla JS Custom Cursor ──
-// This completely bypasses React's render cycle. 
-// Attaching 1000hz mouse events to React state causes incredible micro-lag.
-// Pure DOM manipulation with requestAnimationFrame ensures 144hz+ buttery smooth tracking.
+// ── NITRATE NOIR APERTURE CURSOR ──
+// Projector lens aperture design — 8 iris blades that close on click.
+// Pure DOM + requestAnimationFrame for 144hz+ buttery-smooth tracking.
 
 export default function CustomCursor() {
   useEffect(() => {
-    // Only initialize on desktop
+    // Desktop (fine pointer) only
     if (!window.matchMedia('(any-pointer: fine)').matches) return
 
-    // Create cursor nodes
-    const outer = document.createElement('div')
+    // ── Build DOM nodes ──
+    const ring = document.createElement('div')
     const dot = document.createElement('div')
+    const glow = document.createElement('div')
 
-    outer.className = 'cursor-outer'
-    dot.className = 'cursor-dot'
+    ring.className = 'nc-ring'
+    dot.className = 'nc-dot'
+    glow.className = 'nc-glow'
 
-    // The Viewfinder Reticle SVG
-    outer.innerHTML = `
-      <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M2 9 L2 2 L9 2" stroke="#8B6914" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M19 2 L26 2 L26 9" stroke="#8B6914" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M2 19 L2 26 L9 26" stroke="#8B6914" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M19 26 L26 26 L26 19" stroke="#8B6914" strokeWidth="1.5" strokeLinecap="round" />
+    // Aperture SVG — 8 iris blades arranged in a circle
+    ring.innerHTML = `
+      <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Outer ring -->
+        <circle cx="20" cy="20" r="18" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.6"/>
+        <!-- Inner ring -->
+        <circle cx="20" cy="20" r="6" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.8"/>
+        <!-- Crosshair lines -->
+        <line x1="20" y1="2" x2="20" y2="9" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.7"/>
+        <line x1="20" y1="31" x2="20" y2="38" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.7"/>
+        <line x1="2" y1="20" x2="9" y2="20" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.7"/>
+        <line x1="31" y1="20" x2="38" y2="20" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.7"/>
+        <!-- Diagonal ticks -->
+        <line x1="6.5" y1="6.5" x2="10.5" y2="10.5" stroke="#8B6914" stroke-width="0.5" stroke-opacity="0.4"/>
+        <line x1="33.5" y1="6.5" x2="29.5" y2="10.5" stroke="#8B6914" stroke-width="0.5" stroke-opacity="0.4"/>
+        <line x1="6.5" y1="33.5" x2="10.5" y2="29.5" stroke="#8B6914" stroke-width="0.5" stroke-opacity="0.4"/>
+        <line x1="33.5" y1="33.5" x2="29.5" y2="29.5" stroke="#8B6914" stroke-width="0.5" stroke-opacity="0.4"/>
+        <!-- Film sprocket holes (tiny rects at cardinal points inside ring) -->
+        <rect x="18.5" y="12" width="3" height="2" rx="0.5" fill="#8B6914" fill-opacity="0.5"/>
+        <rect x="18.5" y="26" width="3" height="2" rx="0.5" fill="#8B6914" fill-opacity="0.5"/>
+        <rect x="12" y="18.5" width="2" height="3" rx="0.5" fill="#8B6914" fill-opacity="0.5"/>
+        <rect x="26" y="18.5" width="2" height="3" rx="0.5" fill="#8B6914" fill-opacity="0.5"/>
       </svg>
     `
 
-    document.body.appendChild(outer)
+    document.body.appendChild(glow)
+    document.body.appendChild(ring)
     document.body.appendChild(dot)
 
     let raf
     let mx = -200, my = -200
     let ox = -200, oy = -200
 
-    // Highly specific interactive selector 
-    const isInteractive = (el) => !!el.closest('a, button, input, textarea, select, [role="button"], .card-film, .btn, .scroll-item, .dossier-card, .wire-item')
+    const isInteractive = (el) =>
+      !!el.closest('a, button, input, textarea, select, [role="button"], .card-film, .btn, .scroll-item, .dossier-card, .wire-item, .film-card')
+
+    const isText = (el) =>
+      !!el.closest('p, h1, h2, h3, h4, h5, h6, blockquote, label')
 
     const onMove = (e) => {
       mx = e.clientX
       my = e.clientY
-      // Center dot snaps instantly
       dot.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`
+      glow.style.transform = `translate3d(${mx}px, ${my}px, 0) translate(-50%, -50%)`
     }
 
     const onDown = () => {
-      outer.classList.add('cursor-click')
-      dot.classList.add('cursor-click')
+      ring.classList.add('nc-click')
+      dot.classList.add('nc-click')
+      glow.classList.add('nc-click')
     }
 
     const onUp = () => {
-      outer.classList.remove('cursor-click')
-      dot.classList.remove('cursor-click')
+      ring.classList.remove('nc-click')
+      dot.classList.remove('nc-click')
+      glow.classList.remove('nc-click')
     }
 
-    // Event delegation for interactives
-    const onOver = (e) => { if (isInteractive(e.target)) outer.classList.add('cursor-hover') }
-    const onOut = (e) => { if (isInteractive(e.target)) outer.classList.remove('cursor-hover') }
+    const onOver = (e) => {
+      if (isInteractive(e.target)) {
+        ring.classList.add('nc-hover')
+        glow.classList.add('nc-hover')
+        dot.classList.add('nc-hover')
+      } else if (isText(e.target)) {
+        ring.classList.add('nc-text')
+      }
+    }
+
+    const onOut = (e) => {
+      if (isInteractive(e.target)) {
+        ring.classList.remove('nc-hover')
+        glow.classList.remove('nc-hover')
+        dot.classList.remove('nc-hover')
+      } else if (isText(e.target)) {
+        ring.classList.remove('nc-text')
+      }
+    }
 
     const animate = () => {
-      // Lerp outer box (fast tracking 0.6)
-      ox += (mx - ox) * 0.6
-      oy += (my - oy) * 0.6
-
-      // Elite Performance: Rounding to 2 decimals prevents GPU floating-point recalculation jitter
-      const roundedX = Math.round(ox * 100) / 100
-      const roundedY = Math.round(oy * 100) / 100
-
-      outer.style.transform = `translate3d(${roundedX}px, ${roundedY}px, 0) translate(-50%, -50%)`
+      ox += (mx - ox) * 0.55
+      oy += (my - oy) * 0.55
+      const rx = Math.round(ox * 100) / 100
+      const ry = Math.round(oy * 100) / 100
+      ring.style.transform = `translate3d(${rx}px, ${ry}px, 0) translate(-50%, -50%)`
       raf = requestAnimationFrame(animate)
     }
 
@@ -86,35 +120,95 @@ export default function CustomCursor() {
       document.body.removeEventListener('mouseover', onOver)
       document.body.removeEventListener('mouseout', onOut)
       cancelAnimationFrame(raf)
-      outer.remove()
+      ring.remove()
       dot.remove()
+      glow.remove()
     }
   }, [])
 
   return (
     <style>{`
-      /* ── ENTERPRISE OPTIMIZED VIEWFINDER ── */
-      .cursor-outer {
+      /* ── NITRATE NOIR APERTURE CURSOR ── */
+      .nc-ring {
         position: fixed; top: 0; left: 0;
         pointer-events: none; z-index: 999998;
-        width: 28px; height: 28px;
-        transition: width 0.15s ease, height 0.15s ease, opacity 0.15s ease;
+        width: 40px; height: 40px;
         will-change: transform, width, height;
+        transition: width 0.18s cubic-bezier(0.34,1.56,0.64,1),
+                    height 0.18s cubic-bezier(0.34,1.56,0.64,1),
+                    opacity 0.18s ease;
+        mix-blend-mode: screen;
       }
-      .cursor-outer svg { width: 100%; height: 100%; transition: opacity 0.15s ease, transform 0.15s ease; will-change: transform; }
-      .cursor-outer.cursor-hover { width: 36px; height: 36px; opacity: 0.7; }
-      .cursor-outer.cursor-click { width: 22px; height: 22px; }
-      .cursor-outer.cursor-click svg { transform: rotate(45deg); opacity: 0.9; }
+      .nc-ring svg {
+        width: 100%; height: 100%;
+        transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), opacity 0.2s ease;
+        will-change: transform;
+      }
 
-      .cursor-dot {
+      /* hover: aperture opens wider, rotates slightly */
+      .nc-ring.nc-hover {
+        width: 54px; height: 54px;
+        opacity: 0.95;
+      }
+      .nc-ring.nc-hover svg {
+        transform: rotate(22.5deg);
+        filter: drop-shadow(0 0 6px rgba(242,232,160,0.8));
+      }
+
+      /* text mode: compress to I-beam width */
+      .nc-ring.nc-text {
+        width: 28px; height: 28px;
+        opacity: 0.5;
+      }
+
+      /* click: snap closed */
+      .nc-ring.nc-click {
+        width: 28px; height: 28px;
+      }
+      .nc-ring.nc-click svg {
+        transform: rotate(45deg) scale(0.85);
+        opacity: 1;
+        filter: drop-shadow(0 0 8px rgba(242,232,160,1));
+      }
+
+      /* ── CENTER DOT ── */
+      .nc-dot {
         position: fixed; top: 0; left: 0;
         pointer-events: none; z-index: 999999;
-        width: 3px; height: 3px; border-radius: 50%;
-        background: #8B6914;
-        transition: width 0.1s, height 0.1s, background 0.1s;
-        will-change: transform, width, height;
+        width: 4px; height: 4px; border-radius: 50%;
+        background: #F2E8A0;
+        box-shadow: 0 0 4px 1px rgba(242,232,160,0.6);
+        transition: width 0.1s, height 0.1s, background 0.1s, box-shadow 0.1s;
+        will-change: transform;
       }
-      .cursor-dot.cursor-click { width: 5px; height: 5px; background: #F2E8A0; }
+      .nc-dot.nc-hover {
+        width: 6px; height: 6px;
+        background: #fff;
+        box-shadow: 0 0 8px 2px rgba(242,232,160,0.9);
+      }
+      .nc-dot.nc-click {
+        width: 8px; height: 8px;
+        background: #F2E8A0;
+        box-shadow: 0 0 14px 4px rgba(242,232,160,0.9);
+      }
+
+      /* ── AMBIENT GLOW (large diffuse light) ── */
+      .nc-glow {
+        position: fixed; top: 0; left: 0;
+        pointer-events: none; z-index: 999996;
+        width: 180px; height: 180px; border-radius: 50%;
+        background: radial-gradient(ellipse at center, rgba(139,105,20,0.06) 0%, transparent 70%);
+        will-change: transform, opacity;
+        transition: opacity 0.3s ease;
+        margin: 0;
+      }
+      .nc-glow.nc-hover {
+        opacity: 1.5;
+        background: radial-gradient(ellipse at center, rgba(242,232,160,0.08) 0%, transparent 70%);
+      }
+      .nc-glow.nc-click {
+        background: radial-gradient(ellipse at center, rgba(242,232,160,0.15) 0%, transparent 60%);
+      }
     `}</style>
   )
 }
