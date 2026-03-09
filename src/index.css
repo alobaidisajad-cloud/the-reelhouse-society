@@ -636,6 +636,32 @@ a:hover {
   box-shadow: 0 8px 25px rgba(92, 26, 11, 0.4);
 }
 
+/* ── NAVBAR LOG FILM — dominant amber CTA ── */
+@keyframes nav-log-pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 4px 15px rgba(139, 105, 20, 0.35), 0 0 0 1px rgba(242, 232, 160, 0.1);
+  }
+
+  50% {
+    box-shadow: 0 4px 22px rgba(139, 105, 20, 0.65), 0 0 0 1px rgba(242, 232, 160, 0.25);
+  }
+}
+
+.nav-log-btn {
+  font-size: 0.68rem !important;
+  padding: 0.45em 1.1em !important;
+  letter-spacing: 0.2em !important;
+  animation: nav-log-pulse 2.8s ease-in-out infinite;
+}
+
+@media (any-pointer: coarse) {
+  .nav-log-btn {
+    animation: none !important;
+  }
+}
+
 /* ── CARDS ── */
 .card {
   background: linear-gradient(160deg, rgba(35, 28, 20, 0.95) 0%, rgba(10, 7, 3, 0.98) 100%);

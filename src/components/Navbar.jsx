@@ -138,11 +138,10 @@ export default function Navbar() {
                         {isAuthenticated ? (
                             <>
                                 <button
-                                    className="btn btn-primary"
-                                    style={{ fontSize: '0.65rem', padding: '0.35em 0.9em' }}
+                                    className="btn btn-primary nav-log-btn"
                                     onClick={() => openLogModal()}
                                 >
-                                    + <span className="hide-mobile">Log Film</span>
+                                    + <span className="hide-mobile">LOG FILM</span>
                                 </button>
                                 {user?.role === 'venue_owner' && (
                                     <Link

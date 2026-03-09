@@ -633,51 +633,77 @@ export default function HomePage() {
                     <MarqueeBoard film={heroFilm} />
 
                     {!isAuthenticated && (
-                        <p style={{
+                        <div style={{
                             textAlign: 'center',
-                            fontFamily: 'var(--font-body)',
-                            color: 'var(--bone)',
-                            fontSize: '1.15rem',
-                            maxWidth: '640px',
-                            margin: '2rem auto 0',
-                            lineHeight: 1.6,
-                            opacity: 0.9,
-                            textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+                            margin: IS_TOUCH ? '1.5rem auto 0' : '2.5rem auto 0',
+                            maxWidth: '680px',
                         }}>
-                            Enter the grand palace of cinema. Log your viewings, pen your critiques, and curate your personal archive.
-                        </p>
+                            {/* Three-line manifesto */}
+                            <div style={{
+                                fontFamily: 'var(--font-sub)',
+                                fontSize: IS_TOUCH ? '1.05rem' : '1.35rem',
+                                color: 'var(--parchment)',
+                                lineHeight: 1.75,
+                                letterSpacing: '0.01em',
+                                textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+                            }}>
+                                <span style={{ display: 'block' }}>Track every film you watch.</span>
+                                <span style={{ display: 'block', color: 'var(--bone)', opacity: 0.85 }}>Discover cinema you've never heard of.</span>
+                                <span style={{ display: 'block', color: 'var(--sepia)' }}>Join the underground.</span>
+                            </div>
+                            {/* Decorative rule */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '1.25rem 0' : '1.75rem 0', opacity: 0.4 }}>
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, var(--sepia))' }} />
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)' }}>✦ THE SOCIETY ✦</span>
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, var(--sepia))' }} />
+                            </div>
+                        </div>
                     )}
 
                     {/* CTA row */}
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', marginTop: '3rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: IS_TOUCH ? '1.5rem' : '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                         {isAuthenticated ? (
-                            <button className="btn btn-primary" style={{ fontSize: '1.1rem', padding: '1em 2.5em', boxShadow: '0 4px 20px rgba(139,105,20,0.3)' }} onClick={() => openLogModal()}>
-                                + Log a Film
+                            <button
+                                className="btn btn-primary"
+                                style={{
+                                    fontSize: IS_TOUCH ? '0.85rem' : '1rem',
+                                    padding: IS_TOUCH ? '0.9em 2em' : '1em 2.8em',
+                                    boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
+                                    letterSpacing: '0.18em',
+                                }}
+                                onClick={() => openLogModal()}
+                            >
+                                + LOG A FILM
                             </button>
                         ) : (
                             <>
                                 <button
                                     className="btn btn-primary"
-                                    style={{ fontSize: '1.05rem', padding: '1em 2.5em', boxShadow: '0 4px 20px rgba(139,105,20,0.3)' }}
+                                    style={{
+                                        fontSize: IS_TOUCH ? '0.85rem' : '1rem',
+                                        padding: IS_TOUCH ? '0.9em 2em' : '1em 2.8em',
+                                        boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
+                                        letterSpacing: '0.18em',
+                                    }}
                                     onClick={() => openSignupModal('cinephile')}
                                 >
-                                    Purchase Ticket (Sign Up)
+                                    ✦ PURCHASE TICKET
                                 </button>
                                 <button
                                     className="btn btn-ghost"
-                                    style={{ fontSize: '1rem', padding: '1em 2.5em', borderColor: 'var(--sepia)', background: 'rgba(10,7,3,0.7)' }}
+                                    style={{ fontSize: IS_TOUCH ? '0.75rem' : '0.85rem', padding: IS_TOUCH ? '0.75em 1.5em' : '0.9em 2em', borderColor: 'rgba(139,105,20,0.4)', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
                                     onClick={() => openSignupModal('venue_owner')}
                                 >
-                                    I Manage a Venue
+                                    I MANAGE A VENUE
                                 </button>
                             </>
                         )}
                         <button
                             className="btn btn-ghost"
-                            style={{ fontSize: '1rem', padding: '1em 2.5em', background: 'rgba(10,7,3,0.7)' }}
+                            style={{ fontSize: IS_TOUCH ? '0.75rem' : '0.85rem', padding: IS_TOUCH ? '0.75em 1.5em' : '0.9em 2em', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
                             onClick={() => navigate('/discover')}
                         >
-                            Browse Archives
+                            BROWSE ARCHIVES
                         </button>
                     </div>
                 </div>
