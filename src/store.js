@@ -63,9 +63,25 @@ export const useAuthStore = create(
                 set({ user: null, isAuthenticated: false })
             },
 
-            updateUser: (updates) => set((state) => ({
-                user: state.user ? { ...state.user, ...updates } : null,
-            })),
+            updateUser: async (updates) => {
+                const user = get().user;
+                if (!user) return;
+                // Persist to Supabase profiles table
+                const dbUpdates = {};
+                if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
+                if (updates.username !== undefined) dbUpdates.username = updates.username;
+                if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar;
+                if (updates.isSocialPrivate !== undefined) dbUpdates.is_social_private = updates.isSocialPrivate;
+                if (updates.role !== undefined) dbUpdates.role = updates.role;
+
+                if (Object.keys(dbUpdates).length > 0) {
+                    await supabase.from('profiles').update(dbUpdates).eq('id', user.id).catch(() => { });
+                }
+                // Update Zustand
+                set((state) => ({
+                    user: state.user ? { ...state.user, ...updates } : null,
+                }));
+            },
 
             followUser: (targetUsername) => set((state) => {
                 const following = state.user?.following || [];

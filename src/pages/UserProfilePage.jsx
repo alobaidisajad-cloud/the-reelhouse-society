@@ -1238,7 +1238,7 @@ export default function UserProfilePage() {
         toast.success("Identity updated.")
     }
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const file = e.target.files[0]
         if (!file) return
 
@@ -1247,12 +1247,40 @@ export default function UserProfilePage() {
             return toast.error("Only archival image formats supported.")
         }
 
-        const reader = new FileReader()
-        reader.onload = () => {
-            setEditAvatar(reader.result) // Reader result is a base64 string
-            toast.success("Frame captured.")
+        // Limit file size to 2MB
+        if (file.size > 2 * 1024 * 1024) {
+            return toast.error("Frame too large. Max 2MB.")
         }
-        reader.readAsDataURL(file)
+
+        try {
+            const userId = currentUser?.id
+            if (!userId) return toast.error("Must be signed in.")
+
+            const ext = file.name.split('.').pop()
+            const filePath = `${userId}/avatar.${ext}`
+
+            // Upload to Supabase Storage
+            const { supabase } = await import('../supabaseClient')
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(filePath, file, { upsert: true })
+
+            if (uploadError) {
+                console.error('Avatar upload error:', uploadError)
+                return toast.error("Upload failed. Try again.")
+            }
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(filePath)
+
+            setEditAvatar(publicUrl)
+            toast.success("Frame captured.")
+        } catch (err) {
+            console.error('Avatar upload error:', err)
+            toast.error("Upload failed.")
+        }
     }
 
     const MOODS = ['smiling', 'neutral', 'dead', 'peeking', 'surprised', 'crying']
@@ -1262,8 +1290,8 @@ export default function UserProfilePage() {
     // Helper to render current avatar
     const renderAvatar = (avatarValue, size = 90) => {
         if (!avatarValue) return <Buster size={size} mood="smiling" />
-        if (avatarValue.startsWith('data:image/')) {
-            return <img src={avatarValue} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        if (avatarValue.startsWith('data:image/') || avatarValue.startsWith('http')) {
+            return <img src={avatarValue} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
         }
         return <Buster size={size} mood={avatarValue} />
     }
