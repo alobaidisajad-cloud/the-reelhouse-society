@@ -316,6 +316,7 @@ export default function DiscoverPage() {
                             onChange={e => setInputVal(e.target.value)}
                             onFocus={e => e.target.style.borderColor = 'var(--sepia)'}
                             onBlur={e => e.target.style.borderColor = 'var(--ash)'}
+                            autoFocus={!IS_TOUCH}
                         />
                         {query && (
                             <button type="button" onClick={clearSearch} style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}>

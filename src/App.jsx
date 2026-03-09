@@ -10,6 +10,7 @@ import { useFilmStore, useUIStore, initRealtime, initAuthSync } from './store'
 import Soundscape from './components/Soundscape'
 import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
+import ErrorBoundary from './components/ErrorBoundary'
 
 // ── Heavy Global Modals (Lazy Loaded) ──
 // BootcampModal retired — onboarding content lives in the Handbook now
@@ -169,37 +170,39 @@ export default function App() {
 
       {/* Suspense wrapper handles BOTH global modals AND route-level pages */}
       <Suspense fallback={<PageFallback />}>
-        {/* Mount Modals inside Suspense so they lazy-load when their internal state flips to open */}
-        <Navbar />
-        {!IS_TOUCH && <Soundscape />}
-        <InstallPrompt />
-        <QualityOfLife />
+        <ErrorBoundary>
+          {/* Mount Modals inside Suspense so they lazy-load when their internal state flips to open */}
+          <Navbar />
+          {!IS_TOUCH && <Soundscape />}
+          <InstallPrompt />
+          <QualityOfLife />
 
 
-        {showPaywall && <PaywallModal featureName={paywallFeature} onClose={closePaywall} />}
-        <CommandPalette />
-        <LogModal />
-        <SignupModal />
-        <HandbookModal />
+          {showPaywall && <PaywallModal featureName={paywallFeature} onClose={closePaywall} />}
+          <CommandPalette />
+          <LogModal />
+          <SignupModal />
+          <HandbookModal />
 
-        <AnimatePresence mode="wait" initial={false}>
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
-            <Route path="/film/:id" element={<PageWrapper><FilmDetailPage /></PageWrapper>} />
-            <Route path="/user/:username" element={<PageWrapper><UserProfilePage /></PageWrapper>} />
-            <Route path="/discover" element={<PageWrapper><DiscoverPage /></PageWrapper>} />
-            <Route path="/feed" element={<PageWrapper><FeedPage /></PageWrapper>} />
-            <Route path="/lists" element={<PageWrapper><ListsPage /></PageWrapper>} />
-            <Route path="/lists/:id" element={<PageWrapper><ListDetailPage /></PageWrapper>} />
-            <Route path="/venue/:venueId" element={<PageWrapper><VenuePage /></PageWrapper>} />
-            <Route path="/venue-dashboard" element={<PageWrapper><VenueDashboard /></PageWrapper>} />
-            <Route path="/cinemas" element={<PageWrapper><CinemasPage /></PageWrapper>} />
-            <Route path="/person/:id" element={<PageWrapper><PersonPage /></PageWrapper>} />
-            <Route path="/dispatch" element={<PageWrapper><DispatchPage /></PageWrapper>} />
-            <Route path="/patronage" element={<PageWrapper><MembershipPage /></PageWrapper>} />
-            <Route path="*" element={<PageWrapper><NotFoundPage /></PageWrapper>} />
-          </Routes>
-        </AnimatePresence>
+          <AnimatePresence mode="wait" initial={false}>
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
+              <Route path="/film/:id" element={<PageWrapper><FilmDetailPage /></PageWrapper>} />
+              <Route path="/user/:username" element={<PageWrapper><UserProfilePage /></PageWrapper>} />
+              <Route path="/discover" element={<PageWrapper><DiscoverPage /></PageWrapper>} />
+              <Route path="/feed" element={<PageWrapper><FeedPage /></PageWrapper>} />
+              <Route path="/lists" element={<PageWrapper><ListsPage /></PageWrapper>} />
+              <Route path="/lists/:id" element={<PageWrapper><ListDetailPage /></PageWrapper>} />
+              <Route path="/venue/:venueId" element={<PageWrapper><VenuePage /></PageWrapper>} />
+              <Route path="/venue-dashboard" element={<PageWrapper><VenueDashboard /></PageWrapper>} />
+              <Route path="/cinemas" element={<PageWrapper><CinemasPage /></PageWrapper>} />
+              <Route path="/person/:id" element={<PageWrapper><PersonPage /></PageWrapper>} />
+              <Route path="/dispatch" element={<PageWrapper><DispatchPage /></PageWrapper>} />
+              <Route path="/patronage" element={<PageWrapper><MembershipPage /></PageWrapper>} />
+              <Route path="*" element={<PageWrapper><NotFoundPage /></PageWrapper>} />
+            </Routes>
+          </AnimatePresence>
+        </ErrorBoundary>
       </Suspense>
 
       {/* Footer */}

@@ -88,7 +88,7 @@ export function ObscurityBadge({ score }) {
 
 // Film poster card
 export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', showRating = false }) {
-    const posterUrl = tmdb.poster(film.altPoster || film.poster_path, size === 'lg' ? 'w342' : 'w185')
+    const posterUrl = tmdb.responsivePoster(film.altPoster || film.poster_path)
     const queryClient = useQueryClient()
     const [isLoaded, setIsLoaded] = useState(false)
 
