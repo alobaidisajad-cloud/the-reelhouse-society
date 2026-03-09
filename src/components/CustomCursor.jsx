@@ -22,24 +22,24 @@ export default function CustomCursor() {
     ring.innerHTML = `
       <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         <!-- Outer ring -->
-        <circle cx="20" cy="20" r="18" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.6"/>
+        <circle cx="20" cy="20" r="18" stroke="#C29B38" stroke-width="1" stroke-opacity="0.9"/>
         <!-- Inner ring -->
-        <circle cx="20" cy="20" r="6" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.8"/>
+        <circle cx="20" cy="20" r="6" stroke="#C29B38" stroke-width="1" stroke-opacity="1"/>
         <!-- Crosshair lines -->
-        <line x1="20" y1="2" x2="20" y2="9" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.7"/>
-        <line x1="20" y1="31" x2="20" y2="38" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.7"/>
-        <line x1="2" y1="20" x2="9" y2="20" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.7"/>
-        <line x1="31" y1="20" x2="38" y2="20" stroke="#8B6914" stroke-width="0.75" stroke-opacity="0.7"/>
-        <!-- Diagonal ticks -->
-        <line x1="6.5" y1="6.5" x2="10.5" y2="10.5" stroke="#8B6914" stroke-width="0.5" stroke-opacity="0.4"/>
-        <line x1="33.5" y1="6.5" x2="29.5" y2="10.5" stroke="#8B6914" stroke-width="0.5" stroke-opacity="0.4"/>
-        <line x1="6.5" y1="33.5" x2="10.5" y2="29.5" stroke="#8B6914" stroke-width="0.5" stroke-opacity="0.4"/>
-        <line x1="33.5" y1="33.5" x2="29.5" y2="29.5" stroke="#8B6914" stroke-width="0.5" stroke-opacity="0.4"/>
-        <!-- Film sprocket holes (tiny rects at cardinal points inside ring) -->
-        <rect x="18.5" y="12" width="3" height="2" rx="0.5" fill="#8B6914" fill-opacity="0.5"/>
-        <rect x="18.5" y="26" width="3" height="2" rx="0.5" fill="#8B6914" fill-opacity="0.5"/>
-        <rect x="12" y="18.5" width="2" height="3" rx="0.5" fill="#8B6914" fill-opacity="0.5"/>
-        <rect x="26" y="18.5" width="2" height="3" rx="0.5" fill="#8B6914" fill-opacity="0.5"/>
+        <line x1="20" y1="2" x2="20" y2="12" stroke="#C29B38" stroke-width="1" stroke-opacity="1"/>
+        <line x1="20" y1="28" x2="20" y2="38" stroke="#C29B38" stroke-width="1" stroke-opacity="1"/>
+        <line x1="2" y1="20" x2="12" y2="20" stroke="#C29B38" stroke-width="1" stroke-opacity="1"/>
+        <line x1="28" y1="20" x2="38" y2="20" stroke="#C29B38" stroke-width="1" stroke-opacity="1"/>
+        <!-- Diagonal corner ticks -->
+        <line x1="6.5" y1="6.5" x2="10.5" y2="10.5" stroke="#C29B38" stroke-width="0.75" stroke-opacity="0.7"/>
+        <line x1="33.5" y1="6.5" x2="29.5" y2="10.5" stroke="#C29B38" stroke-width="0.75" stroke-opacity="0.7"/>
+        <line x1="6.5" y1="33.5" x2="10.5" y2="29.5" stroke="#C29B38" stroke-width="0.75" stroke-opacity="0.7"/>
+        <line x1="33.5" y1="33.5" x2="29.5" y2="29.5" stroke="#C29B38" stroke-width="0.75" stroke-opacity="0.7"/>
+        <!-- Film sprocket holes -->
+        <rect x="18.5" y="13" width="3" height="2" rx="0.5" fill="#C29B38" fill-opacity="0.8"/>
+        <rect x="18.5" y="25" width="3" height="2" rx="0.5" fill="#C29B38" fill-opacity="0.8"/>
+        <rect x="13" y="18.5" width="2" height="3" rx="0.5" fill="#C29B38" fill-opacity="0.8"/>
+        <rect x="25" y="18.5" width="2" height="3" rx="0.5" fill="#C29B38" fill-opacity="0.8"/>
       </svg>
     `
 
@@ -137,7 +137,6 @@ export default function CustomCursor() {
         transition: width 0.18s cubic-bezier(0.34,1.56,0.64,1),
                     height 0.18s cubic-bezier(0.34,1.56,0.64,1),
                     opacity 0.18s ease;
-        mix-blend-mode: screen;
       }
       .nc-ring svg {
         width: 100%; height: 100%;
