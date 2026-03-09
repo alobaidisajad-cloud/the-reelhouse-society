@@ -68,11 +68,14 @@ export default function LogModal() {
     useEffect(() => {
         if (film && isPremium) {
             tmdb.movieImages(film.id).then(imgs => {
+                // Poster curation — Auteur-only (matches MembershipPage)
                 if (isAuteur && imgs.posters) {
                     const validPosters = imgs.posters.filter(p => p.iso_639_1 === 'en' || !p.iso_639_1).slice(0, 15)
                     setAvailablePosters(validPosters)
+                } else {
+                    setAvailablePosters([])
                 }
-                if (isPremium && imgs.backdrops) {
+                if (imgs.backdrops) {
                     const validBackdrops = imgs.backdrops.slice(0, 10)
                     setAvailableBackdrops(validBackdrops)
                 }

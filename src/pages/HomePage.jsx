@@ -114,14 +114,19 @@ function MarqueeBoard({ film }) {
     )
 }
 
-// ── FEATURED REVIEW ──
+// ── FEATURED REVIEW (Dynamic from community logs) ──
 function FeaturedReview({ film }) {
-    if (!film) return null
-    const review = {
-        text: "A masterwork of light and shadow — the kind of film that reaches through the screen and rearranges something inside you. I've seen it three times and each viewing reveals a new corridor in its architecture.",
-        author: 'midnight_devotee',
-        rating: 5,
-    }
+    const logs = useFilmStore(state => state.logs)
+
+    // Find the most recent log with a written review
+    const featuredLog = logs.find(l => l.review && l.review.trim().length > 30)
+
+    if (!featuredLog && !film) return null
+
+    // Use real community data, or show a thematic placeholder if no reviews yet
+    const displayReview = featuredLog
+        ? { text: featuredLog.review, author: featuredLog.username || 'anonymous', rating: featuredLog.rating || 0 }
+        : { text: "The projector hums. The house lights dim. Be the first to file your critique and claim this space.", author: 'THE SOCIETY', rating: 0 }
 
     return (
         <div style={{
@@ -149,7 +154,7 @@ function FeaturedReview({ film }) {
                 textShadow: '0 1px 2px var(--ink)',
                 marginBottom: '1.5rem'
             }}>
-                {review.text}
+                {displayReview.text.length > 280 ? displayReview.text.slice(0, 280) + '…' : displayReview.text}
             </p>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -157,10 +162,10 @@ function FeaturedReview({ film }) {
                         <Buster size={16} mood="smiling" />
                     </div>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--bone)' }}>
-                        {review.author.toUpperCase()}
+                        {displayReview.author.toUpperCase()}
                     </div>
                 </div>
-                <ReelRating value={review.rating} size="sm" />
+                {displayReview.rating > 0 && <ReelRating value={displayReview.rating} size="sm" />}
             </div>
         </div>
     )

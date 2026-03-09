@@ -12,7 +12,7 @@ import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
 
 // ── Heavy Global Modals (Lazy Loaded) ──
-const BootcampModal = lazy(() => import('./components/BootcampModal'))
+// BootcampModal retired — onboarding content lives in the Handbook now
 const PaywallModal = lazy(() => import('./components/PaywallModal'))
 const LogModal = lazy(() => import('./components/LogModal'))
 const SignupModal = lazy(() => import('./components/SignupModal'))
@@ -175,7 +175,7 @@ export default function App() {
         <InstallPrompt />
         <QualityOfLife />
 
-        <BootcampModal />
+
         {showPaywall && <PaywallModal featureName={paywallFeature} onClose={closePaywall} />}
         <CommandPalette />
         <LogModal />

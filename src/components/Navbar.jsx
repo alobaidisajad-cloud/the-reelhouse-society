@@ -195,6 +195,16 @@ export default function Navbar() {
                             <BookOpen size={18} />
                         </button>
 
+                        {/* Command Palette hint — desktop only */}
+                        <button
+                            className="nav-icon-btn hide-mobile"
+                            onClick={() => { const e = new KeyboardEvent('keydown', { key: 'k', metaKey: true }); window.dispatchEvent(e) }}
+                            title="Command Palette (⌘K)"
+                            style={{ fontSize: '0.5rem', fontFamily: 'var(--font-ui)', letterSpacing: '0.08em', color: 'var(--fog)', padding: '0.25em 0.5em', border: '1px solid var(--ash)', borderRadius: '4px', opacity: 0.6 }}
+                        >
+                            ⌘K
+                        </button>
+
                         {/* Mobile toggle */}
                         <button
                             className="nav-icon-btn nav-mobile-toggle"
