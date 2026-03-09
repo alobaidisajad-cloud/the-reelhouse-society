@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Check, ChevronRight } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore } from '../store'
 import { tmdb } from '../tmdb'
+import { supabase } from '../supabaseClient'
 import Buster from './Buster'
 import toast from 'react-hot-toast'
 
@@ -31,9 +32,8 @@ export default function OnboardingModal() {
     useEffect(() => {
         if (!isAuthenticated || !user) return
         const dismissedKey = `reelhouse_onboarded_${user.id || user.username}`
-        if (sessionStorage.getItem(dismissedKey)) return
+        if (localStorage.getItem(dismissedKey)) return
         if (logs.length === 0) {
-            // Delay so it doesn't collide with page load
             const timer = setTimeout(() => setOpen(true), 1500)
             return () => clearTimeout(timer)
         }
@@ -65,7 +65,7 @@ export default function OnboardingModal() {
 
     const handleFinish = () => {
         if (user) {
-            sessionStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
+            localStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
         }
         setOpen(false)
         toast.success('Welcome to The Society ✦', { icon: '🎬' })
@@ -74,14 +74,14 @@ export default function OnboardingModal() {
     const handleLogFirst = () => {
         setOpen(false)
         if (user) {
-            sessionStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
+            localStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
         }
         openLogModal()
     }
 
     const handleDismiss = () => {
         if (user) {
-            sessionStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
+            localStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
         }
         setOpen(false)
     }
@@ -249,7 +249,17 @@ export default function OnboardingModal() {
                                         className="btn btn-primary"
                                         style={{ fontSize: '0.7rem', padding: '0.5em 1.5em', letterSpacing: '0.15em', opacity: selectedFilms.length > 0 ? 1 : 0.4 }}
                                         disabled={selectedFilms.length === 0}
-                                        onClick={() => setStep(1)}
+                                        onClick={async () => {
+                                            // Save taste seeds to Supabase profile
+                                            if (user?.id && selectedFilms.length > 0) {
+                                                const seeds = selectedFilms.map(f => ({ id: f.id, title: f.title, poster: f.poster_path }))
+                                                await supabase.from('profiles')
+                                                    .update({ taste_seeds: seeds })
+                                                    .eq('id', user.id)
+                                                    .catch(() => { })  // Graceful if column doesn't exist yet
+                                            }
+                                            setStep(1)
+                                        }}
                                     >
                                         NEXT <ChevronRight size={12} />
                                     </button>

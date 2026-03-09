@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, Check } from 'lucide-react'
-import { useNotificationStore } from '../store'
+import { useNotificationStore, useAuthStore } from '../store'
+import { supabase } from '../supabaseClient'
 
 const NOTIF_ICONS = {
     follow: '👤',
@@ -23,11 +24,65 @@ const timeAgo = (ts) => {
 export default function NotificationBell() {
     const [open, setOpen] = useState(false)
     const ref = useRef(null)
+    const user = useAuthStore(s => s.user)
     const notifications = useNotificationStore(s => s.notifications)
+    const setNotifications = useNotificationStore(s => s.setNotifications)
     const markAllRead = useNotificationStore(s => s.markAllRead)
     const dismiss = useNotificationStore(s => s.dismiss)
     const markRead = useNotificationStore(s => s.markRead)
     const unreadCount = notifications.filter(n => !n.read).length
+
+    // Fetch notifications from Supabase on mount
+    useEffect(() => {
+        if (!user?.id) return
+        let cancelled = false
+
+        const fetchNotifs = async () => {
+            const { data, error } = await supabase
+                .from('notifications')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+                .limit(50)
+
+            if (!error && data && !cancelled) {
+                const formatted = data.map(n => ({
+                    id: n.id,
+                    type: n.type || 'system',
+                    from: n.from_username || '',
+                    message: n.message || '',
+                    read: n.read || false,
+                    timestamp: n.created_at,
+                }))
+                setNotifications(formatted)
+            }
+        }
+
+        fetchNotifs()
+
+        // Realtime subscription for new notifications
+        const channel = supabase
+            .channel(`notifications_${user.id}`)
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+                (payload) => {
+                    const n = payload.new
+                    useNotificationStore.getState().push({
+                        id: n.id,
+                        type: n.type || 'system',
+                        from: n.from_username || '',
+                        message: n.message || '',
+                    })
+                }
+            )
+            .subscribe()
+
+        return () => {
+            cancelled = true
+            supabase.removeChannel(channel)
+        }
+    }, [user?.id])
 
     // Close on outside click
     useEffect(() => {
@@ -36,11 +91,31 @@ export default function NotificationBell() {
         return () => document.removeEventListener('mousedown', handler)
     }, [])
 
+    // Mark as read in Supabase when panel opens
+    const handleOpen = async () => {
+        setOpen(v => !v)
+        if (!open && unreadCount > 0 && user?.id) {
+            markAllRead()
+            // Batch update in Supabase
+            await supabase
+                .from('notifications')
+                .update({ read: true })
+                .eq('user_id', user.id)
+                .eq('read', false)
+                .catch(() => { })  // Graceful if table missing
+        }
+    }
+
+    const handleDismiss = async (id) => {
+        dismiss(id)
+        await supabase.from('notifications').delete().eq('id', id).catch(() => { })
+    }
+
     return (
         <div ref={ref} style={{ position: 'relative' }}>
             <button
                 className="nav-icon-btn"
-                onClick={() => { setOpen(v => !v); if (!open && unreadCount > 0) markAllRead() }}
+                onClick={handleOpen}
                 title="Notifications"
                 style={{ position: 'relative', color: unreadCount > 0 ? 'var(--flicker)' : 'var(--fog)' }}
             >
@@ -132,7 +207,7 @@ export default function NotificationBell() {
                                         </div>
                                     </div>
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); dismiss(n.id) }}
+                                        onClick={(e) => { e.stopPropagation(); handleDismiss(n.id) }}
                                         style={{ background: 'none', border: 'none', color: 'var(--ash)', cursor: 'pointer', padding: 0, flexShrink: 0 }}
                                     >
                                         <X size={12} />

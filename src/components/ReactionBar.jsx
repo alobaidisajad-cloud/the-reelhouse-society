@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore, useNotificationStore } from '../store'
+import { supabase } from '../supabaseClient'
 
 const REACTIONS = [
     { emoji: '🎬', label: 'Masterpiece' },
@@ -10,40 +11,113 @@ const REACTIONS = [
     { emoji: '👏', label: 'Encore' },
 ]
 
-export default function ReactionBar({ logId, logAuthor, filmTitle, reactions = {}, onReact }) {
+export default function ReactionBar({ logId, logAuthor, filmTitle }) {
     const [hoveredEmoji, setHoveredEmoji] = useState(null)
+    const [reactions, setReactions] = useState({})  // { emoji: [username, ...] }
+    const [loading, setLoading] = useState(false)
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
     const pushNotif = useNotificationStore(s => s.push)
 
-    const handleReact = (emoji) => {
-        if (!isAuthenticated) return
-        const username = user?.username || 'anonymous'
+    // Fetch existing reactions for this log from Supabase
+    useEffect(() => {
+        if (!logId) return
+        let cancelled = false
 
-        // Toggle reaction
-        const currentReactions = { ...reactions }
-        const users = currentReactions[emoji] || []
-        const alreadyReacted = users.includes(username)
+        const fetchReactions = async () => {
+            const { data, error } = await supabase
+                .from('interactions')
+                .select('type, user_id, profiles(username)')
+                .eq('target_log_id', logId)
+                .like('type', 'react_%')
 
-        if (alreadyReacted) {
-            currentReactions[emoji] = users.filter(u => u !== username)
-            if (currentReactions[emoji].length === 0) delete currentReactions[emoji]
-        } else {
-            currentReactions[emoji] = [...users, username]
-            // Push notification to log author
-            if (logAuthor && logAuthor !== username) {
-                pushNotif({
-                    type: 'reaction',
-                    from: username,
-                    message: `${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
-                })
+            if (error || cancelled) return
+
+            // Group by emoji
+            const grouped = {}
+            for (const row of (data || [])) {
+                const emoji = row.type.replace('react_', '')
+                const username = row.profiles?.username || 'anon'
+                if (!grouped[emoji]) grouped[emoji] = []
+                grouped[emoji].push(username)
             }
+            setReactions(grouped)
         }
 
-        if (onReact) onReact(logId, currentReactions)
-    }
+        fetchReactions()
+        return () => { cancelled = true }
+    }, [logId])
 
-    const totalReactions = Object.values(reactions).reduce((sum, arr) => sum + arr.length, 0)
+    const handleReact = async (emoji) => {
+        if (!isAuthenticated || !user || loading) return
+        setLoading(true)
+
+        const username = user?.username || 'anonymous'
+        const reactionType = `react_${emoji}`
+        const usersForEmoji = reactions[emoji] || []
+        const alreadyReacted = usersForEmoji.includes(username)
+
+        try {
+            if (alreadyReacted) {
+                // Remove reaction from Supabase
+                await supabase
+                    .from('interactions')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('target_log_id', logId)
+                    .eq('type', reactionType)
+
+                // Optimistic update
+                setReactions(prev => {
+                    const updated = { ...prev }
+                    updated[emoji] = (updated[emoji] || []).filter(u => u !== username)
+                    if (updated[emoji].length === 0) delete updated[emoji]
+                    return updated
+                })
+            } else {
+                // Insert reaction into Supabase
+                await supabase
+                    .from('interactions')
+                    .insert([{ user_id: user.id, target_log_id: logId, type: reactionType }])
+
+                // Optimistic update
+                setReactions(prev => ({
+                    ...prev,
+                    [emoji]: [...(prev[emoji] || []), username]
+                }))
+
+                // Push notification to log author (via Supabase notifications table)
+                if (logAuthor && logAuthor !== username) {
+                    // Insert notification into Supabase
+                    const { data: authorProfile } = await supabase
+                        .from('profiles')
+                        .select('id')
+                        .eq('username', logAuthor)
+                        .single()
+
+                    if (authorProfile) {
+                        await supabase.from('notifications').insert([{
+                            user_id: authorProfile.id,
+                            type: 'reaction',
+                            from_username: username,
+                            message: `${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
+                        }]).catch(() => { })  // Graceful if table doesn't exist yet
+                    }
+
+                    // Also push locally for immediate feedback
+                    pushNotif({
+                        type: 'reaction',
+                        from: username,
+                        message: `${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
+                    })
+                }
+            }
+        } catch (err) {
+            console.error('[ReactionBar] Error:', err)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
@@ -73,7 +147,7 @@ export default function ReactionBar({ logId, logAuthor, filmTitle, reactions = {
                             alignItems: 'center',
                             gap: '0.3em',
                             transition: 'all 0.2s',
-                            opacity: isAuthenticated ? 1 : 0.5,
+                            opacity: isAuthenticated ? (loading ? 0.5 : 1) : 0.5,
                         }}
                     >
                         <span>{r.emoji}</span>
@@ -99,7 +173,7 @@ export default function ReactionBar({ logId, logAuthor, filmTitle, reactions = {
                                         position: 'absolute',
                                         bottom: 'calc(100% + 6px)',
                                         left: '50%',
-                                        transform: 'translateX(-50%)',
+                                        transformtate: 'translateX(-50%)',
                                         background: 'var(--soot)',
                                         border: '1px solid var(--ash)',
                                         borderRadius: '4px',

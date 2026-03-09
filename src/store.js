@@ -70,18 +70,30 @@ export const useAuthStore = create(
             followUser: (targetUsername) => set((state) => {
                 const following = state.user?.following || [];
                 if (following.includes(targetUsername)) return state;
-                // Push notification
+                // Push notification to Supabase for the target user
+                const fromUsername = state.user?.username || 'someone';
+                supabase.from('profiles').select('id').eq('username', targetUsername).single()
+                    .then(({ data: targetProfile }) => {
+                        if (targetProfile) {
+                            supabase.from('notifications').insert([{
+                                user_id: targetProfile.id,
+                                type: 'follow',
+                                from_username: fromUsername,
+                                message: `${fromUsername} followed you`,
+                            }]).catch(() => { })  // Graceful if table not created yet
+                        }
+                    }).catch(() => { })
+                // Also push locally for immediate feedback
                 useNotificationStore.getState().push({
                     type: 'follow',
-                    from: state.user?.username,
-                    message: `${state.user?.username || 'Someone'} followed you`,
+                    from: fromUsername,
+                    message: `${fromUsername} followed you`,
                 });
                 return {
                     user: {
                         ...state.user,
                         following: [...following, targetUsername]
                     },
-                    // Also update the community object to show the follower count increase
                     community: state.community.map(u =>
                         u.username === targetUsername
                             ? { ...u, followers: [...(u.followers || []), state.user?.username] }
@@ -639,10 +651,11 @@ export const useNotificationStore = create(
             // Push a notification: { type: 'follow'|'reaction'|'endorse'|'system', from: string, message: string, filmTitle?: string, timestamp: string }
             push: (notif) => set(state => ({
                 notifications: [
-                    { id: 'n-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6), read: false, timestamp: new Date().toISOString(), ...notif },
+                    { id: notif.id || ('n-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6)), read: false, timestamp: new Date().toISOString(), ...notif },
                     ...state.notifications
-                ].slice(0, 50)  // Keep max 50 notifications
+                ].slice(0, 50)
             })),
+            setNotifications: (notifs) => set({ notifications: notifs }),
             markRead: (id) => set(state => ({
                 notifications: state.notifications.map(n => n.id === id ? { ...n, read: true } : n)
             })),

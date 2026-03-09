@@ -12,7 +12,6 @@ function ActivityCard({ log }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
     const isEndorsed = useFilmStore(state => state.interactions.some(i => i.targetId === log.id && i.type === 'endorse'))
     const [endorsementCount, setEndorsementCount] = useState(Math.floor(Math.random() * 40) + (isEndorsed ? 3 : 2))
-    const [reactions, setReactions] = useState({})
 
     const handleEndorse = () => {
         toggleEndorse(log.id)
@@ -160,8 +159,6 @@ function ActivityCard({ log }) {
                         logId={log.id}
                         logAuthor={log.user}
                         filmTitle={log.film?.title}
-                        reactions={reactions}
-                        onReact={(id, newReactions) => setReactions(newReactions)}
                     />
                 </div>
             </div>
