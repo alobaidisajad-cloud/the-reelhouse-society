@@ -919,7 +919,7 @@ function ProjectorRoom({ stats, user }) {
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {[
-                            { label: 'NITRATE INHALED', value: (stats.count * 122) + 'm' },
+                            { label: 'TIME IN THE DARK', value: (stats.count * 122) + 'm' },
                             { label: 'HOURS IN DARK', value: Math.floor(stats.count * 1.8) + 'h' },
                             { label: 'SILENT ERA PRESERVATIONS', value: isMaster ? '🏆 MASTER' : '4' },
                             { label: 'THEATRICAL VISITS', value: stats.count },
@@ -958,7 +958,7 @@ function ProjectorRoom({ stats, user }) {
                         Certificate of Obsession
                     </h2>
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', maxWidth: '400px', margin: '0 auto 1.5rem' }}>
-                        This document certifies that the bearer has witnessed {stats.count} cinematic projections and contributed to the archival history of The ReelHouse Society.
+                        This document certifies that the bearer has witnessed {stats.count} films and contributed to the archival history of The ReelHouse Society.
                     </p>
                     <div style={{
                         fontFamily: 'var(--font-sub)',
@@ -1299,7 +1299,7 @@ export default function UserProfilePage() {
     if (!profileUser) {
         return (
             <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
-                <Buster size={120} mood="crying" message="This dossier has been redacted or never existed." />
+                <Buster size={120} mood="crying" message="This profile doesn't exist yet, or it's been removed." />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginTop: '1.5rem' }}>Member Not Found</h2>
                 <Link to="/" className="btn btn-ghost" style={{ marginTop: '2rem' }}>Return to Lobby</Link>
             </div>
@@ -1362,7 +1362,7 @@ export default function UserProfilePage() {
                 position: 'relative',
                 overflow: 'hidden',
             }}>
-                {/* Personalized poster backdrop - Celluloid Bleed only for Auteurs */}
+                {/* Personalized poster backdrop - Poster Glow only for Auteurs */}
                 {profileUser?.role === 'auteur' ? (
                     <ProfileBackdrop logs={profileLogs} />
                 ) : (
@@ -1492,7 +1492,7 @@ export default function UserProfilePage() {
                                         fontStyle: 'italic', maxWidth: 600, lineHeight: 1.5,
                                         opacity: profileUser.bio ? 1 : 0.5
                                     }}>
-                                        {profileUser.bio || (isOwnProfile ? "The archive is silent on this user's motives. Add a bio to transmit your manifesto." : "This dossier is brief. No manifesto on file.")}
+                                        {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
                                     </p>
                                 )}
                             </div>
@@ -1532,7 +1532,7 @@ export default function UserProfilePage() {
                             <div style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', color: 'var(--sepia)' }}>{isOwnProfile ? currentLogs.length : 42}</div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>TRANSMISSIONS</div>
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>ACTIVITY</div>
                                 </div>
                                 <div
                                     onClick={() => !isEditing && (isOwnProfile || !profileUser.isSocialPrivate) && setSocialModal({ title: 'Followers', list: profileUser.followers || [] })}

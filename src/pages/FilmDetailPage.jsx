@@ -137,7 +137,7 @@ function TrailerModal({ trailerKey, onClose }) {
                 >
                     {/* Close */}
                     <button onClick={onClose} style={{ position: 'absolute', top: -44, right: 0, background: 'none', border: '1px solid rgba(255,255,255,0.15)', color: 'var(--parchment)', padding: '0.4rem 0.75rem', borderRadius: '2px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em' }}>
-                        <X size={12} /> CLOSE PROJECTION
+                        <X size={12} /> CLOSE
                     </button>
                     {/* Cinematic frame */}
                     <div style={{ position: 'relative', paddingBottom: '56.25%', background: '#000', borderRadius: '2px', overflow: 'hidden', boxShadow: '0 0 0 1px rgba(139,105,20,0.3), 0 40px 80px rgba(0,0,0,0.8)' }}>
@@ -150,7 +150,7 @@ function TrailerModal({ trailerKey, onClose }) {
                         />
                     </div>
                     <div style={{ textAlign: 'center', marginTop: '0.75rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--fog)' }}>
-                        OFFICIAL TRAILER · YOUTUBE PROJECTION
+                        OFFICIAL TRAILER
                     </div>
                 </motion.div>
             </motion.div>
@@ -261,10 +261,10 @@ function WatchProviders({ providers }) {
                 <div style={{ padding: '1.5rem', textAlign: 'center', borderRadius: 'var(--radius-card)', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.05)' }}>
                     <Tv size={24} color="var(--fog)" style={{ marginBottom: '0.75rem', opacity: 0.5 }} />
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', marginBottom: '0.4rem' }}>
-                        No Transmissions Detected
+                        Not Currently Streaming
                     </div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', lineHeight: 1.4, maxWidth: 300, margin: '0 auto' }}>
-                        This film currently has no digital streaming frequencies. It may be vaulted, playing strictly in theatrical venues, or restricted to physical celluloid.
+                        This film isn't available on any streaming platform right now. It may be in theaters, on physical media, or waiting to resurface.
                     </div>
                 </div>
             ) : (
@@ -726,7 +726,7 @@ export default function FilmDetailPage() {
                     }} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', marginLeft: '-0.5rem', alignSelf: 'flex-start', transition: 'color 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
                         onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
-                        <ArrowLeft size={12} /> RETREAT
+                        <ArrowLeft size={12} /> GO BACK
                     </button>
                     <FilmDetails film={film} />
 
@@ -734,7 +734,7 @@ export default function FilmDetailPage() {
                         <section>
                             <div className="divider">✦ YOU MAY ALSO LIKE ✦</div>
                             <div style={{ marginTop: '2rem' }}>
-                                <SectionHeader label="SIMILAR FILMS" title="From the Same Corridor" />
+                                <SectionHeader label="SIMILAR FILMS" title="You May Also Like" />
                                 <div style={IS_TOUCH ? { display: 'flex', gap: '1rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '1rem', marginLeft: '-1.25rem', paddingLeft: '1.25rem' } : { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
                                     {similar.slice(0, IS_TOUCH ? 10 : 6).map(f => (
                                         <Link key={f.id} to={`/film/${f.id}`} style={IS_TOUCH ? { flexShrink: 0, width: 120, display: 'block', textDecoration: 'none' } : { textDecoration: 'none' }}>

@@ -8,7 +8,7 @@ import toast from 'react-hot-toast'
 
 const features = [
     { icon: Key, title: 'The Vault', description: 'Unlock the "Cutting Room Floor" for private notes and thoughts.' },
-    { icon: LayoutTemplate, title: 'Celluloid Bleed', description: 'Immersive glowing posters on your profile for ultimate aesthetics.' },
+    { icon: LayoutTemplate, title: 'Poster Glow', description: 'Immersive glowing posters on your profile for ultimate aesthetics.' },
     { icon: EyeOff, title: 'Ad-Free Theatre', description: 'The purist experience. No distractions, just cinema.' },
     { icon: Crown, title: 'Auteur Status', description: 'Exclusive gold foil badge across the platform.' },
     { icon: Database, title: 'Archival Export', description: 'Full CSV export of your entire cinematic history.' },
@@ -189,11 +189,11 @@ export default function MembershipPage() {
                             <div style={{ padding: '0.75rem', background: 'rgba(162,36,36,0.1)', border: '1px solid rgba(162,36,36,0.3)', borderRadius: 'var(--radius-card)', marginBottom: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
                                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--blood-reel)' }}>✦</div>
                                 <div>
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--blood-reel)', marginBottom: '0.2rem' }}>The Autopsy Engine</div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--blood-reel)', marginBottom: '0.2rem' }}>The Breakdown Engine</div>
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.4 }}>Break down films across 5 specific axes. Attach gorgeous, dynamic radar charts to your reviews.</div>
                                 </div>
                             </div>
-                            {['Publish Transmissions to The Dispatch', 'Curatorial Control (Select Alternative TMDB Posters)', 'Celluloid Bleed Profile Aesthetics', 'Gold Foil "Auteur" Badge', 'Early Access to New Features'].map((feature, i) => (
+                            {['Publish Essays to The Dispatch', 'Curatorial Control (Select Alternative TMDB Posters)', 'Poster Glow Profile Aesthetics', 'Gold Foil "Auteur" Badge', 'Early Access to New Features'].map((feature, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <Star size={12} color="var(--blood-reel)" style={{ flexShrink: 0 }} />
                                     <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)' }}>{feature}</span>

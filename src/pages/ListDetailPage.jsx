@@ -60,7 +60,7 @@ export default function ListDetailPage() {
             <div style={{ paddingTop: 100, textAlign: 'center', minHeight: '100vh', background: 'var(--ink)' }}>
                 <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--sepia)' }}>Archive Missing</h1>
                 <p style={{ color: 'var(--fog)', marginTop: '1rem', fontFamily: 'var(--font-ui)' }}>This collection cannot be located in the vault.</p>
-                <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ marginTop: '2rem' }}>RETREAT</button>
+                <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ marginTop: '2rem' }}>GO BACK</button>
             </div>
         )
     }
@@ -78,7 +78,7 @@ export default function ListDetailPage() {
             <div style={{ maxWidth: 1000, margin: '0 auto', padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
 
                 <button onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', marginLeft: '-0.5rem', alignSelf: 'flex-start', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
-                    <ArrowLeft size={12} /> RETREAT
+                    <ArrowLeft size={12} /> GO BACK
                 </button>
 
                 <header style={{ borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '2.5rem' }}>

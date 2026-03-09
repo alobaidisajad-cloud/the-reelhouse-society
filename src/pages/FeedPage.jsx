@@ -146,7 +146,7 @@ function ActivityCard({ log }) {
                         {endorsed ? 'ENDORSED' : 'ENDORSE'} ({endorsementCount})
                     </button>
                     <button style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
-                        <MessageSquare size={12} /> ADD DOSSIER NOTE
+                        <MessageSquare size={12} /> ADD A NOTE
                     </button>
                     <button style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'none', transition: 'color 0.2s', marginLeft: 'auto' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
                         <Bookmark size={12} /> RE-TRANSMIT
@@ -205,7 +205,7 @@ export default function FeedPage() {
                         Community Intelligence
                     </h1>
                     <p style={{ fontFamily: 'var(--font-sub)', fontSize: '1.1rem', color: 'var(--fog)', maxWidth: 600, margin: '0 auto' }}>
-                        Transmissions, reviews, and archival logs from the house.
+                        Reviews, logs, and activity from the society.
                     </p>
                 </div>
             </div>
@@ -247,7 +247,7 @@ export default function FeedPage() {
                         {/* Venue Events Archive Block */}
                         <div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
-                                UPCOMING TRANSMISSIONS
+                                UPCOMING SCREENINGS
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                 {events.slice(0, 3).map((e, i) => (
@@ -269,7 +269,7 @@ export default function FeedPage() {
                         {/* Classified Dossiers (Lists) Block */}
                         <div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem', marginTop: '1.5rem' }}>
-                                CLASSIFIED DOSSIERS (COMMUNITY LISTS)
+                                CURATED LISTS
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 {[
@@ -282,14 +282,14 @@ export default function FeedPage() {
                                             {list.title}
                                         </div>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
-                                            <span>{list.films} TRANSMISSIONS</span>
+                                            <span>{list.films} FILMS</span>
                                             <span>BY @{list.cur.toUpperCase()}</span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                             <Link to="/" style={{ display: 'inline-block', marginTop: '1.25rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', borderBottom: '1px dashed var(--sepia)' }}>
-                                ACCESS ALL DOSSIERS
+                                BROWSE ALL LISTS
                             </Link>
                         </div>
 
