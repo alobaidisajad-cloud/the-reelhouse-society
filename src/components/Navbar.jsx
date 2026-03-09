@@ -6,6 +6,22 @@ import { useAuthStore, useUIStore } from '../store'
 import Buster from './Buster'
 import NotificationBell from './NotificationBell'
 
+// Route prefetch map — loads chunks on hover for instant navigation
+const prefetchRoute = (path) => {
+    const routes = {
+        '/': () => import('../pages/HomePage'),
+        '/discover': () => import('../pages/DiscoverPage'),
+        '/feed': () => import('../pages/FeedPage'),
+        '/profile': () => import('../pages/UserProfilePage'),
+        '/membership': () => import('../pages/MembershipPage'),
+        '/dispatch': () => import('../pages/DispatchPage'),
+        '/lists': () => import('../pages/ListsPage'),
+        '/cinemas': () => import('../pages/CinemasPage'),
+        '/patronage': () => import('../pages/MembershipPage'),
+    }
+    routes[path]?.()
+}
+
 const NAV_LINKS = [
     { path: '/', label: 'The Lobby', icon: Film },
     { path: '/discover', label: 'Dark Room', icon: Compass },
@@ -119,6 +135,7 @@ export default function Navbar() {
                                 <Link
                                     to={path}
                                     className={`nav-link ${location.pathname === path ? 'active' : ''}`}
+                                    onMouseEnter={() => prefetchRoute(path)}
                                 >
                                     {label}
                                 </Link>
