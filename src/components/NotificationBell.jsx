@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Bell, X, Check } from 'lucide-react'
 import { useNotificationStore, useAuthStore } from '../store'
@@ -24,6 +25,7 @@ const timeAgo = (ts) => {
 export default function NotificationBell() {
     const [open, setOpen] = useState(false)
     const ref = useRef(null)
+    const navigate = useNavigate()
     const user = useAuthStore(s => s.user)
     const notifications = useNotificationStore(s => s.notifications)
     const setNotifications = useNotificationStore(s => s.setNotifications)
@@ -182,7 +184,17 @@ export default function NotificationBell() {
                             notifications.slice(0, 20).map(n => (
                                 <div
                                     key={n.id}
-                                    onClick={() => markRead(n.id)}
+                                    onClick={() => {
+                                        markRead(n.id)
+                                        // Deep link: navigate to relevant page
+                                        if (n.type === 'follow' && n.from) {
+                                            navigate(`/user/${n.from}`)
+                                            setOpen(false)
+                                        } else if (n.type === 'reaction') {
+                                            navigate('/feed')
+                                            setOpen(false)
+                                        }
+                                    }}
                                     style={{
                                         display: 'flex', gap: '0.75rem', padding: '0.75rem 1rem',
                                         borderBottom: '1px solid rgba(139,105,20,0.06)',

@@ -1531,6 +1531,104 @@ export default function UserProfilePage() {
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>STUBS</div>
                                 </div>
                             </div>
+
+                            {/* ── Streak & Achievement Badges ── */}
+                            {isOwnProfile && (
+                                <div style={{ borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1rem', marginTop: '0.5rem' }}>
+                                    {/* Streak */}
+                                    {(() => {
+                                        // Calculate streak from log dates
+                                        const today = new Date()
+                                        today.setHours(0, 0, 0, 0)
+                                        const logDates = [...new Set(profileLogs.map(l => {
+                                            const d = new Date(l.watchedDate || l.createdAt)
+                                            d.setHours(0, 0, 0, 0)
+                                            return d.getTime()
+                                        }))].sort((a, b) => b - a)
+
+                                        let streak = 0
+                                        const DAY_MS = 86400000
+                                        for (let i = 0; i < logDates.length; i++) {
+                                            const expected = today.getTime() - (i * DAY_MS)
+                                            // Allow today or yesterday as start
+                                            if (i === 0 && (logDates[0] === expected || logDates[0] === expected - DAY_MS)) {
+                                                streak = 1
+                                            } else if (logDates[i] === today.getTime() - (streak * DAY_MS)) {
+                                                streak++
+                                            } else {
+                                                break
+                                            }
+                                        }
+
+                                        // Badges
+                                        const badges = []
+                                        if (profileLogs.length >= 1) badges.push({ emoji: '🎬', label: 'First Log', desc: 'Logged your first film' })
+                                        if (profileLogs.length >= 10) badges.push({ emoji: '📽️', label: 'Cinephile', desc: '10 films logged' })
+                                        if (profileLogs.length >= 50) badges.push({ emoji: '🏛️', label: 'Archivist', desc: '50 films logged' })
+                                        if (profileLogs.length >= 100) badges.push({ emoji: '🎭', label: 'Centurion', desc: '100 films logged' })
+                                        if (streak >= 3) badges.push({ emoji: '🔥', label: 'On Fire', desc: `${streak}-day streak` })
+                                        if (streak >= 7) badges.push({ emoji: '⚡', label: 'Week Warrior', desc: '7-day streak' })
+                                        if (streak >= 30) badges.push({ emoji: '💎', label: 'Diamond Reel', desc: '30-day streak' })
+                                        if (profileLogs.filter(l => l.rating === 5).length >= 5) badges.push({ emoji: '⭐', label: 'Masterpiece Hunter', desc: '5 perfect ratings' })
+                                        if (profileLogs.some(l => l.status === 'abandoned')) badges.push({ emoji: '🚪', label: 'Honest Critic', desc: 'Abandoned a film' })
+                                        if (profileLogs.some(l => l.physicalMedia)) badges.push({ emoji: '📀', label: 'Collector', desc: 'Logged physical media' })
+
+                                        return (
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                {/* Streak badge */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                    <div style={{
+                                                        display: 'flex', alignItems: 'center', gap: '0.4rem',
+                                                        background: streak > 0 ? 'rgba(255,120,20,0.1)' : 'rgba(255,255,255,0.02)',
+                                                        border: `1px solid ${streak > 0 ? 'rgba(255,120,20,0.3)' : 'var(--ash)'}`,
+                                                        borderRadius: '100px',
+                                                        padding: '0.3rem 0.8rem',
+                                                    }}>
+                                                        <span style={{ fontSize: '1rem' }}>{streak > 0 ? '🔥' : '💤'}</span>
+                                                        <span style={{
+                                                            fontFamily: 'var(--font-ui)', fontSize: '0.6rem',
+                                                            letterSpacing: '0.1em',
+                                                            color: streak > 0 ? '#ff8c20' : 'var(--fog)',
+                                                        }}>
+                                                            {streak > 0 ? `${streak}-DAY STREAK` : 'NO STREAK'}
+                                                        </span>
+                                                    </div>
+                                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
+                                                        {streak > 0 ? 'Keep the projector running!' : 'Log a film today to start a streak'}
+                                                    </span>
+                                                </div>
+
+                                                {/* Badges */}
+                                                {badges.length > 0 && (
+                                                    <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                                                        {badges.map((b, i) => (
+                                                            <div
+                                                                key={i}
+                                                                title={`${b.label}: ${b.desc}`}
+                                                                style={{
+                                                                    display: 'flex', alignItems: 'center', gap: '0.3em',
+                                                                    background: 'rgba(139,105,20,0.08)',
+                                                                    border: '1px solid rgba(139,105,20,0.15)',
+                                                                    borderRadius: '100px',
+                                                                    padding: '0.2em 0.5em',
+                                                                    fontSize: '0.7rem',
+                                                                    cursor: 'default',
+                                                                    transition: 'all 0.2s',
+                                                                }}
+                                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.18)'; e.currentTarget.style.transform = 'scale(1.05)' }}
+                                                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.08)'; e.currentTarget.style.transform = 'scale(1)' }}
+                                                            >
+                                                                <span>{b.emoji}</span>
+                                                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: 'var(--flicker)' }}>{b.label.toUpperCase()}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )
+                                    })()}
+                                </div>
+                            )}
                         </div>
 
                         {/* Archive Controls */}

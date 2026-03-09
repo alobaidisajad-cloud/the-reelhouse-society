@@ -235,8 +235,45 @@ export const useFilmStore = create(
             },
 
             removeLog: async (id) => {
-                const { error } = await supabase.from('logs').delete().eq('id', id);
-                if (!error) set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }));
+                const user = useAuthStore.getState().user;
+                const isPaid = user?.role === 'archivist' || user?.role === 'auteur';
+                const logToRemove = get().logs.find(l => l.id === id);
+
+                if (isPaid && logToRemove) {
+                    // Paid tier: soft delete with undo toast
+                    set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }));
+
+                    let undone = false;
+                    const { default: toast } = await import('react-hot-toast');
+                    toast((t) => {
+                        // Return a simple string-based toast since we can't use JSX in store
+                        return `"${logToRemove.title}" removed. Tap to undo.`
+                    }, {
+                        duration: 5000,
+                        icon: '🗑️',
+                        style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
+                        id: `undo-${id}`,
+                    });
+
+                    // Listen for dismiss — actually delete after 5s
+                    setTimeout(async () => {
+                        if (!undone) {
+                            await supabase.from('logs').delete().eq('id', id);
+                        }
+                    }, 5200);
+
+                    // Expose undo function on window for this specific log
+                    window.__rh_undo_log = () => {
+                        undone = true;
+                        set((state) => ({ logs: [logToRemove, ...state.logs] }));
+                        const { default: t } = import('react-hot-toast').then(m => m.default.dismiss(`undo-${id}`));
+                        import('react-hot-toast').then(m => m.default.success(`"${logToRemove.title}" restored ✦`));
+                    };
+                } else {
+                    // Free tier: instant delete, no undo
+                    const { error } = await supabase.from('logs').delete().eq('id', id);
+                    if (!error) set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }));
+                }
             },
 
             addToWatchlist: async (film) => {
