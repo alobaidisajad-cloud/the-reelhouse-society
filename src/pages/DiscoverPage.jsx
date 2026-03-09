@@ -60,24 +60,24 @@ const MOODS = [
     { label: 'Hilarious', sub: 'Pure joy and laughter.', glyph: '◎', genre: 35, sort: 'vote_average.desc', voteGte: 200, color: '#0A1A0A', accent: '#4A8B3A' },
 ]
 
+const Chip = ({ active, onClick, children, color }) => (
+    <button onClick={onClick} style={{
+        flexShrink: 0, padding: '0.35rem 0.7rem',
+        background: active ? (color || 'var(--sepia)') : 'var(--soot)',
+        border: `1px solid ${active ? (color || 'var(--sepia)') : 'var(--ash)'}`,
+        color: active ? 'var(--ink)' : 'var(--fog)',
+        fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.08em', textTransform: 'uppercase',
+        borderRadius: '2px', cursor: 'pointer', whiteSpace: 'nowrap',
+        transition: 'all 0.15s',
+    }}>
+        {children}
+    </button>
+)
+
 // ── FILTER PANEL COMPONENT ──
 function FilterPanel({ filters, onChange, onClear, isSearching, style }) {
     const { genreId, decade, sortBy, language, minRating } = filters
     const hasFilters = genreId || decade || language || minRating > 0
-
-    const Chip = ({ active, onClick, children, color }) => (
-        <button onClick={onClick} style={{
-            flexShrink: 0, padding: '0.35rem 0.7rem',
-            background: active ? (color || 'var(--sepia)') : 'var(--soot)',
-            border: `1px solid ${active ? (color || 'var(--sepia)') : 'var(--ash)'}`,
-            color: active ? 'var(--ink)' : 'var(--fog)',
-            fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.08em', textTransform: 'uppercase',
-            borderRadius: '2px', cursor: 'pointer', whiteSpace: 'nowrap',
-            transition: 'all 0.15s',
-        }}>
-            {children}
-        </button>
-    )
 
     return (
         <div style={style}>
@@ -139,19 +139,69 @@ function FilterPanel({ filters, onChange, onClear, isSearching, style }) {
     )
 }
 
+// Use a 3-col grid on mobile — more films visible without excessive swiping
+const mobileGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '0.6rem',
+}
+const desktopGridStyle = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+    gap: '1.25rem',
+}
+
+const FilmGrid = ({ films }) => (
+    <div style={IS_TOUCH ? mobileGridStyle : desktopGridStyle}>
+        {films.map((item, idx) => {
+            const isPerson = item.media_type === 'person'
+            return (
+                <Link
+                    key={`${item.media_type || 'movie'}-${item.id}-${idx}`}
+                    to={isPerson ? `/person/${item.id}` : `/film/${item.id}`}
+                    style={{ display: 'block', textDecoration: 'none' }}
+                    className={IS_TOUCH ? '' : 'fade-in-up'}
+                >
+                    {isPerson ? (
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ width: '100%', aspectRatio: '1', borderRadius: '2px', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--soot)', position: 'relative' }}>
+                                {item.profile_path
+                                    ? <img src={tmdb.profile(item.profile_path, 'w185')} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+                                    : <PersonPlaceholder />}
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.6rem' : '0.9rem', color: 'var(--parchment)', marginTop: '0.4rem', lineHeight: 1.2 }}>{item.name}</div>
+                        </div>
+                    ) : (
+                        <>
+                            <FilmCard film={item} showRating />
+                            {!IS_TOUCH && <div style={{ marginTop: '0.4rem' }}><ObscurityBadge score={obscurityScore(item)} /></div>}
+                        </>
+                    )}
+                </Link>
+            )
+        })}
+    </div>
+)
+
 // ── MAIN PAGE ──
 export default function DiscoverPage() {
     const [searchParams] = useSearchParams()
 
-    const {
-        page, setPage,
-        mood, setMood,
-        query, setQuery,
-        inputVal, setInputVal,
-        accumulatedFilms, setAccumulatedFilms,
-        filters, setFilters,
-        clearFilters, updateFilter, clearSearch
-    } = useDiscoverStore()
+    const page = useDiscoverStore(s => s.page)
+    const setPage = useDiscoverStore(s => s.setPage)
+    const mood = useDiscoverStore(s => s.mood)
+    const setMood = useDiscoverStore(s => s.setMood)
+    const query = useDiscoverStore(s => s.query)
+    const setQuery = useDiscoverStore(s => s.setQuery)
+    const inputVal = useDiscoverStore(s => s.inputVal)
+    const setInputVal = useDiscoverStore(s => s.setInputVal)
+    const accumulatedFilms = useDiscoverStore(s => s.accumulatedFilms)
+    const setAccumulatedFilms = useDiscoverStore(s => s.setAccumulatedFilms)
+    const filters = useDiscoverStore(s => s.filters)
+    const setFilters = useDiscoverStore(s => s.setFilters)
+    const clearFilters = useDiscoverStore(s => s.clearFilters)
+    const updateFilter = useDiscoverStore(s => s.updateFilter)
+    const clearSearch = useDiscoverStore(s => s.clearSearch)
 
     const [suggestions, setSuggestions] = useState([])
     const [showFilters, setShowFilters] = useState(false)
@@ -246,50 +296,6 @@ export default function DiscoverPage() {
         ? `${searchResults?.total_results || accumulatedFilms.length || 0} Matches Found`
         : mood ? mood.sub : 'Discover Titles'
 
-    // Use a 3-col grid on mobile — more films visible without excessive swiping
-    const mobileGridStyle = {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        gap: '0.6rem',
-    }
-    const desktopGridStyle = {
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
-        gap: '1.25rem',
-    }
-
-    const FilmGrid = ({ films }) => (
-        <div style={IS_TOUCH ? mobileGridStyle : desktopGridStyle}>
-            {films.map((item, idx) => {
-                const isPerson = item.media_type === 'person'
-                return (
-                    <Link
-                        key={`${item.media_type || 'movie'}-${item.id}-${idx}`}
-                        to={isPerson ? `/person/${item.id}` : `/film/${item.id}`}
-                        style={{ display: 'block', textDecoration: 'none' }}
-                        className={IS_TOUCH ? '' : 'fade-in-up'}
-                    >
-                        {isPerson ? (
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ width: '100%', aspectRatio: '1', borderRadius: '2px', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--soot)', position: 'relative' }}>
-                                    {item.profile_path
-                                        ? <img src={tmdb.profile(item.profile_path, 'w185')} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
-                                        : <PersonPlaceholder />}
-                                </div>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.6rem' : '0.9rem', color: 'var(--parchment)', marginTop: '0.4rem', lineHeight: 1.2 }}>{item.name}</div>
-                            </div>
-                        ) : (
-                            <>
-                                <FilmCard film={item} showRating />
-                                {!IS_TOUCH && <div style={{ marginTop: '0.4rem' }}><ObscurityBadge score={obscurityScore(item)} /></div>}
-                            </>
-                        )}
-                    </Link>
-                )
-            })}
-        </div>
-    )
-
     return (
         <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
             {/* ── SEARCH HEADER ── */}
@@ -331,7 +337,7 @@ export default function DiscoverPage() {
                                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                             >
                                                 {item.poster_path || item.profile_path
-                                                    ? <img src={isPerson ? tmdb.profile(item.profile_path, 'w92') : tmdb.poster(item.poster_path, 'w92')} style={{ width: isPerson ? 24 : 18, height: isPerson ? 24 : 28, objectFit: 'cover', borderRadius: isPerson ? '50%' : '2px', flexShrink: 0 }} />
+                                                    ? <img src={isPerson ? tmdb.profile(item.profile_path, 'w92') : tmdb.poster(item.poster_path, 'w92')} loading="lazy" decoding="async" style={{ width: isPerson ? 24 : 18, height: isPerson ? 24 : 28, objectFit: 'cover', borderRadius: isPerson ? '50%' : '2px', flexShrink: 0 }} />
                                                     : <div style={{ width: 18, height: 28, background: 'var(--ash)', flexShrink: 0, borderRadius: '2px' }} />
                                                 }
                                                 <div style={{ flex: 1, overflow: 'hidden', textAlign: 'left' }}>
@@ -392,7 +398,7 @@ export default function DiscoverPage() {
                             style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.55rem 1rem', background: showFilters ? 'rgba(139,105,20,0.15)' : 'var(--soot)', border: `1px solid ${showFilters ? 'var(--sepia)' : 'var(--ash)'}`, color: showFilters ? 'var(--sepia)' : 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.12em', borderRadius: '2px', cursor: 'pointer', transition: 'all 0.2s' }}
                         >
                             <SlidersHorizontal size={13} />
-                            FILTERS
+                            {showFilters ? '[-] HIDE ARCHIVE FILTERS' : '[+] EXPAND ARCHIVE FILTERS'}
                             {activeFilterCount > 0 && (
                                 <span style={{ background: 'var(--sepia)', color: 'var(--ink)', width: 16, height: 16, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.5rem', fontWeight: 'bold' }}>{activeFilterCount}</span>
                             )}
@@ -455,7 +461,7 @@ export default function DiscoverPage() {
                             {accumulatedFilms.length > 0 && currentResults?.page < currentResults?.total_pages && (
                                 <div style={{ marginTop: IS_TOUCH ? '2rem' : '4rem', textAlign: 'center' }}>
                                     <button
-                                        onClick={() => setPage(p => p + 1)}
+                                        onClick={() => setPage(page + 1)}
                                         disabled={isFetching}
                                         style={{ border: '1px solid var(--sepia)', background: isFetching ? 'rgba(139,105,20,0.1)' : 'transparent', color: 'var(--sepia)', padding: IS_TOUCH ? '0.75rem 2rem' : '1rem 3rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', cursor: isFetching ? 'default' : 'pointer', transition: 'all 0.3s', borderRadius: '2px' }}
                                         onMouseEnter={e => { if (!isFetching) { e.currentTarget.style.background = 'var(--sepia)'; e.currentTarget.style.color = 'var(--ink)' } }}

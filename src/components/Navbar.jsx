@@ -157,8 +157,12 @@ export default function Navbar() {
                                 <Link
                                     to={`/user/${user?.username || 'me'}`}
                                     className="user-badge hide-mobile"
+                                    style={{
+                                        color: user?.role === 'auteur' ? 'var(--sepia)' : user?.role === 'archivist' ? 'var(--parchment)' : 'var(--bone)',
+                                        borderColor: user?.role === 'auteur' ? 'var(--sepia)' : 'var(--ash)',
+                                    }}
                                 >
-                                    <User size={12} />
+                                    {(user?.role === 'auteur' || user?.role === 'archivist') ? <span style={{ fontSize: '0.6rem' }}>✦</span> : <User size={12} />}
                                     {user?.username || 'Profile'}
                                 </Link>
                                 <button
@@ -181,6 +185,16 @@ export default function Navbar() {
                                 </button>
                             </>
                         )}
+
+                        {/* Handbook Toggle (Always Visible) */}
+                        <button
+                            className="nav-icon-btn hide-mobile"
+                            onClick={() => useUIStore.getState().openHandbook()}
+                            title="Society Handbook"
+                            style={{ marginLeft: '0.5rem', color: 'var(--sepia)' }}
+                        >
+                            <BookOpen size={18} />
+                        </button>
 
                         {/* Mobile toggle */}
                         <button
@@ -343,6 +357,16 @@ export default function Navbar() {
                                     Enter The House
                                 </button>
                             )}
+
+                            {/* Mobile Handbook Link */}
+                            <div style={{ width: '40px', height: '1px', background: 'var(--ash)', margin: '0.5rem 0' }} />
+                            <button
+                                className="mobile-nav-link"
+                                onClick={() => { useUIStore.getState().openHandbook(); setMobileOpen(false) }}
+                                style={{ color: 'var(--sepia)', background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-ui)', letterSpacing: '0.15em' }}
+                            >
+                                SOCIETY HANDBOOK
+                            </button>
                         </div>
                     </motion.div>
                 )}

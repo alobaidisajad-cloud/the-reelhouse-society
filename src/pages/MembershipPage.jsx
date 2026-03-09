@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { Crown, Star, Key, EyeOff, LayoutTemplate, Database } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
+import toast from 'react-hot-toast'
 
 const features = [
     { icon: Key, title: 'The Vault', description: 'Unlock the "Cutting Room Floor" for private notes and thoughts.' },
@@ -29,6 +30,44 @@ export default function MembershipPage() {
     const itemVariants = {
         hidden: { opacity: 0, y: 20 },
         visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 20 } }
+    }
+
+
+    const [isRedirecting, setIsRedirecting] = useState(false)
+
+    // Function to generate PayTabs checkout link
+    const handleAscend = async (tier) => {
+        if (!isAuthenticated) return openSignupModal(tier)
+        if (user?.role === tier || (tier === 'archivist' && user?.role === 'auteur')) return
+
+        try {
+            setIsRedirecting(true)
+            toast.loading('Preparing your Patronage ledger...', { id: 'checkout' })
+
+            // Construct the path to our Edge Function
+            const backendUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paytabs-handler/create`
+
+            // Request a new dynamic checkout URL
+            const response = await fetch(backendUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ user_id: user.id, tier })
+            })
+
+            const data = await response.json()
+
+            if (data.redirect_url) {
+                toast.dismiss('checkout')
+                window.location.href = data.redirect_url // Redirect to secure PayTabs Hosted Migs Page
+            } else {
+                toast.error('Could not initialize checkout. Please try again.', { id: 'checkout' })
+                setIsRedirecting(false)
+            }
+        } catch (error) {
+            console.error(error)
+            toast.error('Network error reaching secure checkout.', { id: 'checkout' })
+            setIsRedirecting(false)
+        }
     }
 
     return (
@@ -123,8 +162,13 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem' }} onClick={() => !isAuthenticated ? openSignupModal('archivist') : useAuthStore.getState().updateUser({ role: 'archivist' })}>
-                            {isAuthenticated ? (user?.role === 'archivist' || user?.role === 'auteur' ? 'CURRENT RANK' : 'Ascend to Archivist') : 'Claim Archivist Status'}
+                        <button
+                            className="btn btn-primary"
+                            style={{ width: '100%', justifyContent: 'center', padding: '1rem', opacity: isRedirecting ? 0.7 : 1 }}
+                            disabled={isRedirecting}
+                            onClick={() => handleAscend('archivist')}
+                        >
+                            {isRedirecting ? 'INITIALIZING...' : isAuthenticated ? (user?.role === 'archivist' || user?.role === 'auteur' ? 'CURRENT RANK' : 'Ascend to Archivist') : 'Claim Archivist Status'}
                         </button>
                     </motion.div>
 
@@ -149,7 +193,7 @@ export default function MembershipPage() {
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.4 }}>Break down films across 5 specific axes. Attach gorgeous, dynamic radar charts to your reviews.</div>
                                 </div>
                             </div>
-                            {['Curatorial Control (Select Alternative TMDB Posters)', 'Celluloid Bleed Profile Aesthetics', 'Gold Foil "Auteur" Badge', 'Early Access to New Features'].map((feature, i) => (
+                            {['Publish Transmissions to The Dispatch', 'Curatorial Control (Select Alternative TMDB Posters)', 'Celluloid Bleed Profile Aesthetics', 'Gold Foil "Auteur" Badge', 'Early Access to New Features'].map((feature, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     <Star size={12} color="var(--blood-reel)" style={{ flexShrink: 0 }} />
                                     <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)' }}>{feature}</span>
@@ -157,8 +201,13 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', padding: '1rem', background: 'var(--blood-reel)', color: 'var(--bone)', border: 'none' }} onClick={() => !isAuthenticated ? openSignupModal('auteur') : useAuthStore.getState().updateUser({ role: 'auteur' })}>
-                            {isAuthenticated ? (user?.role === 'auteur' ? 'CURRENT RANK' : 'Ascend to Auteur') : 'Become a Patron'}
+                        <button
+                            className="btn btn-primary"
+                            style={{ width: '100%', justifyContent: 'center', padding: '1rem', background: 'var(--blood-reel)', color: 'var(--bone)', border: 'none', opacity: isRedirecting ? 0.7 : 1 }}
+                            disabled={isRedirecting}
+                            onClick={() => handleAscend('auteur')}
+                        >
+                            {isRedirecting ? 'INITIALIZING...' : isAuthenticated ? (user?.role === 'auteur' ? 'CURRENT RANK' : 'Ascend to Auteur') : 'Become a Patron'}
                         </button>
                     </motion.div>
                 </motion.div>

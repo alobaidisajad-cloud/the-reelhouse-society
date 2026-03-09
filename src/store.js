@@ -10,12 +10,6 @@ export const useAuthStore = create(
             user: null, // Will hold actual Supabase auth user + profile data
             isAuthenticated: false,
             // Keeping mock community for UI purposes until fully migrated
-            community: [
-                { username: 'midnight_devotee', bio: 'I only watch films after 12:00 AM. Noir is my oxygen.', followers: ['sajjadsalel'], following: ['sajjadsalel'], isSocialPrivate: false },
-                { username: 'the_archivist_84', bio: 'Collecting every frame since 1984. 35mm only.', followers: [], following: ['sajjadsalel'], isSocialPrivate: true },
-                { username: 'weeper_in_the_dark', bio: 'If it doesn\'t make me cry, it\'s not cinema.', followers: ['sajjadsalel'], following: [], isSocialPrivate: false },
-                { username: 'contrarian_rex', bio: 'Your favorite masterpiece is actually mid.', followers: ['sajjadsalel'], following: [], isSocialPrivate: false }
-            ],
 
             // Real authentication actions
             login: async (email, password) => {
@@ -475,6 +469,10 @@ export const useUIStore = create((set) => ({
     signupRole: 'cinephile',
     showPaywall: false,
     paywallFeature: null,
+    handbookOpen: false,
+
+    openHandbook: () => set({ handbookOpen: true }),
+    closeHandbook: () => set({ handbookOpen: false }),
 
     openLogModal: (film = null, editLogId = null) => set({ logModalOpen: true, logModalFilm: film, logModalEditLogId: editLogId }),
     closeLogModal: () => set({ logModalOpen: false, logModalFilm: null, logModalEditLogId: null }),
@@ -580,3 +578,50 @@ export const initRealtime = () => {
         )
         .subscribe();
 };
+
+// ── DISPATCH STORE ──
+export const useDispatchStore = create(
+    persist(
+        (set, get) => ({
+            dossiers: [
+                {
+                    id: 'u1',
+                    title: "The Death of the Jump Scare",
+                    excerpt: "Why modern horror is trading cheap thrills for existential dread, and why audiences are finally craving atmosphere over adrenaline. The tension is in the silence.",
+                    fullContent: "Why modern horror is trading cheap thrills for existential dread, and why it's working. We've seen a shift from monsters jumping out of closets to lingering shots of empty hallways. This 'elevated horror' relies on the haunting atmosphere rather than the sudden shock. Are audiences finally craving atmosphere over adrenaline?\n\nBy Midnight_Muse",
+                    author: "MIDNIGHT_MUSE",
+                    date: "MAR 07, 2026",
+                },
+                {
+                    id: 'u2',
+                    title: "35mm in the Desert",
+                    excerpt: "A dispatch from the Southwest's last true projectionist. The heat is melting the reels, but the show goes on despite the fire hazards.",
+                    fullContent: "A dispatch from the Southwest's last true projectionist. The heat is melting the reels... I visited a dusty drive-in theater just outside of Albuquerque, where a single projectionist operates ancient 35mm machines. The ambient temperature in the booth reaches 110 degrees, making handling the highly flammable film an extreme sport. A must-visit before the reels turn to dust.\n\nBy Archive_Ghost",
+                    author: "ARCHIVE_GHOST",
+                    date: "MAR 06, 2026",
+                }
+            ],
+            addDossier: (dossier) => set(state => ({ dossiers: [{ ...dossier, id: 'essay-' + Date.now() }, ...state.dossiers] })),
+        }),
+        { name: 'reelhouse-dispatch' }
+    )
+);
+
+// ── NIGHTLY PROGRAMMES STORE ──
+export const useProgrammeStore = create(
+    persist(
+        (set, get) => ({
+            programmes: [],
+            addProgramme: (programme) => set(state => ({
+                programmes: [
+                    { ...programme, id: 'prog-' + Date.now(), createdAt: new Date().toISOString() },
+                    ...state.programmes
+                ]
+            })),
+            removeProgramme: (id) => set(state => ({
+                programmes: state.programmes.filter(p => p.id !== id)
+            })),
+        }),
+        { name: 'reelhouse-programmes' }
+    )
+);

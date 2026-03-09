@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Film, BookOpen, Star, Lock, Edit2, Camera, User, Settings, Globe } from 'lucide-react'
-import { useAuthStore, useFilmStore, useUIStore } from '../store'
+import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, StatCard, PersonaStamp, FilmCard, RadarChart } from '../components/UI'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
@@ -52,8 +52,6 @@ function ProfileBackdrop({ logs }) {
         </div>
     )
 }
-
-// ── LAZY LOG ROW — only renders when scrolled into view ──
 function LazyLogRow({ log, onShare }) {
     const ref = useRef(null)
     const [visible, setVisible] = useState(false)
@@ -152,7 +150,7 @@ function ShareCardOverlay({ log, onClose, user }) {
                                 "{log.review}"
                             </p>
                         )}
-                        {log.autopsy && (
+                        {log.isAutopsied && log.autopsy && (
                             <div style={{ transform: 'scale(0.8)', margin: '-1rem 0' }}>
                                 <RadarChart autopsy={log.autopsy} size={150} />
                             </div>
@@ -299,6 +297,17 @@ function TasteDNA({ logs }) {
     // Top decades for bar chart
     const topDecades = Object.entries(decades).sort((a, b) => b[1] - a[1]).slice(0, 4)
 
+    // Compute average autopsy for Radar Chart
+    const autopsies = logs.filter(l => l.isAutopsied && l.autopsy).map(l => l.autopsy)
+    let avgAutopsy = null
+    if (autopsies.length > 0) {
+        avgAutopsy = {
+            story: Math.round(autopsies.reduce((s, a) => s + (a.story || a.screenplay || a.script || 0), 0) / autopsies.length),
+            cinematography: Math.round(autopsies.reduce((s, a) => s + (a.cinematography || a.visuals || a.acting || 0), 0) / autopsies.length),
+            sound: Math.round(autopsies.reduce((s, a) => s + (a.sound || a.score || a.editing || 0), 0) / autopsies.length),
+        }
+    }
+
     return (
         <div className="taste-dna-poster">
             <h3>TASTE DNA</h3>
@@ -321,6 +330,13 @@ function TasteDNA({ logs }) {
             }}>
                 {archetype} of {topDecade} {tones}
             </div>
+
+            {/* Matrix Radar Chart */}
+            {avgAutopsy && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem', marginTop: '0.5rem', filter: 'drop-shadow(0 0 10px rgba(139,105,20,0.2))' }}>
+                    <RadarChart autopsy={avgAutopsy} size={150} />
+                </div>
+            )}
 
             {/* Obscurity score */}
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', alignItems: 'center' }}>
@@ -480,7 +496,7 @@ function FilmLogRow({ log, onShare, onEdit }) {
                 )}
 
                 {/* Autopsy Map */}
-                {log.autopsy && (
+                {log.isAutopsied && log.autopsy && (
                     <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                         <RadarChart autopsy={log.autopsy} size={140} />
                     </div>
@@ -711,12 +727,16 @@ function ListsSection({ lists, user }) {
 }
 
 // ── PROJECTOR ROOM (STATS) ──
-// ── PROJECTOR ROOM (STATS) ──
-function ProjectorRoom({ stats }) {
+function ProjectorRoom({ stats, user }) {
     const isMaster = stats.count > 50
     const { logs } = useFilmStore()
+    const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
 
     const downloadCsv = () => {
+        if (!isPremium) {
+            useUIStore.getState().openSignupModal('archivist')
+            return toast("CSV Export is restricted to Archivists.", { icon: '🔒', style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+        }
         if (logs.length === 0) return toast('No logs to export.')
 
         const headers = ['Title', 'Year', 'Rating', 'Status', 'Watched Date', 'Review', 'Private Notes', 'Watched With']
@@ -778,8 +798,24 @@ function ProjectorRoom({ stats }) {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
             {/* The Projectionist's Calendar (Heatmap) */}
-            <div className="card" style={{ padding: '2rem', overflowX: 'auto' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div className="card" style={{ padding: '2rem', overflowX: 'auto', position: 'relative' }}>
+                {!isPremium && (
+                    <div style={{
+                        position: 'absolute', inset: 0, zIndex: 20, backdropFilter: 'blur(8px)', background: 'rgba(10,7,3,0.7)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-card)', border: '1px solid var(--ash)'
+                    }}>
+                        <Lock size={32} color="var(--sepia)" style={{ marginBottom: '1rem' }} />
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>RESTRICTED ACCESS</div>
+                        <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', textAlign: 'center', maxWidth: 300, marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                            The Projectionist's Calendar requires Archivist or Auteur clearance.
+                        </p>
+                        <button className="btn btn-primary" onClick={() => useUIStore.getState().openSignupModal('archivist')} style={{ padding: '0.6rem 1.5rem', fontSize: '0.65rem' }}>
+                            ASCEND TO ARCHIVIST
+                        </button>
+                    </div>
+                )}
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', opacity: isPremium ? 1 : 0.3 }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>
                         THE PROJECTIONIST'S CALENDAR
                     </div>
@@ -967,6 +1003,14 @@ function ProjectorRoom({ stats }) {
                     DOWNLOAD ARCHIVAL RECORD (.CSV)
                 </button>
             </div>
+
+            {!isPremium && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }} onClick={() => useUIStore.getState().openSignupModal('archivist')}>
+                        <Lock size={10} /> ARCHIVIST EXCLUSIVE
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
@@ -1016,11 +1060,141 @@ function TicketBooth({ stubs }) {
     )
 }
 
+// ── NIGHTLY PROGRAMMES (DOUBLE FEATURES) ──
+function ProgrammesSection({ programmes, user, isOwnProfile }) {
+    const { logs, vault, watchlist } = useFilmStore()
+    const { addProgramme, removeProgramme } = useProgrammeStore()
+    const [isCreating, setIsCreating] = useState(false)
+    const [title, setTitle] = useState('')
+    const [playbill, setPlaybill] = useState('')
+    const [film1Id, setFilm1Id] = useState('')
+    const [film2Id, setFilm2Id] = useState('')
+
+    // Unique films from user's history
+    const allFilms = [...logs, ...vault, ...watchlist]
+    const uniqueFilmsMap = new Map()
+    allFilms.forEach(f => {
+        const id = f.filmId || f.id
+        if (!uniqueFilmsMap.has(id)) uniqueFilmsMap.set(id, f)
+    })
+    const uniqueFilms = Array.from(uniqueFilmsMap.values())
+
+    const handleCreate = () => {
+        if (!title || !playbill || !film1Id || !film2Id) return
+        const f1 = uniqueFilms.find(f => (f.filmId || f.id)?.toString() === film1Id.toString())
+        const f2 = uniqueFilms.find(f => (f.filmId || f.id)?.toString() === film2Id.toString())
+
+        addProgramme({
+            username: user.username,
+            title,
+            playbill,
+            film1: { id: f1.filmId || f1.id, title: f1.title || f1.name, poster_path: f1.poster || f1.poster_path },
+            film2: { id: f2.filmId || f2.id, title: f2.title || f2.name, poster_path: f2.poster || f2.poster_path },
+        })
+        setIsCreating(false)
+        setTitle(''); setPlaybill(''); setFilm1Id(''); setFilm2Id('')
+    }
+
+    // Auteur Check
+    const isAuteur = logs.length >= 20 || user?.role === 'auteur' || user?.role === 'archivist'
+
+    return (
+        <div>
+            {isOwnProfile && isAuteur && !isCreating && (
+                <button className="btn btn-ghost" onClick={() => setIsCreating(true)} style={{ marginBottom: '2rem', padding: '1.5rem', width: '100%', border: '1px dashed var(--sepia)', color: 'var(--sepia)' }}>
+                    + CURATE NIGHTLY PROGRAMME (DOUBLE FEATURE)
+                </button>
+            )}
+
+            {!isOwnProfile && programmes.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>
+                    This Auteur has not curated any programmes yet.
+                </div>
+            )}
+
+            {isOwnProfile && !isAuteur && programmes.length === 0 && (
+                <div className="card" style={{ padding: '3rem', textAlign: 'center', border: '1px solid var(--sepia)' }}>
+                    <Lock size={32} style={{ color: 'var(--sepia)', marginBottom: '1rem', opacity: 0.5 }} />
+                    <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>Auteur Status Required</h3>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', maxWidth: 400, margin: '0 auto' }}>
+                        The Nightly Programme curation is unlocked at 20 film logs or for Archivist tier members. Keep watching to unlock the power to publish double features.
+                    </p>
+                </div>
+            )}
+
+            {isCreating && (
+                <div className="card" style={{ marginBottom: '2rem', background: 'var(--ink)', border: '1px solid var(--sepia)' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--sepia)', letterSpacing: '0.2em', marginBottom: '1.5rem', textAlign: 'center' }}>
+                        NEW DOUBLE FEATURE
+                    </div>
+                    <input className="input" placeholder="Programme Name (e.g., 'Neon Blood & Rain')" value={title} onChange={e => setTitle(e.target.value)} style={{ marginBottom: '1rem', width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', color: 'var(--bone)' }} />
+                    <textarea className="input" placeholder="The Playbill (Why these two films? What is the thematic tissue?)" value={playbill} onChange={e => setPlaybill(e.target.value)} style={{ minHeight: '120px', marginBottom: '1rem', width: '100%', padding: '0.8rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', color: 'var(--bone)', resize: 'vertical' }} />
+
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '2rem' }}>
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FEATURE 1 (THE PRIMER)</div>
+                            <select className="input" value={film1Id} onChange={e => setFilm1Id(e.target.value)} style={{ width: '100%', padding: '0.6rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', color: 'var(--bone)' }}>
+                                <option value="" disabled>Select from Archive...</option>
+                                {uniqueFilms.map(f => (
+                                    <option key={f.filmId || f.id} value={f.filmId || f.id}>{f.title || f.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>FEATURE 2 (THE DESCENT)</div>
+                            <select className="input" value={film2Id} onChange={e => setFilm2Id(e.target.value)} style={{ width: '100%', padding: '0.6rem', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', color: 'var(--bone)' }}>
+                                <option value="" disabled>Select from Archive...</option>
+                                {uniqueFilms.map(f => (
+                                    <option key={f.filmId || f.id} value={f.filmId || f.id}>{f.title || f.name}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
+                        <button className="btn btn-ghost" onClick={() => setIsCreating(false)}>CANCEL</button>
+                        <button className="btn btn-primary" onClick={handleCreate} disabled={!title || !playbill || !film1Id || !film2Id}>PUBLISH PROGRAMME</button>
+                    </div>
+                </div>
+            )}
+
+            {programmes.length > 0 && !isCreating && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    {programmes.map(prog => (
+                        <div key={prog.id} className="card" style={{ display: 'flex', gap: '2.5rem', padding: '2.5rem', background: 'linear-gradient(135deg, var(--soot) 0%, var(--ink) 100%)', position: 'relative' }}>
+                            {isOwnProfile && (
+                                <button className="btn btn-ghost" onClick={() => removeProgramme(prog.id)} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>✕ REMOVE</button>
+                            )}
+                            <div style={{ display: 'flex', width: '220px', flexShrink: 0 }}>
+                                <img src={tmdb.poster(prog.film1.poster_path, 'w342')} alt="" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }} />
+                                <img src={tmdb.poster(prog.film2.poster_path, 'w342')} alt="" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', marginLeft: '-20px', marginTop: '30px', zIndex: 1, filter: 'brightness(0.6)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>THE NIGHTLY PROGRAMME</div>
+                                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2.2rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>{prog.title}</h3>
+                                <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--fog)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <span style={{ color: 'var(--bone)' }}>{prog.film1.title}</span>
+                                    <span>+</span>
+                                    <span style={{ color: 'var(--bone)' }}>{prog.film2.title}</span>
+                                </div>
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--fog)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>
+                                    {prog.playbill}
+                                </p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    )
+}
+
 // ── MAIN PROFILE PAGE ──
 export default function UserProfilePage() {
     const { username: routeUsername } = useParams()
     const { user: currentUser, isAuthenticated, updateUser, community, followUser, unfollowUser } = useAuthStore()
     const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, getCinephileStats } = useFilmStore()
+    const { programmes: currentProgrammes } = useProgrammeStore()
     const { openSignupModal, openLogModal } = useUIStore()
 
     // File input ref
@@ -1130,6 +1304,7 @@ export default function UserProfilePage() {
     const profileStubs = isOwnProfile ? currentStubs : []
     const profileLists = isOwnProfile ? currentLists : []
     const profileWatchlist = isOwnProfile ? currentWatchlist : []
+    const profileProgrammes = currentProgrammes.filter(p => p.username === profileUser?.username)
 
     const filteredLogs = profileLogs.filter(log => {
         if (sieve === 'all') return true
@@ -1143,6 +1318,7 @@ export default function UserProfilePage() {
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: filteredLogs.length },
         { id: 'tickets', label: 'Ticket Booth', count: profileStubs.length },
+        { id: 'programmes', label: 'Programmes', count: profileProgrammes.length },
         { id: 'projector', label: 'Projector Room', count: null },
         { id: 'lists', label: 'Lists', count: profileLists.length },
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
@@ -1158,8 +1334,12 @@ export default function UserProfilePage() {
                 position: 'relative',
                 overflow: 'hidden',
             }}>
-                {/* Personalized poster backdrop */}
-                <ProfileBackdrop logs={profileLogs} />
+                {/* Personalized poster backdrop - Celluloid Bleed only for Auteurs */}
+                {profileUser?.role === 'auteur' ? (
+                    <ProfileBackdrop logs={profileLogs} />
+                ) : (
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />
+                )}
 
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
@@ -1236,8 +1416,13 @@ export default function UserProfilePage() {
                                         }}
                                     />
                                 ) : (
-                                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: 'var(--parchment)', lineHeight: 1 }}>
+                                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: 'var(--parchment)', lineHeight: 1, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                         @{profileUser.username.toUpperCase()}
+                                        {profileUser?.role === 'auteur' && (
+                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem', verticalAlign: 'middle', height: 'fit-content' }}>
+                                                <Star size={10} fill="currentColor" /> AUTEUR
+                                            </span>
+                                        )}
                                     </h1>
                                 )}
 
@@ -1449,7 +1634,14 @@ export default function UserProfilePage() {
                                     </div>
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                        {filteredLogs.map((log) => <LazyLogRow key={log.id} log={log} onShare={setShareLog} onEdit={(log) => openLogModal({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' }, log.id)} />)}
+                                        {filteredLogs.map((log) => <LazyLogRow key={log.id} log={log} onShare={setShareLog} onEdit={isOwnProfile ? ((log) => {
+                                            if (currentUser?.role === 'archivist' || currentUser?.role === 'auteur') {
+                                                openLogModal({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' }, log.id)
+                                            } else {
+                                                openSignupModal('archivist')
+                                                toast("The Splicer requires Archivist clearance.", { icon: '🔒', style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+                                            }
+                                        }) : null} />)}
                                     </div>
                                 )}
                             </div>
@@ -1462,10 +1654,17 @@ export default function UserProfilePage() {
                             </div>
                         )}
 
+                        {activeTab === 'programmes' && (
+                            <div>
+                                <SectionHeader label="CURATED DOUBLE FEATURES" title="Nightly Programmes" />
+                                <ProgrammesSection programmes={profileProgrammes} user={profileUser} isOwnProfile={isOwnProfile} />
+                            </div>
+                        )}
+
                         {activeTab === 'projector' && (
                             <div>
                                 <SectionHeader label="DEVOTEE ANALYTICS" title="Projector Room" />
-                                <ProjectorRoom stats={stats} />
+                                <ProjectorRoom stats={stats} user={profileUser} />
                             </div>
                         )}
 
@@ -1503,6 +1702,7 @@ export default function UserProfilePage() {
 
                     {/* Sidebar */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                        <TasteDNA logs={profileLogs} />
                         <VaultSection vault={isOwnProfile ? currentWatchlist : []} user={profileUser} logs={profileLogs} />
 
                         {/* Recent high-rated */}

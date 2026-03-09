@@ -4,17 +4,20 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from './tmdb'
 import Navbar from './components/Navbar'
-import BootcampModal from './components/BootcampModal'
-import PaywallModal from './components/PaywallModal'
-import LogModal from './components/LogModal'
-import SignupModal from './components/SignupModal'
 import Preloader from './components/Preloader'
 import CustomCursor from './components/CustomCursor'
 import { useFilmStore, useUIStore, initRealtime, initAuthSync } from './store'
 import Soundscape from './components/Soundscape'
-import CommandPalette from './components/CommandPalette'
 import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
+
+// ── Heavy Global Modals (Lazy Loaded) ──
+const BootcampModal = lazy(() => import('./components/BootcampModal'))
+const PaywallModal = lazy(() => import('./components/PaywallModal'))
+const LogModal = lazy(() => import('./components/LogModal'))
+const SignupModal = lazy(() => import('./components/SignupModal'))
+const HandbookModal = lazy(() => import('./components/HandbookModal'))
+const CommandPalette = lazy(() => import('./components/CommandPalette'))
 
 // Detect touch once — controls which desktop-only effects to mount
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
@@ -93,7 +96,7 @@ export default function App() {
   const location = useLocation()
   // Granular selector — only re-renders App when logs.length changes, not on every store write
   const logCount = useFilmStore(state => state.logs.length)
-  const { openLogModal, showPaywall, paywallFeature, closePaywall } = useUIStore()
+  const { openLogModal, showPaywall, paywallFeature, closePaywall, openHandbook } = useUIStore()
 
   const degradationClass = useMemo(() => {
     if (logCount > 40) return 'level-obsessed'
@@ -102,8 +105,13 @@ export default function App() {
   }, [logCount])
 
   // Mobile: skip preloader entirely — show content instantly
-  // Desktop: show 3-count clapperboard preloader
-  const [showPreloader, setShowPreloader] = useState(!IS_TOUCH)
+  // Desktop: show 3-count clapperboard preloader only once per session
+  const [showPreloader, setShowPreloader] = useState(() => {
+    if (typeof window === 'undefined') return false
+    if (IS_TOUCH) return false
+    if (sessionStorage.getItem('reelhouse_init_loaded')) return false
+    return true
+  })
 
   // Persistent scroll position — save on leave, restore on return
   useEffect(() => {
@@ -142,23 +150,13 @@ export default function App() {
 
   return (
     <div className={degradationClass}>
-      {/* Preloader: desktop only, skipped on mobile for instant first paint */}
-      {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
+      {/* Preloader: desktop only, skipped on mobile, fires once per session */}
+      {showPreloader && <Preloader onComplete={() => {
+        setShowPreloader(false)
+        sessionStorage.setItem('reelhouse_init_loaded', 'true')
+      }} />}
 
       <CustomCursor />
-
-      <BootcampModal />
-      {showPaywall && <PaywallModal featureName={paywallFeature} onClose={closePaywall} />}
-      <Navbar />
-
-      {/* Soundscape: desktop only — audio context on mobile wastes battery & memory */}
-      {!IS_TOUCH && <Soundscape />}
-
-      <CommandPalette />
-      <InstallPrompt />
-      <QualityOfLife />
-      <LogModal />
-      <SignupModal />
 
       {/* Floating Action Button — mobile only */}
       <button
@@ -169,7 +167,21 @@ export default function App() {
         +
       </button>
 
+      {/* Suspense wrapper handles BOTH global modals AND route-level pages */}
       <Suspense fallback={<PageFallback />}>
+        {/* Mount Modals inside Suspense so they lazy-load when their internal state flips to open */}
+        <Navbar />
+        {!IS_TOUCH && <Soundscape />}
+        <InstallPrompt />
+        <QualityOfLife />
+
+        <BootcampModal />
+        {showPaywall && <PaywallModal featureName={paywallFeature} onClose={closePaywall} />}
+        <CommandPalette />
+        <LogModal />
+        <SignupModal />
+        <HandbookModal />
+
         <AnimatePresence mode="wait" initial={false}>
           <Routes location={location} key={location.pathname}>
             <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
@@ -209,7 +221,10 @@ export default function App() {
               { to: '/', label: 'The Lobby' },
               { to: '/discover', label: 'Dark Room' },
               { to: '/feed', label: 'The Reel' },
+              { to: '/dispatch', label: 'The Dispatch' },
               { to: '/lists', label: 'The Stacks' },
+              { to: '/cinemas', label: 'Cinemas' },
+              { to: '/patronage', label: 'The Society' },
             ].map(({ to, label }) => (
               <Link key={to} to={to} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--fog)', textDecoration: 'none', transition: 'color 0.2s' }}
                 onMouseOver={(e) => e.target.style.color = 'var(--flicker)'}
@@ -218,6 +233,14 @@ export default function App() {
                 {label}
               </Link>
             ))}
+            <button
+              onClick={openHandbook}
+              style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--sepia)', textDecoration: 'none', transition: 'filter 0.2s', fontWeight: 'bold' }}
+              onMouseOver={(e) => e.target.style.filter = 'brightness(1.5)'}
+              onMouseOut={(e) => e.target.style.filter = 'brightness(1)'}
+            >
+              Society Handbook
+            </button>
           </div>
           <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--ash)' }}>
             Film data provided by TMDB · Built with nitrate &amp; obsession

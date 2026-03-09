@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import { tmdb, obscurityScore } from '../tmdb'
-import { useUIStore, useAuthStore } from '../store'
+import { useUIStore, useAuthStore, useFilmStore, useVenueStore } from '../store'
 import { FilmCard, SectionHeader, ReelRating, LoadingReel, Ticker, FilmStripSkeleton } from '../components/UI'
 import Buster from '../components/Buster'
 import { Plus, Maximize, Play, PlayCircle, Star, Quote } from 'lucide-react'
@@ -305,18 +305,21 @@ const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, desc
 })
 
 // ── VENUE SPOTLIGHT ──
-const DEMO_VENUES = [
-    { id: 1, name: 'The Oracle Palace', location: 'Brooklyn, NY', vibes: ['Arthouse', 'Midnight Palace'], events: 3 },
-    { id: 2, name: 'Lighthouse Cinema', location: 'Austin, TX', vibes: ['Indie', 'Repertory'], events: 5 },
-    { id: 3, name: 'The Neon Coffin', location: 'Chicago, IL', vibes: ['Horror House', 'Drive-In'], events: 2 },
-]
-
 const VenueSpotlight = memo(function VenueSpotlight() {
+    const { venue, events } = useVenueStore()
+    const activeVenues = venue ? [{
+        id: venue.id || 1,
+        name: venue.name || 'The Oracle Palace',
+        location: venue.location || 'Brooklyn, NY',
+        vibes: venue.vibes || ['Arthouse', 'Midnight Palace'],
+        events: events?.length || 0
+    }] : []
+
     return (
         <section>
             <SectionHeader label="FEATURED VENUES" title="The Palaces" />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {DEMO_VENUES.map((v) => (
+                {activeVenues.map((v) => (
                     <Link key={v.id} to={`/venue/${v.id}`} style={{ textDecoration: 'none' }}>
                         <motion.div
                             className="card"
@@ -353,17 +356,36 @@ const VenueSpotlight = memo(function VenueSpotlight() {
 })
 
 // ── THE SOCIAL PULSE (COMMUNITY FEED) ──
-const SocialPulse = memo(function SocialPulse({ films = [] }) {
-    if (!films || films.length < 5) return null
+const SocialPulse = memo(function SocialPulse() {
+    const { logs } = useFilmStore()
+    const { user } = useAuthStore()
 
-    // Generate realistic demo activities mixing reviews, lists, and logs based on current trending films
-    const activities = [
-        { id: 1, type: 'review', user: 'midnight_devotee', film: films[1], rating: 4, text: "A staggering accomplishment. The sound design alone is worth admission.", time: '2m ago' },
-        { id: 2, type: 'log', user: 'celluloid_dreams', film: films[2], rating: 5, watchedWith: 'Sarah', time: '14m ago' },
-        { id: 3, type: 'list', user: 'criterion_collector', title: "Neo-Noir Essentials", count: 24, films: films.slice(2, 6), time: '1h ago' },
-        { id: 4, type: 'review', user: 'kino_eye', film: films[3], rating: 2.5, text: "Visually stunning but emotionally hollow.", time: '2h ago' },
-        { id: 5, type: 'log', user: 'silent_era_fan', film: films[0], status: 'rewatched', time: '5h ago' }
-    ]
+    if (!logs || logs.length === 0) {
+        return (
+            <section style={{ position: 'relative', margin: '4rem 0 2rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ width: '3px', height: '1.8rem', background: 'linear-gradient(to bottom, var(--sepia), var(--flicker))', borderRadius: '2px', boxShadow: '0 0 10px rgba(139,105,20,0.4)' }} />
+                    <SectionHeader label="LIVE FROM THE FOYER" title="The Pulse" style={{ marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }} />
+                </div>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--bone)', paddingLeft: '1.5rem', opacity: 0.75, maxWidth: '600px', marginBottom: '2.5rem', textShadow: '0 1px 2px var(--ink)' }}>
+                    Witness the latest logs, lists, and critiques from the devotees.
+                </p>
+                <div style={{ padding: '2rem 1.5rem', border: '1px dashed var(--ash)', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.2em' }}>
+                    THE LOBBY IS QUIET. LOG A FILM TO START THE PULSE.
+                </div>
+            </section>
+        )
+    }
+
+    const activities = logs.slice(0, 5).map((log, i) => ({
+        id: log.id || i,
+        type: 'log',
+        user: user?.username || 'cinephile',
+        film: { id: log.filmId, title: log.title, poster_path: log.poster },
+        rating: log.rating,
+        text: log.review,
+        time: new Date(log.createdAt || Date.now()).toLocaleDateString()
+    }))
 
     return (
         <section style={{ position: 'relative', margin: '4rem 0 2rem' }}>
@@ -677,7 +699,7 @@ export default function HomePage() {
 
                     {/* Social Pulse */}
                     <div className="divider">✦ THE FOYER ✦</div>
-                    <SocialPulse films={films} />
+                    <SocialPulse />
 
                     {/* Divider */}
                     <div className="divider">✦ TONIGHT'S PROGRAMME ✦</div>

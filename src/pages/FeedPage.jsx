@@ -1,26 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useFilmStore, useAuthStore, useUIStore } from '../store'
+import { useFilmStore, useAuthStore, useUIStore, useVenueStore } from '../store'
 import { ReelRating, SectionHeader, RadarChart, PersonPlaceholder } from '../components/UI'
 import { tmdb } from '../tmdb'
 import { Heart, MessageSquare, Bookmark } from 'lucide-react'
 
-// Simulated community activity
-const COMMUNITY_LOGS = [
-    { id: 1, user: 'the_archivist_84', persona: 'The Archivist', film: { id: 238, title: 'The Godfather', year: '1972', poster: '/3bhkrj58Vtu7enYsLLeWorZyute.jpg' }, rating: 5, review: 'The definitive statement on power and family. Nothing before or since.', timestamp: '2 HOURS AGO' },
-    { id: 2, user: 'weeper_in_the_dark', persona: 'The Weeper', film: { id: 372058, title: 'Your Name', year: '2016', poster: '/q719jXXEzOoYaps6babgKnONONX.jpg' }, rating: 5, review: 'I was not emotionally prepared. I will never be emotionally prepared.', timestamp: '5 HOURS AGO' },
-    { id: 3, user: 'contrarian_rex', persona: 'The Contrarian', film: { id: 299536, title: 'Avengers: Infinity War', year: '2018', poster: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg' }, rating: 2, review: 'Everyone loves this? I see competent assembly-line filmmaking where others see magic. I\'m bored.', timestamp: '11 HOURS AGO' },
-    { id: 4, user: 'midnight_devotee', persona: 'The Midnight Devotee', film: { id: 694, title: 'The Hours', year: '2002', poster: '/9DfkV7MhY9c7FcGtOmVGMDTYCqr.jpg' }, rating: 4.5, review: 'A study in quiet devastation. This is what it feels like to simultaneously be inside three lives at once.', timestamp: '1 DAY AGO' },
-    { id: 5, user: 'completionist_jane', persona: 'The Completionist', film: { id: 346364, title: 'It', year: '2017', poster: '/9E2y5Q7WlCVNEhP5GkVhjr85HCN.jpg' }, rating: 3.5, review: '#47 of Muschietti\'s work. Better than expected but still uneven in its third act. Filed under: Could Have Been More.' },
-    { id: 6, user: 'the_archivist_84', persona: 'The Archivist', film: { id: 120467, title: 'The Grand Budapest Hotel', year: '2014', poster: '/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg' }, rating: 4.5, review: 'Anderson at peak Anderson. Every frame is a painting. Every line a thesis on nostalgia and cruelty.' },
-    { id: 7, user: 'weeper_in_the_dark', persona: 'The Weeper', film: { id: 15121, title: 'Grave of the Fireflies', year: '1988', poster: '/k9tv1rXZbOD5zv3qndFJ6jKBnEh.jpg' }, rating: 5, review: 'You don\'t watch this film. It happens to you. I cannot recommend it. I cannot not recommend it.' },
-]
-
-const VENUE_EVENTS = [
-    { venue: 'The Oracle Palace', event: 'MIDNIGHT HORROR MARATHON — 6 films, no sleep', date: 'SAT MAR 15' },
-    { venue: 'Lighthouse Cinema', event: 'BERGMAN DOUBLE FEATURE — Personas, then Wild Strawberries', date: 'FRI MAR 14' },
-    { venue: 'The Neon Coffin', event: 'GIALLO NIGHT — Argento & Bava, 35mm prints', date: 'SUN MAR 16' },
-]
+// Community logs and venue events are now powered dynamically by Zustand stores.
 
 function ActivityCard({ log }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
@@ -62,6 +47,8 @@ function ActivityCard({ log }) {
                     <img
                         src={tmdb.poster(log.altPoster || log.film.poster, 'w185')}
                         alt={log.film.title}
+                        loading="lazy"
+                        decoding="async"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9, mixBlendMode: 'luminosity' }}
                     />
                 ) : (
@@ -76,8 +63,11 @@ function ActivityCard({ log }) {
                     <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none' }}>
                         @{log.user.toUpperCase()}
                     </Link>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
-                        — {log.persona.toUpperCase()}
+                    <span style={{
+                        fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em',
+                        color: log.userRole === 'auteur' ? 'var(--sepia)' : 'var(--fog)'
+                    }}>
+                        — {log.userRole?.toUpperCase() || log.persona.toUpperCase()} {log.userRole === 'auteur' && '✦'}
                     </span>
                 </div>
 
@@ -103,6 +93,8 @@ function ActivityCard({ log }) {
                         <img
                             src={tmdb.backdrop(log.editorialHeader, 'w780')}
                             alt="Scene from film"
+                            loading="lazy"
+                            decoding="async"
                             style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.3) contrast(1.1)' }}
                         />
                     </div>
@@ -142,7 +134,7 @@ function ActivityCard({ log }) {
                     </div>
                 )}
 
-                {log.autopsy && (
+                {log.isAutopsied && log.autopsy && (
                     <RadarChart autopsy={log.autopsy} size={140} />
                 )}
 
@@ -166,20 +158,21 @@ function ActivityCard({ log }) {
 
 
 export default function FeedPage() {
-    const { isAuthenticated } = useAuthStore()
-    const { openSignupModal } = useUIStore()
-    const { logs } = useFilmStore()
+    const isAuthenticated = useAuthStore(state => state.isAuthenticated)
+    const user = useAuthStore(state => state.user)
+    const openSignupModal = useUIStore(state => state.openSignupModal)
+    const logs = useFilmStore(state => state.logs)
+    const events = useVenueStore(state => state.events)
+    const venue = useVenueStore(state => state.venue)
 
-    const allActivity = [
-        ...(logs.map((l, i) => ({
-            id: `my-${l.id}`, user: 'you', persona: 'Cinephile',
-            film: { id: l.filmId, title: l.title, year: l.year, poster: l.poster },
-            rating: l.rating, review: l.review,
-            autopsy: l.autopsy, altPoster: l.altPoster,
-            editorialHeader: l.editorialHeader, dropCap: l.dropCap, pullQuote: l.pullQuote
-        }))),
-        ...COMMUNITY_LOGS,
-    ]
+    const allActivity = logs.map((l, i) => ({
+        id: `my-${l.id}`, user: user?.username || 'cinephile', persona: 'Cinephile',
+        film: { id: l.filmId, title: l.title, year: '2026', poster: l.poster },
+        rating: l.rating, review: l.review,
+        autopsy: l.autopsy, altPoster: l.altPoster, isAutopsied: l.isAutopsied,
+        editorialHeader: l.editorialHeader, dropCap: l.dropCap, pullQuote: l.pullQuote,
+        timestamp: l.createdAt ? new Date(l.createdAt).toLocaleDateString() : 'RECENT'
+    }))
 
     return (
         <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
@@ -247,13 +240,13 @@ export default function FeedPage() {
                                 UPCOMING TRANSMISSIONS
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {VENUE_EVENTS.map((e, i) => (
-                                    <div key={i}>
+                                {events.slice(0, 3).map((e, i) => (
+                                    <div key={e.id || i}>
                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--flicker)', marginBottom: '0.3rem' }}>
-                                            {e.date} · {e.venue.toUpperCase()}
+                                            {e.date} · {venue?.name?.toUpperCase() || 'THE ORACLE PALACE'}
                                         </div>
                                         <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)', lineHeight: 1.4 }}>
-                                            {e.event}
+                                            {e.title}
                                         </div>
                                     </div>
                                 ))}

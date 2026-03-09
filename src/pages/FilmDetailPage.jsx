@@ -656,7 +656,11 @@ export default function FilmDetailPage() {
         film?.poster_path ? tmdb.poster(film.poster_path, 'w500') : null
     )
 
-    if (isLoading) return <PageFallback message="Extracting File Data..." />
+    if (isLoading) return (
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
+            <LoadingReel />
+        </div>
+    )
     if (error || !film) return (
         <div style={{ paddingTop: 80, textAlign: 'center', padding: '4rem' }}>
             <p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)' }}>Film not found in the archive.</p>

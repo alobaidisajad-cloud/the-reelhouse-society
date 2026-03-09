@@ -58,6 +58,8 @@ export default function LogModal() {
     const [dropCap, setDropCap] = useState(false)
     const [pullQuote, setPullQuote] = useState('')
     const [availableBackdrops, setAvailableBackdrops] = useState([])
+    const [autopsyOpen, setAutopsyOpen] = useState(false) // Toggle to hide bloat
+    const [isAutopsied, setIsAutopsied] = useState(false) // Master flag for 0/10 intentionality
     const searchTimeout = useRef(null)
 
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
@@ -102,15 +104,21 @@ export default function LogModal() {
                 setEditorialHeader(existingLog.editorialHeader || null)
                 setDropCap(existingLog.dropCap || false)
                 setPullQuote(existingLog.pullQuote || '')
+                setIsAutopsied(existingLog.isAutopsied || false)
+                setAutopsyOpen(existingLog.isAutopsied || false)
             }
         } else if (logModalFilm) {
             // New Log Mode (pre-selected film)
             setFilm(logModalFilm)
             setStep(1)
+            setIsAutopsied(false)
+            setAutopsyOpen(false)
         } else {
             // Search Mode
             setStep(0)
             setFilm(null)
+            setIsAutopsied(false)
+            setAutopsyOpen(false)
         }
     }, [logModalFilm, logModalOpen, logModalEditLogId, logs])
 
@@ -128,6 +136,8 @@ export default function LogModal() {
             setDropCap(false)
             setPullQuote('')
             setAvailableBackdrops([])
+            setAutopsyOpen(false)
+            setIsAutopsied(false)
         }
     }, [logModalOpen])
 
@@ -180,7 +190,8 @@ export default function LogModal() {
             privateNotes: privateNotes.trim() || null,
             abandonedReason: status === 'abandoned' ? abandoned : null,
             physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
-            autopsy: isAuteur ? autopsy : null,
+            isAutopsied: isAuteur ? isAutopsied : false,
+            autopsy: isAuteur && isAutopsied ? autopsy : null,
             altPoster: isAuteur ? altPoster : null,
             editorialHeader: isPremium ? editorialHeader : null,
             dropCap: isPremium ? dropCap : false,
@@ -277,9 +288,14 @@ export default function LogModal() {
                                 </div>
 
                                 {searching && (
-                                    <div style={{ textAlign: 'center', padding: '1.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
-                                        SEARCHING...
-                                    </div>
+                                    <motion.div
+                                        initial={{ opacity: 0.4 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ repeat: Infinity, duration: 0.8, direction: 'alternate' }}
+                                        style={{ textAlign: 'center', padding: '1.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', color: 'var(--sepia)', letterSpacing: '0.2em' }}
+                                    >
+                                        TRANSMITTING QUERY...
+                                    </motion.div>
                                 )}
 
                                 {results.length > 0 && (
@@ -552,81 +568,106 @@ export default function LogModal() {
                                     </div>
                                 )}
 
-                                {/* Auteur Features */}
-                                {(isAuteur || isPremium) && status !== 'abandoned' && (
-                                    <div style={{ padding: '1rem', border: '1px solid var(--blood-reel)', borderRadius: 'var(--radius-card)', background: 'rgba(162,36,36,0.05)', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--blood-reel)' }}>
-                                                ✦ Auteur Toolkit
+                                {/* Auteur Features - Collapsed by default to prevent bloat */}
+                                {status !== 'abandoned' && (
+                                    <div style={{ padding: '1rem', border: '1px solid var(--blood-reel)', borderRadius: 'var(--radius-card)', background: 'rgba(162,36,36,0.05)', display: 'flex', flexDirection: 'column', gap: '1.5rem', opacity: isAuteur ? 1 : 0.6 }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setAutopsyOpen(!autopsyOpen)}>
+                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--blood-reel)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                ✦ Auteur Toolkit {autopsyOpen ? '[-]' : '[+]'}
                                             </div>
                                             {!isAuteur && (
-                                                <button onClick={() => { closeLogModal(); navigate('/patronage') }} style={{ background: 'none', border: 'none', color: 'var(--blood-reel)', textDecoration: 'underline', fontSize: '0.6rem', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                                <button onClick={(e) => { e.stopPropagation(); closeLogModal(); navigate('/patronage') }} style={{ background: 'none', border: 'none', color: 'var(--blood-reel)', textDecoration: 'underline', fontSize: '0.6rem', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                                                     <Lock size={10} /> UPGRADE
                                                 </button>
                                             )}
                                         </div>
 
-                                        {/* Autopsy Engine */}
-                                        <div style={{ opacity: isAuteur ? 1 : 0.4, pointerEvents: isAuteur ? 'auto' : 'none' }}>
-                                            <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block', marginBottom: '1rem' }}>
-                                                THE AUTOPSY ENGINE (1-10)
-                                            </label>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                                {Object.keys(autopsy).map(axis => {
-                                                    const labels = { story: 'STORY', script: 'SCRIPT/DIALOGUE', acting: 'ACTING/CHAR', cinematography: 'CINEMATOGRAPHY', editing: 'EDITING/PACING', sound: 'SOUND DESIGN' };
-                                                    return (
-                                                        <div key={axis} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                            <div style={{ width: '100px', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.05em', color: 'var(--fog)' }}>
-                                                                {labels[axis] || axis.toUpperCase()}
+                                        <AnimatePresence>
+                                            {autopsyOpen && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', overflow: 'hidden' }}
+                                                >
+                                                    {/* Autopsy Engine */}
+                                                    <div style={{ opacity: isAuteur ? 1 : 0.4, pointerEvents: isAuteur ? 'auto' : 'none' }}>
+                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1rem' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block' }}>
+                                                                    THE AUTOPSY ENGINE (1-10)
+                                                                </label>
+                                                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--blood-reel)', letterSpacing: '0.1em' }}>
+                                                                    <input type="checkbox" checked={isAutopsied} onChange={(e) => setIsAutopsied(e.target.checked)} style={{ accentColor: 'var(--blood-reel)' }} />
+                                                                    ENABLE
+                                                                </label>
                                                             </div>
-                                                            <input
-                                                                type="range"
-                                                                min="0" max="10" step="1"
-                                                                value={autopsy[axis]}
-                                                                onChange={(e) => setAutopsy({ ...autopsy, [axis]: parseInt(e.target.value) })}
-                                                                style={{ flex: 1, accentColor: 'var(--blood-reel)', height: '4px', background: 'var(--ash)', appearance: 'none', borderRadius: '2px', cursor: 'none' }}
-                                                            />
-                                                            <div style={{ width: '20px', textAlign: 'right', fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--bone)' }}>
-                                                                {autopsy[axis] || '-'}
-                                                            </div>
+                                                            <button onClick={(e) => {
+                                                                e.preventDefault()
+                                                                toast("STORY: Narrative & Structure\nSCRIPT: Dialogue & Theme\nACTING: Micro-expressions & Presence\nCINEMATOGRAPHY: Light, Shadow & Framing\nEDITING: Rhythm & Pacing\nSOUND: Score & Silence", { duration: 8000, icon: '📖', style: { background: 'var(--ink)', border: '1px solid var(--sepia)', color: 'var(--parchment)', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', textAlign: 'left', minWidth: '300px' } })
+                                                            }} className="btn btn-ghost" style={{ fontSize: '0.45rem', padding: '0.2rem 0.4rem', color: 'var(--fog)' }}>
+                                                                <BookOpen size={10} style={{ marginRight: '0.3rem' }} /> FIELD MANUAL
+                                                            </button>
                                                         </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                                            {Object.keys(autopsy).map(axis => {
+                                                                const labels = { story: 'STORY', script: 'SCRIPT/DIALOGUE', acting: 'ACTING/CHAR', cinematography: 'CINEMATOGRAPHY', editing: 'EDITING/PACING', sound: 'SOUND DESIGN' };
+                                                                return (
+                                                                    <div key={axis} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                                                        <div style={{ width: '100px', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.05em', color: 'var(--fog)' }}>
+                                                                            {labels[axis] || axis.toUpperCase()}
+                                                                        </div>
+                                                                        <input
+                                                                            type="range"
+                                                                            min="0" max="10" step="1"
+                                                                            value={autopsy[axis]}
+                                                                            onChange={(e) => setAutopsy({ ...autopsy, [axis]: parseInt(e.target.value) })}
+                                                                            style={{ flex: 1, accentColor: 'var(--blood-reel)', height: '4px', background: 'var(--ash)', appearance: 'none', borderRadius: '2px', cursor: 'none' }}
+                                                                        />
+                                                                        <div style={{ width: '20px', textAlign: 'right', fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--bone)' }}>
+                                                                            {autopsy[axis] || '-'}
+                                                                        </div>
+                                                                    </div>
+                                                                )
+                                                            })}
+                                                        </div>
+                                                    </div>
 
-                                        {/* Curatorial Control */}
-                                        <div style={{ opacity: isAuteur ? 1 : 0.4, pointerEvents: isAuteur ? 'auto' : 'none' }}>
-                                            <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block', marginBottom: '0.75rem' }}>
-                                                CURATORIAL CONTROL (ALT POSTER)
-                                            </label>
-                                            {availablePosters.length > 0 ? (
-                                                <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
-                                                    <button
-                                                        onClick={() => setAltPoster(null)}
-                                                        style={{ flexShrink: 0, width: 44, height: 66, background: altPoster === null ? 'var(--sepia)' : 'var(--ink)', border: altPoster === null ? '2px solid var(--sepia)' : '1px solid var(--ash)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: altPoster === null ? 'var(--ink)' : 'var(--fog)' }}
-                                                    >
-                                                        DEFAULT
-                                                    </button>
-                                                    {availablePosters.map(p => (
-                                                        <img
-                                                            key={p.file_path}
-                                                            src={tmdb.poster(p.file_path, 'w92')}
-                                                            onClick={() => setAltPoster(p.file_path)}
-                                                            style={{
-                                                                flexShrink: 0, width: 44, height: 66, objectFit: 'cover', borderRadius: '2px', cursor: 'pointer',
-                                                                border: altPoster === p.file_path ? '2px solid var(--blood-reel)' : '1px solid transparent',
-                                                                opacity: altPoster && altPoster !== p.file_path ? 0.4 : 1
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)' }}>
-                                                    No alternative active posters found on TMDB.
-                                                </div>
+                                                    {/* Curatorial Control */}
+                                                    <div style={{ opacity: isAuteur ? 1 : 0.4, pointerEvents: isAuteur ? 'auto' : 'none' }}>
+                                                        <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block', marginBottom: '0.75rem' }}>
+                                                            CURATORIAL CONTROL (ALT POSTER)
+                                                        </label>
+                                                        {availablePosters.length > 0 ? (
+                                                            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
+                                                                <button
+                                                                    onClick={() => setAltPoster(null)}
+                                                                    style={{ flexShrink: 0, width: 44, height: 66, background: altPoster === null ? 'var(--sepia)' : 'var(--ink)', border: altPoster === null ? '2px solid var(--sepia)' : '1px solid var(--ash)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: altPoster === null ? 'var(--ink)' : 'var(--fog)' }}
+                                                                >
+                                                                    DEFAULT
+                                                                </button>
+                                                                {availablePosters.map(p => (
+                                                                    <img
+                                                                        key={p.file_path}
+                                                                        src={tmdb.poster(p.file_path, 'w92')}
+                                                                        onClick={() => setAltPoster(p.file_path)}
+                                                                        style={{
+                                                                            flexShrink: 0, width: 44, height: 66, objectFit: 'cover', borderRadius: '2px', cursor: 'pointer',
+                                                                            border: altPoster === p.file_path ? '2px solid var(--blood-reel)' : '1px solid transparent',
+                                                                            opacity: altPoster && altPoster !== p.file_path ? 0.4 : 1
+                                                                        }}
+                                                                    />
+                                                                ))}
+                                                            </div>
+                                                        ) : (
+                                                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)' }}>
+                                                                No alternative active posters found on TMDB.
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </motion.div>
                                             )}
-                                        </div>
+                                        </AnimatePresence>
                                     </div>
                                 )}
 

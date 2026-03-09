@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState, useRef } from 'react'
 import { tmdb } from '../tmdb'
-import { useAuthStore } from '../store'
+import { useAuthStore, useDispatchStore } from '../store'
 import Buster from '../components/Buster'
 
 /* ── REFINED NOIR ICONS ── */
@@ -25,36 +25,17 @@ const IconArrowRight = () => (
     </svg>
 )
 
-const INITIAL_AUTEUR_ESSAYS = [
-    {
-        id: 'u1',
-        title: "The Death of the Jump Scare",
-        excerpt: "Why modern horror is trading cheap thrills for existential dread, and why audiences are finally craving atmosphere over adrenaline. The tension is in the silence.",
-        fullContent: "Why modern horror is trading cheap thrills for existential dread, and why it's working. We've seen a shift from monsters jumping out of closets to lingering shots of empty hallways. This 'elevated horror' relies on the haunting atmosphere rather than the sudden shock. Are audiences finally craving atmosphere over adrenaline?\n\nBy Midnight_Muse",
-        author: "MIDNIGHT_MUSE",
-        date: "MAR 07, 2026",
-    },
-    {
-        id: 'u2',
-        title: "35mm in the Desert",
-        excerpt: "A dispatch from the Southwest's last true projectionist. The heat is melting the reels, but the show goes on despite the fire hazards.",
-        fullContent: "A dispatch from the Southwest's last true projectionist. The heat is melting the reels... I visited a dusty drive-in theater just outside of Albuquerque, where a single projectionist operates ancient 35mm machines. The ambient temperature in the booth reaches 110 degrees, making handling the highly flammable film an extreme sport. A must-visit before the reels turn to dust.\n\nBy Archive_Ghost",
-        author: "ARCHIVE_GHOST",
-        date: "MAR 06, 2026",
-    }
-]
-
 export default function DispatchPage() {
     const { user } = useAuthStore()
+    const { dossiers, addDossier } = useDispatchStore()
     const [news, setNews] = useState([])
-    const [userReports, setUserReports] = useState(INITIAL_AUTEUR_ESSAYS)
     const [loading, setLoading] = useState(true)
     const [selectedArticle, setSelectedArticle] = useState(null)
     const [isWriting, setIsWriting] = useState(false)
     const [formValues, setFormValues] = useState({ title: '', content: '' })
 
     const scrollPos = useRef(0)
-    const canWrite = user?.tier === 'auteur' || user?.tier === 'archivist' || user?.username === 'OMEN'
+    const canWrite = user?.role === 'auteur' || user?.username === 'OMEN'
 
     useEffect(() => {
         const fetchNews = async () => {
@@ -85,14 +66,13 @@ export default function DispatchPage() {
         if (!formValues.title.trim() || !formValues.content.trim()) return
 
         const newEssay = {
-            id: 'essay-' + Date.now(),
             title: formValues.title,
             excerpt: formValues.content.substring(0, 150) + '...',
             fullContent: formValues.content,
             author: user?.username || "AUTEUR",
             date: "JUST FILED",
         }
-        setUserReports([newEssay, ...userReports])
+        addDossier(newEssay)
         setIsWriting(false)
         setFormValues({ title: '', content: '' })
     }
@@ -110,8 +90,12 @@ export default function DispatchPage() {
                 <div className="wb-content">
                     <span className="wb-logo">THE DISPATCH</span>
                     {canWrite ? (
-                        <button onClick={() => setIsWriting(true)} className="btn-write-transmission">
-                            <IconFeather /> WRITE TRANSMISSION
+                        <button
+                            className="btn btn-ghost"
+                            style={{ padding: '0.4em 1em', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--parchment)', borderColor: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                            onClick={() => setIsWriting(true)}
+                        >
+                            <IconFeather /> FILE DOSSIER
                         </button>
                     ) : (
                         <div className="wb-locked">UPGRADE TO AUTEUR TIER TO PUBLISH</div>
@@ -147,7 +131,7 @@ export default function DispatchPage() {
                     </div>
 
                     <div className="auteur-dossier-list">
-                        {userReports.map((report) => (
+                        {dossiers.map((report) => (
                             <article key={report.id} onClick={() => openArticle(report)} className="dossier-card">
                                 <div className="dossier-meta">
                                     <span className="dm-author">BY {report.author.toUpperCase()}</span>
@@ -281,6 +265,20 @@ export default function DispatchPage() {
                                 </button>
                             </div>
                         </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            {/* WRITER FLOATING ACTION BUTTON */}
+            <AnimatePresence>
+                {canWrite && !isWriting && (
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
+                        className="auteur-fab-container"
+                    >
+                        <button onClick={() => setIsWriting(true)} className="auteur-fab-button">
+                            <IconFeather /> FILE DOSSIER
+                        </button>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -467,6 +465,27 @@ export default function DispatchPage() {
                     cursor: pointer; border-radius: 2px; transition: filter 0.2s;
                 }
                 .btn-publish-dossier:hover { filter: brightness(1.15); }
+
+                /* ── AUTEUR FLOATING ACTION BUTTON ── */
+                .auteur-fab-container {
+                    position: fixed; bottom: 2rem; right: 2rem; z-index: 100;
+                }
+                .auteur-fab-button {
+                    background: var(--sepia); color: var(--ink); border: none;
+                    display: flex; align-items: center; gap: 0.8rem;
+                    padding: 1rem 1.5rem; border-radius: 40px;
+                    font-family: var(--font-ui); font-size: 0.85rem; font-weight: bold; letter-spacing: 0.15em;
+                    cursor: pointer; box-shadow: 0 10px 30px rgba(139,105,20,0.3);
+                    transition: transform 0.2s, filter 0.2s, box-shadow 0.2s;
+                }
+                .auteur-fab-button:hover {
+                    transform: translateY(-4px); filter: brightness(1.1);
+                    box-shadow: 0 15px 40px rgba(139,105,20,0.5);
+                }
+                @media (max-width: 768px) {
+                    .auteur-fab-container { bottom: 1.5rem; right: 1.5rem; }
+                    .auteur-fab-button { padding: 0.8rem 1.2rem; font-size: 0.75rem; }
+                }
             `}</style>
         </motion.div>
     )

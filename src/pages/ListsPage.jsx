@@ -73,6 +73,8 @@ function UnbreakablePoster({ posterPath, title, isTop }) {
                 <img
                     src={tmdb.poster(posterPath, 'w185')}
                     alt={title}
+                    loading="lazy"
+                    decoding="async"
                     onError={() => setFailed(true)}
                     style={{ width: '100%', height: '100%', objectFit: 'cover', mixBlendMode: isTop ? 'normal' : 'luminosity', opacity: isTop ? 1 : 0.4 }}
                 />
@@ -156,6 +158,8 @@ function CommunityListCard({ list }) {
                 <img
                     src={imgSrc}
                     alt={list.title}
+                    loading="lazy"
+                    decoding="async"
                     onError={() => {
                         if (!failed) {
                             setImgSrc(cardFallback)
