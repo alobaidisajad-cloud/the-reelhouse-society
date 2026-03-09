@@ -162,9 +162,23 @@ export const useFilmStore = create(
                         id: dbLog.id,
                         filmId: dbLog.film_id,
                         title: dbLog.film_title,
+                        poster: dbLog.poster_path || null,
+                        year: dbLog.year || null,
                         rating: dbLog.rating,
                         review: dbLog.review,
+                        status: dbLog.status || 'watched',
+                        isSpoiler: dbLog.is_spoiler || false,
                         watchedDate: dbLog.watched_date,
+                        watchedWith: dbLog.watched_with || null,
+                        privateNotes: dbLog.private_notes || null,
+                        abandonedReason: dbLog.abandoned_reason || null,
+                        physicalMedia: dbLog.physical_media || null,
+                        isAutopsied: dbLog.is_autopsied || false,
+                        autopsy: dbLog.autopsy || null,
+                        altPoster: dbLog.alt_poster || null,
+                        editorialHeader: dbLog.editorial_header || null,
+                        dropCap: dbLog.drop_cap || false,
+                        pullQuote: dbLog.pull_quote || '',
                         createdAt: dbLog.created_at
                     }));
                     set({ logs: formattedLogs });
@@ -183,10 +197,24 @@ export const useFilmStore = create(
                     user_id: user.id,
                     film_id: log.filmId,
                     film_title: log.title,
+                    poster_path: log.poster || null,
+                    year: log.year || null,
                     rating: log.rating || 0,
                     review: log.review || '',
+                    status: log.status || 'watched',
+                    is_spoiler: log.isSpoiler || false,
                     watched_date: log.watchedDate || new Date().toISOString(),
-                    format: 'Digital'
+                    watched_with: log.watchedWith || null,
+                    private_notes: log.privateNotes || null,
+                    abandoned_reason: log.abandonedReason || null,
+                    physical_media: log.physicalMedia || null,
+                    is_autopsied: log.isAutopsied || false,
+                    autopsy: log.autopsy || null,
+                    alt_poster: log.altPoster || null,
+                    editorial_header: log.editorialHeader || null,
+                    drop_cap: log.dropCap || false,
+                    pull_quote: log.pullQuote || '',
+                    format: log.physicalMedia || 'Digital'
                 };
 
                 const { data, error } = await supabase.from('logs').insert([dbLog]).select().single();
