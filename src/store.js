@@ -28,6 +28,9 @@ export const useAuthStore = create(
                     isAuthenticated: true
                 })
                 useFilmStore.getState().fetchLogs()
+                useFilmStore.getState().fetchWatchlist()
+                useFilmStore.getState().fetchVault()
+                useFilmStore.getState().fetchLists()
                 return data
             },
 
@@ -53,6 +56,9 @@ export const useAuthStore = create(
                         isAuthenticated: true
                     })
                     useFilmStore.getState().fetchLogs()
+                    useFilmStore.getState().fetchWatchlist()
+                    useFilmStore.getState().fetchVault()
+                    useFilmStore.getState().fetchLists()
                 }
 
                 return data
@@ -83,51 +89,61 @@ export const useAuthStore = create(
                 }));
             },
 
-            followUser: (targetUsername) => set((state) => {
+            followUser: async (targetUsername) => {
+                const state = get();
                 const following = state.user?.following || [];
-                if (following.includes(targetUsername)) return state;
-                // Push notification to Supabase for the target user
+                if (following.includes(targetUsername)) return;
                 const fromUsername = state.user?.username || 'someone';
-                supabase.from('profiles').select('id').eq('username', targetUsername).single()
-                    .then(({ data: targetProfile }) => {
-                        if (targetProfile) {
-                            supabase.from('notifications').insert([{
-                                user_id: targetProfile.id,
-                                type: 'follow',
-                                from_username: fromUsername,
-                                message: `${fromUsername} followed you`,
-                            }]).catch(() => { })  // Graceful if table not created yet
-                        }
-                    }).catch(() => { })
-                // Also push locally for immediate feedback
+                const userId = state.user?.id;
+
+                // 1. Persist follow to interactions table
+                if (userId) {
+                    const { data: targetProfile } = await supabase.from('profiles').select('id').eq('username', targetUsername).single().catch(() => ({}));
+                    if (targetProfile) {
+                        await supabase.from('interactions').insert([{
+                            user_id: userId,
+                            target_user_id: targetProfile.id,
+                            type: 'follow'
+                        }]).catch(() => { });
+                        // Push notification
+                        await supabase.from('notifications').insert([{
+                            user_id: targetProfile.id,
+                            type: 'follow',
+                            from_username: fromUsername,
+                            message: `${fromUsername} followed you`,
+                        }]).catch(() => { });
+                    }
+                }
+
                 useNotificationStore.getState().push({
-                    type: 'follow',
-                    from: fromUsername,
+                    type: 'follow', from: fromUsername,
                     message: `${fromUsername} followed you`,
                 });
-                return {
-                    user: {
-                        ...state.user,
-                        following: [...following, targetUsername]
-                    },
-                    community: state.community.map(u =>
-                        u.username === targetUsername
-                            ? { ...u, followers: [...(u.followers || []), state.user?.username] }
-                            : u
-                    )
+                set((s) => ({
+                    user: { ...s.user, following: [...(s.user?.following || []), targetUsername] },
+                    community: s.community.map(u => u.username === targetUsername
+                        ? { ...u, followers: [...(u.followers || []), s.user?.username] } : u)
+                }));
+            },
+
+            unfollowUser: async (targetUsername) => {
+                const userId = get().user?.id;
+                // Remove from interactions table
+                if (userId) {
+                    const { data: targetProfile } = await supabase.from('profiles').select('id').eq('username', targetUsername).single().catch(() => ({}));
+                    if (targetProfile) {
+                        await supabase.from('interactions').delete()
+                            .eq('user_id', userId)
+                            .eq('target_user_id', targetProfile.id)
+                            .eq('type', 'follow').catch(() => { });
+                    }
                 }
-            }),
-            unfollowUser: (targetUsername) => set((state) => ({
-                user: {
-                    ...state.user,
-                    following: (state.user?.following || []).filter(u => u !== targetUsername)
-                },
-                community: state.community.map(u =>
-                    u.username === targetUsername
-                        ? { ...u, followers: (u.followers || []).filter(f => f !== state.user?.username) }
-                        : u
-                )
-            })),
+                set((s) => ({
+                    user: { ...s.user, following: (s.user?.following || []).filter(u => u !== targetUsername) },
+                    community: s.community.map(u => u.username === targetUsername
+                        ? { ...u, followers: (u.followers || []).filter(f => f !== s.user?.username) } : u)
+                }));
+            },
         }),
         { name: 'reelhouse-auth' }
     )
@@ -198,6 +214,45 @@ export const useFilmStore = create(
                         createdAt: dbLog.created_at
                     }));
                     set({ logs: formattedLogs });
+                }
+            },
+
+            fetchWatchlist: async () => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+                const { data, error } = await supabase.from('watchlists').select('*').eq('user_id', user.id);
+                if (!error && data) {
+                    set({ watchlist: data.map(w => ({ id: w.film_id, title: w.film_title })) });
+                }
+            },
+
+            fetchVault: async () => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+                const { data, error } = await supabase.from('vaults').select('*').eq('user_id', user.id);
+                if (!error && data) {
+                    set({ vault: data.map(v => ({ id: v.film_id, title: v.film_title || v.title })) });
+                }
+            },
+
+            fetchLists: async () => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+                const { data: lists, error } = await supabase.from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
+                if (!error && lists) {
+                    // Fetch items for each list
+                    const fullLists = await Promise.all(lists.map(async (list) => {
+                        const { data: items } = await supabase.from('list_items').select('*').eq('list_id', list.id);
+                        return {
+                            id: list.id,
+                            title: list.title,
+                            description: list.description,
+                            isRanked: list.is_ranked,
+                            createdAt: list.created_at,
+                            films: (items || []).map(i => ({ id: i.film_id, title: i.film_title }))
+                        };
+                    }));
+                    set({ lists: fullLists });
                 }
             },
 
@@ -274,7 +329,21 @@ export const useFilmStore = create(
             },
 
             updateLog: async (id, updates) => {
-                const { error } = await supabase.from('logs').update(updates).eq('id', id);
+                // Map camelCase to snake_case for DB
+                const dbUpdates = {};
+                if (updates.rating !== undefined) dbUpdates.rating = updates.rating;
+                if (updates.review !== undefined) dbUpdates.review = updates.review;
+                if (updates.status !== undefined) dbUpdates.status = updates.status;
+                if (updates.isSpoiler !== undefined) dbUpdates.is_spoiler = updates.isSpoiler;
+                if (updates.watchedDate !== undefined) dbUpdates.watched_date = updates.watchedDate;
+                if (updates.watchedWith !== undefined) dbUpdates.watched_with = updates.watchedWith;
+                if (updates.privateNotes !== undefined) dbUpdates.private_notes = updates.privateNotes;
+                if (updates.abandonedReason !== undefined) dbUpdates.abandoned_reason = updates.abandonedReason;
+                if (updates.physicalMedia !== undefined) dbUpdates.physical_media = updates.physicalMedia;
+                if (updates.isAutopsied !== undefined) dbUpdates.is_autopsied = updates.isAutopsied;
+                if (updates.autopsy !== undefined) dbUpdates.autopsy = updates.autopsy;
+
+                const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id);
                 if (!error) set((state) => ({ logs: state.logs.map((l) => l.id === id ? { ...l, ...updates } : l) }));
             },
 
@@ -643,7 +712,11 @@ export const initAuthSync = () => {
             if (!currentUser || currentUser.id !== session.user.id) {
                 const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
                 useAuthStore.setState({ user: { ...session.user, ...profile }, isAuthenticated: true });
+                // Fetch all user data from Supabase
                 useFilmStore.getState().fetchLogs();
+                useFilmStore.getState().fetchWatchlist();
+                useFilmStore.getState().fetchVault();
+                useFilmStore.getState().fetchLists();
             }
         } else {
             // Keep the community array alive, just wipe active user
