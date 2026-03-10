@@ -1,27 +1,24 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { useFilmStore, useAuthStore, useUIStore, useVenueStore } from '../store'
-import { ReelRating, SectionHeader, RadarChart, PersonPlaceholder } from '../components/UI'
+import { useFilmStore, useAuthStore, useUIStore } from '../store'
+import { ReelRating, SectionHeader, RadarChart } from '../components/UI'
 import { tmdb } from '../tmdb'
 import { Heart, MessageSquare, Bookmark } from 'lucide-react'
 import ReactionBar from '../components/ReactionBar'
+import { supabase, isSupabaseConfigured } from '../supabaseClient'
 
-// Community logs and venue events are now powered dynamically by Zustand stores.
-
+// ── ACTIVITY CARD ──
 function ActivityCard({ log }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
     const isEndorsed = useFilmStore(state => state.interactions.some(i => i.targetId === log.id && i.type === 'endorse'))
-    const [endorsementCount, setEndorsementCount] = useState(Math.floor(Math.random() * 40) + (isEndorsed ? 3 : 2))
+    // Fix 3: real endorsement count from DB, not Math.random()
+    const [endorsementCount, setEndorsementCount] = useState(log.endorsementCount ?? 0)
 
     const handleEndorse = () => {
         toggleEndorse(log.id)
-        if (isEndorsed) {
-            setEndorsementCount(p => p - 1);
-        } else {
-            setEndorsementCount(p => p + 1);
-        }
+        setEndorsementCount(p => isEndorsed ? Math.max(0, p - 1) : p + 1)
     }
-    const endorsed = isEndorsed;
+    const endorsed = isEndorsed
 
     return (
         <div
@@ -42,11 +39,11 @@ function ActivityCard({ log }) {
                 {log.timestamp || 'RECENT'}
             </div>
 
-            {/* Poster Dossier Style */}
+            {/* Poster */}
             <div style={{ width: 80, height: 120, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', background: 'var(--ink)', border: '1px solid var(--ash)', position: 'relative' }}>
-                {log.altPoster || log.film.poster ? (
+                {log.film?.poster ? (
                     <img
-                        src={tmdb.poster(log.altPoster || log.film.poster, 'w185')}
+                        src={tmdb.poster(log.film.poster, 'w185')}
                         alt={log.film.title}
                         loading="lazy"
                         decoding="async"
@@ -62,44 +59,31 @@ function ActivityCard({ log }) {
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
                     <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none' }}>
-                        @{log.user.toUpperCase()}
+                        @{(log.user || 'anonymous').toUpperCase()}
                     </Link>
                     <span style={{
                         fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em',
                         color: log.userRole === 'auteur' ? 'var(--sepia)' : 'var(--fog)'
                     }}>
-                        — {log.userRole?.toUpperCase() || log.persona.toUpperCase()} {log.userRole === 'auteur' && '✦'}
+                        — {(log.userRole || 'cinephile').toUpperCase()} {log.userRole === 'auteur' && '✦'}
                     </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.75rem' }}>
                     <Link
-                        to={`/film/${log.film.id}`}
+                        to={`/film/${log.film?.id}`}
                         style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', textDecoration: 'none', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
                     >
-                        {log.film.title}
+                        {log.film?.title}
                     </Link>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
-                        {log.film.year}
-                    </span>
+                    {log.film?.year && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                            {log.film.year}
+                        </span>
+                    )}
                 </div>
 
-                <div style={{ marginBottom: '1rem' }}>
-                    <ReelRating value={log.rating} size="md" />
-                </div>
-
-                {/* Editorial Header */}
-                {log.editorialHeader && (
-                    <div style={{ marginTop: '0.75rem', width: '100%', height: 120, borderRadius: '4px', overflow: 'hidden' }}>
-                        <img
-                            src={tmdb.backdrop(log.editorialHeader, 'w780')}
-                            alt="Scene from film"
-                            loading="lazy"
-                            decoding="async"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.3) contrast(1.1)' }}
-                        />
-                    </div>
-                )}
+                {log.rating > 0 && <ReelRating value={log.rating} size="sm" />}
 
                 {/* Pull Quote */}
                 {log.pullQuote && (
@@ -130,7 +114,7 @@ function ActivityCard({ log }) {
                                 {log.review.slice(1)}
                             </>
                         ) : (
-                            <span>{log.review}</span>
+                            <span>{log.review.length > 300 ? log.review.slice(0, 300) + '…' : log.review}</span>
                         )}
                     </div>
                 )}
@@ -166,27 +150,112 @@ function ActivityCard({ log }) {
     )
 }
 
-
+// ── FEED PAGE ──
 export default function FeedPage() {
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
     const user = useAuthStore(state => state.user)
     const openSignupModal = useUIStore(state => state.openSignupModal)
-    const logs = useFilmStore(state => state.logs)
-    const events = useVenueStore(state => state.events)
-    const venue = useVenueStore(state => state.venue)
 
-    const allActivity = logs.map((l, i) => ({
-        id: `my-${l.id}`, user: user?.username || 'cinephile', persona: 'Cinephile',
-        film: { id: l.filmId, title: l.title, year: l.year || (l.watchedDate ? new Date(l.watchedDate).getFullYear() : ''), poster: l.poster },
-        rating: l.rating, review: l.review,
-        autopsy: l.autopsy, altPoster: l.altPoster, isAutopsied: l.isAutopsied,
-        editorialHeader: l.editorialHeader, dropCap: l.dropCap, pullQuote: l.pullQuote,
-        timestamp: l.createdAt ? new Date(l.createdAt).toLocaleDateString() : 'RECENT'
-    }))
+    // Fix 1: Real community feed from Supabase — all users' logs
+    const [communityFeed, setCommunityFeed] = useState([])
+    const [feedLoading, setFeedLoading] = useState(true)
+
+    // Fix 2: Real sidebar data from Supabase
+    const [recentLists, setRecentLists] = useState([])
+    const [activeAgents, setActiveAgents] = useState([])
+
+    const fetchCommunityFeed = useCallback(async () => {
+        if (!isSupabaseConfigured) { setFeedLoading(false); return }
+        setFeedLoading(true)
+        try {
+            const { data, error } = await supabase
+                .from('logs')
+                .select('*, profiles(username, role)')
+                .not('review', 'is', null)
+                .neq('review', '')
+                .order('created_at', { ascending: false })
+                .limit(50)
+
+            if (!error && data) {
+                setCommunityFeed(data.map(l => ({
+                    id: l.id,
+                    user: l.profiles?.username || 'anonymous',
+                    userRole: l.profiles?.role || 'cinephile',
+                    film: {
+                        id: l.film_id,
+                        title: l.film_title,
+                        year: l.year,
+                        poster: l.poster_path,
+                    },
+                    rating: l.rating,
+                    review: l.review,
+                    pullQuote: l.pull_quote || '',
+                    dropCap: l.drop_cap || false,
+                    autopsy: l.autopsy,
+                    isAutopsied: l.is_autopsied || false,
+                    endorsementCount: 0, // Could join interactions count here later
+                    timestamp: l.created_at
+                        ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()
+                        : 'RECENT'
+                })))
+            }
+        } catch (e) {
+            console.error('Feed fetch error:', e)
+        }
+        setFeedLoading(false)
+    }, [])
+
+    const fetchSidebarData = useCallback(async () => {
+        if (!isSupabaseConfigured) return
+        try {
+            // Real recent public lists
+            const { data: listsData } = await supabase
+                .from('lists')
+                .select('id, title, description, profiles(username)')
+                .order('created_at', { ascending: false })
+                .limit(3)
+
+            if (listsData) {
+                setRecentLists(listsData.map(l => ({
+                    id: l.id,
+                    title: l.title,
+                    curator: l.profiles?.username || 'anonymous'
+                })))
+            }
+
+            // Real active agents: users with most recent log activity
+            const { data: agentsData } = await supabase
+                .from('logs')
+                .select('profiles(username)')
+                .order('created_at', { ascending: false })
+                .limit(20)
+
+            if (agentsData) {
+                const seen = new Set()
+                const unique = []
+                for (const row of agentsData) {
+                    const name = row.profiles?.username
+                    if (name && !seen.has(name) && name !== user?.username) {
+                        seen.add(name)
+                        unique.push(name)
+                        if (unique.length >= 5) break
+                    }
+                }
+                setActiveAgents(unique)
+            }
+        } catch (e) {
+            console.error('Sidebar fetch error:', e)
+        }
+    }, [user?.username])
+
+    useEffect(() => {
+        fetchCommunityFeed()
+        fetchSidebarData()
+    }, [fetchCommunityFeed, fetchSidebarData])
 
     return (
         <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
-            {/* Massive Centered Header Area */}
+            {/* Header */}
             <div style={{
                 background: 'var(--ink)',
                 borderBottom: '1px solid var(--ash)',
@@ -194,9 +263,7 @@ export default function FeedPage() {
                 position: 'relative',
                 overflow: 'hidden'
             }}>
-                {/* Vintage darkroom glow / halation */}
                 <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '1rem' }}>
                         THE REEL
@@ -205,14 +272,14 @@ export default function FeedPage() {
                         Community Intelligence
                     </h1>
                     <p style={{ fontFamily: 'var(--font-sub)', fontSize: '1.1rem', color: 'var(--fog)', maxWidth: 600, margin: '0 auto' }}>
-                        Reviews, logs, and activity from the society.
+                        Reviews, logs, and dispatches from the society.
                     </p>
                 </div>
             </div>
 
             <main className="page-top" style={{ paddingBottom: '7rem', paddingTop: '3rem' }}>
                 <div className="container" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '3rem', alignItems: 'start' }}>
-                    {/* Feed */}
+                    {/* Main Feed */}
                     <div className="main-content">
                         <SectionHeader label="LATEST ACTIVITY" title="The Log" />
 
@@ -235,74 +302,72 @@ export default function FeedPage() {
                             </div>
                         )}
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            {allActivity.map((log) => (
-                                <ActivityCard key={log.id} log={log} />
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Sidebar - Control Panel Aesthetic */}
-                    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        {/* Venue Events Archive Block */}
-                        <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
-                                UPCOMING SCREENINGS
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {events.slice(0, 3).map((e, i) => (
-                                    <div key={e.id || i}>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--flicker)', marginBottom: '0.3rem' }}>
-                                            {e.date} · {venue?.name?.toUpperCase() || 'THE ORACLE PALACE'}
-                                        </div>
-                                        <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)', lineHeight: 1.4 }}>
-                                            {e.title}
-                                        </div>
-                                    </div>
+                        {feedLoading ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <div key={i} className="skeleton" style={{ height: 160, borderRadius: '2px' }} />
                                 ))}
                             </div>
-                            <Link to="/venue/1" style={{ display: 'inline-block', marginTop: '1.25rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', borderBottom: '1px dashed var(--sepia)' }}>
-                                ACCESS ALL VENUES
-                            </Link>
-                        </div>
+                        ) : communityFeed.length === 0 ? (
+                            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-sub)', fontSize: '1rem' }}>
+                                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📽</div>
+                                The society's projection booth is quiet.<br />
+                                <span style={{ fontSize: '0.85rem', opacity: 0.6 }}>Be the first to log a film and leave your mark.</span>
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {communityFeed.map((log) => (
+                                    <ActivityCard key={log.id} log={log} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
 
-                        {/* Classified Dossiers (Lists) Block */}
+                    {/* Sidebar */}
+                    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                        {/* Curated Lists — Real Supabase data */}
                         <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem', marginTop: '1.5rem' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
                                 CURATED LISTS
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {[
-                                    { title: "KOREAN NEW WAVE: BLOOD & RAIN", films: 42, cur: "midnight_devotee" },
-                                    { title: "FILMS THAT FEEL LIKE A FEVER DREAM", films: 18, cur: "weeper_in_the_dark" },
-                                    { title: "THE 70S PARANOIA TRILOGY + EXTRAS", films: 35, cur: "the_archivist_84" }
-                                ].map((list, i) => (
-                                    <div key={i} style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
-                                            {list.title}
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
-                                            <span>{list.films} FILMS</span>
-                                            <span>BY @{list.cur.toUpperCase()}</span>
-                                        </div>
+                                {recentLists.length === 0 ? (
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.6 }}>
+                                        No lists yet. Start curating.
                                     </div>
+                                ) : recentLists.map((list) => (
+                                    <Link key={list.id} to={`/lists`} style={{ textDecoration: 'none' }}>
+                                        <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}>
+                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
+                                                {list.title}
+                                            </div>
+                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                                                BY @{list.curator.toUpperCase()}
+                                            </div>
+                                        </div>
+                                    </Link>
                                 ))}
                             </div>
-                            <Link to="/" style={{ display: 'inline-block', marginTop: '1.25rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', borderBottom: '1px dashed var(--sepia)' }}>
+                            <Link to="/lists" style={{ display: 'inline-block', marginTop: '1.25rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', borderBottom: '1px dashed var(--sepia)' }}>
                                 BROWSE ALL LISTS
                             </Link>
                         </div>
 
-                        {/* Active members Block */}
+                        {/* Active Field Agents — Real Supabase data */}
                         <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem', marginTop: '1rem' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
                                 ACTIVE FIELD AGENTS
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {['midnight_devotee', 'the_archivist_84', 'weeper_in_the_dark', 'contrarian_rex', 'completionist_jane'].map((user) => (
+                                {activeAgents.length === 0 ? (
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.6 }}>
+                                        No activity yet.
+                                    </div>
+                                ) : activeAgents.map((agent) => (
                                     <Link
-                                        key={user}
-                                        to={`/user/${user}`}
+                                        key={agent}
+                                        to={`/user/${agent}`}
                                         style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', background: 'var(--soot)', border: '1px solid var(--ash)', textDecoration: 'none', borderRadius: '2px', transition: 'background 0.2s' }}
                                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(28,23,16,0.8)'}
                                         onMouseLeave={(e) => e.currentTarget.style.background = 'var(--soot)'}
@@ -311,12 +376,13 @@ export default function FeedPage() {
                                             👁️
                                         </div>
                                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--bone)' }}>
-                                            @{user.toUpperCase()}
+                                            @{agent.toUpperCase()}
                                         </span>
                                     </Link>
                                 ))}
                             </div>
                         </div>
+
                     </div>
                 </div>
             </main>

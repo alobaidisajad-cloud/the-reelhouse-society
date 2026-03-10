@@ -757,6 +757,7 @@ export const initAuthSync = () => {
                 useFilmStore.getState().fetchWatchlist();
                 useFilmStore.getState().fetchVault();
                 useFilmStore.getState().fetchLists();
+                useProgrammeStore.getState().fetchProgrammes(); // Fix 4: was missing, programmes tab now auto-loads
             }
         } else {
             // Keep the community array alive, just wipe active user
