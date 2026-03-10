@@ -384,10 +384,20 @@ export const tmdb = {
 
         try {
             const results = await Promise.all(feeds.map(async (url) => {
-                const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`)
-                if (!res.ok) return []
-                const data = await res.json()
-                return data.items || []
+                try {
+                    const controller = new AbortController()
+                    const timer = setTimeout(() => controller.abort(), 4000)
+                    const res = await fetch(
+                        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`,
+                        { signal: controller.signal }
+                    )
+                    clearTimeout(timer)
+                    if (!res.ok) return []
+                    const data = await res.json()
+                    return data.items || []
+                } catch {
+                    return []
+                }
             }))
 
             const liveItems = results.flat()

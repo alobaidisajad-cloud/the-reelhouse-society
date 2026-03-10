@@ -100,19 +100,19 @@ function UnbreakablePoster({ posterPath, title, isTop }) {
 }
 
 function CommunityListCard({ list }) {
-    // Array of high-end cinematic textures/stills from Unsplash as absolute fallbacks 
-    const fallbackImages = [
-        'https://images.unsplash.com/photo-1485093451681-d5dfd99b55b5?q=80&w=1000', // Cinema Seats
-        'https://images.unsplash.com/photo-1440404653325-ab12d1927771?q=80&w=1000', // Reel
-        'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=1000', // Theater
-        'https://images.unsplash.com/photo-1517604931442-7e0c8ed0963c?q=80&w=1000' // Silhouette
+    // Deterministic gradient fallback — no external image dependency, zero 404 risk
+    const gradients = [
+        'linear-gradient(135deg, #1a0e05 0%, #3a2010 40%, #0a0703 100%)',
+        'linear-gradient(135deg, #0a0a0a 0%, #1c1710 50%, #2a1a05 100%)',
+        'linear-gradient(135deg, #05080a 0%, #101820 50%, #1a2010 100%)',
+        'linear-gradient(135deg, #0a0508 0%, #1a0f18 50%, #0a0508 100%)',
     ]
-    const cardFallback = fallbackImages[Math.abs(list.id.charCodeAt(0)) % fallbackImages.length]
+    const cardGradient = gradients[Math.abs(list.id.charCodeAt(0)) % gradients.length]
 
-    // Check if we have at least one valid poster path
+    // Check if we have at least one valid poster path from TMDB (these are reliable)
     const primaryPoster = list.films.find(f => f.poster_path)?.poster_path
-    const [imgSrc, setImgSrc] = useState(primaryPoster ? tmdb.poster(primaryPoster, 'w500') : cardFallback)
-    const [failed, setFailed] = useState(false)
+    const [imgSrc, setImgSrc] = useState(primaryPoster ? tmdb.poster(primaryPoster, 'w500') : null)
+    const [failed, setFailed] = useState(!primaryPoster)
 
     return (
         <Link
@@ -155,19 +155,19 @@ function CommunityListCard({ list }) {
                     transition: 'transform 1.2s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 }}
             >
-                <img
-                    src={imgSrc}
-                    alt={list.title}
-                    loading="lazy"
-                    decoding="async"
-                    onError={() => {
-                        if (!failed) {
-                            setImgSrc(cardFallback)
-                            setFailed(true)
-                        }
-                    }}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.7) sepia(0.2)' }}
-                />
+                {failed || !imgSrc ? (
+                    // No-request gradient fallback — deterministic from list ID, always renders
+                    <div style={{ width: '100%', height: '100%', background: cardGradient }} />
+                ) : (
+                    <img
+                        src={imgSrc}
+                        alt={list.title}
+                        loading="lazy"
+                        decoding="async"
+                        onError={() => setFailed(true)}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.7) sepia(0.2)' }}
+                    />
+                )}
             </div>
 
             {/* Overlays */}
