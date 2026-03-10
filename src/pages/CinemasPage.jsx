@@ -22,7 +22,7 @@ const ALL_CINEMAS = [
         vibes: ['Indie', 'Repertory', 'Arthouse'], verified: false, followers: 892,
         lat: 30.2672, lng: -97.7431,
         nextShow: 'Akira (1988) — Sat 7:30PM',
-        image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed0963c?q=80&w=1200',
+        image: 'https://images.unsplash.com/photo-1580130775562-0ef92da028de?q=80&w=1200',
     },
     {
         id: 3, name: 'The Neon Coffin', city: 'Chicago', country: 'USA', location: 'Chicago, IL, USA',
@@ -46,7 +46,7 @@ const ALL_CINEMAS = [
         vibes: ['Indie', 'Experimental', 'Arthouse'], verified: true, followers: 3340,
         lat: 51.5074, lng: -0.1278,
         nextShow: '2001: A Space Odyssey — Sat 9PM',
-        image: 'https://images.unsplash.com/photo-1440404653325-ab12d1927771?q=80&w=1200',
+        image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200',
     },
     {
         id: 6, name: 'Phantom Projector', city: 'Los Angeles', country: 'USA', location: 'Los Angeles, CA, USA',
@@ -70,7 +70,7 @@ const ALL_CINEMAS = [
         vibes: ['Drive-In', 'Family', 'Historic'], verified: false, followers: 678,
         lat: 36.1627, lng: -86.7816,
         nextShow: 'Grease (1978) — Sat Dusk',
-        image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed0963c?q=80&w=1200&sat=-50',
+        image: 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=1200',
     },
     {
         id: 9, name: 'The Vault Cinema', city: 'Berlin', country: 'Germany', location: 'Berlin, Germany',
