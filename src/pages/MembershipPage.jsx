@@ -139,7 +139,7 @@ export default function MembershipPage() {
                     </motion.div>
 
                     {/* The Pro Tier */}
-                    <motion.div variants={itemVariants} className="card" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', border: '2px solid rgba(139,105,20,0.5)', background: 'linear-gradient(180deg, rgba(139,105,20,0.08) 0%, transparent 100%)', position: 'relative' }}>
+                    <motion.div variants={itemVariants} className="card" style={{ padding: '2.5rem', paddingTop: '3.5rem', display: 'flex', flexDirection: 'column', border: '2px solid rgba(139,105,20,0.5)', background: 'linear-gradient(180deg, rgba(139,105,20,0.08) 0%, transparent 100%)', position: 'relative', overflow: 'visible' }}>
                         <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--sepia)', color: 'var(--ink)', padding: '0.3rem 1rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', borderRadius: '100px', fontWeight: 'bold' }}>
                             MOST POPULAR
                         </div>
