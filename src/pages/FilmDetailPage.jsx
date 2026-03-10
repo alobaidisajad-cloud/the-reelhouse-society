@@ -501,15 +501,13 @@ function FilmHero({ film, onPlayTrailer }) {
     )
 }
 
-// ── FILM DETAILS ──
-function FilmDetails({ film }) {
+function FilmDetails({ film, onPlayVideo }) {
     const director = film.credits?.crew?.find(c => c.job === 'Director')
     const cast = film.credits?.cast?.slice(0, 8) || []
 
     // Grab all trailers + teasers for a richer video section
     const allVideos = film.videos?.results?.filter(v => v.site === 'YouTube') || []
     const trailer = allVideos.find(v => v.type === 'Trailer') || allVideos[0]
-    const [activeVideo, setActiveVideo] = useState(null)
 
     // Watch providers (already in detail via append_to_response)
     const providers = film['watch/providers']?.results || null
@@ -560,7 +558,7 @@ function FilmDetails({ film }) {
                         <SectionHeader label="FOOTAGE" title="More Videos" />
                         <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '0.5rem', marginLeft: IS_TOUCH ? '-1.25rem' : 0, paddingLeft: IS_TOUCH ? '1.25rem' : 0 }}>
                             {allVideos.slice(0, 6).map(v => (
-                                <button key={v.id} onClick={() => setActiveVideo(v.key)}
+                                <button key={v.id} onClick={() => onPlayVideo(v.key)}
                                     style={{ flexShrink: 0, width: 200, background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '2px', cursor: 'pointer', overflow: 'hidden', textAlign: 'left', padding: 0, position: 'relative' }}
                                     onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'}
                                     onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}
@@ -580,7 +578,7 @@ function FilmDetails({ film }) {
                                 </button>
                             ))}
                         </div>
-                        {activeVideo && <TrailerModal trailerKey={activeVideo} onClose={() => setActiveVideo(null)} />}
+                        {/* TrailerModal is lifted to page root to avoid stacking context issues */}
                     </div>
                 )}
 
@@ -592,7 +590,7 @@ function FilmDetails({ film }) {
             <div className="teletype-container" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 {/* Trailer — desktop inline card */}
                 {trailer && !IS_TOUCH && (
-                    <div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} onClick={() => setActiveVideo(trailer.key)}
+                    <div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} onClick={() => onPlayVideo(trailer.key)}
                         onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'}
                         onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}
                     >
@@ -682,6 +680,10 @@ export default function FilmDetailPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const [trailerKey, setTrailerKey] = useState(null)
+    const [activeVideo, setActiveVideo] = useState(null)
+
+    // Single handler — both the hero play button and FilmDetails video pickers route here
+    const handlePlayVideo = (key) => setActiveVideo(key)
 
     const { data: film, isLoading, error } = useQuery({
         queryKey: ['film', id],
@@ -717,8 +719,9 @@ export default function FilmDetailPage() {
 
     return (
         <div className="page-top">
-            <FilmHero film={film} onPlayTrailer={setTrailerKey} />
-            {trailerKey && <TrailerModal trailerKey={trailerKey} onClose={() => setTrailerKey(null)} />}
+            <FilmHero film={film} onPlayTrailer={handlePlayVideo} />
+            {/* Single TrailerModal rendered at root — above all stacking contexts */}
+            {(trailerKey || activeVideo) && <TrailerModal trailerKey={activeVideo || trailerKey} onClose={() => { setTrailerKey(null); setActiveVideo(null) }} />}
             <main style={{ background: 'var(--ink)', paddingBottom: '5rem' }}>
                 <div className="container" style={{ paddingTop: '3rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     <button onClick={() => {
@@ -728,7 +731,7 @@ export default function FilmDetailPage() {
                         onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
                         <ArrowLeft size={12} /> GO BACK
                     </button>
-                    <FilmDetails film={film} />
+                    <FilmDetails film={film} onPlayVideo={handlePlayVideo} />
 
                     {Array.isArray(similar) && similar.length > 0 && (
                         <section>
