@@ -1,0 +1,150 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import { supabase } from '../supabaseClient'
+
+// Lazy-imported to avoid circular dependency at module init time
+const getFilmStore = () => import('./films').then(m => m.useFilmStore.getState())
+const getProgrammeStore = () => import('./content').then(m => m.useProgrammeStore.getState())
+const getNotificationStore = () => import('./social').then(m => m.useNotificationStore.getState())
+
+// Parallel hydration helper — fires all user-data fetches simultaneously
+async function hydrateUserData() {
+    const [films, programmes] = await Promise.all([
+        import('./films'),
+        import('./content'),
+    ])
+    await Promise.all([
+        films.useFilmStore.getState().fetchLogs(),
+        films.useFilmStore.getState().fetchWatchlist(),
+        films.useFilmStore.getState().fetchVault(),
+        films.useFilmStore.getState().fetchLists(),
+        programmes.useProgrammeStore.getState().fetchProgrammes(),
+    ])
+}
+
+export const useAuthStore = create(
+    persist(
+        (set, get) => ({
+            user: null,
+            isAuthenticated: false,
+
+            login: async (email, password) => {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+                if (error) throw error
+
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', data.user.id)
+                    .single()
+
+                set({ user: { ...data.user, ...profile }, isAuthenticated: true })
+                // Parallel fetch — all data loads simultaneously
+                hydrateUserData()
+                return data
+            },
+
+            signup: async (email, password, username, role = 'cinephile') => {
+                const { data, error } = await supabase.auth.signUp({
+                    email, password,
+                    options: { data: { username, role } }
+                })
+                if (error) throw error
+
+                if (data?.session) {
+                    await supabase.from('profiles').update({ username, role }).eq('id', data.user.id)
+                    const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
+                    set({ user: { ...data.user, ...profile }, isAuthenticated: true })
+                    hydrateUserData()
+                }
+                return data
+            },
+
+            logout: async () => {
+                await supabase.auth.signOut()
+                set({ user: null, isAuthenticated: false })
+            },
+
+            updateUser: async (updates) => {
+                const user = get().user
+                if (!user) return
+                const dbUpdates = {}
+                if (updates.bio !== undefined) dbUpdates.bio = updates.bio
+                if (updates.username !== undefined) dbUpdates.username = updates.username
+                if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar
+                if (updates.isSocialPrivate !== undefined) dbUpdates.is_social_private = updates.isSocialPrivate
+                if (updates.role !== undefined) dbUpdates.role = updates.role
+                if (Object.keys(dbUpdates).length > 0) {
+                    await supabase.from('profiles').update(dbUpdates).eq('id', user.id).catch(() => { })
+                }
+                set((state) => ({ user: state.user ? { ...state.user, ...updates } : null }))
+            },
+
+            followUser: async (targetUsername) => {
+                const state = get()
+                const following = state.user?.following || []
+                if (following.includes(targetUsername)) return
+                const fromUsername = state.user?.username || 'someone'
+                const userId = state.user?.id
+
+                if (userId) {
+                    const { data: targetProfile } = await supabase
+                        .from('profiles').select('id').eq('username', targetUsername).single().catch(() => ({}))
+                    if (targetProfile) {
+                        await Promise.all([
+                            supabase.from('interactions').insert([{
+                                user_id: userId, target_user_id: targetProfile.id, type: 'follow'
+                            }]).catch(() => { }),
+                            supabase.from('notifications').insert([{
+                                user_id: targetProfile.id, type: 'follow',
+                                from_username: fromUsername, message: `${fromUsername} followed you`,
+                            }]).catch(() => { }),
+                        ])
+                    }
+                }
+
+                const notifStore = await getProgrammeStore().catch(() => null)
+                const { useNotificationStore } = await import('./social')
+                useNotificationStore.getState().push({ type: 'follow', from: fromUsername, message: `${fromUsername} followed you` })
+
+                set((s) => ({
+                    user: { ...s.user, following: [...(s.user?.following || []), targetUsername] },
+                }))
+            },
+
+            unfollowUser: async (targetUsername) => {
+                const userId = get().user?.id
+                if (userId) {
+                    const { data: targetProfile } = await supabase
+                        .from('profiles').select('id').eq('username', targetUsername).single().catch(() => ({}))
+                    if (targetProfile) {
+                        await supabase.from('interactions').delete()
+                            .eq('user_id', userId)
+                            .eq('target_user_id', targetProfile.id)
+                            .eq('type', 'follow').catch(() => { })
+                    }
+                }
+                set((s) => ({
+                    user: { ...s.user, following: (s.user?.following || []).filter(u => u !== targetUsername) },
+                }))
+            },
+        }),
+        {
+            name: 'reelhouse-auth',
+            // Only persist the minimum needed to restore session UI — no action functions
+            partialize: (state) => ({
+                user: state.user ? {
+                    id: state.user.id,
+                    email: state.user.email,
+                    username: state.user.username,
+                    role: state.user.role,
+                    avatar_url: state.user.avatar_url,
+                    bio: state.user.bio,
+                    is_social_private: state.user.is_social_private,
+                    following: state.user.following,
+                } : null,
+                isAuthenticated: state.isAuthenticated,
+            }),
+        }
+    )
+)

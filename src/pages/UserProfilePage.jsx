@@ -1838,8 +1838,106 @@ export default function UserProfilePage() {
                         )}
 
                         {activeTab === 'projector' && (
-                            <div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                 <SectionHeader label="DEVOTEE ANALYTICS" title="Projector Room" />
+
+                                {/* ── REGISTRY — derived stats panel ── */}
+                                {profileLogs.length > 0 && (() => {
+                                    // Ratings distribution 1–5
+                                    const ratingBuckets = [1, 2, 3, 4, 5].map(r => ({
+                                        star: r,
+                                        count: profileLogs.filter(l => Math.round(l.rating) === r).length,
+                                    }))
+                                    const maxRatingCount = Math.max(...ratingBuckets.map(b => b.count), 1)
+
+                                    // Decade breakdown
+                                    const decadeBuckets = {}
+                                    profileLogs.forEach(l => {
+                                        if (!l.year) return
+                                        const decade = Math.floor(l.year / 10) * 10
+                                        decadeBuckets[decade] = (decadeBuckets[decade] || 0) + 1
+                                    })
+                                    const decades = Object.entries(decadeBuckets).sort(([a], [b]) => +a - +b)
+                                    const maxDecadeCount = Math.max(...Object.values(decadeBuckets), 1)
+
+                                    // Runtime estimate (avg 115 min per film)
+                                    const totalMins = profileLogs.length * 115
+                                    const totalHours = Math.floor(totalMins / 60)
+
+                                    return (
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+
+                                            {/* Ratings Distribution */}
+                                            <div className="card" style={{ padding: '1.75rem' }}>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem' }}>RATINGS REGISTER</div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                                    {ratingBuckets.reverse().map(({ star, count }) => (
+                                                        <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--flicker)', width: 28, flexShrink: 0, textAlign: 'right' }}>
+                                                                {'★'.repeat(star)}
+                                                            </div>
+                                                            <div style={{ flex: 1, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden' }}>
+                                                                <div style={{
+                                                                    height: '100%', borderRadius: 3,
+                                                                    width: `${(count / maxRatingCount) * 100}%`,
+                                                                    background: 'linear-gradient(90deg, var(--sepia), var(--flicker))',
+                                                                    transition: 'width 0.6s ease',
+                                                                }} />
+                                                            </div>
+                                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', width: 20, textAlign: 'right', flexShrink: 0 }}>{count}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Decade Breakdown */}
+                                            <div className="card" style={{ padding: '1.75rem' }}>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem' }}>ERA DISTRIBUTION</div>
+                                                {decades.length === 0 ? (
+                                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.5 }}>No dated logs yet.</div>
+                                                ) : (
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                                        {decades.map(([decade, count]) => (
+                                                            <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', width: 38, flexShrink: 0 }}>{decade}s</div>
+                                                                <div style={{ flex: 1, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden' }}>
+                                                                    <div style={{
+                                                                        height: '100%', borderRadius: 3,
+                                                                        width: `${(count / maxDecadeCount) * 100}%`,
+                                                                        background: 'linear-gradient(90deg, var(--blood-reel), var(--sepia))',
+                                                                        transition: 'width 0.6s ease',
+                                                                    }} />
+                                                                </div>
+                                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', width: 20, textAlign: 'right', flexShrink: 0 }}>{count}</div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Runtime + Catalog Summary */}
+                                            <div className="card" style={{ padding: '1.75rem' }}>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem' }}>CATALOG METRICS</div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+                                                    {[
+                                                        { label: 'ESTIMATED RUNTIME', value: `${totalHours.toLocaleString()} hrs` },
+                                                        { label: 'TOTAL FILMS LOGGED', value: profileLogs.length },
+                                                        { label: 'WATCHLIST QUEUED', value: profileWatchlist.length },
+                                                        { label: 'LISTS CURATED', value: profileLists.length },
+                                                        { label: 'RATED 5 STARS', value: profileLogs.filter(l => l.rating === 5).length },
+                                                        { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length },
+                                                    ].map(({ label, value }) => (
+                                                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.5rem' }}>
+                                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>{label}</span>
+                                                            <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)' }}>{value}</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )
+                                })()}
+
                                 <ProjectorRoom stats={stats} user={profileUser} />
                             </div>
                         )}
