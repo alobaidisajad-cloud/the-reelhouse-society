@@ -149,7 +149,9 @@ body::before {
   z-index: 9999;
   pointer-events: none;
   opacity: 0.03;
-  /* Reduced opacity from 0.08 to prevent wash-out */
+  /* GPU Rasterization Fix: Forces browser to render the complex SVG math ONCE into a texture */
+  transform: translateZ(0);
+  will-change: transform;
   /* Subtle true noise, not distracting dots */
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   background-repeat: repeat;
@@ -163,6 +165,9 @@ body::after {
   inset: 0;
   z-index: 9998;
   pointer-events: none;
+  /* GPU Rasterization Fix */
+  transform: translateZ(0);
+  will-change: transform;
   background: radial-gradient(ellipse 90% 85% at center,
       transparent 45%,
       rgba(0, 0, 0, 0.25) 72%,
@@ -997,6 +1002,9 @@ a:hover {
 .ticker-content {
   display: inline-block;
   white-space: nowrap;
+  /* GPU Rasterization Fix for infinite animation */
+  will-change: transform;
+  transform: translateZ(0);
   animation: marquee-scroll 30s linear infinite;
   font-family: var(--font-ui);
   font-size: 0.75rem;
@@ -2528,11 +2536,10 @@ body::after {
 
 /* Glass Panels */
 .glass-panel {
-  background: linear-gradient(135deg, rgba(35, 28, 20, 0.7), rgba(10, 7, 3, 0.9));
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(139, 105, 20, 0.3);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+  /* Removed heavy backdrop-filter. Opting for a deeply opaque premium gradient for performance */
+  background: linear-gradient(135deg, rgba(25, 20, 15, 0.95), rgba(10, 7, 3, 0.99));
+  border: 1px solid rgba(139, 105, 20, 0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.9), inset 0 1px 1px rgba(255, 255, 255, 0.05);
 }
 
 /* Luminous Glow texts */
