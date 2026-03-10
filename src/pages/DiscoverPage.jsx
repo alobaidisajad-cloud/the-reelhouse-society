@@ -299,7 +299,7 @@ export default function DiscoverPage() {
     return (
         <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
             {/* ── SEARCH HEADER ── */}
-            <div style={{ background: 'var(--ink)', borderBottom: '1px solid var(--ash)', padding: IS_TOUCH ? '2rem 0 1.5rem' : '4rem 0 3rem', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ background: 'var(--ink)', borderBottom: '1px solid var(--ash)', padding: IS_TOUCH ? '2rem 0 1.5rem' : '4rem 0 3rem', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>THE DARK ROOM</div>
@@ -327,7 +327,7 @@ export default function DiscoverPage() {
                             {suggestions.length > 0 && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
-                                    style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'rgba(10,7,3,0.98)', border: '1px solid var(--ash)', borderRadius: '0 0 var(--radius-card) var(--radius-card)', zIndex: 100, marginTop: '2px', overflow: 'hidden' }}
+                                    style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'rgba(10,7,3,0.98)', border: '1px solid var(--ash)', borderRadius: '0 0 var(--radius-card) var(--radius-card)', zIndex: 10000, marginTop: '2px', overflow: 'hidden' }}
                                 >
                                     {suggestions.map(item => {
                                         const isPerson = item.media_type === 'person'
