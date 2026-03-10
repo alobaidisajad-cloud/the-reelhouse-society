@@ -6,7 +6,6 @@ import { useAuthStore, useCinemaReviewStore, useUIStore, useVenueStore } from '.
 import toast from 'react-hot-toast'
 
 // ── CINEMA DATABASE ──
-// Using verified stable Unsplash photo IDs (confirmed 2026-03)
 const ALL_CINEMAS = [
     {
         id: 1, name: 'The Oracle Palace', city: 'Brooklyn', country: 'USA', location: 'Brooklyn, NY, USA',
@@ -14,7 +13,7 @@ const ALL_CINEMAS = [
         vibes: ['Arthouse', 'Midnight Palace', 'Repertory'], verified: true, followers: 1247,
         lat: 40.6782, lng: -73.9442,
         nextShow: 'Nosferatu (1922) — Fri 11PM',
-        image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23130e07'/%3E%3Cstop offset='1' stop-color='%232a1f0a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 2, name: 'Lighthouse Cinema', city: 'Austin', country: 'USA', location: 'Austin, TX, USA',
@@ -22,7 +21,7 @@ const ALL_CINEMAS = [
         vibes: ['Indie', 'Repertory', 'Arthouse'], verified: false, followers: 892,
         lat: 30.2672, lng: -97.7431,
         nextShow: 'Akira (1988) — Sat 7:30PM',
-        image: 'https://images.unsplash.com/photo-1580130775562-0ef92da028de?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230a0f1a'/%3E%3Cstop offset='1' stop-color='%231a2535'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 3, name: 'The Neon Coffin', city: 'Chicago', country: 'USA', location: 'Chicago, IL, USA',
@@ -30,7 +29,7 @@ const ALL_CINEMAS = [
         vibes: ['Horror House', 'Drive-In'], verified: true, followers: 2103,
         lat: 41.8781, lng: -87.6298,
         nextShow: 'Deep Red (1975) — Fri 10:30PM',
-        image: 'https://images.unsplash.com/photo-1478720568477-152d9b164e26?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230f0303'/%3E%3Cstop offset='1' stop-color='%231a0808'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 4, name: 'La Cinémathèque Noir', city: 'Paris', country: 'France', location: 'Paris, France',
@@ -38,7 +37,7 @@ const ALL_CINEMAS = [
         vibes: ['Arthouse', 'Historic', 'Repertory'], verified: true, followers: 5821,
         lat: 48.8566, lng: 2.3522,
         nextShow: 'Breathless (1960) — Thu 8PM',
-        image: 'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230d0d0d'/%3E%3Cstop offset='1' stop-color='%23271c0a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 5, name: 'Electric Sheep Cinema', city: 'London', country: 'UK', location: 'London, UK',
@@ -46,7 +45,7 @@ const ALL_CINEMAS = [
         vibes: ['Indie', 'Experimental', 'Arthouse'], verified: true, followers: 3340,
         lat: 51.5074, lng: -0.1278,
         nextShow: '2001: A Space Odyssey — Sat 9PM',
-        image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230a0a1f'/%3E%3Cstop offset='1' stop-color='%23101030'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 6, name: 'Phantom Projector', city: 'Los Angeles', country: 'USA', location: 'Los Angeles, CA, USA',
@@ -54,7 +53,7 @@ const ALL_CINEMAS = [
         vibes: ['Historic', 'Midnight Palace', 'Repertory'], verified: true, followers: 4102,
         lat: 34.0522, lng: -118.2437,
         nextShow: 'Sunset Blvd. (1950) — Fri 8PM',
-        image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%231a1205'/%3E%3Cstop offset='1' stop-color='%23241900'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 7, name: 'The Midnight Archive', city: 'Tokyo', country: 'Japan', location: 'Tokyo, Japan',
@@ -62,7 +61,7 @@ const ALL_CINEMAS = [
         vibes: ['Arthouse', 'Experimental', 'Repertory'], verified: false, followers: 1890,
         lat: 35.6762, lng: 139.6503,
         nextShow: 'Woman in the Dunes — Sun 7PM',
-        image: 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230a1010'/%3E%3Cstop offset='1' stop-color='%23061818'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 8, name: 'Drive-In Americana', city: 'Nashville', country: 'USA', location: 'Nashville, TN, USA',
@@ -70,7 +69,7 @@ const ALL_CINEMAS = [
         vibes: ['Drive-In', 'Family', 'Historic'], verified: false, followers: 678,
         lat: 36.1627, lng: -86.7816,
         nextShow: 'Grease (1978) — Sat Dusk',
-        image: 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2308080f'/%3E%3Cstop offset='1' stop-color='%23141428'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 9, name: 'The Vault Cinema', city: 'Berlin', country: 'Germany', location: 'Berlin, Germany',
@@ -78,7 +77,7 @@ const ALL_CINEMAS = [
         vibes: ['Experimental', 'Arthouse', 'Indie'], verified: true, followers: 2760,
         lat: 52.5200, lng: 13.4050,
         nextShow: 'Stalker (1979) — Fri 10PM',
-        image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230c0c0c'/%3E%3Cstop offset='1' stop-color='%23181818'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
     {
         id: 10, name: 'IMAX Citadel', city: 'New York', country: 'USA', location: 'New York, NY, USA',
@@ -86,7 +85,7 @@ const ALL_CINEMAS = [
         vibes: ['IMAX', 'Historic'], verified: true, followers: 8902,
         lat: 40.7128, lng: -74.0060,
         nextShow: '2001: A Space Odyssey — Sat 2PM',
-        image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1200&hue=50',
+        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23060613'/%3E%3Cstop offset='1' stop-color='%230d0d24'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
     },
 ]
 

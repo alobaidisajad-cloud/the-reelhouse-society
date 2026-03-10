@@ -372,14 +372,14 @@ export const tmdb = {
                 category: "SOUND",
                 author: "THE WEEPER",
                 link: "#",
-                image: "https://images.unsplash.com/photo-1459749411177-042180ce673c?q=80&w=2000"
+                image: null
             }
         ]
 
         // We use a public RSS-to-JSON bridge to fetch real movie industry news
+        // movieweb.com removed — consistently returns 500 on the rss2json bridge
         const feeds = [
             'https://www.theguardian.com/film/rss',
-            'https://movieweb.com/feed/'
         ]
 
         try {
