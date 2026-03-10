@@ -7,12 +7,12 @@
 
 /* ── CSS VARIABLES ── */
 :root {
-  --ink: #0E0B08;
-  /* Softened from #0A0703 to prevent extreme high-contrast eye strain */
+  /* --ink is the deepest black background */
+  --ink: #050505;
   --parchment: #E2DBD0;
-  /* Slightly cooler/softer to reduce halation */
   --sepia: #8B6914;
-  --soot: #18140E;
+  /* --soot is a slightly lighter black for cards/elevated surfaces */
+  --soot: #0A0A0A;
   --flicker: #F2E8A0;
   --blood-reel: #5C1A0B;
   --ash: #3A3228;
@@ -137,7 +137,8 @@ body::before {
   inset: 0;
   z-index: 9999;
   pointer-events: none;
-  opacity: 0.08;
+  opacity: 0.03;
+  /* Reduced opacity from 0.08 to prevent wash-out */
   /* Subtle true noise, not distracting dots */
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
   background-repeat: repeat;

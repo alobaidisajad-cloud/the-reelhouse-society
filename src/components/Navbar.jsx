@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Film, BookOpen, Compass, User, Menu, X, LogIn, Star, Crown, FileText, MapPin } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
