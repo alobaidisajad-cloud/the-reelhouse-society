@@ -129,8 +129,8 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }) {
                 return (
                     <motion.button
                         key={r.emoji}
-                        whileTap={{ scale: 1.3 }}
-                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.8 }}
+                        whileHover={{ scale: 1.15, transition: { type: 'spring', stiffness: 400, damping: 10 } }}
                         onClick={() => handleReact(r.emoji)}
                         onMouseEnter={() => setHoveredEmoji(r.emoji)}
                         onMouseLeave={() => setHoveredEmoji(null)}
@@ -166,18 +166,19 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }) {
                         <AnimatePresence>
                             {hoveredEmoji === r.emoji && count > 0 && (
                                 <motion.div
-                                    initial={{ opacity: 0, y: 6 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: 6 }}
+                                    initial={{ opacity: 0, y: 10, scale: 0.9 }}
+                                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                                    exit={{ opacity: 0, y: 10, scale: 0.9 }}
+                                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                                     style={{
                                         position: 'absolute',
-                                        bottom: 'calc(100% + 6px)',
+                                        bottom: 'calc(100% + 8px)',
                                         left: '50%',
                                         transform: 'translateX(-50%)',
-                                        background: 'var(--soot)',
-                                        border: '1px solid var(--ash)',
+                                        background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)',
+                                        border: '1px solid rgba(139,105,20,0.3)',
                                         borderRadius: '4px',
-                                        padding: '0.3rem 0.5rem',
+                                        padding: '0.4rem 0.6rem',
                                         whiteSpace: 'nowrap',
                                         fontFamily: 'var(--font-sub)',
                                         fontSize: '0.65rem',

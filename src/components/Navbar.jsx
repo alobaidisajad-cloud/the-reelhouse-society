@@ -49,14 +49,26 @@ export default function Navbar() {
     const [query, setQuery] = useState('')
     const [suggestions, setSuggestions] = useState([])
     const [scrolled, setScrolled] = useState(false)
+    const [hidden, setHidden] = useState(false)
     const [searching, setSearching] = useState(false)
+    const lastScrollY = useRef(0)
 
     useEffect(() => {
         let rafId = null
         const onScroll = () => {
             if (rafId) return
             rafId = requestAnimationFrame(() => {
-                setScrolled(window.scrollY > 40)
+                const currentScrollY = window.scrollY
+                setScrolled(currentScrollY > 40)
+
+                // Only hide if we scroll down past 150px overhead
+                if (currentScrollY > 150 && currentScrollY > lastScrollY.current) {
+                    setHidden(true)
+                } else if (currentScrollY < lastScrollY.current) {
+                    setHidden(false) // Show immediately on scroll up
+                }
+
+                lastScrollY.current = currentScrollY
                 rafId = null
             })
         }
@@ -117,7 +129,10 @@ export default function Navbar() {
     return (
         <>
             {/* Navbar styles are defined in index.css — .navbar, .navbar-inner, .nav-link, etc. */}
-            <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
+            <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} style={{
+                transform: hidden ? 'translateY(-100%)' : 'translateY(0)',
+                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, padding 0.3s ease',
+            }}>
                 <div className="navbar-inner" style={{ position: 'relative' }}>
                     {/* Logo */}
                     <Link to="/" className="nav-logo">

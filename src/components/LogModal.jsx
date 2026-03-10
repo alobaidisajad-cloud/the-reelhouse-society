@@ -225,7 +225,9 @@ export default function LogModal() {
                 onClick={closeLogModal}
                 style={{
                     position: 'fixed', inset: 0, zIndex: 10000,
-                    background: 'rgba(10,7,3,0.92)',
+                    background: 'rgba(10,7,3,0.85)', // Slightly more transparent to allow blur
+                    backdropFilter: 'blur(12px)', // Premium frosted glass effect
+                    WebkitBackdropFilter: 'blur(12px)', // Safari support
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '1rem',
                 }}
@@ -687,17 +689,35 @@ export default function LogModal() {
                                             </span>
                                         )}
                                     </label>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', opacity: isPremium ? 1 : 0.5, pointerEvents: isPremium ? 'auto' : 'none' }}>
-                                        {['None', 'DVD', 'Blu-Ray', '4K UHD', 'VHS', 'Film Print'].map((format) => (
-                                            <button
-                                                key={format}
-                                                onClick={() => setPhysicalMedia(format)}
-                                                className={`tag ${physicalMedia === format ? 'tag-flicker' : ''}`}
-                                                style={{ cursor: 'none' }}
-                                            >
-                                                {format}
-                                            </button>
-                                        ))}
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem', opacity: isPremium ? 1 : 0.5, pointerEvents: isPremium ? 'auto' : 'none', marginTop: '0.5rem' }}>
+                                        {['None', 'DVD', 'Blu-Ray', '4K UHD', 'VHS', 'Film Print'].map((format) => {
+                                            const isActive = physicalMedia === format;
+                                            return (
+                                                <button
+                                                    key={format}
+                                                    onClick={() => setPhysicalMedia(format)}
+                                                    style={{
+                                                        padding: '0.4rem 0.8rem',
+                                                        fontFamily: 'var(--font-ui)',
+                                                        fontSize: '0.6rem',
+                                                        letterSpacing: '0.1em',
+                                                        color: isActive ? 'var(--parchment)' : 'var(--fog)',
+                                                        background: isActive ? 'var(--ink)' : 'var(--soot)',
+                                                        border: `1px solid ${isActive ? 'var(--sepia)' : 'var(--ash)'}`,
+                                                        borderRadius: '2px',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                        // Tactile switch effect
+                                                        boxShadow: isActive
+                                                            ? 'inset 0 2px 4px rgba(0,0,0,0.5), inset 0 0 10px rgba(139,105,20,0.1)'
+                                                            : '0 2px 4px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+                                                        transform: isActive ? 'translateY(1px)' : 'translateY(0)'
+                                                    }}
+                                                >
+                                                    {format}
+                                                </button>
+                                            )
+                                        })}
                                     </div>
                                     {!isPremium && (
                                         <button className="btn btn-ghost" style={{ width: '100%', marginTop: '0.5rem', fontSize: '0.6rem', justifyContent: 'center', borderColor: 'var(--ash)', color: 'var(--fog)' }} onClick={() => { closeLogModal(); navigate('/patronage') }}>

@@ -1759,15 +1759,65 @@ export default function UserProfilePage() {
                                         </div>
                                     </div>
                                 ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                        {filteredLogs.map((log) => <LazyLogRow key={log.id} log={log} onShare={setShareLog} onEdit={isOwnProfile ? ((log) => {
-                                            if (currentUser?.role === 'archivist' || currentUser?.role === 'auteur') {
-                                                openLogModal({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' }, log.id)
-                                            } else {
-                                                openSignupModal('archivist')
-                                                toast("The Splicer requires Archivist clearance.", { icon: '🔒', style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                        gridAutoRows: 'minmax(210px, auto)',
+                                        gap: '1rem'
+                                    }}>
+                                        {filteredLogs.map((log, index) => {
+                                            // Create asymmetrical "marquee" layout for the first few items
+                                            let gridColumnSpan = 'span 1'
+                                            let gridRowSpan = 'span 1'
+
+                                            if (sieve === 'all' && index === 0) {
+                                                // The featured newest film
+                                                gridColumnSpan = 'span 2'
+                                                gridRowSpan = 'span 2'
+                                            } else if (sieve === 'all' && (index === 1 || index === 2)) {
+                                                // Secondary featured
+                                                gridColumnSpan = 'span 2'
+                                                gridRowSpan = 'span 1'
                                             }
-                                        }) : null} />)}
+
+                                            return (
+                                                <div key={log.id} style={{
+                                                    gridColumn: gridColumnSpan,
+                                                    gridRow: gridRowSpan,
+                                                    position: 'relative',
+                                                    height: '100%'
+                                                }}>
+                                                    <FilmCard
+                                                        film={{
+                                                            id: log.filmId,
+                                                            title: log.title,
+                                                            poster_path: log.altPoster || log.poster,
+                                                            release_date: log.year + '-01-01',
+                                                            userRating: log.rating,
+                                                            status: log.status,
+                                                        }}
+                                                        onClick={() => {
+                                                            if (isOwnProfile) {
+                                                                if (currentUser?.role === 'archivist' || currentUser?.role === 'auteur') {
+                                                                    useUIStore.getState().setLogModalFilm({
+                                                                        id: log.filmId,
+                                                                        title: log.title,
+                                                                        poster_path: log.poster,
+                                                                        release_date: log.year + '-01-01'
+                                                                    })
+                                                                    useUIStore.getState().setLogModalEditLogId(log.id)
+                                                                    useUIStore.getState().openLogModal()
+                                                                } else {
+                                                                    openSignupModal('archivist')
+                                                                    toast("The Splicer requires Archivist clearance.", { icon: '🔒', style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+                                                                }
+                                                            }
+                                                        }}
+                                                        disableHover={false}
+                                                    />
+                                                </div>
+                                            )
+                                        })}
                                     </div>
                                 )}
                             </div>
