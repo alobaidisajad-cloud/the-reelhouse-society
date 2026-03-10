@@ -9,9 +9,10 @@ import App from './App.jsx'
 import './index.css'
 
 // ── Sentry Error Monitoring (production only, zero dev overhead) ──
-if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+// DSN is intentionally public — it's a client-side key by Sentry's design
+if (import.meta.env.PROD) {
   Sentry.init({
-    dsn: import.meta.env.VITE_SENTRY_DSN,
+    dsn: 'https://1a619872bca621c5bd5d9b7f45edecf5@o4511019614208000.ingest.us.sentry.io/4511019626463232',
     environment: 'production',
     tracesSampleRate: 0.1, // 10% of sessions — enough signal, minimal overhead
     replaysOnErrorSampleRate: 0,
