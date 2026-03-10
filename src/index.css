@@ -2669,50 +2669,40 @@ body::after {
   }
 }
 
-/* ── MOBILE RESPONSIVE — FEED PAGE SIDEBAR ── */
+/* ── MOBILE RESPONSIVE — FEED PAGE LAYOUT ── */
 @media (max-width: 768px) {
 
-  /* Feed page: stack sidebar below main content */
-  .container>div[style*="grid-template-columns"] {
+  /* Feed page two-column grid → single column on mobile */
+  .feed-grid {
     grid-template-columns: 1fr !important;
   }
 
-  /* Hide the sidebar on mobile — it stacks below fold, which is fine */
-  .sidebar {
-    display: none;
+  /* Sidebar hidden on mobile (stacks out of view) */
+  .feed-sidebar {
+    display: none !important;
   }
 
-  /* ActivityCard poster: slightly smaller on mobile */
-  .fade-in-up img {
-    width: 64px;
-    height: 96px;
+  /* ActivityCard: compact poster on mobile */
+  .feed-main .fade-in-up {
+    gap: 1rem;
+  }
+
+  .feed-main .fade-in-up img {
+    width: 56px !important;
+    height: 84px !important;
   }
 }
 
 /* ── MOBILE RESPONSIVE — CINEMAS PAGE ── */
 @media (max-width: 600px) {
-
-  /* Cinemas grid: force single column on phones */
-  [style*="repeat(auto-fill, minmax(300px, 1fr))"] {
+  .cinemas-grid {
     grid-template-columns: 1fr !important;
-  }
-
-  /* Cinema card image: reduce height slightly */
-  [style*="height: 180"] {
-    height: 140px !important;
   }
 }
 
-/* ── MOBILE RESPONSIVE — CINEMAS FILTER BAR ── */
+/* ── MOBILE RESPONSIVE — CINEMAS FILTER PANEL ── */
 @media (max-width: 640px) {
-
-  /* Filter buttons wrap cleanly on small screens */
-  [style*="flex-wrap: wrap"] {
-    gap: 0.5rem;
-  }
-
-  /* Filter panel grid: single column on mobile */
-  [style*="repeat(auto-fit, minmax(180px, 1fr))"] {
+  .cinemas-filter-grid {
     grid-template-columns: 1fr 1fr !important;
   }
 }

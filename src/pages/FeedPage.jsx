@@ -278,10 +278,11 @@ export default function FeedPage() {
             </div>
 
             <main className="page-top" style={{ paddingBottom: '7rem', paddingTop: '3rem' }}>
-                <div className="container" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '3rem', alignItems: 'start' }}>
+                <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '3rem', alignItems: 'start' }}>
 
                     {/* Main Feed */}
-                    <div className="main-content">
+                    <div className="feed-main">
+
                         <SectionHeader label="LATEST ACTIVITY" title="The Log" />
 
                         {!isAuthenticated && (
@@ -377,7 +378,8 @@ export default function FeedPage() {
                     </div>
 
                     {/* Sidebar */}
-                    <div className="sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div className="feed-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
 
                         {/* Curated Lists — Real Supabase data */}
                         <div>
