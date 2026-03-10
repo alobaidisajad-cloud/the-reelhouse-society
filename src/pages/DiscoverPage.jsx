@@ -229,8 +229,21 @@ export default function DiscoverPage() {
         if (!inputVal.trim() || inputVal.length < 2) { setSuggestions([]); return }
         const id = setTimeout(async () => {
             try {
-                const r = await tmdb.search(inputVal.trim(), 1)
-                setSuggestions(r.results?.slice(0, 5) || [])
+                // Use raw TMDB multi-search for autocomplete — tmdb.search() is a
+                // 3-tier smart matcher that aggressively filters to the single best hit.
+                // For suggestions we want all relevant raw results sorted by popularity.
+                const TMDB_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
+                const res = await fetch(
+                    `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(inputVal.trim())}&page=1&include_adult=false`
+                )
+                if (!res.ok) return
+                const data = await res.json()
+                // Filter to only movies and known people, sort by popularity, show top 6
+                const raw = (data.results || [])
+                    .filter(r => r.media_type === 'movie' || (r.media_type === 'person' && r.profile_path))
+                    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+                    .slice(0, 6)
+                setSuggestions(raw)
             } catch { }
         }, 200)
         return () => clearTimeout(id)
