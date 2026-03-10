@@ -11,6 +11,7 @@
     "publish": "git add . && git commit -m \"Live deployment update\" && git push origin main"
   },
   "dependencies": {
+    "@sentry/react": "^10.43.0",
     "@supabase/supabase-js": "^2.98.0",
     "@tanstack/react-query": "^5.90.21",
     "axios": "^1.13.6",

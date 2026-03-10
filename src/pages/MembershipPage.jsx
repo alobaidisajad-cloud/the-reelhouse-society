@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+﻿import React, { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Crown, Star, Key, EyeOff, LayoutTemplate, Database } from 'lucide-react'
+import { Crown, Star, Key, EyeOff, LayoutTemplate, Database, Upload } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
+import LetterboxdImport from '../components/LetterboxdImport'
 import toast from 'react-hot-toast'
 
 const features = [
@@ -18,6 +19,7 @@ const features = [
 export default function MembershipPage() {
     const { isAuthenticated, user } = useAuthStore()
     const { openSignupModal } = useUIStore()
+    const [letterboxdOpen, setLetterboxdOpen] = useState(false)
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -32,10 +34,8 @@ export default function MembershipPage() {
         visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 20 } }
     }
 
-
     const [isRedirecting, setIsRedirecting] = useState(false)
 
-    // Function to generate PayTabs checkout link
     const handleAscend = async (tier) => {
         if (!isAuthenticated) return openSignupModal(tier)
         if (user?.role === tier || (tier === 'archivist' && user?.role === 'auteur')) return
@@ -44,10 +44,8 @@ export default function MembershipPage() {
             setIsRedirecting(true)
             toast.loading('Preparing your Patronage ledger...', { id: 'checkout' })
 
-            // Construct the path to our Edge Function
             const backendUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paytabs-handler/create`
 
-            // Request a new dynamic checkout URL
             const response = await fetch(backendUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -58,7 +56,7 @@ export default function MembershipPage() {
 
             if (data.redirect_url) {
                 toast.dismiss('checkout')
-                window.location.href = data.redirect_url // Redirect to secure PayTabs Hosted Migs Page
+                window.location.href = data.redirect_url
             } else {
                 toast.error('Could not initialize checkout. Please try again.', { id: 'checkout' })
                 setIsRedirecting(false)
@@ -92,6 +90,17 @@ export default function MembershipPage() {
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.1rem', color: 'var(--bone)', marginTop: '1.5rem', maxWidth: 600, marginInline: 'auto', lineHeight: 1.6 }}>
                         Ascend the ranks of The Society. Embrace the aesthetic. Wield the ultimate cinematic toolkit.
                     </p>
+
+                    {/* Letterboxd Import CTA for logged-in users (more visible here) */}
+                    {isAuthenticated && (
+                        <button
+                            onClick={() => setLetterboxdOpen(true)}
+                            className="btn btn-ghost"
+                            style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.65rem', letterSpacing: '0.15em' }}
+                        >
+                            <Upload size={13} /> MIGRATE FROM LETTERBOXD
+                        </button>
+                    )}
                 </motion.div>
 
                 {/* Tiers Grid */}
@@ -148,7 +157,7 @@ export default function MembershipPage() {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--sepia)', fontStyle: 'italic', marginBottom: '0.5rem' }}>Everything in Free, plus:</div>
                             <div style={{ padding: '0.75rem', background: 'rgba(139,105,20,0.1)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: 'var(--radius-card)', marginBottom: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--flicker)' }}>✦</div>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--flicker)' }}>âœ¦</div>
                                 <div>
                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--flicker)', marginBottom: '0.2rem' }}>The Editorial Desk</div>
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)', lineHeight: 1.4 }}>Pro-level review formatting. Inject movie stills, pull-quotes, and drop caps into your logs.</div>
@@ -187,7 +196,7 @@ export default function MembershipPage() {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--blood-reel)', fontStyle: 'italic', marginBottom: '0.5rem' }}>Everything in Archivist, plus:</div>
                             <div style={{ padding: '0.75rem', background: 'rgba(162,36,36,0.1)', border: '1px solid rgba(162,36,36,0.3)', borderRadius: 'var(--radius-card)', marginBottom: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--blood-reel)' }}>✦</div>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--blood-reel)' }}>âœ¦</div>
                                 <div>
                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--blood-reel)', marginBottom: '0.2rem' }}>The Breakdown Engine</div>
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.4 }}>Break down films across 5 specific axes. Attach gorgeous, dynamic radar charts to your reviews.</div>
@@ -212,12 +221,83 @@ export default function MembershipPage() {
                     </motion.div>
                 </motion.div>
 
-                {/* FAQ / Manifesto */}
+                {/* â”€â”€ FOUNDING MEMBERS BANNER â”€â”€ */}
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.7 }}
+                    style={{
+                        position: 'relative', overflow: 'hidden',
+                        border: '1px solid rgba(139,105,20,0.4)',
+                        borderRadius: 'var(--radius-card)',
+                        padding: '3rem',
+                        marginBottom: '6rem',
+                        background: 'linear-gradient(135deg, rgba(139,105,20,0.08) 0%, rgba(10,7,3,0) 60%)',
+                        textAlign: 'center',
+                    }}
+                >
+                    {/* Background texture */}
+                    <div style={{
+                        position: 'absolute', inset: 0, pointerEvents: 'none',
+                        backgroundImage: 'repeating-linear-gradient(90deg, rgba(139,105,20,0.03) 0px, transparent 1px, transparent 40px)',
+                    }} />
+
+                    {/* Wax seal badge */}
+                    <div style={{
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        width: 64, height: 64, borderRadius: '50%',
+                        border: '2px solid var(--sepia)',
+                        background: 'rgba(139,105,20,0.12)',
+                        marginBottom: '1.5rem',
+                        fontSize: '1.8rem',
+                    }}>
+                        âœ¦
+                    </div>
+
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '1rem' }}>
+                        LIMITED OFFER Â· CLASS OF 1924
+                    </div>
+                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 3rem)', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>
+                        Founding Members
+                    </h2>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', maxWidth: 560, marginInline: 'auto', lineHeight: 1.7, marginBottom: '2rem' }}>
+                        The first 100 members to join The Society receive <em>Archivist access for life</em> â€” permanently, with no recurring charges, ever. A single entry in the ledger. A permanent seat in the house.
+                    </p>
+
+                    {/* Price display */}
+                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.3rem', marginBottom: '0.5rem' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '1.2rem', color: 'var(--sepia)' }}>$</span>
+                        <span style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', color: 'var(--flicker)', lineHeight: 1 }}>49</span>
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>ONE TIME</div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.1em' }}>NO RENEWALS</div>
+                        </div>
+                    </div>
+
+                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', marginBottom: '2.5rem', fontStyle: 'italic' }}>
+                        Compare to $19.99/yr recurring â€” this pays for itself in under 3 years and never charges again.
+                    </div>
+
+                    <button
+                        className="btn btn-primary"
+                        style={{ padding: '1rem 3rem', fontSize: '0.8rem', letterSpacing: '0.25em' }}
+                        onClick={() => isAuthenticated ? handleAscend('archivist') : openSignupModal('archivist')}
+                    >
+                        CLAIM A FOUNDING SEAT
+                    </button>
+
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', marginTop: '1rem', opacity: 0.6 }}>
+                        POWERED BY PAYTAB Â· SECURE CHECKOUT Â· SEATS FILLING FAST
+                    </div>
+                </motion.div>
+
+                {/* Philosophy */}
                 <motion.div
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
-                    style={{ textAlign: 'center', marginTop: '6rem', borderTop: '1px dashed var(--ash)', paddingTop: '4rem', maxWidth: 800, marginInline: 'auto' }}
+                    style={{ textAlign: 'center', borderTop: '1px dashed var(--ash)', paddingTop: '4rem', maxWidth: 800, marginInline: 'auto' }}
                 >
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '1.5rem' }}>
                         OUR PHILOSOPHY
@@ -226,15 +306,18 @@ export default function MembershipPage() {
                         Built for the Love of Cinema.
                     </h2>
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.1rem', color: 'var(--bone)', lineHeight: 1.8, marginBottom: '2rem', fontStyle: 'italic' }}>
-                        We believe that software should feel like a physical artifact—a curated, brutalist space free from corporate bloat. By ascending within The Society, you preserve this aesthetic and command the most premium cinematic ledger ever forged.
+                        We believe that software should feel like a physical artifactâ€”a curated, brutalist space free from corporate bloat. By ascending within The Society, you preserve this aesthetic and command the most premium cinematic ledger ever forged.
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '1px', background: 'var(--flicker)', alignSelf: 'center' }} />
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--flicker)' }}>✦</div>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--flicker)' }}>âœ¦</div>
                         <div style={{ width: '40px', height: '1px', background: 'var(--flicker)', alignSelf: 'center' }} />
                     </div>
                 </motion.div>
             </div>
+
+            {/* Letterboxd Import modal */}
+            {letterboxdOpen && <LetterboxdImport onClose={() => setLetterboxdOpen(false)} />}
         </div>
     )
 }

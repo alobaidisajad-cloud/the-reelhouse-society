@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState, useMemo } from 'react'
+import { Suspense, lazy, useEffect, useState, useMemo, useCallback } from 'react'
 import { Routes, Route, useLocation, Link } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
@@ -21,6 +21,7 @@ const SignupModal = lazy(() => import('./components/SignupModal'))
 const HandbookModal = lazy(() => import('./components/HandbookModal'))
 const CommandPalette = lazy(() => import('./components/CommandPalette'))
 const OnboardingModal = lazy(() => import('./components/OnboardingModal'))
+const LetterboxdImport = lazy(() => import('./components/LetterboxdImport'))
 
 // Detect touch once — controls which desktop-only effects to mount
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
@@ -97,6 +98,7 @@ export default function App() {
   // Granular selector — only re-renders App when logs.length changes, not on every store write
   const logCount = useFilmStore(state => state.logs.length)
   const { openLogModal, showPaywall, paywallFeature, closePaywall, openHandbook } = useUIStore()
+  const [letterboxdOpen, setLetterboxdOpen] = useState(false)
 
   const degradationClass = useMemo(() => {
     if (logCount > 40) return 'level-obsessed'
@@ -150,6 +152,22 @@ export default function App() {
     import('./errorLogger').then(m => m.initGlobalErrorLogging())
   }, [])
 
+  // ── Global Keyboard Shortcuts ──
+  // L = log a film, / = search, I = import from Letterboxd
+  useEffect(() => {
+    const handler = (e) => {
+      // Ignore when user is typing in an input, textarea, or contenteditable
+      const tag = document.activeElement?.tagName
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      if (e.key === 'l' || e.key === 'L') { e.preventDefault(); openLogModal() }
+      if (e.key === '?') { e.preventDefault(); openHandbook() }
+      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); setLetterboxdOpen(true) }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [openLogModal, openHandbook])
+
   return (
     <div className={degradationClass}>
       {/* Preloader: desktop only, skipped on mobile, fires once per session */}
@@ -185,6 +203,7 @@ export default function App() {
           <SignupModal />
           <HandbookModal />
           <OnboardingModal />
+          {letterboxdOpen && <LetterboxdImport onClose={() => setLetterboxdOpen(false)} />}
 
           <AnimatePresence mode="wait" initial={false}>
             <Routes location={location} key={location.pathname}>

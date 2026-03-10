@@ -3,9 +3,22 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster, toast } from 'react-hot-toast'
+import * as Sentry from '@sentry/react'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import App from './App.jsx'
 import './index.css'
+
+// ── Sentry Error Monitoring (production only, zero dev overhead) ──
+if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: 'production',
+    tracesSampleRate: 0.1, // 10% of sessions — enough signal, minimal overhead
+    replaysOnErrorSampleRate: 0,
+    integrations: [],
+  })
+}
+
 
 const queryClient = new QueryClient({
   defaultOptions: {
