@@ -38,6 +38,9 @@
   <!-- Font preconnect for faster DNS -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- TMDB Image CDN preconnect — establishes DNS+TLS before any React code loads -->
+  <!-- Cuts ~150-300ms from the first film poster appearing on every single page -->
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
   <!-- font-display=swap: text shows in fallback font immediately, swaps when loaded.
        Prevents invisible text (FOIT) — critical for mobile perceived performance -->
   <link

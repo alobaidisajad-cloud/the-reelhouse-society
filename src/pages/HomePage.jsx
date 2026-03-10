@@ -176,7 +176,7 @@ function FeaturedReview({ film }) {
 const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, description }) {
     const navigate = useNavigate()
     return (
-        <section style={{ position: 'relative', margin: '3rem 0 1rem' }}>
+        <section style={{ position: 'relative', margin: '3rem 0 1rem', contain: 'layout style' }}>
             {/* Editorial Header Layout */}
             <div style={{
                 display: 'flex',

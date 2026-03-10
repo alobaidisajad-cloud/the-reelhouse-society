@@ -112,7 +112,7 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
 
     return (
         <div
-            className="card-film"
+            className="card-film cine-card"
             style={{ aspectRatio: '2/3', cursor: 'none' }}
             onClick={onClick}
             onMouseEnter={handleMouseEnter}
@@ -124,6 +124,7 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
                     alt={film.title}
                     loading="lazy"
                     decoding="async"
+                    fetchPriority="low"
                     onLoad={() => setIsLoaded(true)}
                     className={isLoaded ? 'developing-poster' : ''}
                     style={{
@@ -136,9 +137,8 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
                     }}
                 />
             ) : (
-                <div style={{
+                <div className="shimmer" style={{
                     width: '100%', height: '100%',
-                    background: 'var(--soot)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     flexDirection: 'column', gap: '0.5rem',
                 }}>
@@ -266,10 +266,7 @@ export function Ticker({ items = [] }) {
 // ── DARKROOM SKELETON — Perceived-speed skeleton loaders ──
 function SkeletonPulse({ style = {} }) {
     return (
-        <div style={{
-            background: 'linear-gradient(90deg, var(--soot) 25%, var(--ash) 50%, var(--soot) 75%)',
-            backgroundSize: '200% 100%',
-            animation: 'skeleton-shimmer 1.4s ease-in-out infinite',
+        <div className="shimmer" style={{
             borderRadius: 'var(--radius-card)',
             ...style
         }} />
