@@ -278,7 +278,8 @@ export default function FeedPage() {
             </div>
 
             <main className="page-top" style={{ paddingBottom: '7rem', paddingTop: '3rem' }}>
-                <div className="container" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '3rem', alignItems: 'start' }}>
+                <div className="container" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '3rem', alignItems: 'start' }}>
+
                     {/* Main Feed */}
                     <div className="main-content">
                         <SectionHeader label="LATEST ACTIVITY" title="The Log" />
@@ -309,11 +310,63 @@ export default function FeedPage() {
                                 ))}
                             </div>
                         ) : communityFeed.length === 0 ? (
-                            <div style={{ padding: '4rem 2rem', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-sub)', fontSize: '1rem' }}>
-                                <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>📽</div>
-                                The society's projection booth is quiet.<br />
-                                <span style={{ fontSize: '0.85rem', opacity: 0.6 }}>Be the first to log a film and leave your mark.</span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                {/* Premium empty state */}
+                                <div style={{
+                                    border: '1px solid var(--ash)',
+                                    padding: '3rem 2rem',
+                                    textAlign: 'center',
+                                    background: 'linear-gradient(180deg, rgba(28,23,16,0.6) 0%, transparent 100%)',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                }}>
+                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.35em', color: 'var(--sepia)', marginBottom: '1rem' }}>
+                                        PROJECTION BOOTH — STANDING BY
+                                    </div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 2.8rem)', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>
+                                        The ink is fresh.
+                                    </div>
+                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', opacity: 0.6, lineHeight: 1.7, maxWidth: 400, margin: '0 auto 2rem' }}>
+                                        Be the first to transmit a cinematic dispatch and leave your mark in the Society's permanent record.
+                                    </p>
+                                    <button
+                                        className="btn btn-primary"
+                                        style={{ padding: '0.9rem 2.5rem', letterSpacing: '0.2em', fontSize: '0.7rem' }}
+                                        onClick={() => openLogModal()}
+                                    >
+                                        LOG THE FIRST FILM
+                                    </button>
+                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                                </div>
+
+                                {/* Society Picks — hand-curated placeholder cards */}
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.3em', color: 'var(--ash)', textAlign: 'center', opacity: 0.5 }}>
+                                    ✦ SOCIETY PICKS — TONIGHT'S RECOMMENDED VIEWING ✦
+                                </div>
+                                {[
+                                    { title: 'Nosferatu', year: '1922', note: 'The shadow that never left.', poster: null },
+                                    { title: 'In the Mood for Love', year: '2000', note: 'Wong Kar-wai at his most devastating.', poster: null },
+                                    { title: 'Stalker', year: '1979', note: 'A film that watches back.', poster: null },
+                                ].map((pick) => (
+                                    <div key={pick.title} style={{
+                                        background: 'var(--soot)', border: '1px solid var(--ash)',
+                                        borderLeft: '3px solid var(--ash)', borderRadius: '2px',
+                                        padding: '1.25rem', display: 'flex', gap: '1.25rem',
+                                        opacity: 0.45,
+                                    }}>
+                                        <div style={{ width: 56, height: 84, background: 'var(--ink)', border: '1px solid var(--ash)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px' }}>
+                                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--sepia)' }}>✦</span>
+                                        </div>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginBottom: '0.25rem' }}>SOCIETY PICK · {pick.year}</div>
+                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>{pick.title}</div>
+                                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', fontStyle: 'italic', opacity: 0.7 }}>"{pick.note}"</div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
+
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 {communityFeed.map((log) => (

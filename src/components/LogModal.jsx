@@ -207,10 +207,48 @@ export default function LogModal() {
         } else {
             addLog(logData)
             const statusEmoji = { watched: '🎬', rewatched: '🔄', abandoned: '🚪' }
-            toast.success(`${statusEmoji[status]} ${film.title} logged!`)
+
+            // ── One-tap share after log ──
+            const shareText = rating > 0
+                ? `${statusEmoji[status]} ${film.title} (${film.year ?? ''}) — ${rating}/5 ✦ The ReelHouse Society`
+                : `${statusEmoji[status]} Just logged ${film.title} on The ReelHouse Society`
+            const shareUrl = 'https://thereelhousesociety.com'
+
+            toast(
+                (t) => (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.62rem', letterSpacing: '0.1em', color: '#E8DFC8' }}>
+                            {statusEmoji[status]} {film.title} logged to the archive.
+                        </div>
+                        <button
+                            onClick={() => {
+                                toast.dismiss(t.id)
+                                if (navigator.share) {
+                                    navigator.share({ title: film.title, text: shareText, url: shareUrl }).catch(() => { })
+                                } else {
+                                    navigator.clipboard.writeText(`${shareText}\n${shareUrl}`).then(() => {
+                                        toast.success('Copied to clipboard')
+                                    }).catch(() => { })
+                                }
+                            }}
+                            style={{
+                                background: 'rgba(139,105,20,0.2)', border: '1px solid rgba(139,105,20,0.4)',
+                                color: '#E8DFC8', fontFamily: 'var(--font-ui)', fontSize: '0.55rem',
+                                letterSpacing: '0.15em', padding: '0.4rem 0.8rem', cursor: 'pointer',
+                                borderRadius: '2px', alignSelf: 'flex-start',
+                                transition: 'background 0.2s',
+                            }}
+                        >
+                            ✦ SHARE THIS LOG
+                        </button>
+                    </div>
+                ),
+                { duration: 5000 }
+            )
         }
 
         closeLogModal()
+
     }
 
     if (!logModalOpen) return null

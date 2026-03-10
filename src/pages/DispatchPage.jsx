@@ -149,7 +149,58 @@ export default function DispatchPage() {
                     <span></span><div className="diamond"></div><span></span>
                 </div>
 
+                {/* ── NIGHTLY TRANSMISSION ── */}
+                <section className="dispatch-section">
+                    <div style={{
+                        border: '1px solid rgba(162,36,36,0.3)',
+                        background: 'linear-gradient(135deg, rgba(162,36,36,0.06) 0%, transparent 100%)',
+                        padding: '3rem',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        marginBottom: '2rem',
+                    }}>
+                        {/* Decorative corner marks */}
+                        <div style={{ position: 'absolute', top: '1rem', left: '1rem', width: 20, height: 20, borderTop: '2px solid rgba(162,36,36,0.5)', borderLeft: '2px solid rgba(162,36,36,0.5)' }} />
+                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', width: 20, height: 20, borderTop: '2px solid rgba(162,36,36,0.5)', borderRight: '2px solid rgba(162,36,36,0.5)' }} />
+                        <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', width: 20, height: 20, borderBottom: '2px solid rgba(162,36,36,0.5)', borderLeft: '2px solid rgba(162,36,36,0.5)' }} />
+                        <div style={{ position: 'absolute', bottom: '1rem', right: '1rem', width: 20, height: 20, borderBottom: '2px solid rgba(162,36,36,0.5)', borderRight: '2px solid rgba(162,36,36,0.5)' }} />
+
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--blood-reel)', marginBottom: '0.5rem', opacity: 0.8 }}>
+                                ◉ THIS SATURDAY · 9PM GMT
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '1.5rem' }}>
+                                THE SOCIETY PRESENTS — NIGHTLY TRANSMISSION №012
+                            </div>
+                            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: 'var(--parchment)', lineHeight: 1, marginBottom: '1rem' }}>
+                                Andrei Rublev
+                            </h2>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '1.5rem' }}>
+                                TARKOVSKY · 1966 · 205 MIN
+                            </div>
+                            <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.05rem', lineHeight: 1.7, color: 'var(--bone)', opacity: 0.75, maxWidth: 480, margin: '0 auto 2rem', fontStyle: 'italic' }}>
+                                "Watch independently at the appointed hour. Return to The Reel at 9PM to file your transmission alongside your fellow devotees."
+                            </p>
+                            <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ width: 6, height: 6, background: 'var(--blood-reel)', borderRadius: '50%' }} />
+                                    WATCH INDEPENDENTLY — NO STREAMING REQUIRED
+                                </div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <span style={{ width: 6, height: 6, background: 'var(--sepia)', borderRadius: '50%' }} />
+                                    JOIN THE REEL THREAD AT TRANSMISSION TIME
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <div className="ornamental-divider">
+                    <span></span><div className="diamond"></div><span></span>
+                </div>
+
                 {/* GLOBAL INDUSTRY WIRE (TMDB NEWS) */}
+
                 <section className="dispatch-section">
                     <div className="section-header-block">
                         <h2 className="sh-title">The Global Wire</h2>
