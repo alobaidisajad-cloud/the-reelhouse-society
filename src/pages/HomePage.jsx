@@ -55,6 +55,7 @@ function MarqueeBoard({ film }) {
                 </div>
                 <div style={{ textAlign: 'center' }}>
                     <h1
+                        className="glow-text"
                         style={{
                             fontFamily: 'var(--font-display)',
                             fontSize: IS_TOUCH ? 'clamp(1.5rem, 7vw, 2.5rem)' : 'clamp(2.5rem, 8vw, 5.5rem)',
@@ -286,8 +287,6 @@ const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, desc
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true, margin: "100px" }}
                                 transition={{ delay: Math.min(i * 0.05, 0.4), duration: 0.5, ease: "easeOut" }}
-                                whileHover={{ y: -6, scale: 1.02, transition: { type: 'spring', damping: 20, mass: 0.8 } }}
-                                whileTap={{ scale: 0.98 }}
                                 style={{
                                     scrollSnapAlign: 'start',
                                     flexShrink: 0,
@@ -328,7 +327,6 @@ const VenueSpotlight = memo(function VenueSpotlight() {
                     <Link key={v.id} to={`/venue/${v.id}`} style={{ textDecoration: 'none' }}>
                         <motion.div
                             className="card"
-                            whileHover={{ y: -3, transition: { type: 'spring', damping: 15 } }}
                             style={{ borderTop: '2px solid var(--sepia)' }}
                         >
                             {/* Marquee-style header */}
@@ -438,8 +436,8 @@ const SocialPulse = memo(function SocialPulse() {
                                 {act.type === 'review' || act.type === 'log' ? (
                                     <div style={{ display: 'flex', gap: '1rem', flex: 1 }}>
                                         {act.film?.poster_path && (
-                                            <div style={{ width: 56, height: 84, flexShrink: 0, borderRadius: '3px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <img src={tmdb.poster(act.film.poster_path, 'w92')} alt={act.film.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.2) contrast(1.1)' }} />
+                                            <div className="cine-card" style={{ width: 56, height: 84, flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
+                                                <img src={tmdb.poster(act.film.poster_path, 'w92')} loading="lazy" alt={act.film.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.2) contrast(1.1)' }} />
                                             </div>
                                         )}
                                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -469,9 +467,9 @@ const SocialPulse = memo(function SocialPulse() {
                                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>CREATED A LIST</div>
                                         </div>
                                         <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.05rem', color: 'var(--parchment)', marginBottom: '1rem' }}>{act.title}</div>
-                                        <div style={{ display: 'flex', gap: 4, height: 60, overflow: 'hidden', borderRadius: '3px', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
+                                        <div className="cine-card" style={{ display: 'flex', gap: 4, height: 60, overflow: 'hidden', borderRadius: '3px' }}>
                                             {act.films.map((f, i) => (
-                                                <img key={i} src={tmdb.poster(f.poster_path, 'w92')} style={{ flex: 1, objectFit: 'cover', filter: 'sepia(0.3) brightness(0.8)', borderRight: i < act.films.length - 1 ? '1px solid rgba(0,0,0,0.5)' : 'none' }} />
+                                                <img key={i} src={tmdb.poster(f.poster_path, 'w92')} loading="lazy" style={{ flex: 1, objectFit: 'cover', filter: 'sepia(0.3) brightness(0.8)', borderRight: i < act.films.length - 1 ? '1px solid rgba(0,0,0,0.5)' : 'none' }} />
                                             ))}
                                         </div>
                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.75rem', textAlign: 'right' }}>
@@ -491,7 +489,6 @@ const SocialPulse = memo(function SocialPulse() {
                             whileInView={{ opacity: 1, y: 0 }}
                             viewport={{ once: true, margin: "50px" }}
                             transition={{ delay: i * 0.05, duration: 0.5, ease: "easeOut" }}
-                            whileHover={{ y: -4, transition: { type: 'spring', damping: 20 } }}
                             style={cardStyle}
                         >
                             {/* Header */}
@@ -507,8 +504,8 @@ const SocialPulse = memo(function SocialPulse() {
                             {act.type === 'review' || act.type === 'log' ? (
                                 <div style={{ display: 'flex', gap: '1rem', flex: 1 }}>
                                     {act.film?.poster_path && (
-                                        <div style={{ width: 56, height: 84, flexShrink: 0, borderRadius: '3px', overflow: 'hidden', boxShadow: '0 4px 10px rgba(0,0,0,0.6)' }}>
-                                            <img src={tmdb.poster(act.film.poster_path, 'w92')} alt={act.film.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.2) contrast(1.1)' }} />
+                                        <div className="cine-card" style={{ width: 56, height: 84, flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
+                                            <img src={tmdb.poster(act.film.poster_path, 'w92')} loading="lazy" alt={act.film.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.2) contrast(1.1)' }} />
                                         </div>
                                     )}
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -532,9 +529,9 @@ const SocialPulse = memo(function SocialPulse() {
                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>CREATED A LIST</div>
                                     </div>
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.05rem', color: 'var(--parchment)', marginBottom: '1rem' }}>{act.title}</div>
-                                    <div style={{ display: 'flex', gap: 4, height: 60, overflow: 'hidden', borderRadius: '3px', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
+                                    <div className="cine-card" style={{ display: 'flex', gap: 4, height: 60, overflow: 'hidden', borderRadius: '3px' }}>
                                         {act.films.map((f, fi) => (
-                                            <img key={fi} src={tmdb.poster(f.poster_path, 'w92')} style={{ flex: 1, objectFit: 'cover', filter: 'sepia(0.3) brightness(0.8)', borderRight: fi < act.films.length - 1 ? '1px solid rgba(0,0,0,0.5)' : 'none' }} />
+                                            <img key={fi} src={tmdb.poster(f.poster_path, 'w92')} loading="lazy" style={{ flex: 1, objectFit: 'cover', filter: 'sepia(0.3) brightness(0.8)', borderRight: fi < act.films.length - 1 ? '1px solid rgba(0,0,0,0.5)' : 'none' }} />
                                         ))}
                                     </div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.75rem', textAlign: 'right' }}>
