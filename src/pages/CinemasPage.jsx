@@ -6,6 +6,7 @@ import { useAuthStore, useCinemaReviewStore, useUIStore, useVenueStore } from '.
 import toast from 'react-hot-toast'
 
 // ── CINEMA DATABASE ──
+// Using verified stable Unsplash photo IDs (confirmed 2026-03)
 const ALL_CINEMAS = [
     {
         id: 1, name: 'The Oracle Palace', city: 'Brooklyn', country: 'USA', location: 'Brooklyn, NY, USA',
@@ -37,7 +38,7 @@ const ALL_CINEMAS = [
         vibes: ['Arthouse', 'Historic', 'Repertory'], verified: true, followers: 5821,
         lat: 48.8566, lng: 2.3522,
         nextShow: 'Breathless (1960) — Thu 8PM',
-        image: 'https://images.unsplash.com/photo-1571204829887-3b8d69e4094d?q=80&w=1200',
+        image: 'https://images.unsplash.com/photo-1509347528160-9a9e33742cdb?q=80&w=1200',
     },
     {
         id: 5, name: 'Electric Sheep Cinema', city: 'London', country: 'UK', location: 'London, UK',
@@ -53,7 +54,7 @@ const ALL_CINEMAS = [
         vibes: ['Historic', 'Midnight Palace', 'Repertory'], verified: true, followers: 4102,
         lat: 34.0522, lng: -118.2437,
         nextShow: 'Sunset Blvd. (1950) — Fri 8PM',
-        image: 'https://images.unsplash.com/photo-1485093451681-d5dfd99b55b5?q=80&w=1200',
+        image: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=1200',
     },
     {
         id: 7, name: 'The Midnight Archive', city: 'Tokyo', country: 'Japan', location: 'Tokyo, Japan',
@@ -61,7 +62,7 @@ const ALL_CINEMAS = [
         vibes: ['Arthouse', 'Experimental', 'Repertory'], verified: false, followers: 1890,
         lat: 35.6762, lng: 139.6503,
         nextShow: 'Woman in the Dunes — Sun 7PM',
-        image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1200',
+        image: 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=1200',
     },
     {
         id: 8, name: 'Drive-In Americana', city: 'Nashville', country: 'USA', location: 'Nashville, TN, USA',
@@ -69,7 +70,7 @@ const ALL_CINEMAS = [
         vibes: ['Drive-In', 'Family', 'Historic'], verified: false, followers: 678,
         lat: 36.1627, lng: -86.7816,
         nextShow: 'Grease (1978) — Sat Dusk',
-        image: 'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?q=80&w=1200',
+        image: 'https://images.unsplash.com/photo-1517604931442-7e0c8ed0963c?q=80&w=1200&sat=-50',
     },
     {
         id: 9, name: 'The Vault Cinema', city: 'Berlin', country: 'Germany', location: 'Berlin, Germany',
@@ -77,7 +78,7 @@ const ALL_CINEMAS = [
         vibes: ['Experimental', 'Arthouse', 'Indie'], verified: true, followers: 2760,
         lat: 52.5200, lng: 13.4050,
         nextShow: 'Stalker (1979) — Fri 10PM',
-        image: 'https://images.unsplash.com/photo-1586899028174-e7098604235b?q=80&w=1200',
+        image: 'https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=1200',
     },
     {
         id: 10, name: 'IMAX Citadel', city: 'New York', country: 'USA', location: 'New York, NY, USA',
@@ -85,7 +86,7 @@ const ALL_CINEMAS = [
         vibes: ['IMAX', 'Historic'], verified: true, followers: 8902,
         lat: 40.7128, lng: -74.0060,
         nextShow: '2001: A Space Odyssey — Sat 2PM',
-        image: 'https://images.unsplash.com/photo-1524985069026-dd778a71c7b4?q=80&w=1200',
+        image: 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=1200&hue=50',
     },
 ]
 

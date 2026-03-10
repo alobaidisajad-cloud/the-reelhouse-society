@@ -168,11 +168,11 @@ export default function FeedPage() {
         if (!isSupabaseConfigured) { setFeedLoading(false); return }
         setFeedLoading(true)
         try {
+            // Note: explicit FK hint solves PGRST201 ambiguous relationship error
+            // 'profiles!logs_user_id_fkey' tells PostgREST which FK path to use
             const { data, error } = await supabase
                 .from('logs')
-                .select('*, profiles(username, role)')
-                .not('review', 'is', null)
-                .neq('review', '')
+                .select('*, profiles!logs_user_id_fkey(username, role)')
                 .order('created_at', { ascending: false })
                 .limit(50)
 
@@ -208,10 +208,10 @@ export default function FeedPage() {
     const fetchSidebarData = useCallback(async () => {
         if (!isSupabaseConfigured) return
         try {
-            // Real recent public lists
+            // Real recent public lists — explicit FK to avoid ambiguous relationship
             const { data: listsData } = await supabase
                 .from('lists')
-                .select('id, title, description, profiles(username)')
+                .select('id, title, description, profiles!lists_user_id_fkey(username)')
                 .order('created_at', { ascending: false })
                 .limit(3)
 
@@ -223,10 +223,10 @@ export default function FeedPage() {
                 })))
             }
 
-            // Real active agents: users with most recent log activity
+            // Real active agents: users with most recent log activity — explicit FK
             const { data: agentsData } = await supabase
                 .from('logs')
-                .select('profiles(username)')
+                .select('profiles!logs_user_id_fkey(username)')
                 .order('created_at', { ascending: false })
                 .limit(20)
 
