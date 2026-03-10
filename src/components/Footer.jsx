@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { Film } from 'lucide-react'
 
 /**
@@ -39,26 +39,27 @@ export default function Footer() {
                         NAVIGATE
                     </div>
                     {[
-                        { to: '/', label: 'The Lobby' },
+                        { to: '/', label: 'The Lobby', end: true },
                         { to: '/discover', label: 'The Darkroom' },
                         { to: '/feed', label: 'The Reel' },
-                        { to: '/lists', label: 'The Stacks' },
-                        { to: '/patronage', label: 'The Society' },
-                    ].map(({ to, label }) => (
-                        <Link key={to} to={to} style={{
+                        { to: '/stacks', label: 'The Stacks' },
+                        { to: '/society', label: 'The Society' },
+                    ].map(({ to, label, end }) => (
+                        <NavLink key={to} to={to} end={end} style={({ isActive }) => ({
                             display: 'block',
                             fontFamily: 'var(--font-sub)',
                             fontSize: '0.75rem',
-                            color: 'var(--bone)',
+                            color: isActive ? 'var(--sepia)' : 'var(--bone)',
+                            fontWeight: isActive ? '600' : 'normal',
                             textDecoration: 'none',
                             padding: '0.2rem 0',
                             transition: 'color 0.2s',
-                        }}
+                        })}
                             onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
-                            onMouseLeave={e => e.currentTarget.style.color = 'var(--bone)'}
+                            onMouseLeave={e => e.currentTarget.style.color = ''}
                         >
                             {label}
-                        </Link>
+                        </NavLink>
                     ))}
                 </div>
 
@@ -69,22 +70,23 @@ export default function Footer() {
                     </div>
                     {[
                         { to: '/dispatch', label: 'The Dispatch' },
-                        { to: '/patronage', label: 'Membership' },
+                        { to: '/society', label: 'Membership' },
                     ].map(({ to, label }) => (
-                        <Link key={to} to={to} style={{
+                        <NavLink key={to} to={to} style={({ isActive }) => ({
                             display: 'block',
                             fontFamily: 'var(--font-sub)',
                             fontSize: '0.75rem',
-                            color: 'var(--bone)',
+                            color: isActive ? 'var(--sepia)' : 'var(--bone)',
+                            fontWeight: isActive ? '600' : 'normal',
                             textDecoration: 'none',
                             padding: '0.2rem 0',
                             transition: 'color 0.2s',
-                        }}
+                        })}
                             onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
-                            onMouseLeave={e => e.currentTarget.style.color = 'var(--bone)'}
+                            onMouseLeave={e => e.currentTarget.style.color = ''}
                         >
                             {label}
-                        </Link>
+                        </NavLink>
                     ))}
                 </div>
             </div>
