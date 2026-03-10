@@ -2537,25 +2537,29 @@ body::after {
 
 /* ── 1924 NITRATE NOIR POLISH UTILITIES ── */
 .glow-text {
-  text-shadow: 0 0 15px rgba(242, 232, 160, 0.6), 0 0 30px rgba(196, 150, 26, 0.4), 0 0 50px rgba(139, 105, 20, 0.15);
+  /* Simplified from 3 complex shadows to 2 for massive GPU paint perf boost */
+  text-shadow: 0 0 12px rgba(242, 232, 160, 0.5), 0 0 35px rgba(196, 150, 26, 0.3);
 }
 
 .cine-card {
   position: relative;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(196, 150, 26, 0.2), inset 0 2px 10px rgba(10, 7, 3, 0.8);
+  /* Simplified shadow stack */
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.8), inset 0 0 0 1px rgba(196, 150, 26, 0.2);
   border-radius: var(--radius-card);
-  transition: transform 0.4s var(--transition-rubber), box-shadow 0.4s ease;
+  /* CRITICAL PERF FIX: Only animate transform. Never animate box-shadow on grids */
+  transition: transform 0.4s var(--transition-rubber);
+  will-change: transform;
 }
 
 .cine-card:hover {
   transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), inset 0 0 0 1px rgba(242, 232, 160, 0.3), 0 0 20px rgba(196, 150, 26, 0.2);
+  /* The physical depth is faked entirely by the translation/scale, handled by GPU */
 }
 
 .shimmer {
-  background: linear-gradient(90deg, var(--soot) 0%, rgba(42, 33, 24, 0.8) 50%, var(--soot) 100%);
+  background: linear-gradient(90deg, var(--soot) 0%, rgba(35, 28, 20, 0.8) 50%, var(--soot) 100%);
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite linear;
+  animation: shimmer 2s infinite linear;
 }
 
 /* Premium Divider */
