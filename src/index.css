@@ -8,19 +8,27 @@
 
 /* ── CSS VARIABLES ── */
 :root {
-  /* --ink is the deepest black background */
-  --ink: #050505;
-  --parchment: #E2DBD0;
-  --sepia: #8B6914;
-  /* --soot is a slightly lighter black for cards/elevated surfaces */
-  --soot: #0A0A0A;
-  --flicker: #F2E8A0;
-  --blood-reel: #5C1A0B;
-  --ash: #3A3228;
-  --bone: #C4B898;
-  --fog: #7A6E5F;
-  --silver-nitrate: #D0D8E0;
-  /* ── NEW: Cool silver accent for premium contrast ── */
+  /* ── NITRATE NOIR PALETTE v3.0 — Maximum Premium ── */
+  /* Deep warm near-black — not flat, has life */
+  --ink: #080604;
+  /* Crisp antique white — aged screen glow */
+  --parchment: #EDE5D8;
+  /* Rich amber gold — old Hollywood spotlight */
+  --sepia: #C4961A;
+  /* Soot — elevated surfaces, cards */
+  --soot: #0F0D0A;
+  /* Flicker — brightest highlight, camera flash */
+  --flicker: #F8F0C0;
+  /* Blood reel — danger, error, dramatic accent */
+  --blood-reel: #6B1A0A;
+  /* Ash — mid-tone dividers, borders */
+  --ash: #2A2118;
+  /* Bone — secondary text, labels */
+  --bone: #C8B99A;
+  /* Fog — muted/disabled text */
+  --fog: #6B6055;
+  /* Silver nitrate — cool contrast for highlights */
+  --silver-nitrate: #D8E0E8;
 
   --font-display: 'Rye', serif;
   --font-sub: 'Special Elite', cursive;
@@ -35,6 +43,8 @@
   --radius-wobbly: 2px 8px 3px 6px / 4px 3px 7px 2px;
   --radius-card: 3px 5px 4px 6px / 5px 3px 6px 4px;
 
+  /* ── MAGNETIC HOVER TRANSITION ── */
+  /* This rubber-band curve makes elements physical and bouncy, not just digital */
   --transition-rubber: cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-jitter: steps(8);
 }
@@ -2523,6 +2533,29 @@ body::after {
 /* Luminous Glow texts */
 .text-glow {
   text-shadow: 0 0 10px rgba(242, 232, 160, 0.4), 0 0 20px rgba(139, 105, 20, 0.2);
+}
+
+/* ── 1924 NITRATE NOIR POLISH UTILITIES ── */
+.glow-text {
+  text-shadow: 0 0 15px rgba(242, 232, 160, 0.6), 0 0 30px rgba(196, 150, 26, 0.4), 0 0 50px rgba(139, 105, 20, 0.15);
+}
+
+.cine-card {
+  position: relative;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7), inset 0 0 0 1px rgba(196, 150, 26, 0.2), inset 0 2px 10px rgba(10, 7, 3, 0.8);
+  border-radius: var(--radius-card);
+  transition: transform 0.4s var(--transition-rubber), box-shadow 0.4s ease;
+}
+
+.cine-card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.9), inset 0 0 0 1px rgba(242, 232, 160, 0.3), 0 0 20px rgba(196, 150, 26, 0.2);
+}
+
+.shimmer {
+  background: linear-gradient(90deg, var(--soot) 0%, rgba(42, 33, 24, 0.8) 50%, var(--soot) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite linear;
 }
 
 /* Premium Divider */
