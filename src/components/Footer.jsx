@@ -40,7 +40,7 @@ export default function Footer() {
                     </div>
                     {[
                         { to: '/', label: 'The Lobby' },
-                        { to: '/discover', label: 'Dark Room' },
+                        { to: '/discover', label: 'The Darkroom' },
                         { to: '/feed', label: 'The Reel' },
                         { to: '/lists', label: 'The Stacks' },
                         { to: '/patronage', label: 'The Society' },

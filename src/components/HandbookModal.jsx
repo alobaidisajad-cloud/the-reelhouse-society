@@ -51,12 +51,12 @@ export default function HandbookModal() {
                             </div>
 
                             <div className="hb-item">
-                                <h3>The Dark Room</h3>
+                                <h3>The Darkroom</h3>
                                 <p>Our expansive discovery engine. Step inside to develop films by emotional resonance, decade, genre, and aesthetic mood.</p>
                             </div>
 
                             <div className="hb-item">
-                                <h3>The Ticket Booth</h3>
+                                <h3>Ticket Stubs</h3>
                                 <p>Where films are committed to the archive. Home to the <strong>Autopsy Engine</strong>: a tool for evaluating the architectural (story), aesthetic (visual), and aural (sound) dimensions of cinema.</p>
                             </div>
 

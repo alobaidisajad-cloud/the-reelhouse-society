@@ -6,7 +6,7 @@ import { tmdb } from '../tmdb'
 
 const QUICK_LINKS = [
     { id: 'lobby', label: 'The Lobby', path: '/', icon: Film },
-    { id: 'discover', label: 'Dark Room', path: '/discover', icon: Compass },
+    { id: 'discover', label: 'The Darkroom', path: '/discover', icon: Compass },
     { id: 'feed', label: 'The Reel', path: '/feed', icon: BookOpen },
     { id: 'lists', label: 'The Stacks', path: '/lists', icon: Star },
     { id: 'profile', label: 'My Dossier', path: '/user/sajjadsaleel', icon: User },

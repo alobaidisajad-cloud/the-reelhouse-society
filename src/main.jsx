@@ -64,9 +64,9 @@ function NoirToast({ t, message, icon }) {
 
 // Expose custom toast helpers globally
 window.__rh_toast = {
-  log: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="🎬" />),
-  err: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="👾" />),
-  info: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="📽" />),
+  log: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="✦" />),
+  err: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="†" />),
+  info: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="◈" />),
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

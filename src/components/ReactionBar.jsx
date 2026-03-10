@@ -3,12 +3,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore, useNotificationStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 
+// Premium monochrome thematic glyphs — no colorful Unicode emojis
 const REACTIONS = [
-    { emoji: '🎬', label: 'Masterpiece' },
-    { emoji: '🔥', label: 'Fire' },
-    { emoji: '💀', label: 'Devastating' },
-    { emoji: '💎', label: 'Hidden Gem' },
-    { emoji: '👏', label: 'Encore' },
+    { emoji: '✦', label: 'Masterpiece' },
+    { emoji: '†', label: 'Devastating' },
+    { emoji: '◈', label: 'Hidden Gem' },
+    { emoji: '∞', label: 'Timeless' },
+    { emoji: '⌀', label: 'Void' },
 ]
 
 export default function ReactionBar({ logId, logAuthor, filmTitle }) {

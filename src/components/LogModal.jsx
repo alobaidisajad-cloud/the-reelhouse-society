@@ -173,7 +173,7 @@ export default function LogModal() {
         if (!film) return
         if (!isAuthenticated) {
             closeLogModal()
-            toast('Sign in to log films!', { icon: '🎬' })
+            toast('Sign in to log films.', { icon: '✦' })
             return
         }
 
@@ -206,19 +206,19 @@ export default function LogModal() {
             toast.success(`Log updated for ${film.title}`)
         } else {
             addLog(logData)
-            const statusEmoji = { watched: '🎬', rewatched: '🔄', abandoned: '🚪' }
+            const statusLabel = { watched: '[ LOGGED ]', rewatched: '[ REWATCH ]', abandoned: '[ ABANDONED ]' }
 
             // ── One-tap share after log ──
             const shareText = rating > 0
-                ? `${statusEmoji[status]} ${film.title} (${film.year ?? ''}) — ${rating}/5 ✦ The ReelHouse Society`
-                : `${statusEmoji[status]} Just logged ${film.title} on The ReelHouse Society`
+                ? `${statusLabel[status]} ${film.title} (${film.year ?? ''}) — ${rating}/5 ✦ The ReelHouse Society`
+                : `${statusLabel[status]} Just logged ${film.title} on The ReelHouse Society`
             const shareUrl = 'https://thereelhousesociety.com'
 
             toast(
                 (t) => (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.62rem', letterSpacing: '0.1em', color: '#E8DFC8' }}>
-                            {statusEmoji[status]} {film.title} logged to the archive.
+                            {statusLabel[status]} {film.title} logged to the archive.
                         </div>
                         <button
                             onClick={() => {
@@ -649,7 +649,7 @@ export default function LogModal() {
                                                                 e.preventDefault()
                                                                 toast("STORY: Narrative & Structure\nSCRIPT: Dialogue & Theme\nACTING: Micro-expressions & Presence\nCINEMATOGRAPHY: Light, Shadow & Framing\nEDITING: Rhythm & Pacing\nSOUND: Score & Silence", { duration: 8000, icon: '📖', style: { background: 'var(--ink)', border: '1px solid var(--sepia)', color: 'var(--parchment)', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', textAlign: 'left', minWidth: '300px' } })
                                                             }} className="btn btn-ghost" style={{ fontSize: '0.45rem', padding: '0.2rem 0.4rem', color: 'var(--fog)' }}>
-                                                                <BookOpen size={10} style={{ marginRight: '0.3rem' }} /> FIELD MANUAL
+                                                                ✦ FIELD MANUAL
                                                             </button>
                                                         </div>
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>

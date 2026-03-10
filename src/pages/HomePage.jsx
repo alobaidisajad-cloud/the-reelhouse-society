@@ -340,7 +340,7 @@ const VenueSpotlight = memo(function VenueSpotlight() {
                                 {v.name}
                             </div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', marginBottom: '0.75rem' }}>
-                                📍 {v.location}
+                                ◈ {v.location}
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.75rem' }}>
                                 {v.vibes.map((vibe) => (
@@ -696,7 +696,7 @@ export default function HomePage() {
                                     style={{ fontSize: IS_TOUCH ? '0.75rem' : '0.85rem', padding: IS_TOUCH ? '0.75em 1.5em' : '0.9em 2em', borderColor: 'rgba(139,105,20,0.4)', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
                                     onClick={() => openSignupModal('venue_owner')}
                                 >
-                                    I MANAGE A VENUE
+                                    CURATE A VENUE
                                 </button>
                             </>
                         )}

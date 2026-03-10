@@ -42,11 +42,12 @@ const DispatchPage = lazy(() => import('./pages/DispatchPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
-// Desktop: full iris transition. Mobile: simple fade (no clip-path GPU thrash)
+// Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
+// We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
 const pageVariantsDesktop = {
-  initial: { opacity: 1, clipPath: 'circle(150% at 50% 50%)' },
-  in: { opacity: 1, clipPath: 'circle(150% at 50% 50%)' },
-  out: { opacity: 1, clipPath: 'circle(0% at 50% 50%)' },
+  initial: { opacity: 0 },
+  in: { opacity: 1 },
+  out: { opacity: 0 },
 }
 
 const pageVariantsMobile = {
@@ -55,8 +56,8 @@ const pageVariantsMobile = {
   out: { opacity: 0 },
 }
 
-const pageTransitionDesktop = { type: 'tween', ease: 'easeInOut', duration: 0.45 }
-const pageTransitionMobile = { type: 'tween', ease: 'easeOut', duration: 0.2 }
+const pageTransitionDesktop = { type: 'tween', ease: 'easeInOut', duration: 0.15 }
+const pageTransitionMobile = { type: 'tween', ease: 'easeOut', duration: 0.15 }
 
 function PageFallback() {
   return <div style={{ minHeight: '100vh', background: 'var(--ink)' }} />
@@ -213,13 +214,16 @@ export default function App() {
               <Route path="/discover" element={<PageWrapper><DiscoverPage /></PageWrapper>} />
               <Route path="/feed" element={<PageWrapper><FeedPage /></PageWrapper>} />
               <Route path="/lists" element={<PageWrapper><ListsPage /></PageWrapper>} />
+              <Route path="/stacks" element={<PageWrapper><ListsPage /></PageWrapper>} />
               <Route path="/lists/:id" element={<PageWrapper><ListDetailPage /></PageWrapper>} />
+              <Route path="/stacks/:id" element={<PageWrapper><ListDetailPage /></PageWrapper>} />
               <Route path="/venue/:venueId" element={<PageWrapper><VenuePage /></PageWrapper>} />
               <Route path="/venue-dashboard" element={<PageWrapper><VenueDashboard /></PageWrapper>} />
               <Route path="/cinemas" element={<PageWrapper><CinemasPage /></PageWrapper>} />
               <Route path="/person/:id" element={<PageWrapper><PersonPage /></PageWrapper>} />
               <Route path="/dispatch" element={<PageWrapper><DispatchPage /></PageWrapper>} />
               <Route path="/patronage" element={<PageWrapper><MembershipPage /></PageWrapper>} />
+              <Route path="/society" element={<PageWrapper><MembershipPage /></PageWrapper>} />
               <Route path="*" element={<PageWrapper><NotFoundPage /></PageWrapper>} />
             </Routes>
           </AnimatePresence>

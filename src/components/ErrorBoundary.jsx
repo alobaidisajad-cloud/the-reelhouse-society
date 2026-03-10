@@ -86,13 +86,14 @@ class ErrorBoundary extends React.Component {
                     </div>
 
                     <p style={{
-                        marginTop: '2rem',
-                        fontFamily: 'var(--font-body)',
-                        fontSize: '0.7rem',
+                        marginTop: '1rem',
+                        fontFamily: 'var(--font-ui)',
+                        fontSize: '0.6rem',
                         color: 'var(--ash)',
-                        fontStyle: 'italic'
+                        fontStyle: 'italic',
+                        letterSpacing: '0.05em',
                     }}>
-                        "{this.state.error?.message || 'Unknown causality'}"
+                        — INCIDENT LOGGED TO THE ARCHIVE —
                     </p>
                 </div>
             )

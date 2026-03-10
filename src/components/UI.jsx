@@ -133,7 +133,7 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
                         objectFit: 'cover',
                         opacity: isLoaded ? 0.95 : 0,
                         transition: 'opacity 0.3s ease-in',
-                        background: 'var(--ink)'
+                        backgroundColor: '#1a1a1a' // Solid constructivist block while loading
                     }}
                 />
             ) : (

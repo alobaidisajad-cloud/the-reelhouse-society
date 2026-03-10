@@ -24,11 +24,11 @@ const prefetchRoute = (path) => {
 
 const NAV_LINKS = [
     { path: '/', label: 'The Lobby', icon: Film },
-    { path: '/discover', label: 'Dark Room', icon: Compass },
+    { path: '/discover', label: 'The Darkroom', icon: Compass },
     { path: '/feed', label: 'The Reel', icon: BookOpen },
     { path: '/dispatch', label: 'The Dispatch', icon: FileText },
     { path: '/lists', label: 'The Stacks', icon: Star },
-    { path: '/cinemas', label: 'Cinemas', icon: MapPin },
+    { path: '/cinemas', label: 'The Cinemas', icon: MapPin },
     { path: '/patronage', label: 'The Society', icon: Crown },
 ]
 

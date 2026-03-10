@@ -1345,7 +1345,7 @@ export default function UserProfilePage() {
 
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: filteredLogs.length },
-        { id: 'tickets', label: 'Ticket Booth', count: profileStubs.length },
+        { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length },
         { id: 'programmes', label: 'Programmes', count: profileProgrammes.length },
         { id: 'projector', label: 'Projector Room', count: null },
         { id: 'lists', label: 'Lists', count: profileLists.length },
@@ -1590,16 +1590,16 @@ export default function UserProfilePage() {
 
                                         // Badges
                                         const badges = []
-                                        if (profileLogs.length >= 1) badges.push({ emoji: '🎬', label: 'First Log', desc: 'Logged your first film' })
-                                        if (profileLogs.length >= 10) badges.push({ emoji: '📽️', label: 'Cinephile', desc: '10 films logged' })
-                                        if (profileLogs.length >= 50) badges.push({ emoji: '🏛️', label: 'Archivist', desc: '50 films logged' })
-                                        if (profileLogs.length >= 100) badges.push({ emoji: '🎭', label: 'Centurion', desc: '100 films logged' })
-                                        if (streak >= 3) badges.push({ emoji: '🔥', label: 'On Fire', desc: `${streak}-day streak` })
-                                        if (streak >= 7) badges.push({ emoji: '⚡', label: 'Week Warrior', desc: '7-day streak' })
-                                        if (streak >= 30) badges.push({ emoji: '💎', label: 'Diamond Reel', desc: '30-day streak' })
-                                        if (profileLogs.filter(l => l.rating === 5).length >= 5) badges.push({ emoji: '⭐', label: 'Masterpiece Hunter', desc: '5 perfect ratings' })
-                                        if (profileLogs.some(l => l.status === 'abandoned')) badges.push({ emoji: '🚪', label: 'Honest Critic', desc: 'Abandoned a film' })
-                                        if (profileLogs.some(l => l.physicalMedia)) badges.push({ emoji: '📀', label: 'Collector', desc: 'Logged physical media' })
+                                        if (profileLogs.length >= 1) badges.push({ emoji: '✦', label: 'First Log', desc: 'Logged your first film' })
+                                        if (profileLogs.length >= 10) badges.push({ emoji: '◈', label: 'Cinephile', desc: '10 films logged' })
+                                        if (profileLogs.length >= 50) badges.push({ emoji: '⌘', label: 'Archivist', desc: '50 films logged' })
+                                        if (profileLogs.length >= 100) badges.push({ emoji: '∞', label: 'Centurion', desc: '100 films logged' })
+                                        if (streak >= 3) badges.push({ emoji: '†', label: 'On Fire', desc: `${streak}-day streak` })
+                                        if (streak >= 7) badges.push({ emoji: '◉', label: 'Week Warrior', desc: '7-day streak' })
+                                        if (streak >= 30) badges.push({ emoji: '⌀', label: 'Diamond Reel', desc: '30-day streak' })
+                                        if (profileLogs.filter(l => l.rating === 5).length >= 5) badges.push({ emoji: '★', label: 'Masterpiece Hunter', desc: '5 perfect ratings' })
+                                        if (profileLogs.some(l => l.status === 'abandoned')) badges.push({ emoji: '✕', label: 'Honest Critic', desc: 'Abandoned a film' })
+                                        if (profileLogs.some(l => l.physicalMedia)) badges.push({ emoji: '▣', label: 'Collector', desc: 'Logged physical media' })
 
                                         return (
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -1612,7 +1612,7 @@ export default function UserProfilePage() {
                                                         borderRadius: '100px',
                                                         padding: '0.3rem 0.8rem',
                                                     }}>
-                                                        <span style={{ fontSize: '1rem' }}>{streak > 0 ? '🔥' : '💤'}</span>
+                                                        <span style={{ fontSize: '0.8rem', fontFamily: 'var(--font-sub)', color: streak > 0 ? '#ff8c20' : 'var(--fog)' }}>{streak > 0 ? '†' : '—'}</span>
                                                         <span style={{
                                                             fontFamily: 'var(--font-ui)', fontSize: '0.6rem',
                                                             letterSpacing: '0.1em',
@@ -1825,7 +1825,7 @@ export default function UserProfilePage() {
 
                         {activeTab === 'tickets' && (
                             <div>
-                                <SectionHeader label="ADMISSION HISTORY" title="Ticket Booth" />
+                                <SectionHeader label="ADMISSION HISTORY" title="Ticket Stubs" />
                                 <TicketBooth stubs={profileStubs} />
                             </div>
                         )}

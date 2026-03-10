@@ -157,7 +157,7 @@ export default function MembershipPage() {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--sepia)', fontStyle: 'italic', marginBottom: '0.5rem' }}>Everything in Free, plus:</div>
                             <div style={{ padding: '0.75rem', background: 'rgba(139,105,20,0.1)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: 'var(--radius-card)', marginBottom: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--flicker)' }}>âœ¦</div>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--flicker)' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                                 <div>
                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--flicker)', marginBottom: '0.2rem' }}>The Editorial Desk</div>
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)', lineHeight: 1.4 }}>Pro-level review formatting. Inject movie stills, pull-quotes, and drop caps into your logs.</div>
@@ -196,7 +196,7 @@ export default function MembershipPage() {
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--blood-reel)', fontStyle: 'italic', marginBottom: '0.5rem' }}>Everything in Archivist, plus:</div>
                             <div style={{ padding: '0.75rem', background: 'rgba(162,36,36,0.1)', border: '1px solid rgba(162,36,36,0.3)', borderRadius: 'var(--radius-card)', marginBottom: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--blood-reel)' }}>âœ¦</div>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--blood-reel)' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                                 <div>
                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--blood-reel)', marginBottom: '0.2rem' }}>The Breakdown Engine</div>
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.4 }}>Break down films across 5 specific axes. Attach gorgeous, dynamic radar charts to your reviews.</div>
@@ -252,7 +252,7 @@ export default function MembershipPage() {
                         marginBottom: '1.5rem',
                         fontSize: '1.8rem',
                     }}>
-                        âœ¦
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     </div>
 
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '1rem' }}>
@@ -310,7 +310,7 @@ export default function MembershipPage() {
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '1px', background: 'var(--flicker)', alignSelf: 'center' }} />
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--flicker)' }}>âœ¦</div>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--flicker)' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                         <div style={{ width: '40px', height: '1px', background: 'var(--flicker)', alignSelf: 'center' }} />
                     </div>
                 </motion.div>
