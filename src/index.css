@@ -64,19 +64,7 @@
     cursor: none !important;
   }
 
-  /* UX OVERRIDE: Restore standard text selection cursors for readability and copypasting */
-  p,
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  input,
-  textarea,
-  blockquote {
-    cursor: text !important;
-  }
+
 }
 
 /* ── CUSTOM SCROLLBAR ── */
