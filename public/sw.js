@@ -1,28 +1,29 @@
-const CACHE_NAME = 'reelhouse-shell-v4';
-const API_CACHE = 'reelhouse-tmdb-api-v4';
-const IMAGE_CACHE = 'reelhouse-tmdb-images-v4';
+// ============================================================
+// REELHOUSE — SERVICE WORKER v5
+// Elite Strategy:
+//   - HTML/navigation: NETWORK FIRST (never cached — always fresh from Vercel CDN)
+//   - JS/CSS assets: NETWORK FIRST with cache fallback (Vercel handles immutable cache via headers)
+//   - TMDB Images: CACHE FIRST (images are immutable by URL hash)
+//   - TMDB API: STALE-WHILE-REVALIDATE (fast UI, background refresh)
+//
+// Cache busting is handled by vercel.json headers, NOT by sw version strings.
+// ============================================================
 
-const STATIC_ASSETS = [
-    '/',
-    '/index.html',
-    '/manifest.json'
-];
+const IMAGE_CACHE = 'reelhouse-tmdb-images-v5';
+const API_CACHE = 'reelhouse-tmdb-api-v5';
 
-self.addEventListener('install', (event) => {
-    // Install immediately
+// Install — skip waiting to activate immediately, don't pre-cache any shell
+self.addEventListener('install', () => {
     self.skipWaiting();
-    event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => cache.addAll(STATIC_ASSETS))
-    );
 });
 
+// Activate — purge ALL old caches
 self.addEventListener('activate', (event) => {
-    // Clear out old obsolete caches
     event.waitUntil(
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (![CACHE_NAME, API_CACHE, IMAGE_CACHE].includes(key)) {
+                    if (key !== IMAGE_CACHE && key !== API_CACHE) {
                         return caches.delete(key);
                     }
                 })
@@ -35,53 +36,48 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // 1. TMDB Image CDN — Cache First strategy (Images don't change)
+    // 1. TMDB Image CDN — Cache First (images are immutable by URL)
     if (url.hostname === 'image.tmdb.org') {
         event.respondWith(
-            caches.match(request).then((cachedResponse) => {
-                if (cachedResponse) return cachedResponse;
-                return fetch(request).then((networkResponse) => {
-                    if (networkResponse.ok) {
-                        const clone = networkResponse.clone();
-                        caches.open(IMAGE_CACHE).then((cache) => cache.put(request, clone));
-                    }
-                    return networkResponse;
-                }).catch(() => new Response('', { status: 404 })); // Fallback
-            })
-        );
-        return;
-    }
-
-    // 2. TMDB API Calls — Stale-While-Revalidate (Fast UI, updates cache in background)
-    if (url.hostname === 'api.themoviedb.org' && request.method === 'GET') {
-        event.respondWith(
-            caches.open(API_CACHE).then((cache) => {
-                return cache.match(request).then((cachedResponse) => {
-                    const fetchPromise = fetch(request).then((networkResponse) => {
-                        if (networkResponse.ok) cache.put(request, networkResponse.clone());
-                        return networkResponse;
-                    }).catch(() => cachedResponse); // Fallback to cache if offline
-
-                    // Return cached instantly if available, otherwise wait for network
-                    return cachedResponse || fetchPromise;
+            caches.open(IMAGE_CACHE).then((cache) => {
+                return cache.match(request).then((cached) => {
+                    if (cached) return cached;
+                    return fetch(request).then((response) => {
+                        if (response.ok) cache.put(request, response.clone());
+                        return response;
+                    }).catch(() => new Response('', { status: 404 }));
                 });
             })
         );
         return;
     }
 
-    // 3. App Shell & Assets (JS/CSS) — Network First, fallback to cache
-    if (request.mode === 'navigate' || url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) {
+    // 2. TMDB API — Stale-While-Revalidate (fast UI, background cache update)
+    if (url.hostname === 'api.themoviedb.org' && request.method === 'GET') {
         event.respondWith(
-            fetch(request).then((response) => {
-                const clone = response.clone();
-                caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-                return response;
-            }).catch(() => caches.match(request))
+            caches.open(API_CACHE).then((cache) => {
+                return cache.match(request).then((cached) => {
+                    const fetchPromise = fetch(request).then((response) => {
+                        if (response.ok) cache.put(request, response.clone());
+                        return response;
+                    }).catch(() => cached);
+                    return cached || fetchPromise;
+                });
+            })
         );
         return;
     }
 
-    // Default fetch for everything else
+    // 3. HTML Navigation — NETWORK FIRST, NO CACHE
+    // Vercel CDN delivers fresh HTML with no-cache headers (handled by vercel.json)
+    // We must not intercept or cache HTML — it causes the exact deployment mismatch bug we had.
+    if (request.mode === 'navigate') {
+        event.respondWith(fetch(request));
+        return;
+    }
+
+    // 4. All other requests — pass through to network
+    // JS/CSS assets have immutable cache-control from Vercel CDN directly.
+    // We do not need to cache them in the service worker.
     event.respondWith(fetch(request));
 });

@@ -220,18 +220,33 @@ export const useFilmStore = create(
             fetchWatchlist: async () => {
                 const user = useAuthStore.getState().user;
                 if (!user) return;
-                const { data, error } = await supabase.from('watchlists').select('*').eq('user_id', user.id);
+                const { data, error } = await supabase.from('watchlists').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
                 if (!error && data) {
-                    set({ watchlist: data.map(w => ({ id: w.film_id, title: w.film_title })) });
+                    set({
+                        watchlist: data.map(w => ({
+                            id: w.film_id,
+                            title: w.film_title,
+                            poster_path: w.poster_path || null,
+                            year: w.year || null,
+                        }))
+                    });
                 }
             },
 
             fetchVault: async () => {
                 const user = useAuthStore.getState().user;
                 if (!user) return;
-                const { data, error } = await supabase.from('vaults').select('*').eq('user_id', user.id);
+                const { data, error } = await supabase.from('vaults').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
                 if (!error && data) {
-                    set({ vault: data.map(v => ({ id: v.film_id, title: v.film_title || v.title })) });
+                    set({
+                        vault: data.map(v => ({
+                            id: v.film_id,
+                            title: v.film_title,
+                            poster_path: v.poster_path || null,
+                            year: v.year || null,
+                            format: v.format || 'Digital',
+                        }))
+                    });
                 }
             },
 
@@ -393,13 +408,17 @@ export const useFilmStore = create(
                 const user = useAuthStore.getState().user;
                 if (!user) return;
 
-                const { error } = await supabase.from('watchlists').insert([
-                    { user_id: user.id, film_id: film.id, film_title: film.title || film.name || 'Unknown' }
-                ]);
+                const { error } = await supabase.from('watchlists').insert([{
+                    user_id: user.id,
+                    film_id: film.id,
+                    film_title: film.title || film.name || 'Unknown',
+                    poster_path: film.poster_path || null,
+                    year: film.release_date ? new Date(film.release_date).getFullYear() : null,
+                }]);
 
                 if (!error) {
                     set((state) => ({
-                        watchlist: state.watchlist.find((f) => f.id === film.id) ? state.watchlist : [...state.watchlist, film],
+                        watchlist: state.watchlist.find((f) => f.id === film.id) ? state.watchlist : [...state.watchlist, { id: film.id, title: film.title || film.name, poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : null }],
                     }));
                 }
             },
@@ -412,17 +431,22 @@ export const useFilmStore = create(
                 if (!error) set((state) => ({ watchlist: state.watchlist.filter((f) => f.id !== filmId) }));
             },
 
-            addToVault: async (film) => {
+            addToVault: async (film, format = 'Digital') => {
                 const user = useAuthStore.getState().user;
                 if (!user) return;
 
-                const { error } = await supabase.from('vaults').insert([
-                    { user_id: user.id, film_id: film.id, film_title: film.title || film.name || 'Unknown', format: 'Digital' }
-                ]);
+                const { error } = await supabase.from('vaults').insert([{
+                    user_id: user.id,
+                    film_id: film.id,
+                    film_title: film.title || film.name || 'Unknown',
+                    poster_path: film.poster_path || null,
+                    year: film.release_date ? new Date(film.release_date).getFullYear() : null,
+                    format,
+                }]);
 
                 if (!error) {
                     set((state) => ({
-                        vault: state.vault.find((f) => f.id === film.id) ? state.vault : [...state.vault, film],
+                        vault: state.vault.find((f) => f.id === film.id) ? state.vault : [...state.vault, { id: film.id, title: film.title || film.name, poster_path: film.poster_path, format }],
                     }));
                 }
             },
@@ -726,78 +750,152 @@ export const initAuthSync = () => {
 };
 
 export const initRealtime = () => {
-    if (!isSupabaseConfigured) return  // Don't attempt WS connections with placeholder credentials
-    // Listen for live film logs dropped globally by any user
+    if (!isSupabaseConfigured) return
+
+    // 1. Live global feed — all new log entries from any user
     supabase
-        .channel('global_logs_channel')
-        .on(
-            'postgres_changes',
-            { event: 'INSERT', schema: 'public', table: 'logs' },
-            (payload) => {
-                const currentLogs = useFilmStore.getState().logs;
-                // Ensure we don't duplicate logs that this client just inserted optimistically
-                if (!currentLogs.find(l => l.id === payload.new.id)) {
-                    const newLog = {
-                        id: payload.new.id,
-                        filmId: payload.new.film_id,
-                        title: payload.new.film_title,
-                        rating: payload.new.rating,
-                        review: payload.new.review,
-                        watchedDate: payload.new.watched_date,
-                        createdAt: payload.new.created_at
-                    };
-                    useFilmStore.setState({ logs: [newLog, ...currentLogs] });
-                }
+        .channel('global_logs_feed')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'logs' }, (payload) => {
+            const currentLogs = useFilmStore.getState().logs;
+            const currentUserId = useAuthStore.getState().user?.id;
+            // Don't duplicate our own optimistic inserts
+            if (!currentLogs.find(l => l.id === payload.new.id) && payload.new.user_id !== currentUserId) {
+                const newLog = {
+                    id: payload.new.id,
+                    filmId: payload.new.film_id,
+                    title: payload.new.film_title,
+                    poster: payload.new.poster_path,
+                    year: payload.new.year,
+                    rating: payload.new.rating,
+                    review: payload.new.review,
+                    watchedDate: payload.new.watched_date,
+                    createdAt: payload.new.created_at,
+                };
+                useFilmStore.setState({ logs: [newLog, ...currentLogs] });
             }
-        )
+        })
         .subscribe();
+
+    // 2. Real-time notifications for the logged-in user
+    const userId = useAuthStore.getState().user?.id;
+    if (userId) {
+        supabase
+            .channel(`user_notifications_${userId}`)
+            .on('postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+                (payload) => {
+                    useNotificationStore.getState().push({
+                        id: payload.new.id,
+                        type: payload.new.type,
+                        from: payload.new.from_username,
+                        message: payload.new.message,
+                        timestamp: payload.new.created_at,
+                    });
+                }
+            )
+            .subscribe();
+    }
 };
 
-// ── DISPATCH STORE ──
-export const useDispatchStore = create(
-    persist(
-        (set, get) => ({
-            dossiers: [
-                {
-                    id: 'u1',
-                    title: "The Death of the Jump Scare",
-                    excerpt: "Why modern horror is trading cheap thrills for existential dread, and why audiences are finally craving atmosphere over adrenaline. The tension is in the silence.",
-                    fullContent: "Why modern horror is trading cheap thrills for existential dread, and why it's working. We've seen a shift from monsters jumping out of closets to lingering shots of empty hallways. This 'elevated horror' relies on the haunting atmosphere rather than the sudden shock. Are audiences finally craving atmosphere over adrenaline?\n\nBy Midnight_Muse",
-                    author: "MIDNIGHT_MUSE",
-                    date: "MAR 07, 2026",
-                },
-                {
-                    id: 'u2',
-                    title: "35mm in the Desert",
-                    excerpt: "A dispatch from the Southwest's last true projectionist. The heat is melting the reels, but the show goes on despite the fire hazards.",
-                    fullContent: "A dispatch from the Southwest's last true projectionist. The heat is melting the reels... I visited a dusty drive-in theater just outside of Albuquerque, where a single projectionist operates ancient 35mm machines. The ambient temperature in the booth reaches 110 degrees, making handling the highly flammable film an extreme sport. A must-visit before the reels turn to dust.\n\nBy Archive_Ghost",
-                    author: "ARCHIVE_GHOST",
-                    date: "MAR 06, 2026",
-                }
-            ],
-            addDossier: (dossier) => set(state => ({ dossiers: [{ ...dossier, id: 'essay-' + Date.now() }, ...state.dossiers] })),
-        }),
-        { name: 'reelhouse-dispatch' }
-    )
-);
+// ── DISPATCH STORE — Supabase-backed ──
+export const useDispatchStore = create((set, get) => ({
+    dossiers: [],
+    loading: false,
 
-export const useProgrammeStore = create(
-    persist(
-        (set, get) => ({
-            programmes: [],
-            addProgramme: (programme) => set(state => ({
-                programmes: [
-                    { ...programme, id: 'prog-' + Date.now(), createdAt: new Date().toISOString() },
-                    ...state.programmes
+    fetchDossiers: async () => {
+        set({ loading: true });
+        const { data, error } = await supabase
+            .from('dispatch_dossiers')
+            .select('*')
+            .eq('is_published', true)
+            .order('created_at', { ascending: false })
+            .limit(20);
+        if (!error && data) {
+            set({
+                dossiers: data.map(d => ({
+                    id: d.id,
+                    title: d.title,
+                    excerpt: d.excerpt || '',
+                    fullContent: d.full_content || '',
+                    author: d.author_username?.toUpperCase() || 'ANONYMOUS',
+                    date: new Date(d.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase(),
+                }))
+            });
+        }
+        // Fallback seed data when table is empty
+        if (error || !data?.length) {
+            set({
+                dossiers: [
+                    { id: 'seed-1', title: 'The Death of the Jump Scare', excerpt: 'Why modern horror is trading cheap thrills for existential dread, and why audiences are finally craving atmosphere over adrenaline.', fullContent: '', author: 'MIDNIGHT_MUSE', date: 'MAR 07, 2026' },
+                    { id: 'seed-2', title: '35mm in the Desert', excerpt: 'A dispatch from the Southwest\'s last true projectionist. The heat is melting the reels, but the show goes on.', fullContent: '', author: 'ARCHIVE_GHOST', date: 'MAR 06, 2026' },
                 ]
-            })),
-            removeProgramme: (id) => set(state => ({
-                programmes: state.programmes.filter(p => p.id !== id)
-            })),
-        }),
-        { name: 'reelhouse-programmes' }
-    )
-);
+            });
+        }
+        set({ loading: false });
+    },
+
+    addDossier: async (dossier) => {
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+        const { data, error } = await supabase
+            .from('dispatch_dossiers')
+            .insert([{ user_id: user.id, author_username: user.username, title: dossier.title, excerpt: dossier.excerpt || '', full_content: dossier.fullContent || '', is_published: true }])
+            .select().single();
+        if (!error && data) {
+            set(state => ({ dossiers: [{ id: data.id, title: data.title, excerpt: data.excerpt, fullContent: data.full_content, author: data.author_username?.toUpperCase(), date: new Date(data.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase() }, ...state.dossiers] }));
+        }
+    },
+}));
+
+export const useProgrammeStore = create((set, get) => ({
+    programmes: [],
+    loading: false,
+
+    fetchProgrammes: async () => {
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+        set({ loading: true });
+        const { data, error } = await supabase
+            .from('programmes')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+        if (!error && data) {
+            set({
+                programmes: data.map(p => ({
+                    id: p.id,
+                    title: p.title,
+                    description: p.description,
+                    films: p.films || [],
+                    isPublic: p.is_public,
+                    createdAt: p.created_at,
+                }))
+            });
+        }
+        set({ loading: false });
+    },
+
+    addProgramme: async (programme) => {
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+        const { data, error } = await supabase
+            .from('programmes')
+            .insert([{ user_id: user.id, title: programme.title, description: programme.description || '', films: programme.films || [], is_public: programme.isPublic !== false }])
+            .select().single();
+        if (!error && data) {
+            set(state => ({
+                programmes: [{ id: data.id, title: data.title, description: data.description, films: data.films, isPublic: data.is_public, createdAt: data.created_at }, ...state.programmes]
+            }));
+        }
+    },
+
+    removeProgramme: async (id) => {
+        const { error } = await supabase.from('programmes').delete().eq('id', id);
+        if (!error) {
+            set(state => ({ programmes: state.programmes.filter(p => p.id !== id) }));
+        }
+    },
+}));
 
 // ── NOTIFICATION STORE ──
 export const useNotificationStore = create(
