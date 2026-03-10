@@ -519,138 +519,154 @@ export const useFilmStore = create(
 )
 
 // â”€â”€ VENUE OWNER STORE â”€â”€
+// ── VENUE STORE — Supabase-backed for owner data, local cache for public reading ──
 export const useVenueStore = create(
     persist(
         (set, get) => ({
             venue: {
-                id: 'my-venue',
+                id: null,
                 name: 'The Oracle Palace',
                 location: 'Brooklyn, NY',
                 address: '42 Clinton Ave, Brooklyn, NY 11238',
-                mapLink: '',
-                description: 'Established in 1934 in a converted Masonic lodge. Our 35mm projection booth has never gone dark.',
+                description: 'Established in 1934 in a converted Masonic lodge.',
                 bio: 'We believe cinema is not entertainment — it is ritual.',
-                email: '',
-                phone: '',
-                website: '',
-                instagram: '',
-                twitter: '',
+                email: '', phone: '', website: '', instagram: '',
                 logo: null,
                 vibes: ['Arthouse', 'Midnight Palace'],
                 seatLayout: { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 },
-                followers: 1247,
-                verified: false,
-                paymentConnected: false,
-                paymentAccountName: '',
-                paymentLast4: '',
-                paymentBrand: '',
-                platformFeePercent: 15,
+                verified: false, paymentConnected: false, platformFeePercent: 15,
             },
-            showtimes: [
-                {
-                    id: 'st1', film: 'Nosferatu (1922)', date: '2026-03-14',
-                    slots: [
-                        {
-                            id: 'slot-1a', time: '14:00', format: '35mm',
-                            notes: 'With live organ accompaniment',
-                            bookedSeats: ['A1', 'A3', 'B2', 'C4', 'C7', 'D1', 'D8', 'E3'],
-                            ticketTypes: [
-                                { id: 'tt-1a-std', type: 'Standard', price: 15, perks: 'General seating rows C-J' },
-                                { id: 'tt-1a-vip', type: 'VIP', price: 28, perks: 'Priority rows A-B + Complimentary drink' },
-                                { id: 'tt-1a-stu', type: 'Student', price: 10, perks: 'All rows, valid student ID required' },
-                            ]
-                        },
-                        {
-                            id: 'slot-1b', time: '21:00', format: '35mm',
-                            notes: 'Late night screening. Doors open 20 min before.',
-                            bookedSeats: ['A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'B3', 'C1', 'C2', 'C3', 'D4', 'E5', 'E6'],
-                            ticketTypes: [
-                                { id: 'tt-1b-std', type: 'Standard', price: 18, perks: 'General seating rows C-J' },
-                                { id: 'tt-1b-vip', type: 'VIP', price: 32, perks: 'Priority rows A-B + Complimentary drink' },
-                            ]
-                        }
-                    ]
-                },
-                {
-                    id: 'st2', film: 'M (1931)', date: '2026-03-15',
-                    slots: [
-                        {
-                            id: 'slot-2a', time: '20:00', format: '35mm', notes: '',
-                            bookedSeats: ['A1', 'A2', 'B3', 'C1', 'C5'],
-                            ticketTypes: [
-                                { id: 'tt-2a-std', type: 'Standard', price: 15, perks: 'General seating' },
-                                { id: 'tt-2a-vip', type: 'VIP', price: 25, perks: 'Priority rows A-B + Complimentary drink' },
-                            ]
-                        }
-                    ]
-                },
-            ],
-            events: [
-                { id: 'ev1', title: 'MIDNIGHT HORROR MARATHON', desc: '6 films. No sleep. No mercy.', date: '2026-03-15', time: '23:00', type: 'Marathon', price: 45, ticketsLeft: 40, totalTickets: 60 },
-            ],
-            updateVenue: (u) => set(s => ({ venue: { ...s.venue, ...u } })),
-            addShowtime: (st) => set(s => ({ showtimes: [{ ...st, id: 'st-' + Date.now(), slots: [] }, ...s.showtimes] })),
-            removeShowtime: (id) => set(s => ({ showtimes: s.showtimes.filter(x => x.id !== id) })),
-            updateShowtime: (id, u) => set(s => ({ showtimes: s.showtimes.map(x => x.id === id ? { ...x, ...u } : x) })),
-            addSlot: (stId, slot) => set(s => ({
-                showtimes: s.showtimes.map(st => st.id === stId
-                    ? { ...st, slots: [...st.slots, { ...slot, id: 'slot-' + Date.now(), bookedSeats: [] }] } : st)
-            })),
-            removeSlot: (stId, slotId) => set(s => ({
-                showtimes: s.showtimes.map(st => st.id === stId
-                    ? { ...st, slots: st.slots.filter(sl => sl.id !== slotId) } : st)
-            })),
-            updateSlot: (stId, slotId, updates) => set(s => ({
-                showtimes: s.showtimes.map(st => st.id === stId ? {
-                    ...st, slots: st.slots.map(sl => sl.id === slotId ? { ...sl, ...updates } : sl)
-                } : st)
-            })),
-            bookSeat: (stId, slotId, seatId) => set(s => ({
-                showtimes: s.showtimes.map(st => st.id === stId ? {
-                    ...st, slots: st.slots.map(sl => sl.id === slotId
-                        ? { ...sl, bookedSeats: [...sl.bookedSeats, seatId] } : sl)
-                } : st)
-            })),
+            showtimes: [],
+            events: [],
+
+            // Load venue data + showtimes from Supabase for this owner
+            fetchVenueData: async () => {
+                const user = useAuthStore.getState().user;
+                if (!user) return;
+                const { data: venueData } = await supabase.from('venues').select('*').eq('owner_id', user.id).single();
+                if (venueData) {
+                    set(s => ({ venue: { ...s.venue, ...venueData, id: venueData.id } }));
+                    const { data: stData } = await supabase.from('showtimes').select('*').eq('venue_id', venueData.id).order('date', { ascending: true });
+                    if (stData) set({ showtimes: stData.map(st => ({ ...st, film: st.film_title, slots: st.slots || [] })) });
+                }
+            },
+
+            updateVenue: async (updates) => {
+                const user = useAuthStore.getState().user;
+                set(s => ({ venue: { ...s.venue, ...updates } })); // Optimistic
+                if (!user) return;
+                const venueId = get().venue.id;
+                if (venueId) {
+                    await supabase.from('venues').update({ name: updates.name, location: updates.location, address: updates.address, description: updates.description, bio: updates.bio, email: updates.email, phone: updates.phone, website: updates.website, instagram: updates.instagram, vibes: updates.vibes, seat_layout: updates.seatLayout }).eq('id', venueId);
+                } else {
+                    const { data } = await supabase.from('venues').insert([{ owner_id: user.id, name: updates.name || get().venue.name, location: updates.location || get().venue.location, address: updates.address, description: updates.description, bio: updates.bio, email: updates.email, phone: updates.phone, website: updates.website, instagram: updates.instagram, vibes: updates.vibes || [], seat_layout: updates.seatLayout || get().venue.seatLayout }]).select().single();
+                    if (data) set(s => ({ venue: { ...s.venue, id: data.id } }));
+                }
+            },
+
+            addShowtime: async (st) => {
+                const venueId = get().venue.id;
+                const optimistic = { ...st, id: 'st-' + Date.now(), slots: [], film: st.film };
+                set(s => ({ showtimes: [optimistic, ...s.showtimes] }));
+                if (venueId) {
+                    const { data } = await supabase.from('showtimes').insert([{ venue_id: venueId, film_id: st.filmId || 0, film_title: st.film, date: st.date, slots: [] }]).select().single();
+                    if (data) set(s => ({ showtimes: s.showtimes.map(x => x.id === optimistic.id ? { ...x, id: data.id } : x) }));
+                }
+            },
+
+            removeShowtime: async (id) => {
+                set(s => ({ showtimes: s.showtimes.filter(x => x.id !== id) }));
+                await supabase.from('showtimes').delete().eq('id', id);
+            },
+
+            addSlot: async (stId, slot) => {
+                const newSlot = { ...slot, id: 'slot-' + Date.now(), bookedSeats: [] };
+                set(s => ({ showtimes: s.showtimes.map(st => st.id === stId ? { ...st, slots: [...st.slots, newSlot] } : st) }));
+                const showtime = get().showtimes.find(s => s.id === stId);
+                if (showtime) await supabase.from('showtimes').update({ slots: showtime.slots }).eq('id', stId);
+            },
+
+            removeSlot: async (stId, slotId) => {
+                set(s => ({ showtimes: s.showtimes.map(st => st.id === stId ? { ...st, slots: st.slots.filter(sl => sl.id !== slotId) } : st) }));
+                const showtime = get().showtimes.find(s => s.id === stId);
+                if (showtime) await supabase.from('showtimes').update({ slots: showtime.slots }).eq('id', stId);
+            },
+
+            updateSlot: async (stId, slotId, updates) => {
+                set(s => ({ showtimes: s.showtimes.map(st => st.id === stId ? { ...st, slots: st.slots.map(sl => sl.id === slotId ? { ...sl, ...updates } : sl) } : st) }));
+                const showtime = get().showtimes.find(s => s.id === stId);
+                if (showtime) await supabase.from('showtimes').update({ slots: showtime.slots }).eq('id', stId);
+            },
+
+            bookSeat: async (stId, slotId, seatId) => {
+                set(s => ({ showtimes: s.showtimes.map(st => st.id === stId ? { ...st, slots: st.slots.map(sl => sl.id === slotId ? { ...sl, bookedSeats: [...sl.bookedSeats, seatId] } : sl) } : st) }));
+                const showtime = get().showtimes.find(s => s.id === stId);
+                if (showtime) await supabase.from('showtimes').update({ slots: showtime.slots }).eq('id', stId);
+            },
+
             addEvent: (ev) => set(s => ({ events: [{ ...ev, id: 'ev-' + Date.now(), ticketsLeft: ev.totalTickets }, ...s.events] })),
             removeEvent: (id) => set(s => ({ events: s.events.filter(e => e.id !== id) })),
             updateEvent: (id, u) => set(s => ({ events: s.events.map(e => e.id === id ? { ...e, ...u } : e) })),
             connectPayment: (info) => set(s => ({ venue: { ...s.venue, paymentConnected: true, ...info } })),
         }),
-        { name: 'reelhouse-venue-v4' }
+        { name: 'reelhouse-venue-v5' }
     )
 )
-export const useCinemaReviewStore = create(
-    persist(
-        (set, get) => ({
-            // reviews: { [cinemaId]: [{ username, rating, review, createdAt }] }
-            reviews: {},
+// ── CINEMA REVIEW STORE — Supabase-backed ──
+export const useCinemaReviewStore = create((set, get) => ({
+    reviews: {}, // { [cinemaId]: [{ id, username, rating, review, createdAt }] }
 
-            addReview: (cinemaId, { username, rating, review }) => set((state) => {
-                const existing = state.reviews[cinemaId] || []
-                // Replace if user already left a review
-                const filtered = existing.filter(r => r.username !== username)
+    fetchReviews: async (cinemaId) => {
+        const { data, error } = await supabase
+            .from('cinema_reviews')
+            .select('*, profiles(username)')
+            .eq('cinema_id', cinemaId)
+            .order('created_at', { ascending: false });
+        if (!error && data) {
+            set(state => ({
+                reviews: {
+                    ...state.reviews,
+                    [cinemaId]: data.map(r => ({
+                        id: r.id,
+                        username: r.profiles?.username || 'Anonymous',
+                        rating: r.rating,
+                        review: r.review,
+                        createdAt: r.created_at,
+                    }))
+                }
+            }));
+        }
+    },
+
+    addReview: async (cinemaId, cinemaName, { username, rating, review }) => {
+        const user = useAuthStore.getState().user;
+        if (!user) return;
+        const { data, error } = await supabase
+            .from('cinema_reviews')
+            .upsert([{ user_id: user.id, cinema_id: cinemaId, cinema_name: cinemaName, rating, review }], { onConflict: 'user_id,cinema_id' })
+            .select().single();
+        if (!error && data) {
+            set(state => {
+                const existing = state.reviews[cinemaId] || [];
+                const filtered = existing.filter(r => r.username !== username);
                 return {
                     reviews: {
                         ...state.reviews,
-                        [cinemaId]: [
-                            { username, rating, review, createdAt: new Date().toISOString() },
-                            ...filtered
-                        ]
+                        [cinemaId]: [{ id: data.id, username, rating, review, createdAt: data.created_at }, ...filtered]
                     }
-                }
-            }),
+                };
+            });
+        }
+    },
 
-            getReviews: (cinemaId) => get().reviews[cinemaId] || [],
+    getReviews: (cinemaId) => get().reviews[cinemaId] || [],
 
-            getAvgRating: (cinemaId) => {
-                const reviews = get().reviews[cinemaId] || []
-                if (!reviews.length) return 0
-                return reviews.reduce((a, r) => a + r.rating, 0) / reviews.length
-            },
-        }),
-        { name: 'reelhouse-cinema-reviews' }
-    )
-)
+    getAvgRating: (cinemaId) => {
+        const reviews = get().reviews[cinemaId] || [];
+        if (!reviews.length) return 0;
+        return reviews.reduce((a, r) => a + r.rating, 0) / reviews.length;
+    },
+}));
 
 // â”€â”€ UI STORE â”€â”€
 export const useUIStore = create((set) => ({
