@@ -831,13 +831,13 @@ a:hover {
   text-transform: uppercase;
   padding: 0.3em 0.8em;
   border-radius: 4px;
-  background: linear-gradient(135deg, rgba(58, 50, 40, 0.5), rgba(28, 23, 16, 0.8));
-  backdrop-filter: blur(4px);
+  /* PERF FIX: removed backdrop-filter blur from tags — they appear in grids of 50+ */
+  background: linear-gradient(135deg, rgba(58, 50, 40, 0.7), rgba(28, 23, 16, 0.9));
   color: var(--parchment);
   border: 1px solid rgba(139, 105, 20, 0.4);
   display: inline-block;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 2px 5px rgba(0, 0, 0, 0.5);
-  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08), 0 2px 5px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s var(--transition-rubber), border-color 0.3s ease;
 }
 
 .tag:hover {
@@ -868,39 +868,16 @@ a:hover {
 /* ── INPUT FIELDS ── */
 .input {
   font-family: var(--font-body);
-
-  /* ── MOBILE UX (Ensure minimum 44px touch targets) ── */
-  @media (max-width: 768px) {
-
-    button,
-    .btn,
-    [role="button"],
-    .slot-action-btn {
-      min-width: 44px;
-      min-height: 44px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0.5rem;
-      /* Allow icon buttons to expand gracefully */
-    }
-
-    .btn {
-      padding: 0.75rem 1.8rem;
-      /* Keep regular buttons looking good */
-    }
-  }
-
-  background: rgba(10, 7, 3, 0.6);
-  backdrop-filter: blur(8px);
+  background: rgba(10, 7, 3, 0.9);
+  /* PERF FIX: removed backdrop-filter blur from inputs — used on every form field across the entire app */
   border: 1px solid rgba(122, 110, 95, 0.4);
   color: var(--parchment);
   padding: 0.7em 1.2em;
   border-radius: var(--radius-wobbly);
   width: 100%;
-  transition: all 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   font-size: 0.95rem;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
 }
 
 .input::placeholder {
@@ -1769,10 +1746,11 @@ body::after {
 }
 
 .navbar.scrolled {
-  background: rgba(10, 7, 3, 0.96);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
-  box-shadow: 0 1px 0 rgba(139, 105, 20, 0.15), 0 4px 30px rgba(0, 0, 0, 0.7);
+  background: rgba(10, 7, 3, 0.97);
+  /* Premium Navbar: REDUCED blur from 16px to 8px — halves the GPU cost while keeping the frosted look */
+  backdrop-filter: blur(8px) saturate(1.1);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  box-shadow: 0 1px 0 rgba(139, 105, 20, 0.15), 0 4px 30px rgba(0, 0, 0, 0.8);
 }
 
 .navbar-inner {
@@ -1883,13 +1861,12 @@ body::after {
   left: 0;
   right: 0;
   top: 100%;
-  background: rgba(10, 7, 3, 0.98);
+  /* PERF FIX: Using opaque background. Search bar is over a fixed dark navbar so blur is invisible anyway */
+  background: rgba(8, 6, 4, 0.99);
   border-bottom: 1px solid var(--ash);
   padding: 0.75rem 1.5rem;
   display: flex;
   gap: 0.75rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   z-index: 10;
 }
 
