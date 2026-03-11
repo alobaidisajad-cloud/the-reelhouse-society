@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Film, BookOpen, Star, Lock, Edit2, Camera, User, Settings, Globe } from 'lucide-react'
@@ -1189,6 +1189,183 @@ function ProgrammesSection({ programmes, user, isOwnProfile }) {
     )
 }
 
+// ── NOIR PASSPORT COMPONENT ──
+const PASSPORT_STAMPS = [
+    {
+        id: 'archivist',
+        label: 'THE ARCHIVIST',
+        sub: '100 FILMS LOGGED',
+        glyph: '◈',
+        test: (logs) => logs.length >= 100,
+    },
+    {
+        id: 'devotee',
+        label: 'THE DEVOTEE',
+        sub: '500 FILMS LOGGED',
+        glyph: '✦',
+        test: (logs) => logs.length >= 500,
+    },
+    {
+        id: 'silver_screen',
+        label: 'SILVER SCREEN',
+        sub: '20 FILMS PRE-1960',
+        glyph: '†',
+        test: (logs) => logs.filter(l => l.year && parseInt(l.year) < 1960).length >= 20,
+    },
+    {
+        id: 'masterpiece',
+        label: 'MASTERPIECE HUNTER',
+        sub: '10 PERFECT RATINGS',
+        glyph: '★',
+        test: (logs) => logs.filter(l => l.rating === 5).length >= 10,
+    },
+    {
+        id: 'vault_keeper',
+        label: 'VAULT KEEPER',
+        sub: 'PHYSICAL MEDIA LOGGED',
+        glyph: '▣',
+        test: (logs) => logs.some(l => l.physicalMedia),
+    },
+    {
+        id: 'honest_critic',
+        label: 'HONEST CRITIC',
+        sub: 'ABANDONED A FILM',
+        glyph: '✕',
+        test: (logs) => logs.some(l => l.status === 'abandoned'),
+    },
+    {
+        id: 'completionist',
+        label: 'THE COMPLETIONIST',
+        sub: 'FILMS FROM 7 DECADES',
+        glyph: '∞',
+        test: (logs) => new Set(logs.filter(l => l.year).map(l => Math.floor(parseInt(l.year) / 10) * 10)).size >= 7,
+    },
+    {
+        id: 'half_life',
+        label: 'THE RETURNER',
+        sub: 'REWATCHED A FILM',
+        glyph: '↩',
+        test: (logs) => {
+            const seen = new Set()
+            return logs.some(l => { if (seen.has(l.filmId)) return true; seen.add(l.filmId); return false })
+        },
+    },
+]
+
+function PassportStamp({ stamp, earned, index }) {
+    // Deterministic rotation based on index — no Math.random() on render
+    const rotation = ['-4', '3', '-2', '5', '-3', '2', '-5', '4'][index % 8]
+    return (
+        <div
+            title={earned ? stamp.label : `Not yet earned: ${stamp.sub}`}
+            style={{
+                position: 'relative',
+                width: 120,
+                height: 120,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                opacity: earned ? 1 : 0.18,
+                transform: `rotate(${rotation}deg)`,
+                transition: 'opacity 0.3s, transform 0.3s',
+                cursor: 'default',
+                filter: earned ? 'none' : 'grayscale(1)',
+            }}
+            onMouseEnter={e => { if (earned) e.currentTarget.style.transform = `rotate(${rotation}deg) scale(1.08)` }}
+            onMouseLeave={e => e.currentTarget.style.transform = `rotate(${rotation}deg) scale(1)`}
+        >
+            <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" width="120" height="120">
+                {/* Outer distressed ring */}
+                <circle cx="60" cy="60" r="56" fill="none" stroke="var(--sepia)" strokeWidth="2.5" strokeDasharray="8 3 15 2 6 4 20 2" opacity="0.9" />
+                {/* Inner ring */}
+                <circle cx="60" cy="60" r="48" fill="none" stroke="var(--sepia)" strokeWidth="1" opacity="0.5" />
+                {/* Glyph */}
+                <text x="60" y="58" textAnchor="middle" dominantBaseline="middle"
+                    fontFamily="var(--font-display)" fontSize="24" fill="var(--sepia)" opacity="0.95"
+                >{stamp.glyph}</text>
+                {/* Stamp label — curved along top arc (simulated with two tspans) */}
+                <text x="60" y="38" textAnchor="middle"
+                    fontFamily="var(--font-ui)" fontSize="7" letterSpacing="2"
+                    fill="var(--sepia)" opacity="0.85" textTransform="uppercase"
+                >{stamp.label.slice(0, 14)}</text>
+                {stamp.label.length > 14 && (
+                    <text x="60" y="47" textAnchor="middle"
+                        fontFamily="var(--font-ui)" fontSize="7" letterSpacing="2"
+                        fill="var(--sepia)" opacity="0.85"
+                    >{stamp.label.slice(14).trim()}</text>
+                )}
+                {/* Sub label at bottom */}
+                <text x="60" y="82" textAnchor="middle"
+                    fontFamily="var(--font-ui)" fontSize="6" letterSpacing="1.5"
+                    fill="var(--sepia)" opacity="0.6"
+                >{stamp.sub}</text>
+                {/* Distress scuff marks */}
+                <line x1="20" y1="55" x2="28" y2="58" stroke="var(--sepia)" strokeWidth="1" opacity="0.2" />
+                <line x1="92" y1="63" x2="100" y2="60" stroke="var(--sepia)" strokeWidth="1" opacity="0.15" />
+            </svg>
+        </div>
+    )
+}
+
+function NoirPassport({ logs }) {
+    const earned = useMemo(() =>
+        PASSPORT_STAMPS.map(s => ({ ...s, earned: s.test(logs) })),
+        [logs])
+
+    const earnedCount = earned.filter(s => s.earned).length
+
+    return (
+        <div style={{ padding: '2rem 0' }}>
+            {/* Document header */}
+            <div style={{
+                border: '1px solid rgba(139,105,20,0.3)',
+                borderRadius: '4px',
+                padding: '3rem',
+                background: 'linear-gradient(135deg, rgba(139,105,20,0.04) 0%, transparent 60%)',
+                position: 'relative',
+                overflow: 'hidden',
+            }}>
+                {/* Corner registration marks */}
+                {[['top', 'left'], ['top', 'right'], ['bottom', 'left'], ['bottom', 'right']].map(([v, h]) => (
+                    <div key={`${v}-${h}`} style={{
+                        position: 'absolute', [v]: '0.75rem', [h]: '0.75rem',
+                        width: 16, height: 16,
+                        borderTop: v === 'top' ? '1px solid rgba(139,105,20,0.4)' : 'none',
+                        borderBottom: v === 'bottom' ? '1px solid rgba(139,105,20,0.4)' : 'none',
+                        borderLeft: h === 'left' ? '1px solid rgba(139,105,20,0.4)' : 'none',
+                        borderRight: h === 'right' ? '1px solid rgba(139,105,20,0.4)' : 'none',
+                    }} />
+                ))}
+
+                {/* Masthead */}
+                <div style={{ textAlign: 'center', marginBottom: '2.5rem', borderBottom: '1px dashed rgba(139,105,20,0.2)', paddingBottom: '2rem' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.5em', color: 'var(--sepia)', marginBottom: '0.5rem', opacity: 0.7 }}>THE REELHOUSE SOCIETY</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 4vw, 3rem)', color: 'var(--parchment)', lineHeight: 1, marginBottom: '0.75rem' }}>Cinematic Passport</div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--fog)' }}>{earnedCount} of {PASSPORT_STAMPS.length} STAMPS EARNED</div>
+                </div>
+
+                {/* Stamp grid */}
+                <div style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '1rem',
+                    justifyContent: 'center',
+                    padding: '1rem 0',
+                }}>
+                    {earned.map((stamp, i) => (
+                        <PassportStamp key={stamp.id} stamp={stamp} earned={stamp.earned} index={i} />
+                    ))}
+                </div>
+
+                {/* Footer watermark */}
+                <div style={{ textAlign: 'center', marginTop: '2.5rem', paddingTop: '1.5rem', borderTop: '1px dashed rgba(139,105,20,0.2)' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.4em', color: 'var(--fog)', opacity: 0.4 }}>STAMPS ARE ISSUED BY THE SOCIETY ARCHIVIST · NOT TRANSFERABLE · REELHOUSE ARCHIVE DEPT</div>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ── MAIN PROFILE PAGE ──
 export default function UserProfilePage() {
     const { username: routeUsername } = useParams()
@@ -1204,7 +1381,7 @@ export default function UserProfilePage() {
     const isOwnProfile = !routeUsername || routeUsername === currentUser?.username || routeUsername === 'me'
 
     // Find profile data
-    const profileUser = isOwnProfile ? currentUser : community.find(u => u.username === routeUsername)
+    const profileUser = isOwnProfile ? currentUser : community?.find(u => u.username === routeUsername)
 
     // Tab state
     const [activeTab, setActiveTab] = useState('diary')
@@ -1343,8 +1520,32 @@ export default function UserProfilePage() {
         return true
     })
 
+    // ── HALF-LIFE MAP — pure in-memory computation, zero network ──
+    const halfLifeMap = useMemo(() => {
+        const byFilm = {}
+        for (const log of profileLogs) {
+            if (!log.filmId || !log.rating) continue
+            if (!byFilm[log.filmId]) byFilm[log.filmId] = []
+            byFilm[log.filmId].push({ rating: log.rating, date: log.createdAt || log.watchedDate })
+        }
+        const result = {}
+        for (const [filmId, entries] of Object.entries(byFilm)) {
+            if (entries.length < 2) continue
+            const sorted = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date))
+            const first = sorted[0].rating
+            const last = sorted[sorted.length - 1].rating
+            result[filmId] = {
+                count: entries.length,
+                trajectory: last > first ? 'ASCENDING' : last < first ? 'DECAYING' : 'ETERNAL',
+                delta: last - first,
+            }
+        }
+        return result
+    }, [profileLogs])
+
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: filteredLogs.length },
+        { id: 'passport', label: 'Passport', count: null },
         { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length },
         { id: 'programmes', label: 'Programmes', count: profileProgrammes.length },
         { id: 'projector', label: 'Projector Room', count: null },
@@ -1780,6 +1981,7 @@ export default function UserProfilePage() {
                                                 gridRowSpan = 'span 1'
                                             }
 
+                                            const hl = halfLifeMap[log.filmId]
                                             return (
                                                 <div key={log.id} style={{
                                                     gridColumn: gridColumnSpan,
@@ -1815,6 +2017,33 @@ export default function UserProfilePage() {
                                                         }}
                                                         disableHover={false}
                                                     />
+                                                    {/* Half-Life Score chip — only on rewatched films */}
+                                                    {hl && (
+                                                        <div style={{
+                                                            position: 'absolute', bottom: 6, left: 4, right: 4,
+                                                            background: 'rgba(10,7,3,0.88)',
+                                                            backdropFilter: 'blur(4px)',
+                                                            border: '1px solid rgba(139,105,20,0.3)',
+                                                            borderRadius: '2px',
+                                                            padding: '0.25rem 0.4rem',
+                                                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                            gap: '0.3rem',
+                                                            pointerEvents: 'none',
+                                                        }}>
+                                                            <span style={{
+                                                                fontFamily: 'var(--font-ui)', fontSize: '0.45rem',
+                                                                letterSpacing: '0.1em', whiteSpace: 'nowrap',
+                                                                color: hl.trajectory === 'ASCENDING' ? '#7cb87a'
+                                                                    : hl.trajectory === 'DECAYING' ? 'var(--blood-reel)'
+                                                                        : 'var(--sepia)',
+                                                            }}>
+                                                                {hl.trajectory === 'ASCENDING' ? '↑' : hl.trajectory === 'DECAYING' ? '↓' : '—'} {hl.trajectory}
+                                                            </span>
+                                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--fog)', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>
+                                                                ×{hl.count}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )
                                         })}
@@ -1942,6 +2171,13 @@ export default function UserProfilePage() {
                             </div>
                         )}
 
+                        {activeTab === 'passport' && (
+                            <div>
+                                <SectionHeader label="CINEMATIC ACHIEVEMENTS" title="The Passport" />
+                                <NoirPassport logs={profileLogs} />
+                            </div>
+                        )}
+
                         {activeTab === 'lists' && (
                             <div>
                                 <SectionHeader label="YOUR COLLECTIONS" title="The Stacks" />
@@ -2032,7 +2268,7 @@ export default function UserProfilePage() {
                                 ) : (
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                         {socialModal.list.map(username => {
-                                            const member = community.find(u => u.username === username) || (username === currentUser?.username ? currentUser : null)
+                                            const member = community?.find(u => u.username === username) || (username === currentUser?.username ? currentUser : null)
                                             return (
                                                 <Link
                                                     key={username}
