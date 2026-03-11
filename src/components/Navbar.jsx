@@ -17,7 +17,7 @@ const prefetchRoute = (path) => {
         '/dispatch': () => import('../pages/DispatchPage'),
         '/lists': () => import('../pages/ListsPage'),
         '/cinemas': () => import('../pages/CinemasPage'),
-        '/patronage': () => import('../pages/MembershipPage'),
+        '/society': () => import('../pages/MembershipPage'),
     }
     routes[path]?.()
 }
@@ -29,7 +29,7 @@ const NAV_LINKS = [
     { path: '/dispatch', label: 'The Dispatch', icon: FileText },
     { path: '/lists', label: 'The Stacks', icon: Star },
     { path: '/cinemas', label: 'The Cinemas', icon: MapPin },
-    { path: '/patronage', label: 'The Society', icon: Crown },
+    { path: '/society', label: 'The Society', icon: Crown },
 ]
 
 export default function Navbar() {
