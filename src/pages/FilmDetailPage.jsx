@@ -6,7 +6,7 @@ import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camer
 import { tmdb, obscurityScore, formatRuntime, getYear } from '../tmdb'
 import { ReelRating, ObscurityBadge, GenreTags, FilmCard, LoadingReel, SectionHeader } from '../components/UI'
 import { useSEOSync } from '../components/useSEOSync'
-import { useUIStore, useFilmStore } from '../store'
+import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 
@@ -16,6 +16,7 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 // ── COMMUNITY REVIEWS (Dynamic from Supabase) ──
 function CommunityReviews({ filmId }) {
     const { logs } = useFilmStore()
+    const { user: authUser } = useAuthStore()
     const { data: dbReviews } = useQuery({
         queryKey: ['film-reviews', filmId],
         queryFn: async () => {
@@ -32,30 +33,35 @@ function CommunityReviews({ filmId }) {
         staleTime: 1000 * 60 * 5,
     })
 
-    // Local user's review for this film (immediate feedback)
+    // Local user's review for this film (immediate feedback before DB refetch)
     const localReview = logs.find(l => (l.filmId === filmId || String(l.filmId) === String(filmId)) && l.review)
+    const currentUsername = authUser?.username || null
 
     const reviews = []
     if (localReview) {
         reviews.push({
-            author: 'you', persona: 'Your Review',
+            author: currentUsername || 'you',
+            authorDisplay: currentUsername || 'you',
+            persona: 'Your Review',
             rating: localReview.rating, text: localReview.review, isLocal: true,
         })
     }
     if (dbReviews) {
         dbReviews.forEach(r => {
-            if (!localReview || r.user_id !== localReview.userId) {
-                reviews.push({
-                    author: r.profiles?.username || 'anonymous',
-                    persona: r.profiles?.role === 'auteur' ? 'Auteur' : r.profiles?.role === 'archivist' ? 'Archivist' : 'Cinephile',
-                    rating: r.rating, text: r.review,
-                })
-            }
+            const dbUsername = r.profiles?.username
+            // Deduplicate: skip DB entry if it matches the local optimistic review
+            if (localReview && currentUsername && dbUsername === currentUsername) return
+            reviews.push({
+                author: dbUsername || 'anonymous',
+                authorDisplay: dbUsername || 'anonymous',
+                persona: r.profiles?.role === 'auteur' ? 'Auteur' : r.profiles?.role === 'archivist' ? 'Archivist' : 'Cinephile',
+                rating: r.rating, text: r.review,
+            })
         })
     }
 
     if (reviews.length === 0) {
-        reviews.push({ author: 'the_society', persona: 'The ReelHouse Society', rating: 0, text: 'No reviews yet. Be the first to share your thoughts on this film.' })
+        reviews.push({ author: 'the_society', authorDisplay: 'the_society', persona: 'The ReelHouse Society', rating: 0, text: 'No reviews yet. Be the first to share your thoughts on this film.' })
     }
 
     return (
@@ -65,7 +71,7 @@ function CommunityReviews({ filmId }) {
                 <div key={r.author + i} className="review-manuscript" style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <div>
-                            <Link to={r.isLocal ? '#' : `/user/${r.author}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>@{r.author}</Link>
+                            <Link to={r.isLocal ? '#' : `/user/${r.author}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>@{r.authorDisplay}</Link>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '0.15rem' }}>{r.persona}</div>
                         </div>
                         {r.rating > 0 && <ReelRating value={r.rating} size="sm" />}

@@ -17,7 +17,7 @@ const VALID_CODES = ['NITRATE', 'OMEN', 'REELHOUSE', 'AUTEUR', 'GHOST']
 
 export default function SignupModal() {
     const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
-    const { login } = useAuthStore()
+    const { login, isAuthenticated } = useAuthStore()
     const { playShutter } = useSoundscape()
 
     const [role, setRole] = useState(signupRole || 'cinephile')
@@ -108,6 +108,12 @@ export default function SignupModal() {
     }
 
     if (!signupModalOpen) return null
+
+    // If the user is already logged in, don't show the signup flow at all
+    if (isAuthenticated) {
+        closeSignupModal()
+        return null
+    }
 
     // VELVET ROPE: TERMINAL UI
     if (!isLogin && !hasClearance) {
