@@ -41,6 +41,7 @@ const PersonPage = lazy(() => import('./pages/PersonPage'))
 const DispatchPage = lazy(() => import('./pages/DispatchPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
+const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
 
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
@@ -224,6 +225,7 @@ export default function App() {
               <Route path="/dispatch" element={<PageWrapper><DispatchPage /></PageWrapper>} />
               <Route path="/patronage" element={<PageWrapper><MembershipPage /></PageWrapper>} />
               <Route path="/society" element={<PageWrapper><MembershipPage /></PageWrapper>} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="*" element={<PageWrapper><NotFoundPage /></PageWrapper>} />
             </Routes>
           </AnimatePresence>

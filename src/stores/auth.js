@@ -45,18 +45,27 @@ export const useAuthStore = create(
             },
 
             signup: async (email, password, username, role = 'cinephile') => {
+                const redirectTo = `${window.location.origin}/auth/callback`
                 const { data, error } = await supabase.auth.signUp({
                     email, password,
-                    options: { data: { username, role } }
+                    options: {
+                        data: { username, role },
+                        emailRedirectTo: redirectTo,
+                    }
                 })
                 if (error) throw error
 
+                // If email confirmation is enabled, data.session will be null
+                // The user must click the link in their email first.
+                // If confirmation is disabled (dev mode), session is returned immediately.
                 if (data?.session) {
                     await supabase.from('profiles').update({ username, role }).eq('id', data.user.id)
                     const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
                     set({ user: { ...data.user, ...profile }, isAuthenticated: true })
                     hydrateUserData()
                 }
+                // Return data — SignupModal checks data.session to decide
+                // whether to show the 'Check Inbox' screen or close immediately
                 return data
             },
 
