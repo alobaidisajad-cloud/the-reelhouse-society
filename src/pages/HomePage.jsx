@@ -84,19 +84,42 @@ function MarqueeBoard({ film }) {
             )}
 
             <div className="marquee-board" style={{
-                background: 'linear-gradient(180deg, rgba(28,23,16,0.95) 0%, rgba(10,7,3,0.98) 100%)',
                 border: '2px solid var(--sepia)',
                 borderRadius: 'var(--radius-card)',
                 padding: IS_TOUCH ? '1.25rem 1rem' : '3rem 2rem',
                 boxShadow: IS_TOUCH
                     ? '0 8px 20px rgba(0,0,0,0.8)'
                     : '0 20px 50px rgba(0,0,0,0.9), inset 0 0 40px rgba(139,105,20,0.15), 0 0 0 1px rgba(242,232,160,0.1)',
-                position: 'relative'
+                position: 'relative',
+                overflow: 'hidden',
+                background: 'rgba(10,7,3,0.98)',
             }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.6rem' : '0.75rem', letterSpacing: '0.3em', color: 'var(--flicker)', textAlign: 'center', marginBottom: IS_TOUCH ? '0.75rem' : '1.5rem', textShadow: '0 0 10px rgba(242,232,160,0.3)' }}>
+                {/* Backdrop image layer */}
+                {film.backdrop_path && (
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        backgroundImage: `url(${tmdb.backdrop(film.backdrop_path, 'w1280')})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center 20%',
+                        opacity: IS_TOUCH ? 0.12 : 0.22,
+                        filter: 'sepia(0.5) contrast(0.9)',
+                        zIndex: 0,
+                        pointerEvents: 'none',
+                    }} />
+                )}
+                {/* Dark vignette overlay so text stays readable */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(180deg, rgba(10,7,3,0.55) 0%, rgba(10,7,3,0.75) 60%, rgba(10,7,3,0.92) 100%)',
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                }} />
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.6rem' : '0.75rem', letterSpacing: '0.3em', color: 'var(--flicker)', textAlign: 'center', marginBottom: IS_TOUCH ? '0.75rem' : '1.5rem', textShadow: '0 0 10px rgba(242,232,160,0.3)', position: 'relative', zIndex: 1 }}>
                     ★ MAIN FEATURE ★
                 </div>
-                <div style={{ textAlign: 'center' }}>
+                <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
                     <h1
                         className="glow-text"
                         style={{
@@ -133,7 +156,9 @@ function MarqueeBoard({ film }) {
                         marginTop: '2.5rem',
                         overflow: 'hidden',
                         opacity: 0.15,
-                        justifyContent: 'center'
+                        justifyContent: 'center',
+                        position: 'relative',
+                        zIndex: 1
                     }}>
                         {Array.from({ length: 14 }).map((_, i) => (
                             <div key={i} style={{ width: 32, height: 24, flexShrink: 0, border: '2px solid var(--parchment)', borderRadius: 2 }} />

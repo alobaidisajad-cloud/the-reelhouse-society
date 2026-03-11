@@ -2,8 +2,11 @@
 const TMDB_BASE = 'https://api.themoviedb.org/3'
 const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
-// Use env var or a public read-only demo key
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
+// API key must be set in .env.local as VITE_TMDB_API_KEY
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY
+if (!API_KEY && import.meta.env.MODE !== 'test') {
+    console.error('[ReelHouse] VITE_TMDB_API_KEY is not set. Add it to .env.local')
+}
 
 // Resilient fetch wrapper — 8s timeout, logs errors, always returns a safe fallback
 async function fetchTMDB(url, fallback = null) {
@@ -20,6 +23,16 @@ async function fetchTMDB(url, fallback = null) {
     } catch (e) {
         if (e.name !== 'AbortError') console.warn('[TMDB] Fetch error:', e.message)
         return fallback
+    }
+}
+
+// Decode HTML entities from RSS text (fixes â€", â€™, &amp; etc.)
+function decodeEntities(str) {
+    if (!str || typeof str !== 'string') return str
+    try {
+        return new DOMParser().parseFromString(str, 'text/html').documentElement.textContent
+    } catch {
+        return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'")
     }
 }
 
@@ -297,12 +310,19 @@ export const tmdb = {
 
     // NEW: Real-time News Proxy (Aggregates Film News)
     getNews: async () => {
+        // Compute relative dates at runtime so fallback news never looks stale
+        const relDate = (daysAgo) => {
+            const d = new Date()
+            d.setDate(d.getDate() - daysAgo)
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()
+        }
+
         const FALLBACK_NEWS = [
             {
                 id: 'fb1',
                 title: "OSCAR RADAR: The Monochrome Revival",
                 excerpt: "Why modern auteurs are returning to black and white for their most personal statements. A deep look at this year's Academy favorites.",
-                date: "MAR 07",
+                date: relDate(1),
                 time: "10:30 AM",
                 category: "AWARDS",
                 author: "THE ARCHIVIST",
@@ -311,9 +331,9 @@ export const tmdb = {
             },
             {
                 id: 'fb2',
-                title: "CANNES UNVEILED: The 2026 Selection",
+                title: "CANNES UNVEILED: The Latest Selection",
                 excerpt: "The festival returns to its roots with a heavy focus on European surrealism and South American neo-noir.",
-                date: "MAR 06",
+                date: relDate(2),
                 time: "02:15 PM",
                 category: "FESTIVALS",
                 author: "MIDNIGHT DEVOTEE",
@@ -322,9 +342,9 @@ export const tmdb = {
             },
             {
                 id: 'fb3',
-                title: "DEEP VAULT: 1924 Horror Masterpiece Restored",
+                title: "DEEP VAULT: Silent Era Masterpiece Restored",
                 excerpt: "Metropolis-style visuals meet gothic horror in this newly unearthed reel from the Weimar Republic archives.",
-                date: "MAR 05",
+                date: relDate(3),
                 time: "09:00 PM",
                 category: "HISTORY",
                 author: "THE ORACLE",
@@ -333,9 +353,9 @@ export const tmdb = {
             },
             {
                 id: 'fb4',
-                title: "NEON TRANCE: The Soundscapes of 2026",
+                title: "NEON TRANCE: The Soundscapes of Cinema",
                 excerpt: "How modern electronic scores are redefining the cinematic experience through spatial audio and grain frequency.",
-                date: "MAR 04",
+                date: relDate(4),
                 time: "11:45 PM",
                 category: "SOUND",
                 author: "THE WEEPER",
@@ -377,9 +397,9 @@ export const tmdb = {
                 .sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate))
                 .map(item => ({
                     id: item.guid || item.link,
-                    title: item.title,
-                    excerpt: item.description.replace(/<[^>]*>?/gm, '').slice(0, 160) + '...',
-                    fullContent: item.description.replace(/<[^>]*>?/gm, ''),
+                    title: decodeEntities(item.title),
+                    excerpt: decodeEntities(item.description?.replace(/<[^>]*>?/gm, '')?.slice(0, 160) || '') + '...',
+                    fullContent: decodeEntities(item.description?.replace(/<[^>]*>?/gm, '') || ''),
                     date: new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase(),
                     time: new Date(item.pubDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
                     category: item.categories?.[0]?.toUpperCase() || 'WIRE',

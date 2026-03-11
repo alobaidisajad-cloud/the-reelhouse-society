@@ -21,7 +21,6 @@
     "framer-motion": "^12.35.0",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.577.0",
-    "pg": "^8.20.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-hot-toast": "^2.6.0",

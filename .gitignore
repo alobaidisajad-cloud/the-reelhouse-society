@@ -7,6 +7,21 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Build & audit artifacts (generated files — never commit)
+build*.log
+build_out.txt
+lint_output.txt
+lighthouse-report.json
+.lighthouserc.json
+
+# One-off debug scripts
+check_profiles.js
+check_tables.js
+run_sql.js
+testAuth.js
+test_signup.js
+generate_icons.js
+
 node_modules
 dist
 dist-ssr

@@ -209,24 +209,24 @@ export default function App() {
 
           <AnimatePresence mode="wait" initial={false}>
             <Routes location={location} key={location.pathname}>
-              <Route path="/" element={<PageWrapper><HomePage /></PageWrapper>} />
-              <Route path="/film/:id" element={<PageWrapper><FilmDetailPage /></PageWrapper>} />
-              <Route path="/user/:username" element={<PageWrapper><UserProfilePage /></PageWrapper>} />
-              <Route path="/discover" element={<PageWrapper><DiscoverPage /></PageWrapper>} />
-              <Route path="/feed" element={<PageWrapper><FeedPage /></PageWrapper>} />
-              <Route path="/lists" element={<PageWrapper><ListsPage /></PageWrapper>} />
-              <Route path="/stacks" element={<PageWrapper><ListsPage /></PageWrapper>} />
-              <Route path="/lists/:id" element={<PageWrapper><ListDetailPage /></PageWrapper>} />
-              <Route path="/stacks/:id" element={<PageWrapper><ListDetailPage /></PageWrapper>} />
-              <Route path="/venue/:venueId" element={<PageWrapper><VenuePage /></PageWrapper>} />
-              <Route path="/venue-dashboard" element={<PageWrapper><VenueDashboard /></PageWrapper>} />
-              <Route path="/cinemas" element={<PageWrapper><CinemasPage /></PageWrapper>} />
-              <Route path="/person/:id" element={<PageWrapper><PersonPage /></PageWrapper>} />
-              <Route path="/dispatch" element={<PageWrapper><DispatchPage /></PageWrapper>} />
-              <Route path="/patronage" element={<PageWrapper><MembershipPage /></PageWrapper>} />
-              <Route path="/society" element={<PageWrapper><MembershipPage /></PageWrapper>} />
-              <Route path="/auth/callback" element={<AuthCallbackPage />} />
-              <Route path="*" element={<PageWrapper><NotFoundPage /></PageWrapper>} />
+              <Route path="/" element={<ErrorBoundary key="home"><PageWrapper><HomePage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/film/:id" element={<ErrorBoundary key="film"><PageWrapper><FilmDetailPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/user/:username" element={<ErrorBoundary key="profile"><PageWrapper><UserProfilePage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/discover" element={<ErrorBoundary key="discover"><PageWrapper><DiscoverPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/feed" element={<ErrorBoundary key="feed"><PageWrapper><FeedPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/lists" element={<ErrorBoundary key="lists"><PageWrapper><ListsPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/stacks" element={<ErrorBoundary key="stacks"><PageWrapper><ListsPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/lists/:id" element={<ErrorBoundary key="list-detail"><PageWrapper><ListDetailPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/stacks/:id" element={<ErrorBoundary key="stack-detail"><PageWrapper><ListDetailPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/venue/:venueId" element={<ErrorBoundary key="venue"><PageWrapper><VenuePage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/venue-dashboard" element={<ErrorBoundary key="venue-dash"><PageWrapper><VenueDashboard /></PageWrapper></ErrorBoundary>} />
+              <Route path="/cinemas" element={<ErrorBoundary key="cinemas"><PageWrapper><CinemasPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/person/:id" element={<ErrorBoundary key="person"><PageWrapper><PersonPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/dispatch" element={<ErrorBoundary key="dispatch"><PageWrapper><DispatchPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/patronage" element={<ErrorBoundary key="patronage"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/society" element={<ErrorBoundary key="society"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/auth/callback" element={<ErrorBoundary key="auth"><AuthCallbackPage /></ErrorBoundary>} />
+              <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
             </Routes>
           </AnimatePresence>
         </ErrorBoundary>
