@@ -706,6 +706,21 @@ a:hover {
   /* Appended subtle flicker glow */
 }
 
+/* ── SOCIETY TIER CARDS — suppress white hover glow ── */
+.card-tier {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+.card-tier:hover {
+  transform: translateY(-3px) !important;
+  border-color: inherit !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8) !important;
+}
+
+.card-tier::before {
+  display: none !important;
+}
+
 .card-film {
   aspect-ratio: 2/3;
   overflow: hidden;

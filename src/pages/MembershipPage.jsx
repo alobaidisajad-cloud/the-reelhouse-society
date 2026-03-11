@@ -111,7 +111,7 @@ export default function MembershipPage() {
                     style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '4rem', marginTop: '1.5rem' }}
                 >
                     {/* The Free Tier */}
-                    <motion.div variants={itemVariants} className="card" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', background: 'rgba(18,14,9,0.95)', border: 'none' }}>
+                    <motion.div variants={itemVariants} className="card card-tier" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', background: 'rgba(18,14,9,0.95)', border: 'none' }}>
                         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>The<br/>Cinephile</h3>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--fog)', marginBottom: '2rem', opacity: 0.7 }}>BASIC ACCESS</div>
 
@@ -139,7 +139,7 @@ export default function MembershipPage() {
                     </motion.div>
 
                     {/* The Pro Tier */}
-                    <motion.div variants={itemVariants} className="card" style={{ padding: '3.5rem 2.5rem 2.5rem', display: 'flex', flexDirection: 'column', border: '1px solid var(--sepia)', background: 'rgba(18,14,9,0.95)', position: 'relative', borderRadius: 'var(--radius-card)' }}>
+                    <motion.div variants={itemVariants} className="card card-tier" style={{ padding: '3.5rem 2.5rem 2.5rem', display: 'flex', flexDirection: 'column', border: '1px solid var(--sepia)', background: 'rgba(18,14,9,0.95)', position: 'relative', borderRadius: 'var(--radius-card)' }}>
                         <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--sepia)', color: 'var(--ink)', padding: '0.4rem 1.2rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', borderRadius: '100px', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
                             MOST POPULAR
                         </div>
@@ -190,7 +190,7 @@ export default function MembershipPage() {
                     </motion.div>
 
                     {/* The Patron Tier */}
-                    <motion.div variants={itemVariants} className="card" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', border: '1px solid #7d1f1f', background: 'rgba(18,14,9,0.95)', borderRadius: 'var(--radius-card)' }}>
+                    <motion.div variants={itemVariants} className="card card-tier" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', border: '1px solid #7d1f1f', background: 'rgba(18,14,9,0.95)', borderRadius: 'var(--radius-card)' }}>
                         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: '#7d1f1f', marginBottom: '0.5rem' }}>The Auteur</h3>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: '#7d1f1f', marginBottom: '2rem' }}>ULTIMATE PATRONAGE</div>
 
