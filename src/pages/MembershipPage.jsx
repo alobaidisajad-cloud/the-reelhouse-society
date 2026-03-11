@@ -108,10 +108,10 @@ export default function MembershipPage() {
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '4rem', marginTop: '1.5rem' }}
+                    style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', marginBottom: '4rem', marginTop: '1.5rem' }}
                 >
                     {/* The Free Tier */}
-                    <motion.div variants={itemVariants} className="card" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column' }}>
+                    <motion.div variants={itemVariants} className="card" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', border: '1px solid var(--ash)' }}>
                         <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>The Cinephile</h3>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--fog)', marginBottom: '2rem' }}>BASIC ACCESS</div>
 
@@ -256,13 +256,13 @@ export default function MembershipPage() {
                     </div>
 
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '1rem' }}>
-                        LIMITED OFFER Â· CLASS OF 1924
+                        LIMITED OFFER · CLASS OF 1924
                     </div>
                     <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 3rem)', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>
                         Founding Members
                     </h2>
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', maxWidth: 560, marginInline: 'auto', lineHeight: 1.7, marginBottom: '2rem' }}>
-                        The first 100 members to join The Society receive <em>Archivist access for life</em> â€” permanently, with no recurring charges, ever. A single entry in the ledger. A permanent seat in the house.
+                        The first 100 members to join The Society receive <em>Archivist access for life</em> u{2014} permanently, with no recurring charges, ever. A single entry in the ledger. A permanent seat in the house.
                     </p>
 
                     {/* Price display */}
@@ -276,7 +276,7 @@ export default function MembershipPage() {
                     </div>
 
                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', marginBottom: '2.5rem', fontStyle: 'italic' }}>
-                        Compare to $19.99/yr recurring â€” this pays for itself in under 3 years and never charges again.
+                        Compare to $19.99/yr recurring u{2014} this pays for itself in under 3 years and never charges again.
                     </div>
 
                     <button
@@ -288,7 +288,7 @@ export default function MembershipPage() {
                     </button>
 
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', marginTop: '1rem', opacity: 0.6 }}>
-                        POWERED BY PAYTAB Â· SECURE CHECKOUT Â· SEATS FILLING FAST
+                        POWERED BY PAYTAB · SECURE CHECKOUT · SEATS FILLING FAST
                     </div>
                 </motion.div>
 
@@ -306,7 +306,7 @@ export default function MembershipPage() {
                         Built for the Love of Cinema.
                     </h2>
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.1rem', color: 'var(--bone)', lineHeight: 1.8, marginBottom: '2rem', fontStyle: 'italic' }}>
-                        We believe that software should feel like a physical artifactâ€”a curated, brutalist space free from corporate bloat. By ascending within The Society, you preserve this aesthetic and command the most premium cinematic ledger ever forged.
+                        We believe that software should feel like a physical artifactu{2014}a curated, brutalist space free from corporate bloat. By ascending within The Society, you preserve this aesthetic and command the most premium cinematic ledger ever forged.
                     </p>
                     <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
                         <div style={{ width: '40px', height: '1px', background: 'var(--flicker)', alignSelf: 'center' }} />
