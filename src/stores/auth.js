@@ -49,7 +49,14 @@ export const useAuthStore = create(
                 const { data, error } = await supabase.auth.signUp({
                     email, password,
                     options: {
-                        data: { username, role },
+                        // SECURITY: Only send username in metadata.
+                        // Role is determined server-side by the DB trigger (handle_new_user).
+                        // Sending role here was a vector for free premium access - removed.
+                        data: {
+                            username,
+                            // Allow 'venue_owner' only — trigger rejects all other non-default roles
+                            ...(role === 'venue_owner' ? { role: 'venue_owner' } : {}),
+                        },
                         emailRedirectTo: redirectTo,
                     }
                 })
