@@ -193,75 +193,52 @@ export const tmdb = {
         return data
     },
 
-    trending: async (timeWindow = 'week') => {
-        const res = await fetch(
-            `${TMDB_BASE}/trending/movie/${timeWindow}?api_key=${API_KEY}`
-        )
-        if (!res.ok) throw new Error('TMDB trending failed')
-        return res.json()
-    },
+    trending: async (timeWindow = 'week') => fetchTMDB(
+        `${TMDB_BASE}/trending/movie/${timeWindow}?api_key=${API_KEY}`,
+        { results: [] }
+    ),
 
-    topRated: async (page = 1) => {
-        const res = await fetch(
-            `${TMDB_BASE}/movie/top_rated?api_key=${API_KEY}&page=${page}`
-        )
-        if (!res.ok) throw new Error('TMDB top rated failed')
-        return res.json()
-    },
+    topRated: async (page = 1) => fetchTMDB(
+        `${TMDB_BASE}/movie/top_rated?api_key=${API_KEY}&page=${page}`,
+        { results: [] }
+    ),
 
-    nowPlaying: async () => {
-        const res = await fetch(
-            `${TMDB_BASE}/movie/now_playing?api_key=${API_KEY}`
-        )
-        if (!res.ok) throw new Error('TMDB now playing failed')
-        return res.json()
-    },
+    nowPlaying: async () => fetchTMDB(
+        `${TMDB_BASE}/movie/now_playing?api_key=${API_KEY}`,
+        { results: [] }
+    ),
 
-    upcoming: async () => {
-        const res = await fetch(
-            `${TMDB_BASE}/movie/upcoming?api_key=${API_KEY}`
-        )
-        if (!res.ok) throw new Error('TMDB upcoming failed')
-        return res.json()
-    },
+    upcoming: async () => fetchTMDB(
+        `${TMDB_BASE}/movie/upcoming?api_key=${API_KEY}`,
+        { results: [] }
+    ),
 
-    detail: async (id) => {
-        const res = await fetch(
-            `${TMDB_BASE}/movie/${id}?api_key=${API_KEY}&append_to_response=credits,videos,similar,watch/providers,release_dates`
-        )
-        if (!res.ok) throw new Error('TMDB detail failed')
-        return res.json()
-    },
+    detail: async (id) => fetchTMDB(
+        `${TMDB_BASE}/movie/${id}?api_key=${API_KEY}&append_to_response=credits,videos,similar,watch/providers,release_dates`,
+        null
+    ),
 
     // Watch providers (streaming, rent, buy) for a specific movie
     watchProviders: async (id, country = 'US') => {
-        const res = await fetch(`${TMDB_BASE}/movie/${id}/watch/providers?api_key=${API_KEY}`)
-        if (!res.ok) return {}
-        const data = await res.json()
-        return data.results || {}
+        const data = await fetchTMDB(`${TMDB_BASE}/movie/${id}/watch/providers?api_key=${API_KEY}`, {})
+        return data?.results || {}
     },
 
     // Release dates by country for a movie
     releaseDates: async (id) => {
-        const res = await fetch(`${TMDB_BASE}/movie/${id}/release_dates?api_key=${API_KEY}`)
-        if (!res.ok) return []
-        const data = await res.json()
-        return data.results || []
+        const data = await fetchTMDB(`${TMDB_BASE}/movie/${id}/release_dates?api_key=${API_KEY}`, {})
+        return data?.results || []
     },
 
     // Search production companies by name (for Discover filter)
     companySearch: async (query) => {
-        const res = await fetch(`${TMDB_BASE}/search/company?api_key=${API_KEY}&query=${encodeURIComponent(query)}`)
-        if (!res.ok) return []
-        const data = await res.json()
-        return data.results || []
+        const data = await fetchTMDB(`${TMDB_BASE}/search/company?api_key=${API_KEY}&query=${encodeURIComponent(query)}`, {})
+        return data?.results || []
     },
 
     discover: async (params = {}) => {
         const qs = new URLSearchParams({ api_key: API_KEY, ...params }).toString()
-        const res = await fetch(`${TMDB_BASE}/discover/movie?${qs}`)
-        if (!res.ok) throw new Error('TMDB discover failed')
-        return res.json()
+        return fetchTMDB(`${TMDB_BASE}/discover/movie?${qs}`, { results: [] })
     },
 
     poster: (path, size = 'w342') => path ? `${TMDB_IMG}/${size}${path}` : null,
@@ -279,53 +256,26 @@ export const tmdb = {
 
     // Separate similar endpoint (avoids double-fetching detail)
     similar: async (id) => {
-        const res = await fetch(
-            `${TMDB_BASE}/movie/${id}/similar?api_key=${API_KEY}&page=1`
-        )
-        if (!res.ok) throw new Error('TMDB similar failed')
-        const data = await res.json()
-        return data.results || []
+        const data = await fetchTMDB(`${TMDB_BASE}/movie/${id}/similar?api_key=${API_KEY}&page=1`, {})
+        return data?.results || []
     },
 
     // Aliases used by hover-prefetch in FilmCard
-    movieDetails: async (id) => {
-        const res = await fetch(
-            `${TMDB_BASE}/movie/${id}?api_key=${API_KEY}&append_to_response=credits,videos,similar`
-        )
-        if (!res.ok) throw new Error('TMDB movieDetails failed')
-        return res.json()
-    },
+    movieDetails: async (id) => fetchTMDB(
+        `${TMDB_BASE}/movie/${id}?api_key=${API_KEY}&append_to_response=credits,videos,similar`,
+        null
+    ),
 
-    movieCredits: async (id) => {
-        const res = await fetch(
-            `${TMDB_BASE}/movie/${id}/credits?api_key=${API_KEY}`
-        )
-        if (!res.ok) throw new Error('TMDB movieCredits failed')
-        return res.json()
-    },
+    movieCredits: async (id) => fetchTMDB(`${TMDB_BASE}/movie/${id}/credits?api_key=${API_KEY}`, null),
 
     // Fetch all images for a movie (posters, backdrops, logos)
-    movieImages: async (id) => {
-        const res = await fetch(
-            `${TMDB_BASE}/movie/${id}/images?api_key=${API_KEY}`
-        )
-        if (!res.ok) throw new Error('TMDB images failed')
-        return res.json() // { posters[], backdrops[], logos[] }
-    },
+    movieImages: async (id) => fetchTMDB(`${TMDB_BASE}/movie/${id}/images?api_key=${API_KEY}`, { posters: [], backdrops: [], logos: [] }),
 
     // Fetch person details (Actor/Director profile)
-    person: async (id) => {
-        const res = await fetch(`${TMDB_BASE}/person/${id}?api_key=${API_KEY}`)
-        if (!res.ok) throw new Error('TMDB person failed')
-        return res.json()
-    },
+    person: async (id) => fetchTMDB(`${TMDB_BASE}/person/${id}?api_key=${API_KEY}`, null),
 
     // Fetch person's movie credits
-    personCredits: async (id) => {
-        const res = await fetch(`${TMDB_BASE}/person/${id}/movie_credits?api_key=${API_KEY}`)
-        if (!res.ok) throw new Error('TMDB person credits failed')
-        return res.json()
-    },
+    personCredits: async (id) => fetchTMDB(`${TMDB_BASE}/person/${id}/movie_credits?api_key=${API_KEY}`, null),
 
     // NEW: Real-time News Proxy (Aggregates Film News)
     getNews: async () => {
