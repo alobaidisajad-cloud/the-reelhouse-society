@@ -94,8 +94,8 @@
 
 /* ── SELECTION ── */
 ::selection {
-  background: rgba(196, 150, 26, 0.45);
-  color: var(--parchment);
+  background: var(--flicker);
+  color: var(--ink);
 }
 
 /* ── BASE ── */
