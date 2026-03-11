@@ -45,6 +45,13 @@ export default function SignupModal() {
         }
     }, [signupModalOpen])
 
+    // Close the modal if the user is already logged in (prevents showing gate to auth'd users)
+    useEffect(() => {
+        if (signupModalOpen && isAuthenticated) {
+            closeSignupModal()
+        }
+    }, [signupModalOpen, isAuthenticated])
+
     const [isLoading, setIsLoading] = useState(false)
     const toggleVibe = (v) => setVibes((prev) =>
         prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
@@ -107,13 +114,7 @@ export default function SignupModal() {
         setHasClearance(false); setClearanceCode(''); setClearanceStatus('idle')
     }
 
-    if (!signupModalOpen) return null
-
-    // If the user is already logged in, don't show the signup flow at all
-    if (isAuthenticated) {
-        closeSignupModal()
-        return null
-    }
+    if (!signupModalOpen || isAuthenticated) return null
 
     // VELVET ROPE: TERMINAL UI
     if (!isLogin && !hasClearance) {
