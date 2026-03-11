@@ -1546,8 +1546,6 @@ export default function UserProfilePage() {
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: filteredLogs.length },
         { id: 'passport', label: 'Passport', count: null },
-        { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length },
-        { id: 'programmes', label: 'Programmes', count: profileProgrammes.length },
         { id: 'projector', label: 'Projector Room', count: null },
         { id: 'lists', label: 'Lists', count: profileLists.length },
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
@@ -2059,12 +2057,6 @@ export default function UserProfilePage() {
                             </div>
                         )}
 
-                        {activeTab === 'programmes' && (
-                            <div>
-                                <SectionHeader label="CURATED DOUBLE FEATURES" title="Nightly Programmes" />
-                                <ProgrammesSection programmes={profileProgrammes} user={profileUser} isOwnProfile={isOwnProfile} />
-                            </div>
-                        )}
 
                         {activeTab === 'projector' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>

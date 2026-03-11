@@ -17,7 +17,50 @@ const MARQUEE_BULBS = Array.from({ length: IS_TOUCH ? 8 : 14 }) // fewer bulb an
 
 // ── MARQUEE BOARD COMPONENT ──
 function MarqueeBoard({ film }) {
-    if (!film) return null;
+    if (!film) return (
+        <div style={{
+            position: 'relative',
+            padding: IS_TOUCH ? '0 0 1rem' : '0 0 2rem',
+            maxWidth: '800px',
+            margin: '0 auto',
+            width: '100%',
+            boxSizing: 'border-box',
+        }}>
+            {!IS_TOUCH && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', padding: '0 10px' }}>
+                    {MARQUEE_BULBS.map((_, i) => (
+                        <div key={i} className="marquee-bulb" style={{ animationDelay: `${i * 0.18}s` }} />
+                    ))}
+                </div>
+            )}
+            <div className="marquee-board" style={{
+                background: 'linear-gradient(180deg, rgba(28,23,16,0.95) 0%, rgba(10,7,3,0.98) 100%)',
+                border: '2px solid var(--sepia)',
+                borderRadius: 'var(--radius-card)',
+                padding: IS_TOUCH ? '1.25rem 1rem' : '3rem 2rem',
+                boxShadow: IS_TOUCH
+                    ? '0 8px 20px rgba(0,0,0,0.8)'
+                    : '0 20px 50px rgba(0,0,0,0.9), inset 0 0 40px rgba(139,105,20,0.15), 0 0 0 1px rgba(242,232,160,0.1)',
+                textAlign: 'center',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '1rem',
+                minHeight: IS_TOUCH ? 80 : 160,
+                justifyContent: 'center',
+            }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.6rem' : '0.75rem', letterSpacing: '0.3em', color: 'var(--flicker)', textShadow: '0 0 10px rgba(242,232,160,0.3)', opacity: 0.6, animation: 'pulse 1.8s ease-in-out infinite' }}>
+                    ★ LOADING THE FEATURE PRESENTATION ★
+                </div>
+                <div style={{ display: 'flex', gap: 4, overflow: 'hidden', opacity: 0.08, justifyContent: 'center' }}>
+                    {Array.from({ length: IS_TOUCH ? 6 : 14 }).map((_, i) => (
+                        <div key={i} style={{ width: 32, height: 24, flexShrink: 0, border: '2px solid var(--parchment)', borderRadius: 2 }} />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div style={{
             position: 'relative',
@@ -689,14 +732,14 @@ export default function HomePage() {
                                     }}
                                     onClick={() => openSignupModal('cinephile')}
                                 >
-                                    ✦ PURCHASE TICKET
+                                    ✦ JOIN THE SOCIETY
                                 </button>
                                 <button
                                     className="btn btn-ghost"
                                     style={{ fontSize: IS_TOUCH ? '0.75rem' : '0.85rem', padding: IS_TOUCH ? '0.75em 1.5em' : '0.9em 2em', borderColor: 'rgba(139,105,20,0.4)', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
                                     onClick={() => openSignupModal('venue_owner')}
                                 >
-                                    CURATE A VENUE
+                                    I MANAGE A VENUE
                                 </button>
                             </>
                         )}

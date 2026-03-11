@@ -5,6 +5,24 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p'
 // Use env var or a public read-only demo key
 const API_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
 
+// Resilient fetch wrapper — 8s timeout, logs errors, always returns a safe fallback
+async function fetchTMDB(url, fallback = null) {
+    try {
+        const controller = new AbortController()
+        const timer = setTimeout(() => controller.abort(), 8000)
+        const res = await fetch(url, { signal: controller.signal })
+        clearTimeout(timer)
+        if (!res.ok) {
+            console.warn(`[TMDB] ${res.status} ${res.statusText} — ${url.split('?')[0]}`)
+            return fallback
+        }
+        return await res.json()
+    } catch (e) {
+        if (e.name !== 'AbortError') console.warn('[TMDB] Fetch error:', e.message)
+        return fallback
+    }
+}
+
 export const tmdb = {
     search: async (query, page = 1) => {
         // TIER 1: Omni-Search (Movies + Actors + Directors simultaneously)

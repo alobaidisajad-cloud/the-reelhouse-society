@@ -28,7 +28,6 @@ const NAV_LINKS = [
     { path: '/feed', label: 'The Reel', icon: BookOpen },
     { path: '/dispatch', label: 'The Dispatch', icon: FileText },
     { path: '/lists', label: 'The Stacks', icon: Star },
-    { path: '/cinemas', label: 'The Cinemas', icon: MapPin },
     { path: '/patronage', label: 'The Society', icon: Crown },
 ]
 

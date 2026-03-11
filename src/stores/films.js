@@ -127,12 +127,6 @@ export const useFilmStore = create(
 
                 set((state) => ({
                     logs: [{ ...log, id: data.id, createdAt: data.created_at }, ...state.logs],
-                    stubs: state.stubs.find((s) => s.filmId === log.filmId) ? state.stubs : [{
-                        id: `stub-${Date.now()}`, filmId: log.filmId, title: log.title,
-                        date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                        venue: 'The Oracle Palace',
-                        seat: Math.floor(Math.random() * 20 + 1) + String.fromCharCode(65 + Math.floor(Math.random() * 8)),
-                    }, ...state.stubs],
                 }))
             },
 

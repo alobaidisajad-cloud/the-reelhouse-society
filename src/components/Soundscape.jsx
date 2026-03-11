@@ -11,6 +11,12 @@ export default function Soundscape() {
     const { isPlaying, toggle } = useSoundscape()
     const audioRef = useRef(null)
     const [hasInteracted, setHasInteracted] = useState(false)
+    const [visible, setVisible] = useState(false)
+
+    useEffect(() => {
+        const timer = setTimeout(() => setVisible(true), 3000)
+        return () => clearTimeout(timer)
+    }, [])
 
     useEffect(() => {
         if (isPlaying && hasInteracted) {
@@ -41,7 +47,8 @@ export default function Soundscape() {
 
             <motion.div
                 initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
+                animate={{ opacity: visible ? 1 : 0, x: visible ? 0 : -20 }}
+                transition={{ duration: 0.5 }}
                 className="soundscape-control"
                 style={{
                     position: 'fixed',
