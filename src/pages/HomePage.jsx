@@ -92,7 +92,7 @@ function MarqueeBoard({ film }) {
                     : '0 20px 50px rgba(0,0,0,0.9), inset 0 0 40px rgba(139,105,20,0.15), 0 0 0 1px rgba(242,232,160,0.1)',
                 position: 'relative',
                 overflow: 'hidden',
-                background: 'rgba(10,7,3,0.98)',
+                background: film.backdrop_path ? 'rgba(10,7,3,0.15)' : 'rgba(10,7,3,0.98)',
             }}>
                 {/* Backdrop image layer */}
                 {film.backdrop_path && (
@@ -102,17 +102,19 @@ function MarqueeBoard({ film }) {
                         backgroundImage: `url(${tmdb.backdrop(film.backdrop_path, 'w1280')})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 20%',
-                        opacity: IS_TOUCH ? 0.20 : 0.40,
-                        filter: 'sepia(0.3) contrast(0.85)',
+                        opacity: 1,
+                        filter: IS_TOUCH
+                            ? 'sepia(0.4) contrast(0.8) brightness(0.38)'
+                            : 'sepia(0.3) contrast(0.85) brightness(0.45)',
                         zIndex: 0,
                         pointerEvents: 'none',
                     }} />
                 )}
-                {/* Dark vignette overlay so text stays readable */}
+                {/* Vignette — keeps text readable while letting image show */}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(180deg, rgba(10,7,3,0.55) 0%, rgba(10,7,3,0.75) 60%, rgba(10,7,3,0.92) 100%)',
+                    background: 'linear-gradient(180deg, rgba(10,7,3,0.20) 0%, rgba(10,7,3,0.45) 60%, rgba(10,7,3,0.75) 100%)',
                     zIndex: 0,
                     pointerEvents: 'none',
                 }} />
