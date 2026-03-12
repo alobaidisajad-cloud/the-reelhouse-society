@@ -1824,13 +1824,14 @@ body::after {
   white-space: nowrap;
 }
 
-.nav-link:hover,
-.nav-link.active {
-  color: var(--flicker);
-  background: rgba(242, 232, 160, 0.06);
+.nav-link:hover {
+  color: var(--bone);
+  background: rgba(242, 232, 160, 0.04);
 }
 
 .nav-link.active {
+  color: var(--flicker);
+  background: rgba(242, 232, 160, 0.07);
   border-bottom: 1px solid var(--sepia);
 }
 
