@@ -1898,10 +1898,11 @@ body::after {
   text-decoration: none;
   padding: 0.5rem 1rem;
   transition: color 0.2s;
-  /* Bigger tap target for mobile */
+  /* Tap target size for mobile, but width limited to text */
   min-height: 48px;
-  display: flex;
+  display: inline-flex;
   align-items: center;
+  width: fit-content;
 }
 
 .mobile-nav-link:hover {

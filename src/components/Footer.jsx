@@ -46,14 +46,16 @@ export default function Footer() {
                         { to: '/society', label: 'The Society' },
                     ].map(({ to, label, end }) => (
                         <NavLink key={to} to={to} end={end} style={({ isActive }) => ({
-                            display: 'block',
+                            display: 'inline-block',
                             fontFamily: 'var(--font-sub)',
                             fontSize: '0.75rem',
                             color: isActive ? 'var(--sepia)' : 'var(--bone)',
                             fontWeight: isActive ? '600' : 'normal',
                             textDecoration: 'none',
                             padding: '0.2rem 0',
+                            marginBottom: '0.1rem',
                             transition: 'color 0.2s',
+                            cursor: 'pointer',
                         })}
                             onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
                             onMouseLeave={e => e.currentTarget.style.color = ''}
@@ -73,14 +75,16 @@ export default function Footer() {
                         { to: '/society', label: 'Membership' },
                     ].map(({ to, label }) => (
                         <NavLink key={to} to={to} style={({ isActive }) => ({
-                            display: 'block',
+                            display: 'inline-block',
                             fontFamily: 'var(--font-sub)',
                             fontSize: '0.75rem',
                             color: isActive ? 'var(--sepia)' : 'var(--bone)',
                             fontWeight: isActive ? '600' : 'normal',
                             textDecoration: 'none',
                             padding: '0.2rem 0',
+                            marginBottom: '0.1rem',
                             transition: 'color 0.2s',
+                            cursor: 'pointer',
                         })}
                             onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
                             onMouseLeave={e => e.currentTarget.style.color = ''}
