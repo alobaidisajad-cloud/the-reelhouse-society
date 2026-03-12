@@ -1,6 +1,6 @@
 import { Suspense, lazy, useEffect, useState, useMemo } from 'react'
 import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from './tmdb'
 import Navbar from './components/Navbar'

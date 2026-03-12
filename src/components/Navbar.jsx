@@ -63,10 +63,11 @@ export default function Navbar() {
                 setScrolled(currentScrollY > 40)
 
                 // Only hide if we scroll down past 150px overhead
-                if (currentScrollY > 150 && currentScrollY > lastScrollY.current) {
+                // Only reveal if we scroll up by at least 50px (prevents micro-flicker)
+                if (currentScrollY > 150 && currentScrollY > lastScrollY.current + 8) {
                     setHidden(true)
-                } else if (currentScrollY < lastScrollY.current) {
-                    setHidden(false) // Show immediately on scroll up
+                } else if (currentScrollY < lastScrollY.current - 50) {
+                    setHidden(false)
                 }
 
                 lastScrollY.current = currentScrollY

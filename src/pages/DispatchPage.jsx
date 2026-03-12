@@ -43,8 +43,8 @@ export default function DispatchPage() {
             try {
                 const items = await tmdb.getNews()
                 setNews(items.slice(0, 10))
-            } catch (e) {
-                console.error(e)
+            } catch {
+                // TMDB news failed silently — UI shows empty state
             }
             setLoading(false)
         }
@@ -428,7 +428,7 @@ export default function DispatchPage() {
                     padding: 2.5rem; background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.05);
                     border-radius: 2px; cursor: pointer; transition: background 0.2s, transform 0.2s; position: relative;
                 }
-                .dossier-card::before { content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 3px; background: var(--sepia); transform: scaleY(0); transition: transform 0.2s transform-origin: top; }
+                .dossier-card::before { content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 3px; background: var(--sepia); transform: scaleY(0); transform-origin: top; transition: transform 0.2s; }
                 .dossier-card:hover { background: rgba(255,255,255,0.03); transform: translateX(5px); }
                 .dossier-card:hover::before { transform: scaleY(1); }
                 

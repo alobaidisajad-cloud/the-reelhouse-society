@@ -110,10 +110,10 @@ export default function Footer() {
                 flexWrap: 'wrap',
                 gap: '0.5rem',
             }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
                     © {new Date().getFullYear()} THE REELHOUSE SOCIETY · ALL RIGHTS RESERVED
                 </span>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--ash)' }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
                     FILM DATA BY TMDB
                 </span>
             </div>

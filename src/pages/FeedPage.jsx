@@ -98,7 +98,7 @@ function ActivityCard({ log }) {
             }).then(({ error }) => {
                 // Ignore duplicate constraint errors (already retransmitted)
                 if (error && !error.message.includes('duplicate')) {
-                    console.error('Retransmit error:', error)
+                    // Retransmit failed silently — user sees toast success already
                 }
             })
         }
@@ -130,8 +130,8 @@ function ActivityCard({ log }) {
             link.download = `ReelHouse-Dossier-${log.user}-${log.film?.title?.replace(/\s+/g, '-')}.jpg`
             link.href = dataUrl
             link.click()
-        } catch (err) {
-            console.error('Export failed:', err)
+        } catch {
+            // Export failed silently — isExporting state resets in finally
         } finally {
             setIsExporting(false)
         }

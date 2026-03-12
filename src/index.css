@@ -993,7 +993,7 @@ a:hover {
 }
 
 /* ── FLICKER TEXT ── */
-.text-flicker {
+.text-flicker-anim {
   animation: flicker-text 6s ease-in-out infinite;
 }
 
@@ -1155,7 +1155,7 @@ a:hover {
 .loading-reel {
   width: 60px;
   height: 60px;
-  animation: reel-spin-steps 1s steps(12) infinite;
+  animation: reel-spin-steps 1.2s linear infinite;
 }
 
 /* ── VAULT ── */
