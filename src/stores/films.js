@@ -10,7 +10,7 @@ export const useFilmStore = create(
             watchlist: [],
             vault: [],
             lists: [],
-            stubs: [],       // decorative digital tickets — not persisted
+            stubs: [],       // Supabase-backed digital tickets — fetched on login
             interactions: [], // { type: 'endorse', targetId, timestamp }
 
             toggleEndorse: async (targetId) => {
@@ -101,6 +101,59 @@ export const useFilmStore = create(
                     }))
                     set({ lists: fullLists })
                 }
+            },
+
+            fetchStubs: async () => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const { data, error } = await supabase
+                    .from('tickets')
+                    .select('*, showtimes(film_title, date)')
+                    .eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                if (!error && data) {
+                    set({
+                        stubs: data.map((t) => ({
+                            id: t.id,
+                            filmTitle: t.showtimes?.film_title || 'Unknown Film',
+                            date: t.showtimes?.date || '',
+                            seat: t.seat,
+                            ticketType: t.ticket_type,
+                            amount: t.amount,
+                            qrCode: t.qr_code || null,
+                            screenName: t.screen_name || null,
+                            createdAt: t.created_at,
+                        })),
+                    })
+                }
+            },
+
+            saveStub: async (stub) => {
+                const user = useAuthStore.getState().user
+                if (!user) return null
+                // Only write to DB if we have a real showtime UUID (not demo data)
+                const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+                const isRealShowtime = stub.showtimeId && UUID_RE.test(stub.showtimeId)
+                if (!isRealShowtime) return null
+                const { data, error } = await supabase.from('tickets').insert([{
+                    user_id: user.id,
+                    showtime_id: stub.showtimeId,
+                    slot_id: stub.slotId || 'default',
+                    seat: stub.seat || '—',
+                    ticket_type: stub.ticketType || 'Standard',
+                    amount: stub.amount || 0,
+                    qr_code: stub.qrCode || null,
+                    screen_name: stub.screenName || null,
+                }]).select().single()
+                if (!error && data) {
+                    return data.id
+                }
+                return null
+            },
+
+            addStubLocal: (stub) => {
+                // Used for demo/mock venues without a real Supabase showtime UUID
+                set((state) => ({ stubs: [stub, ...state.stubs] }))
             },
 
             addLog: async (log) => {

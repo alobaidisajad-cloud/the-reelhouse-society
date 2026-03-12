@@ -45,24 +45,41 @@ export default function TicketFlow({ showtime, slot, onClose }) {
         setSelectedSeat(seatId)
     }
 
-    const handlePurchase = () => {
+
+    const handlePurchase = async () => {
         if (!selectedSeat || !ticketType) return
         if (!isAuthenticated) { openSignupModal(); return }
         bookSeat(showtime.id, slot.id, selectedSeat)
         const stub = {
-            id: 'stub-' + Date.now(),
+            showtimeId: showtime.dbId || showtime.id || null,   // real Supabase UUID if available
+            slotId: slot.id || 'default',
             filmId: showtime.id,
             title: showtime.film,
             date: showtime.date,
             time: slot.time,
             venue: venue.name,
-            screen: showtime.screenName || 'Main Screen',
+            screen: showtime.screenName || slot.screenName || 'Main Screen',
+            screenName: showtime.screenName || slot.screenName || null,
             seat: selectedSeat,
             ticketType: ticketType.type,
             price: ticketType.price,
+            amount: ticketType.price + BOOKING_FEE,
             format: slot.format,
+            qrCode: null,
         }
-        useFilmStore.setState(s => ({ stubs: [stub, ...s.stubs] }))
+        // Try to persist to Supabase; fall back to local-only for demo venues
+        try {
+            const dbId = await useFilmStore.getState().saveStub(stub)
+            if (dbId) {
+                useFilmStore.setState(s => ({
+                    stubs: [{ ...stub, id: dbId }, ...s.stubs.filter(x => x.id !== dbId)]
+                }))
+            } else {
+                useFilmStore.getState().addStubLocal({ ...stub, id: 'stub-' + Date.now() })
+            }
+        } catch {
+            useFilmStore.getState().addStubLocal({ ...stub, id: 'stub-' + Date.now() })
+        }
         setCreatedStub(stub)
         setStep(4)
     }
