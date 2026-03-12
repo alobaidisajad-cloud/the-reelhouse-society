@@ -21,6 +21,7 @@ run_sql.js
 testAuth.js
 test_signup.js
 generate_icons.js
+deploy.ps1
 
 node_modules
 dist

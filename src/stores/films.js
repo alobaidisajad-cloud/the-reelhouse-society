@@ -29,7 +29,7 @@ export const useFilmStore = create(
                 }
             },
 
-            hasEndorsed: () => false,
+            hasEndorsed: (targetId) => get().interactions.some((i) => i.targetId === targetId && i.type === 'endorse'),
 
             fetchLogs: async () => {
                 const user = useAuthStore.getState().user
@@ -133,10 +133,10 @@ export const useFilmStore = create(
             getCinephileStats: () => {
                 const logs = get().logs
                 const count = logs.length
-                let level = 'THE VISITOR'
+                let level = 'FIRST REEL'
                 let color = 'var(--fog)'
-                if (count > 50) { level = 'THE ARCHIVIST'; color = 'var(--sepia)' }
-                else if (count > 20) { level = 'THE MIDNIGHT DEVOTEE'; color = 'var(--blood-reel)' }
+                if (count > 50) { level = 'THE ORACLE'; color = 'var(--sepia)' }
+                else if (count > 20) { level = 'MIDNIGHT DEVOTEE'; color = 'var(--blood-reel)' }
                 else if (count > 5) { level = 'THE REGULAR'; color = 'var(--flicker)' }
                 return { count, level, color, progress: (count % 20) * 5 }
             },
@@ -162,8 +162,10 @@ export const useFilmStore = create(
                 const user = useAuthStore.getState().user
                 const isPaid = user?.role === 'archivist' || user?.role === 'auteur'
                 const logToRemove = get().logs.find((l) => l.id === id)
+                if (!logToRemove) return
 
-                if (isPaid && logToRemove) {
+                if (isPaid) {
+                    // Paid users: optimistic remove with 5s undo toast
                     set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
                     let undone = false
                     const { default: toast } = await import('react-hot-toast')
@@ -181,6 +183,9 @@ export const useFilmStore = create(
                     }
                     setTimeout(async () => { if (!undone) await supabase.from('logs').delete().eq('id', id) }, 5200)
                 } else {
+                    // Free users: require confirmation before permanent delete
+                    const confirmed = window.confirm(`Remove "${logToRemove.title}" from your archive? This cannot be undone.`)
+                    if (!confirmed) return
                     const { error } = await supabase.from('logs').delete().eq('id', id)
                     if (!error) set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
                 }

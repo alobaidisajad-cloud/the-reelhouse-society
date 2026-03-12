@@ -2761,3 +2761,43 @@ body::after {
     filter: drop-shadow(0 2px 10px rgba(107, 26, 10, 0.4));
   }
 }
+
+/* ── MOBILE FIX — CINEMAS SEARCH BAR ── */
+@media (max-width: 640px) {
+  /* Stack the search row vertically so the input and NEAR ME button have full width */
+  .cinemas-search-row {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+  }
+
+  .cinemas-search-row input,
+  .cinemas-search-row .input {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .cinemas-search-row .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+}
+
+/* ── MOBILE FIX — DISPATCH HEADER ── */
+@media (max-width: 640px) {
+  /* Give the dispatch page header more breathing room so title and upgrade badge don't crowd */
+  .dispatch-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  .dispatch-header-upgrade {
+    margin-top: 0 !important;
+    align-self: flex-start !important;
+  }
+
+  /* Hide decorative film corners on mobile — they float incorrectly */
+  .dispatch-film-corner {
+    display: none !important;
+  }
+}

@@ -408,7 +408,7 @@ export default function CinemasPage() {
                     </p>
 
                     {/* Search */}
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', paddingBottom: '1.5rem' }}>
+                    <div className="cinemas-search-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', paddingBottom: '1.5rem' }}>
                         <div style={{ flex: 1, minWidth: 240, position: 'relative', display: 'flex', alignItems: 'center' }}>
                             <Search size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--fog)', pointerEvents: 'none' }} />
                             <input

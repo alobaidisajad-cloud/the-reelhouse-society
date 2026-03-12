@@ -29,7 +29,7 @@ const NAV_LINKS = [
     { path: '/dispatch', label: 'The Dispatch', icon: FileText },
     { path: '/lists', label: 'The Stacks', icon: Star },
     { path: '/cinemas', label: 'The Cinemas', icon: MapPin },
-    { path: '/patronage', label: 'The Society', icon: Crown },
+    { path: '/society', label: 'The Society', icon: Crown },
 ]
 
 export default function Navbar() {
@@ -146,7 +146,7 @@ export default function Navbar() {
                     {/* Desktop Nav */}
                     <ul className="nav-links hide-mobile">
                         {NAV_LINKS.map(({ path, label }) => {
-                            const ALIASES = { '/patronage': ['/society', '/membership'] }
+                            const ALIASES = { '/society': ['/patronage', '/membership'] }
                             const isActive = (p) => {
                                 if (location.pathname === p) return true
                                 const al = ALIASES[p] || []

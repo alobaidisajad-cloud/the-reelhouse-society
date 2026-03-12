@@ -89,11 +89,13 @@ export const useAuthStore = create(
                 if (updates.username !== undefined) dbUpdates.username = updates.username
                 if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar
                 if (updates.isSocialPrivate !== undefined) dbUpdates.is_social_private = updates.isSocialPrivate
-                if (updates.role !== undefined) dbUpdates.role = updates.role
+                // NOTE: role is intentionally excluded — role changes only happen via payment flow
                 if (Object.keys(dbUpdates).length > 0) {
                     await supabase.from('profiles').update(dbUpdates).eq('id', user.id).catch(() => { })
                 }
-                set((state) => ({ user: state.user ? { ...state.user, ...updates } : null }))
+                // Strip role from local update too — never allow client-side role elevation
+                const { role: _stripped, ...safeUpdates } = updates
+                set((state) => ({ user: state.user ? { ...state.user, ...safeUpdates } : null }))
             },
 
             followUser: async (targetUsername) => {
@@ -119,10 +121,9 @@ export const useAuthStore = create(
                     }
                 }
 
-                const notifStore = await getProgrammeStore().catch(() => null)
-                const { useNotificationStore } = await import('./social')
-                useNotificationStore.getState().push({ type: 'follow', from: fromUsername, message: `${fromUsername} followed you` })
-
+                // Note: Supabase insert above handles the target's notification.
+                // We do NOT push to the local notification store here — that is
+                // reserved for notifications addressed TO the current user, not FROM them.
                 set((s) => ({
                     user: { ...s.user, following: [...(s.user?.following || []), targetUsername] },
                 }))

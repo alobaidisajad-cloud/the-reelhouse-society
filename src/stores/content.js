@@ -29,12 +29,26 @@ export const useDispatchStore = create((set, get) => ({
                 })),
             })
         }
-        // Seed data when table is empty or errored
-        if (error || !data?.length) {
+        // Seed data only when table genuinely has no published content yet
+        if (!error && data?.length === 0) {
             set({
                 dossiers: [
-                    { id: 'seed-1', title: 'The Death of the Jump Scare', excerpt: 'Why modern horror is trading cheap thrills for existential dread, and why audiences are finally craving atmosphere over adrenaline.', fullContent: '', author: 'MIDNIGHT_MUSE', date: 'MAR 07, 2026' },
-                    { id: 'seed-2', title: '35mm in the Desert', excerpt: "A dispatch from the Southwest's last true projectionist. The heat is melting the reels, but the show goes on.", fullContent: '', author: 'ARCHIVE_GHOST', date: 'MAR 06, 2026' },
+                    {
+                        id: 'seed-1',
+                        title: 'The Death of the Jump Scare',
+                        excerpt: 'Why modern horror is trading cheap thrills for existential dread, and why audiences are finally craving atmosphere over adrenaline.',
+                        fullContent: 'There was a time when horror directors believed the jolt was the point. The sudden crash of music, the figure lunging from the dark — a cheap electrical charge designed to make you spill your popcorn. But something shifted. Audiences grew tired of being startled and started craving something worse: the slow creep of dread that follows you home.\n\nFilms like Hereditary, The Lighthouse, and Midsommar did not succeed because they made you jump. They succeeded because they made you feel fundamentally unsafe — in the family home, in broad daylight, in your own mind. The horror had migrated from the screen into the nervous system.\n\nThis is where modern auteur horror lives: in the pause before the sound, in the wide shot that stays too long, in the moment when the character walks toward the thing you are begging them to avoid. The jump scare is dead. Long live the dread.',
+                        author: 'MIDNIGHT_MUSE',
+                        date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase(),
+                    },
+                    {
+                        id: 'seed-2',
+                        title: '35mm in the Desert',
+                        excerpt: "A dispatch from the Southwest's last true projectionist. The heat is melting the reels, but the show goes on.",
+                        fullContent: "The projector room smells of acetate and machine oil. Outside, the Sonoran desert bakes at 110 degrees. Inside, Cecil Navarro threads the reel with the practiced ease of a man who has done it 40,000 times.\n\nHe is the last full-time 35mm projectionist in a three-state radius. The cinema he runs, the Velvet Gate, is a converted church that seats 90 people on mismatched pews. On weekends, every pew is full.\n\n'Digital is clean,' Navarro says, not looking up from the projector. 'But clean is not the same as true. There is something in the grain that tells the audience: this was real. Someone held a camera. Light touched something physical.' He clicks the reel into the sprockets. 'You cannot fake that. You can only preserve it.'\n\nThe house lights dim. The beam cuts through the dark like a wound in the air. The audience, many of whom drove two hours, goes quiet. The show goes on.",
+                        author: 'ARCHIVE_GHOST',
+                        date: new Date(Date.now() - 86400000).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase(),
+                    },
                 ],
             })
         }

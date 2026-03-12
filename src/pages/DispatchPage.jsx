@@ -160,10 +160,10 @@ export default function DispatchPage() {
                         marginBottom: '2rem',
                     }}>
                         {/* Decorative corner marks */}
-                        <div style={{ position: 'absolute', top: '1rem', left: '1rem', width: 20, height: 20, borderTop: '2px solid rgba(162,36,36,0.5)', borderLeft: '2px solid rgba(162,36,36,0.5)' }} />
-                        <div style={{ position: 'absolute', top: '1rem', right: '1rem', width: 20, height: 20, borderTop: '2px solid rgba(162,36,36,0.5)', borderRight: '2px solid rgba(162,36,36,0.5)' }} />
-                        <div style={{ position: 'absolute', bottom: '1rem', left: '1rem', width: 20, height: 20, borderBottom: '2px solid rgba(162,36,36,0.5)', borderLeft: '2px solid rgba(162,36,36,0.5)' }} />
-                        <div style={{ position: 'absolute', bottom: '1rem', right: '1rem', width: 20, height: 20, borderBottom: '2px solid rgba(162,36,36,0.5)', borderRight: '2px solid rgba(162,36,36,0.5)' }} />
+                        <div className="dispatch-film-corner" style={{ position: 'absolute', top: '1rem', left: '1rem', width: 20, height: 20, borderTop: '2px solid rgba(162,36,36,0.5)', borderLeft: '2px solid rgba(162,36,36,0.5)' }} />
+                        <div className="dispatch-film-corner" style={{ position: 'absolute', top: '1rem', right: '1rem', width: 20, height: 20, borderTop: '2px solid rgba(162,36,36,0.5)', borderRight: '2px solid rgba(162,36,36,0.5)' }} />
+                        <div className="dispatch-film-corner" style={{ position: 'absolute', bottom: '1rem', left: '1rem', width: 20, height: 20, borderBottom: '2px solid rgba(162,36,36,0.5)', borderLeft: '2px solid rgba(162,36,36,0.5)' }} />
+                        <div className="dispatch-film-corner" style={{ position: 'absolute', bottom: '1rem', right: '1rem', width: 20, height: 20, borderBottom: '2px solid rgba(162,36,36,0.5)', borderRight: '2px solid rgba(162,36,36,0.5)' }} />
 
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--blood-reel)', marginBottom: '0.5rem', opacity: 0.8 }}>
@@ -362,6 +362,10 @@ export default function DispatchPage() {
                 .wb-content {
                     max-width: 720px; margin: 0 auto; padding: 1rem 2rem;
                     display: flex; justify-content: space-between; align-items: center;
+                    flex-wrap: wrap; gap: 0.5rem;
+                }
+                @media (max-width: 600px) {
+                    .wb-content { flex-direction: column; align-items: flex-start; padding: 0.75rem 1.25rem; gap: 0.6rem; }
                 }
                 .wb-logo { font-family: var(--font-display); font-size: 1.2rem; color: var(--parchment); letter-spacing: 0.1em; }
                 .btn-write-transmission {
