@@ -6,6 +6,8 @@ import { useAuthStore, useUIStore, useVenueStore } from '../store'
 import { SectionHeader } from '../components/UI'
 import TicketFlow from '../components/TicketFlow'
 import toast from 'react-hot-toast'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../supabaseClient'
 
 // ── DEMO VENUES ──
 const DEMO_VENUES = {
@@ -354,6 +356,46 @@ function EventCard({ event }) {
     )
 }
 
+// ── OTHER PALACES SIDEBAR — live from Supabase ──
+function OtherPalacesSidebar({ currentId }) {
+    const { data: venues = [], isLoading } = useQuery({
+        queryKey: ['other-palaces', currentId],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('venues')
+                .select('id, name, location')
+                .neq('id', currentId)
+                .limit(6)
+            return data || []
+        },
+        staleTime: 1000 * 60 * 10,
+    })
+    if (isLoading) return null
+    return (
+        <div className="card">
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
+                {venues.length > 0 ? 'OTHER PALACES' : 'THE ATLAS'}
+            </div>
+            {venues.length === 0 ? (
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic', lineHeight: 1.6 }}>
+                    The Society is growing. More Palaces are joining the atlas soon.
+                </div>
+            ) : venues.map(v => (
+                <Link
+                    key={v.id}
+                    to={`/venue/${v.id}`}
+                    style={{ display: 'block', padding: '0.5rem 0', borderBottom: '1px solid var(--ash)', textDecoration: 'none' }}
+                >
+                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)' }}>{v.name}</div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.52rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '0.1rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                        <MapPin size={8} />{v.location}
+                    </div>
+                </Link>
+            ))}
+        </div>
+    )
+}
+
 export default function VenuePage() {
     const { id } = useParams()
     const { isAuthenticated } = useAuthStore()
@@ -525,24 +567,9 @@ export default function VenuePage() {
                             ))}
                         </div>
 
-                        {/* Quick Nav — other venues */}
-                        <div className="card">
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
-                                OTHER PALACES
-                            </div>
-                            {Object.values(DEMO_VENUES).filter(v => v.id !== venue.id).map(v => (
-                                <Link
-                                    key={v.id}
-                                    to={`/venue/${v.id}`}
-                                    style={{ display: 'block', padding: '0.5rem 0', borderBottom: '1px solid var(--ash)', textDecoration: 'none' }}
-                                >
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)' }}>{v.name}</div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.52rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '0.1rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                                        <MapPin size={8} />{v.location}
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
+                        {/* Other Palaces — live from Supabase */}
+                        <OtherPalacesSidebar currentId={venue.id} />
+
                     </div>
                 </div>
             </main>

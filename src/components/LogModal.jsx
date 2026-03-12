@@ -376,7 +376,7 @@ export default function LogModal() {
                                                 <div>
                                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{r.title}</div>
                                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
-                                                        {r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)} ★
+                                                        {r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)} ✦
                                                     </div>
                                                 </div>
                                             </button>

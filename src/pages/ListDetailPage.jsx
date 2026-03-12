@@ -1,59 +1,49 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useFilmStore } from '../store'
-import { FilmCard, SectionHeader } from '../components/UI'
+import { FilmCard, SectionHeader, LoadingReel } from '../components/UI'
 import { ArrowLeft, Clock, Film } from 'lucide-react'
-
-// Sync with ListsPage mock data
-const COMMUNITY_LISTS = [
-    {
-        id: 'c1', title: 'Films That Rewired My Brain', user: 'the_archivist_84',
-        desc: 'Before and after. You will not be the same.',
-        films: [
-            { id: 238, title: 'The Godfather', poster_path: '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg' },
-            { id: 372058, title: 'Your Name', poster_path: '/q719jXXEzOoYaps6babgKnONONX.jpg' },
-            { id: 12477, title: 'Grave of the Fireflies', poster_path: '/k9tv1rXZbOhH7eiCk378x61kNQ1.jpg' },
-        ],
-        count: 12,
-    },
-    {
-        id: 'c2', title: 'Midnight Horror Essentials', user: 'midnight_devotee',
-        desc: 'Do not watch alone. Or do. That might be worse.',
-        films: [
-            { id: 694, title: 'The Shining', poster_path: '/nRj5511mZdTl4saWEPoj9QroTIu.jpg' },
-            { id: 346364, title: 'IT', poster_path: '/9E2y5Q7WlCVNEhP5GkVhjr85HCN.jpg' },
-            { id: 299536, title: 'Avengers', poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg' },
-        ],
-        count: 34,
-    },
-    {
-        id: 'c3', title: 'Films for When You Need to Cry', user: 'weeper_in_the_dark',
-        desc: 'A curated destruction of your emotional composure.',
-        films: [
-            { id: 12477, title: 'Grave of the Fireflies', poster_path: '/k9tv1rXZbOhH7eiCk378x61kNQ1.jpg' },
-            { id: 372058, title: 'Your Name', poster_path: '/q719jXXEzOoYaps6babgKnONONX.jpg' },
-            { id: 120467, title: 'Budapest', poster_path: '/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg' },
-        ],
-        count: 8,
-    },
-    {
-        id: 'c4', title: 'Underrated Crime Masterpieces', user: 'contrarian_rex',
-        desc: 'Not Heat. Not Godfather. The ones they forgot.',
-        films: [
-            { id: 590, title: 'The Hours', poster_path: '/4myDtowDJQPQnkEDB1IWGtJR1Fo.jpg' },
-            { id: 238, title: 'The Godfather', poster_path: '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg' },
-            { id: 12477, title: 'Grave of the Fireflies', poster_path: '/k9tv1rXZbOhH7eiCk378x61kNQ1.jpg' },
-        ],
-        count: 19,
-    },
-]
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../supabaseClient'
 
 export default function ListDetailPage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const { lists: userLists } = useFilmStore()
 
-    // Find list either in user's created lists or community mocks
-    const list = userLists.find(l => l.id.toString() === id) || COMMUNITY_LISTS.find(l => l.id === id)
+    // Check local user lists first — fast, no network needed
+    const localList = userLists.find(l => l.id.toString() === id)
+
+    // Fetch from Supabase for any community list (only fires when not found locally)
+    const { data: remoteList, isLoading } = useQuery({
+        queryKey: ['list-detail', id],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('lists')
+                .select(`id, title, description, created_at, is_private, profiles:user_id(username), list_items(film_id, film_title, poster_path, film_year)`)
+                .eq('id', id)
+                .single()
+            if (error || !data) return null
+            return {
+                id: data.id,
+                title: data.title,
+                description: data.description,
+                user: data.profiles?.username || 'anonymous',
+                films: (data.list_items || []).map(item => ({
+                    id: item.film_id,
+                    title: item.film_title,
+                    poster_path: item.poster_path,
+                })),
+                createdAt: data.created_at,
+                isPrivate: data.is_private,
+            }
+        },
+        enabled: !localList && !!id,
+        staleTime: 1000 * 60 * 5,
+    })
+
+    if (!localList && isLoading) return <LoadingReel />
+
+    const list = localList || remoteList
 
     if (!list) {
         return (
@@ -66,7 +56,6 @@ export default function ListDetailPage() {
     }
 
     const { title, description, desc, user, films = [], createdAt } = list
-    const isMock = !!desc
     const displayDesc = description || desc
     const authorParam = user || 'YOU'
 
@@ -92,7 +81,7 @@ export default function ListDetailPage() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', flexWrap: 'wrap', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <div style={{ width: 16, height: 16, borderRadius: '50%', background: 'var(--sepia)' }} />
-                            CURATED BY <Link to={isMock ? `/user/${authorParam}` : '#'} style={{ color: 'var(--bone)', textDecoration: 'none' }}>@{authorParam.toUpperCase()}</Link>
+                            CURATED BY <Link to={user ? `/user/${authorParam}` : '#'} style={{ color: 'var(--bone)', textDecoration: 'none' }}>@{authorParam.toUpperCase()}</Link>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Film size={12} /> {films.length} ENTRIES</div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}><Clock size={12} /> {displayDate}</div>
