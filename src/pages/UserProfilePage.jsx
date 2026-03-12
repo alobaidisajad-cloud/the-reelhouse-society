@@ -415,7 +415,7 @@ export default function UserProfilePage() {
             <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
                 {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-                    <div style={{ display: 'flex', gap: '3rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    <div className="profile-hero" style={{ display: 'flex', gap: '3rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                         {/* Avatar */}
                         <div style={{ position: 'relative', flexShrink: 0 }}>
                             <div style={{ width: 140, height: 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}20`, overflow: 'hidden' }}>
@@ -485,7 +485,7 @@ export default function UserProfilePage() {
                             )}
 
                             {/* Stats bar */}
-                            <div style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
+                            <div className="profile-stats-row" style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
                                 {[
                                     { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
                                     { value: profileUser.followers?.length || 0, label: 'FOLLOWERS', onClick: () => !isEditing && (isOwnProfile || !profileUser.isSocialPrivate) && setSocialModal({ title: 'Followers', list: profileUser.followers || [] }) },
@@ -516,7 +516,7 @@ export default function UserProfilePage() {
             {/* Tabs */}
             <div style={{ borderBottom: '1px solid var(--ash)', background: 'var(--ink)', position: 'sticky', top: 64, zIndex: 100 }}>
                 <div className="container">
-                    <div style={{ display: 'flex', gap: 0, overflowX: 'auto', scrollbarWidth: 'none' }}>
+                    <div className="profile-tabs" style={{ display: 'flex', gap: 0, overflowX: 'auto', scrollbarWidth: 'none' }}>
                         {TABS.map((tab) => (
                             <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.9rem 1rem', background: 'none', border: 'none', whiteSpace: 'nowrap', color: activeTab === tab.id ? 'var(--flicker)' : 'var(--fog)', borderBottom: `2px solid ${activeTab === tab.id ? 'var(--sepia)' : 'transparent'}`, transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                 {tab.label}

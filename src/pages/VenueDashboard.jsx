@@ -566,7 +566,7 @@ export default function VenueDashboard() {
             {/* Header */}
             <div style={{ background: 'var(--soot)', borderBottom: '1px solid var(--ash)', padding: '2rem 0 0' }}>
                 <div className="container">
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1.5rem' }}>
+                    <div className="venue-dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1.5rem' }}>
                         <div style={{ display: 'flex', items: 'center', gap: '1rem', alignItems: 'center' }}>
                             {venue.logo ? (
                                 <img src={venue.logo} alt="logo" style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--sepia)', flexShrink: 0 }} />
@@ -592,9 +592,9 @@ export default function VenueDashboard() {
                         <Link to="/venue/1" className="btn btn-ghost" style={{ fontSize: '0.6rem' }}><Eye size={12} /> View Public Page</Link>
                     </div>
                     {/* Tabs */}
-                    <div style={{ display: 'flex', borderBottom: '1px solid var(--ash)', overflowX: 'auto' }}>
+                    <div className="venue-tab-strip" style={{ display: 'flex', borderBottom: '1px solid var(--ash)', overflowX: 'auto' }}>
                         {TABS.map(({ id, label, icon: Icon }) => (
-                            <button key={id} onClick={() => setTab(id)} style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.7rem 1.1rem', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.12em', color: tab === id ? 'var(--parchment)' : 'var(--fog)', borderBottom: `2px solid ${tab === id ? 'var(--sepia)' : 'transparent'}`, transition: 'all 0.2s' }}>
+                            <button key={id} onClick={() => setTab(id)} className="venue-tab-btn" style={{ background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.7rem 1.1rem', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.12em', color: tab === id ? 'var(--parchment)' : 'var(--fog)', borderBottom: `2px solid ${tab === id ? 'var(--sepia)' : 'transparent'}`, transition: 'all 0.2s' }}>
                                 <Icon size={12} />{label.toUpperCase()}
                                 {id === 'payment' && !venue.paymentConnected && <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--blood-reel)', flexShrink: 0 }} />}
                             </button>
@@ -612,7 +612,7 @@ export default function VenueDashboard() {
                         {tab === 'overview' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                 {/* Stat cards row */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem' }}>
+                                <div className="venue-stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem' }}>
                                     <StatCard icon={DollarSign} label="TOTAL REVENUE" value={`$${(showtimeRevenue + eventRevenue).toLocaleString()}`} sub="Showtimes + Events" color="var(--flicker)" />
                                     <StatCard icon={Users} label="FOLLOWERS" value={(venue.followers ?? 0).toLocaleString()} color="var(--sepia)" />
                                     <StatCard icon={TrendingUp} label="OCCUPANCY" value={`${occPct}%`} sub={`${totalBooked}/${totalCap} seats filled`} color={occPct > 70 ? 'var(--blood-reel)' : 'var(--sepia)'} />

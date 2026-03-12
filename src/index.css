@@ -2807,4 +2807,669 @@ body::after {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
-}
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   REELHOUSE — COMPREHENSIVE MOBILE RESPONSIVE SYSTEM
+   Breakpoints: 1024, 768, 480 (tablet → phone → small phone)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── NAVBAR ── */
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(8, 6, 4, 0.96);
+  border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 64px;
+  max-width: 1440px;
+  margin: 0 auto;
+  gap: 1rem;
+}
+
+.navbar.scrolled {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+  border-bottom-color: rgba(139, 105, 20, 0.35);
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nav-logo-text {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--parchment);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.nav-logo-buster {
+  display: flex;
+  align-items: center;
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.nav-link {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+  text-decoration: none;
+  padding: 0.5em 0.75em;
+  transition: color 0.2s, border-color 0.2s;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-link:hover,
+.nav-link.active {
+  color: var(--parchment);
+  border-bottom-color: var(--sepia);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.nav-icon-btn {
+  background: none;
+  border: none;
+  color: var(--bone);
+  padding: 0.4rem;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.nav-icon-btn:hover {
+  color: var(--parchment);
+  background: rgba(139, 105, 20, 0.1);
+}
+
+.nav-mobile-toggle {
+  display: none;
+}
+
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-ui);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  border: 1px solid var(--ash);
+  padding: 0.35em 0.8em;
+  border-radius: 2px;
+  color: var(--bone);
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.user-badge:hover {
+  border-color: var(--sepia);
+  color: var(--parchment);
+}
+
+.search-bar {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: rgba(8, 6, 4, 0.98);
+  border-bottom: 1px solid rgba(139, 105, 20, 0.35);
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 999;
+}
+
+/* Mobile menu overlay */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 3, 1, 0.98);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow-y: auto;
+  padding: 4rem 2rem 2rem;
+}
+
+.mobile-nav-link {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--parchment);
+  text-decoration: none;
+  line-height: 1.2;
+  padding: 0.35rem 0;
+  letter-spacing: 0.03em;
+  transition: color 0.15s;
+}
+
+.mobile-nav-link:hover {
+  color: var(--sepia);
+}
+
+/* ── TABLET (≤1024px) ── */
+@media (max-width: 1024px) {
+  .navbar-inner {
+    padding: 0 1.5rem;
+  }
+
+  .nav-logo-buster {
+    display: none;
+  }
+
+  /* VenueDashboard tab strip: allow horizontal scroll */
+  .venue-tab-strip {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+    padding-bottom: 2px;
+  }
+
+  .venue-tab-strip::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* ── MOBILE (≤768px) ── */
+@media (max-width: 768px) {
+
+  /* === CORE LAYOUT === */
+  .navbar-inner {
+    padding: 0 1rem;
+    height: 56px;
+  }
+
+  .search-bar {
+    top: 56px;
+    padding: 0.6rem 1rem;
+  }
+
+  .page-top {
+    padding-top: 56px !important;
+  }
+
+  .container {
+    padding: 0 1rem !important;
+  }
+
+  .nav-mobile-toggle {
+    display: flex !important;
+  }
+
+  .hide-mobile {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
+  /* === TYPOGRAPHY scale-down === */
+  :root {
+    --section-gap: 2.5rem;
+  }
+
+  h1 {
+    font-size: clamp(1.6rem, 6vw, 2.5rem) !important;
+    line-height: 1.15 !important;
+  }
+
+  h2 {
+    font-size: clamp(1.2rem, 5vw, 1.8rem) !important;
+  }
+
+  h3 {
+    font-size: clamp(1rem, 4vw, 1.4rem) !important;
+  }
+
+  /* === LOBBY / HOME PAGE === */
+  .nav-logo-text {
+    font-size: 0.85rem !important;
+    max-width: 160px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Hero section — stack poster and text */
+  .hero-grid {
+    grid-template-columns: 1fr !important;
+    text-align: center !important;
+    gap: 1.5rem !important;
+  }
+
+  .hero-grid > div:first-child {
+    max-width: 160px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Marquee board padding */
+  .marquee-board {
+    padding: 1rem !important;
+    border-width: 2px !important;
+  }
+
+  .marquee-bulb {
+    width: 5px !important;
+    height: 5px !important;
+  }
+
+  /* Film grid — 2-col minimum on phones */
+  .grid-films,
+  .grid-films-lg {
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Sections */
+  .section-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* === FEED PAGE === */
+  /* Feed filter bar stacks */
+  .feed-sort-toggle {
+    flex-wrap: wrap !important;
+    gap: 0.4rem !important;
+  }
+
+  /* Log cards: tighter padding */
+  .review-manuscript {
+    padding: 1.25rem !important;
+  }
+
+  /* === DISCOVER / DARKROOM PAGE === */
+  /* Filter sidebar becomes horizontal scroll strip */
+  .discover-filters {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+    gap: 0.4rem !important;
+    padding-bottom: 4px;
+  }
+
+  .discover-filters::-webkit-scrollbar { display: none; }
+
+  /* === FILM DETAIL PAGE === */
+  /* Hero layout — poster stacks above meta */
+  .film-detail-hero {
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    align-items: flex-start !important;
+  }
+
+  .film-detail-poster {
+    width: 140px !important;
+    flex-shrink: 0 !important;
+    margin: 0 auto !important;
+    display: block !important;
+  }
+
+  .film-detail-meta {
+    text-align: left !important;
+    padding-left: 0 !important;
+  }
+
+  /* Two-column detail layout stacks */
+  .film-detail-layout {
+    grid-template-columns: 1fr !important;
+    gap: 2rem !important;
+  }
+
+  /* === CINEMAS PAGE === */
+  .cinemas-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  .cinemas-search-row {
+    flex-direction: column !important;
+    gap: 0.6rem !important;
+  }
+
+  .cinemas-search-row .input,
+  .cinemas-search-row > * {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .cinemas-filter-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* === VENUE PAGE (public-facing) === */
+  /* Showtime cards stack info */
+  .venue-showtime-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Venue header area tighter */
+  .venue-marquee-header {
+    padding: 1.5rem 1rem !important;
+  }
+
+  /* Seat selector: make cells smaller so full map fits on screen */
+  .seat-cell {
+    width: 22px !important;
+    height: 22px !important;
+    font-size: 0.4rem !important;
+  }
+
+  .seat-row-label {
+    font-size: 0.55rem !important;
+    width: 18px !important;
+  }
+
+  /* Seat map overflow scrolls horizontally */
+  .seat-map-container,
+  .seat-map-grid {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100% !important;
+  }
+
+  /* === VENUE DASHBOARD === */
+  /* Tab strip — horizontal scroll, no wrap */
+  .venue-tab-strip {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none !important;
+    gap: 0.15rem !important;
+    padding: 0 1rem 4px !important;
+  }
+
+  .venue-tab-strip::-webkit-scrollbar { display: none !important; }
+
+  /* Dashboard tab buttons smaller */
+  .venue-tab-btn {
+    white-space: nowrap !important;
+    padding: 0.5em 0.8em !important;
+    font-size: 0.48rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* Stats grid: 2 columns */
+  .venue-stats-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* Analytics charts: single column */
+  .analytics-charts-row {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Schedule calendar: compact */
+  .schedule-calendar-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Dashboard header: stack title and venue name */
+  .venue-dashboard-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  /* Seat map editor: panels stack */
+  .seat-map-editor-layout {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+
+  /* === PROFILE PAGE === */
+  .profile-hero {
+    flex-direction: column !important;
+    text-align: center !important;
+    align-items: center !important;
+    gap: 1rem !important;
+  }
+
+  .profile-stats-row {
+    justify-content: center !important;
+    gap: 1.25rem !important;
+    flex-wrap: wrap !important;
+  }
+
+  .profile-tabs {
+    overflow-x: auto !important;
+    flex-wrap: nowrap !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .profile-tabs::-webkit-scrollbar { display: none !important; }
+
+  /* === MEMBERSHIP / SOCIETY PAGE === */
+  .membership-tiers-grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+    max-width: 420px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* === DISPATCH PAGE === */
+  .dispatch-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .dispatch-film-corner {
+    display: none !important;
+  }
+
+  /* === TICKET FLOW MODAL === */
+  .ticket-flow-modal {
+    padding: 1.25rem !important;
+    border-radius: 4px !important;
+  }
+
+  /* === MODALS & OVERLAYS === */
+  /* All fixed/absolute modals should be near-fullscreen on mobile */
+  [data-modal],
+  .modal-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 1.25rem !important;
+  }
+
+  /* Log film modal — full screen slide-up */
+  .log-modal-panel {
+    max-width: 100vw !important;
+    width: 100vw !important;
+    min-height: 50vh !important;
+    border-radius: 12px 12px 0 0 !important;
+    padding: 1.5rem 1rem !important;
+  }
+
+  /* === STACKS / LISTS PAGE === */
+  .lists-header {
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    align-items: flex-start !important;
+  }
+
+  .lists-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.75rem !important;
+  }
+
+  /* === LAYOUT SIDEBAR — already handled but reinforce === */
+  .layout-sidebar,
+  .layout-sidebar.reversed {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+
+  /* === BUTTONS — larger tap targets ===  */
+  .btn {
+    min-height: 44px !important;
+    padding: 0.6em 1.2em !important;
+  }
+
+  /* Row of buttons wraps to column on very small screens */
+  .btn-row-mobile {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 0.5rem !important;
+  }
+
+  .btn-row-mobile .btn {
+    justify-content: center !important;
+    width: 100% !important;
+  }
+
+  /* === FILM STRIP HORIZONTAL SCROLL === */
+  .film-strip-scroll {
+    padding-bottom: 0.75rem;
+  }
+
+  .scroll-item {
+    flex: 0 0 120px !important;
+  }
+
+  /* === TICKER / MARQUEE: smaller on mobile === */
+  .ticker-content {
+    font-size: 0.65rem !important;
+    letter-spacing: 0.08em !important;
+  }
+
+  /* === INPUTS — larger on mobile for thumb typing === */
+  .input {
+    font-size: 16px !important; /* prevents iOS zoom-on-focus */
+    padding: 0.75em 1em !important;
+  }
+
+}
+
+/* ── SMALL PHONE (≤480px) ── */
+@media (max-width: 480px) {
+
+  .nav-logo-text {
+    max-width: 130px !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* Film cards go 2-column minimum */
+  .grid-films,
+  .grid-films-lg {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.5rem !important;
+  }
+
+  /* Schedule calendar: single column */
+  .schedule-calendar-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Stats grid: single column */
+  .venue-stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Reduce heading sizes further */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.2rem !important;
+  }
+
+  /* Hero section poster even smaller */
+  .hero-grid > div:first-child {
+    max-width: 120px !important;
+  }
+
+  /* Seat cells even smaller to fit all columns */
+  .seat-cell {
+    width: 18px !important;
+    height: 18px !important;
+    font-size: 0.35rem !important;
+  }
+
+  /* Ticket stub — scale down */
+  .ticket-stub-card {
+    padding: 1rem !important;
+  }
+
+  /* Filter chips/vibes wrap tighter */
+  .cinemas-filter-grid {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.3rem !important;
+  }
+
+  /* Remove padding on the marquee board */
+  .marquee-board {
+    padding: 0.75rem !important;
+  }
+
+  /* Profile avatar smaller */
+  .profile-avatar-lg {
+    width: 72px !important;
+    height: 72px !important;
+  }
+
+  /* Make tags smaller */
+  .tag {
+    font-size: 0.55rem !important;
+    padding: 0.2em 0.55em !important;
+  }
+
+  /* Membership tiers: full width, no padding */
+  .membership-tiers-grid {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Bottom padding so floating nav doesn't cover content */
+  main, [data-page-content] {
+    padding-bottom: 1.5rem;
+  }
+}
+
