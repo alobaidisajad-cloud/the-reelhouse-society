@@ -1,8 +1,9 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Film, BookOpen, Compass, User, Menu, X, LogIn, Star, Crown, FileText, MapPin } from 'lucide-react'
+import { Search, Film, BookOpen, Compass, User, Menu, X, LogIn, Star, Crown, FileText, MapPin, Loader } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
+import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import Buster from './Buster'
 import NotificationBell from './NotificationBell'
 
@@ -84,31 +85,37 @@ export default function Navbar() {
         setSearchOpen(false)
     }, [location.pathname])
 
-    // Debounced search — 150ms delay prevents firing on every keystroke
+    // Debounced search — 250ms delay, queries Supabase profiles for real results
     useEffect(() => {
         if (!query.trim()) {
             setSuggestions([])
+            setSearching(false)
             return
         }
 
-        const timer = setTimeout(() => {
-            const authState = useAuthStore.getState()
-            const community = authState.community || []
-            const currentUser = authState.user
+        setSearching(true)
+        const timer = setTimeout(async () => {
+            try {
+                if (!isSupabaseConfigured) {
+                    setSearching(false)
+                    return
+                }
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('username, role, bio, avatar_url')
+                    .or(`username.ilike.%${query}%,bio.ilike.%${query}%`)
+                    .order('username', { ascending: true })
+                    .limit(8)
 
-            const allUsers = [...community]
-            if (currentUser && !community.find(u => u.username === currentUser.username)) {
-                allUsers.push(currentUser)
+                if (!error && data) {
+                    setSuggestions(data)
+                }
+            } catch (e) {
+                console.error('Search error:', e)
+            } finally {
+                setSearching(false)
             }
-
-            const filtered = allUsers.filter(u =>
-                u.username.toLowerCase().includes(query.toLowerCase()) ||
-                (u.bio && u.bio.toLowerCase().includes(query.toLowerCase()))
-            ).slice(0, 8)
-
-            setSuggestions(filtered)
-            setSearching(false)
-        }, 150)
+        }, 250)
 
         return () => clearTimeout(timer)
     }, [query])
@@ -292,7 +299,7 @@ export default function Navbar() {
 
                                 {/* Suggestions Dropdown */}
                                 <AnimatePresence>
-                                    {suggestions.length > 0 && (
+                                    {(searching || suggestions.length > 0) && (
                                         <motion.div
                                             initial={{ opacity: 0, height: 0 }}
                                             animate={{ opacity: 1, height: 'auto' }}
@@ -307,7 +314,18 @@ export default function Navbar() {
                                                 transformOrigin: 'top center',
                                             }}
                                         >
-                                            {suggestions.map((member) => (
+                                            {searching && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
+                                                    <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                                    SEARCHING ARCHIVES...
+                                                </div>
+                                            )}
+                                            {!searching && suggestions.length === 0 && query.trim() && (
+                                                <div style={{ padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
+                                                    NO MEMBERS FOUND
+                                                </div>
+                                            )}
+                                            {!searching && suggestions.map((member) => (
                                                 <Link
                                                     key={member.username}
                                                     to={`/user/${member.username}`}
@@ -329,18 +347,14 @@ export default function Navbar() {
                                                         background: 'var(--ink)', border: '1px solid var(--sepia)',
                                                         display: 'flex', alignItems: 'center', justifyContent: 'center'
                                                     }}>
-                                                        {member.avatar?.startsWith('data:image/') ? (
-                                                            <img src={member.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                                        ) : (
-                                                            <Buster size={28} mood={member.avatar || 'smiling'} />
-                                                        )}
+                                                        <Buster size={28} mood="smiling" />
                                                     </div>
                                                     <div style={{ flex: 1 }}>
                                                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1 }}>
                                                             @{member.username.toUpperCase()}
                                                         </div>
                                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.15em', marginTop: '0.3rem' }}>
-                                                            {member.followers?.length || 0} FOLLOWERS · CINEPHILE
+                                                            {(member.role || 'cinephile').toUpperCase()}
                                                         </div>
                                                         {member.bio && (
                                                             <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>

@@ -63,9 +63,23 @@ export default function SignupModal() {
     }, [signupModalOpen, isAuthenticated])
 
     const [isLoading, setIsLoading] = useState(false)
+    const [showPassword, setShowPassword] = useState(false)
     const toggleVibe = (v) => setVibes((prev) =>
         prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
     )
+
+    // ── PASSWORD STRENGTH ──
+    const passwordChecks = {
+        length:    password.length >= 8,
+        uppercase: /[A-Z]/.test(password),
+        lowercase: /[a-z]/.test(password),
+        number:    /[0-9]/.test(password),
+        special:   /[^A-Za-z0-9]/.test(password),
+    }
+    const passedChecks = Object.values(passwordChecks).filter(Boolean).length
+    const passwordStrong = passedChecks === 5
+    const strengthLabel = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'][passedChecks]
+    const strengthColor = ['', 'var(--blood-reel)', '#c4a000', '#c4a000', 'var(--sepia)', '#4caf50'][passedChecks]
 
     const handleClearanceSubmit = (e) => {
         e.preventDefault()
@@ -86,6 +100,10 @@ export default function SignupModal() {
     const handleSubmit = async () => {
         if (!email || !password || (!isLogin && !username)) {
             toast.error('Please fill all fields')
+            return
+        }
+        if (!isLogin && !passwordStrong) {
+            toast.error('Password does not meet security requirements.')
             return
         }
 
@@ -361,7 +379,53 @@ export default function SignupModal() {
                             {!isLogin && (
                                 <input className="input" placeholder="Username / Handle" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
                             )}
-                            <input className="input" placeholder="Password" type="password" autoComplete={isLogin ? 'current-password' : 'new-password'} value={password} onChange={(e) => setPassword(e.target.value)} />
+                            {/* Password field with show/hide toggle */}
+                            <div style={{ position: 'relative' }}>
+                                <input
+                                    className="input"
+                                    placeholder="Password"
+                                    type={showPassword ? 'text' : 'password'}
+                                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    style={{ width: '100%', paddingRight: '3rem', boxSizing: 'border-box' }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(v => !v)}
+                                    style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer', fontSize: '0.6rem', fontFamily: 'var(--font-ui)', letterSpacing: '0.08em', opacity: 0.7 }}
+                                >
+                                    {showPassword ? 'HIDE' : 'SHOW'}
+                                </button>
+                            </div>
+
+                            {/* Password strength — signup only */}
+                            {!isLogin && password.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                    {/* Strength bars */}
+                                    <div style={{ display: 'flex', gap: '3px', alignItems: 'center' }}>
+                                        {[1,2,3,4,5].map(i => (
+                                            <div key={i} style={{ flex: 1, height: 3, borderRadius: 2, background: i <= passedChecks ? strengthColor : 'var(--ash)', transition: 'background 0.3s' }} />
+                                        ))}
+                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: strengthColor, marginLeft: '0.5rem', minWidth: '6rem', transition: 'color 0.3s' }}>{strengthLabel}</span>
+                                    </div>
+                                    {/* Requirement checklist */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.2rem 0.75rem' }}>
+                                        {[
+                                            [passwordChecks.length,    '8+ characters'],
+                                            [passwordChecks.uppercase, 'Uppercase letter'],
+                                            [passwordChecks.lowercase, 'Lowercase letter'],
+                                            [passwordChecks.number,    'Number'],
+                                            [passwordChecks.special,   'Special character'],
+                                        ].map(([ok, label]) => (
+                                            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: ok ? '#4caf50' : 'var(--fog)', transition: 'color 0.2s' }}>
+                                                <span style={{ fontSize: '0.55rem' }}>{ok ? '✓' : '○'}</span>
+                                                {label}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Persona pick (cinephile signup) */}
                             {!isLogin && role === 'cinephile' && (
