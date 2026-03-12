@@ -135,7 +135,7 @@ export const useCinemaReviewStore = create((set, get) => ({
     fetchReviews: async (cinemaId) => {
         const { data, error } = await supabase
             .from('cinema_reviews')
-            .select('*, profiles!cinema_reviews_user_id_fkey(username)')
+            .select('*, profiles(username)')
             .eq('cinema_id', cinemaId)
             .order('created_at', { ascending: false })
         if (!error && data) {

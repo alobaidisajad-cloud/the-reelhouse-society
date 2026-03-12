@@ -497,11 +497,10 @@ export default function FeedPage() {
         if (!isSupabaseConfigured) { setFeedLoading(false); return }
         setFeedLoading(true)
         try {
-            // Note: explicit FK hint solves PGRST201 ambiguous relationship error
-            // 'profiles!logs_user_id_fkey' tells PostgREST which FK path to use
+            // PostgREST resolves the FK automatically — no explicit hint needed
             const { data, error } = await supabase
                 .from('logs')
-                .select('*, profiles!logs_user_id_fkey(username, role)')
+                .select('*, profiles(username, role)')
                 .order('created_at', { ascending: false })
                 .limit(50)
 
