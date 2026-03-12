@@ -46,8 +46,8 @@ export default function HandbookModal() {
                             </div>
 
                             <div className="hb-item">
-                                <h3>The Pulse</h3>
-                                <p>The live cardiovascular system of the community. See what other devotees are logging in real-time.</p>
+                                <h3>The Reel</h3>
+                                <p>The live cardiovascular system of the community. See what other devotees are logging in real-time, and endorse transmissions from fellow cinephiles.</p>
                             </div>
 
                             <div className="hb-item">
@@ -57,7 +57,7 @@ export default function HandbookModal() {
 
                             <div className="hb-item">
                                 <h3>Ticket Stubs</h3>
-                                <p>Where films are committed to the archive. Home to the <strong>Autopsy Engine</strong>: a tool for evaluating the architectural (story), aesthetic (visual), and aural (sound) dimensions of cinema.</p>
+                                <p>Physical proof of attendance. When you book a seat at a Society-affiliated Palace, your stub is preserved here — a permanent record of where you were and what you witnessed.</p>
                             </div>
 
                             <div className="hb-item">

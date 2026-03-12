@@ -311,28 +311,7 @@ export default function SignupModal() {
                     </div>
 
                     <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                        {/* Demo buttons */}
-                        <div style={{ borderBottom: '1px solid var(--ash)', paddingBottom: '1.25rem' }}>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--fog)', marginBottom: '0.75rem', textAlign: 'center' }}>
-                                INSTANT DEMO ACCESS
-                            </div>
-                            <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                <button
-                                    className="btn btn-ghost"
-                                    style={{ flex: 1, fontSize: '0.6rem', justifyContent: 'center', gap: '0.3rem' }}
-                                    onClick={() => handleDemoLogin('cinephile')}
-                                >
-                                    <Film size={12} /> Cinephile Demo
-                                </button>
-                                <button
-                                    className="btn btn-ghost"
-                                    style={{ flex: 1, fontSize: '0.6rem', justifyContent: 'center', gap: '0.3rem' }}
-                                    onClick={() => handleDemoLogin('venue_owner')}
-                                >
-                                    <Building size={12} /> Cinema Demo
-                                </button>
-                            </div>
-                        </div>
+
 
                         {/* Role selection (signup only) */}
                         {!isLogin && (
