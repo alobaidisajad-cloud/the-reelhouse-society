@@ -182,7 +182,7 @@ export default function UserProfilePage() {
         queryFn: async () => {
             const { data } = await supabase
                 .from('profiles')
-                .select('id, username, role, bio, avatar_url, following, followers, is_social_private, created_at')
+                .select('id, username, role, bio, avatar_url, following, followers, is_social_private, created_at, tier')
                 .eq('username', routeUsername)
                 .single()
             if (!data) return null
