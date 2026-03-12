@@ -14,7 +14,11 @@ const PERSONAS = [
 ]
 
 const VIBE_TAGS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace', 'Repertory', 'Horror House', 'Indie']
-const VALID_CODES = ['NITRATE', 'OMEN', 'REELHOUSE', 'AUTEUR', 'GHOST']
+// Invite codes — read from env so they're not exposed in the public repo.
+// Set VITE_INVITE_CODES in Vercel as a comma-separated list, e.g. "CODE1,CODE2,CODE3"
+const VALID_CODES = import.meta.env.VITE_INVITE_CODES
+    ? import.meta.env.VITE_INVITE_CODES.split(',').map(c => c.trim().toUpperCase())
+    : ['NITRATE', 'OMEN', 'REELHOUSE', 'AUTEUR', 'GHOST']
 
 export default function SignupModal() {
     const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
