@@ -178,7 +178,7 @@ function FeaturedReview({ film }) {
             if (!film?.id) return null
             const { data } = await supabase
                 .from('logs')
-                .select('review, rating, profiles(username)')
+                .select('review, rating')
                 .eq('film_id', String(film.id))
                 .not('review', 'is', null)
                 .neq('review', '')
@@ -187,7 +187,7 @@ function FeaturedReview({ film }) {
                 .limit(1)
                 .single()
             if (!data) return null
-            return { ...data, username: data.profiles?.username || null }
+            return { ...data, username: null }
         },
         enabled: !!film?.id,
         staleTime: 1000 * 60 * 5,

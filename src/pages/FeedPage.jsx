@@ -497,15 +497,30 @@ export default function FeedPage() {
         if (!isSupabaseConfigured) { setFeedLoading(false); return }
         setFeedLoading(true)
         try {
-            // PostgREST resolves the FK automatically — no explicit hint needed
+            // Simple select — no cross-table join to avoid 400 errors
             const { data, error } = await supabase
                 .from('logs')
-                .select('*, profiles(username, role)')
+                .select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, created_at')
                 .order('created_at', { ascending: false })
                 .limit(50)
 
             if (!error && data) {
+                    // Resolve usernames in a single batch query
+                    const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
+                    let usernameMap = {}
+                    if (userIds.length > 0) {
+                        const { data: profilesData } = await supabase
+                            .from('profiles')
+                            .select('id, username, role')
+                            .in('id', userIds)
+                        if (profilesData) {
+                            usernameMap = Object.fromEntries(profilesData.map(p => [p.id, p]))
+                        }
+                    }
                     const mapped = data.map(l => ({
+                        ...l,
+                        profiles: usernameMap[l.user_id] || { username: 'anonymous', role: 'cinephile' },
+                    })).map(l => ({
                         id: l.id,
                         user: l.profiles?.username || 'anonymous',
                         userRole: l.profiles?.role || 'cinephile',
@@ -545,40 +560,39 @@ export default function FeedPage() {
     const fetchSidebarData = useCallback(async () => {
         if (!isSupabaseConfigured) return
         try {
-            // Real recent public lists — explicit FK to avoid ambiguous relationship
+            // Lists: simple select without cross-table join
             const { data: listsData } = await supabase
                 .from('lists')
-                .select('id, title, description, profiles(username)')
+                .select('id, title, description, user_id')
                 .order('created_at', { ascending: false })
                 .limit(3)
 
             if (listsData) {
+                // Resolve curators in a single batch query
+                const curatorIds = [...new Set(listsData.map(l => l.user_id).filter(Boolean))]
+                let curatorMap = {}
+                if (curatorIds.length > 0) {
+                    const { data: curatorsData } = await supabase
+                        .from('profiles').select('id, username').in('id', curatorIds)
+                    if (curatorsData) curatorMap = Object.fromEntries(curatorsData.map(p => [p.id, p.username]))
+                }
                 setRecentLists(listsData.map(l => ({
                     id: l.id,
                     title: l.title,
-                    curator: l.profiles?.username || 'anonymous'
+                    curator: curatorMap[l.user_id] || 'The Society'
                 })))
             }
 
-            // Real active agents: users with most recent log activity — explicit FK
+            // Active agents: fetch directly from profiles ordered by most recent activity
             const { data: agentsData } = await supabase
-                .from('logs')
-                .select('profiles(username)')
-                .order('created_at', { ascending: false })
-                .limit(20)
+                .from('profiles')
+                .select('username')
+                .neq('username', user?.username || '')
+                .order('updated_at', { ascending: false })
+                .limit(5)
 
             if (agentsData) {
-                const seen = new Set()
-                const unique = []
-                for (const row of agentsData) {
-                    const name = row.profiles?.username
-                    if (name && !seen.has(name) && name !== user?.username) {
-                        seen.add(name)
-                        unique.push(name)
-                        if (unique.length >= 5) break
-                    }
-                }
-                setActiveAgents(unique)
+                setActiveAgents(agentsData.map(p => p.username).filter(Boolean))
             }
         } catch (e) {
             console.error('Sidebar fetch error:', e)

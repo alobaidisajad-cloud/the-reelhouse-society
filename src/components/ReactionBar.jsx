@@ -28,17 +28,26 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }) {
         const fetchReactions = async () => {
             const { data, error } = await supabase
                 .from('interactions')
-                .select('type, user_id, profiles(username)')
+                .select('type, user_id')
                 .eq('target_log_id', logId)
                 .like('type', 'react_%')
 
             if (error || cancelled) return
 
+            // Batch resolve usernames
+            const userIds = [...new Set((data || []).map(r => r.user_id).filter(Boolean))]
+            let usernameMap = {}
+            if (userIds.length > 0) {
+                const { data: profilesData } = await supabase
+                    .from('profiles').select('id, username').in('id', userIds)
+                if (profilesData) usernameMap = Object.fromEntries(profilesData.map(p => [p.id, p.username]))
+            }
+
             // Group by emoji
             const grouped = {}
             for (const row of (data || [])) {
                 const emoji = row.type.replace('react_', '')
-                const username = row.profiles?.username || 'anon'
+                const username = usernameMap[row.user_id] || 'anon'
                 if (!grouped[emoji]) grouped[emoji] = []
                 grouped[emoji].push(username)
             }

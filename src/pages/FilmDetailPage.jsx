@@ -22,13 +22,22 @@ function CommunityReviews({ filmId }) {
         queryFn: async () => {
             const { data } = await supabase
                 .from('logs')
-                .select('user_id, review, rating, created_at, profiles(username, role)')
+                .select('user_id, review, rating, created_at')
                 .eq('film_id', filmId)
                 .not('review', 'is', null)
                 .neq('review', '')
                 .order('created_at', { ascending: false })
                 .limit(6)
-            return data || []
+            if (!data || data.length === 0) return []
+            // Batch resolve usernames
+            const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
+            let usernameMap = {}
+            if (userIds.length > 0) {
+                const { data: profilesData } = await supabase
+                    .from('profiles').select('id, username, role').in('id', userIds)
+                if (profilesData) usernameMap = Object.fromEntries(profilesData.map(p => [p.id, p]))
+            }
+            return data.map(r => ({ ...r, profiles: usernameMap[r.user_id] || { username: 'anonymous', role: 'cinephile' } }))
         },
         staleTime: 1000 * 60 * 5,
     })
