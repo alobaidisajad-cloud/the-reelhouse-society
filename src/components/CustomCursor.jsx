@@ -126,13 +126,15 @@ export default function CustomCursor() {
         position: fixed; top: 0; left: 0;
         pointer-events: none; z-index: 999999;
         width: 4px; height: 4px; border-radius: 50%;
-        background: #C29B38;
+        background: #F2E8A0;
+        box-shadow: 0 0 5px 1px rgba(242,232,160,0.7);
         will-change: transform;
         transition: width 0.1s, height 0.1s, background 0.1s;
       }
       .cursor-dot.cursor-click {
         width: 7px; height: 7px;
-        background: #C29B38;
+        background: #fff;
+        box-shadow: 0 0 12px 3px rgba(242,232,160,1);
       }
     `}</style>
   )

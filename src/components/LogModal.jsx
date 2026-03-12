@@ -619,7 +619,7 @@ export default function LogModal() {
                                                 ✦ Auteur Toolkit {autopsyOpen ? '[-]' : '[+]'}
                                             </div>
                                             {!isAuteur && (
-                                                <button onClick={(e) => { e.stopPropagation(); closeLogModal(); navigate('/society') }} style={{ background: 'none', border: 'none', color: 'var(--blood-reel)', textDecoration: 'underline', fontSize: '0.6rem', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
+                                                <button onClick={(e) => { e.stopPropagation(); closeLogModal(); navigate('/patronage') }} style={{ background: 'none', border: 'none', color: 'var(--blood-reel)', textDecoration: 'underline', fontSize: '0.6rem', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                                                     <Lock size={10} /> UPGRADE
                                                 </button>
                                             )}
@@ -758,7 +758,7 @@ export default function LogModal() {
                                         })}
                                     </div>
                                     {!isPremium && (
-                                        <button className="btn btn-ghost" style={{ width: '100%', marginTop: '0.5rem', fontSize: '0.6rem', justifyContent: 'center', borderColor: 'var(--ash)', color: 'var(--fog)' }} onClick={() => { closeLogModal(); navigate('/society') }}>
+                                        <button className="btn btn-ghost" style={{ width: '100%', marginTop: '0.5rem', fontSize: '0.6rem', justifyContent: 'center', borderColor: 'var(--ash)', color: 'var(--fog)' }} onClick={() => { closeLogModal(); navigate('/patronage') }}>
                                             Upgrade to Unlock Physical Tracking
                                         </button>
                                     )}
