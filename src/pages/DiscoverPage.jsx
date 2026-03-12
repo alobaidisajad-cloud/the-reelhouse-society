@@ -315,7 +315,7 @@ export default function DiscoverPage() {
             <div style={{ background: 'var(--ink)', borderBottom: '1px solid var(--ash)', padding: IS_TOUCH ? '2rem 0 1.5rem' : '4rem 0 3rem', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>THE DARK ROOM</div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>THE DARKROOM</div>
                     <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.8rem, 7vw, 2.5rem)' : 'clamp(2.5rem, 6vw, 4.5rem)', color: 'var(--parchment)', marginBottom: IS_TOUCH ? '1.25rem' : '2.5rem', lineHeight: 1 }}>
                         Search the Archive
                     </h1>

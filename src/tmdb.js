@@ -417,16 +417,13 @@ export const tmdb = {
 }
 
 // Compute obscurity score (0–100, higher = more obscure)
+// Uses a continuous log10 scale so every film gets a unique score.
+// pop ~3000+ → near 2 (MAINSTREAM), pop ~1 → near 99 (GHOST REEL)
 export function obscurityScore(movie) {
     const pop = movie.popularity || 0
-    // popularity > 100 = mainstream, < 5 = very obscure
-    if (pop > 500) return 2
-    if (pop > 100) return 15
-    if (pop > 50) return 35
-    if (pop > 20) return 55
-    if (pop > 10) return 72
-    if (pop > 5) return 85
-    return 95
+    if (pop <= 0) return 99
+    const score = Math.round(100 - (Math.log10(Math.max(pop, 1)) / Math.log10(5000)) * 98)
+    return Math.max(2, Math.min(99, score))
 }
 
 // Format runtime
