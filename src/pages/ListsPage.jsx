@@ -233,21 +233,26 @@ function CreateListModal({ onClose, onCreate }) {
 }
 
 export default function ListsPage() {
-    const { isAuthenticated } = useAuthStore()
+    const { isAuthenticated, user } = useAuthStore()
     const { lists, createList } = useFilmStore()
     const { openSignupModal } = useUIStore()
     const [showCreate, setShowCreate] = useState(false)
     const [query, setQuery] = useState('')
 
-    // Fetch ALL public lists from Supabase
+    // Fetch public community lists from Supabase
+    // Excludes: private lists + the logged-in user's own lists (they see those in My Collections)
     const { data: communityLists = [], isLoading: communityLoading } = useQuery({
-        queryKey: ['public-lists'],
+        queryKey: ['public-lists', user?.id],
         queryFn: async () => {
-            const { data, error } = await supabase
+            let q = supabase
                 .from('lists')
                 .select(`id, title, description, created_at, profiles:user_id(username), list_items(film_id, film_title)`)
+                .eq('is_private', false)
                 .order('created_at', { ascending: false })
                 .limit(30)
+            // Exclude logged-in user's lists — they already appear in "My Collections"
+            if (user?.id) q = q.neq('user_id', user.id)
+            const { data, error } = await q
             if (error || !data) return []
             return data.map(l => ({
                 id: l.id,

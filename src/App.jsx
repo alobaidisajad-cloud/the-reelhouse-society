@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState, useMemo, useCallback } from 'react'
-import { Routes, Route, useLocation, Link } from 'react-router-dom'
+import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from './tmdb'
@@ -226,7 +226,10 @@ export default function App() {
               <Route path="/patronage" element={<ErrorBoundary key="patronage"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/society" element={<ErrorBoundary key="society"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/auth/callback" element={<ErrorBoundary key="auth"><AuthCallbackPage /></ErrorBoundary>} />
+              <Route path="/darkroom" element={<Navigate to="/discover" replace />} />
+              <Route path="/membership" element={<Navigate to="/patronage" replace />} />
               <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
+
             </Routes>
           </AnimatePresence>
         </ErrorBoundary>

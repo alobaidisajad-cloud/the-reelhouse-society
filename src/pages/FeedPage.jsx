@@ -394,28 +394,37 @@ export default function FeedPage() {
                 .limit(50)
 
             if (!error && data) {
-                setCommunityFeed(data.map(l => ({
-                    id: l.id,
-                    user: l.profiles?.username || 'anonymous',
-                    userRole: l.profiles?.role || 'cinephile',
-                    film: {
-                        id: l.film_id,
-                        title: l.film_title,
-                        year: l.year,
-                        poster: l.poster_path,
-                    },
-                    rating: l.rating,
-                    review: l.review,
-                    pullQuote: l.pull_quote || '',
-                    dropCap: l.drop_cap || false,
-                    autopsy: l.autopsy,
-                    isAutopsied: l.is_autopsied || false,
-                    endorsementCount: 0, // Could join interactions count here later
-                    timestamp: l.created_at
-                        ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()
-                        : 'RECENT'
-                })))
-            }
+                    const mapped = data.map(l => ({
+                        id: l.id,
+                        user: l.profiles?.username || 'anonymous',
+                        userRole: l.profiles?.role || 'cinephile',
+                        film: {
+                            id: l.film_id,
+                            title: l.film_title,
+                            year: l.year,
+                            poster: l.poster_path,
+                        },
+                        rating: l.rating,
+                        review: l.review,
+                        pullQuote: l.pull_quote || '',
+                        dropCap: l.drop_cap || false,
+                        autopsy: l.autopsy,
+                        isAutopsied: l.is_autopsied || false,
+                        endorsementCount: 0,
+                        timestamp: l.created_at
+                            ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()
+                            : 'RECENT'
+                    }))
+                    // Deduplicate: one card per user+film — keeps only the most recent log
+                    const seen = new Set()
+                    const deduped = mapped.filter(entry => {
+                        const key = `${entry.user}:${entry.film.id}`
+                        if (seen.has(key)) return false
+                        seen.add(key)
+                        return true
+                    })
+                    setCommunityFeed(deduped)
+                }
         } catch (e) {
             console.error('Feed fetch error:', e)
         }

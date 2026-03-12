@@ -51,7 +51,7 @@ function MarqueeBoard({ film }) {
                 justifyContent: 'center',
             }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.6rem' : '0.75rem', letterSpacing: '0.3em', color: 'var(--flicker)', textShadow: '0 0 10px rgba(242,232,160,0.3)', opacity: 0.6, animation: 'pulse 1.8s ease-in-out infinite' }}>
-                    ★ LOADING THE FEATURE PRESENTATION ★
+                    ✦ LOADING THE FEATURE PRESENTATION ✦
                 </div>
                 <div style={{ display: 'flex', gap: 4, overflow: 'hidden', opacity: 0.08, justifyContent: 'center' }}>
                     {Array.from({ length: IS_TOUCH ? 6 : 14 }).map((_, i) => (
@@ -104,7 +104,7 @@ function MarqueeBoard({ film }) {
                     pointerEvents: 'none',
                 }} />
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.6rem' : '0.75rem', letterSpacing: '0.3em', color: 'var(--flicker)', textAlign: 'center', marginBottom: IS_TOUCH ? '0.75rem' : '1.5rem', textShadow: '0 0 10px rgba(242,232,160,0.3)', position: 'relative', zIndex: 1 }}>
-                    ★ MAIN FEATURE ★
+                    ✦ MAIN FEATURE ✦
                 </div>
                 <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
                     <h1
@@ -380,45 +380,58 @@ const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, desc
 
 // ── VENUE SPOTLIGHT ──
 const VenueSpotlight = memo(function VenueSpotlight() {
-    const { venue, events } = useVenueStore()
-    const activeVenues = venue ? [{
-        id: venue.id || 1,
-        name: venue.name || 'The Oracle Palace',
-        location: venue.location || 'Brooklyn, NY',
-        vibes: venue.vibes || ['Arthouse', 'Midnight Palace'],
-        events: events?.length || 0
-    }] : []
+    const { data: featuredVenues = [], isLoading } = useQuery({
+        queryKey: ['featured-venues-home'],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('venues')
+                .select('id, name, location, vibes, verified')
+                .order('created_at', { ascending: false })
+                .limit(3)
+            return data || []
+        },
+        staleTime: 1000 * 60 * 10,
+    })
+
+    // Hide the entire section when no venues are registered yet
+    if (isLoading || featuredVenues.length === 0) return null
 
     return (
         <section>
             <SectionHeader label="FEATURED VENUES" title="The Palaces" />
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                {activeVenues.map((v) => (
+                {featuredVenues.map((v) => (
                     <Link key={v.id} to={`/venue/${v.id}`} style={{ textDecoration: 'none' }}>
                         <motion.div
                             className="card"
                             style={{ borderTop: '2px solid var(--sepia)' }}
                         >
-                            {/* Marquee-style header */}
                             <div style={{
                                 fontFamily: 'var(--font-display)',
                                 fontSize: '1.1rem',
                                 color: 'var(--parchment)',
                                 marginBottom: '0.4rem',
                                 lineHeight: 1.2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem',
+                                flexWrap: 'wrap',
                             }}>
                                 {v.name}
+                                {v.verified && (
+                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--flicker)', letterSpacing: '0.1em', background: 'rgba(242,232,160,0.08)', padding: '0.15em 0.4em', border: '1px solid rgba(242,232,160,0.2)' }}>✦ VERIFIED</span>
+                                )}
                             </div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', marginBottom: '0.75rem' }}>
-                                ◈ {v.location}
+                                ◈ {v.location || 'Location TBC'}
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.75rem' }}>
-                                {v.vibes.map((vibe) => (
+                                {(v.vibes || []).slice(0, 3).map((vibe) => (
                                     <span key={vibe} className="tag tag-vibe" style={{ fontSize: '0.55rem' }}>⟡ {vibe}</span>
                                 ))}
                             </div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>
-                                {v.events} UPCOMING EVENTS
+                                VIEW VENUE →
                             </div>
                         </motion.div>
                     </Link>

@@ -75,7 +75,7 @@ export default function Footer() {
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
                         {[
                             { to: '/dispatch', label: 'The Dispatch' },
-                            { to: '/society', label: 'Membership' },
+                            { to: '/patronage', label: 'Membership' },
                         ].map(({ to, label }) => (
                             <NavLink key={to} to={to} style={({ isActive }) => ({
                                 display: 'inline-block',
