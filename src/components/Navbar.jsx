@@ -145,17 +145,27 @@ export default function Navbar() {
 
                     {/* Desktop Nav */}
                     <ul className="nav-links hide-mobile">
-                        {NAV_LINKS.map(({ path, label }) => (
-                            <li key={path}>
-                                <Link
-                                    to={path}
-                                    className={`nav-link ${location.pathname === path ? 'active' : ''}`}
-                                    onMouseEnter={() => prefetchRoute(path)}
-                                >
-                                    {label}
-                                </Link>
-                            </li>
-                        ))}
+                        {NAV_LINKS.map(({ path, label }) => {
+                            const ALIASES = { '/patronage': ['/society', '/membership'] }
+                            const isActive = (p) => {
+                                if (location.pathname === p) return true
+                                const al = ALIASES[p] || []
+                                if (al.includes(location.pathname)) return true
+                                if (p !== '/' && location.pathname.startsWith(p + '/')) return true
+                                return false
+                            }
+                            return (
+                                <li key={path}>
+                                    <Link
+                                        to={path}
+                                        className={`nav-link ${isActive(path) ? 'active' : ''}`}
+                                        onMouseEnter={() => prefetchRoute(path)}
+                                    >
+                                        {label}
+                                    </Link>
+                                </li>
+                            )
+                        })}
                     </ul>
 
                     {/* Actions */}
