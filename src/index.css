@@ -1808,7 +1808,8 @@ body::after {
 }
 
 .nav-link {
-  display: flex;
+  display: inline-flex;
+  width: fit-content;
   align-items: center;
   gap: 0.4rem;
   padding: 0.4rem 0.75rem;
