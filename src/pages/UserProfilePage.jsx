@@ -176,7 +176,34 @@ export default function UserProfilePage() {
     const { openSignupModal, openLogModal } = useUIStore()
     const fileRef = useRef(null)
     const isOwnProfile = !routeUsername || routeUsername === currentUser?.username || routeUsername === 'me'
-    const profileUser = isOwnProfile ? currentUser : community?.find(u => u.username === routeUsername)
+
+    // Fetch the profile from Supabase for other users' pages
+    const { data: fetchedProfile, isLoading: profileLoading } = useQuery({
+        queryKey: ['profile-by-username', routeUsername],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, username, role, bio, avatar_url, following, followers, is_social_private, created_at')
+                .eq('username', routeUsername)
+                .single()
+            if (!data) return null
+            return {
+                id: data.id,
+                username: data.username,
+                role: data.role || 'cinephile',
+                bio: data.bio || '',
+                avatar: data.avatar_url || 'smiling',
+                following: data.following || [],
+                followers: data.followers || [],
+                isSocialPrivate: data.is_social_private || false,
+                createdAt: data.created_at,
+            }
+        },
+        enabled: !isOwnProfile && !!routeUsername,
+        staleTime: 1000 * 60 * 5,
+    })
+
+    const profileUser = isOwnProfile ? currentUser : fetchedProfile
 
     // Fetch other user's public logs from Supabase (own logs come from Zustand)
     const { data: otherUserLogs = [] } = useQuery({
@@ -262,9 +289,16 @@ export default function UserProfilePage() {
         return <Buster size={size} mood={avatarValue} />
     }
 
+    // Show a loading state while fetching another user's profile
+    if (!isOwnProfile && profileLoading) return (
+        <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.3em', color: 'var(--sepia)', animation: 'pulse 1.8s ease-in-out infinite' }}>✦ RETRIEVING DOSSIER ✦</div>
+        </div>
+    )
+
     if (!profileUser) return (
         <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
-            <Buster size={120} mood="crying" message="This profile doesn't exist yet, or it's been removed." />
+            <Buster size={120} mood="crying" message="This member doesn't exist yet, or it's been removed." />
             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginTop: '1.5rem' }}>Member Not Found</h2>
             <Link to="/" className="btn btn-ghost" style={{ marginTop: '2rem' }}>Return to Lobby</Link>
         </div>
