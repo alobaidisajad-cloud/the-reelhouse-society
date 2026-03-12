@@ -241,7 +241,7 @@ export default function ListsPage() {
 
     // Fetch public community lists from Supabase
     // Excludes: private lists + the logged-in user's own lists (they see those in My Collections)
-    const { data: communityLists = [], isLoading: communityLoading } = useQuery({
+    const { data: communityLists = [] } = useQuery({
         queryKey: ['public-lists', user?.id],
         queryFn: async () => {
             let q = supabase

@@ -2,10 +2,6 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 
-// Lazy-imported to avoid circular dependency at module init time
-const getFilmStore = () => import('./films').then(m => m.useFilmStore.getState())
-const getProgrammeStore = () => import('./content').then(m => m.useProgrammeStore.getState())
-const getNotificationStore = () => import('./social').then(m => m.useNotificationStore.getState())
 
 // Parallel hydration helper — fires all user-data fetches simultaneously
 async function hydrateUserData() {

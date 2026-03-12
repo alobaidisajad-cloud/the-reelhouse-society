@@ -483,6 +483,7 @@ export default function FeedPage() {
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
     const user = useAuthStore(state => state.user)
     const openSignupModal = useUIStore(state => state.openSignupModal)
+    const openLogModal = useUIStore(state => state.openLogModal)
 
     // Fix 1: Real community feed from Supabase — all users' logs
     const [communityFeed, setCommunityFeed] = useState([])

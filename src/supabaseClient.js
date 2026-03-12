@@ -23,7 +23,7 @@ if (!isSupabaseConfigured) {
     try {
         supabase.realtime.disconnect()
         supabase.removeAllChannels()
-    } catch (_) { /* ignore */ }
+    } catch { /* ignore */ }
 }
 
 // Silently handle stale/expired refresh tokens.

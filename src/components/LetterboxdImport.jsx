@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, X, Check, Film, AlertTriangle } from 'lucide-react'
-import { useFilmStore, useAuthStore } from '../store'
+import { useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 

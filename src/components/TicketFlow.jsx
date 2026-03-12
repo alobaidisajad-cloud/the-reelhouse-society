@@ -8,7 +8,7 @@ import TicketStubGallery from './TicketStubGallery'
 import toast from 'react-hot-toast'
 
 export default function TicketFlow({ showtime, slot, onClose }) {
-    const { user, isAuthenticated } = useAuthStore()
+    const { isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
     const { venue, bookSeat } = useVenueStore()
 
@@ -23,7 +23,7 @@ export default function TicketFlow({ showtime, slot, onClose }) {
     const availableSeats = totalSeats - takenSeats
     const BOOKING_FEE = 1.50
 
-    const handleSeatSelect = (seatId, seatKind) => {
+    const handleSeatSelect = (seatId, _seatKind) => {
         if (ticketType?.type === 'VIP') {
             const vipRowCount = seatLayout.vipRows || 2
             const rowLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']

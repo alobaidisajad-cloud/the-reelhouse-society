@@ -215,7 +215,7 @@ export default function DiscoverPage() {
     useEffect(() => {
         if (initialRender.current) { initialRender.current = false; return }
         setPage(1)
-    }, [query, filters, mood])
+    }, [query, filters, mood, setPage])
 
     useEffect(() => {
         const urlQ = searchParams.get('q')

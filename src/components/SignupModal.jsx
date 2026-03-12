@@ -62,7 +62,6 @@ export default function SignupModal() {
         }
     }, [signupModalOpen, isAuthenticated])
 
-    const [isLoading, setIsLoading] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
     const toggleVibe = (v) => setVibes((prev) =>
         prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
@@ -108,7 +107,6 @@ export default function SignupModal() {
         }
 
         playShutter()
-        setIsLoading(true)
 
         try {
             if (isLogin) {
@@ -138,12 +136,7 @@ export default function SignupModal() {
             }
             toast.error(msg)
         } finally {
-            setIsLoading(false)
         }
-    }
-
-    const handleDemoLogin = () => {
-        toast.error('Demo mode disabled while connected to live Supabase backend.')
     }
 
     const resetForm = () => {

@@ -43,7 +43,7 @@ const emptyStateStyles = {
     }
 }
 
-export function EmptyLogs({ onAction }) {
+export function EmptyLogs() {
     const openLogModal = useUIStore((s) => s.openLogModal)
     return (
         <div style={emptyStateStyles.container}>

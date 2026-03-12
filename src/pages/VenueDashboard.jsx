@@ -551,7 +551,7 @@ export default function VenueDashboard() {
                                 <img src={venue.logo} alt="logo" style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--sepia)', flexShrink: 0 }} />
                             ) : (
                                 <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'var(--ink)', border: '2px solid var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--sepia)' }}>{venue.name[0]}</span>
+                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--sepia)' }}>{(venue.name || '?')[0]}</span>
                                 </div>
                             )}
                             <div>
@@ -559,7 +559,7 @@ export default function VenueDashboard() {
                                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 3.5vw, 2.5rem)', color: 'var(--parchment)', lineHeight: 1 }}>{venue.name}</h1>
                                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={9} />{venue.location}</span>
-                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}><Users size={9} />{venue.followers.toLocaleString()} followers</span>
+                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}><Users size={9} />{(venue.followers ?? 0).toLocaleString()} followers</span>
                                     {!venue.paymentConnected && (
                                         <span onClick={() => setTab('payment')} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--blood-reel)', letterSpacing: '0.08em', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
                                             <AlertTriangle size={9} /> Payment not connected
@@ -592,7 +592,7 @@ export default function VenueDashboard() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem' }}>
                                     <StatCard icon={DollarSign} label="TOTAL REVENUE" value={`$${(showtimeRevenue + eventRevenue).toLocaleString()}`} sub="Showtimes + Events" color="var(--flicker)" />
-                                    <StatCard icon={Users} label="FOLLOWERS" value={venue.followers.toLocaleString()} color="var(--sepia)" />
+                                    <StatCard icon={Users} label="FOLLOWERS" value={(venue.followers ?? 0).toLocaleString()} color="var(--sepia)" />
                                     <StatCard icon={TrendingUp} label="OCCUPANCY" value={`${occPct}%`} sub={`${totalBooked}/${totalCap} seats filled`} color={occPct > 70 ? 'var(--blood-reel)' : 'var(--sepia)'} />
                                     <StatCard icon={Film} label="FILMS SCHEDULED" value={showtimes.length} sub={`${showtimes.reduce((a, s) => a + s.slots.length, 0)} time slots`} color="var(--bone)" />
                                 </div>

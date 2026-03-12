@@ -18,6 +18,7 @@ export const useVenueStore = create(
                 logo: null,
                 vibes: ['Arthouse', 'Midnight Palace'],
                 seatLayout: { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 },
+                followers: 0,
                 verified: false, paymentConnected: false, platformFeePercent: 15,
             },
             showtimes: [],

@@ -17,7 +17,6 @@ export default function OnboardingModal() {
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
     const logs = useFilmStore(s => s.logs)
-    const addLog = useFilmStore(s => s.addLog)
     const openLogModal = useUIStore(s => s.openLogModal)
 
     const [open, setOpen] = useState(false)

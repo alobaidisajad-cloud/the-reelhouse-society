@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { Popcorn, Search, Calendar, Star, Film, User, Hash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { tmdb, obscurityScore } from '../tmdb'
-import { useUIStore, useFilmStore, useSoundscape } from '../store'
+import { tmdb } from '../tmdb'
+import { useUIStore, useSoundscape } from '../store'
 import { PersonPlaceholder } from './UI'
 
 export default function CommandPalette() {

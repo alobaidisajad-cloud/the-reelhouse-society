@@ -2,7 +2,6 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
-import { motion } from 'framer-motion'
 import { Film, BookOpen, Star, Lock, Edit2, Camera, User, Settings, Globe } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, StatCard, PersonaStamp, FilmCard, RadarChart } from '../components/UI'
@@ -95,8 +94,8 @@ function LazyLogRow({ log, onShare }) {
 }
 
 // ── VAULT SECTION ──
-function VaultSection({ vault, user, logs }) {
-    const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
+function VaultSection({ vault, user }) {
+    const isPremiumVault = user?.role === 'archivist' || user?.role === 'auteur'
     return (
         <div className="vault-box" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
@@ -170,7 +169,7 @@ function ListsSection({ lists, user }) {
 // ── MAIN PAGE ──
 export default function UserProfilePage() {
     const { username: routeUsername } = useParams()
-    const { user: currentUser, isAuthenticated, updateUser, community, followUser, unfollowUser } = useAuthStore()
+    const { user: currentUser, isAuthenticated, updateUser, community } = useAuthStore()
     const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, getCinephileStats } = useFilmStore()
     const { programmes: currentProgrammes } = useProgrammeStore()
     const { openSignupModal, openLogModal } = useUIStore()
@@ -338,6 +337,35 @@ export default function UserProfilePage() {
         return <Buster size={size} mood={avatarValue} />
     }
 
+    const profileLogs = isOwnProfile ? currentLogs : otherUserLogs
+    const profileStubs = isOwnProfile ? currentStubs : []
+    const profileLists = isOwnProfile ? currentLists : []
+    const profileWatchlist = isOwnProfile ? currentWatchlist : []
+    const stats = getCinephileStats ? (isOwnProfile ? getCinephileStats() : {
+        count: profileLogs.length,
+        level: profileLogs.length > 50 ? 'THE ORACLE' : profileLogs.length > 20 ? 'MIDNIGHT DEVOTEE' : profileLogs.length > 5 ? 'THE REGULAR' : 'FIRST REEL',
+        color: profileLogs.length > 50 ? 'var(--sepia)' : profileLogs.length > 20 ? 'var(--blood-reel)' : 'var(--flicker)',
+        progress: (profileLogs.length % 20) * 5,
+    }) : { count: 0, level: 'FIRST REEL', color: 'var(--fog)', progress: 0 }
+
+    // useMemo must be called unconditionally (before any early returns) — rules of hooks
+    const halfLifeMap = useMemo(() => {
+        const byFilm = {}
+        for (const log of profileLogs) {
+            if (!log.filmId || !log.rating) continue
+            if (!byFilm[log.filmId]) byFilm[log.filmId] = []
+            byFilm[log.filmId].push({ rating: log.rating, date: log.createdAt || log.watchedDate })
+        }
+        const result = {}
+        for (const [filmId, entries] of Object.entries(byFilm)) {
+            if (entries.length < 2) continue
+            const sorted = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date))
+            const first = sorted[0].rating, last = sorted[sorted.length - 1].rating
+            result[filmId] = { count: entries.length, trajectory: last > first ? 'ASCENDING' : last < first ? 'DECAYING' : 'ETERNAL', delta: last - first }
+        }
+        return result
+    }, [profileLogs])
+
     // Show a loading state while fetching another user's profile
     if (!isOwnProfile && profileLoading) return (
         <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
@@ -360,17 +388,6 @@ export default function UserProfilePage() {
         </div>
     )
 
-    const profileLogs = isOwnProfile ? currentLogs : otherUserLogs
-    const profileStubs = isOwnProfile ? currentStubs : []
-    const profileLists = isOwnProfile ? currentLists : []
-    const profileWatchlist = isOwnProfile ? currentWatchlist : []
-    const profileProgrammes = currentProgrammes.filter(p => p.username === profileUser?.username)
-    const stats = getCinephileStats ? (isOwnProfile ? getCinephileStats() : {
-        count: profileLogs.length,
-        level: profileLogs.length > 50 ? 'THE ORACLE' : profileLogs.length > 20 ? 'MIDNIGHT DEVOTEE' : profileLogs.length > 5 ? 'THE REGULAR' : 'FIRST REEL',
-        color: profileLogs.length > 50 ? 'var(--sepia)' : profileLogs.length > 20 ? 'var(--blood-reel)' : 'var(--flicker)',
-        progress: (profileLogs.length % 20) * 5,
-    }) : { count: 0, level: 'FIRST REEL', color: 'var(--fog)', progress: 0 }
 
     const filteredLogs = profileLogs.filter(log => {
         if (sieve === 'all') return true
@@ -381,22 +398,6 @@ export default function UserProfilePage() {
         return true
     })
 
-    const halfLifeMap = useMemo(() => {
-        const byFilm = {}
-        for (const log of profileLogs) {
-            if (!log.filmId || !log.rating) continue
-            if (!byFilm[log.filmId]) byFilm[log.filmId] = []
-            byFilm[log.filmId].push({ rating: log.rating, date: log.createdAt || log.watchedDate })
-        }
-        const result = {}
-        for (const [filmId, entries] of Object.entries(byFilm)) {
-            if (entries.length < 2) continue
-            const sorted = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date))
-            const first = sorted[0].rating, last = sorted[sorted.length - 1].rating
-            result[filmId] = { count: entries.length, trajectory: last > first ? 'ASCENDING' : last < first ? 'DECAYING' : 'ETERNAL', delta: last - first }
-        }
-        return result
-    }, [profileLogs])
 
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: filteredLogs.length },

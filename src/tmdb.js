@@ -146,7 +146,7 @@ export const tmdb = {
                             return { data: fData, fallback: fb, bestItem }
                         }
                     }
-                } catch (e) { }
+                } catch { }
                 return null
             }))
 
@@ -201,7 +201,7 @@ export const tmdb = {
                     if (kwData.results?.length > 0) {
                         keywordIds.push(kwData.results[0].id)
                     }
-                } catch (e) { }
+                } catch { }
             }))
 
             if (keywordIds.length > 0) {
@@ -250,7 +250,7 @@ export const tmdb = {
     ),
 
     // Watch providers (streaming, rent, buy) for a specific movie
-    watchProviders: async (id, country = 'US') => {
+    watchProviders: async (id) => {
         const data = await fetchTMDB(`${TMDB_BASE}/movie/${id}/watch/providers?api_key=${API_KEY}`, {})
         return data?.results || {}
     },

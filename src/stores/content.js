@@ -3,7 +3,7 @@ import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 
 // ── DISPATCH STORE — Auteur dossiers ──
-export const useDispatchStore = create((set, get) => ({
+export const useDispatchStore = create((set) => ({
     dossiers: [],
     loading: false,
 

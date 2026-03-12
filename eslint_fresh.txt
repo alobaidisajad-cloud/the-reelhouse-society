@@ -1,0 +1,400 @@
+﻿
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\App.jsx
+  1:56  error  'useCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  3:27  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u       no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\CommandPalette.jsx
+   2:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                     no-unused-vars
+   5:16  error    'obscurityScore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                             no-unused-vars
+   6:22  error    'useFilmStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                               no-unused-vars
+  95:8   warning  React Hook useEffect has a missing dependency: 'executeAction'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\EmptyStates.jsx
+  46:29  error  'onAction' is defined but never used  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\HandbookModal.jsx
+  1:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\InstallPrompt.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\LetterboxdImport.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u        no-unused-vars
+  4:10  error  'useFilmStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\LogModal.jsx
+  3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\Navbar.jsx
+  2:31  error  'useCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u       no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\NotificationBell.jsx
+   3:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                        no-unused-vars
+  87:8   warning  React Hook useEffect has a missing dependency: 'setNotifications'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\OnboardingModal.jsx
+   2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u              no-unused-vars
+  20:11  error  'addLog' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u     no-unused-vars
+  28:12  error  'searching' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\PaywallModal.jsx
+  1:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u         no-unused-vars
+  3:10  error  'useUIStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u     no-unused-vars
+  7:13  error  'user' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\Preloader.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\QualityOfLife.jsx
+   2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-unused-vars
+  26:32  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  24 |         const handleOffline = () => setIsOffline(true)
+  25 |         const handleOnline = () => setIsOffline(false)
+> 26 |         if (!navigator.onLine) setIsOffline(true)
+     |                                ^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  27 |         window.addEventListener('offline', handleOffline)
+  28 |         window.addEventListener('online', handleOnline)
+  29 |  react-hooks/set-state-in-effect
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\ReactionBar.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\Searchlight.jsx
+   3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               no-unused-vars
+  36:13  error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  34 |     useEffect(() => {
+  35 |         if (!query) {
+> 36 |             setResults(QUICK_LINKS)
+     |             ^^^^^^^^^^ Avoid calling setState() directly within an effect
+  37 |             return
+  38 |         }
+  39 |  react-hooks/set-state-in-effect
+  56:22  error  'err' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+  72:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  70 |
+  71 |     useEffect(() => {
+> 72 |         setSelectedIndex(0)
+     |         ^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  73 |     }, [results])
+  74 |
+  75 |     const onKeyDown = (e) => {          react-hooks/set-state-in-effect
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\SignupModal.jsx
+    2:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                        no-unused-vars
+   29:12  error    'step' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                 no-unused-vars
+   63:8   warning  React Hook useEffect has a missing dependency: 'closeSignupModal'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   65:12  error    'isLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                            no-unused-vars
+  145:11  error    'handleDemoLogin' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                      no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\Soundscape.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\TicketFlow.jsx
+   2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u         no-unused-vars
+  11:13  error  'user' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  26:39  error  'seatKind' is defined but never used                                                  no-unused-vars
+  88:34  error  'Icon' is defined but never used                                                      no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\TicketStubGallery.jsx
+  2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\UI.jsx
+   90:65  error  'size' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-unused-vars
+   97:42  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `film.id`, but the source dependencies were [film?.id, queryClient]. Inferred different dependency than source.
+
+   95 |     const hoverTimeout = useRef(null)
+   96 |
+>  97 |     const handleMouseEnter = useCallback(() => {
+      |                                          ^^^^^^^
+>  98 |         hoverTimeout.current = setTimeout(() => {
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+>  99 |             if (!film?.id) return
+      ΓÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 106 |         }, 300) // 300ms debounce prevents API hammering
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 107 |     }, [film?.id, queryClient])
+      | ^^^^^^ Could not preserve existing manual memoization
+  108 |
+  109 |     const handleMouseLeave = useCallback(() => {
+  110 |         if (hoverTimeout.current) clearTimeout(hoverTimeout.current)  react-hooks/preserve-manual-memoization
+  371:34  error  'i' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\profile\ProjectorRoom.jsx
+  1:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\profile\TasteDNA.jsx
+  1:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  3:10  error  'tmdb' is defined but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\profile\TicketBooth.jsx
+  1:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  3:10  error  'tmdb' is defined but never used. Allowed unused vars must match /^[A-Z_]/u    no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\profile\WatchlistRoulette.jsx
+  3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\components\useSEOSync.jsx
+  2:10  error  'useParams' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  3:10  error  'tmdb' is defined but never used. Allowed unused vars must match /^[A-Z_]/u       no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\errorLogger.js
+  20:14  error  '_' is defined but never used  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\main.jsx
+  35:10  error  Fast refresh only works when a file has exports. Move your component(s) to a separate file  react-refresh/only-export-components
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\AuthCallbackPage.jsx
+  5:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\CinemasPage.jsx
+    3:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+  132:50  warning  React Hook useEffect has a missing dependency: 'fetchReviews'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            react-hooks/exhaustive-deps
+  241:27  error    'error' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+  253:8   warning  React Hook useEffect has missing dependencies: 'allReviews' and 'fetchReviews'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         react-hooks/exhaustive-deps
+  264:30  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `getAvg`, but the source dependencies were [venues, query, selectedVibes, minRating, sortBy, allReviews]. Inferred different dependency than source.
+
+  262 |     const toggleVibe = (v) => setSelectedVibes(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
+  263 |
+> 264 |     const filtered = useMemo(() => {
+      |                              ^^^^^^^
+> 265 |         let list = [...venues]
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 266 |         if (query.trim()) {
+      ΓÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 281 |         return list
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 282 |     }, [venues, query, selectedVibes, minRating, sortBy, allReviews])
+      | ^^^^^^ Could not preserve existing manual memoization
+  283 |
+  284 |     const hasFilters = query || selectedVibes.length > 0 || minRating > 0
+  285 |     const clearFilters = () => { setQuery(''); setSelectedVibes([]); setMinRating(0) }  react-hooks/preserve-manual-memoization
+  264:30  error    Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `getAvg`, but the source dependencies were [venues, query, selectedVibes, minRating, sortBy, allReviews]. Inferred different dependency than source.
+
+  262 |     const toggleVibe = (v) => setSelectedVibes(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
+  263 |
+> 264 |     const filtered = useMemo(() => {
+      |                              ^^^^^^^
+> 265 |         let list = [...venues]
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 266 |         if (query.trim()) {
+      ΓÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 281 |         return list
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 282 |     }, [venues, query, selectedVibes, minRating, sortBy, allReviews])
+      | ^^^^^^ Could not preserve existing manual memoization
+  283 |
+  284 |     const hasFilters = query || selectedVibes.length > 0 || minRating > 0
+  285 |     const clearFilters = () => { setQuery(''); setSelectedVibes([]); setMinRating(0) }  react-hooks/preserve-manual-memoization
+  282:8   warning  React Hook useMemo has a missing dependency: 'getAvg'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/exhaustive-deps
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\DiscoverPage.jsx
+    1:31  error    'useCallback' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+    4:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   no-unused-vars
+    8:10  error    'useUIStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               no-unused-vars
+   78:52  error    'isSearching' is defined but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         no-unused-vars
+  218:8   warning  React Hook useEffect has a missing dependency: 'setPage'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      react-hooks/exhaustive-deps
+  226:8   warning  React Hook useEffect has missing dependencies: 'query', 'setInputVal', and 'setQuery'. Either include them or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+  229:56  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  227 |
+  228 |     useEffect(() => {
+> 229 |         if (!inputVal.trim() || inputVal.length < 2) { setSuggestions([]); return }
+      |                                                        ^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  230 |         const id = setTimeout(async () => {
+  231 |             try {
+  232 |                 // Use raw TMDB multi-search for autocomplete ΓÇö tmdb.search() is a  react-hooks/set-state-in-effect
+  247:21  error    Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-empty
+  296:8   warning  React Hook useEffect has a missing dependency: 'setAccumulatedFilms'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          react-hooks/exhaustive-deps
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\DispatchPage.jsx
+    1:10  error    'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          no-unused-vars
+   53:8   warning  React Hook useEffect has a missing dependency: 'fetchDossiers'. Either include it or remove the dependency array                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       react-hooks/exhaustive-deps
+   63:9   error    Error: This value cannot be modified
+
+Modifying a variable defined outside a component or hook is not allowed. Consider using an effect.
+
+  61 |         scrollPos.current = window.scrollY
+  62 |         setSelectedArticle(item)
+> 63 |         document.body.style.overflow = 'hidden'
+     |         ^^^^^^^^^^^^^^^^^^^ value cannot be modified
+  64 |     }
+  65 |     const closeArticle = () => {
+  66 |         setSelectedArticle(null)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    react-hooks/immutability
+  118:56  error    Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  116 |                 <header className="dispatch-masthead">
+  117 |                     <div className="masthead-meta">
+> 118 |                         <span>VOL. {String(Math.floor((Date.now() - new Date('2026-03-12T00:00:00Z').getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1).padStart(3, '0')}</span>
+      |                                                        ^^^^^^^^^^ Cannot call impure function
+  119 |                         <span className="pulse-dot"></span>
+  120 |                         <span>{new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }).toUpperCase()}</span>
+  121 |                     </div>                                                                                                                                                                                                                                      react-hooks/purity
+  179:98  error    Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  177 |                             </div>
+  178 |                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '1.5rem' }}>
+> 179 |                                 THE SOCIETY PRESENTS ΓÇö NIGHTLY TRANSMISSION Γäû{String(Math.floor((Date.now() - new Date('2026-03-12T00:00:00Z').getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1).padStart(3, '0')}
+      |                                                                                                  ^^^^^^^^^^ Cannot call impure function
+  180 |                             </div>
+  181 |                             <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3rem)', color: 'var(--parchment)', lineHeight: 1, marginBottom: '1rem', letterSpacing: '0.02em' }}>
+  182 |                                 To Be Announced  react-hooks/purity
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\FeedPage.jsx
+  436:67  error  Empty block statement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             no-empty
+  545:42  error  Compilation Skipped: Existing memoization could not be preserved
+
+React Compiler has skipped optimizing this component because the existing manual memoization could not be preserved. The inferred dependencies did not match the manually specified dependencies, which could cause the value to change more or less frequently than expected. The inferred dependency was `user`, but the source dependencies were [user?.username]. Inferred less specific property than source.
+
+  543 |     }, [])
+  544 |
+> 545 |     const fetchSidebarData = useCallback(async () => {
+      |                                          ^^^^^^^^^^^^^
+> 546 |         if (!isSupabaseConfigured) return
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 547 |         try {
+      ΓÇª
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 585 |         }
+      | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+> 586 |     }, [user?.username])
+      | ^^^^^^ Could not preserve existing manual memoization
+  587 |
+  588 |     useEffect(() => {
+  589 |         fetchCommunityFeed()  react-hooks/preserve-manual-memoization
+  589:9   error  Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+  587 |
+  588 |     useEffect(() => {
+> 589 |         fetchCommunityFeed()
+      |         ^^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  590 |         fetchSidebarData()
+  591 |     }, [fetchCommunityFeed, fetchSidebarData])
+  592 |                                                                                             react-hooks/set-state-in-effect
+  675:56  error  'openLogModal' is not defined                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     no-undef
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\FilmDetailPage.jsx
+    4:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u             no-unused-vars
+  690:11  error  'location' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\HomePage.jsx
+    1:10  error  'useEffect' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           no-unused-vars
+    1:21  error  'useRef' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+    1:29  error  'useState' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            no-unused-vars
+    3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              no-unused-vars
+    5:16  error  'obscurityScore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      no-unused-vars
+    6:50  error  'useVenueStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       no-unused-vars
+  473:41  error  Error: Cannot call impure function during render
+
+`Date.now` is an impure function. Calling an impure function can produce unstable results that update unpredictably when the component happens to re-render. (https://react.dev/reference/rules/components-and-hooks-must-be-pure#components-and-hooks-must-be-idempotent).
+
+  471 |         rating: log.rating,
+  472 |         text: log.review,
+> 473 |         time: new Date(log.createdAt || Date.now()).toLocaleDateString()
+      |                                         ^^^^^^^^^^ Cannot call impure function
+  474 |     }))
+  475 |
+  476 |     return (  react-hooks/purity
+  654:19  error  'nowPlaying' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\ListsPage.jsx
+   76:20  error  'setImgSrc' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u         no-unused-vars
+  244:51  error  'communityLoading' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\MembershipPage.jsx
+   2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u             no-unused-vars
+  10:7   error  'features' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\NotFoundPage.jsx
+  1:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\PersonPage.jsx
+  3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\UserProfilePage.jsx
+    5:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                              no-unused-vars
+   98:38  error  'logs' is defined but never used                                                                                                                                                           no-unused-vars
+   99:11  error  'isPremium' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                  no-unused-vars
+  173:72  error  'followUser' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                                 no-unused-vars
+  173:84  error  'unfollowUser' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                               no-unused-vars
+  367:11  error  'profileProgrammes' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u                                                                                          no-unused-vars
+  384:25  error  React Hook "useMemo" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\VenueDashboard.jsx
+    2:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u              no-unused-vars
+    3:10  error  'useAuthStore' is defined but never used. Allowed unused vars must match /^[A-Z_]/u        no-unused-vars
+   25:27  error  'Icon' is defined but never used                                                           no-unused-vars
+  288:12  error  'submitted' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+  454:57  error  'Icon' is defined but never used                                                           no-unused-vars
+  575:55  error  'Icon' is defined but never used                                                           no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\pages\VenuePage.jsx
+    3:10  error  'motion' is defined but never used. Allowed unused vars must match /^[A-Z_]/u                no-unused-vars
+  246:31  error  'lowestPrice' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\stores\auth.js
+  6:7  error  'getFilmStore' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u          no-unused-vars
+  7:7  error  'getProgrammeStore' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u     no-unused-vars
+  8:7  error  'getNotificationStore' is assigned a value but never used. Allowed unused vars must match /^[A-Z_]/u  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\stores\content.js
+  6:46  error  'get' is defined but never used  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\supabaseClient.js
+  26:14  error  '_' is defined but never used  no-unused-vars
+
+C:\Users\OMEN\OneDrive\Desktop\divisionops\reelhouse\src\tmdb.js
+  149:26  error  'e' is defined but never used                 no-unused-vars
+  149:29  error  Empty block statement                         no-empty
+  204:26  error  'e' is defined but never used                 no-unused-vars
+  204:29  error  Empty block statement                         no-empty
+  253:32  error  'country' is assigned a value but never used  no-unused-vars
+
+Γ£û 121 problems (111 errors, 10 warnings)
+

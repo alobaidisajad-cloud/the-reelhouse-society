@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { AnimatePresence } from 'framer-motion'
 import { Search, X, Star, BookOpen, EyeOff, Clock, Lock } from 'lucide-react'
 import { useUIStore, useFilmStore, useAuthStore, useSoundscape } from '../store'
 import { tmdb } from '../tmdb'

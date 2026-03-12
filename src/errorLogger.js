@@ -17,7 +17,7 @@ export async function logError({ type = 'runtime', message, stack, component, us
             url: typeof window !== 'undefined' ? window.location.href : null,
             user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
         }]).catch(() => { })
-    } catch (_) { /* Never let error logging crash the app */ }
+    } catch { /* Never let error logging crash the app */ }
 }
 
 /**
