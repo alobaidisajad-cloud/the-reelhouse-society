@@ -102,8 +102,8 @@ function MarqueeBoard({ film }) {
                         backgroundImage: `url(${tmdb.backdrop(film.backdrop_path, 'w1280')})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 20%',
-                        opacity: IS_TOUCH ? 0.12 : 0.22,
-                        filter: 'sepia(0.5) contrast(0.9)',
+                        opacity: IS_TOUCH ? 0.20 : 0.40,
+                        filter: 'sepia(0.3) contrast(0.85)',
                         zIndex: 0,
                         pointerEvents: 'none',
                     }} />
