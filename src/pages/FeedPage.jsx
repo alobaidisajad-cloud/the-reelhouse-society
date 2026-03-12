@@ -549,7 +549,7 @@ export default function FeedPage() {
             // Real recent public lists — explicit FK to avoid ambiguous relationship
             const { data: listsData } = await supabase
                 .from('lists')
-                .select('id, title, description, profiles!lists_user_id_fkey(username)')
+                .select('id, title, description, profiles(username)')
                 .order('created_at', { ascending: false })
                 .limit(3)
 
@@ -564,7 +564,7 @@ export default function FeedPage() {
             // Real active agents: users with most recent log activity — explicit FK
             const { data: agentsData } = await supabase
                 .from('logs')
-                .select('profiles!logs_user_id_fkey(username)')
+                .select('profiles(username)')
                 .order('created_at', { ascending: false })
                 .limit(20)
 

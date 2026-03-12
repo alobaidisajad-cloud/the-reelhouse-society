@@ -178,7 +178,7 @@ function FeaturedReview({ film }) {
             if (!film?.id) return null
             const { data } = await supabase
                 .from('logs')
-                .select('review, rating, username')
+                .select('review, rating, profiles(username)')
                 .eq('film_id', String(film.id))
                 .not('review', 'is', null)
                 .neq('review', '')
@@ -186,7 +186,8 @@ function FeaturedReview({ film }) {
                 .order('rating', { ascending: false })
                 .limit(1)
                 .single()
-            return data || null
+            if (!data) return null
+            return { ...data, username: data.profiles?.username || null }
         },
         enabled: !!film?.id,
         staleTime: 1000 * 60 * 5,
@@ -385,10 +386,10 @@ const VenueSpotlight = memo(function VenueSpotlight() {
         queryFn: async () => {
             const { data } = await supabase
                 .from('venues')
-                .select('id, name, location, vibes, verified')
+                .select('id, name, location, vibes, is_verified')
                 .order('created_at', { ascending: false })
                 .limit(3)
-            return data || []
+            return (data || []).map(v => ({ ...v, verified: v.is_verified }))
         },
         staleTime: 1000 * 60 * 10,
     })
