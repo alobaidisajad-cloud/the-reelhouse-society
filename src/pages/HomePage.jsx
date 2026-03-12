@@ -658,11 +658,11 @@ export default function HomePage() {
                         backgroundImage: `url(${tmdb.backdrop(heroFilm.backdrop_path, 'w1280')})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 15%',
-                        opacity: 0.38,
-                        filter: 'sepia(0.25) brightness(0.55)',
+                        opacity: 0.55,
+                        filter: 'sepia(0.2) brightness(0.60)',
                         maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
-                        zIndex: -1,
+                        zIndex: 0,
                         pointerEvents: 'none',
                     }} />
                 )}
@@ -672,7 +672,7 @@ export default function HomePage() {
                         position: 'absolute',
                         inset: 0,
                         background: 'radial-gradient(circle at center, transparent 0%, var(--ink) 90%)',
-                        zIndex: -1,
+                        zIndex: 0,
                         pointerEvents: 'none',
                     }} />
                 )}
