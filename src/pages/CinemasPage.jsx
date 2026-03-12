@@ -1,12 +1,21 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, MapPin, Star, Filter, X, Check, Building2, ArrowRight } from 'lucide-react'
+import { Search, MapPin, Star, Filter, X, Check, Building2, ArrowRight, Navigation, Loader } from 'lucide-react'
 import { useAuthStore, useCinemaReviewStore, useUIStore } from '../store'
 import { supabase } from '../supabaseClient'
 import { useQuery } from '@tanstack/react-query'
 import { LoadingReel } from '../components/UI'
 import toast from 'react-hot-toast'
+
+// Haversine distance in km between two lat/lng points
+function haversineKm(lat1, lng1, lat2, lng2) {
+    const R = 6371
+    const dLat = (lat2 - lat1) * Math.PI / 180
+    const dLng = (lng2 - lng1) * Math.PI / 180
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLng / 2) ** 2
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+}
 
 // ── STAR RATING ──
 function StarRating({ value, onChange, readonly = false, size = 20 }) {
@@ -30,7 +39,7 @@ function StarRating({ value, onChange, readonly = false, size = 20 }) {
 }
 
 // ── CINEMA CARD ──
-function CinemaCard({ cinema, avgRating, reviewCount }) {
+function CinemaCard({ cinema, avgRating, reviewCount, distanceKm }) {
     const [imgFailed, setImgFailed] = useState(!cinema.image)
 
     // deterministic gradient from name
@@ -72,6 +81,11 @@ function CinemaCard({ cinema, avgRating, reviewCount }) {
                 {cinema.verified && (
                     <div style={{ position: 'absolute', top: 10, right: 10, background: 'var(--ink)', border: '1px solid var(--flicker)', padding: '2px 8px', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--flicker)' }}>
                         ✦ VERIFIED
+                    </div>
+                )}
+                {distanceKm != null && (
+                    <div style={{ position: 'absolute', bottom: 10, left: 10, background: 'rgba(5,3,1,0.85)', border: '1px solid var(--sepia)', padding: '2px 8px', fontFamily: 'var(--font-ui)', fontSize: '0.48rem', letterSpacing: '0.12em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <Navigation size={8} />{distanceKm < 1 ? `${Math.round(distanceKm * 1000)}m away` : `${distanceKm.toFixed(1)} km away`}
                     </div>
                 )}
             </div>
@@ -234,6 +248,29 @@ export default function CinemasPage() {
     const [showFilters, setShowFilters] = useState(false)
     const [reviewModal, setReviewModal] = useState(null)
 
+    // Geolocation state
+    const [userLocation, setUserLocation] = useState(null)  // { lat, lng }
+    const [geoLoading, setGeoLoading] = useState(false)
+
+    const findNearest = useCallback(() => {
+        if (!navigator.geolocation) { toast.error('Geolocation not supported by your browser'); return }
+        setGeoLoading(true)
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+                setSortBy('distance')
+                setGeoLoading(false)
+                toast.success('Location detected — sorting by distance')
+            },
+            (err) => {
+                setGeoLoading(false)
+                if (err.code === 1) toast.error('Location access denied. Enable it in your browser settings.')
+                else toast.error('Could not get your location')
+            },
+            { timeout: 10000, maximumAge: 60000 }
+        )
+    }, [])
+
     // Fetch ALL venues from Supabase (not just owner's)
     const { data: venues = [], isLoading } = useQuery({
         queryKey: ['all-venues'],
@@ -273,13 +310,29 @@ export default function CinemasPage() {
         }
         if (selectedVibes.length) list = list.filter(c => selectedVibes.every(v => (c.vibes || []).includes(v)))
         if (minRating > 0) list = list.filter(c => getAvg(c.id) >= minRating)
+
+        // Compute distance for each venue if user location known
+        if (userLocation) {
+            list = list.map(c => ({
+                ...c,
+                _distKm: (c.lat && c.lng) ? haversineKm(userLocation.lat, userLocation.lng, c.lat, c.lng) : null
+            }))
+        }
+
         list.sort((a, b) => {
+            if (sortBy === 'distance' && userLocation) {
+                // venues without lat/lng go to end
+                if (a._distKm == null && b._distKm == null) return 0
+                if (a._distKm == null) return 1
+                if (b._distKm == null) return -1
+                return a._distKm - b._distKm
+            }
             if (sortBy === 'rating') return getAvg(b.id) - getAvg(a.id)
             if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '')
             return 0 // 'newest' already sorted by Supabase
         })
         return list
-    }, [venues, query, selectedVibes, minRating, sortBy, allReviews])
+    }, [venues, query, selectedVibes, minRating, sortBy, allReviews, userLocation])
 
     const hasFilters = query || selectedVibes.length > 0 || minRating > 0
     const clearFilters = () => { setQuery(''); setSelectedVibes([]); setMinRating(0) }
@@ -312,6 +365,16 @@ export default function CinemasPage() {
                                 style={{ paddingLeft: '2.5rem' }}
                             />
                         </div>
+                        {/* Find Nearest button */}
+                        <button
+                            className={`btn ${userLocation ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={userLocation ? () => { setUserLocation(null); setSortBy('newest'); toast('Location cleared') } : findNearest}
+                            disabled={geoLoading}
+                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 120 }}
+                        >
+                            {geoLoading ? <Loader size={13} style={{ animation: 'spin 1s linear infinite' }} /> : <Navigation size={13} />}
+                            {geoLoading ? 'Locating...' : userLocation ? 'Clear Location' : 'Find Nearest'}
+                        </button>
                         {allVibes.length > 0 && (
                             <button
                                 className={`btn ${showFilters ? 'btn-primary' : 'btn-ghost'}`}
@@ -345,6 +408,7 @@ export default function CinemasPage() {
                                         <option value="newest">Newest First</option>
                                         <option value="rating">Highest Rated</option>
                                         <option value="name">Name A→Z</option>
+                                        {userLocation && <option value="distance">Nearest First</option>}
                                     </select>
                                 </div>
                                 <div>
@@ -429,7 +493,7 @@ export default function CinemasPage() {
                                                 transition={{ duration: 0.2, delay: i * 0.04 }}
                                                 style={{ display: 'flex', flexDirection: 'column' }}
                                             >
-                                                <CinemaCard cinema={mapped} avgRating={avg} reviewCount={count} />
+                                                <CinemaCard cinema={mapped} avgRating={avg} reviewCount={count} distanceKm={cinema._distKm ?? null} />
                                                 <button
                                                     onClick={() => setReviewModal(mapped)}
                                                     className="btn btn-ghost"

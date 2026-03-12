@@ -17,7 +17,9 @@ export const useVenueStore = create(
                 email: '', phone: '', website: '', instagram: '',
                 logo: null,
                 vibes: ['Arthouse', 'Midnight Palace'],
-                seatLayout: { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 },
+                seatLayout: { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7, blockedSeats: [] },
+                screens: [], // [] means single-screen (fallback to seatLayout)
+                lat: null, lng: null,
                 followers: 0,
                 verified: false, paymentConnected: false, platformFeePercent: 15,
             },
@@ -30,10 +32,10 @@ export const useVenueStore = create(
                 const { data: venueData } = await supabase
                     .from('venues').select('*').eq('owner_id', user.id).single()
                 if (venueData) {
-                    set((s) => ({ venue: { ...s.venue, ...venueData, id: venueData.id } }))
+                    set((s) => ({ venue: { ...s.venue, ...venueData, id: venueData.id, screens: venueData.screens || [], lat: venueData.lat || null, lng: venueData.lng || null } }))
                     const { data: stData } = await supabase
                         .from('showtimes').select('*').eq('venue_id', venueData.id).order('date', { ascending: true })
-                    if (stData) set({ showtimes: stData.map((st) => ({ ...st, film: st.film_title, slots: st.slots || [] })) })
+                    if (stData) set({ showtimes: stData.map((st) => ({ ...st, film: st.film_title, slots: st.slots || [], screenName: st.screen_name || '', durationMins: st.duration_minutes || 0 })) })
                 }
             },
 
@@ -48,6 +50,7 @@ export const useVenueStore = create(
                         description: updates.description, bio: updates.bio, email: updates.email,
                         phone: updates.phone, website: updates.website, instagram: updates.instagram,
                         vibes: updates.vibes, seat_layout: updates.seatLayout,
+                        lat: updates.lat ?? null, lng: updates.lng ?? null,
                     }).eq('id', venueId)
                 } else {
                     const { data } = await supabase.from('venues').insert([{
@@ -57,18 +60,28 @@ export const useVenueStore = create(
                         email: updates.email, phone: updates.phone, website: updates.website,
                         instagram: updates.instagram, vibes: updates.vibes || [],
                         seat_layout: updates.seatLayout || get().venue.seatLayout,
+                        lat: updates.lat ?? null, lng: updates.lng ?? null,
                     }]).select().single()
                     if (data) set((s) => ({ venue: { ...s.venue, id: data.id } }))
                 }
             },
 
+            saveScreens: async ({ screens, seatLayout }) => {
+                set((s) => ({ venue: { ...s.venue, screens, seatLayout } }))
+                const venueId = get().venue.id
+                if (venueId) {
+                    await supabase.from('venues').update({ screens, seat_layout: seatLayout }).eq('id', venueId)
+                }
+            },
+
             addShowtime: async (st) => {
                 const venueId = get().venue.id
-                const optimistic = { ...st, id: 'st-' + Date.now(), slots: [], film: st.film }
+                const optimistic = { ...st, id: 'st-' + Date.now(), slots: [], film: st.film, screenName: st.screenName || '', durationMins: st.durationMins || 0 }
                 set((s) => ({ showtimes: [optimistic, ...s.showtimes] }))
                 if (venueId) {
                     const { data } = await supabase.from('showtimes').insert([{
                         venue_id: venueId, film_id: st.filmId || 0, film_title: st.film, date: st.date, slots: [],
+                        screen_name: st.screenName || null, duration_minutes: st.durationMins || null,
                     }]).select().single()
                     if (data) set((s) => ({
                         showtimes: s.showtimes.map((x) => x.id === optimistic.id ? { ...x, id: data.id } : x),

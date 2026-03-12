@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAuthStore, useVenueStore } from '../store'
 import { Link } from 'react-router-dom'
@@ -6,9 +6,11 @@ import {
     BarChart2, Calendar, Ticket, Settings, Plus, Trash2,
     TrendingUp, Users, DollarSign, Film, Edit2, Check, X,
     CreditCard, Shield, Eye, MapPin, Instagram, Globe, Phone,
-    Mail, Twitter, ChevronLeft, ChevronRight, Clock, Tag, AlertTriangle, Upload
+    Mail, Twitter, ChevronLeft, ChevronRight, Clock, Tag, AlertTriangle, Upload, LayoutGrid,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+import SeatMapEditor from '../components/SeatMapEditor'
+import { WeeklyRevenueChart, OccupancyGauge, TopFilmsChart, TicketTypeBreakdown } from '../components/AnalyticsCharts'
 
 const VIBE_OPTIONS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace', 'Repertory', 'Horror House', 'Indie', 'Experimental', 'Family']
 const FORMAT_OPTIONS = ['35mm', 'DCP 4K', 'DCP 2K', '70mm', 'Blu-ray', '16mm', 'VHS (Special)']
@@ -16,6 +18,7 @@ const EVENT_TYPES = ['Marathon', 'Retrospective', 'Series', 'Q&A', 'Premiere', '
 const TABS = [
     { id: 'overview', label: 'Overview', icon: BarChart2 },
     { id: 'schedule', label: 'Schedule', icon: Film },
+    { id: 'seatmap', label: 'Seat Map', icon: LayoutGrid },
     { id: 'events', label: 'Events', icon: Calendar },
     { id: 'sales', label: 'Ticket Sales', icon: Ticket },
     { id: 'profile', label: 'Profile', icon: Settings },
@@ -247,22 +250,40 @@ function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdate
     )
 }
 
-// ── ADD SHOWTIME MODAL ──
-function AddShowtimeModal({ onClose, onAdd, defaultDate = '' }) {
+// ── ADD SHOWTIME MODAL — now with screen + duration ──
+function AddShowtimeModal({ onClose, onAdd, defaultDate = '', screens = [] }) {
     const [film, setFilm] = useState('')
     const [date, setDate] = useState(defaultDate)
+    const [screenName, setScreenName] = useState(screens[0]?.name || 'Screen 1')
+    const [durationMins, setDurationMins] = useState(120)
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(5,3,1,0.95)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', width: '100%', maxWidth: 440, padding: '2rem', borderRadius: 2, position: 'relative' }}>
+                style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', width: '100%', maxWidth: 480, padding: '2rem', borderRadius: 2, position: 'relative' }}>
                 <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}><X size={20} /></button>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.25em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>NEW FILM</div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '1.25rem' }}>Add to Schedule</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <input className="input" placeholder="Film title *" value={film} onChange={e => setFilm(e.target.value)} autoFocus />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>SCREENING DATE</div>
+                            <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} />
+                        </div>
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>DURATION (MINS)</div>
+                            <input className="input" type="number" min={30} max={480} value={durationMins} onChange={e => setDurationMins(parseInt(e.target.value) || 120)} />
+                        </div>
+                    </div>
                     <div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>SCREENING DATE</div>
-                        <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} />
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>SCREEN</div>
+                        {screens.length > 0 ? (
+                            <select className="input" value={screenName} onChange={e => setScreenName(e.target.value)}>
+                                {screens.map(sc => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
+                            </select>
+                        ) : (
+                            <input className="input" placeholder="Screen 1" value={screenName} onChange={e => setScreenName(e.target.value)} />
+                        )}
                     </div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--fog)', fontStyle: 'italic' }}>
                         Add time slots and ticket prices after creating the entry.
@@ -270,7 +291,7 @@ function AddShowtimeModal({ onClose, onAdd, defaultDate = '' }) {
                     <button className="btn btn-primary" style={{ justifyContent: 'center', marginTop: '0.25rem' }}
                         onClick={() => {
                             if (!film || !date) { toast.error('Film title and date are required'); return }
-                            onAdd({ film, date })
+                            onAdd({ film, date, screenName, durationMins })
                             toast.success(`${film} added to schedule`)
                             onClose()
                         }}>
@@ -513,7 +534,7 @@ function ProfileTab({ venue, onSave }) {
 
 // ── MAIN DASHBOARD ──
 export default function VenueDashboard() {
-    const { venue, showtimes, events, updateVenue, addShowtime, removeShowtime, addSlot, removeSlot, updateSlot, addEvent, removeEvent, connectPayment } = useVenueStore()
+    const { venue, showtimes, events, updateVenue, addShowtime, removeShowtime, addSlot, removeSlot, updateSlot, addEvent, removeEvent, connectPayment, saveScreens } = useVenueStore()
     const [tab, setTab] = useState('overview')
     const [showAddFilm, setShowAddFilm] = useState(false)
     const [addFilmDate, setAddFilmDate] = useState('')
@@ -587,20 +608,31 @@ export default function VenueDashboard() {
                 <AnimatePresence mode="wait">
                     <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.18 }}>
 
-                        {/* OVERVIEW */}
+                        {/* OVERVIEW — with analytics charts */}
                         {tab === 'overview' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                                {/* Stat cards row */}
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: '1rem' }}>
                                     <StatCard icon={DollarSign} label="TOTAL REVENUE" value={`$${(showtimeRevenue + eventRevenue).toLocaleString()}`} sub="Showtimes + Events" color="var(--flicker)" />
                                     <StatCard icon={Users} label="FOLLOWERS" value={(venue.followers ?? 0).toLocaleString()} color="var(--sepia)" />
                                     <StatCard icon={TrendingUp} label="OCCUPANCY" value={`${occPct}%`} sub={`${totalBooked}/${totalCap} seats filled`} color={occPct > 70 ? 'var(--blood-reel)' : 'var(--sepia)'} />
                                     <StatCard icon={Film} label="FILMS SCHEDULED" value={showtimes.length} sub={`${showtimes.reduce((a, s) => a + s.slots.length, 0)} time slots`} color="var(--bone)" />
                                 </div>
+                                {/* Analytics charts */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+                                    <WeeklyRevenueChart showtimes={showtimes} events={events} />
+                                    <OccupancyGauge showtimes={showtimes} />
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1rem' }}>
+                                    <TopFilmsChart showtimes={showtimes} />
+                                    <TicketTypeBreakdown showtimes={showtimes} events={events} />
+                                </div>
                                 <div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>QUICK ACTIONS</div>
                                     <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                                         <button className="btn btn-primary" onClick={() => { setTab('schedule'); setShowAddFilm(true) }}><Plus size={12} /> Add Film</button>
                                         <button className="btn btn-ghost" onClick={() => { setTab('events'); setShowAddEvent(true) }}><Plus size={12} /> Create Event</button>
+                                        <button className="btn btn-ghost" onClick={() => setTab('seatmap')}><LayoutGrid size={12} /> Edit Seat Map</button>
                                         <button className="btn btn-ghost" onClick={() => setTab('profile')}><Settings size={12} /> Edit Profile</button>
                                         {!venue.paymentConnected && <button className="btn btn-ghost" onClick={() => setTab('payment')} style={{ color: 'var(--blood-reel)', borderColor: 'var(--blood-reel)' }}><CreditCard size={12} /> Connect Payment</button>}
                                     </div>
@@ -611,16 +643,19 @@ export default function VenueDashboard() {
                                         <div key={st.id} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', padding: '0.9rem 1.2rem', marginBottom: '0.4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
                                                 <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{st.film}</div>
-                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', marginTop: 3, letterSpacing: '0.08em' }}>{st.date} · {st.slots.map(s => s.time).join(', ')}</div>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', marginTop: 3, letterSpacing: '0.08em' }}>
+                                                    {st.date} · {st.screenName || 'Screen 1'} · {st.slots.map(s => s.time).join(', ')}
+                                                </div>
                                             </div>
                                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--sepia)' }}>{st.slots.length} SLOT{st.slots.length !== 1 ? 'S' : ''}</div>
                                         </div>
                                     ))}
+                                    {showtimes.length === 0 && <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--fog)', fontStyle: 'italic' }}>No films scheduled yet.</div>}
                                 </div>
                             </div>
                         )}
 
-                        {/* SCHEDULE */}
+                        {/* SCHEDULE — multi-screen with conflict detection */}
                         {tab === 'schedule' && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -632,8 +667,18 @@ export default function VenueDashboard() {
                                     </div>
                                     <button className="btn btn-primary" onClick={() => { setAddFilmDate(''); setShowAddFilm(true) }}><Plus size={12} /> Add Film</button>
                                 </div>
+                                {/* Screen legend if multi-screen */}
+                                {(venue.screens?.length > 0) && (
+                                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>SCREENS:</span>
+                                        {venue.screens.map(sc => (
+                                            <span key={sc.id} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', border: `1px solid ${sc.color}`, color: sc.color, padding: '2px 8px' }}>{sc.name}</span>
+                                        ))}
+                                    </div>
+                                )}
                                 <WeeklyCalendar
                                     showtimes={showtimes}
+                                    screens={venue.screens || []}
                                     onRemove={(id) => { removeShowtime(id); toast.success('Film removed from schedule') }}
                                     onAddSlot={addSlot}
                                     onRemoveSlot={(stId, slId) => { removeSlot(stId, slId); toast.success('Slot removed') }}
@@ -742,6 +787,9 @@ export default function VenueDashboard() {
                             </div>
                         )}
 
+                        {/* SEAT MAP */}
+                        {tab === 'seatmap' && <SeatMapEditor venue={venue} onSave={saveScreens} />}
+
                         {/* PROFILE */}
                         {tab === 'profile' && <ProfileTab venue={venue} onSave={updateVenue} />}
 
@@ -752,7 +800,7 @@ export default function VenueDashboard() {
                 </AnimatePresence>
             </div>
 
-            {showAddFilm && <AddShowtimeModal onClose={() => setShowAddFilm(false)} onAdd={addShowtime} defaultDate={addFilmDate} />}
+            {showAddFilm && <AddShowtimeModal onClose={() => setShowAddFilm(false)} onAdd={addShowtime} defaultDate={addFilmDate} screens={venue.screens || []} />}
         </div>
     )
 }

@@ -114,6 +114,12 @@ export default function TicketStubGallery({ stub, onClose }) {
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--fog)', letterSpacing: '0.15em' }}>VENUE</div>
                                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--ink)', fontWeight: 'bold' }}>{stub.venue}</div>
                             </div>
+                            {stub.screen && (
+                                <div style={{ gridColumn: '1 / -1' }}>
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--fog)', letterSpacing: '0.15em' }}>SCREEN</div>
+                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--ink)', fontWeight: 'bold' }}>{stub.screen}</div>
+                                </div>
+                            )}
                         </div>
                     </div>
 
