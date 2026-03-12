@@ -41,6 +41,9 @@ export default function CustomCursor() {
       '<rect x="24.5" y="18.5" width="2" height="3" rx="0.4" fill="#C29B38" fill-opacity="0.85"/>' +
       '</svg>'
 
+    // Start off-screen before appending — prevents 1-frame flash at (0,0)
+    outer.style.transform = 'translate3d(-200px,-200px,0) translate(-50%,-50%)'
+    dot.style.transform = 'translate3d(-200px,-200px,0) translate(-50%,-50%)'
     document.body.appendChild(outer)
     document.body.appendChild(dot)
 

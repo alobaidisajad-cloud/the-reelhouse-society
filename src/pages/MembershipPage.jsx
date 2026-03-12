@@ -132,7 +132,7 @@ export default function MembershipPage() {
                         {isAuthenticated ? (
                             <div style={{ textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', color: 'var(--fog)', padding: '1rem', border: '1px solid var(--ash)', borderRadius: 'var(--radius-card)' }}>YOUR CURRENT TIER</div>
                         ) : (
-                            <button className="btn btn-ghost" style={{ width: '100%', justifyContet: 'center', padding: '1rem', fontSize: '0.8rem', letterSpacing: '0.2em' }} onClick={() => openSignupModal('cinephile')}>
+                            <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.8rem', letterSpacing: '0.2em' }} onClick={() => openSignupModal('cinephile')}>
                                 JOIN FREE
                             </button>
                         )}
@@ -185,7 +185,7 @@ export default function MembershipPage() {
                             disabled={isRedirecting}
                             onClick={() => handleAscend('archivist')}
                         >
-                            {isRedirecting ? 'INITIALIZING...' : isAuthenticated ? (user?.role === 'archivist' || user?.role === 'auteur' ? 'CURRENT RANK' : 'ASCEND TO ARCHIVIST') : 'CLAIM ARCHIVIST\nSTATUS'}
+                            {isRedirecting ? 'INITIALIZING...' : isAuthenticated ? (user?.role === 'archivist' || user?.role === 'auteur' ? 'CURRENT RANK' : 'ASCEND TO ARCHIVIST') : 'CLAIM ARCHIVIST STATUS'}
                         </button>
                     </motion.div>
 

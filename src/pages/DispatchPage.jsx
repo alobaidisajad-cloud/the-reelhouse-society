@@ -35,7 +35,7 @@ export default function DispatchPage() {
     const [formValues, setFormValues] = useState({ title: '', content: '' })
 
     const scrollPos = useRef(0)
-    const canWrite = user?.role === 'auteur' || user?.username === 'OMEN'
+    const canWrite = user?.role === 'auteur'
 
     useEffect(() => {
         const fetchNews = async () => {

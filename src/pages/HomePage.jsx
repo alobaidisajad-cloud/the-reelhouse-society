@@ -8,6 +8,7 @@ import { FilmCard, SectionHeader, ReelRating, LoadingReel, Ticker, FilmStripSkel
 import Buster from '../components/Buster'
 import { Plus, Maximize, Play, PlayCircle, Star, Quote } from 'lucide-react'
 import TicketStubGallery from '../components/TicketStubGallery'
+import { supabase } from '../supabaseClient'
 
 // Detect touch/mobile once at module level — never re-evaluated
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
@@ -141,13 +142,13 @@ function MarqueeBoard({ film }) {
                         gap: 4,
                         marginTop: '2.5rem',
                         overflow: 'hidden',
-                        opacity: 0.15,
+                        opacity: 0.28,
                         justifyContent: 'center',
                         position: 'relative',
                         zIndex: 1
                     }}>
                         {Array.from({ length: 14 }).map((_, i) => (
-                            <div key={i} style={{ width: 32, height: 24, flexShrink: 0, border: '2px solid var(--parchment)', borderRadius: 2 }} />
+                            <div key={i} style={{ width: 32, height: 24, flexShrink: 0, border: '2px solid var(--sepia)', borderRadius: 2 }} />
                         ))}
                     </div>
                 )}
@@ -169,19 +170,34 @@ function MarqueeBoard({ film }) {
     )
 }
 
-// ── FEATURED REVIEW (Dynamic from community logs) ──
+// ── FEATURED REVIEW (Top community critique for the hero film) ──
 function FeaturedReview({ film }) {
-    const logs = useFilmStore(state => state.logs)
+    const { data: communityReview } = useQuery({
+        queryKey: ['featured-review', film?.id],
+        queryFn: async () => {
+            if (!film?.id) return null
+            const { data } = await supabase
+                .from('logs')
+                .select('review, rating, username')
+                .eq('film_id', String(film.id))
+                .not('review', 'is', null)
+                .neq('review', '')
+                .gt('rating', 0)
+                .order('rating', { ascending: false })
+                .limit(1)
+                .single()
+            return data || null
+        },
+        enabled: !!film?.id,
+        staleTime: 1000 * 60 * 5,
+    })
 
-    // Find the most recent log with a written review
-    const featuredLog = logs.find(l => l.review && l.review.trim().length > 30)
+    if (!film) return null
 
-    if (!featuredLog && !film) return null
-
-    // Use real community data, or show a thematic placeholder if no reviews yet
-    const displayReview = featuredLog
-        ? { text: featuredLog.review, author: featuredLog.username || 'anonymous', rating: featuredLog.rating || 0 }
-        : { text: "The projector hums. The house lights dim. Be the first to file your critique and claim this space.", author: 'THE SOCIETY', rating: 0 }
+    // Top community review for this film, or a thematic invite placeholder
+    const displayReview = communityReview
+        ? { text: communityReview.review, author: (communityReview.username || 'ANONYMOUS').toUpperCase(), rating: communityReview.rating || 0 }
+        : { text: 'The projection box awaits. Be the first to file a dispatch on this title and claim this space in the archive.', author: 'THE SOCIETY', rating: 0 }
 
     return (
         <div style={{
@@ -780,11 +796,11 @@ export default function HomePage() {
                     )}
 
                     {/* Social Pulse */}
-                    <div className="divider">✦ THE FOYER ✦</div>
+                    <div className="divider" style={{ margin: '1rem 0' }}>✦ THE FOYER ✦</div>
                     <SocialPulse />
 
                     {/* Divider */}
-                    <div className="divider">✦ TONIGHT'S PROGRAMME ✦</div>
+                    <div className="divider" style={{ margin: '1rem 0' }}>✦ TONIGHT'S PROGRAMME ✦</div>
 
                     {/* Featured review + film */}
                     {heroFilm && (
@@ -794,7 +810,7 @@ export default function HomePage() {
                                 <SectionHeader label="PICK OF THE WEEK" title="Featured Critique" style={{ marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }} />
                             </div>
                             <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--bone)', paddingLeft: '1.5rem', opacity: 0.75, maxWidth: '600px', marginBottom: '3rem', textShadow: '0 1px 2px var(--ink)' }}>
-                                A profound reflection from our community's most esteemed auteur.
+                                One critique, filed for the archive.
                             </p>
                             <div className="layout-sidebar">
                                 <div style={{ maxWidth: 260, margin: '0 auto' }}>

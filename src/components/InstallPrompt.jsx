@@ -58,9 +58,8 @@ export default function InstallPrompt() {
                 style={{
                     position: 'fixed',
                     bottom: 'calc(1.5rem + env(safe-area-inset-bottom, 0px))',
-                    left: '1rem',
-                    right: '5rem', // leave space for back-to-top button
-                    maxWidth: 380,
+                    right: '1rem',
+                    maxWidth: 340,
                     zIndex: 8900, // below mobile menu (9000) and back-to-top (9000)
                     background: 'var(--ink)',
                     border: '1px solid var(--sepia)',
