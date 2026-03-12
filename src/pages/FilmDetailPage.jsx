@@ -634,7 +634,7 @@ function FilmDetails({ film, onPlayVideo }) {
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '1rem' }}>FILM DOSSIER</div>
                     {[
                         { label: 'GENRES', value: film.genres?.map(g => g.name).join(', ') },
-                        { label: 'RELEASE', value: film.release_date },
+                        { label: 'RELEASE', value: film.release_date ? new Date(film.release_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase() : '—' },
                         { label: 'RUNTIME', value: formatRuntime(film.runtime) },
                         { label: 'STATUS', value: film.status },
                         { label: 'LANGUAGE', value: film.original_language?.toUpperCase() },
@@ -720,8 +720,12 @@ export default function FilmDetailPage() {
         </div>
     )
     if (error || !film) return (
-        <div style={{ paddingTop: 80, textAlign: 'center', padding: '4rem' }}>
-            <p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)' }}>Film not found in the archive.</p>
+        <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ textAlign: 'center', border: '1px solid var(--ash)', padding: '4rem 3rem', maxWidth: 440, background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)' }}>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '4rem', color: 'var(--ash)', marginBottom: '1.5rem', lineHeight: 1 }}>∅</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '0.75rem' }}>Not in the Archive</div>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', lineHeight: 1.6 }}>This reel could not be found. It may have been withdrawn from circulation.</p>
+            </div>
         </div>
     )
 

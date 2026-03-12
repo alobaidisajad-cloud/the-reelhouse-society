@@ -52,6 +52,11 @@ export default function DispatchPage() {
         fetchDossiers()
     }, [])
 
+    // Cleanup scroll lock if user navigates away mid-article
+    useEffect(() => {
+        return () => { document.body.style.overflow = 'unset' }
+    }, [])
+
     const openArticle = (item) => {
         scrollPos.current = window.scrollY
         setSelectedArticle(item)
@@ -110,7 +115,7 @@ export default function DispatchPage() {
                 {/* HEAD & MASTHEAD */}
                 <header className="dispatch-masthead">
                     <div className="masthead-meta">
-                        <span>VOL. 084</span>
+                        <span>VOL. {String(Math.floor((Date.now() - new Date('2026-03-12T00:00:00Z').getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1).padStart(3, '0')}</span>
                         <span className="pulse-dot"></span>
                         <span>{new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }).toUpperCase()}</span>
                     </div>
@@ -168,19 +173,19 @@ export default function DispatchPage() {
 
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--blood-reel)', marginBottom: '0.5rem', opacity: 0.8 }}>
-                                ◉ THIS SATURDAY · 9PM GMT
+                                ◉ TRANSMISSION INCOMING
                             </div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '1.5rem' }}>
-                                THE SOCIETY PRESENTS — NIGHTLY TRANSMISSION №012
+                                THE SOCIETY PRESENTS — NIGHTLY TRANSMISSION №{String(Math.floor((Date.now() - new Date('2026-03-12T00:00:00Z').getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1).padStart(3, '0')}
                             </div>
-                            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3.5rem)', color: 'var(--parchment)', lineHeight: 1, marginBottom: '1rem' }}>
-                                Andrei Rublev
+                            <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3rem)', color: 'var(--parchment)', lineHeight: 1, marginBottom: '1rem', letterSpacing: '0.02em' }}>
+                                To Be Announced
                             </h2>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '1.5rem' }}>
-                                TARKOVSKY · 1966 · 205 MIN
+                                SELECTION DISCLOSED AT TRANSMISSION TIME
                             </div>
                             <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.05rem', lineHeight: 1.7, color: 'var(--bone)', opacity: 0.75, maxWidth: 480, margin: '0 auto 2rem', fontStyle: 'italic' }}>
-                                "Watch independently at the appointed hour. Return to The Reel at 9PM to file your transmission alongside your fellow devotees."
+                                "Watch independently at the appointed hour. Return to The Reel to file your transmission alongside your fellow devotees."
                             </p>
                             <div style={{ display: 'flex', justifyContent: 'center', gap: '1.5rem', flexWrap: 'wrap' }}>
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>

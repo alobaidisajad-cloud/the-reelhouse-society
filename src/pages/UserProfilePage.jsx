@@ -321,6 +321,8 @@ export default function UserProfilePage() {
         { id: 'projector', label: 'Projector Room', count: null },
         { id: 'lists', label: 'Lists', count: profileLists.length },
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
+        { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length > 0 ? profileStubs.length : null },
+        ...(isOwnProfile && currentProgrammes.length >= 0 ? [{ id: 'programmes', label: 'Nightly Programmes', count: currentProgrammes.length > 0 ? currentProgrammes.length : null }] : []),
     ]
 
     return (
@@ -443,7 +445,7 @@ export default function UserProfilePage() {
                                 <SectionHeader label="CHRONOLOGICAL" title="The Ledger" />
                                 {profileLogs.length > 0 && (
                                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ash)' }}>
-                                        {[{ id: 'all', label: 'All Logs' }, { id: 'masterpieces', label: '★★★★★ Masterpieces' }, { id: 'rewatched', label: '↩ Rewatched' }, { id: 'abandoned', label: '✕ Abandoned' }, { id: 'companion', label: '♡ Companions' }].map(s => (
+                                        {[{ id: 'all', label: 'All Logs' }, { id: 'masterpieces', label: '✦✦✦✦✦ Masterpieces' }, { id: 'rewatched', label: '↩ Rewatched' }, { id: 'abandoned', label: '✕ Abandoned' }, { id: 'companion', label: '♡ Companions' }].map(s => (
                                             <button key={s.id} onClick={() => setSieve(s.id)} className={`btn ${sieve === s.id ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', whiteSpace: 'nowrap' }}>{s.label}</button>
                                         ))}
                                     </div>
@@ -512,7 +514,7 @@ export default function UserProfilePage() {
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                                     {ratingBuckets.reverse().map(({ star, count }) => (
                                                         <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--flicker)', width: 28, flexShrink: 0, textAlign: 'right' }}>{'★'.repeat(star)}</div>
+                                                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--flicker)', width: 28, flexShrink: 0, textAlign: 'right' }}>{'✦'.repeat(star)}</div>
                                                             <div style={{ flex: 1, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden' }}><div style={{ height: '100%', borderRadius: 3, width: `${(count / maxRatingCount) * 100}%`, background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', transition: 'width 0.6s ease' }} /></div>
                                                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', width: 20, textAlign: 'right', flexShrink: 0 }}>{count}</div>
                                                         </div>
@@ -534,7 +536,7 @@ export default function UserProfilePage() {
                                             <div className="card" style={{ padding: '1.75rem' }}>
                                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem' }}>CATALOG METRICS</div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-                                                    {[{ label: 'ESTIMATED RUNTIME', value: `${totalHours.toLocaleString()} hrs` }, { label: 'TOTAL FILMS LOGGED', value: profileLogs.length }, { label: 'WATCHLIST QUEUED', value: profileWatchlist.length }, { label: 'LISTS CURATED', value: profileLists.length }, { label: 'RATED 5 STARS', value: profileLogs.filter(l => l.rating === 5).length }, { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length }].map(({ label, value }) => (
+                                                    {[{ label: 'ESTIMATED RUNTIME', value: `${totalHours.toLocaleString()} hrs` }, { label: 'TOTAL FILMS LOGGED', value: profileLogs.length }, { label: 'WATCHLIST QUEUED', value: profileWatchlist.length }, { label: 'LISTS CURATED', value: profileLists.length }, { label: 'RATED 5 REELS', value: profileLogs.filter(l => l.rating === 5).length }, { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length }].map(({ label, value }) => (
                                                         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.5rem' }}>
                                                             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>{label}</span>
                                                             <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)' }}>{value}</span>
@@ -575,6 +577,10 @@ export default function UserProfilePage() {
                                     </>
                                 )}
                             </div>
+                        )}
+
+                        {activeTab === 'programmes' && (
+                            <div><SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" /><ProgrammesSection programmes={currentProgrammes} user={profileUser} /></div>
                         )}
                     </div>
 

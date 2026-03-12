@@ -140,7 +140,7 @@ function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, onRemoveSlot, o
 
 // ── WEEKLY CALENDAR ──
 function getWeekDates(offset = 0) {
-    const now = new Date('2026-03-08T12:00:00') // anchored to current date
+    const now = new Date()
     const day = now.getDay()
     const monday = new Date(now)
     monday.setDate(now.getDate() - (day === 0 ? 6 : day - 1) + offset * 7)
@@ -194,7 +194,7 @@ function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdate
                 <div className="hide-scroll" style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, minmax(260px, 1fr))', gap: '0.75rem', overflowX: 'auto', scrollSnapType: 'x mandatory', paddingBottom: '1rem', WebkitOverflowScrolling: 'touch' }}>
                     {weekDates.map((date, di) => {
                         const films = byDate[date] || []
-                        const isToday = date === '2026-03-08'
+                        const isToday = date === new Date().toISOString().slice(0, 10)
                         return (
                             <div key={date} style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', minHeight: 120, scrollSnapAlign: 'start' }}>
                                 {/* Day header */}
