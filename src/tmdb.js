@@ -3,7 +3,7 @@ const TMDB_BASE = 'https://api.themoviedb.org/3'
 const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
 // API key must be set in .env.local as VITE_TMDB_API_KEY
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY
+const API_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
 if (!API_KEY && import.meta.env.MODE !== 'test') {
     console.error('[ReelHouse] VITE_TMDB_API_KEY is not set. Add it to .env.local')
 }
