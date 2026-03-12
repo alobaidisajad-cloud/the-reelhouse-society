@@ -44,6 +44,7 @@ export default function Footer() {
                             { to: '/discover', label: 'The Darkroom' },
                             { to: '/feed', label: 'The Reel' },
                             { to: '/stacks', label: 'The Stacks' },
+                            { to: '/cinemas', label: 'The Cinemas' },
                             { to: '/society', label: 'The Society' },
                         ].map(({ to, label, end }) => (
                             <NavLink key={to} to={to} end={end} style={({ isActive }) => ({

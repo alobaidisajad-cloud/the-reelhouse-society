@@ -5,53 +5,15 @@ import { SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
 import { Plus, Lock, Globe, Search as SearchIcon, X } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 
 // Detect touch/mobile once at module level
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
-const COMMUNITY_LISTS = [
-    {
-        id: 'c1', title: 'Films That Rewired My Brain', user: 'the_archivist_84',
-        desc: 'Before and after. You will not be the same.',
-        films: [
-            { id: 238, title: 'The Godfather', poster_path: '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg' },
-            { id: 372058, title: 'Your Name', poster_path: '/q719jXXEzOoYaps6babgKnONONX.jpg' },
-            { id: 12477, title: 'Grave of the Fireflies', poster_path: '/k9tv1rXZbOhH7eiCk378x61kNQ1.jpg' },
-        ],
-        count: 12,
-    },
-    {
-        id: 'c2', title: 'Midnight Horror Essentials', user: 'midnight_devotee',
-        desc: 'Do not watch alone. Or do. That might be worse.',
-        films: [
-            { id: 694, title: 'The Shining', poster_path: '/nRj5511mZdTl4saWEPoj9QroTIu.jpg' },
-            { id: 346364, title: 'IT', poster_path: '/9E2y5Q7WlCVNEhP5GkVhjr85HCN.jpg' },
-            { id: 299536, title: 'Avengers', poster_path: '/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg' },
-        ],
-        count: 34,
-    },
-    {
-        id: 'c3', title: 'Films for When You Need to Cry', user: 'weeper_in_the_dark',
-        desc: 'A curated destruction of your emotional composure.',
-        films: [
-            { id: 12477, title: 'Grave of the Fireflies', poster_path: '/k9tv1rXZbOhH7eiCk378x61kNQ1.jpg' },
-            { id: 372058, title: 'Your Name', poster_path: '/q719jXXEzOoYaps6babgKnONONX.jpg' },
-            { id: 120467, title: 'Budapest', poster_path: '/eWdyYQreja6JGCzqHWXpWHDrrPo.jpg' },
-        ],
-        count: 8,
-    },
-    {
-        id: 'c4', title: 'Underrated Crime Masterpieces', user: 'contrarian_rex',
-        desc: 'Not Heat. Not Godfather. The ones they forgot.',
-        films: [
-            { id: 590, title: 'The Hours', poster_path: '/4myDtowDJQPQnkEDB1IWGtJR1Fo.jpg' },
-            { id: 238, title: 'The Godfather', poster_path: '/3bhkrj58Vtu7enYsRolD1fZdja1.jpg' },
-            { id: 12477, title: 'Grave of the Fireflies', poster_path: '/k9tv1rXZbOhH7eiCk378x61kNQ1.jpg' },
-        ],
-        count: 19,
-    },
-]
+// Community lists are fetched live from Supabase
+
 
 function UnbreakablePoster({ posterPath, title, isTop }) {
     const [failed, setFailed] = useState(!posterPath)
@@ -277,7 +239,28 @@ export default function ListsPage() {
     const [showCreate, setShowCreate] = useState(false)
     const [query, setQuery] = useState('')
 
-    // Smart filtering logic
+    // Fetch ALL public lists from Supabase
+    const { data: communityLists = [], isLoading: communityLoading } = useQuery({
+        queryKey: ['public-lists'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('lists')
+                .select(`id, title, description, created_at, profiles:user_id(username), list_items(film_id, film_title)`)
+                .order('created_at', { ascending: false })
+                .limit(30)
+            if (error || !data) return []
+            return data.map(l => ({
+                id: l.id,
+                title: l.title,
+                desc: l.description || '',
+                user: l.profiles?.username || 'anonymous',
+                films: (l.list_items || []).map(item => ({ id: item.film_id, title: item.film_title, poster_path: null })),
+                count: (l.list_items || []).length,
+            }))
+        },
+        staleTime: 1000 * 60 * 2,
+    })
+
     const filterLists = (listArray) => {
         if (!query.trim()) return listArray
         const q = query.toLowerCase()
@@ -290,7 +273,7 @@ export default function ListsPage() {
     }
 
     const filteredMyLists = filterLists(lists)
-    const filteredCommunity = filterLists(COMMUNITY_LISTS)
+    const filteredCommunity = filterLists(communityLists)
 
     return (
         <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>

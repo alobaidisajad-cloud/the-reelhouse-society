@@ -155,7 +155,7 @@ export default function App() {
   }, [])
 
   // ── Global Keyboard Shortcuts ──
-  // L = log a film, / = search, I = import from Letterboxd
+  // L = log a film, ? = handbook, I = import from Letterboxd
   useEffect(() => {
     const handler = (e) => {
       // Ignore when user is typing in an input, textarea, or contenteditable

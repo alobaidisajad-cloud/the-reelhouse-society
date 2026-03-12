@@ -1,101 +1,18 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, MapPin, Star, Filter, X, Navigation, Users, Check } from 'lucide-react'
-import { useAuthStore, useCinemaReviewStore, useUIStore, useVenueStore } from '../store'
+import { Search, MapPin, Star, Filter, X, Check, Building2, ArrowRight } from 'lucide-react'
+import { useAuthStore, useCinemaReviewStore, useUIStore } from '../store'
+import { supabase } from '../supabaseClient'
+import { useQuery } from '@tanstack/react-query'
+import { LoadingReel } from '../components/UI'
 import toast from 'react-hot-toast'
 
-// ── CINEMA DATABASE ──
-const ALL_CINEMAS = [
-    {
-        id: 1, name: 'The Oracle Palace', city: 'Brooklyn', country: 'USA', location: 'Brooklyn, NY, USA',
-        description: 'Established in 1934 in a converted Masonic lodge. We believe cinema is not entertainment — it is ritual.',
-        vibes: ['Arthouse', 'Midnight Palace', 'Repertory'], verified: true, followers: 1247,
-        lat: 40.6782, lng: -73.9442,
-        nextShow: 'Nosferatu (1922) — Fri 11PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23130e07'/%3E%3Cstop offset='1' stop-color='%232a1f0a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 2, name: 'Lighthouse Cinema', city: 'Austin', country: 'USA', location: 'Austin, TX, USA',
-        description: 'Showing the films your local multiplex is afraid of. We program for the curious and the adventurous.',
-        vibes: ['Indie', 'Repertory', 'Arthouse'], verified: false, followers: 892,
-        lat: 30.2672, lng: -97.7431,
-        nextShow: 'Akira (1988) — Sat 7:30PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230a0f1a'/%3E%3Cstop offset='1' stop-color='%231a2535'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 3, name: 'The Neon Coffin', city: 'Chicago', country: 'USA', location: 'Chicago, IL, USA',
-        description: 'We only show horror. We never apologize for it.',
-        vibes: ['Horror House', 'Drive-In'], verified: true, followers: 2103,
-        lat: 41.8781, lng: -87.6298,
-        nextShow: 'Deep Red (1975) — Fri 10:30PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230f0303'/%3E%3Cstop offset='1' stop-color='%231a0808'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 4, name: 'La Cinémathèque Noir', city: 'Paris', country: 'France', location: 'Paris, France',
-        description: 'The last custodians of pre-war French cinema. Our archive holds 4,000 prints. We screen three per week.',
-        vibes: ['Arthouse', 'Historic', 'Repertory'], verified: true, followers: 5821,
-        lat: 48.8566, lng: 2.3522,
-        nextShow: 'Breathless (1960) — Thu 8PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230d0d0d'/%3E%3Cstop offset='1' stop-color='%23271c0a'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 5, name: 'Electric Sheep Cinema', city: 'London', country: 'UK', location: 'London, UK',
-        description: 'Sci-fi, surrealism, and the uncanny. If it makes you doubt reality, it belongs on our screen.',
-        vibes: ['Indie', 'Experimental', 'Arthouse'], verified: true, followers: 3340,
-        lat: 51.5074, lng: -0.1278,
-        nextShow: '2001: A Space Odyssey — Sat 9PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230a0a1f'/%3E%3Cstop offset='1' stop-color='%23101030'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 6, name: 'Phantom Projector', city: 'Los Angeles', country: 'USA', location: 'Los Angeles, CA, USA',
-        description: 'Where Hollywood golden-age classics meet underground midnight screenings. A temple to celluloid.',
-        vibes: ['Historic', 'Midnight Palace', 'Repertory'], verified: true, followers: 4102,
-        lat: 34.0522, lng: -118.2437,
-        nextShow: 'Sunset Blvd. (1950) — Fri 8PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%231a1205'/%3E%3Cstop offset='1' stop-color='%23241900'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 7, name: 'The Midnight Archive', city: 'Tokyo', country: 'Japan', location: 'Tokyo, Japan',
-        description: 'Seijun Suzuki, Teshigahara, Imamura. We show the Japanese masters the West forgot to translate.',
-        vibes: ['Arthouse', 'Experimental', 'Repertory'], verified: false, followers: 1890,
-        lat: 35.6762, lng: 139.6503,
-        nextShow: 'Woman in the Dunes — Sun 7PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230a1010'/%3E%3Cstop offset='1' stop-color='%23061818'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 8, name: 'Drive-In Americana', city: 'Nashville', country: 'USA', location: 'Nashville, TN, USA',
-        description: 'The last authentic drive-in within 200 miles. Bring a blanket. We will bring the magic.',
-        vibes: ['Drive-In', 'Family', 'Historic'], verified: false, followers: 678,
-        lat: 36.1627, lng: -86.7816,
-        nextShow: 'Grease (1978) — Sat Dusk',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%2308080f'/%3E%3Cstop offset='1' stop-color='%23141428'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 9, name: 'The Vault Cinema', city: 'Berlin', country: 'Germany', location: 'Berlin, Germany',
-        description: 'Former cold war bunker converted into a subterranean screening room. The acoustics are extraordinary.',
-        vibes: ['Experimental', 'Arthouse', 'Indie'], verified: true, followers: 2760,
-        lat: 52.5200, lng: 13.4050,
-        nextShow: 'Stalker (1979) — Fri 10PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%230c0c0c'/%3E%3Cstop offset='1' stop-color='%23181818'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-    {
-        id: 10, name: 'IMAX Citadel', city: 'New York', country: 'USA', location: 'New York, NY, USA',
-        description: 'The largest IMAX screen on the eastern seaboard. For films that demand to be felt in your chest.',
-        vibes: ['IMAX', 'Historic'], verified: true, followers: 8902,
-        lat: 40.7128, lng: -74.0060,
-        nextShow: '2001: A Space Odyssey — Sat 2PM',
-        image: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1200' height='800'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23060613'/%3E%3Cstop offset='1' stop-color='%230d0d24'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect fill='url(%23g)' width='1200' height='800'/%3E%3C/svg%3E",
-    },
-]
-
-const ALL_VIBES = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace', 'Repertory', 'Horror House', 'Indie', 'Experimental', 'Family']
-const ALL_COUNTRIES = [...new Set(ALL_CINEMAS.map(c => c.country))].sort()
-
+// ── STAR RATING ──
 function StarRating({ value, onChange, readonly = false, size = 20 }) {
     const [hovered, setHovered] = useState(0)
     return (
-        <div style={{ display: 'flex', gap: '0.2rem' }}>
+        <div style={{ display: 'flex', gap: 3 }}>
             {[1, 2, 3, 4, 5].map(star => (
                 <Star
                     key={star}
@@ -112,8 +29,20 @@ function StarRating({ value, onChange, readonly = false, size = 20 }) {
     )
 }
 
+// ── CINEMA CARD ──
 function CinemaCard({ cinema, avgRating, reviewCount }) {
-    const [imgFailed, setImgFailed] = useState(false)
+    const [imgFailed, setImgFailed] = useState(!cinema.image)
+
+    // deterministic gradient from name
+    const gradients = [
+        'linear-gradient(135deg, #130e07 0%, #2a1f0a 100%)',
+        'linear-gradient(135deg, #0a0a14 0%, #101030 100%)',
+        'linear-gradient(135deg, #0f0303 0%, #1a0808 100%)',
+        'linear-gradient(135deg, #080f0a 0%, #0d2010 100%)',
+        'linear-gradient(135deg, #0c0c0c 0%, #181818 100%)',
+    ]
+    const grad = gradients[(cinema.name?.charCodeAt(0) || 0) % gradients.length]
+
     return (
         <motion.div
             whileHover={{ y: -6 }}
@@ -128,14 +57,14 @@ function CinemaCard({ cinema, avgRating, reviewCount }) {
         >
             {/* Cover Image */}
             <div style={{ height: 180, overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
-                {!imgFailed ? (
+                {!imgFailed && cinema.image ? (
                     <img
                         src={cinema.image} alt={cinema.name}
                         onError={() => setImgFailed(true)}
                         style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.7) sepia(0.3)', transition: 'transform 0.5s' }}
                     />
                 ) : (
-                    <div style={{ width: '100%', height: '100%', background: 'var(--soot)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '100%', height: '100%', background: grad, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <span style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--sepia)', opacity: 0.3 }}>⬡</span>
                     </div>
                 )}
@@ -151,14 +80,14 @@ function CinemaCard({ cinema, avgRating, reviewCount }) {
             <div style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: 1 }}>
                 <div>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.3rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                        <MapPin size={8} /> {cinema.location}
+                        <MapPin size={8} /> {cinema.location || 'Location TBC'}
                     </div>
                     <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', color: 'var(--parchment)', lineHeight: 1.1 }}>
                         {cinema.name}
                     </h3>
                 </div>
 
-                {/* Star Rating */}
+                {/* Rating */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <StarRating value={Math.round(avgRating)} readonly size={14} />
                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
@@ -167,23 +96,22 @@ function CinemaCard({ cinema, avgRating, reviewCount }) {
                 </div>
 
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--fog)', lineHeight: 1.6, flex: 1 }}>
-                    {cinema.description.slice(0, 90)}...
+                    {(cinema.description || '').slice(0, 100)}{cinema.description?.length > 100 ? '…' : ''}
                 </p>
 
                 {/* Vibes */}
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                    {cinema.vibes.slice(0, 3).map(v => (
-                        <span key={v} className="tag tag-vibe" style={{ fontSize: '0.48rem', padding: '2px 6px' }}>⟡ {v}</span>
-                    ))}
-                </div>
-
-                {/* Next Show + Link */}
-                <div style={{ paddingTop: '0.75rem', borderTop: '1px solid var(--ash)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: 'var(--bone)' }}>
-                        ▶ {cinema.nextShow}
+                {cinema.vibes?.length > 0 && (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                        {cinema.vibes.slice(0, 3).map(v => (
+                            <span key={v} className="tag tag-vibe" style={{ fontSize: '0.48rem', padding: '2px 6px' }}>⟡ {v}</span>
+                        ))}
                     </div>
-                    <Link to={`/venue/${cinema.id}`} className="btn btn-primary" style={{ fontSize: '0.55rem', padding: '0.25em 0.8em', whiteSpace: 'nowrap' }}>
-                        Enter
+                )}
+
+                {/* Footer — venue link */}
+                <div style={{ paddingTop: '0.75rem', borderTop: '1px solid var(--ash)', display: 'flex', justifyContent: 'flex-end' }}>
+                    <Link to={`/venue/${cinema.id}`} className="btn btn-primary" style={{ fontSize: '0.55rem', padding: '0.25em 0.8em', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                        Enter <ArrowRight size={10} />
                     </Link>
                 </div>
             </div>
@@ -191,21 +119,24 @@ function CinemaCard({ cinema, avgRating, reviewCount }) {
     )
 }
 
+// ── REVIEW MODAL ──
 function ReviewModal({ cinema, onClose }) {
     const { user, isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
-    const { addReview, reviews: allReviews } = useCinemaReviewStore()
+    const { addReview, reviews: allReviews, fetchReviews } = useCinemaReviewStore()
     const cinemaReviews = allReviews[cinema.id] || []
 
     const [myRating, setMyRating] = useState(0)
     const [myReview, setMyReview] = useState('')
 
-    const handleSubmit = (e) => {
+    useEffect(() => { fetchReviews(cinema.id) }, [cinema.id])
+
+    const handleSubmit = async (e) => {
         e.preventDefault()
         if (!isAuthenticated) { openSignupModal(); return }
         if (!myRating) { toast.error('Please select a star rating first'); return }
-        addReview(cinema.id, { username: user.username, rating: myRating, review: myReview.trim() })
-        toast.success('Review submitted')
+        await addReview(cinema.id, cinema.name, { username: user.username, rating: myRating, review: myReview.trim() })
+        toast.success('Review submitted to the archive')
         setMyRating(0); setMyReview('')
     }
 
@@ -219,15 +150,13 @@ function ReviewModal({ cinema, onClose }) {
                 onClick={e => e.stopPropagation()}
                 style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', width: '100%', maxWidth: 560, maxHeight: '90vh', overflowY: 'auto', borderRadius: '2px', position: 'relative' }}
             >
-                {/* Header */}
-                <div style={{ padding: '1.5rem 1.5rem 0', position: 'sticky', top: 0, background: 'var(--soot)', borderBottom: '1px solid var(--ash)', paddingBottom: '1rem', zIndex: 1 }}>
+                <div style={{ padding: '1.5rem 1.5rem 1rem', position: 'sticky', top: 0, background: 'var(--soot)', borderBottom: '1px solid var(--ash)', zIndex: 1 }}>
                     <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}><X size={20} /></button>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.25rem' }}>REVIEWS & RATINGS</div>
                     <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)' }}>{cinema.name}</h2>
                 </div>
 
                 <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                    {/* Write Review */}
                     <div style={{ background: 'var(--ink)', border: '1px solid var(--ash)', padding: '1.25rem' }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem' }}>LEAVE YOUR VERDICT</div>
                         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -252,7 +181,6 @@ function ReviewModal({ cinema, onClose }) {
                         </form>
                     </div>
 
-                    {/* Existing Reviews */}
                     <div>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem' }}>
                             {cinemaReviews.length} CRITIQUE{cinemaReviews.length !== 1 ? 'S' : ''} FROM THE COMMUNITY
@@ -290,9 +218,9 @@ function ReviewModal({ cinema, onClose }) {
     )
 }
 
+// ── MAIN PAGE ──
 export default function CinemasPage() {
-    const { reviews: allReviews } = useCinemaReviewStore()
-    const liveVenue = useVenueStore(s => s.venue)
+    const { reviews: allReviews, fetchReviews } = useCinemaReviewStore()
 
     const getAvg = (id) => {
         const r = allReviews[id] || []
@@ -300,100 +228,65 @@ export default function CinemasPage() {
     }
 
     const [query, setQuery] = useState('')
-    const [selectedCountry, setSelectedCountry] = useState('')
-    const [selectedCity, setSelectedCity] = useState('')
     const [selectedVibes, setSelectedVibes] = useState([])
     const [minRating, setMinRating] = useState(0)
-    const [sortBy, setSortBy] = useState('followers') // 'followers' | 'rating' | 'name'
+    const [sortBy, setSortBy] = useState('newest')
     const [showFilters, setShowFilters] = useState(false)
-    const [locating, setLocating] = useState(false)
-    const [activeCity, setActiveCity] = useState('')
     const [reviewModal, setReviewModal] = useState(null)
 
-    const cities = useMemo(() => {
-        const filtered = selectedCountry ? ALL_CINEMAS.filter(c => c.country === selectedCountry) : ALL_CINEMAS
-        return [...new Set(filtered.map(c => c.city))].sort()
-    }, [selectedCountry])
+    // Fetch ALL venues from Supabase (not just owner's)
+    const { data: venues = [], isLoading } = useQuery({
+        queryKey: ['all-venues'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('venues')
+                .select('*')
+                .order('created_at', { ascending: false })
+            return data || []
+        },
+        staleTime: 1000 * 60 * 5,
+    })
+
+    // Fetch reviews for each loaded venue
+    useEffect(() => {
+        venues.forEach(v => { if (!allReviews[v.id]) fetchReviews(v.id) })
+    }, [venues])
+
+    // Derive unique vibes from real venue data
+    const allVibes = useMemo(() => {
+        const vibeSet = new Set()
+        venues.forEach(v => (v.vibes || []).forEach(vibe => vibeSet.add(vibe)))
+        return [...vibeSet].sort()
+    }, [venues])
 
     const toggleVibe = (v) => setSelectedVibes(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
 
-    const cinemas = useMemo(() => {
-        return ALL_CINEMAS.map(c => {
-            if (c.id === 1) {
-                return {
-                    ...c,
-                    name: liveVenue.name || c.name,
-                    description: liveVenue.bio || liveVenue.description || c.description,
-                    vibes: liveVenue.vibes?.length ? liveVenue.vibes : c.vibes,
-                    location: liveVenue.location || c.location,
-                    image: liveVenue.logo || c.image,
-                }
-            }
-            return c
-        })
-    }, [liveVenue])
-
     const filtered = useMemo(() => {
-        let list = [...cinemas]
+        let list = [...venues]
         if (query.trim()) {
             const q = query.toLowerCase()
             list = list.filter(c =>
-                c.name.toLowerCase().includes(q) ||
-                c.city.toLowerCase().includes(q) ||
-                c.location.toLowerCase().includes(q) ||
-                c.vibes.some(v => v.toLowerCase().includes(q))
+                (c.name || '').toLowerCase().includes(q) ||
+                (c.location || '').toLowerCase().includes(q) ||
+                (c.vibes || []).some(v => v.toLowerCase().includes(q))
             )
         }
-        if (selectedCountry) list = list.filter(c => c.country === selectedCountry)
-        if (selectedCity || activeCity) list = list.filter(c => c.city === (selectedCity || activeCity))
-        if (selectedVibes.length) list = list.filter(c => selectedVibes.every(v => c.vibes.includes(v)))
+        if (selectedVibes.length) list = list.filter(c => selectedVibes.every(v => (c.vibes || []).includes(v)))
         if (minRating > 0) list = list.filter(c => getAvg(c.id) >= minRating)
         list.sort((a, b) => {
             if (sortBy === 'rating') return getAvg(b.id) - getAvg(a.id)
-            if (sortBy === 'name') return a.name.localeCompare(b.name)
-            return b.followers - a.followers
+            if (sortBy === 'name') return (a.name || '').localeCompare(b.name || '')
+            return 0 // 'newest' already sorted by Supabase
         })
         return list
-    }, [query, selectedCountry, selectedCity, selectedVibes, minRating, sortBy, allReviews, activeCity, cinemas])
+    }, [venues, query, selectedVibes, minRating, sortBy, allReviews])
 
-    const handleNearMe = () => {
-        if (!navigator.geolocation) { toast.error('Geolocation not supported on this browser'); return }
-        setLocating(true)
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                // Find nearest cinema by Haversine distance
-                const { latitude, longitude } = pos.coords
-                let nearest = null, minDist = Infinity
-                ALL_CINEMAS.forEach(c => {
-                    const R = 6371
-                    const dLat = (c.lat - latitude) * Math.PI / 180
-                    const dLng = (c.lng - longitude) * Math.PI / 180
-                    const a = Math.sin(dLat / 2) ** 2 + Math.cos(latitude * Math.PI / 180) * Math.cos(c.lat * Math.PI / 180) * Math.sin(dLng / 2) ** 2
-                    const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
-                    if (dist < minDist) { minDist = dist; nearest = c }
-                })
-                setLocating(false)
-                if (nearest) {
-                    setActiveCity(nearest.city)
-                    setSelectedCity(nearest.city)
-                    toast.success(`Nearest cinema city: ${nearest.city}`)
-                }
-            },
-            () => {
-                setLocating(false)
-                toast.error('Could not get your location. Please search manually.')
-            },
-            { timeout: 8000 }
-        )
-    }
-
-    const clearFilters = () => {
-        setQuery(''); setSelectedCountry(''); setSelectedCity(''); setSelectedVibes([]); setMinRating(0); setActiveCity('')
-    }
-    const hasFilters = query || selectedCountry || selectedCity || selectedVibes.length > 0 || minRating > 0
+    const hasFilters = query || selectedVibes.length > 0 || minRating > 0
+    const clearFilters = () => { setQuery(''); setSelectedVibes([]); setMinRating(0) }
 
     return (
         <div style={{ minHeight: '100vh', paddingTop: 70 }}>
+
             {/* Page Header */}
             <div style={{ background: 'var(--soot)', borderBottom: '1px solid var(--ash)', padding: '3rem 0 0' }}>
                 <div className="container">
@@ -407,34 +300,27 @@ export default function CinemasPage() {
                         Discover independent cinemas, check showtimes, and read critiques from The ReelHouse Society community.
                     </p>
 
-                    {/* Search */}
+                    {/* Search Row */}
                     <div className="cinemas-search-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', paddingBottom: '1.5rem' }}>
                         <div style={{ flex: 1, minWidth: 240, position: 'relative', display: 'flex', alignItems: 'center' }}>
                             <Search size={16} style={{ position: 'absolute', left: '0.75rem', color: 'var(--fog)', pointerEvents: 'none' }} />
                             <input
                                 className="input"
-                                placeholder="Search cinema name, city, or vibe..."
+                                placeholder="Search cinema name, location, or vibe..."
                                 value={query}
                                 onChange={e => setQuery(e.target.value)}
                                 style={{ paddingLeft: '2.5rem' }}
                             />
                         </div>
-                        <button
-                            className={`btn ${locating ? 'btn-ghost' : 'btn-ghost'}`}
-                            onClick={handleNearMe}
-                            disabled={locating}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                        >
-                            <Navigation size={14} style={{ animation: locating ? 'pulse 1s infinite' : 'none' }} />
-                            {locating ? 'Locating...' : 'Near Me'}
-                        </button>
-                        <button
-                            className={`btn ${showFilters ? 'btn-primary' : 'btn-ghost'}`}
-                            onClick={() => setShowFilters(v => !v)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                        >
-                            <Filter size={14} /> Filters {selectedVibes.length + (selectedCountry ? 1 : 0) + (minRating ? 1 : 0) > 0 && `(${selectedVibes.length + (selectedCountry ? 1 : 0) + (minRating ? 1 : 0)})`}
-                        </button>
+                        {allVibes.length > 0 && (
+                            <button
+                                className={`btn ${showFilters ? 'btn-primary' : 'btn-ghost'}`}
+                                onClick={() => setShowFilters(v => !v)}
+                                style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                            >
+                                <Filter size={14} /> Filters {selectedVibes.length + (minRating ? 1 : 0) > 0 && `(${selectedVibes.length + (minRating ? 1 : 0)})`}
+                            </button>
+                        )}
                         {hasFilters && (
                             <button className="btn btn-ghost" onClick={clearFilters} style={{ color: 'var(--fog)', fontSize: '0.65rem' }}>
                                 <X size={14} /> Clear
@@ -446,7 +332,7 @@ export default function CinemasPage() {
 
             {/* Filter Panel */}
             <AnimatePresence>
-                {showFilters && (
+                {showFilters && allVibes.length > 0 && (
                     <motion.div
                         initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
                         style={{ background: 'var(--ink)', borderBottom: '1px solid var(--ash)', overflow: 'hidden' }}
@@ -454,23 +340,9 @@ export default function CinemasPage() {
                         <div className="container" style={{ padding: '1.5rem 0', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
                                 <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>COUNTRY</div>
-                                    <select className="input" value={selectedCountry} onChange={e => { setSelectedCountry(e.target.value); setSelectedCity('') }}>
-                                        <option value="">All Countries</option>
-                                        {ALL_COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                </div>
-                                <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>CITY</div>
-                                    <select className="input" value={selectedCity} onChange={e => setSelectedCity(e.target.value)}>
-                                        <option value="">All Cities</option>
-                                        {cities.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                </div>
-                                <div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>SORT BY</div>
                                     <select className="input" value={sortBy} onChange={e => setSortBy(e.target.value)}>
-                                        <option value="followers">Most Followed</option>
+                                        <option value="newest">Newest First</option>
                                         <option value="rating">Highest Rated</option>
                                         <option value="name">Name A→Z</option>
                                     </select>
@@ -483,11 +355,10 @@ export default function CinemasPage() {
                                     </div>
                                 </div>
                             </div>
-
                             <div>
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>VIBE TAGS</div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                    {ALL_VIBES.map(v => (
+                                    {allVibes.map(v => (
                                         <button key={v} type="button"
                                             className={`tag ${selectedVibes.includes(v) ? 'tag-flicker' : 'tag-vibe'}`}
                                             onClick={() => toggleVibe(v)} style={{ cursor: 'pointer' }}
@@ -502,47 +373,77 @@ export default function CinemasPage() {
 
             {/* Results */}
             <main className="container" style={{ paddingTop: '2.5rem', paddingBottom: '6rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
-                        {filtered.length} CINEMA{filtered.length !== 1 ? 'S' : ''} {hasFilters ? 'MATCHING FILTERS' : 'IN THE ATLAS'}
-                    </div>
-                </div>
 
-                {filtered.length === 0 ? (
-                    <div style={{ textAlign: 'center', padding: '5rem 2rem', border: '1px dashed var(--ash)' }}>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--sepia)', marginBottom: '0.75rem' }}>No Temples Found</div>
-                        <p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)', fontSize: '0.85rem' }}>Try adjusting your search or filters.</p>
-                        <button className="btn btn-ghost" onClick={clearFilters} style={{ marginTop: '1.5rem' }}>Clear all filters</button>
+                {isLoading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '5rem' }}>
+                        <LoadingReel />
+                    </div>
+                ) : venues.length === 0 && !hasFilters ? (
+                    /* Empty state — no venues in DB yet */
+                    <div style={{ textAlign: 'center', padding: '6rem 1rem', border: '1px dashed rgba(139,105,20,0.2)', borderRadius: '2px', maxWidth: 560, margin: '0 auto' }}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: 'var(--sepia)', marginBottom: '1rem', lineHeight: 1.1 }}>
+                            The Atlas Awaits Its<br />First Guardians
+                        </div>
+                        <p style={{ fontFamily: 'var(--font-sub)', fontSize: '1rem', color: 'var(--fog)', lineHeight: 1.6, maxWidth: 380, margin: '0 auto 2rem' }}>
+                            No cinemas have joined the archive yet. If you run an independent venue, claim your place on the map.
+                        </p>
+                        <Link to="/venue-dashboard" className="btn btn-primary" style={{ padding: '0.8rem 2.5rem', letterSpacing: '0.2em' }}>
+                            <Building2 size={14} /> Register Your Venue
+                        </Link>
                     </div>
                 ) : (
-                    <motion.div layout style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
-                        <AnimatePresence>
-                            {filtered.map((cinema, i) => {
-                                const avg = getAvg(cinema.id)
-                                const count = (allReviews[cinema.id] || []).length
-                                return (
-                                    <motion.div
-                                        key={cinema.id}
-                                        layout
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        exit={{ opacity: 0, scale: 0.95 }}
-                                        transition={{ duration: 0.2 }}
-                                        style={{ display: 'flex', flexDirection: 'column' }}
-                                    >
-                                        <CinemaCard cinema={cinema} avgRating={avg} reviewCount={count} />
-                                        <button
-                                            onClick={() => setReviewModal(cinema)}
-                                            className="btn btn-ghost"
-                                            style={{ borderTop: 'none', borderRadius: 0, fontSize: '0.58rem', justifyContent: 'center', letterSpacing: '0.15em', gap: '0.35rem' }}
-                                        >
-                                            <Star size={11} /> Read / Write Reviews
-                                        </button>
-                                    </motion.div>
-                                )
-                            })}
-                        </AnimatePresence>
-                    </motion.div>
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
+                                {filtered.length} CINEMA{filtered.length !== 1 ? 'S' : ''} {hasFilters ? 'MATCHING FILTERS' : 'IN THE ATLAS'}
+                            </div>
+                        </div>
+
+                        {filtered.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '5rem 2rem', border: '1px dashed var(--ash)' }}>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--sepia)', marginBottom: '0.75rem' }}>No Temples Found</div>
+                                <p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)', fontSize: '0.85rem' }}>Try adjusting your search or filters.</p>
+                                <button className="btn btn-ghost" onClick={clearFilters} style={{ marginTop: '1.5rem' }}>Clear all filters</button>
+                            </div>
+                        ) : (
+                            <motion.div layout style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                                <AnimatePresence>
+                                    {filtered.map((cinema, i) => {
+                                        const avg = getAvg(cinema.id)
+                                        const count = (allReviews[cinema.id] || []).length
+                                        const mapped = {
+                                            id: cinema.id,
+                                            name: cinema.name,
+                                            location: cinema.location,
+                                            description: cinema.description || cinema.bio,
+                                            vibes: cinema.vibes || [],
+                                            verified: cinema.verified || false,
+                                            image: cinema.logo || null,
+                                        }
+                                        return (
+                                            <motion.div
+                                                key={cinema.id} layout
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                transition={{ duration: 0.2, delay: i * 0.04 }}
+                                                style={{ display: 'flex', flexDirection: 'column' }}
+                                            >
+                                                <CinemaCard cinema={mapped} avgRating={avg} reviewCount={count} />
+                                                <button
+                                                    onClick={() => setReviewModal(mapped)}
+                                                    className="btn btn-ghost"
+                                                    style={{ borderTop: 'none', borderRadius: 0, fontSize: '0.58rem', justifyContent: 'center', letterSpacing: '0.15em', gap: '0.35rem' }}
+                                                >
+                                                    <Star size={11} /> Read / Write Reviews
+                                                </button>
+                                            </motion.div>
+                                        )
+                                    })}
+                                </AnimatePresence>
+                            </motion.div>
+                        )}
+                    </>
                 )}
             </main>
 

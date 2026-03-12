@@ -27,7 +27,7 @@ const IconArrowRight = () => (
 
 export default function DispatchPage() {
     const { user } = useAuthStore()
-    const { dossiers, addDossier } = useDispatchStore()
+    const { dossiers, addDossier, fetchDossiers } = useDispatchStore()
     const [news, setNews] = useState([])
     const [loading, setLoading] = useState(true)
     const [selectedArticle, setSelectedArticle] = useState(null)
@@ -49,6 +49,7 @@ export default function DispatchPage() {
             setLoading(false)
         }
         fetchNews()
+        fetchDossiers()
     }, [])
 
     const openArticle = (item) => {
@@ -111,7 +112,7 @@ export default function DispatchPage() {
                     <div className="masthead-meta">
                         <span>VOL. 084</span>
                         <span className="pulse-dot"></span>
-                        <span>MARCH 07, 2026</span>
+                        <span>{new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }).toUpperCase()}</span>
                     </div>
                     <h1 className="masthead-title">THE DISPATCH</h1>
                     <div className="masthead-subtitle">The official newsletter of The ReelHouse Society Underground.</div>

@@ -60,14 +60,17 @@ function CommunityReviews({ filmId }) {
         })
     }
 
-    if (reviews.length === 0) {
-        reviews.push({ author: 'the_society', authorDisplay: 'the_society', persona: 'The ReelHouse Society', rating: 0, text: 'No reviews yet. Be the first to share your thoughts on this film.' })
-    }
+    const noReviews = reviews.length === 0
 
     return (
         <div>
             <SectionHeader label="FROM THE CRITICS" title="Community Reviews" />
-            {reviews.map((r, i) => (
+            {noReviews ? (
+                <div style={{ padding: '2rem', border: '1px dashed rgba(139,105,20,0.2)', borderRadius: '2px', textAlign: 'center' }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>The projection box awaits.</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic' }}>No transmissions yet. Log this film to be the first voice in the archive.</div>
+                </div>
+            ) : reviews.map((r, i) => (
                 <div key={r.author + i} className="review-manuscript" style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <div>
@@ -109,7 +112,7 @@ function DossierExportModal({ film, log, onClose }) {
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem', borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.3rem' }}>REELHOUSE · DECLASSIFIED</div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 5vw, 2.8rem)', color: 'var(--parchment)', lineHeight: 1, margin: '0 0 0.5rem 0' }}>{film.title}</h2>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', marginBottom: '1rem' }}>{film.release_date?.slice(0, 4)} · DIR. {film.credits?.crew?.find(c => c.job === 'Director')?.name?.toUpperCase()}</div>
-                        {log.rating > 0 && <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.1rem', color: 'var(--flicker)', marginBottom: '1rem' }}>{'★'.repeat(Math.round(log.rating))}{'☆'.repeat(5 - Math.round(log.rating))}</div>}
+                        {log.rating > 0 && <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.1rem', color: 'var(--flicker)', marginBottom: '1rem', letterSpacing: '0.1em' }}>{'✦'.repeat(Math.round(log.rating))}{'·'.repeat(5 - Math.round(log.rating))}</div>}
                         <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 8, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>"{log.review || "Classified Analysis"}"</p>
                     </div>
                 </div>
@@ -685,7 +688,6 @@ export default function FilmDetailPage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const location = useLocation()
-    const [trailerKey, setTrailerKey] = useState(null)
     const [activeVideo, setActiveVideo] = useState(null)
 
     // Single handler — both the hero play button and FilmDetails video pickers route here
@@ -727,7 +729,7 @@ export default function FilmDetailPage() {
         <div className="page-top">
             <FilmHero film={film} onPlayTrailer={handlePlayVideo} />
             {/* Single TrailerModal rendered at root — above all stacking contexts */}
-            {(trailerKey || activeVideo) && <TrailerModal trailerKey={activeVideo || trailerKey} onClose={() => { setTrailerKey(null); setActiveVideo(null) }} />}
+            {activeVideo && <TrailerModal trailerKey={activeVideo} onClose={() => setActiveVideo(null)} />}
             <main style={{ background: 'var(--ink)', paddingBottom: '5rem' }}>
                 <div className="container" style={{ paddingTop: '3rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     <button onClick={() => {
@@ -741,7 +743,6 @@ export default function FilmDetailPage() {
 
                     {Array.isArray(similar) && similar.length > 0 && (
                         <section>
-                            <div className="divider">✦ YOU MAY ALSO LIKE ✦</div>
                             <div style={{ marginTop: '2rem' }}>
                                 <SectionHeader label="SIMILAR FILMS" title="You May Also Like" />
                                 <div style={IS_TOUCH ? { display: 'flex', gap: '1rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '1rem', marginLeft: '-1.25rem', paddingLeft: '1.25rem' } : { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>

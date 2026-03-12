@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Film, BookOpen, Star, Lock, Edit2, Camera, User, Settings, Globe } from 'lucide-react'
@@ -175,6 +177,43 @@ export default function UserProfilePage() {
     const fileRef = useRef(null)
     const isOwnProfile = !routeUsername || routeUsername === currentUser?.username || routeUsername === 'me'
     const profileUser = isOwnProfile ? currentUser : community?.find(u => u.username === routeUsername)
+
+    // Fetch other user's public logs from Supabase (own logs come from Zustand)
+    const { data: otherUserLogs = [] } = useQuery({
+        queryKey: ['user-profile-logs', routeUsername],
+        queryFn: async () => {
+            const { data: prof } = await supabase
+                .from('profiles').select('id').eq('username', routeUsername).single()
+            if (!prof) return []
+            const { data } = await supabase
+                .from('logs')
+                .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, watched_with, created_at, pull_quote, is_autopsied, autopsy, alt_poster, physical_media')
+                .eq('user_id', prof.id)
+                .order('created_at', { ascending: false })
+                .limit(100)
+            return (data || []).map(l => ({
+                id: l.id,
+                filmId: l.film_id,
+                title: l.film_title,
+                poster: l.poster_path,
+                year: l.year,
+                rating: l.rating,
+                review: l.review,
+                status: l.status || 'watched',
+                watchedDate: l.watched_date,
+                watchedWith: l.watched_with,
+                createdAt: l.created_at,
+                pullQuote: l.pull_quote || '',
+                isAutopsied: l.is_autopsied || false,
+                autopsy: l.autopsy || null,
+                altPoster: l.alt_poster || null,
+                physicalMedia: l.physical_media || null,
+                // private_notes intentionally excluded — never visible to other users
+            }))
+        },
+        enabled: !isOwnProfile && !!routeUsername,
+        staleTime: 1000 * 60 * 5,
+    })
     const [activeTab, setActiveTab] = useState('diary')
     const [shareLog, setShareLog] = useState(null)
     const [sieve, setSieve] = useState('all')
@@ -238,12 +277,17 @@ export default function UserProfilePage() {
         </div>
     )
 
-    const stats = isOwnProfile ? getCinephileStats() : { count: 42, level: 'THE REGULAR', color: 'var(--flicker)', progress: 65 }
-    const profileLogs = isOwnProfile ? currentLogs : []
+    const profileLogs = isOwnProfile ? currentLogs : otherUserLogs
     const profileStubs = isOwnProfile ? currentStubs : []
     const profileLists = isOwnProfile ? currentLists : []
     const profileWatchlist = isOwnProfile ? currentWatchlist : []
     const profileProgrammes = currentProgrammes.filter(p => p.username === profileUser?.username)
+    const stats = getCinephileStats ? (isOwnProfile ? getCinephileStats() : {
+        count: profileLogs.length,
+        level: profileLogs.length > 50 ? 'THE ORACLE' : profileLogs.length > 20 ? 'MIDNIGHT DEVOTEE' : profileLogs.length > 5 ? 'THE REGULAR' : 'FIRST REEL',
+        color: profileLogs.length > 50 ? 'var(--sepia)' : profileLogs.length > 20 ? 'var(--blood-reel)' : 'var(--flicker)',
+        progress: (profileLogs.length % 20) * 5,
+    }) : { count: 0, level: 'FIRST REEL', color: 'var(--fog)', progress: 0 }
 
     const filteredLogs = profileLogs.filter(log => {
         if (sieve === 'all') return true
@@ -350,7 +394,7 @@ export default function UserProfilePage() {
                             {/* Stats bar */}
                             <div style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
                                 {[
-                                    { value: isOwnProfile ? currentLogs.length : 42, label: 'ACTIVITY', onClick: null },
+                                    { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
                                     { value: profileUser.followers?.length || 0, label: 'FOLLOWERS', onClick: () => !isEditing && (isOwnProfile || !profileUser.isSocialPrivate) && setSocialModal({ title: 'Followers', list: profileUser.followers || [] }) },
                                     { value: profileUser.following?.length || 0, label: 'FOLLOWING', onClick: () => !isEditing && (isOwnProfile || !profileUser.isSocialPrivate) && setSocialModal({ title: 'Following', list: profileUser.following || [] }) },
                                     { value: profileStubs.length, label: 'STUBS', onClick: null },
