@@ -282,6 +282,55 @@ export default function UserProfilePage() {
 
     const MOODS = ['smiling', 'neutral', 'dead', 'peeking', 'surprised', 'crying']
     const isFollowing = currentUser?.following?.includes(profileUser?.username)
+    const [followLoading, setFollowLoading] = useState(false)
+
+    const handleFollow = async () => {
+        if (!currentUser) { openSignupModal(); return }
+        if (followLoading || isOwnProfile) return
+        setFollowLoading(true)
+        try {
+            if (isFollowing) {
+                // Unfollow — remove from both arrays
+                await supabase.rpc('remove_follow', {
+                    follower_username: currentUser.username,
+                    followed_username: profileUser.username
+                }).then(async () => {
+                    // Fallback: direct update if RPC not available
+                    await supabase.from('profiles')
+                        .update({ following: (currentUser.following || []).filter(u => u !== profileUser.username) })
+                        .eq('username', currentUser.username)
+                    await supabase.from('profiles')
+                        .update({ followers: (profileUser.followers || []).filter(u => u !== currentUser.username) })
+                        .eq('username', profileUser.username)
+                })
+                updateUser({ following: (currentUser.following || []).filter(u => u !== profileUser.username) })
+                toast.success(`Unfollowed @${profileUser.username}`)
+            } else {
+                // Follow — add to both arrays
+                const newFollowing = [...(currentUser.following || []), profileUser.username]
+                await supabase.from('profiles')
+                    .update({ following: newFollowing })
+                    .eq('username', currentUser.username)
+                await supabase.from('profiles')
+                    .update({ followers: [...(profileUser.followers || []), currentUser.username] })
+                    .eq('username', profileUser.username)
+                // Notify the followed user
+                await supabase.from('notifications').insert({
+                    user_id: profileUser.id,
+                    type: 'follow',
+                    from_username: currentUser.username,
+                    message: `@${currentUser.username} is now following you.`,
+                })
+                updateUser({ following: newFollowing })
+                toast.success(`Now following @${profileUser.username} ✦`)
+            }
+        } catch (err) {
+            console.error('Follow error:', err)
+            toast.error('Could not update follow status.')
+        } finally {
+            setFollowLoading(false)
+        }
+    }
 
     const renderAvatar = (avatarValue, size = 90) => {
         if (!avatarValue) return <Buster size={size} mood="smiling" />
@@ -402,7 +451,14 @@ export default function UserProfilePage() {
                                 {isOwnProfile ? (
                                     <button onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)} className="btn btn-ghost" style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', height: 'fit-content' }}>{isEditing ? 'SAVE DOSSIER' : 'EDIT PROFILE'}</button>
                                 ) : (
-                                    <button onClick={() => isFollowing ? unfollowUser(profileUser.username) : followUser(profileUser.username)} className={`btn ${isFollowing ? 'btn-ghost' : 'btn-primary'}`} style={{ fontSize: '0.65rem', padding: '0.3rem 1.2rem', height: 'fit-content' }}>{isFollowing ? 'UNFOLLOW' : 'FOLLOW'}</button>
+                                    <button
+                                        onClick={handleFollow}
+                                        disabled={followLoading}
+                                        className={`btn ${isFollowing ? 'btn-ghost' : 'btn-primary'}`}
+                                        style={{ fontSize: '0.65rem', padding: '0.3rem 1.2rem', height: 'fit-content', opacity: followLoading ? 0.6 : 1 }}
+                                    >
+                                        {followLoading ? '...' : isFollowing ? 'UNFOLLOW' : '+ FOLLOW'}
+                                    </button>
                                 )}
                             </div>
 

@@ -3,10 +3,11 @@ import { Link } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../store'
 import { ReelRating, SectionHeader, RadarChart } from '../components/UI'
 import { tmdb } from '../tmdb'
-import { Heart, MessageSquare, Bookmark, Download } from 'lucide-react'
+import { Heart, MessageSquare, Bookmark, Download, Send, RefreshCw } from 'lucide-react'
 import ReactionBar from '../components/ReactionBar'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import html2canvas from 'html2canvas'
+import toast from 'react-hot-toast'
 
 // ── ACTIVITY CARD ──
 function ActivityCard({ log }) {
@@ -33,10 +34,78 @@ function ActivityCard({ log }) {
         toggleEndorse(log.id)
     }
 
-    const endorsed = optimisticEndorsed
-
     const [isExporting, setIsExporting] = useState(false)
     const dossierRef = useRef(null)
+
+    // ── ANNOTATE ──
+    const [annotateOpen, setAnnotateOpen] = useState(false)
+    const [annotateText, setAnnotateText] = useState('')
+    const [comments, setComments] = useState([])
+    const [commentsLoading, setCommentsLoading] = useState(false)
+    const [submittingComment, setSubmittingComment] = useState(false)
+    const { user: currentUser } = useAuthStore()
+
+    const loadComments = async () => {
+        if (!isSupabaseConfigured || !log.id) return
+        setCommentsLoading(true)
+        const { data } = await supabase
+            .from('log_comments')
+            .select('id, username, body, created_at')
+            .eq('log_id', log.id)
+            .order('created_at', { ascending: true })
+            .limit(20)
+        setComments(data || [])
+        setCommentsLoading(false)
+    }
+
+    const handleAnnotateToggle = () => {
+        const next = !annotateOpen
+        setAnnotateOpen(next)
+        if (next && comments.length === 0) loadComments()
+    }
+
+    const handleAnnotateSubmit = async () => {
+        if (!annotateText.trim() || !currentUser) return
+        setSubmittingComment(true)
+        const { error } = await supabase.from('log_comments').insert({
+            log_id: log.id,
+            user_id: currentUser.id,
+            username: currentUser.username,
+            body: annotateText.trim(),
+        })
+        if (!error) {
+            setComments(prev => [...prev, { id: Date.now(), username: currentUser.username, body: annotateText.trim(), created_at: new Date().toISOString() }])
+            setAnnotateText('')
+            toast.success('Annotation filed.')
+        } else {
+            toast.error('Could not save annotation.')
+        }
+        setSubmittingComment(false)
+    }
+
+    // ── RE-TRANSMIT ──
+    const [retransmitted, setRetransmitted] = useState(false)
+
+    const handleRetransmit = async () => {
+        if (!currentUser) { toast.error('Sign in to retransmit.'); return }
+        if (retransmitted) return
+        setRetransmitted(true)
+        if (isSupabaseConfigured) {
+            await supabase.from('interactions').insert({
+                user_id: currentUser.id,
+                target_log_id: log.id,
+                type: 'retransmit',
+            }).then(({ error }) => {
+                // Ignore duplicate constraint errors (already retransmitted)
+                if (error && !error.message.includes('duplicate')) {
+                    console.error('Retransmit error:', error)
+                }
+            })
+        }
+        toast.success('Signal retransmitted to your archive.')
+    }
+
+    const endorsed = optimisticEndorsed
 
     const exportDossier = async () => {
         if (!dossierRef.current) return
@@ -213,11 +282,21 @@ function ActivityCard({ log }) {
                             </div>
                         )}
                     </div>
-                    <button style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
-                        <MessageSquare size={12} /> ANNOTATE
+                    <button
+                        onClick={handleAnnotateToggle}
+                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'none', transition: 'color 0.2s' }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
+                        onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
+                    >
+                        <MessageSquare size={12} /> ANNOTATE {comments.length > 0 && `(${comments.length})`}
                     </button>
-                    <button style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'none', transition: 'color 0.2s', marginLeft: 'auto' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
-                        <Bookmark size={12} /> RE-TRANSMIT
+                    <button
+                        onClick={handleRetransmit}
+                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'none', transition: 'color 0.2s', marginLeft: 'auto' }}
+                        onMouseEnter={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--sepia)' }}
+                        onMouseLeave={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--fog)' }}
+                    >
+                        <RefreshCw size={12} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
                     </button>
                     {log.isAutopsied && log.autopsy && (
                         <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'none', transition: 'color 0.2s', opacity: isExporting ? 0.5 : 1 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--flicker)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--sepia)'}>
@@ -225,6 +304,38 @@ function ActivityCard({ log }) {
                         </button>
                     )}
                 </div>
+
+                {/* ── ANNOTATION PANEL ── */}
+                {annotateOpen && (
+                    <div style={{ marginTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)', paddingTop: '1rem' }}>
+                        {/* Existing comments */}
+                        {commentsLoading && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>RETRIEVING ANNOTATIONS...</div>}
+                        {comments.map(c => (
+                            <div key={c.id} style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.5rem' }}>
+                                <Link to={`/user/${c.username}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>@{c.username}</Link>
+                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--bone)', lineHeight: 1.5 }}>{c.body}</span>
+                            </div>
+                        ))}
+                        {/* Input */}
+                        {currentUser ? (
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                                <input
+                                    value={annotateText}
+                                    onChange={e => setAnnotateText(e.target.value)}
+                                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleAnnotateSubmit()}
+                                    placeholder="File an annotation..."
+                                    style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', borderRadius: '2px', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', padding: '0.4rem 0.6rem', outline: 'none' }}
+                                />
+                                <button onClick={handleAnnotateSubmit} disabled={submittingComment || !annotateText.trim()} className="btn btn-primary" style={{ padding: '0.4rem 0.7rem', fontSize: '0.5rem', opacity: submittingComment ? 0.5 : 1 }}>
+                                    <Send size={10} />
+                                </button>
+                            </div>
+                        ) : (
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>SIGN IN TO ANNOTATE</div>
+                        )}
+                    </div>
+                )}
+
                 {log.isAutopsied && log.autopsy && (
                     <div style={{ position: 'absolute', left: '-9999px', top: 0, pointerEvents: 'none', userSelect: 'none' }}>
                         <div id={`dossier-${log.id}`} ref={dossierRef} style={{
