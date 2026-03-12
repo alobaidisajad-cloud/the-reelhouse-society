@@ -409,7 +409,14 @@ export default function ListsPage() {
                         {filteredCommunity.length === 0 ? (
                             <div style={{ padding: '4rem 2rem', border: '1px dashed var(--ash)', textAlign: 'center' }}>
                                 <Buster size={60} mood="peeking" />
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--sepia)', marginTop: '1rem' }}>No collections found with this keyword.</div>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--sepia)', marginTop: '1rem' }}>
+                                    {query ? 'No collections found for this keyword.' : 'The Public Archive Awaits Its First Curators.'}
+                                </div>
+                                {!query && (
+                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', marginTop: '0.5rem', opacity: 0.7 }}>
+                                        Be the first to forge a public anthology for the Society.
+                                    </div>
+                                )}
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '3rem' }}>

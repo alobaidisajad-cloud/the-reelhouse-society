@@ -27,8 +27,10 @@ export default function PersonPage() {
 
     if (!person) {
         return (
-            <div style={{ paddingTop: 120, textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-body)' }}>
-                <h2>Person not found.</h2>
+            <div style={{ paddingTop: 140, textAlign: 'center', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '1rem' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--sepia)' }}>ARCHIVE DEPT — FILE NOT FOUND</div>
+                <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)' }}>No Record On File</div>
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', maxWidth: 360 }}>This person does not exist in the TMDB archive, or the reel was lost.</div>
             </div>
         )
     }
@@ -81,8 +83,8 @@ export default function PersonPage() {
                             {person.name}
                         </h1>
                         <div style={{ display: 'flex', gap: '1rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '1.5rem' }}>
-                            {person.birthday && <span>BORN: {person.birthday}</span>}
-                            {person.deathday && <span>DIED: {person.deathday}</span>}
+                            {person.birthday && <span>BORN: {new Date(person.birthday + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>}
+                            {person.deathday && <span>DIED: {new Date(person.deathday + 'T12:00:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}</span>}
                         </div>
 
                         {person.biography && (
