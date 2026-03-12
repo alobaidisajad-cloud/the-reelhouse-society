@@ -38,31 +38,32 @@ export default function Footer() {
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
                         NAVIGATE
                     </div>
-                    {[
-                        { to: '/', label: 'The Lobby', end: true },
-                        { to: '/discover', label: 'The Darkroom' },
-                        { to: '/feed', label: 'The Reel' },
-                        { to: '/stacks', label: 'The Stacks' },
-                        { to: '/society', label: 'The Society' },
-                    ].map(({ to, label, end }) => (
-                        <NavLink key={to} to={to} end={end} style={({ isActive }) => ({
-                            display: 'inline-block',
-                            fontFamily: 'var(--font-sub)',
-                            fontSize: '0.75rem',
-                            color: isActive ? 'var(--sepia)' : 'var(--bone)',
-                            fontWeight: isActive ? '600' : 'normal',
-                            textDecoration: 'none',
-                            padding: '0.2rem 0',
-                            marginBottom: '0.1rem',
-                            transition: 'color 0.2s',
-                            cursor: 'pointer',
-                        })}
-                            onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
-                            onMouseLeave={e => e.currentTarget.style.color = ''}
-                        >
-                            {label}
-                        </NavLink>
-                    ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        {[
+                            { to: '/', label: 'The Lobby', end: true },
+                            { to: '/discover', label: 'The Darkroom' },
+                            { to: '/feed', label: 'The Reel' },
+                            { to: '/stacks', label: 'The Stacks' },
+                            { to: '/society', label: 'The Society' },
+                        ].map(({ to, label, end }) => (
+                            <NavLink key={to} to={to} end={end} style={({ isActive }) => ({
+                                display: 'inline-block',
+                                fontFamily: 'var(--font-sub)',
+                                fontSize: '0.75rem',
+                                color: isActive ? 'var(--sepia)' : 'var(--bone)',
+                                fontWeight: isActive ? '600' : 'normal',
+                                textDecoration: 'none',
+                                padding: '0.2rem 0',
+                                transition: 'color 0.2s',
+                                cursor: 'pointer',
+                            })}
+                                onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
+                                onMouseLeave={e => e.currentTarget.style.color = ''}
+                            >
+                                {label}
+                            </NavLink>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Society */}
@@ -70,28 +71,29 @@ export default function Footer() {
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
                         THE SOCIETY
                     </div>
-                    {[
-                        { to: '/dispatch', label: 'The Dispatch' },
-                        { to: '/society', label: 'Membership' },
-                    ].map(({ to, label }) => (
-                        <NavLink key={to} to={to} style={({ isActive }) => ({
-                            display: 'inline-block',
-                            fontFamily: 'var(--font-sub)',
-                            fontSize: '0.75rem',
-                            color: isActive ? 'var(--sepia)' : 'var(--bone)',
-                            fontWeight: isActive ? '600' : 'normal',
-                            textDecoration: 'none',
-                            padding: '0.2rem 0',
-                            marginBottom: '0.1rem',
-                            transition: 'color 0.2s',
-                            cursor: 'pointer',
-                        })}
-                            onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
-                            onMouseLeave={e => e.currentTarget.style.color = ''}
-                        >
-                            {label}
-                        </NavLink>
-                    ))}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        {[
+                            { to: '/dispatch', label: 'The Dispatch' },
+                            { to: '/society', label: 'Membership' },
+                        ].map(({ to, label }) => (
+                            <NavLink key={to} to={to} style={({ isActive }) => ({
+                                display: 'inline-block',
+                                fontFamily: 'var(--font-sub)',
+                                fontSize: '0.75rem',
+                                color: isActive ? 'var(--sepia)' : 'var(--bone)',
+                                fontWeight: isActive ? '600' : 'normal',
+                                textDecoration: 'none',
+                                padding: '0.2rem 0',
+                                transition: 'color 0.2s',
+                                cursor: 'pointer',
+                            })}
+                                onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
+                                onMouseLeave={e => e.currentTarget.style.color = ''}
+                            >
+                                {label}
+                            </NavLink>
+                        ))}
+                    </div>
                 </div>
             </div>
 
