@@ -92,29 +92,13 @@ function MarqueeBoard({ film }) {
                     : '0 20px 50px rgba(0,0,0,0.9), inset 0 0 40px rgba(139,105,20,0.15), 0 0 0 1px rgba(242,232,160,0.1)',
                 position: 'relative',
                 overflow: 'hidden',
-                background: film.backdrop_path ? 'rgba(10,7,3,0.15)' : 'rgba(10,7,3,0.98)',
+                background: 'rgba(10,7,3,0.70)',
             }}>
-                {/* Backdrop image layer */}
-                {film.backdrop_path && (
-                    <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        backgroundImage: `url(${tmdb.backdrop(film.backdrop_path, 'w1280')})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center 20%',
-                        opacity: 1,
-                        filter: IS_TOUCH
-                            ? 'sepia(0.4) contrast(0.8) brightness(0.38)'
-                            : 'sepia(0.3) contrast(0.85) brightness(0.45)',
-                        zIndex: 0,
-                        pointerEvents: 'none',
-                    }} />
-                )}
-                {/* Vignette — keeps text readable while letting image show */}
+                {/* Vignette — keeps text readable */}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(180deg, rgba(10,7,3,0.20) 0%, rgba(10,7,3,0.45) 60%, rgba(10,7,3,0.75) 100%)',
+                    background: 'linear-gradient(180deg, rgba(10,7,3,0.30) 0%, rgba(10,7,3,0.55) 60%, rgba(10,7,3,0.80) 100%)',
                     zIndex: 0,
                     pointerEvents: 'none',
                 }} />
@@ -674,12 +658,12 @@ export default function HomePage() {
                         backgroundImage: `url(${tmdb.backdrop(heroFilm.backdrop_path, 'w1280')})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 15%',
-                        opacity: 0.25,
-                        maskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
-                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%)',
+                        opacity: 0.38,
+                        filter: 'sepia(0.25) brightness(0.55)',
+                        maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
                         zIndex: -1,
                         pointerEvents: 'none',
-                        mixBlendMode: 'luminosity'
                     }} />
                 )}
                 {/* Spotlight ambient glow — desktop only */}
