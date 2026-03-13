@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Popcorn, Search, Calendar, Star, Film, User, Hash } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { tmdb } from '../tmdb'
