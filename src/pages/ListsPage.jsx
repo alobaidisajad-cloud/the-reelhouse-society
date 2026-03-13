@@ -246,21 +246,42 @@ export default function ListsPage() {
         queryFn: async () => {
             let q = supabase
                 .from('lists')
-                .select(`id, title, description, created_at, profiles:user_id(username), list_items(film_id, film_title)`)
+                .select('id, title, description, created_at, user_id')
                 .eq('is_private', false)
                 .order('created_at', { ascending: false })
                 .limit(30)
-            // Exclude logged-in user's lists — they already appear in "My Collections"
             if (user?.id) q = q.neq('user_id', user.id)
             const { data, error } = await q
-            if (error || !data) return []
+            if (error || !data || data.length === 0) return []
+
+            // Batch-resolve usernames
+            const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
+            let usernameMap = {}
+            if (userIds.length > 0) {
+                const { data: p } = await supabase.from('profiles').select('id, username').in('id', userIds)
+                if (p) usernameMap = Object.fromEntries(p.map(x => [x.id, x.username]))
+            }
+
+            // Batch-resolve list items
+            const listIds = data.map(l => l.id)
+            let itemsMap = {}
+            if (listIds.length > 0) {
+                const { data: items } = await supabase.from('list_items').select('list_id, film_id, film_title').in('list_id', listIds)
+                if (items) {
+                    items.forEach(item => {
+                        if (!itemsMap[item.list_id]) itemsMap[item.list_id] = []
+                        itemsMap[item.list_id].push(item)
+                    })
+                }
+            }
+
             return data.map(l => ({
                 id: l.id,
                 title: l.title,
                 desc: l.description || '',
-                user: l.profiles?.username || 'anonymous',
-                films: (l.list_items || []).map(item => ({ id: item.film_id, title: item.film_title, poster_path: null })),
-                count: (l.list_items || []).length,
+                user: usernameMap[l.user_id] || 'anonymous',
+                films: (itemsMap[l.id] || []).map(item => ({ id: item.film_id, title: item.film_title, poster_path: null })),
+                count: (itemsMap[l.id] || []).length,
             }))
         },
         staleTime: 1000 * 60 * 2,

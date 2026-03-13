@@ -185,7 +185,7 @@ function FeaturedReview({ film }) {
                 .gt('rating', 0)
                 .order('rating', { ascending: false })
                 .limit(1)
-                .single()
+                .maybeSingle()
             if (!data) return null
             return { ...data, username: null }
         },
