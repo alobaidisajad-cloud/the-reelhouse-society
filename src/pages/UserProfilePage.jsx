@@ -228,6 +228,22 @@ export default function UserProfilePage() {
         staleTime: 1000 * 60 * 5,
     })
 
+    // Live counts for own profile — re-fetches every 30s so follower gain is visible immediately
+    const { data: ownCounts } = useQuery({
+        queryKey: ['own-profile-counts', currentUser?.id],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('profiles')
+                .select('followers_count, following_count')
+                .eq('id', currentUser.id)
+                .single()
+            return { followersCount: data?.followers_count || 0, followingCount: data?.following_count || 0 }
+        },
+        enabled: isOwnProfile && !!currentUser?.id,
+        refetchInterval: 30000,  // refresh every 30s
+        staleTime: 10000,
+    })
+
     const profileUser = isOwnProfile ? currentUser : fetchedProfile
 
     // Fetch other user's public logs from Supabase (own logs come from Zustand)
@@ -580,8 +596,8 @@ export default function UserProfilePage() {
                             <div className="profile-stats-row" style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
                                 {[
                                     { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
-                                    { value: isOwnProfile ? (currentUser?.followers_count || 0) : (profileUser?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
-                                    { value: isOwnProfile ? (currentUser?.following_count || 0) : (profileUser?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
+                                    { value: isOwnProfile ? (ownCounts?.followersCount ?? currentUser?.followers_count ?? 0) : (profileUser?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
+                                    { value: isOwnProfile ? (ownCounts?.followingCount ?? currentUser?.following_count ?? 0) : (profileUser?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
                                     { value: profileStubs.length, label: 'STUBS', onClick: null },
                                 ].map(({ value, label, onClick }) => (
                                     <div key={label} onClick={onClick} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default' }}>
