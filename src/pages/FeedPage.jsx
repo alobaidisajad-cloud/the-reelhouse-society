@@ -12,6 +12,7 @@ import toast from 'react-hot-toast'
 // ── ACTIVITY CARD ──
 function ActivityCard({ log }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
+    const openViewLog = useUIStore(state => state.openViewLog)
     // Memoize stamp rotation so Math.random() doesn't fire on every re-render
     const stampRotation = React.useMemo(() => `${(Math.random() * 8 - 4).toFixed(2)}deg`, [])
     const storeEndorsed = useFilmStore(state => state.interactions.some(i => i.targetId === log.id && i.type === 'endorse'))
@@ -157,7 +158,24 @@ function ActivityCard({ log }) {
             </div>
 
             {/* Poster */}
-            <div style={{ width: 80, height: 120, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', background: 'var(--ink)', border: '1px solid var(--ash)', position: 'relative' }}>
+            <div
+                onClick={() => openViewLog({
+                    log: {
+                        id: log.id, filmId: log.film?.id, title: log.film?.title,
+                        poster: log.film?.poster, year: log.film?.year,
+                        rating: log.rating, review: log.review, status: log.status || 'watched',
+                        isSpoiler: log.isSpoiler, watchedDate: log.watchedDate,
+                        watchedWith: log.watchedWith, physicalMedia: log.physicalMedia,
+                        isAutopsied: log.isAutopsied, autopsy: log.autopsy,
+                        altPoster: log.altPoster, editorialHeader: log.editorialHeader,
+                        dropCap: log.dropCap, pullQuote: log.pullQuote,
+                        abandonedReason: log.abandonedReason,
+                    },
+                    film: log.film ? { id: log.film.id, title: log.film.title, poster_path: log.film.poster } : null,
+                    ownerUsername: log.user,
+                })}
+                style={{ width: 80, height: 120, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', background: 'var(--ink)', border: '1px solid var(--ash)', position: 'relative', cursor: 'pointer' }}
+            >
                 {log.film?.poster ? (
                     <img
                         src={tmdb.poster(log.film.poster, 'w185')}

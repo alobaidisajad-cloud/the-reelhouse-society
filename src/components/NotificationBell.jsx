@@ -99,18 +99,19 @@ export default function NotificationBell() {
         if (!open && unreadCount > 0 && user?.id) {
             markAllRead()
             // Batch update in Supabase — column is `is_read`
-            await supabase
+            const { error } = await supabase
                 .from('notifications')
                 .update({ is_read: true })
                 .eq('user_id', user.id)
                 .eq('is_read', false)
-                .catch(() => { })  // Graceful if table missing
+            if (error) console.error('[NotifBell] mark-read failed:', error.message)
         }
     }
 
     const handleDismiss = async (id) => {
         dismiss(id)
-        await supabase.from('notifications').delete().eq('id', id).catch(() => { })
+        const { error } = await supabase.from('notifications').delete().eq('id', id)
+        if (error) console.error('[NotifBell] dismiss failed:', error.message)
     }
 
     return (
@@ -169,8 +170,9 @@ export default function NotificationBell() {
                                     onClick={async () => {
                                         markAllRead()
                                         if (user?.id) {
-                                            await supabase.from('notifications').update({ is_read: true })
-                                                .eq('user_id', user.id).eq('is_read', false).catch(() => {})
+                                            const { error } = await supabase.from('notifications').update({ is_read: true })
+                                                .eq('user_id', user.id).eq('is_read', false)
+                                            if (error) console.error('[NotifBell] mark-all failed:', error.message)
                                         }
                                     }}
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fog)', fontSize: '0.55rem', fontFamily: 'var(--font-ui)', letterSpacing: '0.1em' }}
@@ -193,8 +195,8 @@ export default function NotificationBell() {
                                     onClick={async () => {
                                         markRead(n.id)
                                         // Sync read status to DB
-                                        supabase.from('notifications').update({ is_read: true }).eq('id', n.id).catch(() => {})
-                                        // Deep link: navigate to relevant page
+                                        const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
+                                        if (error) console.error('[NotifBell] mark-read single failed:', error.message)
                                         if (n.type === 'follow' && n.from) {
                                             navigate(`/user/${n.from}`)
                                             setOpen(false)
