@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
@@ -660,14 +661,15 @@ export default function UserProfilePage() {
                                             return (
                                                 <div key={log.id} style={{ gridColumn: gridColumnSpan, gridRow: gridRowSpan, position: 'relative', height: '100%' }}>
                                                     <div
-                                                        onClick={() => {
+                                                        onClick={(e) => {
+                                                            e.stopPropagation()
                                                             useUIStore.getState().openViewLog({
                                                                 log,
                                                                 film: { id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' },
                                                                 ownerUsername: displayUser?.username || username,
                                                             })
                                                         }}
-                                                        style={{ cursor: 'pointer', height: '100%', position: 'relative', zIndex: 1 }}
+                                                        style={{ cursor: 'pointer', height: '100%', position: 'relative', zIndex: 10 }}
                                                     >
                                                         <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status }} />
                                                     </div>
