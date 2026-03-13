@@ -116,10 +116,22 @@ export default function SignupModal() {
                 resetForm()
             } else {
                 const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '_')
-                const result = await useAuthStore.getState().signup(email, password, formattedUsername, role)
+                const result = await useAuthStore.getState().signup(email, password, formattedUsername, role, persona)
 
                 if (result?.session) {
                     // Email confirmation disabled — user is logged in immediately
+                    // For venue owners: create their venue row in Supabase
+                    if (role === 'venue_owner' && venueName.trim() && result.user?.id) {
+                        const slug = venueName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+                        await supabase.from('venues').insert([{
+                            owner_id: result.user.id,
+                            name: venueName.trim(),
+                            slug,
+                            location: 'TBD',
+                            description: venueDesc.trim() || null,
+                            vibes: vibes.length > 0 ? vibes : null,
+                        }]).catch(() => {})
+                    }
                     toast.success(`Welcome to The ReelHouse Society, ${formattedUsername}! 🎬`)
                     closeSignupModal()
                     resetForm()

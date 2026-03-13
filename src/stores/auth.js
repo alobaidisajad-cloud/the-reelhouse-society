@@ -40,7 +40,7 @@ export const useAuthStore = create(
                 return data
             },
 
-            signup: async (email, password, username, role = 'cinephile') => {
+            signup: async (email, password, username, role = 'cinephile', persona = '') => {
                 const redirectTo = `${window.location.origin}/auth/callback`
                 const { data, error } = await supabase.auth.signUp({
                     email, password,
@@ -62,7 +62,13 @@ export const useAuthStore = create(
                 // The user must click the link in their email first.
                 // If confirmation is disabled (dev mode), session is returned immediately.
                 if (data?.session) {
-                    await supabase.from('profiles').update({ username, role }).eq('id', data.user.id)
+                    // Save role, persona, and tier to profiles
+                    await supabase.from('profiles').update({
+                        username,
+                        role,
+                        persona: persona || (role === 'cinephile' ? 'The Cinephile' : 'The Society'),
+                        tier: role === 'venue_owner' ? 'free' : 'free',
+                    }).eq('id', data.user.id)
                     const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
                     set({ user: { ...data.user, ...profile }, isAuthenticated: true })
                     hydrateUserData()
