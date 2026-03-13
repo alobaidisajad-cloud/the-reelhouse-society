@@ -108,6 +108,23 @@ function ActivityCard({ log }) {
 
     const endorsed = optimisticEndorsed
 
+    // ── Open full log view modal ──
+    const handleOpenLog = () => openViewLog({
+        log: {
+            id: log.id, filmId: log.film?.id, title: log.film?.title,
+            poster: log.film?.poster, year: log.film?.year,
+            rating: log.rating, review: log.review, status: log.status || 'watched',
+            isSpoiler: log.isSpoiler, watchedDate: log.watchedDate,
+            watchedWith: log.watchedWith, physicalMedia: log.physicalMedia,
+            isAutopsied: log.isAutopsied, autopsy: log.autopsy,
+            altPoster: log.altPoster, editorialHeader: log.editorialHeader,
+            dropCap: log.dropCap, pullQuote: log.pullQuote,
+            abandonedReason: log.abandonedReason,
+        },
+        film: log.film ? { id: log.film.id, title: log.film.title, poster_path: log.film.poster } : null,
+        ownerUsername: log.user,
+    })
+
     const exportDossier = async () => {
         if (!dossierRef.current) return
         setIsExporting(true)
@@ -141,6 +158,7 @@ function ActivityCard({ log }) {
     return (
         <div
             className="fade-in-up"
+            onClick={handleOpenLog}
             style={{
                 background: 'var(--soot)',
                 border: '1px solid var(--ash)',
@@ -149,7 +167,8 @@ function ActivityCard({ log }) {
                 position: 'relative',
                 display: 'flex',
                 gap: '1.25rem',
-                borderLeft: '3px solid var(--sepia)'
+                borderLeft: '3px solid var(--sepia)',
+                cursor: 'pointer',
             }}
         >
             {/* Timestamp */}
@@ -159,21 +178,6 @@ function ActivityCard({ log }) {
 
             {/* Poster */}
             <div
-                onClick={() => openViewLog({
-                    log: {
-                        id: log.id, filmId: log.film?.id, title: log.film?.title,
-                        poster: log.film?.poster, year: log.film?.year,
-                        rating: log.rating, review: log.review, status: log.status || 'watched',
-                        isSpoiler: log.isSpoiler, watchedDate: log.watchedDate,
-                        watchedWith: log.watchedWith, physicalMedia: log.physicalMedia,
-                        isAutopsied: log.isAutopsied, autopsy: log.autopsy,
-                        altPoster: log.altPoster, editorialHeader: log.editorialHeader,
-                        dropCap: log.dropCap, pullQuote: log.pullQuote,
-                        abandonedReason: log.abandonedReason,
-                    },
-                    film: log.film ? { id: log.film.id, title: log.film.title, poster_path: log.film.poster } : null,
-                    ownerUsername: log.user,
-                })}
                 style={{ width: 80, height: 120, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', background: 'var(--ink)', border: '1px solid var(--ash)', position: 'relative', cursor: 'pointer' }}
             >
                 {log.film?.poster ? (
@@ -205,7 +209,7 @@ function ActivityCard({ log }) {
             {/* Content Body */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                    <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none' }}>
+                    <Link to={`/user/${log.user}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none' }}>
                         @{(log.user || 'anonymous').toUpperCase()}
                     </Link>
                     <span style={{
@@ -217,12 +221,11 @@ function ActivityCard({ log }) {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    <Link
-                        to={`/film/${log.film?.id}`}
-                        style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', textDecoration: 'none', textShadow: '0 2px 4px rgba(0,0,0,0.5)' }}
+                    <span
+                        style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', textDecoration: 'none', textShadow: '0 2px 4px rgba(0,0,0,0.5)', cursor: 'pointer' }}
                     >
                         {log.film?.title}
-                    </Link>
+                    </span>
                     {log.film?.year && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
                             {log.film.year}
@@ -271,7 +274,7 @@ function ActivityCard({ log }) {
                 )}
 
                 {/* Social Interaction Bar */}
-                <div style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap' }}>
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative' }}>
                         <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: endorsed ? 'var(--sepia)' : 'var(--fog)', cursor: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)'}>
                             <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />
