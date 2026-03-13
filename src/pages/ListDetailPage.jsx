@@ -19,7 +19,7 @@ export default function ListDetailPage() {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('lists')
-                .select('id, title, description, created_at, is_private, user_id')
+                .select('id, title, description, created_at, user_id')
                 .eq('id', id)
                 .maybeSingle()
             if (error || !data) return null

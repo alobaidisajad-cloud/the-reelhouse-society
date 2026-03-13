@@ -247,7 +247,6 @@ export default function ListsPage() {
             let q = supabase
                 .from('lists')
                 .select('id, title, description, created_at, user_id')
-                .eq('is_private', false)
                 .order('created_at', { ascending: false })
                 .limit(30)
             if (user?.id) q = q.neq('user_id', user.id)
