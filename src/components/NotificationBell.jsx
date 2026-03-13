@@ -166,7 +166,13 @@ export default function NotificationBell() {
                             </span>
                             {notifications.length > 0 && (
                                 <button
-                                    onClick={() => markAllRead()}
+                                    onClick={async () => {
+                                        markAllRead()
+                                        if (user?.id) {
+                                            await supabase.from('notifications').update({ is_read: true })
+                                                .eq('user_id', user.id).eq('is_read', false).catch(() => {})
+                                        }
+                                    }}
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fog)', fontSize: '0.55rem', fontFamily: 'var(--font-ui)', letterSpacing: '0.1em' }}
                                 >
                                     <Check size={12} /> MARK ALL
@@ -184,8 +190,10 @@ export default function NotificationBell() {
                             notifications.slice(0, 20).map(n => (
                                 <div
                                     key={n.id}
-                                    onClick={() => {
+                                    onClick={async () => {
                                         markRead(n.id)
+                                        // Sync read status to DB
+                                        supabase.from('notifications').update({ is_read: true }).eq('id', n.id).catch(() => {})
                                         // Deep link: navigate to relevant page
                                         if (n.type === 'follow' && n.from) {
                                             navigate(`/user/${n.from}`)

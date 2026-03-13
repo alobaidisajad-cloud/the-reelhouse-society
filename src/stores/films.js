@@ -31,6 +31,25 @@ export const useFilmStore = create(
 
             hasEndorsed: (targetId) => get().interactions.some((i) => i.targetId === targetId && i.type === 'endorse'),
 
+            fetchEndorsements: async () => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const { data, error } = await supabase
+                    .from('interactions')
+                    .select('target_log_id, created_at')
+                    .eq('user_id', user.id)
+                    .eq('type', 'endorse_log')
+                if (!error && data) {
+                    set({
+                        interactions: data.map(r => ({
+                            type: 'endorse',
+                            targetId: r.target_log_id,
+                            timestamp: r.created_at,
+                        }))
+                    })
+                }
+            },
+
             fetchLogs: async () => {
                 const user = useAuthStore.getState().user
                 if (!user) return
