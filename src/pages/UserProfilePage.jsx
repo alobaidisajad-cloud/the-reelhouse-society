@@ -274,7 +274,6 @@ export default function UserProfilePage() {
     const [editUsername, setEditUsername] = useState(profileUser?.username || '')
     const [editAvatar, setEditAvatar] = useState(profileUser?.avatar || 'smiling')
     const [editIsSocialPrivate, setEditIsSocialPrivate] = useState(profileUser?.isSocialPrivate || false)
-    const [socialModal, setSocialModal] = useState(null)
 
     useEffect(() => {
         if (profileUser) { setEditAvatar(profileUser.avatar || 'smiling'); setEditIsSocialPrivate(profileUser.isSocialPrivate || false) }
@@ -308,6 +307,36 @@ export default function UserProfilePage() {
     const MOODS = ['smiling', 'neutral', 'dead', 'peeking', 'surprised', 'crying']
     const isFollowing = currentUser?.following?.includes(profileUser?.username)
     const [followLoading, setFollowLoading] = useState(false)
+    const [socialModal, setSocialModal] = useState(null)
+    const [socialLoading, setSocialLoading] = useState(false)
+
+    const openSocialModal = async (type) => {
+        setSocialLoading(true)
+        setSocialModal({ title: type === 'followers' ? 'Followers' : 'Following', list: [] })
+        try {
+            let query
+            if (type === 'followers') {
+                // People who follow this profile
+                const { data } = await supabase
+                    .from('interactions')
+                    .select('profiles!user_id(username, avatar_url, followers_count)')
+                    .eq('target_user_id', profileUser.id)
+                    .eq('type', 'follow')
+                    .limit(100)
+                setSocialModal({ title: 'Followers', list: (data || []).map(r => r.profiles).filter(Boolean) })
+            } else {
+                // People this profile follows
+                const { data } = await supabase
+                    .from('interactions')
+                    .select('profiles!target_user_id(username, avatar_url, followers_count)')
+                    .eq('user_id', profileUser.id)
+                    .eq('type', 'follow')
+                    .limit(100)
+                setSocialModal({ title: 'Following', list: (data || []).map(r => r.profiles).filter(Boolean) })
+            }
+        } catch { setSocialModal(prev => prev ? { ...prev, list: [] } : null) }
+        finally { setSocialLoading(false) }
+    }
 
     const handleFollow = async () => {
         if (!currentUser) { openSignupModal(); return }
@@ -315,58 +344,41 @@ export default function UserProfilePage() {
         setFollowLoading(true)
         try {
             if (isFollowing) {
-                // Unfollow: decrement both counters
-                await supabase.rpc('decrement_follow_counts', {
-                    follower_id: currentUser.id,
-                    followed_id: profileUser.id
-                }).catch(async () => {
-                    // Fallback if RPC not created: direct arithmetic update
-                    await supabase.from('profiles')
-                        .update({ following_count: Math.max(0, (currentUser.following_count || 1) - 1) })
-                        .eq('id', currentUser.id)
-                    await supabase.from('profiles')
-                        .update({ followers_count: Math.max(0, (profileUser.followersCount || 1) - 1) })
-                        .eq('id', profileUser.id)
-                })
-                // Remove from interactions table
+                // Remove from interactions
                 await supabase.from('interactions').delete()
                     .eq('user_id', currentUser.id)
                     .eq('target_user_id', profileUser.id)
-                    .eq('type', 'follow').catch(() => {})
+                    .eq('type', 'follow')
+                // Decrement counters via SECURITY DEFINER RPC (bypasses RLS)
+                await supabase.rpc('decrement_follow_counts', {
+                    follower_id: currentUser.id,
+                    followed_id: profileUser.id
+                })
                 updateUser({ following: (currentUser.following || []).filter(u => u !== profileUser.username) })
-                // Optimistically drop follower count in cache
                 queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
                     old ? { ...old, followersCount: Math.max(0, (old.followersCount || 1) - 1) } : old
                 )
                 toast.success(`Unfollowed @${profileUser.username}`)
             } else {
-                // Follow: insert interaction + increment both counters
+                // Insert into interactions (unique constraint prevents duplicates)
                 await supabase.from('interactions').insert({
                     user_id: currentUser.id,
                     target_user_id: profileUser.id,
                     type: 'follow'
-                }).catch(() => {})
+                })
+                // Increment counters via SECURITY DEFINER RPC (bypasses RLS)
                 await supabase.rpc('increment_follow_counts', {
                     follower_id: currentUser.id,
                     followed_id: profileUser.id
-                }).catch(async () => {
-                    // Fallback if RPC not created
-                    await supabase.from('profiles')
-                        .update({ following_count: (currentUser.following_count || 0) + 1 })
-                        .eq('id', currentUser.id)
-                    await supabase.from('profiles')
-                        .update({ followers_count: (profileUser.followersCount || 0) + 1 })
-                        .eq('id', profileUser.id)
                 })
                 // Notify the followed user
-                await supabase.from('notifications').insert({
+                supabase.from('notifications').insert({
                     user_id: profileUser.id,
                     type: 'follow',
                     from_username: currentUser.username,
                     message: `@${currentUser.username} is now following you.`,
                 }).catch(() => {})
                 updateUser({ following: [...(currentUser.following || []), profileUser.username] })
-                // Optimistically bump follower count in cache
                 queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
                     old ? { ...old, followersCount: (old.followersCount || 0) + 1 } : old
                 )
@@ -374,7 +386,7 @@ export default function UserProfilePage() {
             }
         } catch (err) {
             console.error('Follow error:', err)
-            toast.error('Could not update follow status.')
+            toast.error('Follow system not yet configured. Run supabase-follow-rpcs.sql in your Supabase SQL editor.')
         } finally {
             setFollowLoading(false)
         }
@@ -552,8 +564,8 @@ export default function UserProfilePage() {
                             <div className="profile-stats-row" style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
                                 {[
                                     { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
-                                    { value: isOwnProfile ? (currentUser?.followers_count || 0) : (profileUser?.followersCount || 0), label: 'FOLLOWERS', onClick: null },
-                                    { value: isOwnProfile ? (currentUser?.following_count || 0) : (profileUser?.followingCount || 0), label: 'FOLLOWING', onClick: null },
+                                    { value: isOwnProfile ? (currentUser?.followers_count || 0) : (profileUser?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
+                                    { value: isOwnProfile ? (currentUser?.following_count || 0) : (profileUser?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
                                     { value: profileStubs.length, label: 'STUBS', onClick: null },
                                 ].map(({ value, label, onClick }) => (
                                     <div key={label} onClick={onClick} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default' }}>
@@ -770,7 +782,7 @@ export default function UserProfilePage() {
                 </div>
             </main>
 
-            {/* Social Modal */}
+            {/* Social Modal — fetches from interactions table */}
             {socialModal && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 1000000, background: 'rgba(10,7,3,0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(10px)' }} onClick={() => setSocialModal(null)}>
                     <div className="card" style={{ maxWidth: 440, width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--sepia)', padding: 0, overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
@@ -779,25 +791,24 @@ export default function UserProfilePage() {
                             <button className="btn btn-ghost" onClick={() => setSocialModal(null)}>✕</button>
                         </div>
                         <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-                            {socialModal.list.length === 0 ? (
+                            {socialLoading ? (
+                                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em' }}>✦ LOADING ✦</div>
+                            ) : socialModal.list.length === 0 ? (
                                 <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>This archive is empty.</div>
                             ) : (
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {socialModal.list.map(username => {
-                                        const member = community?.find(u => u.username === username) || (username === currentUser?.username ? currentUser : null)
-                                        return (
-                                            <Link key={username} to={`/user/${username}`} onClick={() => setSocialModal(null)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', textDecoration: 'none', borderRadius: '4px' }}>
-                                                <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                    {member?.avatar?.startsWith('data:image/') || member?.avatar?.startsWith('http') ? <img src={member.avatar} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Buster size={20} mood={member?.avatar || 'smiling'} />}
-                                                </div>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', color: 'var(--parchment)', lineHeight: 1 }}>@{username.toUpperCase()}</div>
-                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--sepia)', letterSpacing: '0.1em', marginTop: '0.2rem' }}>{member?.followers?.length || 0} FOLLOWERS</div>
-                                                </div>
-                                                <div style={{ color: 'var(--fog)' }}>→</div>
-                                            </Link>
-                                        )
-                                    })}
+                                    {socialModal.list.map(member => (
+                                        <Link key={member.username} to={`/user/${member.username}`} onClick={() => setSocialModal(null)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', textDecoration: 'none', borderRadius: '4px' }}>
+                                            <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                {member.avatar_url?.startsWith('http') ? <img src={member.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Buster size={20} mood={member.avatar_url || 'smiling'} />}
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', color: 'var(--parchment)', lineHeight: 1 }}>@{member.username.toUpperCase()}</div>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--sepia)', letterSpacing: '0.1em', marginTop: '0.2rem' }}>{member.followers_count || 0} FOLLOWERS</div>
+                                            </div>
+                                            <div style={{ color: 'var(--fog)' }}>→</div>
+                                        </Link>
+                                    ))}
                                 </div>
                             )}
                         </div>
@@ -809,3 +820,4 @@ export default function UserProfilePage() {
         </div>
     )
 }
+
