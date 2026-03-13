@@ -53,7 +53,7 @@ export default function NotificationBell() {
                     type: n.type || 'system',
                     from: n.from_username || '',
                     message: n.message || '',
-                    read: n.read || false,
+                    read: n.is_read || false,
                     timestamp: n.created_at,
                 }))
                 setNotifications(formatted)
@@ -98,12 +98,12 @@ export default function NotificationBell() {
         setOpen(v => !v)
         if (!open && unreadCount > 0 && user?.id) {
             markAllRead()
-            // Batch update in Supabase
+            // Batch update in Supabase — column is `is_read`
             await supabase
                 .from('notifications')
-                .update({ read: true })
+                .update({ is_read: true })
                 .eq('user_id', user.id)
-                .eq('read', false)
+                .eq('is_read', false)
                 .catch(() => { })  // Graceful if table missing
         }
     }

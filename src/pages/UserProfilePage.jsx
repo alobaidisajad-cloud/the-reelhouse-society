@@ -208,7 +208,7 @@ export default function UserProfilePage() {
         queryFn: async () => {
             const { data } = await supabase
                 .from('profiles')
-                .select('id, username, role, bio, avatar_url, following, followers, is_social_private, created_at, tier')
+                .select('id, username, role, bio, avatar_url, followers_count, following_count, is_social_private, created_at, tier')
                 .eq('username', routeUsername)
                 .single()
             if (!data) return null
@@ -218,8 +218,8 @@ export default function UserProfilePage() {
                 role: data.role || 'cinephile',
                 bio: data.bio || '',
                 avatar: data.avatar_url || 'smiling',
-                following: data.following || [],
-                followers: data.followers || [],
+                followersCount: data.followers_count || 0,
+                followingCount: data.following_count || 0,
                 isSocialPrivate: data.is_social_private || false,
                 createdAt: data.created_at,
             }
@@ -315,45 +315,60 @@ export default function UserProfilePage() {
         setFollowLoading(true)
         try {
             if (isFollowing) {
-                // Unfollow — remove from both arrays
-                await supabase.rpc('remove_follow', {
-                    follower_username: currentUser.username,
-                    followed_username: profileUser.username
-                }).then(async () => {
-                    // Fallback: direct update if RPC not available
+                // Unfollow: decrement both counters
+                await supabase.rpc('decrement_follow_counts', {
+                    follower_id: currentUser.id,
+                    followed_id: profileUser.id
+                }).catch(async () => {
+                    // Fallback if RPC not created: direct arithmetic update
                     await supabase.from('profiles')
-                        .update({ following: (currentUser.following || []).filter(u => u !== profileUser.username) })
-                        .eq('username', currentUser.username)
+                        .update({ following_count: Math.max(0, (currentUser.following_count || 1) - 1) })
+                        .eq('id', currentUser.id)
                     await supabase.from('profiles')
-                        .update({ followers: (profileUser.followers || []).filter(u => u !== currentUser.username) })
-                        .eq('username', profileUser.username)
+                        .update({ followers_count: Math.max(0, (profileUser.followersCount || 1) - 1) })
+                        .eq('id', profileUser.id)
                 })
+                // Remove from interactions table
+                await supabase.from('interactions').delete()
+                    .eq('user_id', currentUser.id)
+                    .eq('target_user_id', profileUser.id)
+                    .eq('type', 'follow').catch(() => {})
                 updateUser({ following: (currentUser.following || []).filter(u => u !== profileUser.username) })
-                // Optimistically update the cached profile so follower count drops immediately
+                // Optimistically drop follower count in cache
                 queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
-                    old ? { ...old, followers: (old.followers || []).filter(u => u !== currentUser.username) } : old
+                    old ? { ...old, followersCount: Math.max(0, (old.followersCount || 1) - 1) } : old
                 )
                 toast.success(`Unfollowed @${profileUser.username}`)
             } else {
-                // Follow — add to both arrays
-                const newFollowing = [...(currentUser.following || []), profileUser.username]
-                await supabase.from('profiles')
-                    .update({ following: newFollowing })
-                    .eq('username', currentUser.username)
-                await supabase.from('profiles')
-                    .update({ followers: [...(profileUser.followers || []), currentUser.username] })
-                    .eq('username', profileUser.username)
+                // Follow: insert interaction + increment both counters
+                await supabase.from('interactions').insert({
+                    user_id: currentUser.id,
+                    target_user_id: profileUser.id,
+                    type: 'follow'
+                }).catch(() => {})
+                await supabase.rpc('increment_follow_counts', {
+                    follower_id: currentUser.id,
+                    followed_id: profileUser.id
+                }).catch(async () => {
+                    // Fallback if RPC not created
+                    await supabase.from('profiles')
+                        .update({ following_count: (currentUser.following_count || 0) + 1 })
+                        .eq('id', currentUser.id)
+                    await supabase.from('profiles')
+                        .update({ followers_count: (profileUser.followersCount || 0) + 1 })
+                        .eq('id', profileUser.id)
+                })
                 // Notify the followed user
                 await supabase.from('notifications').insert({
                     user_id: profileUser.id,
                     type: 'follow',
                     from_username: currentUser.username,
                     message: `@${currentUser.username} is now following you.`,
-                })
-                updateUser({ following: newFollowing })
-                // Optimistically update the cached profile so follower count rises immediately
+                }).catch(() => {})
+                updateUser({ following: [...(currentUser.following || []), profileUser.username] })
+                // Optimistically bump follower count in cache
                 queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
-                    old ? { ...old, followers: [...(old.followers || []), currentUser.username] } : old
+                    old ? { ...old, followersCount: (old.followersCount || 0) + 1 } : old
                 )
                 toast.success(`Now following @${profileUser.username} ✦`)
             }
@@ -537,8 +552,8 @@ export default function UserProfilePage() {
                             <div className="profile-stats-row" style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
                                 {[
                                     { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
-                                    { value: profileUser.followers?.length || 0, label: 'FOLLOWERS', onClick: () => !isEditing && (isOwnProfile || !profileUser.isSocialPrivate) && setSocialModal({ title: 'Followers', list: profileUser.followers || [] }) },
-                                    { value: profileUser.following?.length || 0, label: 'FOLLOWING', onClick: () => !isEditing && (isOwnProfile || !profileUser.isSocialPrivate) && setSocialModal({ title: 'Following', list: profileUser.following || [] }) },
+                                    { value: isOwnProfile ? (currentUser?.followers_count || 0) : (profileUser?.followersCount || 0), label: 'FOLLOWERS', onClick: null },
+                                    { value: isOwnProfile ? (currentUser?.following_count || 0) : (profileUser?.followingCount || 0), label: 'FOLLOWING', onClick: null },
                                     { value: profileStubs.length, label: 'STUBS', onClick: null },
                                 ].map(({ value, label, onClick }) => (
                                     <div key={label} onClick={onClick} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default' }}>

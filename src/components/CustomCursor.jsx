@@ -92,6 +92,11 @@ export default function CustomCursor() {
     document.body.addEventListener('mouseout', onOut, { passive: true })
     document.addEventListener('mouseleave', onLeave, { passive: true })
     document.addEventListener('mouseenter', onEnter, { passive: true })
+    // Cover alt-tab / window switch — mouseleave doesn't fire in these cases
+    window.addEventListener('blur', onLeave, { passive: true })
+    window.addEventListener('focus', onEnter, { passive: true })
+    const onVisibilityChange = () => { document.hidden ? onLeave() : onEnter() }
+    document.addEventListener('visibilitychange', onVisibilityChange, { passive: true })
 
     animate()
 
@@ -103,6 +108,9 @@ export default function CustomCursor() {
       document.body.removeEventListener('mouseout', onOut)
       document.removeEventListener('mouseleave', onLeave)
       document.removeEventListener('mouseenter', onEnter)
+      window.removeEventListener('blur', onLeave)
+      window.removeEventListener('focus', onEnter)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       cancelAnimationFrame(raf)
       outer.remove()
       dot.remove()
