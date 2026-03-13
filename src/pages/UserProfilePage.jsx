@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
-import { Film, BookOpen, Star, Lock, Edit2, Camera, User, Settings, Globe } from 'lucide-react'
+import { Film, BookOpen, Star, Lock, Edit2, Camera, User, Settings, Globe, Download } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, StatCard, PersonaStamp, FilmCard, RadarChart } from '../components/UI'
 import Buster from '../components/Buster'
@@ -16,6 +16,31 @@ import { NoirPassport } from '../components/profile/NoirPassport'
 import { ProjectorRoom } from '../components/profile/ProjectorRoom'
 import { TicketBooth } from '../components/profile/TicketBooth'
 import { ProgrammesSection } from '../components/profile/ProgrammesSection'
+import { ProjectionistCalendar } from '../components/profile/ProjectionistCalendar'
+
+// ── CSV EXPORT ──
+function exportLogsCSV(logs, username) {
+    const headers = ['Title', 'Year', 'Rating', 'Status', 'Date Watched', 'Review', 'Physical Media', 'Watched With', 'Pull Quote']
+    const rows = logs.map(l => [
+        `"${(l.title || '').replace(/"/g, '""')}"`,
+        l.year || '',
+        l.rating || '',
+        l.status || 'watched',
+        l.watchedDate || l.createdAt?.slice(0, 10) || '',
+        `"${(l.review || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+        l.physicalMedia || '',
+        `"${(l.watchedWith || '').replace(/"/g, '""')}"`,
+        `"${(l.pullQuote || '').replace(/"/g, '""')}"`,
+    ])
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `reelhouse_${username}_archive_${new Date().toISOString().slice(0, 10)}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+}
 
 // ── PROFILE BACKDROP ──
 function ProfileBackdrop({ logs }) {
@@ -399,6 +424,8 @@ export default function UserProfilePage() {
     })
 
 
+    const isPremium = currentUser?.role === 'archivist' || currentUser?.role === 'auteur'
+
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: filteredLogs.length },
         { id: 'passport', label: 'Passport', count: null },
@@ -407,6 +434,7 @@ export default function UserProfilePage() {
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
         { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length > 0 ? profileStubs.length : null },
         ...(isOwnProfile && currentProgrammes.length >= 0 ? [{ id: 'programmes', label: 'Nightly Programmes', count: currentProgrammes.length > 0 ? currentProgrammes.length : null }] : []),
+        ...(isOwnProfile ? [{ id: 'calendar', label: isPremium ? '✦ The Calendar' : '🔒 The Calendar', count: null }] : []),
     ]
 
     return (
@@ -450,7 +478,19 @@ export default function UserProfilePage() {
                                     </h1>
                                 )}
                                 {isOwnProfile ? (
-                                    <button onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)} className="btn btn-ghost" style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', height: 'fit-content' }}>{isEditing ? 'SAVE DOSSIER' : 'EDIT PROFILE'}</button>
+                                    <>
+                                        <button onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)} className="btn btn-ghost" style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', height: 'fit-content' }}>{isEditing ? 'SAVE DOSSIER' : 'EDIT PROFILE'}</button>
+                                        {!isEditing && isPremium && (
+                                            <button
+                                                onClick={() => exportLogsCSV(profileLogs, profileUser.username)}
+                                                className="btn btn-ghost"
+                                                style={{ fontSize: '0.55rem', padding: '0.3rem 0.6rem', height: 'fit-content', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--sepia)', borderColor: 'var(--sepia)' }}
+                                                title="Export your complete film archive as CSV"
+                                            >
+                                                <Download size={10} /> EXPORT ARCHIVE
+                                            </button>
+                                        )}
+                                    </>
                                 ) : (
                                     <button
                                         onClick={handleFollow}
@@ -672,6 +712,13 @@ export default function UserProfilePage() {
 
                         {activeTab === 'programmes' && (
                             <div><SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" /><ProgrammesSection programmes={currentProgrammes} user={profileUser} /></div>
+                        )}
+
+                        {activeTab === 'calendar' && (
+                            <div>
+                                <SectionHeader label="ARCHIVIST · VIEWING HISTORY" title="The Projectionist's Calendar" />
+                                <ProjectionistCalendar logs={profileLogs} isPremium={isPremium} />
+                            </div>
                         )}
                     </div>
 
