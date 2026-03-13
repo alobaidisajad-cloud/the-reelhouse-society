@@ -19,16 +19,25 @@ export default function ListDetailPage() {
         queryFn: async () => {
             const { data, error } = await supabase
                 .from('lists')
-                .select(`id, title, description, created_at, is_private, profiles:user_id(username), list_items(film_id, film_title, poster_path, film_year)`)
+                .select('id, title, description, created_at, is_private, user_id')
                 .eq('id', id)
-                .single()
+                .maybeSingle()
             if (error || !data) return null
+
+            // Resolve username
+            const { data: profile } = await supabase
+                .from('profiles').select('username').eq('id', data.user_id).maybeSingle()
+
+            // Resolve list items
+            const { data: items } = await supabase
+                .from('list_items').select('film_id, film_title, poster_path').eq('list_id', id)
+
             return {
                 id: data.id,
                 title: data.title,
                 description: data.description,
-                user: data.profiles?.username || 'anonymous',
-                films: (data.list_items || []).map(item => ({
+                user: profile?.username || 'anonymous',
+                films: (items || []).map(item => ({
                     id: item.film_id,
                     title: item.film_title,
                     poster_path: item.poster_path,

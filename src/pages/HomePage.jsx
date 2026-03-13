@@ -386,7 +386,7 @@ const VenueSpotlight = memo(function VenueSpotlight() {
         queryFn: async () => {
             const { data } = await supabase
                 .from('venues')
-                .select('id, name, location, vibes, is_verified')
+                .select('*')
                 .order('created_at', { ascending: false })
                 .limit(3)
             return (data || []).map(v => ({ ...v, verified: v.is_verified }))
