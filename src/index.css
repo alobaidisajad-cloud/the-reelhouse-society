@@ -727,7 +727,7 @@ a:hover {
   position: relative;
   border-radius: var(--radius-card);
   border: 1px solid var(--ash);
-  cursor: none;
+  cursor: pointer;
   background: var(--ink);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
   transition: border-color 0.3s, box-shadow 0.3s;

@@ -113,7 +113,7 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
     return (
         <div
             className="card-film cine-card"
-            style={{ aspectRatio: '2/3', cursor: 'none' }}
+            style={{ aspectRatio: '2/3' }}
             onClick={onClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}

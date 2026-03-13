@@ -659,29 +659,18 @@ export default function UserProfilePage() {
                                             else if (sieve === 'all' && (index === 1 || index === 2)) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 1' }
                                             const hl = halfLifeMap[log.filmId]
                                             return (
-                                                <div key={log.id} style={{ gridColumn: gridColumnSpan, gridRow: gridRowSpan, position: 'relative', height: '100%' }}>
-                                                    <FilmCard
-                                                        film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status }}
-                                                        onClick={() => {
-                                                            useUIStore.getState().openViewLog({
-                                                                log,
-                                                                film: { id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' },
-                                                                ownerUsername: displayUser?.username || username,
-                                                            })
-                                                        }}
-                                                    />
-                                                    {/* Transparent click overlay — guaranteed to capture clicks even if FilmCard's cursor:none blocks automation */}
-                                                    <div
-                                                        onClick={() => {
-                                                            window.alert('CLICK WORKS! Opening review for: ' + log.title)
-                                                            useUIStore.getState().openViewLog({
-                                                                log,
-                                                                film: { id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' },
-                                                                ownerUsername: displayUser?.username || username,
-                                                            })
-                                                        }}
-                                                        style={{ position: 'absolute', inset: 0, zIndex: 5, cursor: 'pointer' }}
-                                                    />
+                                                <div
+                                                    key={log.id}
+                                                    onClick={() => {
+                                                        useUIStore.getState().openViewLog({
+                                                            log,
+                                                            film: { id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' },
+                                                            ownerUsername: displayUser?.username || username,
+                                                        })
+                                                    }}
+                                                    style={{ gridColumn: gridColumnSpan, gridRow: gridRowSpan, position: 'relative', cursor: 'pointer' }}
+                                                >
+                                                    <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status }} />
                                                     {hl && (
                                                         <div style={{ position: 'absolute', bottom: 6, left: 4, right: 4, background: 'rgba(10,7,3,0.88)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.25rem 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem', pointerEvents: 'none' }}>
                                                             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', whiteSpace: 'nowrap', color: hl.trajectory === 'ASCENDING' ? '#7cb87a' : hl.trajectory === 'DECAYING' ? 'var(--blood-reel)' : 'var(--sepia)' }}>{hl.trajectory === 'ASCENDING' ? '↑' : hl.trajectory === 'DECAYING' ? '↓' : '—'} {hl.trajectory}</span>
