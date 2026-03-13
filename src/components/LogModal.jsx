@@ -190,7 +190,7 @@ export default function LogModal() {
             isSpoiler,
             watchedDate: date,
             watchedWith: watchedWith.trim() || null,
-            privateNotes: privateNotes.trim() || null,
+            privateNotes: isPremium ? (privateNotes.trim() || null) : null,
             abandonedReason: status === 'abandoned' ? abandoned : null,
             physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
             isAutopsied: isAuteur ? isAutopsied : false,
@@ -764,20 +764,44 @@ export default function LogModal() {
                                     )}
                                 </div>
 
-                                {/* Private Notes */}
-                                <div>
-                                    <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem' }}>
-                                        <Lock size={10} style={{ display: 'inline' }} />
-                                        PRIVATE NOTES (THE CUTTING ROOM FLOOR)
+                {/* Private Notes — Archivist+ (The Vault) */}
+                                <div style={{ position: 'relative' }}>
+                                    <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', justifyContent: 'space-between' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                            <Lock size={10} style={{ display: 'inline' }} />
+                                            PRIVATE NOTES (THE CUTTING ROOM FLOOR)
+                                        </div>
+                                        {!isPremium && (
+                                            <span style={{ color: 'var(--fog)', fontSize: '0.5rem' }}>
+                                                <Lock size={8} style={{ display: 'inline', marginRight: '0.1rem' }} /> ARCHIVIST TIER
+                                            </span>
+                                        )}
                                     </label>
-                                    <textarea
-                                        className="input"
-                                        style={{ minHeight: 80, resize: 'vertical', fontFamily: 'var(--font-body)', background: 'var(--ink)' }}
-                                        placeholder="Hidden from the public. Your personal thoughts, contexts, or reminders..."
-                                        value={privateNotes}
-                                        onChange={(e) => setPrivateNotes(e.target.value)}
-                                        maxLength={1000}
-                                    />
+                                    <div style={{ position: 'relative' }}>
+                                        <textarea
+                                            className="input"
+                                            style={{ minHeight: 80, resize: 'vertical', fontFamily: 'var(--font-body)', background: 'var(--ink)', opacity: isPremium ? 1 : 0.4 }}
+                                            placeholder={isPremium ? "Hidden from the public. Your personal thoughts, contexts, or reminders..." : "Upgrade to Archivist to unlock private notes..."}
+                                            value={isPremium ? privateNotes : ''}
+                                            onChange={(e) => isPremium && setPrivateNotes(e.target.value)}
+                                            maxLength={1000}
+                                            readOnly={!isPremium}
+                                        />
+                                        {!isPremium && (
+                                            <button
+                                                onClick={() => { closeLogModal(); navigate('/society') }}
+                                                style={{
+                                                    position: 'absolute', inset: 0, width: '100%', height: '100%',
+                                                    background: 'rgba(10,7,3,0.6)', border: 'none', cursor: 'pointer',
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
+                                                    borderRadius: 'var(--radius-card)',
+                                                }}
+                                            >
+                                                <Lock size={16} color="var(--sepia)" />
+                                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>UNLOCK WITH ARCHIVIST</span>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
 
                                 {/* Submit */}
