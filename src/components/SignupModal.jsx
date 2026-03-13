@@ -46,6 +46,12 @@ export default function SignupModal() {
     const [confirmedEmail, setConfirmedEmail] = useState('')
     const [resending, setResending] = useState(false)
 
+    // Forgot password state
+    const [forgotMode, setForgotMode] = useState(false)
+    const [forgotEmail, setForgotEmail] = useState('')
+    const [forgotSent, setForgotSent] = useState(false)
+    const [forgotLoading, setForgotLoading] = useState(false)
+
     useEffect(() => {
         // Reset state when modal opens
         if (signupModalOpen) {
@@ -156,6 +162,7 @@ export default function SignupModal() {
         setPersona(''); setVenueName(''); setVenueDesc(''); setVibes([])
         setHasClearance(false); setClearanceCode(''); setClearanceStatus('idle')
         setAwaitingConfirmation(false); setConfirmedEmail('')
+        setForgotMode(false); setForgotEmail(''); setForgotSent(false)
     }
 
     const handleResend = async () => {
@@ -171,6 +178,107 @@ export default function SignupModal() {
     }
 
     if (!signupModalOpen || isAuthenticated) return null
+
+    // FORGOT PASSWORD SCREEN
+    if (forgotMode) {
+        return (
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5, 3, 1, 0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                >
+                    <motion.div
+                        initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                        style={{ width: '100%', maxWidth: 480, background: 'var(--ink)', border: '1px solid var(--sepia)', borderRadius: '4px', padding: '3rem 2rem', position: 'relative', boxShadow: '0 0 40px rgba(139,105,20,0.15)', textAlign: 'center' }}
+                    >
+                        <button onClick={closeSignupModal} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', opacity: 0.5 }}>
+                            <X size={16} />
+                        </button>
+
+                        <div style={{ display: 'inline-flex', marginBottom: '1.5rem', background: 'rgba(139,105,20,0.1)', padding: '1.25rem', borderRadius: '50%', border: '1px solid var(--sepia)' }}>
+                            <Lock size={32} color="var(--sepia)" />
+                        </div>
+
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
+                            CREDENTIAL RECOVERY
+                        </div>
+                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>
+                            {forgotSent ? 'Check Your Inbox.' : 'Reset Your Password'}
+                        </h2>
+
+                        {forgotSent ? (
+                            <>
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6, marginBottom: '0.5rem' }}>
+                                    We sent a password reset link to:
+                                </p>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.08em', color: 'var(--flicker)', background: 'var(--soot)', padding: '0.6rem 1rem', borderRadius: '2px', border: '1px solid var(--ash)', marginBottom: '1.5rem', wordBreak: 'break-all' }}>
+                                    {forgotEmail}
+                                </div>
+                                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.08em', color: 'var(--fog)', lineHeight: 1.7, marginBottom: '2rem' }}>
+                                    CLICK THE LINK IN YOUR EMAIL TO SET A NEW PASSWORD.<br />
+                                    CHECK YOUR SPAM FOLDER IF IT DOESN'T ARRIVE WITHIN 2 MINUTES.
+                                </p>
+                                <button
+                                    onClick={() => { setForgotMode(false); setForgotSent(false); setIsLogin(true) }}
+                                    style={{ background: 'none', border: '1px solid var(--ash)', color: 'var(--bone)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', cursor: 'pointer', padding: '0.6rem 1.25rem', borderRadius: '2px' }}
+                                >
+                                    BACK TO SIGN IN
+                                </button>
+                            </>
+                        ) : (
+                            <>
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                                    Enter the email associated with your account and we'll send you a classified reset link.
+                                </p>
+                                <form onSubmit={async (e) => {
+                                    e.preventDefault()
+                                    if (!forgotEmail.trim()) { toast.error('Please enter your email.'); return }
+                                    setForgotLoading(true)
+                                    try {
+                                        const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
+                                            redirectTo: `${window.location.origin}/auth/reset-password`,
+                                        })
+                                        if (error) throw error
+                                        setForgotSent(true)
+                                        toast.success('Reset link sent!')
+                                    } catch (err) {
+                                        toast.error(err.message || 'Could not send reset link.')
+                                    } finally {
+                                        setForgotLoading(false)
+                                    }
+                                }} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                    <input
+                                        className="input"
+                                        type="email"
+                                        placeholder="Your email address"
+                                        autoComplete="email"
+                                        value={forgotEmail}
+                                        onChange={e => setForgotEmail(e.target.value)}
+                                        autoFocus
+                                        style={{ textAlign: 'center' }}
+                                    />
+                                    <button
+                                        className="btn btn-primary"
+                                        type="submit"
+                                        disabled={forgotLoading}
+                                        style={{ width: '100%', justifyContent: 'center', padding: '0.7em', opacity: forgotLoading ? 0.5 : 1 }}
+                                    >
+                                        {forgotLoading ? 'SENDING...' : 'SEND RESET LINK'}
+                                    </button>
+                                </form>
+                                <button
+                                    onClick={() => { setForgotMode(false); setIsLogin(true) }}
+                                    style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', textDecoration: 'underline', cursor: 'pointer' }}
+                                >
+                                    BACK TO SIGN IN
+                                </button>
+                            </>
+                        )}
+                    </motion.div>
+                </motion.div>
+            </AnimatePresence>
+        )
+    }
 
     // EMAIL CONFIRMATION PENDING: show 'Check your inbox' screen
     if (awaitingConfirmation) {
@@ -487,6 +595,14 @@ export default function SignupModal() {
                         >
                             {isLogin ? "Don't have an account? Enter Clearance Code" : 'Already a member? Sign in'}
                         </button>
+                        {isLogin && (
+                            <button
+                                onClick={() => { setForgotMode(true); setForgotEmail(email) }}
+                                style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', background: 'none', border: 'none', textDecoration: 'underline', textAlign: 'center', cursor: 'pointer', marginTop: '0.25rem', opacity: 0.8 }}
+                            >
+                                Forgot your password?
+                            </button>
+                        )}
                     </div>
                 </motion.div>
             </motion.div>

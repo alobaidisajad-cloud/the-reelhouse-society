@@ -42,6 +42,7 @@ const DispatchPage = lazy(() => import('./pages/DispatchPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
@@ -226,6 +227,7 @@ export default function App() {
               <Route path="/patronage" element={<ErrorBoundary key="patronage"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/society" element={<ErrorBoundary key="society"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/auth/callback" element={<ErrorBoundary key="auth"><AuthCallbackPage /></ErrorBoundary>} />
+              <Route path="/auth/reset-password" element={<ErrorBoundary key="reset-pw"><PageWrapper><ResetPasswordPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/darkroom" element={<Navigate to="/discover" replace />} />
               <Route path="/membership" element={<Navigate to="/patronage" replace />} />
               <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
