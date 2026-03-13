@@ -30,8 +30,9 @@ export default function OnboardingModal() {
     // Show onboarding ONLY for brand new users (0 logs, hasn't dismissed before)
     useEffect(() => {
         if (!isAuthenticated || !user) return
+        // Check DB preference first, fall back to legacy localStorage
         const dismissedKey = `reelhouse_onboarded_${user.id || user.username}`
-        if (localStorage.getItem(dismissedKey)) return
+        if (user.preferences?.onboarded || localStorage.getItem(dismissedKey)) return
         if (logs.length === 0) {
             const timer = setTimeout(() => setOpen(true), 1500)
             return () => clearTimeout(timer)
@@ -64,6 +65,7 @@ export default function OnboardingModal() {
 
     const handleFinish = () => {
         if (user) {
+            useAuthStore.getState().setPreference('onboarded', true)
             localStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
         }
         setOpen(false)
@@ -73,6 +75,7 @@ export default function OnboardingModal() {
     const handleLogFirst = () => {
         setOpen(false)
         if (user) {
+            useAuthStore.getState().setPreference('onboarded', true)
             localStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
         }
         openLogModal()
@@ -80,6 +83,7 @@ export default function OnboardingModal() {
 
     const handleDismiss = () => {
         if (user) {
+            useAuthStore.getState().setPreference('onboarded', true)
             localStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
         }
         setOpen(false)

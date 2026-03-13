@@ -429,10 +429,14 @@ function ActivityCard({ log }) {
 // ── RATING LEGEND (one-time, dismissible) ──
 function RatingLegend() {
     const [visible, setVisible] = useState(() => {
+        // Check Supabase preference first, fall back to legacy localStorage
+        const prefs = useAuthStore.getState().user?.preferences
+        if (prefs?.legend_dismissed) return false
         try { return !localStorage.getItem('reel-legend-v1') } catch { return true }
     })
     if (!visible) return null
     const dismiss = () => {
+        useAuthStore.getState().setPreference('legend_dismissed', true)
         try { localStorage.setItem('reel-legend-v1', '1') } catch {}
         setVisible(false)
     }

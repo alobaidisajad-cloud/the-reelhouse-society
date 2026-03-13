@@ -129,6 +129,21 @@ export const useAuthStore = create(
                 set((state) => ({ user: state.user ? { ...state.user, ...safeUpdates } : null }))
             },
 
+            // ── Preferences — synced to profiles.preferences JSONB column ──
+            setPreference: async (key, value) => {
+                const user = get().user
+                if (!user) return
+                const prefs = { ...(user.preferences || {}), [key]: value }
+                set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }))
+                await supabase.from('profiles').update({ preferences: prefs }).eq('id', user.id).catch(() => {})
+            },
+
+            getPreference: (key, fallback = null) => {
+                const user = get().user
+                return user?.preferences?.[key] ?? fallback
+            },
+
+
             followUser: async (targetUsername) => {
                 const state = get()
                 const following = state.user?.following || []
@@ -190,6 +205,7 @@ export const useAuthStore = create(
                     bio: state.user.bio,
                     is_social_private: state.user.is_social_private,
                     following: state.user.following,
+                    preferences: state.user.preferences || {},
                 } : null,
                 isAuthenticated: state.isAuthenticated,
             }),
