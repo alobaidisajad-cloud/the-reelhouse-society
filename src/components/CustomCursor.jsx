@@ -67,15 +67,16 @@ export default function CustomCursor() {
     const onOut = (e) => { if (isInteractive(e.target)) outer.classList.remove('cursor-hover') }
 
     // Hide custom cursor + restore real cursor when mouse leaves / window loses focus
+    // Must use setProperty with 'important' to override `cursor: none !important` in index.css
     const onLeave = () => {
       outer.style.opacity = '0'
       dot.style.opacity = '0'
-      document.body.style.cursor = 'auto'
+      document.documentElement.style.setProperty('cursor', 'auto', 'important')
     }
     const onEnter = () => {
       outer.style.opacity = ''
       dot.style.opacity = ''
-      document.body.style.cursor = 'none'
+      document.documentElement.style.removeProperty('cursor')
     }
 
     const animate = () => {
