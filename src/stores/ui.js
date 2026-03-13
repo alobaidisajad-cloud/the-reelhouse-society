@@ -10,9 +10,13 @@ export const useUIStore = create((set) => ({
     showPaywall: false,
     paywallFeature: null,
     handbookOpen: false,
+    viewLogData: null,  // { log, film, ownerUsername } for read-only view
 
     openHandbook: () => set({ handbookOpen: true }),
     closeHandbook: () => set({ handbookOpen: false }),
+
+    openViewLog: (logData) => set({ viewLogData: logData }),
+    closeViewLog: () => set({ viewLogData: null }),
 
     openLogModal: (film = null, editLogId = null) =>
         set({ logModalOpen: true, logModalFilm: film, logModalEditLogId: editLogId }),

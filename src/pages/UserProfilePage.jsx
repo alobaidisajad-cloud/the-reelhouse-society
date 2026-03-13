@@ -668,13 +668,11 @@ export default function UserProfilePage() {
                                                 <div key={log.id} style={{ gridColumn: gridColumnSpan, gridRow: gridRowSpan, position: 'relative', height: '100%' }}>
                                                     <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status }}
                                                         onClick={() => {
-                                                            if (isOwnProfile) {
-                                                                if (currentUser?.role === 'archivist' || currentUser?.role === 'auteur') {
-                                                                    useUIStore.getState().setLogModalFilm({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' })
-                                                                    useUIStore.getState().setLogModalEditLogId(log.id)
-                                                                    useUIStore.getState().openLogModal()
-                                                                } else { openSignupModal('archivist'); toast("The Splicer requires Archivist clearance.", { icon: '🔒', style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } }) }
-                                                            }
+                                                            useUIStore.getState().openViewLog({
+                                                                log,
+                                                                film: { id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' },
+                                                                ownerUsername: displayUser?.username || username,
+                                                            })
                                                         }}
                                                         disableHover={false} />
                                                     {hl && (

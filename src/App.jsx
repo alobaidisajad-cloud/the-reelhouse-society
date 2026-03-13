@@ -19,6 +19,7 @@ const PaywallModal = lazy(() => import('./components/PaywallModal'))
 const LogModal = lazy(() => import('./components/LogModal'))
 const SignupModal = lazy(() => import('./components/SignupModal'))
 const HandbookModal = lazy(() => import('./components/HandbookModal'))
+const LogViewModal = lazy(() => import('./components/LogViewModal'))
 const CommandPalette = lazy(() => import('./components/CommandPalette'))
 const OnboardingModal = lazy(() => import('./components/OnboardingModal'))
 const LetterboxdImport = lazy(() => import('./components/LetterboxdImport'))
@@ -205,6 +206,7 @@ export default function App() {
           <LogModal />
           <SignupModal />
           <HandbookModal />
+          <LogViewModal />
           <OnboardingModal />
           {letterboxdOpen && <LetterboxdImport onClose={() => setLetterboxdOpen(false)} />}
 
