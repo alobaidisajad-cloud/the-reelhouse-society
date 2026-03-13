@@ -61,15 +61,7 @@ export default function Navbar() {
             rafId = requestAnimationFrame(() => {
                 const currentScrollY = window.scrollY
                 setScrolled(currentScrollY > 40)
-
-                // Only hide if we scroll down past 150px overhead
-                // Only reveal if we scroll up by at least 50px (prevents micro-flicker)
-                if (currentScrollY > 150 && currentScrollY > lastScrollY.current + 8) {
-                    setHidden(true)
-                } else if (currentScrollY < lastScrollY.current - 50) {
-                    setHidden(false)
-                }
-
+                // Navbar always stays visible — no hide-on-scroll
                 lastScrollY.current = currentScrollY
                 rafId = null
             })
