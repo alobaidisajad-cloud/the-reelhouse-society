@@ -652,6 +652,22 @@ export default function UserProfilePage() {
                                         </div>
                                     </div>
                                 ) : (
+                                    <>
+                                    {/* DEBUG: Test button to verify LogViewModal works */}
+                                    <button
+                                        onClick={() => {
+                                            const firstLog = filteredLogs[0]
+                                            useUIStore.getState().openViewLog({
+                                                log: firstLog,
+                                                film: { id: firstLog.filmId, title: firstLog.title, poster_path: firstLog.poster, release_date: firstLog.year + '-01-01' },
+                                                ownerUsername: displayUser?.username || username,
+                                            })
+                                        }}
+                                        className="btn btn-primary"
+                                        style={{ marginBottom: '1rem', fontSize: '0.7rem', padding: '0.6rem 1.2rem' }}
+                                    >
+                                        ✦ TAP TO READ FIRST LOG
+                                    </button>
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gridAutoRows: 'minmax(210px, auto)', gap: '1rem' }}>
                                         {filteredLogs.map((log, index) => {
                                             let gridColumnSpan = 'span 1', gridRowSpan = 'span 1'
@@ -681,6 +697,7 @@ export default function UserProfilePage() {
                                             )
                                         })}
                                     </div>
+                                    </>
                                 )}
                             </div>
                         )}
