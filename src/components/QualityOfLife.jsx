@@ -7,7 +7,6 @@ export default function QualityOfLife() {
     const [showBackToTop, setShowBackToTop] = useState(false)
     const [isOffline, setIsOffline] = useState(false)
     const openLogModal = useUIStore(state => state.openLogModal)
-    const toggleCommandPalette = useUIStore(state => state.toggleCommandPalette)
 
     useEffect(() => {
         // 1. Back to Top Visibility Tracker
@@ -37,11 +36,7 @@ export default function QualityOfLife() {
                 e.preventDefault()
                 openLogModal()
             }
-            // / -> Quick Search (Command Palette)
-            if (e.key === '/') {
-                e.preventDefault()
-                toggleCommandPalette()
-            }
+
         }
         window.addEventListener('keydown', handleKeyDown)
 
@@ -51,7 +46,7 @@ export default function QualityOfLife() {
             window.removeEventListener('online', handleOnline)
             window.removeEventListener('keydown', handleKeyDown)
         }
-    }, [openLogModal, toggleCommandPalette])
+    }, [openLogModal])
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' })

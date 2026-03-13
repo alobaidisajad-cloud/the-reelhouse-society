@@ -114,8 +114,8 @@ export const useFilmStore = create(
                         const { data: items } = await supabase.from('list_items').select('*').eq('list_id', list.id)
                         return {
                             id: list.id, title: list.title, description: list.description,
-                            isRanked: list.is_ranked, createdAt: list.created_at,
-                            films: (items || []).map((i) => ({ id: i.film_id, title: i.film_title })),
+                            isRanked: list.is_ranked, isPrivate: list.is_private || false, createdAt: list.created_at,
+                            films: (items || []).map((i) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path || null })),
                         }
                     }))
                     set({ lists: fullLists })
@@ -326,6 +326,7 @@ export const useFilmStore = create(
             addFilmToList: async (listId, film) => {
                 const { error } = await supabase.from('list_items').insert([{
                     list_id: listId, film_id: film.id, film_title: film.title || film.name || 'Unknown',
+                    poster_path: film.poster_path || null,
                 }])
                 if (!error) {
                     set((state) => ({

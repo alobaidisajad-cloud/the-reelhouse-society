@@ -122,7 +122,8 @@ export const useAuthStore = create(
                 if (updates.isSocialPrivate !== undefined) dbUpdates.is_social_private = updates.isSocialPrivate
                 // NOTE: role is intentionally excluded — role changes only happen via payment flow
                 if (Object.keys(dbUpdates).length > 0) {
-                    await supabase.from('profiles').update(dbUpdates).eq('id', user.id).catch(() => { })
+                    const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', user.id)
+                    if (error) console.error('[updateUser] profile update failed:', error.message)
                 }
                 // Strip role from local update too — never allow client-side role elevation
                 const { role: _stripped, ...safeUpdates } = updates
