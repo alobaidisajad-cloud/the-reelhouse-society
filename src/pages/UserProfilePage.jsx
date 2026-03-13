@@ -383,15 +383,11 @@ export default function UserProfilePage() {
                     old ? { ...old, followersCount: Math.max(0, (old.followersCount || 1) - 1) } : old
                 )
                 toast.success(`Unfollowed @${profileUser.username}`)
-                // Then fire DB ops in background
-                supabase.from('interactions').delete()
+                // DB: remove follow interaction (trigger handles count update)
+                await supabase.from('interactions').delete()
                     .eq('user_id', currentUser.id)
                     .eq('target_user_id', profileUser.id)
-                    .eq('type', 'follow').catch(() => {})
-                supabase.rpc('decrement_follow_counts', {
-                    follower_id: currentUser.id,
-                    followed_id: profileUser.id
-                }).catch(() => {})
+                    .eq('type', 'follow')
             } else {
                 // Update local state FIRST so UI responds immediately
                 updateUser({ following: [...(currentUser.following || []), profileUser.username] })
@@ -399,16 +395,13 @@ export default function UserProfilePage() {
                     old ? { ...old, followersCount: (old.followersCount || 0) + 1 } : old
                 )
                 toast.success(`Now following @${profileUser.username} ✦`)
-                // Then fire DB ops in background
-                supabase.from('interactions').insert({
+                // DB: insert follow interaction (trigger handles count update)
+                await supabase.from('interactions').insert({
                     user_id: currentUser.id,
                     target_user_id: profileUser.id,
                     type: 'follow'
-                }).catch(() => {})
-                supabase.rpc('increment_follow_counts', {
-                    follower_id: currentUser.id,
-                    followed_id: profileUser.id
-                }).catch(() => {})
+                })
+                // Send notification
                 supabase.from('notifications').insert({
                     user_id: profileUser.id,
                     type: 'follow',

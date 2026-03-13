@@ -3,6 +3,34 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 
 
+// Load the user's following list from the interactions table
+export async function hydrateFollowing() {
+    const userId = useAuthStore.getState().user?.id
+    if (!userId) return
+    try {
+        // Get all follow interactions by this user
+        const { data: followRows } = await supabase
+            .from('interactions')
+            .select('target_user_id')
+            .eq('user_id', userId)
+            .eq('type', 'follow')
+        if (!followRows || followRows.length === 0) {
+            useAuthStore.setState(s => ({ user: { ...s.user, following: [] } }))
+            return
+        }
+        // Resolve target IDs to usernames
+        const targetIds = followRows.map(r => r.target_user_id)
+        const { data: profiles } = await supabase
+            .from('profiles')
+            .select('username')
+            .in('id', targetIds)
+        const usernames = (profiles || []).map(p => p.username).filter(Boolean)
+        useAuthStore.setState(s => ({ user: { ...s.user, following: usernames } }))
+    } catch (e) {
+        console.error('Failed to hydrate following list:', e)
+    }
+}
+
 // Parallel hydration helper — fires all user-data fetches simultaneously
 async function hydrateUserData() {
     const [films, programmes] = await Promise.all([
@@ -15,6 +43,7 @@ async function hydrateUserData() {
         films.useFilmStore.getState().fetchVault(),
         films.useFilmStore.getState().fetchLists(),
         programmes.useProgrammeStore.getState().fetchProgrammes(),
+        hydrateFollowing(),
     ])
 }
 
@@ -34,8 +63,8 @@ export const useAuthStore = create(
                     .eq('id', data.user.id)
                     .single()
 
-                set({ user: { ...data.user, ...profile }, isAuthenticated: true })
-                // Parallel fetch — all data loads simultaneously
+                set({ user: { ...data.user, ...profile, following: [] }, isAuthenticated: true })
+                // Parallel fetch — all data loads simultaneously (including following list)
                 hydrateUserData()
                 return data
             },
@@ -70,7 +99,7 @@ export const useAuthStore = create(
                         tier: role === 'venue_owner' ? 'free' : 'free',
                     }).eq('id', data.user.id)
                     const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
-                    set({ user: { ...data.user, ...profile }, isAuthenticated: true })
+                    set({ user: { ...data.user, ...profile, following: [] }, isAuthenticated: true })
                     hydrateUserData()
                 }
                 // Return data — SignupModal checks data.session to decide

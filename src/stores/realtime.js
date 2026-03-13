@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
-import { useAuthStore } from './auth'
+import { useAuthStore, hydrateFollowing } from './auth'
 import { useFilmStore } from './films'
 import { useNotificationStore } from './social'
 import { useProgrammeStore } from './content'
@@ -29,6 +29,7 @@ export const initAuthSync = () => {
                     useFilmStore.getState().fetchLists(),
                     useFilmStore.getState().fetchStubs(),
                     useProgrammeStore.getState().fetchProgrammes(),
+                    hydrateFollowing(),
                 ])
             } else {
                 // No session on load — clear any stale localStorage auth
@@ -55,6 +56,7 @@ export const initAuthSync = () => {
                     useFilmStore.getState().fetchLists(),
                     useFilmStore.getState().fetchStubs(),
                     useProgrammeStore.getState().fetchProgrammes(),
+                    hydrateFollowing(),
                 ])
             }
         }
