@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
 import { Film, BookOpen, Star, Lock, Edit2, Camera, User, Settings, Globe, Download } from 'lucide-react'
@@ -194,6 +194,7 @@ function ListsSection({ lists, user }) {
 // ── MAIN PAGE ──
 export default function UserProfilePage() {
     const { username: routeUsername } = useParams()
+    const queryClient = useQueryClient()
     const { user: currentUser, isAuthenticated, updateUser, community } = useAuthStore()
     const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, getCinephileStats } = useFilmStore()
     const { programmes: currentProgrammes } = useProgrammeStore()
@@ -328,6 +329,10 @@ export default function UserProfilePage() {
                         .eq('username', profileUser.username)
                 })
                 updateUser({ following: (currentUser.following || []).filter(u => u !== profileUser.username) })
+                // Optimistically update the cached profile so follower count drops immediately
+                queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
+                    old ? { ...old, followers: (old.followers || []).filter(u => u !== currentUser.username) } : old
+                )
                 toast.success(`Unfollowed @${profileUser.username}`)
             } else {
                 // Follow — add to both arrays
@@ -346,6 +351,10 @@ export default function UserProfilePage() {
                     message: `@${currentUser.username} is now following you.`,
                 })
                 updateUser({ following: newFollowing })
+                // Optimistically update the cached profile so follower count rises immediately
+                queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
+                    old ? { ...old, followers: [...(old.followers || []), currentUser.username] } : old
+                )
                 toast.success(`Now following @${profileUser.username} ✦`)
             }
         } catch (err) {

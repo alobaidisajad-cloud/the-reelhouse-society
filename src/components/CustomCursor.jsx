@@ -66,6 +66,16 @@ export default function CustomCursor() {
     const onOver = (e) => { if (isInteractive(e.target)) outer.classList.add('cursor-hover') }
     const onOut = (e) => { if (isInteractive(e.target)) outer.classList.remove('cursor-hover') }
 
+    // Hide custom cursor when mouse leaves viewport (prevents invisible-cursor bug)
+    const onLeave = () => {
+      outer.style.opacity = '0'
+      dot.style.opacity = '0'
+    }
+    const onEnter = () => {
+      outer.style.opacity = ''
+      dot.style.opacity = ''
+    }
+
     const animate = () => {
       ox += (mx - ox) * 0.92
       oy += (my - oy) * 0.92
@@ -80,6 +90,8 @@ export default function CustomCursor() {
     window.addEventListener('mouseup', onUp, { passive: true })
     document.body.addEventListener('mouseover', onOver, { passive: true })
     document.body.addEventListener('mouseout', onOut, { passive: true })
+    document.addEventListener('mouseleave', onLeave, { passive: true })
+    document.addEventListener('mouseenter', onEnter, { passive: true })
 
     animate()
 
@@ -89,6 +101,8 @@ export default function CustomCursor() {
       window.removeEventListener('mouseup', onUp)
       document.body.removeEventListener('mouseover', onOver)
       document.body.removeEventListener('mouseout', onOut)
+      document.removeEventListener('mouseleave', onLeave)
+      document.removeEventListener('mouseenter', onEnter)
       cancelAnimationFrame(raf)
       outer.remove()
       dot.remove()
