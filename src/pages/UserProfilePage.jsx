@@ -314,25 +314,42 @@ export default function UserProfilePage() {
         setSocialLoading(true)
         setSocialModal({ title: type === 'followers' ? 'Followers' : 'Following', list: [] })
         try {
-            let query
             if (type === 'followers') {
-                // People who follow this profile
-                const { data } = await supabase
+                // Step 1: get IDs of people who follow this profile
+                const { data: rows } = await supabase
                     .from('interactions')
-                    .select('profiles!user_id(username, avatar_url, followers_count)')
+                    .select('user_id')
                     .eq('target_user_id', profileUser.id)
                     .eq('type', 'follow')
                     .limit(100)
-                setSocialModal({ title: 'Followers', list: (data || []).map(r => r.profiles).filter(Boolean) })
+                const ids = (rows || []).map(r => r.user_id)
+                if (ids.length > 0) {
+                    const { data: profiles } = await supabase
+                        .from('profiles')
+                        .select('username, avatar_url, followers_count')
+                        .in('id', ids)
+                    setSocialModal({ title: 'Followers', list: profiles || [] })
+                } else {
+                    setSocialModal({ title: 'Followers', list: [] })
+                }
             } else {
-                // People this profile follows
-                const { data } = await supabase
+                // Step 1: get IDs of people this profile follows
+                const { data: rows } = await supabase
                     .from('interactions')
-                    .select('profiles!target_user_id(username, avatar_url, followers_count)')
+                    .select('target_user_id')
                     .eq('user_id', profileUser.id)
                     .eq('type', 'follow')
                     .limit(100)
-                setSocialModal({ title: 'Following', list: (data || []).map(r => r.profiles).filter(Boolean) })
+                const ids = (rows || []).map(r => r.target_user_id)
+                if (ids.length > 0) {
+                    const { data: profiles } = await supabase
+                        .from('profiles')
+                        .select('username, avatar_url, followers_count')
+                        .in('id', ids)
+                    setSocialModal({ title: 'Following', list: profiles || [] })
+                } else {
+                    setSocialModal({ title: 'Following', list: [] })
+                }
             }
         } catch { setSocialModal(prev => prev ? { ...prev, list: [] } : null) }
         finally { setSocialLoading(false) }
@@ -344,49 +361,48 @@ export default function UserProfilePage() {
         setFollowLoading(true)
         try {
             if (isFollowing) {
-                // Remove from interactions
-                await supabase.from('interactions').delete()
-                    .eq('user_id', currentUser.id)
-                    .eq('target_user_id', profileUser.id)
-                    .eq('type', 'follow')
-                // Decrement counters via SECURITY DEFINER RPC (bypasses RLS)
-                await supabase.rpc('decrement_follow_counts', {
-                    follower_id: currentUser.id,
-                    followed_id: profileUser.id
-                })
+                // Update local state FIRST so UI responds immediately
                 updateUser({ following: (currentUser.following || []).filter(u => u !== profileUser.username) })
                 queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
                     old ? { ...old, followersCount: Math.max(0, (old.followersCount || 1) - 1) } : old
                 )
                 toast.success(`Unfollowed @${profileUser.username}`)
+                // Then fire DB ops in background
+                supabase.from('interactions').delete()
+                    .eq('user_id', currentUser.id)
+                    .eq('target_user_id', profileUser.id)
+                    .eq('type', 'follow').catch(() => {})
+                supabase.rpc('decrement_follow_counts', {
+                    follower_id: currentUser.id,
+                    followed_id: profileUser.id
+                }).catch(() => {})
             } else {
-                // Insert into interactions (unique constraint prevents duplicates)
-                await supabase.from('interactions').insert({
+                // Update local state FIRST so UI responds immediately
+                updateUser({ following: [...(currentUser.following || []), profileUser.username] })
+                queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
+                    old ? { ...old, followersCount: (old.followersCount || 0) + 1 } : old
+                )
+                toast.success(`Now following @${profileUser.username} ✦`)
+                // Then fire DB ops in background
+                supabase.from('interactions').insert({
                     user_id: currentUser.id,
                     target_user_id: profileUser.id,
                     type: 'follow'
-                })
-                // Increment counters via SECURITY DEFINER RPC (bypasses RLS)
-                await supabase.rpc('increment_follow_counts', {
+                }).catch(() => {})
+                supabase.rpc('increment_follow_counts', {
                     follower_id: currentUser.id,
                     followed_id: profileUser.id
-                })
-                // Notify the followed user
+                }).catch(() => {})
                 supabase.from('notifications').insert({
                     user_id: profileUser.id,
                     type: 'follow',
                     from_username: currentUser.username,
                     message: `@${currentUser.username} is now following you.`,
                 }).catch(() => {})
-                updateUser({ following: [...(currentUser.following || []), profileUser.username] })
-                queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
-                    old ? { ...old, followersCount: (old.followersCount || 0) + 1 } : old
-                )
-                toast.success(`Now following @${profileUser.username} ✦`)
             }
         } catch (err) {
             console.error('Follow error:', err)
-            toast.error('Follow system not yet configured. Run supabase-follow-rpcs.sql in your Supabase SQL editor.')
+            toast.error('Something went wrong.')
         } finally {
             setFollowLoading(false)
         }
