@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
+import { logError } from '../errorLogger'
 
 
 // Load the user's following list from the interactions table
@@ -27,7 +28,7 @@ export async function hydrateFollowing() {
         const usernames = (profiles || []).map(p => p.username).filter(Boolean)
         useAuthStore.setState(s => ({ user: { ...s.user, following: usernames } }))
     } catch (e) {
-        console.error('Failed to hydrate following list:', e)
+        logError({ type: 'store', message: `Failed to hydrate following list: ${e.message}`, stack: e.stack, component: 'auth.hydrateFollowing' })
     }
 }
 
@@ -123,7 +124,7 @@ export const useAuthStore = create(
                 // NOTE: role is intentionally excluded — role changes only happen via payment flow
                 if (Object.keys(dbUpdates).length > 0) {
                     const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', user.id)
-                    if (error) console.error('[updateUser] profile update failed:', error.message)
+                    if (error) logError({ type: 'store', message: `[updateUser] profile update failed: ${error.message}`, component: 'auth.updateUser' })
                 }
                 // Strip role from local update too — never allow client-side role elevation
                 const { role: _stripped, ...safeUpdates } = updates
