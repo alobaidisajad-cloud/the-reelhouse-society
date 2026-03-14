@@ -918,7 +918,7 @@ export default function UserProfilePage() {
                             {/* Author + Date */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--fog)' }}>
-                                    LOGGED BY <span style={{ color: 'var(--flicker)' }}>@{(displayUser?.username || username || '').toUpperCase()}</span>
+                                    LOGGED BY <span style={{ color: 'var(--flicker)' }}>@{(profileUser?.username || routeUsername || '').toUpperCase()}</span>
                                 </div>
                                 {viewLog.watchedDate && (
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.08em' }}>
