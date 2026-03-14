@@ -260,7 +260,8 @@ export default function LogModal() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={closeLogModal}
+                onMouseDown={(e) => { if (e.target === e.currentTarget) e.currentTarget.dataset.backdropMouseDown = 'true' }}
+                onMouseUp={(e) => { if (e.target === e.currentTarget && e.currentTarget.dataset.backdropMouseDown === 'true') closeLogModal(); e.currentTarget.dataset.backdropMouseDown = 'false' }}
                 style={{
                     position: 'fixed', inset: 0, zIndex: 10000,
                     background: 'rgba(10,7,3,0.85)', // Slightly more transparent to allow blur

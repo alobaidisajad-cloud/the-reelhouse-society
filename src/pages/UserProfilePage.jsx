@@ -695,7 +695,8 @@ export default function UserProfilePage() {
             {/* ── INLINE REVIEW MODAL — uses local state, no external store ── */}
             {viewLog && (
                 <div
-                    onClick={() => setViewLog(null)}
+                    onMouseDown={(e) => { if (e.target === e.currentTarget) e.currentTarget.dataset.backdropMouseDown = 'true' }}
+                    onMouseUp={(e) => { if (e.target === e.currentTarget && e.currentTarget.dataset.backdropMouseDown === 'true') setViewLog(null); e.currentTarget.dataset.backdropMouseDown = 'false' }}
                     style={{
                         position: 'fixed', inset: 0, zIndex: 10000,
                         background: 'rgba(10,7,3,0.92)',
