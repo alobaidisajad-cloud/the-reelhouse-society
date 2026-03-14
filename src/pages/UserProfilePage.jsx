@@ -975,8 +975,8 @@ export default function UserProfilePage() {
                                 </div>
                             )}
 
-                            {/* Watched With */}
-                            {viewLog.watchedWith && (
+                            {/* Watched With — private, only visible on own profile */}
+                            {isOwnProfile && viewLog.watchedWith && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.08em' }}>
                                     ♡ WATCHED WITH <span style={{ color: 'var(--bone)' }}>{viewLog.watchedWith}</span>
                                 </div>
