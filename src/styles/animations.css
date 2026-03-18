@@ -1,0 +1,272 @@
+/* ============================================================
+   REELHOUSE — ANIMATIONS & KEYFRAMES
+   ============================================================ */
+
+/* ── FADE IN UP ── */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  will-change: opacity, transform;
+}
+
+/* ── FILM BURN INTRO ── */
+@keyframes film-burn {
+  0%   { opacity: 1; background: var(--sepia); mix-blend-mode: color-burn; }
+  15%  { opacity: 0.8; background: var(--flicker); }
+  30%  { opacity: 0.4; background: white; }
+  60%  { opacity: 0; }
+  100% { opacity: 0; }
+}
+
+@keyframes aperture-flash {
+  0%   { opacity: 0; background: var(--flicker); transform: scale(0.9); }
+  50%  { opacity: 0.3; background: var(--parchment); transform: scale(1.1); }
+  100% { opacity: 0; background: transparent; transform: scale(1.3); }
+}
+
+.film-burn-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  animation: film-burn 1.2s ease-out forwards;
+  pointer-events: none;
+}
+
+.aperture-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+  pointer-events: none;
+}
+
+/* ── RUBBER HOSE HOVER ── */
+@keyframes wobble {
+  0%   { transform: skew(0deg, 0deg) scale(1); }
+  25%  { transform: skew(-1.5deg, 0.5deg) scale(1.02); }
+  50%  { transform: skew(1deg, -0.5deg) scale(1.03); }
+  75%  { transform: skew(-0.5deg, 1deg) scale(1.01); }
+  100% { transform: skew(0deg, 0deg) scale(1); }
+}
+
+@keyframes rubber-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.12) skew(-2deg); }
+  70%  { transform: scale(0.97) skew(1deg); }
+  100% { transform: scale(1); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  50%      { transform: translateY(-8px) rotate(2deg); }
+}
+
+@keyframes jitter {
+  0%, 100% { transform: translate(0, 0); }
+  20%      { transform: translate(-1px, 1px); }
+  40%      { transform: translate(1px, -1px); }
+  60%      { transform: translate(-1px, -1px); }
+  80%      { transform: translate(1px, 1px); }
+}
+
+@keyframes spin-reel {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+@keyframes flicker-text {
+  0%, 100% { opacity: 1; }
+  92%      { opacity: 1; }
+  93%      { opacity: 0.3; }
+  94%      { opacity: 1; }
+  97%      { opacity: 0.7; }
+  98%      { opacity: 1; }
+}
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@keyframes bulb-flicker {
+  0%, 80%, 100% { opacity: 1; box-shadow: 0 0 8px 2px var(--flicker), 0 0 20px 6px rgba(242, 232, 160, 0.3); }
+  82%           { opacity: 0.4; box-shadow: none; }
+  85%           { opacity: 1; box-shadow: 0 0 8px 2px var(--flicker); }
+  88%           { opacity: 0.7; }
+}
+
+@keyframes film-flicker {
+  0%, 100% { opacity: 1; transform: translateX(0); }
+  31%      { opacity: 1; transform: translateX(0); }
+  32%      { opacity: 0.9; transform: translateX(0.5px); }
+  33%      { opacity: 1; transform: translateX(0); }
+  45%      { opacity: 1; }
+  46%      { opacity: 0.94; filter: brightness(1.1); }
+  47%      { opacity: 1; }
+  78%      { opacity: 1; }
+  79%      { opacity: 0.92; transform: translateY(0.5px); }
+  80%      { opacity: 1; transform: translateY(0); }
+}
+
+/* ── PAGE TRANSITIONS ── */
+.page-enter {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: scale(1);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* ── DARKROOM DEVELOPING ── */
+@keyframes darkroom-develop {
+  0%   { filter: brightness(3) contrast(0.5) blur(10px) sepia(1); opacity: 0; }
+  60%  { filter: brightness(1.5) contrast(0.9) blur(4px) sepia(0.6); opacity: 0.8; }
+  100% { filter: brightness(1) contrast(1.1) blur(0) sepia(0.25); opacity: 1; }
+}
+
+.developing-poster {
+  animation: darkroom-develop 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  will-change: filter, opacity;
+}
+
+/* ── CIGARETTE BURN ── */
+@keyframes cigarette-burn-flash {
+  0%   { opacity: 0; transform: scale(0.8) rotate(0deg); }
+  5%   { opacity: 0.8; transform: scale(1.1) rotate(15deg); }
+  10%  { opacity: 0.2; transform: scale(1) rotate(-5deg); }
+  15%  { opacity: 0.9; transform: scale(1.2) rotate(10deg); }
+  20%  { opacity: 0; transform: scale(1.5) rotate(0deg); }
+  100% { opacity: 0; }
+}
+
+.cigarette-burn-overlay {
+  position: fixed;
+  top: 30px;
+  right: 30px;
+  width: 45px;
+  height: 45px;
+  background: radial-gradient(circle, #000 20%, #1a1a1a 50%, transparent 70%);
+  border-radius: 50%;
+  z-index: 100004;
+  pointer-events: none;
+  opacity: 0;
+  mix-blend-mode: multiply;
+  filter: blur(1.5px);
+}
+
+.cigarette-burn-active {
+  animation: cigarette-burn-flash 0.45s steps(1) forwards;
+}
+
+/* ── MECHANICAL SHUTTER ── */
+@keyframes shutter-click {
+  0%   { transform: scale(1); filter: brightness(1); }
+  50%  { transform: scale(0.97); filter: brightness(1.4); }
+  100% { transform: scale(1); filter: brightness(1); }
+}
+
+.shutter-feedback {
+  animation: shutter-click 0.15s ease-out;
+}
+
+/* ── SKELETON SHIMMER ── */
+@keyframes skeleton-shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── NAVBAR LOG PULSE ── */
+@keyframes nav-log-pulse {
+  0%, 100% { box-shadow: 0 4px 15px rgba(139, 105, 20, 0.35), 0 0 0 1px rgba(242, 232, 160, 0.1); }
+  50%      { box-shadow: 0 4px 22px rgba(139, 105, 20, 0.65), 0 0 0 1px rgba(242, 232, 160, 0.25); }
+}
+
+/* ── LOADING REEL SPINNER ── */
+@keyframes reel-spin-steps {
+  to { transform: rotate(360deg); }
+}
+
+.loading-reel {
+  width: 60px;
+  height: 60px;
+  animation: reel-spin-steps 1.2s linear infinite;
+}
+
+/* ── SOCIETY STAMP ── */
+@keyframes stamp-slam {
+  0%   { transform: scale(2.5) rotate(-15deg); opacity: 0; }
+  30%  { transform: scale(1) rotate(var(--stamp-rotation, -3deg)); opacity: 1; }
+  45%  { transform: scale(1.03) rotate(calc(var(--stamp-rotation, -3deg) + 1deg)); }
+  100% { transform: scale(1) rotate(var(--stamp-rotation, -3deg)); opacity: 0.85; }
+}
+
+.society-stamp {
+  position: absolute;
+  right: 2rem;
+  bottom: 4rem;
+  animation: stamp-slam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  pointer-events: none;
+  z-index: 10;
+  transform-origin: center center;
+  mix-blend-mode: color-burn;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.stamp-svg {
+  width: 140px;
+  height: auto;
+  fill: none;
+  stroke: var(--blood-reel);
+  stroke-width: 2;
+  stroke-dasharray: 4 1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .society-stamp {
+    mix-blend-mode: screen;
+    filter: drop-shadow(0 2px 10px rgba(107, 26, 10, 0.4));
+  }
+}
+
+/* ── TELETYPE REVEAL ── */
+@keyframes teletype-reveal {
+  0%   { opacity: 0; transform: translateY(2px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.teletype-container > * {
+  opacity: 0;
+  animation: teletype-reveal 0.3s steps(3) forwards;
+}
+
+.teletype-container > *:nth-child(1)     { animation-delay: 0.1s; }
+.teletype-container > *:nth-child(2)     { animation-delay: 0.2s; }
+.teletype-container > *:nth-child(3)     { animation-delay: 0.3s; }
+.teletype-container > *:nth-child(4)     { animation-delay: 0.4s; }
+.teletype-container > *:nth-child(5)     { animation-delay: 0.5s; }
+.teletype-container > *:nth-child(6)     { animation-delay: 0.6s; }
+.teletype-container > *:nth-child(7)     { animation-delay: 0.7s; }
+.teletype-container > *:nth-child(8)     { animation-delay: 0.8s; }
+.teletype-container > *:nth-child(9)     { animation-delay: 0.9s; }
+.teletype-container > *:nth-child(n+10)  { animation-delay: 1.0s; }
+
+/* ── FLICKER TEXT ── */
+.text-flicker-anim {
+  animation: flicker-text 6s ease-in-out infinite;
+}

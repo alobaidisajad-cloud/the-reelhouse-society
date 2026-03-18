@@ -1,0 +1,199 @@
+/* ============================================================
+   REELHOUSE — NAVBAR STYLES (Deduplicated)
+   ============================================================ */
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(8, 6, 4, 0.96);
+  border-bottom: 1px solid rgba(139, 105, 20, 0.2);
+  border-top: 1px solid rgba(139, 105, 20, 0.4);
+  transition: background 0.4s, box-shadow 0.4s;
+  contain: layout style;
+}
+
+.navbar.scrolled {
+  background: rgba(10, 7, 3, 0.97);
+  backdrop-filter: blur(8px) saturate(1.1);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.6);
+  border-bottom-color: rgba(139, 105, 20, 0.35);
+}
+
+.navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2rem;
+  height: 64px;
+  max-width: 1440px;
+  margin: 0 auto;
+  gap: 1rem;
+  position: relative;
+}
+
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.nav-logo-text {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--parchment);
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  animation: flicker-text 8s ease-in-out infinite;
+}
+
+.nav-logo-buster {
+  display: flex;
+  align-items: center;
+  opacity: 0;
+  transition: opacity 0.3s, transform 0.3s;
+  pointer-events: none;
+}
+
+.nav-logo:hover .nav-logo-buster {
+  opacity: 1;
+  transform: translateY(-4px);
+}
+
+.nav-links {
+  display: flex;
+  list-style: none;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.nav-link {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+  text-decoration: none;
+  padding: 0.5em 0.75em;
+  transition: color 0.2s, border-color 0.2s, background 0.2s;
+  border-bottom: 2px solid transparent;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.4rem;
+  text-transform: uppercase;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.nav-link:hover {
+  color: var(--parchment);
+  border-bottom-color: var(--sepia);
+  background: rgba(242, 232, 160, 0.04);
+}
+
+.nav-link.active {
+  color: var(--flicker);
+  background: rgba(242, 232, 160, 0.07);
+  border-bottom-color: var(--sepia);
+}
+
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.nav-icon-btn {
+  background: none;
+  border: none;
+  color: var(--bone);
+  padding: 0.4rem;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  cursor: pointer;
+}
+
+.nav-icon-btn:hover {
+  color: var(--parchment);
+  background: rgba(139, 105, 20, 0.1);
+}
+
+.nav-mobile-toggle { display: none; }
+
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-ui);
+  font-size: 0.52rem;
+  letter-spacing: 0.12em;
+  border: 1px solid var(--ash);
+  padding: 0.35em 0.8em;
+  border-radius: 2px;
+  color: var(--bone);
+  text-decoration: none;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.user-badge:hover {
+  border-color: var(--sepia);
+  color: var(--parchment);
+}
+
+.search-bar {
+  position: absolute;
+  top: 64px;
+  left: 0;
+  right: 0;
+  background: rgba(8, 6, 4, 0.98);
+  border-bottom: 1px solid rgba(139, 105, 20, 0.35);
+  padding: 0.75rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 999;
+}
+
+/* ── MOBILE MENU ── */
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 3, 1, 0.98);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow-y: auto;
+  padding: 4rem 2rem 2rem;
+  overscroll-behavior: contain;
+}
+
+.mobile-nav-link {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--parchment);
+  text-decoration: none;
+  line-height: 1.2;
+  padding: 0.35rem 0;
+  letter-spacing: 0.03em;
+  transition: color 0.15s;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+}
+
+.mobile-nav-link:hover { color: var(--sepia); }
