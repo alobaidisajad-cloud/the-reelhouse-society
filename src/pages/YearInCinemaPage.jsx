@@ -1,0 +1,394 @@
+import { useState, useEffect, useRef, useMemo } from 'react'
+import { Link } from 'react-router-dom'
+import { useFilmStore, useAuthStore } from '../store'
+import { tmdb } from '../tmdb'
+import { Film, ArrowLeft } from 'lucide-react'
+import '../styles/year-in-cinema.css'
+
+const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
+function useInView(ref) {
+    const [visible, setVisible] = useState(false)
+    useEffect(() => {
+        if (!ref.current) return
+        const obs = new IntersectionObserver(([e]) => {
+            if (e.isIntersecting) { setVisible(true); obs.disconnect() }
+        }, { threshold: 0.15 })
+        obs.observe(ref.current)
+        return () => obs.disconnect()
+    }, [ref])
+    return visible
+}
+
+function Section({ children, className = '' }) {
+    const ref = useRef(null)
+    const visible = useInView(ref)
+    return (
+        <div ref={ref} className={`yic-section ${visible ? 'yic-visible' : ''} ${className}`}>
+            {children}
+        </div>
+    )
+}
+
+export default function YearInCinemaPage() {
+    const { logs } = useFilmStore()
+    const { user } = useAuthStore()
+
+    // Available years from logs
+    const availableYears = useMemo(() => {
+        const years = new Set()
+        logs.forEach(l => {
+            const d = l.loggedAt || l.created_at
+            if (d) years.add(new Date(d).getFullYear())
+        })
+        return [...years].sort((a, b) => b - a)
+    }, [logs])
+
+    const [selectedYear, setSelectedYear] = useState(() => {
+        const current = new Date().getFullYear()
+        return availableYears.includes(current) ? current : availableYears[0] || current
+    })
+
+    // Filter logs for the selected year
+    const yearLogs = useMemo(() => {
+        return logs.filter(l => {
+            const d = l.loggedAt || l.created_at
+            return d && new Date(d).getFullYear() === selectedYear
+        }).sort((a, b) => new Date(a.loggedAt || a.created_at) - new Date(b.loggedAt || b.created_at))
+    }, [logs, selectedYear])
+
+    // ─── COMPUTED STATS ───
+
+    const totalFilms = yearLogs.length
+    const totalHours = useMemo(() => {
+        return Math.round(yearLogs.reduce((sum, l) => sum + (l.runtime || 110), 0) / 60)
+    }, [yearLogs])
+
+    // Monthly breakdown
+    const monthlyData = useMemo(() => {
+        const counts = Array(12).fill(0)
+        yearLogs.forEach(l => {
+            const d = l.loggedAt || l.created_at
+            if (d) counts[new Date(d).getMonth()]++
+        })
+        return counts
+    }, [yearLogs])
+    const maxMonth = Math.max(...monthlyData, 1)
+    const busiestMonthIdx = monthlyData.indexOf(Math.max(...monthlyData))
+
+    // Top directors
+    const topDirectors = useMemo(() => {
+        const map = {}
+        yearLogs.forEach(l => {
+            const dir = l.director || l.directors
+            if (typeof dir === 'string' && dir) {
+                map[dir] = (map[dir] || 0) + 1
+            } else if (Array.isArray(dir)) {
+                dir.forEach(d => { if (d) map[d] = (map[d] || 0) + 1 })
+            }
+        })
+        return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5)
+    }, [yearLogs])
+
+    // Decade distribution
+    const decadeData = useMemo(() => {
+        const map = {}
+        yearLogs.forEach(l => {
+            const y = l.year || (l.release_date && new Date(l.release_date).getFullYear())
+            if (y) {
+                const decade = `${Math.floor(y / 10) * 10}s`
+                map[decade] = (map[decade] || 0) + 1
+            }
+        })
+        return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]))
+    }, [yearLogs])
+
+    // Rating stats
+    const ratingStats = useMemo(() => {
+        const rated = yearLogs.filter(l => l.rating && l.rating > 0)
+        if (rated.length === 0) return { avg: 0, highest: null, lowest: null }
+        const avg = rated.reduce((s, l) => s + l.rating, 0) / rated.length
+        const sorted = [...rated].sort((a, b) => b.rating - a.rating)
+        return { avg: avg.toFixed(1), highest: sorted[0], lowest: sorted[sorted.length - 1] }
+    }, [yearLogs])
+
+    // Obscurity index
+    const obscurityStats = useMemo(() => {
+        const scored = yearLogs.filter(l => l.popularity != null)
+        if (scored.length === 0) return { avg: 50, mostObscure: null }
+        const scores = scored.map(l => {
+            const pop = l.popularity || 0
+            if (pop <= 0) return 99
+            return Math.max(2, Math.min(99, Math.round(100 - (Math.log10(Math.max(pop, 1)) / Math.log10(5000)) * 98)))
+        })
+        const avg = Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)
+        const maxIdx = scores.indexOf(Math.max(...scores))
+        return { avg, mostObscure: scored[maxIdx] }
+    }, [yearLogs])
+
+    // Genre map
+    const genreData = useMemo(() => {
+        const map = {}
+        yearLogs.forEach(l => {
+            const genres = l.genres || l.genre_ids
+            if (Array.isArray(genres)) {
+                genres.forEach(g => {
+                    const name = typeof g === 'object' ? g.name : g
+                    if (name) map[name] = (map[name] || 0) + 1
+                })
+            }
+        })
+        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6)
+        const total = sorted.reduce((s, [, c]) => s + c, 0)
+        return sorted.map(([name, count]) => ({ name, count, pct: Math.round((count / total) * 100) }))
+    }, [yearLogs])
+
+    // First & Last
+    const firstLog = yearLogs[0]
+    const lastLog = yearLogs[yearLogs.length - 1]
+
+    // Favorite (highest rated)
+    const favorite = ratingStats.highest
+
+    if (totalFilms < 1) {
+        return (
+            <div className="yic-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '2rem' }}>
+                <Film size={48} style={{ color: 'var(--sepia)', marginBottom: '1.5rem', opacity: 0.5 }} />
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '1rem' }}>No Reels to Review</h2>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.6, fontStyle: 'italic' }}>
+                    Log some films first, then return here to see your annual cinematic retrospective.
+                </p>
+                <Link to={user ? `/u/${user.username}` : '/'} className="btn btn-ghost" style={{ marginTop: '2rem', fontSize: '0.65rem', letterSpacing: '0.15em' }}>
+                    <ArrowLeft size={14} /> RETURN TO PROFILE
+                </Link>
+            </div>
+        )
+    }
+
+    return (
+        <div className="yic-page">
+            {/* ────── I. THE OPENING TITLE ────── */}
+            <Section className="yic-hero">
+                <div className="yic-eyebrow">YOUR YEAR IN CINEMA</div>
+
+                {availableYears.length > 1 && (
+                    <select
+                        className="yic-year-select"
+                        value={selectedYear}
+                        onChange={e => setSelectedYear(Number(e.target.value))}
+                        style={{ marginBottom: '1rem' }}
+                    >
+                        {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                )}
+
+                <div className="yic-year">{selectedYear}</div>
+                <div className="yic-subtitle">
+                    A year of devotion, distilled into data. Every frame you've witnessed, catalogued for eternity.
+                </div>
+
+                <div className="yic-hero-stats">
+                    <div className="yic-hero-stat">
+                        <span className="yic-hero-stat-value">{totalFilms}</span>
+                        <span className="yic-hero-stat-label">FILMS LOGGED</span>
+                    </div>
+                    <div className="yic-hero-stat">
+                        <span className="yic-hero-stat-value">{totalHours}</span>
+                        <span className="yic-hero-stat-label">HOURS WATCHED</span>
+                    </div>
+                    <div className="yic-hero-stat">
+                        <span className="yic-hero-stat-value">{ratingStats.avg || '—'}</span>
+                        <span className="yic-hero-stat-label">AVG RATING</span>
+                    </div>
+                </div>
+            </Section>
+
+            {/* ────── II. THE REEL COUNT ────── */}
+            <Section>
+                <div className="yic-section-number">II</div>
+                <div className="yic-section-title">The Reel Count</div>
+                <div className="yic-section-desc">
+                    Your viewing rhythm across the calendar. {monthlyData[busiestMonthIdx] > 0 && `${MONTH_FULL[busiestMonthIdx]} was your most prolific month with ${monthlyData[busiestMonthIdx]} films.`}
+                </div>
+
+                <div className="yic-months">
+                    {monthlyData.map((count, i) => (
+                        <div key={i} className="yic-month-bar">
+                            <div className="yic-month-count">{count || ''}</div>
+                            <div className="yic-month-fill" style={{ height: `${(count / maxMonth) * 100}%` }} />
+                            <div className="yic-month-label">{MONTHS[i]}</div>
+                        </div>
+                    ))}
+                </div>
+            </Section>
+
+            {/* ────── III. THE AUTEUR'S EYE ────── */}
+            {topDirectors.length > 0 && (
+                <Section>
+                    <div className="yic-section-number">III</div>
+                    <div className="yic-section-title">The Auteur's Eye</div>
+                    <div className="yic-section-desc">The directors who shaped your year.</div>
+
+                    <div className="yic-directors">
+                        {topDirectors.map(([name, count], i) => (
+                            <div key={name} className="yic-director">
+                                <div className="yic-director-rank">{i + 1}</div>
+                                <div className="yic-director-name">{name}</div>
+                                <div className="yic-director-count">{count} {count === 1 ? 'FILM' : 'FILMS'}</div>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+            )}
+
+            {/* ────── IV. THE TIME MACHINE ────── */}
+            {decadeData.length > 0 && (
+                <Section>
+                    <div className="yic-section-number">IV</div>
+                    <div className="yic-section-title">The Time Machine</div>
+                    <div className="yic-section-desc">The eras you drifted through.</div>
+
+                    <div className="yic-decades">
+                        {decadeData.map(([decade, count]) => (
+                            <div key={decade} className="yic-decade">
+                                <span className="yic-decade-label">{decade}</span>
+                                <span className="yic-decade-count">{count}</span>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+            )}
+
+            {/* ────── V. THE VERDICT ────── */}
+            {ratingStats.highest && (
+                <Section>
+                    <div className="yic-section-number">V</div>
+                    <div className="yic-section-title">The Verdict</div>
+                    <div className="yic-section-desc">Your critical lens, quantified.</div>
+
+                    <div className="yic-rating-row">
+                        <div className="yic-rating-box">
+                            <div className="yic-rating-box-value">{ratingStats.avg}</div>
+                            <div className="yic-rating-box-label">AVERAGE RATING</div>
+                        </div>
+                        <div className="yic-rating-box">
+                            <div className="yic-rating-box-value">{ratingStats.highest.rating}</div>
+                            <div className="yic-rating-box-label">HIGHEST RATED</div>
+                            <div className="yic-rating-box-film">{ratingStats.highest.title}</div>
+                        </div>
+                        {ratingStats.lowest && ratingStats.lowest.id !== ratingStats.highest.id && (
+                            <div className="yic-rating-box">
+                                <div className="yic-rating-box-value">{ratingStats.lowest.rating}</div>
+                                <div className="yic-rating-box-label">LOWEST RATED</div>
+                                <div className="yic-rating-box-film">{ratingStats.lowest.title}</div>
+                            </div>
+                        )}
+                    </div>
+                </Section>
+            )}
+
+            {/* ────── VI. THE OBSCURITY INDEX ────── */}
+            <Section>
+                <div className="yic-section-number">VI</div>
+                <div className="yic-section-title">The Obscurity Index</div>
+                <div className="yic-section-desc">How deep did you dig this year?</div>
+
+                <div className="yic-rating-row">
+                    <div className="yic-rating-box">
+                        <div className="yic-rating-box-value">{obscurityStats.avg}</div>
+                        <div className="yic-rating-box-label">AVG OBSCURITY SCORE</div>
+                        <div className="yic-rating-box-film" style={{ color: 'var(--sepia)' }}>
+                            {obscurityStats.avg >= 70 ? 'DEEP ARCHIVIST' : obscurityStats.avg >= 40 ? 'CURIOUS EXPLORER' : 'MAINSTREAM PATRON'}
+                        </div>
+                    </div>
+                    {obscurityStats.mostObscure && (
+                        <div className="yic-rating-box">
+                            <div className="yic-rating-box-value">☾</div>
+                            <div className="yic-rating-box-label">MOST OBSCURE WATCH</div>
+                            <div className="yic-rating-box-film">{obscurityStats.mostObscure.title}</div>
+                        </div>
+                    )}
+                </div>
+            </Section>
+
+            {/* ────── VII. THE GENRE MAP ────── */}
+            {genreData.length > 0 && (
+                <Section>
+                    <div className="yic-section-number">VII</div>
+                    <div className="yic-section-title">The Genre Map</div>
+                    <div className="yic-section-desc">The terrain you covered.</div>
+
+                    <div className="yic-genres">
+                        {genreData.map(({ name, pct }) => (
+                            <div key={name} className="yic-genre-row">
+                                <div className="yic-genre-name">{name.toUpperCase()}</div>
+                                <div className="yic-genre-bar-wrap">
+                                    <div className="yic-genre-bar-fill" style={{ width: `${pct}%` }} />
+                                </div>
+                                <div className="yic-genre-pct">{pct}%</div>
+                            </div>
+                        ))}
+                    </div>
+                </Section>
+            )}
+
+            {/* ────── VIII. FIRST & LAST ────── */}
+            {firstLog && lastLog && (
+                <Section>
+                    <div className="yic-section-number">VIII</div>
+                    <div className="yic-section-title">The First & The Last</div>
+                    <div className="yic-section-desc">The bookends of your cinematic year.</div>
+
+                    <div className="yic-bookend-row">
+                        <div className="yic-bookend">
+                            <div className="yic-bookend-label">FIRST REEL</div>
+                            {firstLog.poster && <img src={tmdb.poster(firstLog.poster)} alt="" className="yic-bookend-poster" loading="lazy" />}
+                            <div className="yic-bookend-title">{firstLog.title}</div>
+                            <div className="yic-bookend-date">{new Date(firstLog.loggedAt || firstLog.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</div>
+                        </div>
+                        <div className="yic-bookend">
+                            <div className="yic-bookend-label">LAST REEL</div>
+                            {lastLog.poster && <img src={tmdb.poster(lastLog.poster)} alt="" className="yic-bookend-poster" loading="lazy" />}
+                            <div className="yic-bookend-title">{lastLog.title}</div>
+                            <div className="yic-bookend-date">{new Date(lastLog.loggedAt || lastLog.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</div>
+                        </div>
+                    </div>
+                </Section>
+            )}
+
+            {/* ────── IX. THE FAVORITE ────── */}
+            {favorite && (
+                <Section className="yic-favorite">
+                    <div className="yic-section-number">IX</div>
+                    <div className="yic-section-title">The Favorite</div>
+                    <div className="yic-section-desc" style={{ marginInline: 'auto' }}>The one that stayed with you.</div>
+
+                    {favorite.poster && <img src={tmdb.poster(favorite.poster)} alt={favorite.title} className="yic-favorite-poster" loading="lazy" />}
+                    <div className="yic-favorite-title">{favorite.title}</div>
+                    <div className="yic-favorite-year">{favorite.year}</div>
+                    <div className="yic-favorite-rating">{'✦'.repeat(Math.round(favorite.rating))}</div>
+                </Section>
+            )}
+
+            {/* ────── X. THE CREDITS ────── */}
+            <Section className="yic-credits">
+                <div className="yic-credits-divider">
+                    <div className="yic-credits-line" />
+                    <Film size={16} style={{ color: 'var(--sepia)' }} />
+                    <div className="yic-credits-line" />
+                </div>
+
+                <div className="yic-credits-logo">THE REELHOUSE SOCIETY</div>
+                <div className="yic-credits-tagline">
+                    {totalFilms} films. {totalHours} hours. One year of devotion.<br />
+                    Your {selectedYear} archive is sealed.
+                </div>
+
+                <Link to={user ? `/u/${user.username}` : '/'} className="btn btn-ghost yic-share-btn">
+                    <ArrowLeft size={14} /> RETURN TO PROFILE
+                </Link>
+            </Section>
+        </div>
+    )
+}

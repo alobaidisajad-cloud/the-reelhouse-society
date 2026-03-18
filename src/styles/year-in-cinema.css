@@ -1,0 +1,452 @@
+/* ============================================================
+   YEAR IN CINEMA — THE ANNUAL RETROSPECTIVE
+   A scroll-driven cinematic experience in Nitrate Noir
+   ============================================================ */
+
+/* ── Page Container ── */
+.yic-page {
+  min-height: 100vh;
+  background: var(--ink);
+  color: var(--parchment);
+  overflow-x: hidden;
+  padding-bottom: 6rem;
+}
+
+/* Film grain overlay */
+.yic-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── Section Base ── */
+.yic-section {
+  position: relative;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s cubic-bezier(0.19, 1, 0.22, 1),
+              transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.yic-section.yic-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.yic-section + .yic-section {
+  border-top: 1px dashed var(--ash);
+}
+
+/* ── Opening Title (Hero) ── */
+.yic-hero {
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding-top: 100px;
+  border-top: none;
+}
+.yic-hero .yic-eyebrow {
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  letter-spacing: 0.5em;
+  color: var(--sepia);
+  margin-bottom: 2rem;
+}
+.yic-hero .yic-year {
+  font-family: var(--font-display);
+  font-size: clamp(5rem, 15vw, 12rem);
+  color: var(--parchment);
+  line-height: 0.9;
+  margin-bottom: 1rem;
+  text-shadow: 0 0 60px rgba(139, 105, 20, 0.2);
+}
+.yic-hero .yic-subtitle {
+  font-family: var(--font-body);
+  font-size: 1.1rem;
+  color: var(--bone);
+  font-style: italic;
+  max-width: 500px;
+  line-height: 1.6;
+  margin-bottom: 3rem;
+}
+.yic-hero-stats {
+  display: flex;
+  gap: 3rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.yic-hero-stat {
+  text-align: center;
+}
+.yic-hero-stat-value {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--flicker);
+  display: block;
+}
+.yic-hero-stat-label {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: var(--fog);
+  margin-top: 0.3rem;
+  display: block;
+}
+
+/* ── Section Headers ── */
+.yic-section-number {
+  font-family: var(--font-display);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--sepia);
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+}
+.yic-section-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.8rem);
+  color: var(--parchment);
+  margin-bottom: 0.75rem;
+  line-height: 1.1;
+}
+.yic-section-desc {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--bone);
+  font-style: italic;
+  margin-bottom: 2rem;
+  max-width: 550px;
+  line-height: 1.5;
+}
+
+/* ── Monthly Bar Chart ── */
+.yic-months {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 0.5rem;
+  align-items: end;
+  height: 180px;
+  margin-bottom: 1.5rem;
+}
+.yic-month-bar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+}
+.yic-month-fill {
+  width: 100%;
+  background: linear-gradient(to top, var(--sepia), var(--flicker));
+  border-radius: 2px 2px 0 0;
+  min-height: 2px;
+  transition: height 1s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.yic-month-label {
+  font-family: var(--font-ui);
+  font-size: 0.45rem;
+  letter-spacing: 0.1em;
+  color: var(--fog);
+  margin-top: 0.5rem;
+}
+.yic-month-count {
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  color: var(--bone);
+  margin-bottom: 0.3rem;
+}
+
+/* ── Director Grid ── */
+.yic-directors {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.yic-director {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: rgba(18, 14, 9, 0.6);
+  border: 1px solid rgba(139, 105, 20, 0.1);
+  border-radius: var(--radius-card);
+}
+.yic-director-rank {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--sepia);
+  width: 2rem;
+  text-align: center;
+  opacity: 0.6;
+}
+.yic-director-name {
+  font-family: var(--font-sub);
+  font-size: 1rem;
+  color: var(--parchment);
+  flex: 1;
+}
+.yic-director-count {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--fog);
+}
+
+/* ── Decade Distribution ── */
+.yic-decades {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+.yic-decade {
+  padding: 0.6rem 1.2rem;
+  background: rgba(18, 14, 9, 0.6);
+  border: 1px solid rgba(139, 105, 20, 0.15);
+  border-radius: var(--radius-card);
+  text-align: center;
+  min-width: 80px;
+}
+.yic-decade-label {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+  display: block;
+}
+.yic-decade-count {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--flicker);
+  display: block;
+  margin-top: 0.2rem;
+}
+
+/* ── Rating Stats ── */
+.yic-rating-row {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+.yic-rating-box {
+  flex: 1;
+  min-width: 200px;
+  padding: 1.5rem;
+  background: rgba(18, 14, 9, 0.6);
+  border: 1px solid rgba(139, 105, 20, 0.1);
+  border-radius: var(--radius-card);
+  text-align: center;
+}
+.yic-rating-box-value {
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--flicker);
+}
+.yic-rating-box-label {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+  margin-top: 0.3rem;
+}
+.yic-rating-box-film {
+  font-family: var(--font-sub);
+  font-size: 0.8rem;
+  color: var(--bone);
+  margin-top: 0.5rem;
+  font-style: italic;
+}
+
+/* ── Genre Bars ── */
+.yic-genres {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.yic-genre-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.yic-genre-name {
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--bone);
+  width: 100px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.yic-genre-bar-wrap {
+  flex: 1;
+  height: 12px;
+  background: rgba(18, 14, 9, 0.6);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.yic-genre-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sepia), var(--flicker));
+  border-radius: 2px;
+  transition: width 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.yic-genre-pct {
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  color: var(--fog);
+  width: 35px;
+  text-align: left;
+}
+
+/* ── First & Last ── */
+.yic-bookend-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+.yic-bookend {
+  text-align: center;
+}
+.yic-bookend-label {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  color: var(--sepia);
+  margin-bottom: 1rem;
+}
+.yic-bookend-poster {
+  width: 140px;
+  height: 210px;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--ash);
+  margin: 0 auto 0.75rem;
+  display: block;
+  filter: sepia(0.15);
+}
+.yic-bookend-title {
+  font-family: var(--font-sub);
+  font-size: 0.9rem;
+  color: var(--parchment);
+}
+.yic-bookend-date {
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  color: var(--fog);
+  letter-spacing: 0.1em;
+  margin-top: 0.3rem;
+}
+
+/* ── The Favorite (Hero Film) ── */
+.yic-favorite {
+  text-align: center;
+}
+.yic-favorite-poster {
+  width: 220px;
+  height: 330px;
+  object-fit: cover;
+  border-radius: var(--radius-card);
+  border: 2px solid var(--sepia);
+  margin: 0 auto 1.5rem;
+  display: block;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6),
+              0 0 40px rgba(139, 105, 20, 0.15);
+}
+.yic-favorite-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--parchment);
+  margin-bottom: 0.5rem;
+}
+.yic-favorite-year {
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  color: var(--sepia);
+  margin-bottom: 0.5rem;
+}
+.yic-favorite-rating {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--flicker);
+}
+
+/* ── Credits / End Card ── */
+.yic-credits {
+  text-align: center;
+  padding: 6rem 2rem;
+}
+.yic-credits-logo {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--sepia);
+  margin-bottom: 1rem;
+  letter-spacing: 0.1em;
+}
+.yic-credits-tagline {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--bone);
+  font-style: italic;
+  margin-bottom: 2rem;
+}
+.yic-credits-divider {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+.yic-credits-line {
+  width: 60px;
+  height: 1px;
+  background: var(--sepia);
+  opacity: 0.4;
+}
+
+/* ── Share Button ── */
+.yic-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 2rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+}
+
+/* ── Year Selector ── */
+.yic-year-select {
+  background: transparent;
+  border: 1px solid var(--ash);
+  color: var(--parchment);
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.15em;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-card);
+  cursor: pointer;
+  appearance: none;
+  text-align: center;
+}
+.yic-year-select option {
+  background: var(--ink);
+  color: var(--parchment);
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .yic-hero .yic-year { font-size: 5rem; }
+  .yic-hero-stats { gap: 1.5rem; }
+  .yic-months { grid-template-columns: repeat(6, 1fr); height: 120px; }
+  .yic-bookend-row { grid-template-columns: 1fr; gap: 2rem; }
+  .yic-rating-row { flex-direction: column; }
+  .yic-section { padding: 3rem 1.25rem; }
+}

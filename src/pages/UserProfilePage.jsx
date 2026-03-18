@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
-import { Star, Lock, Camera, Settings, Globe, Download, Share2 } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
@@ -401,6 +401,15 @@ export default function UserProfilePage() {
                                             >
                                                 <Download size={10} /> EXPORT ARCHIVE
                                             </button>
+                                        )}
+                                        {!isEditing && profileLogs.length >= 10 && (
+                                            <Link
+                                                to="/year-in-cinema"
+                                                className="btn btn-ghost"
+                                                style={{ fontSize: '0.55rem', padding: '0.3rem 0.6rem', height: 'fit-content', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--flicker)', borderColor: 'var(--sepia)', textDecoration: 'none' }}
+                                            >
+                                                <Film size={10} /> YEAR IN CINEMA
+                                            </Link>
                                         )}
                                     </>
                                 ) : (
