@@ -144,18 +144,43 @@ export default function UserProfilePage() {
         const file = e.target.files[0]
         if (!file) return
         if (!file.type.startsWith('image/')) return toast.error("Only archival image formats supported.")
-        if (file.size > 2 * 1024 * 1024) return toast.error("Frame too large. Max 2MB.")
+        if (file.size > 5 * 1024 * 1024) return toast.error("Frame too large. Max 5MB.")
         try {
             const userId = currentUser?.id
             if (!userId) return toast.error("Must be signed in.")
-            const ext = file.name.split('.').pop()
-            const filePath = `${userId}/avatar.${ext}`
+
+            // Client-side compression: resize to 400x400 max, convert to WebP
+            const compressed = await new Promise<Blob>((resolve, reject) => {
+                const img = new Image()
+                img.onload = () => {
+                    const MAX = 400
+                    let { width, height } = img
+                    if (width > MAX || height > MAX) {
+                        const scale = Math.min(MAX / width, MAX / height)
+                        width = Math.round(width * scale)
+                        height = Math.round(height * scale)
+                    }
+                    const canvas = document.createElement('canvas')
+                    canvas.width = width
+                    canvas.height = height
+                    const ctx = canvas.getContext('2d')
+                    ctx?.drawImage(img, 0, 0, width, height)
+                    canvas.toBlob(
+                        (blob) => blob ? resolve(blob) : reject(new Error('Compression failed')),
+                        'image/webp', 0.8
+                    )
+                }
+                img.onerror = reject
+                img.src = URL.createObjectURL(file)
+            })
+
+            const filePath = `${userId}/avatar.webp`
             const { supabase } = await import('../supabaseClient')
-            const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, file, { upsert: true })
+            const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, compressed, { upsert: true, contentType: 'image/webp' })
             if (uploadError) return toast.error("Upload failed. Try again.")
             const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
             setEditAvatar(publicUrl)
-            toast.success("Frame captured.")
+            toast.success("Frame captured & optimized.")
         } catch { toast.error("Upload failed.") }
     }
 
@@ -690,7 +715,7 @@ export default function UserProfilePage() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {profileLogs.filter(l => l.rating >= 4).slice(0, 4).map((log) => (
                                         <Link key={log.id} to={`/film/${log.filmId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-                                            {log.poster && <img src={tmdb.poster(log.poster, 'w92')} alt={log.title} style={{ width: 28, height: 42, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)', flexShrink: 0 }} />}
+                                            {log.poster && <img src={tmdb.poster(log.poster, 'w92')} alt={log.title} loading="lazy" decoding="async" style={{ width: 28, height: 42, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)', flexShrink: 0 }} />}
                                             <div>
                                                 <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--parchment)', lineHeight: 1.2 }}>{log.title}</div>
                                                 <ReelRating value={log.rating} size="sm" />

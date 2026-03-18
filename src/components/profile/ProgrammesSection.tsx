@@ -92,8 +92,8 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }) {
                                 <button className="btn btn-ghost" onClick={() => removeProgramme(prog.id)} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>✕ REMOVE</button>
                             )}
                             <div style={{ display: 'flex', width: '220px', flexShrink: 0 }}>
-                                <img src={tmdb.poster(prog.film1.poster_path, 'w342')} alt={prog.film1.title} style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }} />
-                                <img src={tmdb.poster(prog.film2.poster_path, 'w342')} alt={prog.film2.title} style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', marginLeft: '-20px', marginTop: '30px', zIndex: 1, filter: 'brightness(0.6)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                <img src={tmdb.poster(prog.film1.poster_path, 'w342')} alt={prog.film1.title} loading="lazy" decoding="async" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }} />
+                                <img src={tmdb.poster(prog.film2.poster_path, 'w342')} alt={prog.film2.title} loading="lazy" decoding="async" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', marginLeft: '-20px', marginTop: '30px', zIndex: 1, filter: 'brightness(0.6)', border: '1px solid rgba(255,255,255,0.1)' }} />
                             </div>
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>THE NIGHTLY PROGRAMME</div>

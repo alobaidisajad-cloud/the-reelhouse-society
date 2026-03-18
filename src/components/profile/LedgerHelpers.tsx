@@ -30,7 +30,7 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onShare }) {
         <div className={`card ${isAbandoned ? 'log-abandoned' : ''}`} style={{ padding: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
             <div style={{ width: 44, height: 66, flexShrink: 0, borderRadius: 'var(--radius-card)', overflow: 'hidden', background: 'var(--ash)' }}>
                 {(log.altPoster || log.poster) ? (
-                    <img src={tmdb.poster(log.altPoster || log.poster, 'w92')} alt={log.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.3)' }} />
+                    <img src={tmdb.poster(log.altPoster || log.poster, 'w92')} alt={log.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.3)' }} />
                 ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)' }}><Film size={16} /></div>
                 )}
@@ -114,7 +114,7 @@ export function ListsSection({ lists, user }) {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
                         {posterMode.films.map(film => (
                             <div key={film.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <img src={tmdb.poster(film.poster_path, 'w185')} alt={film.title} style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', border: '1px solid var(--ash)' }} />
+                                <img src={tmdb.poster(film.poster_path, 'w185')} alt={film.title} loading="lazy" decoding="async" style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', border: '1px solid var(--ash)' }} />
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{film.title.toUpperCase()}</div>
                             </div>
                         ))}

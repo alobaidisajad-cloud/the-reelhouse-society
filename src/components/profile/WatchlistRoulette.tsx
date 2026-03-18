@@ -61,7 +61,7 @@ export function WatchlistRoulette({ watchlist }) {
                     </div>
                     <Link to={`/film/${result.id}`} style={{ textDecoration: 'none' }}>
                         <motion.div whileHover={{ scale: 1.05 }} style={{ display: 'inline-block' }}>
-                            <img src={tmdb.poster(result.poster_path, 'w185')} alt={result.title} style={{ width: 140, borderRadius: 4, filter: 'sepia(0.3) contrast(1.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }} />
+                            <img src={tmdb.poster(result.poster_path, 'w185')} alt={result.title} loading="lazy" decoding="async" style={{ width: 140, borderRadius: 4, filter: 'sepia(0.3) contrast(1.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }} />
                         </motion.div>
                     </Link>
                     <Link to={`/film/${result.id}`} style={{ textDecoration: 'none' }}>

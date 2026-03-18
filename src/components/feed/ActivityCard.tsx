@@ -393,7 +393,7 @@ export default function ActivityCard({ log }) {
                                     <div style={{ width: '400px', flexShrink: 0 }}>
                                         {log.film?.poster && (
                                             <div style={{ padding: '20px', border: '2px dashed var(--ash)', background: 'var(--soot)' }}>
-                                                <img src={tmdb.poster(log.film.poster, 'w500')} alt={log.film?.title} style={{ width: '100%', border: '1px solid var(--soot)' }} />
+                                                <img src={tmdb.poster(log.film.poster, 'w500')} alt={log.film?.title} loading="lazy" decoding="async" style={{ width: '100%', border: '1px solid var(--soot)' }} />
                                             </div>
                                         )}
                                         <div style={{ marginTop: '40px', fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--bone)', lineHeight: 1.1 }}>

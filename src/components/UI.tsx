@@ -1,10 +1,69 @@
-import { useState, memo, useCallback, useRef } from 'react'
+import { useState, memo, useCallback, useRef, ReactNode, CSSProperties } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from '../tmdb'
+import type { TMDBMovie } from '../types'
+
+// ── Prop Interfaces ──
+
+interface ReelRatingProps {
+    value?: number
+    onChange?: ((value: number) => void) | null
+    size?: 'sm' | 'md' | 'lg'
+}
+
+interface FilmCardProps {
+    film: TMDBMovie & { altPoster?: string | null; title?: string }
+    onClick?: () => void
+    size?: 'sm' | 'md' | 'lg'
+    showRating?: boolean
+}
+
+interface ObscurityBadgeProps {
+    score: number
+}
+
+interface GenreTagsProps {
+    genreIds?: number[]
+    genres?: Array<{ id?: number; name: string }>
+}
+
+interface PersonaStampProps {
+    persona: string
+}
+
+interface SectionHeaderProps {
+    label: string
+    title: string
+    action?: ReactNode
+    className?: string
+    style?: CSSProperties
+}
+
+interface TickerProps {
+    items?: string[]
+}
+
+interface SkeletonProps {
+    count?: number
+}
+
+interface StatCardProps {
+    label: string
+    value: string | number
+    icon?: ReactNode
+}
+
+interface PersonPlaceholderProps {
+    size?: string
+}
+
+interface RadarChartProps {
+    autopsy: Record<string, number> | null
+}
 
 // Film reel rating — 5 segments, half-reels allowed
-export const ReelRating = memo(function ReelRating({ value = 0, onChange = null, size = 'md' }) {
-    const [hovered, setHovered] = useState(null)
+export const ReelRating = memo(function ReelRating({ value = 0, onChange = null, size = 'md' }: ReelRatingProps) {
+    const [hovered, setHovered] = useState<number | null>(null)
     const display = hovered !== null ? hovered : value
 
     const sizes = { sm: 16, md: 22, lg: 30 }
@@ -37,7 +96,7 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
     )
 })
 
-function ReelSegmentSVG({ size, filled }) {
+function ReelSegmentSVG({ size, filled }: { size: number; filled: 'full' | 'half' | 'empty' }) {
     const colors = {
         full: { outer: '#8B6914', inner: '#F2E8A0', hub: '#F2E8A0' },
         half: { outer: '#8B6914', inner: '#8B6914', hub: '#F2E8A0' },
@@ -65,7 +124,7 @@ function ReelSegmentSVG({ size, filled }) {
 }
 
 // Obscurity badge
-export function ObscurityBadge({ score }) {
+export function ObscurityBadge({ score }: ObscurityBadgeProps) {
     const label = score > 80 ? 'GHOST REEL' : score > 60 ? 'OBSCURE' : score > 40 ? 'CULT' : score > 20 ? 'KNOWN' : 'MAINSTREAM'
     const opacity = score > 60 ? 1 : score > 30 ? 0.6 : 0.3
 
@@ -87,19 +146,19 @@ export function ObscurityBadge({ score }) {
 }
 
 // Film poster card
-export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', showRating = false }) {
+export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', showRating = false }: FilmCardProps) {
     const posterUrl = tmdb.responsivePoster(film.altPoster || film.poster_path)
     const queryClient = useQueryClient()
     const [isLoaded, setIsLoaded] = useState(false)
 
-    const hoverTimeout = useRef(null)
+    const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const handleMouseEnter = useCallback(() => {
         hoverTimeout.current = setTimeout(() => {
             if (!film?.id) return
             // movieDetails already includes credits via append_to_response
             queryClient.prefetchQuery({
-                queryKey: ['film', film.id.toString()],
+                queryKey: ['film', String(film.id)],
                 queryFn: () => tmdb.movieDetails(film.id),
                 staleTime: 1000 * 60 * 10
             })
@@ -158,9 +217,9 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em', marginTop: '0.2rem' }}>
                     {film.release_date?.slice(0, 4) || '—'}
                 </div>
-                {showRating && film.vote_average > 0 && (
+                {showRating && (film.vote_average ?? 0) > 0 && (
                     <div style={{ marginTop: '0.3rem' }}>
-                        <ReelRating value={film.vote_average / 2} size="sm" />
+                        <ReelRating value={(film.vote_average ?? 0) / 2} size="sm" />
                     </div>
                 )}
             </div>
@@ -169,7 +228,7 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
 })
 
 // ── NEW: PREMIUM PERSON PLACEHOLDER ──
-export function PersonPlaceholder({ size = '100%' }) {
+export function PersonPlaceholder({ size = '100%' }: PersonPlaceholderProps) {
     return (
         <div style={{
             width: size, height: '100%',
@@ -204,7 +263,7 @@ function FilmReelIcon() {
 }
 
 // Genre tag cloud
-const GENRE_MAP = {
+const GENRE_MAP: Record<number, string> = {
     28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
     80: 'Crime', 99: 'Documentary', 18: 'Drama', 10751: 'Family',
     14: 'Fantasy', 36: 'History', 27: 'Horror', 10402: 'Music',
@@ -212,7 +271,7 @@ const GENRE_MAP = {
     53: 'Thriller', 10752: 'War', 37: 'Western',
 }
 
-export function GenreTags({ genreIds = [], genres = [] }) {
+export function GenreTags({ genreIds = [], genres = [] }: GenreTagsProps) {
     const display = genres.length > 0
         ? genres.slice(0, 3).map((g) => g.name)
         : genreIds.slice(0, 3).map((id) => GENRE_MAP[id]).filter(Boolean)
@@ -227,7 +286,7 @@ export function GenreTags({ genreIds = [], genres = [] }) {
 }
 
 // Persona stamp
-const PERSONAS = {
+const PERSONAS: Record<string, { color: string; symbol: string }> = {
     'The Midnight Devotee': { color: '#5C1A0B', symbol: '🕛' },
     'The Archivist': { color: '#8B6914', symbol: '📜' },
     'The Weeper': { color: '#4A6B8A', symbol: '💧' },
@@ -235,7 +294,7 @@ const PERSONAS = {
     'The Completionist': { color: '#1C5C1A', symbol: '✓' },
 }
 
-export function PersonaStamp({ persona }) {
+export function PersonaStamp({ persona }: PersonaStampProps) {
     const p = PERSONAS[persona] || { color: 'var(--sepia)', symbol: '✦' }
     return (
         <span className="persona-stamp" style={{ color: p.color, borderColor: p.color }}>
@@ -245,7 +304,7 @@ export function PersonaStamp({ persona }) {
 }
 
 // Section header
-export function SectionHeader({ label, title, action, className = '', style = {} }) {
+export function SectionHeader({ label, title, action, className = '', style = {} }: SectionHeaderProps) {
     return (
         <div className={`section-header ${className}`} style={{ ...style }}>
             <span className="section-label">{label}</span>
@@ -256,7 +315,7 @@ export function SectionHeader({ label, title, action, className = '', style = {}
 }
 
 // Marquee ticker
-export function Ticker({ items = [] }) {
+export function Ticker({ items = [] }: TickerProps) {
     if (!items.length) return null
     const content = items.join(' ✦ ')
     return (
@@ -267,7 +326,7 @@ export function Ticker({ items = [] }) {
 }
 
 // ── DARKROOM SKELETON — Perceived-speed skeleton loaders ──
-function SkeletonPulse({ style = {} }) {
+function SkeletonPulse({ style = {} }: { style?: CSSProperties }) {
     return (
         <div className="shimmer" style={{
             borderRadius: 'var(--radius-card)',
@@ -277,7 +336,7 @@ function SkeletonPulse({ style = {} }) {
 }
 
 // Film strip poster grid skeleton
-export function PosterGridSkeleton({ count = 6 }) {
+export function PosterGridSkeleton({ count = 6 }: SkeletonProps) {
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
             {Array.from({ length: count }).map((_, i) => (
@@ -292,7 +351,7 @@ export function PosterGridSkeleton({ count = 6 }) {
 }
 
 // Horizontal film strip row skeleton
-export function FilmStripSkeleton({ count = 8 }) {
+export function FilmStripSkeleton({ count = 8 }: SkeletonProps) {
     return (
         <div style={{ display: 'flex', gap: '1rem', overflow: 'hidden', padding: '0.5rem 0 1rem' }}>
             {Array.from({ length: count }).map((_, i) => (
@@ -326,7 +385,7 @@ export function LoadingReel() {
 }
 
 // Film stat card
-export function StatCard({ label, value, icon }) {
+export function StatCard({ label, value, icon }: StatCardProps) {
     return (
         <div className="card" style={{ textAlign: 'center', padding: '1.25rem' }}>
             {icon && <div style={{ marginBottom: '0.5rem', color: 'var(--sepia)' }}>{icon}</div>}
@@ -341,7 +400,7 @@ export function StatCard({ label, value, icon }) {
 }
 
 // ── THE AUTOPSY (CELLULOID GAUGE) ──
-export function RadarChart({ autopsy }) {
+export function RadarChart({ autopsy }: RadarChartProps) {
     if (!autopsy) return null;
 
     // Data mapping uses the new precise architectural constraints while maintaining backwards compatibility with legacy logs
@@ -380,7 +439,7 @@ export function RadarChart({ autopsy }) {
                             </span>
                             {/* Using the core cinematic font to perfectly match the Nitrate Noir aesthetic */}
                             <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', lineHeight: 1, color: 'var(--parchment)', opacity: 0.85, letterSpacing: '0.05em' }}>
-                                {item.value === 10 ? '10.0' : `${parseFloat(item.value).toFixed(1)}`}
+                                {item.value === 10 ? '10.0' : `${parseFloat(String(item.value)).toFixed(1)}`}
                             </span>
                         </div>
 
