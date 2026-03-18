@@ -6,6 +6,7 @@ import { tmdb } from '../tmdb'
 import { supabase } from '../supabaseClient'
 import Buster from './Buster'
 import toast from 'react-hot-toast'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const STEPS = [
     { label: 'PICK YOUR FIVE', sub: 'Choose 5 films that define your taste.' },
@@ -89,6 +90,8 @@ export default function OnboardingModal() {
         setOpen(false)
     }
 
+    const focusTrapRef = useFocusTrap(open, handleDismiss)
+
     if (!open) return null
 
     return (
@@ -104,6 +107,9 @@ export default function OnboardingModal() {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '1rem',
                 }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Welcome onboarding"
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 20 }}

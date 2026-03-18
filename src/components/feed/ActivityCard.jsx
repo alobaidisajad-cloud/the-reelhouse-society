@@ -283,7 +283,7 @@ export default function ActivityCard({ log }) {
                 {/* Social Interaction Bar */}
                 <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative' }}>
-                        <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: endorsed ? 'var(--sepia)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)'}>
+                        <button onClick={handleEndorse} aria-label={endorsed ? 'Remove endorsement' : 'Endorse this log'} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: endorsed ? 'var(--sepia)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)'}>
                             <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />
                             {endorsed ? 'ENDORSED' : 'ENDORSE'} ({endorsementCount})
                         </button>
@@ -312,6 +312,7 @@ export default function ActivityCard({ log }) {
                     </div>
                     <button
                         onClick={handleAnnotateToggle}
+                        aria-label="Annotate this log"
                         style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
                         onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
@@ -320,6 +321,7 @@ export default function ActivityCard({ log }) {
                     </button>
                     <button
                         onClick={handleRetransmit}
+                        aria-label="Retransmit this log"
                         style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', transition: 'color 0.2s', marginLeft: 'auto' }}
                         onMouseEnter={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--sepia)' }}
                         onMouseLeave={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--fog)' }}

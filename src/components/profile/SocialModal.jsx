@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom'
 import Buster from '../Buster'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 /**
  * Social modal — shows a list of followers or following.
  * @param {{ socialModal: object, socialLoading: boolean, onClose: Function }} props
  */
 export default function SocialModal({ socialModal, socialLoading, onClose }) {
+    const focusTrapRef = useFocusTrap(!!socialModal, onClose)
     if (!socialModal) return null
 
     return (

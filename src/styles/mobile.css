@@ -51,6 +51,15 @@
   }
 
   .ticker-content { animation-duration: 20s !important; }
+
+  /* ── Gentle page fade on route change (replaces Framer Motion) ── */
+  @keyframes page-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .page-top {
+    animation: page-fade 0.25s ease-out;
+  }
 }
 
 /* ── Touch interaction improvements ── */

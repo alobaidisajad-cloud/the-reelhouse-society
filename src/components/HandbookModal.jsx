@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '../store'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 const IconClose = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -10,6 +11,7 @@ const IconClose = () => (
 
 export default function HandbookModal() {
     const { handbookOpen, closeHandbook } = useUIStore()
+    const focusTrapRef = useFocusTrap(handbookOpen, closeHandbook)
 
     return (
         <AnimatePresence>
@@ -20,6 +22,9 @@ export default function HandbookModal() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     onClick={closeHandbook}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Society Handbook"
                 >
                     <motion.div
                         className="handbook-content"

@@ -117,6 +117,9 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
             onClick={onClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            aria-label={film.title || 'Film'}
+            role="button"
+            tabIndex={onClick ? 0 : undefined}
         >
             {posterUrl ? (
                 <img

@@ -1,11 +1,13 @@
 import { ReelRating } from '../UI'
 import { tmdb } from '../../tmdb'
+import { useFocusTrap } from '../../hooks/useFocusTrap'
 
 /**
  * Inline review/log detail modal — shows full details of a logged film.
  * @param {{ viewLog: object, profileUser: object, isOwnProfile: boolean, routeUsername: string, onClose: Function, onEdit: Function }} props
  */
 export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeUsername, onClose, onEdit }) {
+    const focusTrapRef = useFocusTrap(!!viewLog, onClose)
     if (!viewLog) return null
 
     return (

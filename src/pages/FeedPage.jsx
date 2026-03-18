@@ -7,6 +7,7 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient'
 // ── Extracted Components ──
 import ActivityCard from '../components/feed/ActivityCard'
 import RatingLegend from '../components/feed/RatingLegend'
+import SectionErrorBoundary from '../components/SectionErrorBoundary'
 
 // ── FEED PAGE ──
 export default function FeedPage() {
@@ -146,7 +147,7 @@ export default function FeedPage() {
             }}>
                 <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '1rem' }}>
+                    <div className="section-title-lg" style={{ textAlign: 'center' }}>
                         THE REEL
                     </div>
                     <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: 'var(--parchment)', marginBottom: '1.5rem', lineHeight: 1, textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
@@ -162,6 +163,7 @@ export default function FeedPage() {
                 <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '3rem', alignItems: 'start' }}>
 
                     {/* Main Feed */}
+                    <SectionErrorBoundary label="COMMUNITY FEED">
                     <div className="feed-main">
 
                         <SectionHeader label="RECENT TRANSMISSIONS" title="The Log" />
@@ -258,14 +260,16 @@ export default function FeedPage() {
                             </div>
                         )}
                     </div>
+                    </SectionErrorBoundary>
 
                     {/* Sidebar */}
+                    <SectionErrorBoundary label="SIDEBAR">
                     <div className="feed-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
 
                         {/* Curated Lists — Real Supabase data */}
                         <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
+                            <div className="section-title" style={{ borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
                                 CURATED LISTS
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -293,7 +297,7 @@ export default function FeedPage() {
 
                         {/* Active Field Agents — Real Supabase data */}
                         <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
+                            <div className="section-title" style={{ borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
                                 ACTIVE FIELD AGENTS
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
@@ -325,6 +329,7 @@ export default function FeedPage() {
                         </div>
 
                     </div>
+                    </SectionErrorBoundary>
                 </div>
             </main>
         </div>

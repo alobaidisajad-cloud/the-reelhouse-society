@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 import { tmdb } from '../tmdb'
 import { useUIStore, useSoundscape } from '../store'
 import { PersonPlaceholder } from './UI'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 export default function CommandPalette() {
     const [open, setOpen] = useState(false)
@@ -19,6 +20,7 @@ export default function CommandPalette() {
     const navigate = useNavigate()
     const openLogModal = useUIStore(state => state.openLogModal)
     const playShutter = useSoundscape(state => state.playShutter)
+    const focusTrapRef = useFocusTrap(open, () => setOpen(false))
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -112,6 +114,9 @@ export default function CommandPalette() {
                     paddingLeft: '1rem',
                     paddingRight: '1rem',
                 }}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Search the archive"
             >
                 <motion.div
                     key="cmd-palette"

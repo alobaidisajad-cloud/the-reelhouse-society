@@ -2,9 +2,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Lock, Database, Briefcase, Zap, ShieldAlert } from 'lucide-react'
 import { useUIStore, useAuthStore } from '../store'
 import toast from 'react-hot-toast'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 
 export default function PaywallModal({ featureName, onClose }) {
     const { user, updateUser } = useAuthStore()
+    const focusTrapRef = useFocusTrap(true, onClose)
 
     const handleUpgrade = (tier) => {
         // Stripe Checkout logic goes here
@@ -22,6 +24,9 @@ export default function PaywallModal({ featureName, onClose }) {
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={onClose}
                 style={{ position: 'fixed', inset: 0, background: 'rgba(5, 4, 2, 0.95)', zIndex: 60000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(10px)' }}
+                role="dialog"
+                aria-modal="true"
+                aria-label={featureName || 'Upgrade membership'}
             >
                 <motion.div
                     initial={{ scale: 0.9, opacity: 0, y: 40 }}
