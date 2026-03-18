@@ -121,7 +121,7 @@ function DossierExportModal({ film, log, onClose }) {
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--ink) 25%, transparent 80%)' }} />
 
                     <div style={{ position: 'absolute', bottom: '2rem', left: '1.5rem', right: '1.5rem', zIndex: 2 }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem', borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.3rem' }}>REELHOUSE · DECLASSIFIED</div>
+                        <div className="section-title" style={{ marginBottom: '0.5rem', borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.3rem' }}>REELHOUSE · DECLASSIFIED</div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 5vw, 2.8rem)', color: 'var(--parchment)', lineHeight: 1, margin: '0 0 0.5rem 0' }}>{film.title}</h2>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', marginBottom: '1rem' }}>{film.release_date?.slice(0, 4)} · DIR. {film.credits?.crew?.find(c => c.job === 'Director')?.name?.toUpperCase()}</div>
                         {log.rating > 0 && <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.1rem', color: 'var(--flicker)', marginBottom: '1rem', letterSpacing: '0.1em' }}>{'✦'.repeat(Math.round(log.rating))}{'·'.repeat(5 - Math.round(log.rating))}</div>}
@@ -202,7 +202,7 @@ function DirectorPanel({ director, onClose }) {
             >
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--ash)', position: 'sticky', top: 0, background: 'var(--soot)', zIndex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <div style={{ flex: 1, paddingRight: '1rem' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>DIRECTOR DOSSIER</div>
+                        <div className="section-title" style={{ marginBottom: '0.3rem' }}>DIRECTOR DOSSIER</div>
                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--parchment)', lineHeight: 1.2 }}>{director.name}</div>
                         {filmography && (() => {
                             const seenCount = logs.filter(l => filmography.some(f => f.id === l.filmId)).length
@@ -274,7 +274,7 @@ function WatchProviders({ providers }) {
 
     return (
         <div className="card glass-panel">
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Tv size={12} /> WHERE TO WATCH
             </div>
 
@@ -351,7 +351,7 @@ function CountryReleases({ releaseDates }) {
 
     return (
         <div className="card">
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Globe size={12} /> INTERNATIONAL RELEASES
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
@@ -624,7 +624,7 @@ function FilmDetails({ film, onPlayVideo }) {
                             </div>
                         </div>
                         <div style={{ padding: '0.75rem 1rem' }}>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.2rem' }}>OFFICIAL TRAILER</div>
+                            <div className="ui-micro" style={{ color: 'var(--sepia)', marginBottom: '0.2rem' }}>OFFICIAL TRAILER</div>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--bone)', lineHeight: 1.2 }}>{trailer.name}</div>
                         </div>
                     </div>
@@ -633,7 +633,7 @@ function FilmDetails({ film, onPlayVideo }) {
                 {/* Director */}
                 {director && (
                     <Link to={`/person/${director.id}`} className="card" style={{ textDecoration: 'none', display: 'block' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>DIRECTED BY</div>
+                        <div className="section-title" style={{ marginBottom: '0.5rem' }}>DIRECTED BY</div>
                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)' }}>{director.name}</div>
                     </Link>
                 )}
@@ -643,7 +643,7 @@ function FilmDetails({ film, onPlayVideo }) {
 
                 {/* Film Dossier */}
                 <div className="card glass-panel">
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '1rem' }}>FILM DOSSIER</div>
+                    <div className="section-title">FILM DOSSIER</div>
                     {[
                         { label: 'GENRES', value: film.genres?.map(g => g.name).join(', ') },
                         { label: 'RELEASE', value: film.release_date ? new Date(film.release_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase() : '—' },

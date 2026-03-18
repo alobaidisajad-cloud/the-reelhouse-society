@@ -29,11 +29,11 @@ function StatCard({ icon: Icon, label, value, sub, color = 'var(--sepia)' }) {
     return (
         <div style={{ background: 'var(--soot)', border: '1px solid var(--ash)', borderTop: `3px solid ${color}`, padding: '1.4rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.52rem', letterSpacing: '0.18em', color: 'var(--fog)' }}>{label}</span>
+                <span className="section-title-sm" style={{ color: 'var(--fog)' }}>{label}</span>
                 <Icon size={14} color={color} />
             </div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', color: 'var(--parchment)', lineHeight: 1 }}>{value}</div>
-            {sub && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.08em' }}>{sub}</div>}
+            {sub && <div className="ui-micro" style={{ color: 'var(--fog)' }}>{sub}</div>}
         </div>
     )
 }
@@ -89,7 +89,7 @@ function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, onRemoveSlot, o
                 style={{ position: 'absolute', top: 0, right: 0, bottom: 0, background: 'var(--soot)', borderLeft: '3px solid var(--sepia)', width: '100%', maxWidth: 360, display: 'flex', flexDirection: 'column', overflowY: 'auto', pointerEvents: 'auto', boxShadow: '-10px 0 40px rgba(0,0,0,0.5)' }}>
                 <div style={{ padding: '1rem 1.25rem', borderBottom: '1px solid var(--ash)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'rgba(139,105,20,0.07)', position: 'sticky', top: 0, zIndex: 2 }}>
                     <div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.2rem' }}>FILM DETAILS</div>
+                        <div className="ui-micro" style={{ color: 'var(--sepia)', marginBottom: '0.2rem' }}>FILM DETAILS</div>
                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1.2 }}>{showtime.film}</div>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.46rem', color: 'var(--fog)', marginTop: 3 }}>{showtime.date} · {totalBooked} seats sold</div>
                     </div>
@@ -98,18 +98,18 @@ function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, onRemoveSlot, o
                         <button onClick={onClose} style={{ background: 'none', border: '1px solid var(--ash)', color: 'var(--fog)', padding: '0.3rem', cursor: 'pointer', borderRadius: 2 }}><X size={12} /></button>
                     </div>
                 </div>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 1.25rem 0.4rem' }}>TIME SLOTS</div>
+                <div className="ui-micro" style={{ color: 'var(--sepia)', padding: '0.75rem 1.25rem 0.4rem' }}>TIME SLOTS</div>
                 <div>
                     {showtime.slots.map(sl => (
                         <SlotEditor key={sl.id} slot={sl} stId={showtime.id} onRemove={onRemoveSlot} onUpdate={onUpdate} />
                     ))}
                     {showtime.slots.length === 0 && (
-                        <div style={{ padding: '1rem 1.25rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.08em' }}>No slots yet. Add one below.</div>
+                        <div className="ui-label" style={{ padding: '1rem 1.25rem', color: 'var(--fog)' }}>No slots yet. Add one below.</div>
                     )}
                 </div>
                 {addingSlot ? (
                     <div style={{ padding: '0.75rem 1.25rem', background: 'rgba(139,105,20,0.07)', borderTop: '1px dashed var(--ash)' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>NEW TIME SLOT</div>
+                        <div className="ui-micro" style={{ color: 'var(--sepia)', marginBottom: '0.5rem' }}>NEW TIME SLOT</div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginBottom: '0.4rem' }}>
                             <input className="input" type="time" value={slotForm.time} onChange={e => setSlotForm(p => ({ ...p, time: e.target.value }))} />
                             <select className="input" value={slotForm.format} onChange={e => setSlotForm(p => ({ ...p, format: e.target.value }))}>
@@ -261,22 +261,22 @@ function AddShowtimeModal({ onClose, onAdd, defaultDate = '', screens = [] }) {
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                 style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', width: '100%', maxWidth: 480, padding: '2rem', borderRadius: 2, position: 'relative' }}>
                 <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}><X size={20} /></button>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.25em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>NEW FILM</div>
+                <div className="section-title-sm" style={{ color: 'var(--sepia)', marginBottom: '0.4rem' }}>NEW FILM</div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '1.25rem' }}>Add to Schedule</h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <input className="input" placeholder="Film title *" value={film} onChange={e => setFilm(e.target.value)} autoFocus />
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
                         <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>SCREENING DATE</div>
+                            <div className="ui-micro" style={{ color: 'var(--sepia)', marginBottom: '0.35rem' }}>SCREENING DATE</div>
                             <input className="input" type="date" value={date} onChange={e => setDate(e.target.value)} />
                         </div>
                         <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>DURATION (MINS)</div>
+                            <div className="ui-micro" style={{ color: 'var(--sepia)', marginBottom: '0.35rem' }}>DURATION (MINS)</div>
                             <input className="input" type="number" min={30} max={480} value={durationMins} onChange={e => setDurationMins(parseInt(e.target.value) || 120)} />
                         </div>
                     </div>
                     <div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>SCREEN</div>
+                        <div className="ui-micro" style={{ color: 'var(--sepia)', marginBottom: '0.35rem' }}>SCREEN</div>
                         {screens.length > 0 ? (
                             <select className="input" value={screenName} onChange={e => setScreenName(e.target.value)}>
                                 {screens.map(sc => <option key={sc.id} value={sc.name}>{sc.name}</option>)}
@@ -344,16 +344,16 @@ function PaymentTab({ venue, onConnect }) {
             <RevenueBreakdown pct={venue.platformFeePercent} />
             <form onSubmit={handleConnect} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '2rem' }}>
                 <div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.52rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>ACCOUNT HOLDER NAME</div>
+                    <div className="section-title-sm" style={{ color: 'var(--sepia)', marginBottom: '0.4rem' }}>ACCOUNT HOLDER NAME</div>
                     <input className="input" placeholder="Full legal name" value={form.accountName} onChange={e => set('accountName', e.target.value)} />
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
                     <div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.52rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>ROUTING NUMBER</div>
+                        <div className="section-title-sm" style={{ color: 'var(--sepia)', marginBottom: '0.4rem' }}>ROUTING NUMBER</div>
                         <input className="input" placeholder="9-digit routing number" maxLength={9} value={form.routingNumber} onChange={e => set('routingNumber', e.target.value.replace(/\D/g, ''))} />
                     </div>
                     <div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.52rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>ACCOUNT NUMBER</div>
+                        <div className="section-title-sm" style={{ color: 'var(--sepia)', marginBottom: '0.4rem' }}>ACCOUNT NUMBER</div>
                         <input className="input" placeholder="Account number" value={form.accountNumber} onChange={e => set('accountNumber', e.target.value.replace(/\D/g, ''))} />
                     </div>
                 </div>
@@ -375,7 +375,7 @@ function RevenueBreakdown({ pct }) {
     const venueCut = 100 - pct
     return (
         <div style={{ background: 'var(--ink)', border: '1px solid var(--ash)', padding: '1.5rem' }}>
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem' }}>REVENUE SPLIT PER TICKET SOLD</div>
+            <div className="section-title" style={{ marginBottom: '1.25rem' }}>REVENUE SPLIT PER TICKET SOLD</div>
             <div style={{ display: 'flex', gap: '1rem', alignItems: 'stretch', marginBottom: '1rem' }}>
                 <div style={{ flex: venueCut, background: 'rgba(139,105,20,0.15)', border: '2px solid var(--sepia)', padding: '1rem', textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--flicker)' }}>{venueCut}%</div>
@@ -576,7 +576,7 @@ export default function VenueDashboard() {
                                 </div>
                             )}
                             <div>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>VENUE CONTROL PANEL</div>
+                                <div className="ui-micro" style={{ color: 'var(--sepia)', letterSpacing: '0.3em', marginBottom: '0.3rem' }}>VENUE CONTROL PANEL</div>
                                 <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 3.5vw, 2.5rem)', color: 'var(--parchment)', lineHeight: 1 }}>{venue.name}</h1>
                                 <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.35rem', flexWrap: 'wrap' }}>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: 4 }}><MapPin size={9} />{venue.location}</span>
@@ -628,7 +628,7 @@ export default function VenueDashboard() {
                                     <TicketTypeBreakdown showtimes={showtimes} events={events} />
                                 </div>
                                 <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>QUICK ACTIONS</div>
+                                    <div className="section-title" style={{ marginBottom: '0.75rem' }}>QUICK ACTIONS</div>
                                     <div style={{ display: 'flex', gap: '0.6rem', flexWrap: 'wrap' }}>
                                         <button className="btn btn-primary" onClick={() => { setTab('schedule'); setShowAddFilm(true) }}><Plus size={12} /> Add Film</button>
                                         <button className="btn btn-ghost" onClick={() => { setTab('events'); setShowAddEvent(true) }}><Plus size={12} /> Create Event</button>
@@ -638,7 +638,7 @@ export default function VenueDashboard() {
                                     </div>
                                 </div>
                                 <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>UPCOMING SCHEDULE</div>
+                                    <div className="section-title" style={{ marginBottom: '0.75rem' }}>UPCOMING SCHEDULE</div>
                                     {showtimes.slice(0, 3).map(st => (
                                         <div key={st.id} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', padding: '0.9rem 1.2rem', marginBottom: '0.4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
@@ -697,7 +697,7 @@ export default function VenueDashboard() {
                                 </div>
                                 {showAddEvent && (
                                     <div style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', padding: '1.5rem' }}>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem' }}>NEW SPECIAL EVENT</div>
+                                        <div className="section-title">NEW SPECIAL EVENT</div>
                                         <form onSubmit={submitEvent} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                             <input className="input" placeholder="Event title *" value={eventForm.title} onChange={e => setEventForm(p => ({ ...p, title: e.target.value }))} />
                                             <textarea className="input" placeholder="Description" value={eventForm.desc} onChange={e => setEventForm(p => ({ ...p, desc: e.target.value }))} style={{ minHeight: 70 }} />
@@ -741,7 +741,7 @@ export default function VenueDashboard() {
                                     )
                                 })}
                                 {events.length === 0 && !showAddEvent && (
-                                    <div style={{ textAlign: 'center', padding: '4rem', border: '1px dashed var(--ash)', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em' }}>
+                                    <div className="empty-state">
                                         NO SPECIAL EVENTS. CREATE YOUR FIRST PROGRAMME.
                                     </div>
                                 )}
@@ -758,7 +758,7 @@ export default function VenueDashboard() {
                                     <StatCard icon={DollarSign} label="YOUR CUT (85%)" value={`$${Math.round((showtimeRevenue + eventRevenue) * 0.85).toLocaleString()}`} sub="After platform fee" color="var(--flicker)" />
                                 </div>
                                 <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem' }}>SHOWTIME BREAKDOWN</div>
+                                    <div className="section-title">SHOWTIME BREAKDOWN</div>
                                     {showtimes.map(st => (
                                         <div key={st.id} style={{ marginBottom: '1rem' }}>
                                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)', marginBottom: '0.4rem' }}>{st.film} · {st.date}</div>

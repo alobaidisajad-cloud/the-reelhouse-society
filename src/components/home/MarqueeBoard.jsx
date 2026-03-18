@@ -36,16 +36,17 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
-                gap: '1rem',
+                gap: IS_TOUCH ? '0.6rem' : '1rem',
                 minHeight: IS_TOUCH ? 80 : 160,
                 justifyContent: 'center',
             }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.6rem' : '0.75rem', letterSpacing: '0.3em', color: 'var(--flicker)', textShadow: '0 0 10px rgba(242,232,160,0.3)', opacity: 0.6, animation: 'pulse 1.8s ease-in-out infinite' }}>
-                    ✦ LOADING THE FEATURE PRESENTATION ✦
-                </div>
-                <div style={{ display: 'flex', gap: 4, overflow: 'hidden', opacity: 0.08, justifyContent: 'center' }}>
-                    {Array.from({ length: IS_TOUCH ? 6 : 14 }).map((_, i) => (
-                        <div key={i} style={{ width: 32, height: 24, flexShrink: 0, border: '2px solid var(--parchment)', borderRadius: 2 }} />
+                {/* Shimmer skeleton — previews the marquee layout */}
+                <div className="shimmer" style={{ width: '40%', height: IS_TOUCH ? 8 : 12, borderRadius: 2, background: 'rgba(139,105,20,0.12)' }} />
+                <div className="shimmer" style={{ width: '70%', height: IS_TOUCH ? 22 : 36, borderRadius: 2, background: 'rgba(139,105,20,0.08)', animationDelay: '0.1s' }} />
+                <div className="shimmer" style={{ width: '55%', height: IS_TOUCH ? 10 : 14, borderRadius: 2, background: 'rgba(139,105,20,0.06)', animationDelay: '0.2s' }} />
+                <div style={{ display: 'flex', gap: IS_TOUCH ? 4 : 6, marginTop: IS_TOUCH ? '0.3rem' : '0.5rem' }}>
+                    {Array.from({ length: IS_TOUCH ? 3 : 5 }).map((_, i) => (
+                        <div key={i} className="shimmer" style={{ width: IS_TOUCH ? 40 : 60, height: IS_TOUCH ? 56 : 84, borderRadius: 2, background: 'rgba(139,105,20,0.06)', animationDelay: `${0.3 + i * 0.08}s` }} />
                     ))}
                 </div>
             </div>

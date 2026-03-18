@@ -777,3 +777,92 @@
   border-radius: var(--radius-card);
   background: rgba(92, 26, 11, 0.08);
 }
+
+/* ============================================================
+   HANDBOOK MODAL (moved from inline <style> in HandbookModal.jsx)
+   ============================================================ */
+.handbook-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(5, 3, 1, 0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.handbook-content {
+  background: #110E0C;
+  width: 100%;
+  max-width: 600px;
+  border: 1px solid rgba(139, 105, 20, 0.3);
+  border-radius: 4px;
+  padding: 3rem;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.handbook-content::-webkit-scrollbar { width: 6px; }
+.handbook-content::-webkit-scrollbar-track { background: transparent; }
+.handbook-content::-webkit-scrollbar-thumb { background: rgba(139, 105, 20, 0.3); border-radius: 3px; }
+
+.handbook-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  background: none;
+  border: none;
+  color: var(--sepia);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.handbook-close:hover { opacity: 1; transform: scale(1.1); }
+
+.handbook-header {
+  text-align: center;
+  margin-bottom: 3rem;
+  border-bottom: 1px dashed rgba(139, 105, 20, 0.2);
+  padding-bottom: 2rem;
+}
+
+.hb-badge {
+  font-family: var(--font-ui);
+  font-size: 0.7rem;
+  letter-spacing: 0.3em;
+  color: var(--sepia);
+  opacity: 0.8;
+  margin-bottom: 1rem;
+}
+
+.hb-title {
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  color: var(--parchment);
+  line-height: 1;
+  margin-bottom: 0.5rem;
+}
+
+.hb-subtitle {
+  font-family: 'Georgia', serif;
+  font-style: italic;
+  color: var(--bone);
+  opacity: 0.6;
+  font-size: 1.1rem;
+}
+
+.handbook-grid { display: flex; flex-direction: column; gap: 2rem; }
+
+.hb-item { padding-left: 1.5rem; border-left: 2px solid rgba(139, 105, 20, 0.2); }
+.hb-item h3 { font-family: var(--font-display); font-size: 1.5rem; color: var(--parchment); margin-bottom: 0.5rem; letter-spacing: 0.05em; }
+.hb-item p { font-family: var(--font-body); font-size: 1.05rem; line-height: 1.6; color: var(--bone); opacity: 0.8; }
+.hb-item p strong { color: var(--sepia); font-weight: normal; }
+
+@media (max-width: 600px) {
+  .handbook-content { padding: 2rem 1.5rem; }
+  .hb-title { font-size: 2.8rem; }
+}

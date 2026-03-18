@@ -531,7 +531,7 @@ export default function UserProfilePage() {
                                     return (
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                                             <div className="card" style={{ padding: '1.75rem' }}>
-                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem' }}>RATINGS REGISTER</div>
+                                                <div className="section-title" style={{ marginBottom: '1.25rem' }}>RATINGS REGISTER</div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                                     {ratingBuckets.reverse().map(({ star, count }) => (
                                                         <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -543,7 +543,7 @@ export default function UserProfilePage() {
                                                 </div>
                                             </div>
                                             <div className="card" style={{ padding: '1.75rem' }}>
-                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem' }}>ERA DISTRIBUTION</div>
+                                                <div className="section-title" style={{ marginBottom: '1.25rem' }}>ERA DISTRIBUTION</div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                                                     {decades.map(([decade, count]) => (
                                                         <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -555,7 +555,7 @@ export default function UserProfilePage() {
                                                 </div>
                                             </div>
                                             <div className="card" style={{ padding: '1.75rem' }}>
-                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem' }}>CATALOG METRICS</div>
+                                                <div className="section-title" style={{ marginBottom: '1.25rem' }}>CATALOG METRICS</div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                                                     {[{ label: 'ESTIMATED RUNTIME', value: `${totalHours.toLocaleString()} hrs` }, { label: 'TOTAL FILMS LOGGED', value: profileLogs.length }, { label: 'WATCHLIST QUEUED', value: profileWatchlist.length }, { label: 'LISTS CURATED', value: profileLists.length }, { label: 'RATED 5 REELS', value: profileLogs.filter(l => l.rating === 5).length }, { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length }].map(({ label, value }) => (
                                                         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.5rem' }}>
@@ -618,7 +618,7 @@ export default function UserProfilePage() {
                         <VaultSection vault={isOwnProfile ? currentWatchlist : []} user={profileUser} logs={profileLogs} />
                         {profileLogs.filter(l => l.rating >= 4).length > 0 && (
                             <div className="card">
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>YOUR FAVOURITES</div>
+                                <div className="section-title" style={{ marginBottom: '0.75rem' }}>YOUR FAVOURITES</div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {profileLogs.filter(l => l.rating >= 4).slice(0, 4).map((log) => (
                                         <Link key={log.id} to={`/film/${log.filmId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
