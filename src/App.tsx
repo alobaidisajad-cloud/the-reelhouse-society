@@ -22,7 +22,7 @@ const SignupModal = lazy(() => import('./components/SignupModal'))
 const HandbookModal = lazy(() => import('./components/HandbookModal'))
 const CommandPalette = lazy(() => import('./components/CommandPalette'))
 const OnboardingModal = lazy(() => import('./components/OnboardingModal'))
-const LetterboxdImport = lazy(() => import('./components/LetterboxdImport'))
+const CSVImport = lazy(() => import('./components/CSVImport'))
 
 // Detect touch once — controls which desktop-only effects to mount
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
@@ -106,7 +106,7 @@ export default function App() {
   // Granular selector — only re-renders App when logs.length changes, not on every store write
   const logCount = useFilmStore(state => state.logs.length)
   const { openLogModal, showPaywall, paywallFeature, closePaywall, openHandbook } = useUIStore()
-  const [letterboxdOpen, setLetterboxdOpen] = useState(false)
+  const [csvImportOpen, setCsvImportOpen] = useState(false)
 
   const degradationClass = useMemo(() => {
     if (logCount > 40) return 'level-obsessed'
@@ -161,7 +161,7 @@ export default function App() {
   }, [])
 
   // ── Global Keyboard Shortcuts ──
-  // L = log a film, ? = handbook, I = import from Letterboxd
+  // L = log a film, ? = handbook, I = import CSV
   useEffect(() => {
     const handler = (e) => {
       // Ignore when user is typing in an input, textarea, or contenteditable
@@ -170,7 +170,7 @@ export default function App() {
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (e.key === 'l' || e.key === 'L') { e.preventDefault(); openLogModal() }
       if (e.key === '?') { e.preventDefault(); openHandbook() }
-      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); setLetterboxdOpen(true) }
+      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); setCsvImportOpen(true) }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
@@ -232,7 +232,7 @@ export default function App() {
           <SignupModal />
           <HandbookModal />
           <OnboardingModal />
-          {letterboxdOpen && <LetterboxdImport onClose={() => setLetterboxdOpen(false)} />}
+          {csvImportOpen && <CSVImport onClose={() => setCsvImportOpen(false)} />}
 
           <main id="main-content" tabIndex={-1}>
           <AnimatePresence mode="wait" initial={false}>

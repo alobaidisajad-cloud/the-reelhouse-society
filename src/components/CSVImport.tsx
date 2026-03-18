@@ -5,24 +5,24 @@ import { useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 
-// Parse Letterboxd CSV export into our log format
-// Letterboxd exports: Name, Year, URI, Rating, WatchedDate (from diary.csv or ratings.csv)
-function parseLetterboxdCSV(text) {
+// Parse a standard film diary CSV export into our log format
+// Supports CSV with columns: Name, Year, Rating, WatchedDate (diary.csv or ratings.csv)
+function parseCSVExport(text: any) {
     const lines = text.trim().split('\n')
     if (lines.length < 2) return []
-    const headers = lines[0].split(',').map(h => h.replace(/"/g, '').trim())
+    const headers = lines[0].split(',').map((h: any) => h.replace(/"/g, '').trim())
 
-    // Detect format: diary.csv has "Watched Date", ratings.csv has "Rating"
-    const nameIdx = headers.findIndex(h => h.toLowerCase() === 'name')
-    const yearIdx = headers.findIndex(h => h.toLowerCase() === 'year')
-    const ratingIdx = headers.findIndex(h => h.toLowerCase() === 'rating')
-    const dateIdx = headers.findIndex(h => h.toLowerCase().includes('date'))
+    // Detect format: diary exports typically have "Watched Date", ratings exports have "Rating"
+    const nameIdx = headers.findIndex((h: any) => h.toLowerCase() === 'name')
+    const yearIdx = headers.findIndex((h: any) => h.toLowerCase() === 'year')
+    const ratingIdx = headers.findIndex((h: any) => h.toLowerCase() === 'rating')
+    const dateIdx = headers.findIndex((h: any) => h.toLowerCase().includes('date'))
 
     if (nameIdx === -1) return []
 
-    return lines.slice(1).map(line => {
+    return lines.slice(1).map((line: any) => {
         // Handle commas inside quoted fields
-        const cols = []
+        const cols: any[] = []
         let current = ''
         let inQuotes = false
         for (const ch of line) {
@@ -37,7 +37,7 @@ function parseLetterboxdCSV(text) {
 
         const year = cols[yearIdx] || null
         const ratingRaw = cols[ratingIdx] || '0'
-        // Letterboxd uses 0.5–5.0 stars; we use 1–5 integer
+        // Common export format uses 0.5–5.0 stars; we use 1–5 integer
         const rating = Math.round(parseFloat(ratingRaw) || 0)
         const watchedDate = cols[dateIdx] ? new Date(cols[dateIdx]).toISOString() : new Date().toISOString()
 
@@ -45,25 +45,25 @@ function parseLetterboxdCSV(text) {
     }).filter(Boolean)
 }
 
-export default function LetterboxdImport({ onClose }) {
-    const user = useAuthStore(s => s.user)
+export default function CSVImport({ onClose }: any) {
+    const user = useAuthStore((s: any) => s.user)
     const [dragOver, setDragOver] = useState(false)
-    const [parsed, setParsed] = useState(null) // { entries: [], fileName }
+    const [parsed, setParsed] = useState<any>(null) // { entries: [], fileName }
     const [importing, setImporting] = useState(false)
     const [done, setDone] = useState(false)
     const [importCount, setImportCount] = useState(0)
-    const fileRef = useRef(null)
+    const fileRef = useRef<any>(null)
 
-    const handleFile = useCallback((file) => {
+    const handleFile = useCallback((file: any) => {
         if (!file || !file.name.endsWith('.csv')) {
-            toast.error('Please upload a Letterboxd CSV file.')
+            toast.error('Please upload a valid CSV file.')
             return
         }
         const reader = new FileReader()
-        reader.onload = (e) => {
-            const entries = parseLetterboxdCSV(e.target.result)
+        reader.onload = (e: any) => {
+            const entries = parseCSVExport(e.target.result)
             if (entries.length === 0) {
-                toast.error('No films found. Make sure this is a Letterboxd diary or ratings export.')
+                toast.error('No films found. Make sure this is a diary or ratings CSV export.')
                 return
             }
             setParsed({ entries, fileName: file.name })
@@ -71,7 +71,7 @@ export default function LetterboxdImport({ onClose }) {
         reader.readAsText(file)
     }, [])
 
-    const handleDrop = (e) => {
+    const handleDrop = (e: any) => {
         e.preventDefault()
         setDragOver(false)
         const file = e.dataTransfer.files[0]
@@ -88,7 +88,7 @@ export default function LetterboxdImport({ onClose }) {
 
         for (let i = 0; i < entries.length; i += BATCH) {
             const batch = entries.slice(i, i + BATCH)
-            const dbRows = batch.map(e => ({
+            const dbRows = batch.map((e: any) => ({
                 user_id: user.id,
                 film_id: 0, // No TMDB id from CSV — set to 0, enrichable later
                 film_title: e.title,
@@ -137,7 +137,7 @@ export default function LetterboxdImport({ onClose }) {
                     animate={{ scale: 1, opacity: 1, y: 0 }}
                     exit={{ scale: 0.92, opacity: 0 }}
                     transition={{ type: 'spring', damping: 28, stiffness: 320 }}
-                    onClick={e => e.stopPropagation()}
+                    onClick={(e: any) => e.stopPropagation()}
                     style={{
                         background: 'var(--soot)',
                         border: '1px solid var(--ash)',
@@ -162,10 +162,10 @@ export default function LetterboxdImport({ onClose }) {
                             MIGRATE YOUR ARCHIVE
                         </div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: 'var(--parchment)', lineHeight: 1.1, margin: 0 }}>
-                            Import from Letterboxd
+                            Import Your Film Diary
                         </h2>
                         <p style={{ fontFamily: 'var(--font-sub)', fontSize: '0.82rem', color: 'var(--bone)', marginTop: '0.75rem', opacity: 0.7, lineHeight: 1.5 }}>
-                            Export your diary from Letterboxd → Settings → Import & Export → Export Your Data. Then drop the <code style={{ fontFamily: 'monospace', color: 'var(--sepia)' }}>diary.csv</code> or <code style={{ fontFamily: 'monospace', color: 'var(--sepia)' }}>ratings.csv</code> file here.
+                            Export your diary from any film tracking app as a CSV, then drop the <code style={{ fontFamily: 'monospace', color: 'var(--sepia)' }}>diary.csv</code> or <code style={{ fontFamily: 'monospace', color: 'var(--sepia)' }}>ratings.csv</code> file here.
                         </p>
                     </div>
 
@@ -295,7 +295,7 @@ export default function LetterboxdImport({ onClose }) {
                                     type="file"
                                     accept=".csv"
                                     style={{ display: 'none' }}
-                                    onChange={e => handleFile(e.target.files[0])}
+                                    onChange={(e: any) => handleFile(e.target.files[0])}
                                 />
                             </div>
 

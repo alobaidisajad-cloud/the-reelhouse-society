@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { Crown, Star, Key, EyeOff, LayoutTemplate, Database, Upload } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
-import LetterboxdImport from '../components/LetterboxdImport'
+import CSVImport from '../components/CSVImport'
 import toast from 'react-hot-toast'
 import '../styles/membership.css'
 
@@ -20,7 +20,7 @@ const features = [
 export default function MembershipPage() {
     const { isAuthenticated, user } = useAuthStore()
     const { openSignupModal } = useUIStore()
-    const [letterboxdOpen, setLetterboxdOpen] = useState(false)
+    const [csvImportOpen, setCsvImportOpen] = useState(false)
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -88,10 +88,10 @@ export default function MembershipPage() {
 
                     {isAuthenticated && (
                         <button
-                            onClick={() => setLetterboxdOpen(true)}
+                            onClick={() => setCsvImportOpen(true)}
                             className="btn btn-ghost membership-import-btn"
                         >
-                            <Upload size={13} /> MIGRATE FROM LETTERBOXD
+                            <Upload size={13} /> IMPORT YOUR ARCHIVE
                         </button>
                     )}
                 </motion.div>
@@ -295,8 +295,8 @@ export default function MembershipPage() {
                 </motion.div>
             </div>
 
-            {/* Letterboxd Import modal */}
-            {letterboxdOpen && <LetterboxdImport onClose={() => setLetterboxdOpen(false)} />}
+            {/* CSV Import modal */}
+            {csvImportOpen && <CSVImport onClose={() => setCsvImportOpen(false)} />}
         </div>
     )
 }
