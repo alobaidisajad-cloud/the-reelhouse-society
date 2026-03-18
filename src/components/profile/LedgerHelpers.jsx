@@ -114,7 +114,7 @@ export function ListsSection({ lists, user }) {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
                         {posterMode.films.map(film => (
                             <div key={film.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <img src={tmdb.poster(film.poster_path, 'w185')} style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', border: '1px solid var(--ash)' }} />
+                                <img src={tmdb.poster(film.poster_path, 'w185')} alt={film.title} style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', border: '1px solid var(--ash)' }} />
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{film.title.toUpperCase()}</div>
                             </div>
                         ))}

@@ -314,7 +314,7 @@ function ActivityCard({ log }) {
                     </button>
                     <button
                         onClick={handleRetransmit}
-                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'none', transition: 'color 0.2s', marginLeft: 'auto' }}
+                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', transition: 'color 0.2s', marginLeft: 'auto' }}
                         onMouseEnter={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--sepia)' }}
                         onMouseLeave={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--fog)' }}
                     >
@@ -385,7 +385,7 @@ function ActivityCard({ log }) {
                                     <div style={{ width: '400px', flexShrink: 0 }}>
                                         {log.film?.poster && (
                                             <div style={{ padding: '20px', border: '2px dashed var(--ash)', background: 'var(--soot)' }}>
-                                                <img src={tmdb.poster(log.film.poster, 'w500')} style={{ width: '100%', border: '1px solid var(--soot)' }} />
+                                                <img src={tmdb.poster(log.film.poster, 'w500')} alt={log.film?.title} style={{ width: '100%', border: '1px solid var(--soot)' }} />
                                             </div>
                                         )}
                                         <div style={{ marginTop: '40px', fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--bone)', lineHeight: 1.1 }}>

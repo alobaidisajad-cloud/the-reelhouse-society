@@ -274,7 +274,7 @@ export default function UserProfilePage() {
 
     const renderAvatar = (avatarValue, size = 90) => {
         if (!avatarValue) return <Buster size={size} mood="smiling" />
-        if (avatarValue.startsWith('data:image/') || avatarValue.startsWith('http')) return <img src={avatarValue} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+        if (avatarValue.startsWith('data:image/') || avatarValue.startsWith('http')) return <img src={avatarValue} alt="User avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
         return <Buster size={size} mood={avatarValue} />
     }
 
@@ -674,7 +674,7 @@ export default function UserProfilePage() {
                                     {socialModal.list.map(member => (
                                         <Link key={member.username} to={`/user/${member.username}`} onClick={() => setSocialModal(null)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', textDecoration: 'none', borderRadius: '4px' }}>
                                             <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                {member.avatar_url?.startsWith('http') ? <img src={member.avatar_url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Buster size={20} mood={member.avatar_url || 'smiling'} />}
+                                                {member.avatar_url?.startsWith('http') ? <img src={member.avatar_url} alt={member.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Buster size={20} mood={member.avatar_url || 'smiling'} />}
                                             </div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', color: 'var(--parchment)', lineHeight: 1 }}>@{member.username.toUpperCase()}</div>
@@ -723,7 +723,7 @@ export default function UserProfilePage() {
                             <div style={{ width: '100%', height: 200, overflow: 'hidden', position: 'relative' }}>
                                 <img
                                     src={tmdb.poster(viewLog.altPoster || viewLog.poster, 'w780')}
-                                    alt=""
+                                    alt={viewLog.title}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.25) brightness(0.5) blur(2px)', transform: 'scale(1.05)' }}
                                 />
                                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 20%, rgba(28,22,14,1) 100%)' }} />

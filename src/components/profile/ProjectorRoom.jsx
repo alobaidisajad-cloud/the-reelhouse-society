@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Lock } from 'lucide-react'
 import { useFilmStore, useUIStore } from '../../store'
@@ -50,7 +51,7 @@ export function ProjectorRoom({ stats, user }) {
         return days
     }
 
-    const heatmapDays = generateHeatmap()
+    const heatmapDays = useMemo(generateHeatmap, [logs])
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>

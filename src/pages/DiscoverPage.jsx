@@ -166,7 +166,7 @@ const FilmGrid = ({ films }) => (
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ width: '100%', aspectRatio: '1', borderRadius: '2px', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--soot)', position: 'relative' }}>
                                 {item.profile_path
-                                    ? <img src={tmdb.profile(item.profile_path, 'w185')} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+                                    ? <img src={tmdb.profile(item.profile_path, 'w185')} alt={item.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
                                     : <PersonPlaceholder />}
                             </div>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.6rem' : '0.9rem', color: 'var(--parchment)', marginTop: '0.4rem', lineHeight: 1.2 }}>{item.name}</div>
@@ -351,7 +351,7 @@ export default function DiscoverPage() {
                                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                             >
                                                 {item.poster_path || item.profile_path
-                                                    ? <img src={isPerson ? tmdb.profile(item.profile_path, 'w92') : tmdb.poster(item.poster_path, 'w92')} loading="lazy" decoding="async" style={{ width: isPerson ? 24 : 18, height: isPerson ? 24 : 28, objectFit: 'cover', borderRadius: isPerson ? '50%' : '2px', flexShrink: 0 }} />
+                                                    ? <img src={isPerson ? tmdb.profile(item.profile_path, 'w92') : tmdb.poster(item.poster_path, 'w92')} alt={isPerson ? item.name : item.title} loading="lazy" decoding="async" style={{ width: isPerson ? 24 : 18, height: isPerson ? 24 : 28, objectFit: 'cover', borderRadius: isPerson ? '50%' : '2px', flexShrink: 0 }} />
                                                     : <div style={{ width: 18, height: 28, background: 'var(--ash)', flexShrink: 0, borderRadius: '2px' }} />
                                                 }
                                                 <div style={{ flex: 1, overflow: 'hidden', textAlign: 'left' }}>
