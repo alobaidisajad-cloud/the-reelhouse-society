@@ -151,15 +151,22 @@ export default function YearInCinemaPage() {
     // Favorite (highest rated)
     const favorite = ratingStats.highest
 
-    if (totalFilms < 1) {
+    if (totalFilms < 10) {
+        const progress = Math.round((totalFilms / 10) * 100)
         return (
             <div className="yic-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '2rem' }}>
                 <Film size={48} style={{ color: 'var(--sepia)', marginBottom: '1.5rem', opacity: 0.5 }} />
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '1rem' }}>No Reels to Review</h2>
-                <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.6, fontStyle: 'italic' }}>
-                    Log some films first, then return here to see your annual cinematic retrospective.
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '1rem' }}>Your Retrospective Awaits</h2>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.6, fontStyle: 'italic', marginBottom: '2rem' }}>
+                    Log {10 - totalFilms} more film{10 - totalFilms !== 1 ? 's' : ''} to unlock your annual cinematic retrospective. Every great year deserves at least 10 entries.
                 </p>
-                <Link to={user ? `/u/${user.username}` : '/'} className="btn btn-ghost" style={{ marginTop: '2rem', fontSize: '0.65rem', letterSpacing: '0.15em' }}>
+                <div style={{ width: '100%', maxWidth: 320, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden', marginBottom: '0.75rem' }}>
+                    <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', borderRadius: 3, transition: 'width 0.5s ease' }} />
+                </div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--fog)', marginBottom: '2rem' }}>
+                    {totalFilms}/10 FILMS LOGGED
+                </div>
+                <Link to={user ? `/user/${user.username}` : '/'} className="btn btn-ghost" style={{ fontSize: '0.65rem', letterSpacing: '0.15em' }}>
                     <ArrowLeft size={14} /> RETURN TO PROFILE
                 </Link>
             </div>

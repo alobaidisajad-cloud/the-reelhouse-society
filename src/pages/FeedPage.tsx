@@ -274,9 +274,23 @@ export default function FeedPage() {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                                 {recentLists.length === 0 ? (
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.6 }}>
-                                        No lists yet. Start curating.
-                                    </div>
+                                    <>
+                                        {[
+                                            { title: 'Essential Noir', curator: 'THE ARCHIVIST' },
+                                            { title: 'Arthouse Manifesto', curator: 'THE ORACLE' },
+                                        ].map(ph => (
+                                            <Link key={ph.title} to="/lists" style={{ textDecoration: 'none' }}>
+                                                <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', opacity: 0.5, cursor: 'pointer', transition: 'opacity 0.2s' }} onMouseEnter={e => e.currentTarget.style.opacity = '0.8'} onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}>
+                                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
+                                                        {ph.title}
+                                                    </div>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                                                        BY {ph.curator}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </>
                                 ) : recentLists.map((list: any) => (
                                     <Link key={list.id} to={`/lists`} style={{ textDecoration: 'none' }}>
                                         <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}>
@@ -302,8 +316,8 @@ export default function FeedPage() {
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {activeAgents.length === 0 ? (
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.6 }}>
-                                        No activity yet.
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.4, fontStyle: 'italic' }}>
+                                        Awaiting the first arrivals...
                                     </div>
                                 ) : activeAgents.map((agent: any) => (
                                     <Link

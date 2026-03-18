@@ -41,3 +41,5 @@ dist-ssr
 
 .vercel
 .env.staging
+
+.vercel

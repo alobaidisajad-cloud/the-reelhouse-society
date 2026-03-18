@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Popcorn, Search, Calendar, Star, Film, User, Hash, BookOpen, List } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { tmdb } from '../tmdb'
-import { useUIStore, useFilmStore, useSoundscape } from '../store'
+import { useUIStore, useFilmStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { PersonPlaceholder } from './UI'
 import { useFocusTrap } from '../hooks/useFocusTrap'
@@ -22,7 +22,6 @@ export default function CommandPalette() {
     const openLogModal = useUIStore(state => state.openLogModal)
     const logs = useFilmStore(state => state.logs)
     const lists = useFilmStore(state => state.lists)
-    const playShutter = useSoundscape(state => state.playShutter)
     const focusTrapRef = useFocusTrap(open, () => setOpen(false))
 
     useEffect(() => {
@@ -42,9 +41,8 @@ export default function CommandPalette() {
             setResults([])
             setSelectedIndex(0)
             setTimeout(() => inputRef.current?.focus(), 100)
-            playShutter()
         }
-    }, [open, playShutter])
+    }, [open])
 
     const handleSearch = (q) => {
         setQuery(q)

@@ -208,9 +208,6 @@ a:hover {
   contain: layout style paint;
 }
 
-.soundscape-control {
-  contain: layout style;
-}
 
 .custom-cursor {
   contain: strict;

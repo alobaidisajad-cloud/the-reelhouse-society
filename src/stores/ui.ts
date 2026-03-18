@@ -115,22 +115,4 @@ export const useDiscoverStore = create<DiscoverStoreState>((set) => ({
     clearSearch: () => set({ query: '', inputVal: '' }),
 }))
 
-export interface SoundscapeState {
-    isPlaying: boolean
-    toggle: () => void
-    playShutter: () => void
-}
 
-// ── SOUNDSCAPE STORE — ambient audio toggle ──
-export const useSoundscape = create<SoundscapeState>((set) => ({
-    isPlaying: false,
-    toggle: () => set((state) => ({ isPlaying: !state.isPlaying })),
-    playShutter: () => {
-        const audio = document.getElementById('shutter-audio') as HTMLAudioElement | null
-        if (audio) {
-            audio.currentTime = 0
-            audio.volume = 0.4
-            audio.play().catch(() => { }) // Ignore autoplay blocks
-        }
-    },
-}))

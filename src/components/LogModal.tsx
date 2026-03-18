@@ -3,7 +3,7 @@ import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Star, BookOpen, EyeOff, Clock, Lock } from 'lucide-react'
-import { useUIStore, useFilmStore, useAuthStore, useSoundscape } from '../store'
+import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { tmdb } from '../tmdb'
 import { ReelRating } from './UI'
 import toast from 'react-hot-toast'
@@ -39,7 +39,6 @@ export default function LogModal() {
     const openSignupModal = useAuthStore(state => state.openSignupModal)
     const user = useAuthStore(state => state.user)
 
-    const playShutter = useSoundscape(state => state.playShutter)
 
     const [step, setStep] = useState(0) // 0=search, 1=log
     const [query, setQuery] = useState('')
@@ -66,6 +65,7 @@ export default function LogModal() {
     const [availableBackdrops, setAvailableBackdrops] = useState([])
     const [autopsyOpen, setAutopsyOpen] = useState(false) // Toggle to hide bloat
     const [isAutopsied, setIsAutopsied] = useState(false) // Master flag for 0/10 intentionality
+    const [moreOpen, setMoreOpen] = useState(false) // Progressive disclosure for secondary fields
     const searchTimeout = useRef(null)
 
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
@@ -115,6 +115,8 @@ export default function LogModal() {
                 setPullQuote(existingLog.pullQuote || '')
                 setIsAutopsied(existingLog.isAutopsied || false)
                 setAutopsyOpen(existingLog.isAutopsied || false)
+                // Auto-expand "More Details" if any secondary fields have data
+                setMoreOpen(!!(existingLog.watchedWith || existingLog.privateNotes || (existingLog.physicalMedia && existingLog.physicalMedia !== 'None')))
             }
         } else if (logModalFilm) {
             // New Log Mode (pre-selected film)
@@ -128,6 +130,7 @@ export default function LogModal() {
             setFilm(null)
             setIsAutopsied(false)
             setAutopsyOpen(false)
+            setMoreOpen(false)
         }
     }, [logModalFilm, logModalOpen, logModalEditLogId, logs])
 
@@ -147,6 +150,7 @@ export default function LogModal() {
             setAvailableBackdrops([])
             setAutopsyOpen(false)
             setIsAutopsied(false)
+            setMoreOpen(false)
         }
     }, [logModalOpen])
 
@@ -183,7 +187,6 @@ export default function LogModal() {
             return
         }
 
-        playShutter()
 
         const logData = {
             filmId: film.id,
@@ -491,6 +494,36 @@ export default function LogModal() {
                                         )}
                                     </div>
                                 )}
+
+                                {/* ─── MORE DETAILS toggle ─── */}
+                                <div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setMoreOpen(!moreOpen)}
+                                        style={{
+                                            background: 'none', border: 'none', width: '100%',
+                                            display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                            fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em',
+                                            color: 'var(--sepia)', cursor: 'pointer', padding: '0.5rem 0',
+                                            borderTop: '1px solid var(--ash)',
+                                        }}
+                                    >
+                                        <span style={{ transition: 'transform 0.2s', transform: moreOpen ? 'rotate(90deg)' : 'rotate(0deg)', display: 'inline-block' }}>▸</span>
+                                        MORE DETAILS
+                                        <span style={{ flex: 1 }} />
+                                        <span style={{ fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>DATE · COMPANION · MEDIA · NOTES</span>
+                                    </button>
+                                </div>
+
+                                <AnimatePresence>
+                                {moreOpen && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                                        style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                                    >
 
                                 {/* Date */}
                                 <div>
@@ -816,6 +849,9 @@ export default function LogModal() {
                                         )}
                                     </div>
                                 </div>
+                                    </motion.div>
+                                )}
+                                </AnimatePresence>
 
                                 {/* Submit */}
                                 <div style={{ display: 'flex', gap: '0.75rem' }}>

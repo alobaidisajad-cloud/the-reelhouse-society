@@ -228,6 +228,18 @@ export const tmdb = {
         { results: [] }
     ),
 
+    // Lightweight multi-search for autocomplete — returns raw results without heavy filtering
+    searchMulti: async (query: any) => {
+        const data = await fetchTMDB(
+            `/search/multi?query=${encodeURIComponent(query)}&page=1&include_adult=false`,
+            { results: [] }
+        )
+        return (data?.results || [])
+            .filter((r: any) => r.media_type === 'movie' || (r.media_type === 'person' && r.profile_path))
+            .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+            .slice(0, 6)
+    },
+
     topRated: async (page: any = 1) => fetchTMDB(
         `/movie/top_rated?page=${page}`,
         { results: [] }

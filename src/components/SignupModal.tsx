@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Film, Building, Lock, Terminal, Mail, RefreshCw } from 'lucide-react'
-import { useUIStore, useAuthStore, useSoundscape } from '../store'
+import { useUIStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 
@@ -24,7 +24,6 @@ const VALID_CODES = import.meta.env.VITE_INVITE_CODES
 export default function SignupModal() {
     const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
     const { login, isAuthenticated } = useAuthStore()
-    const { playShutter } = useSoundscape()
 
     const [role, setRole] = useState(signupRole || 'cinephile')
     const [step, setStep] = useState(0)
@@ -113,7 +112,6 @@ export default function SignupModal() {
             return
         }
 
-        playShutter()
 
         try {
             if (isLogin) {

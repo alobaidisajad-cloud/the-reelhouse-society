@@ -372,7 +372,6 @@ export default function UserProfilePage() {
         { id: 'lists', label: 'Lists', count: profileLists.length },
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
         { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length > 0 ? profileStubs.length : null },
-        ...(isOwnProfile && currentProgrammes.length >= 0 ? [{ id: 'programmes', label: 'Nightly Programmes', count: currentProgrammes.length > 0 ? currentProgrammes.length : null }] : []),
         ...(isOwnProfile ? [{ id: 'calendar', label: isPremium ? '✦ The Calendar' : '🔒 The Calendar', count: null }] : []),
     ]
 
@@ -655,6 +654,14 @@ export default function UserProfilePage() {
                                     )
                                 })()}
                                 <ProjectorRoom stats={stats} user={profileUser} />
+                                {/* Nightly Programmes — merged into Projector Room */}
+                                {isOwnProfile && (
+                                    <>
+                                        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, var(--ash), transparent)', margin: '2rem 0' }} />
+                                        <SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" />
+                                        <ProgrammesSection {...{ programmes: currentProgrammes, user: profileUser } as any} />
+                                    </>
+                                )}
                             </div>
                         )}
 
@@ -686,9 +693,7 @@ export default function UserProfilePage() {
                             </div>
                         )}
 
-                        {activeTab === 'programmes' && (
-                            <div><SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" /><ProgrammesSection {...{ programmes: currentProgrammes, user: profileUser } as any} /></div>
-                        )}
+
 
                         {activeTab === 'calendar' && (
                             <div>

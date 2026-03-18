@@ -8,7 +8,6 @@ import Footer from './components/Footer'
 import Preloader from './components/Preloader'
 import CustomCursor from './components/CustomCursor'
 import { useFilmStore, useUIStore, initRealtime, initAuthSync } from './store'
-import Soundscape from './components/Soundscape'
 import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -220,7 +219,6 @@ export default function App() {
         <ErrorBoundary>
           {/* Mount Modals inside Suspense so they lazy-load when their internal state flips to open */}
           <Navbar />
-          {!IS_TOUCH && <Soundscape />}
           <OfflineBanner />
       <InstallPrompt />
           <QualityOfLife />
