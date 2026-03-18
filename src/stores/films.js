@@ -249,36 +249,26 @@ export const useFilmStore = create(
             },
 
             removeLog: async (id) => {
-                const user = useAuthStore.getState().user
-                const isPaid = user?.role === 'archivist' || user?.role === 'auteur'
                 const logToRemove = get().logs.find((l) => l.id === id)
                 if (!logToRemove) return
 
-                if (isPaid) {
-                    // Paid users: optimistic remove with 5s undo toast
-                    set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
-                    let undone = false
-                    const { default: toast } = await import('react-hot-toast')
-                    toast(`"${logToRemove.title}" removed. Tap to undo.`, {
-                        duration: 5000, id: `undo-${id}`,
-                        style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
+                // Optimistic remove with 5s undo toast (all users)
+                set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
+                let undone = false
+                const { default: toast } = await import('react-hot-toast')
+                toast(`"${logToRemove.title}" removed. Tap to undo.`, {
+                    duration: 5000, id: `undo-${id}`,
+                    style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
+                })
+                window.__rh_undo_log = () => {
+                    undone = true
+                    set((state) => ({ logs: [logToRemove, ...state.logs] }))
+                    import('react-hot-toast').then((m) => {
+                        m.default.dismiss(`undo-${id}`)
+                        m.default.success(`"${logToRemove.title}" restored ✦`)
                     })
-                    window.__rh_undo_log = () => {
-                        undone = true
-                        set((state) => ({ logs: [logToRemove, ...state.logs] }))
-                        import('react-hot-toast').then((m) => {
-                            m.default.dismiss(`undo-${id}`)
-                            m.default.success(`"${logToRemove.title}" restored ✦`)
-                        })
-                    }
-                    setTimeout(async () => { if (!undone) await supabase.from('logs').delete().eq('id', id) }, 5200)
-                } else {
-                    // Free users: require confirmation before permanent delete
-                    const confirmed = window.confirm(`Remove "${logToRemove.title}" from your archive? This cannot be undone.`)
-                    if (!confirmed) return
-                    const { error } = await supabase.from('logs').delete().eq('id', id)
-                    if (!error) set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
                 }
+                setTimeout(async () => { if (!undone) await supabase.from('logs').delete().eq('id', id) }, 5200)
             },
 
             addToWatchlist: async (film) => {
@@ -301,8 +291,25 @@ export const useFilmStore = create(
             removeFromWatchlist: async (filmId) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const { error } = await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId)
-                if (!error) set((state) => ({ watchlist: state.watchlist.filter((f) => f.id !== filmId) }))
+                const itemToRemove = get().watchlist.find((f) => f.id === filmId)
+
+                // Optimistic remove with 5s undo toast
+                set((state) => ({ watchlist: state.watchlist.filter((f) => f.id !== filmId) }))
+                let undone = false
+                const { default: toast } = await import('react-hot-toast')
+                toast(`"${itemToRemove?.title || 'Film'}" removed from watchlist. Tap to undo.`, {
+                    duration: 5000, id: `undo-wl-${filmId}`,
+                    style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
+                })
+                window.__rh_undo_watchlist = () => {
+                    undone = true
+                    if (itemToRemove) set((state) => ({ watchlist: [...state.watchlist, itemToRemove] }))
+                    import('react-hot-toast').then((m) => {
+                        m.default.dismiss(`undo-wl-${filmId}`)
+                        m.default.success(`Restored to watchlist ✦`)
+                    })
+                }
+                setTimeout(async () => { if (!undone) await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId) }, 5200)
             },
 
             addToVault: async (film, format = 'Digital') => {

@@ -77,16 +77,12 @@ function PageWrapper({ children }) {
 
   if (IS_TOUCH) {
     return (
-      <motion.div
-        initial="initial"
-        animate="in"
-        exit="out"
-        variants={pageVariantsMobile}
-        transition={pageTransitionMobile}
+      <div
+        className="page-fade-in"
         style={{ position: 'relative', background: 'var(--ink)' }}
       >
         {children}
-      </motion.div>
+      </div>
     )
   }
 

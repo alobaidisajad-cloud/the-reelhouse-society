@@ -128,6 +128,17 @@
   transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
+/* ── MOBILE PAGE FADE-IN (CSS-only, replaces Framer Motion on touch) ── */
+@keyframes pageFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.page-fade-in {
+  animation: pageFadeIn 0.15s ease-out both;
+  will-change: opacity;
+}
+
 /* ── DARKROOM DEVELOPING ── */
 @keyframes darkroom-develop {
   0%   { filter: brightness(3) contrast(0.5) blur(10px) sepia(1); opacity: 0; }

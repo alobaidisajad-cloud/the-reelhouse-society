@@ -6,6 +6,7 @@ import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import LetterboxdImport from '../components/LetterboxdImport'
 import toast from 'react-hot-toast'
+import '../styles/membership.css'
 
 const features = [
     { icon: Key, title: 'The Vault', description: 'Unlock the "Cutting Room Floor" for private notes and thoughts.' },
@@ -58,44 +59,37 @@ export default function MembershipPage() {
                 toast.dismiss('checkout')
                 window.location.href = data.redirect_url
             } else {
-                toast.error('Could not initialize checkout. Please try again.', { id: 'checkout' })
-                setIsRedirecting(false)
+                throw new Error(data.error || 'No redirect URL returned')
             }
-        } catch {
-            toast.error('Network error reaching secure checkout.', { id: 'checkout' })
+        } catch (error) {
+            toast.error(`Checkout failed: ${error.message}`, { id: 'checkout' })
             setIsRedirecting(false)
         }
     }
 
     return (
-        <div style={{ minHeight: '100vh', paddingTop: '80px', paddingBottom: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div className="membership-page">
             <div className="container" style={{ maxWidth: 1000 }}>
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
-                    style={{ textAlign: 'center', marginBottom: '4rem' }}
+                    className="membership-header"
                 >
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+                    <div className="buster-wrap">
                         <Buster size={80} mood="smiling" />
                     </div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '1rem' }}>
-                        ELEVATE YOUR DEVOTION
-                    </div>
-                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', color: 'var(--parchment)', lineHeight: 1.1 }}>
-                        The ReelHouse Society
-                    </h1>
-                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.1rem', color: 'var(--bone)', marginTop: '1.5rem', maxWidth: 600, marginInline: 'auto', lineHeight: 1.6 }}>
+                    <div className="membership-label">ELEVATE YOUR DEVOTION</div>
+                    <h1 className="membership-title">The ReelHouse Society</h1>
+                    <p className="membership-subtitle">
                         Ascend the ranks of The Society. Embrace the aesthetic. Wield the ultimate cinematic toolkit.
                     </p>
 
-                    {/* Letterboxd Import CTA for logged-in users (more visible here) */}
                     {isAuthenticated && (
                         <button
                             onClick={() => setLetterboxdOpen(true)}
-                            className="btn btn-ghost"
-                            style={{ marginTop: '1.5rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.65rem', letterSpacing: '0.15em' }}
+                            className="btn btn-ghost membership-import-btn"
                         >
                             <Upload size={13} /> MIGRATE FROM LETTERBOXD
                         </button>
@@ -107,29 +101,29 @@ export default function MembershipPage() {
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem', marginBottom: '4rem', marginTop: '1.5rem' }}
+                    className="tiers-grid"
                 >
                     {/* The Free Tier */}
-                    <motion.div variants={itemVariants} className="card card-tier" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', background: 'rgba(18,14,9,0.95)', border: 'none' }}>
-                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>The<br/>Cinephile</h3>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--fog)', marginBottom: '2rem', opacity: 0.7 }}>BASIC ACCESS</div>
+                    <motion.div variants={itemVariants} className="card card-tier tier-card" style={{ border: 'none' }}>
+                        <h3 className="tier-name">The<br/>Cinephile</h3>
+                        <div className="tier-label tier-label--free">BASIC ACCESS</div>
 
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.2rem', marginBottom: '2rem' }}>
-                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--bone)' }}>Free</span>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>FOREVER</span>
+                        <div className="tier-price tier-price--free">
+                            <span className="price-amount price-amount--free">Free</span>
+                            <span className="price-period">FOREVER</span>
                         </div>
 
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2.5rem' }}>
+                        <div className="tier-features">
                             {['Log & Rate Films', 'The Diary & Watchlist', 'Basic Profile', 'Unlimited Custom Lists'].map((feature, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <div style={{ width: 4, height: 4, background: 'var(--fog)', borderRadius: '50%' }} />
-                                    <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)', opacity: 0.9 }}>{feature}</span>
+                                <div key={i} className="feature-item">
+                                    <div className="feature-dot feature-dot--free" />
+                                    <span className="feature-text feature-text--free">{feature}</span>
                                 </div>
                             ))}
                         </div>
 
                         {isAuthenticated && (!user?.role || user?.role === 'cinephile') ? (
-                            <div style={{ textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', color: 'var(--fog)', padding: '1rem', border: '1px solid var(--ash)', borderRadius: 'var(--radius-card)' }}>YOUR CURRENT RANK</div>
+                            <div className="current-rank">YOUR CURRENT RANK</div>
                         ) : (
                             <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.8rem', letterSpacing: '0.2em' }} onClick={() => openSignupModal('cinephile')}>
                                 JOIN FREE
@@ -138,29 +132,27 @@ export default function MembershipPage() {
                     </motion.div>
 
                     {/* The Pro Tier */}
-                    <motion.div variants={itemVariants} className="card card-tier" style={{ padding: '3.5rem 2.5rem 2.5rem', display: 'flex', flexDirection: 'column', border: '1px solid var(--sepia)', background: 'rgba(18,14,9,0.95)', position: 'relative', borderRadius: 'var(--radius-card)' }}>
-                        <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translate(-50%, -50%)', background: 'var(--sepia)', color: 'var(--ink)', padding: '0.4rem 1.2rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', borderRadius: '100px', fontWeight: 'bold', boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
-                            MOST POPULAR
+                    <motion.div variants={itemVariants} className="card card-tier tier-card tier-card--archivist">
+                        <div className="popular-badge">MOST POPULAR</div>
+
+                        <h3 className="tier-name tier-name--archivist">The<br/>Archivist</h3>
+                        <div className="tier-label tier-label--archivist">PREMIUM TOOLS</div>
+
+                        <div className="tier-price">
+                            <span className="price-currency">$</span>
+                            <span className="price-amount">1.99</span>
+                            <span className="price-period">/ MO</span>
                         </div>
+                        <div className="price-billing">BILLED ANNUALLY ($19.99/YR)</div>
 
-                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '0.5rem', lineHeight: 1.1 }}>The<br/>Archivist</h3>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '2rem' }}>PREMIUM TOOLS</div>
-
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.2rem', marginBottom: '0.5rem' }}>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--parchment)' }}>$</span>
-                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '4.5rem', color: 'var(--parchment)', lineHeight: 1 }}>1.99</span>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>/ MO</span>
-                        </div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', marginBottom: '2rem', letterSpacing: '0.1em', opacity: 0.7 }}>BILLED ANNUALLY ($19.99/YR)</div>
-
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2.5rem' }}>
-                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--sepia)', fontStyle: 'italic', marginBottom: '0.5rem' }}>Everything in Free, plus:</div>
+                        <div className="tier-features tier-features--pro">
+                            <div className="tier-includes tier-includes--archivist">Everything in Free, plus:</div>
                             
-                            <div style={{ padding: '1rem', background: 'rgba(25,20,13,0.95)', border: '1px solid rgba(139,105,20,0.15)', borderRadius: 'var(--radius-card)', marginBottom: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                                <div style={{ width: 4, height: 4, background: 'var(--parchment)', borderRadius: '50%', marginTop: '0.5rem', flexShrink: 0 }} />
+                            <div className="featured-feature featured-feature--archivist">
+                                <div className="feature-dot feature-dot--archivist" />
                                 <div>
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.05rem', color: 'var(--parchment)', marginBottom: '0.4rem', fontWeight: 'bold' }}>The Editorial<br/>Desk</div>
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--bone)', lineHeight: 1.5, opacity: 0.9 }}>Pro-level review formatting. Inject movie stills, pull-quotes, and drop caps into your logs.</div>
+                                    <div className="featured-feature-title featured-feature-title--archivist">The Editorial<br/>Desk</div>
+                                    <div className="featured-feature-desc">Pro-level review formatting. Inject movie stills, pull-quotes, and drop caps into your logs.</div>
                                 </div>
                             </div>
                             
@@ -171,16 +163,16 @@ export default function MembershipPage() {
                                 'Archival Record (.CSV\nExport)', 
                                 'The Projectionist\'s\nCalendar'
                             ].map((feature, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                                    <div style={{ width: 4, height: 4, background: 'var(--bone)', borderRadius: '50%', marginTop: '0.4rem', flexShrink: 0 }} />
-                                    <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{feature}</span>
+                                <div key={i} className="feature-item feature-item--pro">
+                                    <div className="feature-dot feature-dot--archivist" />
+                                    <span className="feature-text">{feature}</span>
                                 </div>
                             ))}
                         </div>
 
                         <button
-                            className="btn btn-primary"
-                            style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.85rem', letterSpacing: '0.15em', opacity: isRedirecting ? 0.7 : 1 }}
+                            className="btn btn-primary tier-btn"
+                            style={{ opacity: isRedirecting ? 0.7 : 1 }}
                             disabled={isRedirecting}
                             onClick={() => handleAscend('archivist')}
                         >
@@ -189,25 +181,25 @@ export default function MembershipPage() {
                     </motion.div>
 
                     {/* The Patron Tier */}
-                    <motion.div variants={itemVariants} className="card card-tier" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', border: '1px solid #7d1f1f', background: 'rgba(18,14,9,0.95)', borderRadius: 'var(--radius-card)' }}>
-                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: '#7d1f1f', marginBottom: '0.5rem' }}>The Auteur</h3>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: '#7d1f1f', marginBottom: '2rem' }}>ULTIMATE PATRONAGE</div>
+                    <motion.div variants={itemVariants} className="card card-tier tier-card tier-card--auteur">
+                        <h3 className="tier-name tier-name--auteur">The Auteur</h3>
+                        <div className="tier-label tier-label--auteur">ULTIMATE PATRONAGE</div>
 
-                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.2rem', marginBottom: '0.5rem' }}>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--parchment)' }}>$</span>
-                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '4.5rem', color: 'var(--parchment)', lineHeight: 1 }}>4.99</span>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>/ MO</span>
+                        <div className="tier-price">
+                            <span className="price-currency">$</span>
+                            <span className="price-amount">4.99</span>
+                            <span className="price-period">/ MO</span>
                         </div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', marginBottom: '2rem', letterSpacing: '0.1em', opacity: 0.7 }}>BILLED ANNUALLY ($49.99/YR)</div>
+                        <div className="price-billing">BILLED ANNUALLY ($49.99/YR)</div>
 
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.25rem', marginBottom: '2.5rem' }}>
-                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: '#7d1f1f', fontStyle: 'italic', marginBottom: '0.5rem' }}>Everything in Archivist, plus:</div>
+                        <div className="tier-features tier-features--pro">
+                            <div className="tier-includes tier-includes--auteur">Everything in Archivist, plus:</div>
                             
-                            <div style={{ padding: '1rem', background: 'rgba(25,20,13,0.95)', border: '1px solid rgba(125,31,31,0.2)', borderRadius: 'var(--radius-card)', marginBottom: '0.5rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                                <div style={{ width: 4, height: 4, background: '#7d1f1f', borderRadius: '50%', marginTop: '0.5rem', flexShrink: 0 }} />
+                            <div className="featured-feature featured-feature--auteur">
+                                <div className="feature-dot feature-dot--auteur" />
                                 <div>
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.05rem', color: '#7d1f1f', marginBottom: '0.4rem', fontWeight: 'bold' }}>The Breakdown<br/>Engine</div>
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--bone)', lineHeight: 1.5, opacity: 0.9 }}>Break down films across 5 specific axes. Attach gorgeous, dynamic radar charts to your reviews.</div>
+                                    <div className="featured-feature-title featured-feature-title--auteur">The Breakdown<br/>Engine</div>
+                                    <div className="featured-feature-desc">Break down films across 5 specific axes. Attach gorgeous, dynamic radar charts to your reviews.</div>
                                 </div>
                             </div>
 
@@ -218,18 +210,18 @@ export default function MembershipPage() {
                                 'Gold Foil "Auteur" Badge', 
                                 'Early Access to New\nFeatures'
                             ].map((feature, i) => (
-                                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-                                    <div style={{ width: 8, height: 8, marginTop: '0.3rem', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div key={i} className="feature-item feature-item--pro">
+                                    <div className="auteur-star">
                                         <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#7d1f1f" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                                     </div>
-                                    <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)', whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>{feature}</span>
+                                    <span className="feature-text">{feature}</span>
                                 </div>
                             ))}
                         </div>
 
                         <button
-                            className="btn btn-primary"
-                            style={{ width: '100%', justifyContent: 'center', padding: '1rem', background: '#7d1f1f', color: 'var(--parchment)', border: 'none', fontSize: '0.85rem', letterSpacing: '0.15em', opacity: isRedirecting ? 0.7 : 1 }}
+                            className="btn btn-primary tier-btn tier-btn--auteur"
+                            style={{ opacity: isRedirecting ? 0.7 : 1 }}
                             disabled={isRedirecting}
                             onClick={() => handleAscend('auteur')}
                         >
@@ -244,67 +236,41 @@ export default function MembershipPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ duration: 0.7 }}
-                    style={{
-                        position: 'relative', overflow: 'hidden',
-                        border: '1px solid rgba(139,105,20,0.4)',
-                        borderRadius: 'var(--radius-card)',
-                        padding: '3rem',
-                        marginBottom: '6rem',
-                        background: 'linear-gradient(135deg, rgba(139,105,20,0.08) 0%, rgba(10,7,3,0) 60%)',
-                        textAlign: 'center',
-                    }}
+                    className="founding-banner"
                 >
-                    {/* Background texture */}
-                    <div style={{
-                        position: 'absolute', inset: 0, pointerEvents: 'none',
-                        backgroundImage: 'repeating-linear-gradient(90deg, rgba(139,105,20,0.03) 0px, transparent 1px, transparent 40px)',
-                    }} />
+                    <div className="founding-texture" />
 
-                    {/* Wax seal badge */}
-                    <div style={{
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        width: 64, height: 64, borderRadius: '50%',
-                        border: '2px solid var(--sepia)',
-                        background: 'rgba(139,105,20,0.12)',
-                        marginBottom: '1.5rem',
-                        fontSize: '1.8rem',
-                    }}>
+                    <div className="founding-seal">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     </div>
 
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '1rem' }}>
-                        LIMITED OFFER · CLASS OF 1924
-                    </div>
-                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.8rem, 4vw, 3rem)', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>
-                        Founding Members
-                    </h2>
-                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', maxWidth: 560, marginInline: 'auto', lineHeight: 1.7, marginBottom: '2rem' }}>
+                    <div className="founding-tag">LIMITED OFFER · CLASS OF 1924</div>
+                    <h2 className="founding-title">Founding Members</h2>
+                    <p className="founding-desc">
                         The first 100 members to join The Society receive <em>Archivist access for life</em> — permanently, with no recurring charges, ever. A single entry in the ledger. A permanent seat in the house.
                     </p>
 
-                    {/* Price display */}
-                    <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '0.3rem', marginBottom: '0.5rem' }}>
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '1.2rem', color: 'var(--sepia)' }}>$</span>
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', color: 'var(--flicker)', lineHeight: 1 }}>49</span>
+                    <div className="founding-price">
+                        <span className="founding-price-currency">$</span>
+                        <span className="founding-price-amount">49</span>
                         <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>ONE TIME</div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.1em' }}>NO RENEWALS</div>
+                            <div className="founding-price-label">ONE TIME</div>
+                            <div className="founding-price-sub">NO RENEWALS</div>
                         </div>
                     </div>
 
-                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', marginBottom: '2.5rem', fontStyle: 'italic' }}>
+                    <div className="founding-compare">
                         Compare to $19.99/yr recurring — this pays for itself in under 3 years and never charges again.
                     </div>
 
                     <button
-                        className="btn btn-primary"
-                        style={{ padding: '1rem 3rem', fontSize: '0.8rem', letterSpacing: '0.25em' }}
+                        className="btn btn-primary founding-btn"
                         onClick={() => isAuthenticated ? handleAscend('archivist') : openSignupModal('archivist')}
                     >
                         CLAIM A FOUNDING SEAT
                     </button>
 
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', marginTop: '1rem', opacity: 0.6 }}>
+                    <div className="founding-footer">
                         POWERED BY PAYTABS · SECURE CHECKOUT · SEATS FILLING FAST
                     </div>
                 </motion.div>
@@ -314,21 +280,17 @@ export default function MembershipPage() {
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     viewport={{ once: true }}
-                    style={{ textAlign: 'center', borderTop: '1px dashed var(--ash)', paddingTop: '4rem', maxWidth: 800, marginInline: 'auto' }}
+                    className="philosophy-section"
                 >
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '1.5rem' }}>
-                        OUR PHILOSOPHY
-                    </div>
-                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: 'var(--parchment)', marginBottom: '1.5rem' }}>
-                        Built for the Love of Cinema.
-                    </h2>
-                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.1rem', color: 'var(--bone)', lineHeight: 1.8, marginBottom: '2rem', fontStyle: 'italic' }}>
+                    <div className="philosophy-label">OUR PHILOSOPHY</div>
+                    <h2 className="philosophy-title">Built for the Love of Cinema.</h2>
+                    <p className="philosophy-body">
                         We believe that software should feel like a physical artifact—a curated, brutalist space free from corporate bloat. By ascending within The Society, you preserve this aesthetic and command the most premium cinematic ledger ever forged.
                     </p>
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem' }}>
-                        <div style={{ width: '40px', height: '1px', background: 'var(--flicker)', alignSelf: 'center' }} />
+                    <div className="philosophy-divider">
+                        <div className="philosophy-line" />
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--flicker)' }}><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                        <div style={{ width: '40px', height: '1px', background: 'var(--flicker)', alignSelf: 'center' }} />
+                        <div className="philosophy-line" />
                     </div>
                 </motion.div>
             </div>

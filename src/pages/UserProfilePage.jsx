@@ -121,6 +121,8 @@ export default function UserProfilePage() {
     const [shareLog, setShareLog] = useState(null)
     const [showDNA, setShowDNA] = useState(false)
     const [sieve, setSieve] = useState('all')
+    const [visibleLogCount, setVisibleLogCount] = useState(40)
+    const loadMoreRef = useRef(null)
     const [isEditing, setIsEditing] = useState(false)
     const [editBio, setEditBio] = useState(profileUser?.bio || '')
     const [editUsername, setEditUsername] = useState(profileUser?.username || '')
@@ -162,6 +164,18 @@ export default function UserProfilePage() {
     const [followLoading, setFollowLoading] = useState(false)
     const [socialModal, setSocialModal] = useState(null)
     const [socialLoading, setSocialLoading] = useState(false)
+
+    // Progressive log rendering: reset on filter change, load more on scroll
+    useEffect(() => { setVisibleLogCount(40) }, [sieve])
+    useEffect(() => {
+        const el = loadMoreRef.current
+        if (!el) return
+        const obs = new IntersectionObserver(([e]) => {
+            if (e.isIntersecting) setVisibleLogCount(c => c + 40)
+        }, { rootMargin: '400px' })
+        obs.observe(el)
+        return () => obs.disconnect()
+    }, [visibleLogCount])
 
     const openSocialModal = async (type) => {
         setSocialLoading(true)
@@ -487,31 +501,41 @@ export default function UserProfilePage() {
                                             {profileLogs.length === 0 ? (isOwnProfile ? "No films logged yet. Press Ctrl+K or tap + to log your first film." : "This member hasn't logged any films yet.") : "No logs match this filter."}
                                         </div>
                                     </div>
-                                ) : (
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gridAutoRows: 'minmax(210px, auto)', gap: '1rem' }}>
-                                        {filteredLogs.map((log, index) => {
-                                            let gridColumnSpan = 'span 1', gridRowSpan = 'span 1'
-                                            if (sieve === 'all' && index === 0) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 2' }
-                                            else if (sieve === 'all' && (index === 1 || index === 2)) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 1' }
-                                            const hl = halfLifeMap[log.filmId]
-                                            return (
-                                                <div
-                                                    key={log.id}
-                                                    onClick={() => setViewLog(log)}
-                                                    style={{ gridColumn: gridColumnSpan, gridRow: gridRowSpan, position: 'relative', cursor: 'pointer' }}
-                                                >
-                                                    <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status }} />
-                                                    {hl && (
-                                                        <div style={{ position: 'absolute', bottom: 6, left: 4, right: 4, background: 'rgba(10,7,3,0.88)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.25rem 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem', pointerEvents: 'none' }}>
-                                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', whiteSpace: 'nowrap', color: hl.trajectory === 'ASCENDING' ? '#7cb87a' : hl.trajectory === 'DECAYING' ? 'var(--blood-reel)' : 'var(--sepia)' }}>{hl.trajectory === 'ASCENDING' ? '↑' : hl.trajectory === 'DECAYING' ? '↓' : '—'} {hl.trajectory}</span>
-                                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--fog)', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>×{hl.count}</span>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                )}
+                                ) : (() => {
+                                    const shown = filteredLogs.slice(0, visibleLogCount)
+                                    return (
+                                        <>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gridAutoRows: 'minmax(210px, auto)', gap: '1rem' }}>
+                                            {shown.map((log, index) => {
+                                                let gridColumnSpan = 'span 1', gridRowSpan = 'span 1'
+                                                if (sieve === 'all' && index === 0) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 2' }
+                                                else if (sieve === 'all' && (index === 1 || index === 2)) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 1' }
+                                                const hl = halfLifeMap[log.filmId]
+                                                return (
+                                                    <div
+                                                        key={log.id}
+                                                        onClick={() => setViewLog(log)}
+                                                        style={{ gridColumn: gridColumnSpan, gridRow: gridRowSpan, position: 'relative', cursor: 'pointer' }}
+                                                    >
+                                                        <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status }} />
+                                                        {hl && (
+                                                            <div style={{ position: 'absolute', bottom: 6, left: 4, right: 4, background: 'rgba(10,7,3,0.88)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.25rem 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem', pointerEvents: 'none' }}>
+                                                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', whiteSpace: 'nowrap', color: hl.trajectory === 'ASCENDING' ? '#7cb87a' : hl.trajectory === 'DECAYING' ? 'var(--blood-reel)' : 'var(--sepia)' }}>{hl.trajectory === 'ASCENDING' ? '↑' : hl.trajectory === 'DECAYING' ? '↓' : '—'} {hl.trajectory}</span>
+                                                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--fog)', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>×{hl.count}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                        {visibleLogCount < filteredLogs.length && (
+                                            <div ref={loadMoreRef} style={{ textAlign: 'center', padding: '2rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
+                                                LOADING MORE REELS...
+                                            </div>
+                                        )}
+                                        </>
+                                    )
+                                })()}
                             </div>
                         )}
 
