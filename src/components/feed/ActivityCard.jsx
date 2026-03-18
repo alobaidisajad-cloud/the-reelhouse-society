@@ -7,6 +7,7 @@ import { Heart, MessageSquare, Download, Send, RefreshCw } from 'lucide-react'
 import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import toast from 'react-hot-toast'
+import { throttleAction } from '../../errorLogger'
 
 export default function ActivityCard({ log }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
@@ -25,12 +26,13 @@ export default function ActivityCard({ log }) {
     }, [storeEndorsed])
 
     const handleEndorse = () => {
-        // Optimistic update
-        setOptimisticEndorsed(!optimisticEndorsed)
-        setEndorsementCount(p => optimisticEndorsed ? Math.max(0, p - 1) : p + 1)
-
-        // Background sync
-        toggleEndorse(log.id)
+        throttleAction(`endorse-${log.id}`, () => {
+            // Optimistic update
+            setOptimisticEndorsed(!optimisticEndorsed)
+            setEndorsementCount(p => optimisticEndorsed ? Math.max(0, p - 1) : p + 1)
+            // Background sync (rollback handled in store)
+            toggleEndorse(log.id)
+        })
     }
 
     const [isExporting, setIsExporting] = useState(false)
@@ -85,23 +87,29 @@ export default function ActivityCard({ log }) {
     // ── RE-TRANSMIT ──
     const [retransmitted, setRetransmitted] = useState(false)
 
-    const handleRetransmit = async () => {
+    const handleRetransmit = () => {
         if (!currentUser) { toast.error('Sign in to retransmit.'); return }
         if (retransmitted) return
-        setRetransmitted(true)
-        if (isSupabaseConfigured) {
-            await supabase.from('interactions').insert({
-                user_id: currentUser.id,
-                target_log_id: log.id,
-                type: 'retransmit',
-            }).then(({ error }) => {
-                // Ignore duplicate constraint errors (already retransmitted)
-                if (error && !error.message.includes('duplicate')) {
-                    // Retransmit failed silently — user sees toast success already
+        throttleAction(`retransmit-${log.id}`, async () => {
+            // Optimistic update
+            setRetransmitted(true)
+            toast.success('Signal retransmitted to your archive.')
+
+            // Background sync — rollback on failure
+            if (isSupabaseConfigured) {
+                try {
+                    const { error } = await supabase.from('interactions').insert({
+                        user_id: currentUser.id,
+                        target_log_id: log.id,
+                        type: 'retransmit',
+                    })
+                    if (error && !error.message?.includes('duplicate')) throw error
+                } catch {
+                    setRetransmitted(false)
+                    toast.error('Retransmit failed — please try again.')
                 }
-            })
-        }
-        toast.success('Signal retransmitted to your archive.')
+            }
+        })
     }
 
     const endorsed = optimisticEndorsed

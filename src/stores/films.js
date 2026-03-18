@@ -17,16 +17,33 @@ export const useFilmStore = create(
             toggleEndorse: async (targetId) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const exists = get().interactions.find((i) => i.targetId === targetId && i.type === 'endorse')
+                const prevInteractions = get().interactions
+                const exists = prevInteractions.find((i) => i.targetId === targetId && i.type === 'endorse')
+
+                // Optimistic update — UI responds instantly
                 if (exists) {
-                    const { error } = await supabase.from('interactions').delete()
-                        .eq('user_id', user.id).eq('target_log_id', targetId).eq('type', 'endorse_log')
-                    if (!error) set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
+                    set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
                 } else {
-                    const { error } = await supabase.from('interactions').insert([
-                        { user_id: user.id, target_log_id: targetId, type: 'endorse_log' }
-                    ])
-                    if (!error) set((state) => ({ interactions: [...state.interactions, { type: 'endorse', targetId, timestamp: new Date().toISOString() }] }))
+                    set((state) => ({ interactions: [...state.interactions, { type: 'endorse', targetId, timestamp: new Date().toISOString() }] }))
+                }
+
+                // Background sync — rollback on failure
+                try {
+                    if (exists) {
+                        const { error } = await supabase.from('interactions').delete()
+                            .eq('user_id', user.id).eq('target_log_id', targetId).eq('type', 'endorse_log')
+                        if (error) throw error
+                    } else {
+                        const { error } = await supabase.from('interactions').insert([
+                            { user_id: user.id, target_log_id: targetId, type: 'endorse_log' }
+                        ])
+                        if (error && !error.message?.includes('duplicate')) throw error
+                    }
+                } catch {
+                    // Rollback to previous state
+                    set({ interactions: prevInteractions })
+                    const { default: toast } = await import('react-hot-toast')
+                    toast.error('Endorsement failed — please try again.')
                 }
             },
 

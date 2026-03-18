@@ -153,45 +153,68 @@ export const useAuthStore = create(
                 const fromUsername = state.user?.username || 'someone'
                 const userId = state.user?.id
 
-                if (userId) {
-                    const { data: targetProfile } = await supabase
-                        .from('profiles').select('id').eq('username', targetUsername).single().catch(() => ({}))
-                    if (targetProfile) {
-                        await Promise.all([
-                            supabase.from('interactions').insert([{
-                                user_id: userId, target_user_id: targetProfile.id, type: 'follow'
-                            }]).catch(() => { }),
-                            supabase.from('notifications').insert([{
-                                user_id: targetProfile.id, type: 'follow',
-                                from_username: fromUsername, message: `${fromUsername} followed you`,
-                            }]).catch(() => { }),
-                        ])
-                    }
-                }
-
-                // Note: Supabase insert above handles the target's notification.
-                // We do NOT push to the local notification store here — that is
-                // reserved for notifications addressed TO the current user, not FROM them.
+                // Optimistic update — UI responds instantly
                 set((s) => ({
                     user: { ...s.user, following: [...(s.user?.following || []), targetUsername] },
                 }))
+
+                // Background sync — rollback on failure
+                try {
+                    if (userId) {
+                        const { data: targetProfile } = await supabase
+                            .from('profiles').select('id').eq('username', targetUsername).single()
+                        if (!targetProfile) throw new Error('User not found')
+                        const [{ error: followErr }] = await Promise.all([
+                            supabase.from('interactions').insert([{
+                                user_id: userId, target_user_id: targetProfile.id, type: 'follow'
+                            }]),
+                            supabase.from('notifications').insert([{
+                                user_id: targetProfile.id, type: 'follow',
+                                from_username: fromUsername, message: `${fromUsername} followed you`,
+                            }]).catch(() => {}),
+                        ])
+                        if (followErr && !followErr.message?.includes('duplicate')) throw followErr
+                    }
+                } catch {
+                    // Rollback
+                    set((s) => ({
+                        user: { ...s.user, following: (s.user?.following || []).filter(u => u !== targetUsername) },
+                    }))
+                    const { default: toast } = await import('react-hot-toast')
+                    toast.error('Follow failed — please try again.')
+                }
             },
 
             unfollowUser: async (targetUsername) => {
+                const prevFollowing = get().user?.following || []
                 const userId = get().user?.id
-                if (userId) {
-                    const { data: targetProfile } = await supabase
-                        .from('profiles').select('id').eq('username', targetUsername).single().catch(() => ({}))
-                    if (targetProfile) {
-                        await supabase.from('interactions').delete()
-                            .eq('user_id', userId)
-                            .eq('target_user_id', targetProfile.id)
-                            .eq('type', 'follow').catch(() => { })
-                    }
-                }
+
+                // Optimistic update
                 set((s) => ({
                     user: { ...s.user, following: (s.user?.following || []).filter(u => u !== targetUsername) },
                 }))
+
+                // Background sync — rollback on failure
+                try {
+                    if (userId) {
+                        const { data: targetProfile } = await supabase
+                            .from('profiles').select('id').eq('username', targetUsername).single()
+                        if (targetProfile) {
+                            const { error } = await supabase.from('interactions').delete()
+                                .eq('user_id', userId)
+                                .eq('target_user_id', targetProfile.id)
+                                .eq('type', 'follow')
+                            if (error) throw error
+                        }
+                    }
+                } catch {
+                    // Rollback
+                    set((s) => ({
+                        user: { ...s.user, following: prevFollowing },
+                    }))
+                    const { default: toast } = await import('react-hot-toast')
+                    toast.error('Unfollow failed — please try again.')
+                }
             },
         }),
         {
