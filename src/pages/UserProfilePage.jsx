@@ -3,9 +3,9 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
-import { Film, BookOpen, Star, Lock, Edit2, Camera, User, Settings, Globe, Download } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
-import { ReelRating, SectionHeader, StatCard, PersonaStamp, FilmCard, RadarChart } from '../components/UI'
+import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
 import toast from 'react-hot-toast'
@@ -19,30 +19,10 @@ import { TicketBooth } from '../components/profile/TicketBooth'
 import { ProgrammesSection } from '../components/profile/ProgrammesSection'
 import { ProjectionistCalendar } from '../components/profile/ProjectionistCalendar'
 import { ProfileBackdrop, FilmLogRow, LazyLogRow, VaultSection, ListsSection } from '../components/profile/LedgerHelpers'
+import exportLogsCSV from '../components/profile/exportLogsCSV'
+import SocialModal from '../components/profile/SocialModal'
+import ReviewModal from '../components/profile/ReviewModal'
 
-// ── CSV EXPORT ──
-function exportLogsCSV(logs, username) {
-    const headers = ['Title', 'Year', 'Rating', 'Status', 'Date Watched', 'Review', 'Physical Media', 'Watched With', 'Pull Quote']
-    const rows = logs.map(l => [
-        `"${(l.title || '').replace(/"/g, '""')}"`,
-        l.year || '',
-        l.rating || '',
-        l.status || 'watched',
-        l.watchedDate || l.createdAt?.slice(0, 10) || '',
-        `"${(l.review || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-        l.physicalMedia || '',
-        `"${(l.watchedWith || '').replace(/"/g, '""')}"`,
-        `"${(l.pullQuote || '').replace(/"/g, '""')}"`,
-    ])
-    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `reelhouse_${username}_archive_${new Date().toISOString().slice(0, 10)}.csv`
-    a.click()
-    URL.revokeObjectURL(url)
-}
 
 
 // ── MAIN PAGE ──
@@ -656,238 +636,21 @@ export default function UserProfilePage() {
                 </div>
             </main>
 
-            {/* Social Modal — fetches from interactions table */}
-            {socialModal && (
-                <div style={{ position: 'fixed', inset: 0, zIndex: 1000000, background: 'rgba(10,7,3,0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(10px)' }} onClick={() => setSocialModal(null)}>
-                    <div className="card" style={{ maxWidth: 440, width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--sepia)', padding: 0, overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
-                        <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--ash)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--parchment)' }}>{socialModal.title.toUpperCase()}</h3>
-                            <button className="btn btn-ghost" onClick={() => setSocialModal(null)}>✕</button>
-                        </div>
-                        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
-                            {socialLoading ? (
-                                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em' }}>✦ LOADING ✦</div>
-                            ) : socialModal.list.length === 0 ? (
-                                <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>This archive is empty.</div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {socialModal.list.map(member => (
-                                        <Link key={member.username} to={`/user/${member.username}`} onClick={() => setSocialModal(null)} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', textDecoration: 'none', borderRadius: '4px' }}>
-                                            <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                {member.avatar_url?.startsWith('http') ? <img src={member.avatar_url} alt={member.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Buster size={20} mood={member.avatar_url || 'smiling'} />}
-                                            </div>
-                                            <div style={{ flex: 1 }}>
-                                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.9rem', color: 'var(--parchment)', lineHeight: 1 }}>@{member.username.toUpperCase()}</div>
-                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--sepia)', letterSpacing: '0.1em', marginTop: '0.2rem' }}>{member.followers_count || 0} FOLLOWERS</div>
-                                            </div>
-                                            <div style={{ color: 'var(--fog)' }}>→</div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            <SocialModal socialModal={socialModal} socialLoading={socialLoading} onClose={() => setSocialModal(null)} />
 
             <ShareCardOverlay log={shareLog} user={profileUser} onClose={() => setShareLog(null)} />
 
-            {/* ── INLINE REVIEW MODAL — uses local state, no external store ── */}
-            {viewLog && (
-                <div
-                    onMouseDown={(e) => { if (e.target === e.currentTarget) e.currentTarget.dataset.backdropMouseDown = 'true' }}
-                    onMouseUp={(e) => { if (e.target === e.currentTarget && e.currentTarget.dataset.backdropMouseDown === 'true') setViewLog(null); e.currentTarget.dataset.backdropMouseDown = 'false' }}
-                    style={{
-                        position: 'fixed', inset: 0, zIndex: 10000,
-                        background: 'rgba(10,7,3,0.92)',
-                        backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        padding: '1rem',
-                    }}
-                >
-                    <div
-                        onClick={e => e.stopPropagation()}
-                        style={{
-                            background: 'linear-gradient(180deg, rgba(28,22,14,1) 0%, rgba(18,14,8,1) 100%)',
-                            border: '1px solid rgba(139,105,20,0.35)',
-                            borderRadius: '12px',
-                            width: 'calc(100% - 2rem)', maxWidth: 580,
-                            maxHeight: 'calc(100dvh - 2rem)',
-                            overflow: 'auto',
-                            position: 'relative',
-                            boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(139,105,20,0.15)',
-                        }}
-                    >
-                        {/* Poster Banner */}
-                        {(viewLog.altPoster || viewLog.poster) && (
-                            <div style={{ width: '100%', height: 200, overflow: 'hidden', position: 'relative' }}>
-                                <img
-                                    src={tmdb.poster(viewLog.altPoster || viewLog.poster, 'w780')}
-                                    alt={viewLog.title}
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.25) brightness(0.5) blur(2px)', transform: 'scale(1.05)' }}
-                                />
-                                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 20%, rgba(28,22,14,1) 100%)' }} />
-                            </div>
-                        )}
-
-                        {/* Header Bar */}
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', padding: '1.5rem 1.5rem 0', marginTop: (viewLog.altPoster || viewLog.poster) ? '-3rem' : 0, position: 'relative', zIndex: 2 }}>
-                            <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', flex: 1 }}>
-                                {(viewLog.altPoster || viewLog.poster) && (
-                                    <img
-                                        src={tmdb.poster(viewLog.altPoster || viewLog.poster, 'w154')}
-                                        alt={viewLog.title}
-                                        style={{ width: 80, height: 120, objectFit: 'cover', borderRadius: '6px', border: '1px solid rgba(139,105,20,0.3)', flexShrink: 0, boxShadow: '0 8px 20px rgba(0,0,0,0.6)' }}
-                                    />
-                                )}
-                                <div style={{ paddingTop: '0.25rem' }}>
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', lineHeight: 1.15 }}>
-                                        {viewLog.title}
-                                    </div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.12em', marginTop: '0.35rem' }}>
-                                        {viewLog.year}
-                                    </div>
-                                    <div style={{
-                                        fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', marginTop: '0.5rem',
-                                        padding: '0.2rem 0.6rem', borderRadius: '3px', display: 'inline-block',
-                                        color: viewLog.status === 'abandoned' ? 'var(--blood-reel)' : viewLog.status === 'rewatched' ? 'var(--flicker)' : 'var(--sepia)',
-                                        background: viewLog.status === 'abandoned' ? 'rgba(162,36,36,0.12)' : viewLog.status === 'rewatched' ? 'rgba(212,185,117,0.1)' : 'rgba(139,105,20,0.12)',
-                                        border: `1px solid ${viewLog.status === 'abandoned' ? 'rgba(162,36,36,0.3)' : viewLog.status === 'rewatched' ? 'rgba(212,185,117,0.25)' : 'rgba(139,105,20,0.3)'}`,
-                                    }}>
-                                        {viewLog.status === 'watched' ? 'WATCHED' : viewLog.status === 'rewatched' ? 'REWATCH' : 'ABANDONED'}
-                                    </div>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setViewLog(null)}
-                                style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)', cursor: 'pointer', flexShrink: 0 }}
-                            >
-                                ✕
-                            </button>
-                        </div>
-
-                        {/* Body */}
-                        <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-
-                            {/* Author + Date */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--fog)' }}>
-                                    LOGGED BY <span style={{ color: 'var(--flicker)' }}>@{(profileUser?.username || routeUsername || '').toUpperCase()}</span>
-                                </div>
-                                {viewLog.watchedDate && (
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.08em' }}>
-                                        {new Date(viewLog.watchedDate + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Rating */}
-                            {viewLog.rating > 0 && (
-                                <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>RATING</div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <ReelRating value={viewLog.rating} size="sm" />
-                                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)' }}>
-                                            {['', 'Unwatchable', 'Poor', 'Fine', 'Really Good', 'Masterpiece'][Math.ceil(viewLog.rating)]}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Abandoned Reason */}
-                            {viewLog.status === 'abandoned' && viewLog.abandonedReason && (
-                                <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--blood-reel)', marginBottom: '0.4rem' }}>ABANDONED BECAUSE</div>
-                                    <div className="tag tag-flicker" style={{ display: 'inline-block' }}>{viewLog.abandonedReason}</div>
-                                </div>
-                            )}
-
-                            {/* Pull Quote */}
-                            {viewLog.pullQuote && (
-                                <blockquote style={{
-                                    fontFamily: 'var(--font-sub)', fontStyle: 'italic',
-                                    fontSize: '1.15rem', color: 'var(--flicker)',
-                                    borderLeft: '3px solid var(--sepia)',
-                                    paddingLeft: '1rem', margin: '0.25rem 0',
-                                    lineHeight: 1.5,
-                                }}>
-                                    "{viewLog.pullQuote}"
-                                </blockquote>
-                            )}
-
-                            {/* Review */}
-                            {viewLog.review && (
-                                <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.6rem' }}>REVIEW</div>
-                                    <div style={{
-                                        fontFamily: 'var(--font-body)', fontSize: '0.92rem',
-                                        color: 'var(--bone)', lineHeight: 1.75,
-                                        whiteSpace: 'pre-wrap',
-                                    }}>
-                                        {viewLog.review}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Watched With — private, only visible on own profile */}
-                            {isOwnProfile && viewLog.watchedWith && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.08em' }}>
-                                    ♡ WATCHED WITH <span style={{ color: 'var(--bone)' }}>{viewLog.watchedWith}</span>
-                                </div>
-                            )}
-
-                            {/* Physical Media */}
-                            {viewLog.physicalMedia && viewLog.physicalMedia !== 'None' && (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.08em' }}>
-                                    📀 PHYSICAL COPY: <span style={{ color: 'var(--bone)' }}>{viewLog.physicalMedia}</span>
-                                </div>
-                            )}
-
-                            {/* Autopsy Engine */}
-                            {viewLog.isAutopsied && viewLog.autopsy && (
-                                <div style={{ padding: '1rem', border: '1px solid rgba(162,36,36,0.25)', borderRadius: '8px', background: 'rgba(162,36,36,0.04)' }}>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--blood-reel)', marginBottom: '0.75rem' }}>
-                                        ✦ AUTOPSY ENGINE
-                                    </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {Object.entries(viewLog.autopsy).map(([axis, val]) => {
-                                            const labels = { story: 'STORY', script: 'SCRIPT', acting: 'ACTING', cinematography: 'CINEMA', editing: 'EDITING', sound: 'SOUND' }
-                                            return (
-                                                <div key={axis} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                    <div style={{ width: 60, fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.05em', color: 'var(--fog)' }}>{labels[axis] || axis.toUpperCase()}</div>
-                                                    <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                                                        <div style={{ width: `${val * 10}%`, height: '100%', background: 'linear-gradient(90deg, var(--blood-reel), var(--sepia))', borderRadius: 2 }} />
-                                                    </div>
-                                                    <div style={{ width: 20, textAlign: 'right', fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--bone)' }}>{val}</div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Actions */}
-                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid rgba(139,105,20,0.2)', paddingTop: '1rem' }}>
-                                {isOwnProfile && (
-                                    <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', gap: '0.4rem' }} onClick={() => {
-                                        setViewLog(null)
-                                        openLogModal({ id: viewLog.filmId, title: viewLog.title, poster_path: viewLog.poster, release_date: viewLog.year + '-01-01' }, viewLog.id)
-                                    }}>
-                                        ✎ Edit This Log
-                                    </button>
-                                )}
-                                <button
-                                    className="btn btn-ghost"
-                                    style={{ flex: isOwnProfile ? 0 : 1, justifyContent: 'center' }}
-                                    onClick={() => setViewLog(null)}
-                                >
-                                    Close
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <ReviewModal
+                viewLog={viewLog}
+                profileUser={profileUser}
+                isOwnProfile={isOwnProfile}
+                routeUsername={routeUsername}
+                onClose={() => setViewLog(null)}
+                onEdit={(log) => {
+                    setViewLog(null)
+                    openLogModal({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' }, log.id)
+                }}
+            />
         </div>
     )
 }
