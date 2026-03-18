@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /api/
+
+Sitemap: https://the-reelhouse-society.vercel.app/sitemap.xml

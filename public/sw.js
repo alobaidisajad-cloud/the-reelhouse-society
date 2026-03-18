@@ -9,11 +9,15 @@
 // Cache busting is handled by vercel.json headers, NOT by sw version strings.
 // ============================================================
 
-const IMAGE_CACHE = 'reelhouse-tmdb-images-v5';
-const API_CACHE = 'reelhouse-tmdb-api-v5';
+const IMAGE_CACHE = 'reelhouse-tmdb-images-v6';
+const API_CACHE = 'reelhouse-tmdb-api-v6';
+const OFFLINE_CACHE = 'reelhouse-offline-v6';
 
 // Install — skip waiting to activate immediately, don't pre-cache any shell
-self.addEventListener('install', () => {
+self.addEventListener('install', (event) => {
+    event.waitUntil(
+        caches.open(OFFLINE_CACHE).then((cache) => cache.add('/offline.html'))
+    );
     self.skipWaiting();
 });
 
@@ -23,7 +27,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then((keys) => {
             return Promise.all(
                 keys.map((key) => {
-                    if (key !== IMAGE_CACHE && key !== API_CACHE) {
+                    if (key !== IMAGE_CACHE && key !== API_CACHE && key !== OFFLINE_CACHE) {
                         return caches.delete(key);
                     }
                 })
@@ -72,7 +76,9 @@ self.addEventListener('fetch', (event) => {
     // Vercel CDN delivers fresh HTML with no-cache headers (handled by vercel.json)
     // We must not intercept or cache HTML — it causes the exact deployment mismatch bug we had.
     if (request.mode === 'navigate') {
-        event.respondWith(fetch(request));
+        event.respondWith(
+            fetch(request).catch(() => caches.match('/offline.html'))
+        );
         return;
     }
 

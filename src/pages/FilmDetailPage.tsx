@@ -16,7 +16,7 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 import CommunityReviews from '../components/film/CommunityReviews'
 
 // ── VIRAL EXPORT MODAL ──
-function DossierExportModal({ film, log, onClose }: any) {
+function DossierExportModal({ film, log, onClose }: { film: Record<string, any>; log: Record<string, any> | null; onClose: () => void }) {
     if (!log) return null;
     return (
         <AnimatePresence>
@@ -55,7 +55,7 @@ function DossierExportModal({ film, log, onClose }: any) {
 }
 
 // ── TRAILER MODAL ──
-function TrailerModal({ trailerKey, onClose }: any) {
+function TrailerModal({ trailerKey, onClose }: { trailerKey: string; onClose: () => void }) {
     return (
         <AnimatePresence>
             <motion.div
@@ -637,9 +637,9 @@ export default function FilmDetailPage() {
 
     // Dynamically inject SEO & Social tags once loaded
     useSEOSync(
-        film ? `${film.title} (${film.release_date?.slice(0, 4) || 'Unknown'})` : null,
-        film?.overview?.substring(0, 160),
-        film?.poster_path ? tmdb.poster(film.poster_path, 'w500') : null
+        film ? `${film.title} (${film.release_date?.slice(0, 4) || 'Unknown'})` : undefined,
+        film?.overview?.substring(0, 160) || undefined,
+        film?.poster_path ? (tmdb.poster(film.poster_path, 'w500') ?? undefined) : undefined
     )
 
     if (isLoading) return (
