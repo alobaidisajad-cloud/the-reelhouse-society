@@ -185,14 +185,14 @@ export default function CommandPalette() {
                                             >
                                                 {isPerson ? (
                                                     r.profile_path ? (
-                                                        <img src={tmdb.profile(r.profile_path, 'w185')} style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: '50%', filter: 'sepia(0.3)' }} />
+                                                        <img src={tmdb.profile(r.profile_path, 'w185')} alt={r.name} style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: '50%', filter: 'sepia(0.3)' }} />
                                                     ) : (
                                                         <div style={{ width: 32, height: 48, borderRadius: '50%', overflow: 'hidden' }}>
                                                             <PersonPlaceholder />
                                                         </div>
                                                     )
                                                 ) : r.poster_path ? (
-                                                    <img src={tmdb.poster(r.poster_path, 'w92')} style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: 2, filter: 'sepia(0.3)' }} />
+                                                    <img src={tmdb.poster(r.poster_path, 'w92')} alt={r.title} style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: 2, filter: 'sepia(0.3)' }} />
                                                 ) : (
                                                     <div style={{ width: 32, height: 48, background: 'var(--ash)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                         <Film size={12} color="var(--fog)" />

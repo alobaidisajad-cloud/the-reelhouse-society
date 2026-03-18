@@ -4,12 +4,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Film, User, Compass, Star, BookOpen, Hash, ArrowRight } from 'lucide-react'
 import { tmdb } from '../tmdb'
 
+import { useAuthStore } from '../store'
+
 const QUICK_LINKS = [
     { id: 'lobby', label: 'The Lobby', path: '/', icon: Film },
     { id: 'discover', label: 'The Darkroom', path: '/discover', icon: Compass },
     { id: 'feed', label: 'The Reel', path: '/feed', icon: BookOpen },
     { id: 'lists', label: 'The Stacks', path: '/lists', icon: Star },
-    { id: 'profile', label: 'My Dossier', path: '/user/sajjadsaleel', icon: User },
 ]
 
 export default function Searchlight() {
@@ -18,6 +19,12 @@ export default function Searchlight() {
     const [results, setResults] = useState([])
     const [selectedIndex, setSelectedIndex] = useState(0)
     const navigate = useNavigate()
+    const user = useAuthStore(s => s.user)
+
+    // Build quick links dynamically — include profile only when logged in
+    const quickLinks = user
+        ? [...QUICK_LINKS, { id: 'profile', label: 'My Dossier', path: `/user/${user.username || 'me'}`, icon: User }]
+        : QUICK_LINKS
 
     useEffect(() => {
         const down = (e) => {
@@ -33,11 +40,11 @@ export default function Searchlight() {
 
     useEffect(() => {
         if (!query) {
-            setResults(QUICK_LINKS)
+            setResults(quickLinks)
             return
         }
 
-        const filteredLinks = QUICK_LINKS.filter(l =>
+        const filteredLinks = quickLinks.filter(l =>
             l.label.toLowerCase().includes(query.toLowerCase())
         )
 

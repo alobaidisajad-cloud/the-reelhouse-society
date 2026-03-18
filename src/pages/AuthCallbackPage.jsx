@@ -41,18 +41,8 @@ export default function AuthCallbackPage() {
                             isAuthenticated: true,
                         })
 
-                        // Hydrate user data in the background
-                        const [films, content] = await Promise.all([
-                            import('../stores/films'),
-                            import('../stores/content'),
-                        ])
-                        Promise.all([
-                            films.useFilmStore.getState().fetchLogs(),
-                            films.useFilmStore.getState().fetchWatchlist(),
-                            films.useFilmStore.getState().fetchVault(),
-                            films.useFilmStore.getState().fetchLists(),
-                            content.useProgrammeStore.getState().fetchProgrammes(),
-                        ])
+                        // Hydration is handled by initAuthSync() via SIGNED_IN event —
+                        // no manual fetch calls here to prevent double-fetch.
 
                         setStatus('success')
                         setTimeout(() => navigate('/'), 2000)

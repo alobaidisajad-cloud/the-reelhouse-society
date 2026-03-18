@@ -287,7 +287,7 @@ export default function CinemasPage() {
     // Fetch reviews for each loaded venue
     useEffect(() => {
         venues.forEach(v => { if (!allReviews[v.id]) fetchReviews(v.id) })
-    }, [venues])
+    }, [venues, fetchReviews]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // Derive unique vibes from real venue data
     const allVibes = useMemo(() => {

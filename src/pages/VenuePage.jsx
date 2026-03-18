@@ -511,7 +511,10 @@ export default function VenuePage() {
             </div>
 
             <main style={{ padding: '2.5rem 0 5rem' }}>
-                <div className="container" style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '2.5rem' }}>
+                <div className="container">
+                    {/* Responsive sidebar layout */}
+                    <style>{`.venue-grid-layout { display: grid; grid-template-columns: 1fr; gap: 2.5rem; } @media (min-width: 900px) { .venue-grid-layout { grid-template-columns: 1fr 300px; } }`}</style>
+                    <div className="venue-grid-layout">
                     {/* Main Content */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', minWidth: 0 }}>
                         {/* About */}
@@ -570,6 +573,7 @@ export default function VenuePage() {
                         {/* Other Palaces — live from Supabase */}
                         <OtherPalacesSidebar currentId={venue.id} />
 
+                    </div>
                     </div>
                 </div>
             </main>

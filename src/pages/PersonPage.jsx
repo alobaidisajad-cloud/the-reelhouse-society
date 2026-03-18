@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
@@ -7,6 +7,7 @@ import { FilmCard, LoadingReel, SectionHeader, ObscurityBadge, PersonPlaceholder
 
 export default function PersonPage() {
     const { id } = useParams()
+    const navigate = useNavigate()
 
     const { data: person, isLoading: loadingPerson } = useQuery({
         queryKey: ['person', id],
@@ -57,9 +58,9 @@ export default function PersonPage() {
     return (
         <div className="page-top" style={{ minHeight: '100vh', paddingBottom: '4rem' }}>
             <div className="container" style={{ padding: '0 1.5rem' }}>
-                <Link to={-1} className="btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', marginTop: '1rem', textDecoration: 'none', color: 'var(--fog)', fontSize: '0.8rem' }}>
+                <button onClick={() => navigate(-1)} className="btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', marginTop: '1rem', textDecoration: 'none', color: 'var(--fog)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}>
                     <ArrowLeft size={16} /> BACK
-                </Link>
+                </button>
 
                 {/* Profile Header */}
                 <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '4rem' }}>
