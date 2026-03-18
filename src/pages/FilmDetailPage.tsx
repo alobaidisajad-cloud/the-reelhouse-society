@@ -11,9 +11,6 @@ import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
 
-// TMDB API key — MUST be set via VITE_TMDB_API_KEY in environment.
-// No hardcoded fallback shipped in bundle — prevents key abuse.
-const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || ''
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
 // ── COMMUNITY REVIEWS (Dynamic from Supabase) ──
@@ -185,7 +182,7 @@ function DirectorPanel({ director, onClose }: any) {
     const { data: filmography, isLoading } = useQuery({
         queryKey: ['person-films', director.id],
         queryFn: async () => {
-            const res = await fetch(`https://api.themoviedb.org/3/person/${director.id}/movie_credits?api_key=${TMDB_API_KEY}`)
+            const res = await fetch(`/api/tmdb?path=${encodeURIComponent(`/person/${director.id}/movie_credits`)}`)
             const data = await res.json()
             return (data.crew || []).filter((f: any) => f.job === 'Director' && f.poster_path).sort((a: any, b: any) => (b.release_date || '').localeCompare(a.release_date || ''))
         },

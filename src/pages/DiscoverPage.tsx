@@ -232,9 +232,8 @@ export default function DiscoverPage() {
                 // Use raw TMDB multi-search for autocomplete — tmdb.search() is a
                 // 3-tier smart matcher that aggressively filters to the single best hit.
                 // For suggestions we want all relevant raw results sorted by popularity.
-                const TMDB_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
                 const res = await fetch(
-                    `https://api.themoviedb.org/3/search/multi?api_key=${TMDB_KEY}&query=${encodeURIComponent(inputVal.trim())}&page=1&include_adult=false`
+                    `/api/tmdb?path=${encodeURIComponent(`/search/multi?query=${encodeURIComponent(inputVal.trim())}&page=1&include_adult=false`)}`
                 )
                 if (!res.ok) return
                 const data = await res.json()

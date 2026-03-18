@@ -1,22 +1,18 @@
 // TMDB API utilities
-const TMDB_BASE = 'https://api.themoviedb.org/3'
+// API requests are proxied through /api/tmdb — the key stays server-side
+const TMDB_PROXY = '/api/tmdb'
 const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
-// API key must be set in .env.local as VITE_TMDB_API_KEY
-const API_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
-if (!API_KEY && import.meta.env.MODE !== 'test') {
-    console.error('[ReelHouse] VITE_TMDB_API_KEY is not set. Add it to .env.local')
-}
-
 // Resilient fetch wrapper — 8s timeout, logs errors, always returns a safe fallback
-async function fetchTMDB(url: any, fallback: any = null) {
+// `path` is the TMDB API path (e.g. /search/multi?query=...)
+async function fetchTMDB(path: any, fallback: any = null) {
     try {
         const controller = new AbortController()
-        const timer = setTimeout(() => controller.abort(), 8000)
-        const res = await fetch(url, { signal: controller.signal })
+        const timer = setTimeout(() => controller.abort(), 10000)
+        const res = await fetch(`${TMDB_PROXY}?path=${encodeURIComponent(path)}`, { signal: controller.signal })
         clearTimeout(timer)
         if (!res.ok) {
-            console.warn(`[TMDB] ${res.status} ${res.statusText} — ${url.split('?')[0]}`)
+            console.warn(`[TMDB] ${res.status} — ${path.split('?')[0]}`)
             return fallback
         }
         return await res.json()
@@ -40,7 +36,7 @@ export const tmdb = {
     search: async (query: any, page: any = 1) => {
         // TIER 1: Omni-Search (Movies + Actors + Directors simultaneously)
         const res = await fetch(
-            `${TMDB_BASE}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}&include_adult=false`
+            `${TMDB_PROXY}?path=${encodeURIComponent(`/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`)}`
         )
         if (!res.ok) throw new Error('TMDB search failed')
         let data = await res.json()
@@ -87,8 +83,8 @@ export const tmdb = {
 
                     // Always consider their movies if they are somewhat known
                     if (hasPhoto || isHighPop || isExact) {
-                        const knownFor = item.known_for?.filter(k => k.media_type === 'movie') || []
-                        items.push(...knownFor.map(m => ({ ...m, media_type: 'movie' })))
+                        const knownFor = item.known_for?.filter((k: any) => k.media_type === 'movie') || []
+                        items.push(...knownFor.map((m: any) => ({ ...m, media_type: 'movie' })))
                     }
                 }
             }
@@ -137,7 +133,7 @@ export const tmdb = {
             const fallbackResults = await Promise.all(fallbacks.map(async (fb: any) => {
                 try {
                     // Search both movies and people in fallback
-                    const fRes = await fetch(`${TMDB_BASE}/search/multi?api_key=${API_KEY}&query=${encodeURIComponent(fb.text)}&page=1`)
+                    const fRes = await fetch(`${TMDB_PROXY}?path=${encodeURIComponent(`/search/multi?query=${encodeURIComponent(fb.text)}&page=1`)}`)
                     if (fRes.ok) {
                         const fData = await fRes.json()
                         if (fData.results?.length > 0) {
@@ -169,8 +165,8 @@ export const tmdb = {
                     if (item.media_type === 'movie') items.push({ ...item, media_type: 'movie' })
                     else if (item.media_type === 'person') {
                         items.push({ ...item, media_type: 'person' })
-                        const known = item.known_for?.filter(k => k.media_type === 'movie') || []
-                        items.push(...known.map(k => ({ ...k, media_type: 'movie' })))
+                        const known = item.known_for?.filter((k: any) => k.media_type === 'movie') || []
+                        items.push(...known.map((k: any) => ({ ...k, media_type: 'movie' })))
                     }
                 }
 
@@ -191,11 +187,11 @@ export const tmdb = {
         // Strip grammar and look for words > 3 chars
         const words = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter((w: any) => w.length > 2)
         if (words.length > 0) {
-            const keywordIds = []
+            const keywordIds: number[] = []
             // Look up TMDB's internal keyword Dictionary for each word
             await Promise.all(words.map(async (word: any) => {
                 try {
-                    const kwRes = await fetch(`${TMDB_BASE}/search/keyword?api_key=${API_KEY}&query=${encodeURIComponent(word)}`)
+                    const kwRes = await fetch(`${TMDB_PROXY}?path=${encodeURIComponent(`/search/keyword?query=${encodeURIComponent(word)}`)}`)
                     const kwData = await kwRes.json()
                     // Take the most popular exact keyword match
                     if (kwData.results?.length > 0) {
@@ -207,7 +203,7 @@ export const tmdb = {
             if (keywordIds.length > 0) {
                 // Use a 'Discover' query to mathematically group films that have these keywords!
                 // Using an OR (|) operator for fuzzier matching, AND (,) for strict.
-                const discoverRes = await fetch(`${TMDB_BASE}/discover/movie?api_key=${API_KEY}&with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1`)
+                const discoverRes = await fetch(`${TMDB_PROXY}?path=${encodeURIComponent(`/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1`)}`)
                 if (discoverRes.ok) {
                     const discoverData = await discoverRes.json()
                     if (discoverData.results?.length > 0) {
@@ -225,51 +221,51 @@ export const tmdb = {
     },
 
     trending: async (timeWindow: any = 'week') => fetchTMDB(
-        `${TMDB_BASE}/trending/movie/${timeWindow}?api_key=${API_KEY}`,
+        `/trending/movie/${timeWindow}`,
         { results: [] }
     ),
 
     topRated: async (page: any = 1) => fetchTMDB(
-        `${TMDB_BASE}/movie/top_rated?api_key=${API_KEY}&page=${page}`,
+        `/movie/top_rated?page=${page}`,
         { results: [] }
     ),
 
     nowPlaying: async () => fetchTMDB(
-        `${TMDB_BASE}/movie/now_playing?api_key=${API_KEY}`,
+        `/movie/now_playing`,
         { results: [] }
     ),
 
     upcoming: async () => fetchTMDB(
-        `${TMDB_BASE}/movie/upcoming?api_key=${API_KEY}`,
+        `/movie/upcoming`,
         { results: [] }
     ),
 
     detail: async (id: any) => fetchTMDB(
-        `${TMDB_BASE}/movie/${id}?api_key=${API_KEY}&append_to_response=credits,videos,similar,watch/providers,release_dates`,
+        `/movie/${id}?append_to_response=credits,videos,similar,watch/providers,release_dates`,
         null
     ),
 
     // Watch providers (streaming, rent, buy) for a specific movie
     watchProviders: async (id: any) => {
-        const data = await fetchTMDB(`${TMDB_BASE}/movie/${id}/watch/providers?api_key=${API_KEY}`, {})
+        const data = await fetchTMDB(`/movie/${id}/watch/providers`, {})
         return data?.results || {}
     },
 
     // Release dates by country for a movie
     releaseDates: async (id: any) => {
-        const data = await fetchTMDB(`${TMDB_BASE}/movie/${id}/release_dates?api_key=${API_KEY}`, {})
+        const data = await fetchTMDB(`/movie/${id}/release_dates`, {})
         return data?.results || []
     },
 
     // Search production companies by name (for Discover filter)
     companySearch: async (query: any) => {
-        const data = await fetchTMDB(`${TMDB_BASE}/search/company?api_key=${API_KEY}&query=${encodeURIComponent(query)}`, {})
+        const data = await fetchTMDB(`/search/company?query=${encodeURIComponent(query)}`, {})
         return data?.results || []
     },
 
     discover: async (params: any = {}) => {
-        const qs = new URLSearchParams({ api_key: API_KEY, ...params }).toString()
-        return fetchTMDB(`${TMDB_BASE}/discover/movie?${qs}`, { results: [] })
+        const qs = new URLSearchParams(params).toString()
+        return fetchTMDB(`/discover/movie?${qs}`, { results: [] })
     },
 
     poster: (path: any, size: any = 'w342') => path ? `${TMDB_IMG}/${size}${path}` : null,
@@ -287,26 +283,26 @@ export const tmdb = {
 
     // Separate similar endpoint (avoids double-fetching detail)
     similar: async (id: any) => {
-        const data = await fetchTMDB(`${TMDB_BASE}/movie/${id}/similar?api_key=${API_KEY}&page=1`, {})
+        const data = await fetchTMDB(`/movie/${id}/similar?page=1`, {})
         return data?.results || []
     },
 
     // Aliases used by hover-prefetch in FilmCard
     movieDetails: async (id: any) => fetchTMDB(
-        `${TMDB_BASE}/movie/${id}?api_key=${API_KEY}&append_to_response=credits,videos,similar`,
+        `/movie/${id}?append_to_response=credits,videos,similar`,
         null
     ),
 
-    movieCredits: async (id: any) => fetchTMDB(`${TMDB_BASE}/movie/${id}/credits?api_key=${API_KEY}`, null),
+    movieCredits: async (id: any) => fetchTMDB(`/movie/${id}/credits`, null),
 
     // Fetch all images for a movie (posters, backdrops, logos)
-    movieImages: async (id: any) => fetchTMDB(`${TMDB_BASE}/movie/${id}/images?api_key=${API_KEY}`, { posters: [], backdrops: [], logos: [] }),
+    movieImages: async (id: any) => fetchTMDB(`/movie/${id}/images`, { posters: [], backdrops: [], logos: [] }),
 
     // Fetch person details (Actor/Director profile)
-    person: async (id: any) => fetchTMDB(`${TMDB_BASE}/person/${id}?api_key=${API_KEY}`, null),
+    person: async (id: any) => fetchTMDB(`/person/${id}`, null),
 
     // Fetch person's movie credits
-    personCredits: async (id: any) => fetchTMDB(`${TMDB_BASE}/person/${id}/movie_credits?api_key=${API_KEY}`, null),
+    personCredits: async (id: any) => fetchTMDB(`/person/${id}/movie_credits`, null),
 
     // NEW: Real-time News Proxy (Aggregates Film News)
     getNews: async () => {
