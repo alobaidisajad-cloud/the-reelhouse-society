@@ -174,6 +174,7 @@ export default function Navbar() {
                             className="nav-icon-btn"
                             onClick={() => setSearchOpen((v) => !v)}
                             title="Search films"
+                            aria-label="Search films"
                         >
                             <Search size={18} />
                         </button>
@@ -212,6 +213,7 @@ export default function Navbar() {
                                     className="nav-icon-btn hide-mobile"
                                     onClick={logout}
                                     title="Sign out"
+                                    aria-label="Sign out"
                                     style={{ fontSize: '0.6rem', fontFamily: 'var(--font-ui)', letterSpacing: '0.1em', color: 'var(--fog)' }}
                                 >
                                     EXIT
@@ -253,6 +255,8 @@ export default function Navbar() {
                         <button
                             className="nav-icon-btn nav-mobile-toggle"
                             onClick={() => setMobileOpen((v) => !v)}
+                            aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
+                            aria-expanded={mobileOpen}
                         >
                             {mobileOpen ? <X size={20} /> : <Menu size={20} />}
                         </button>

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Film, Building, Lock, Terminal, Mail, RefreshCw } from 'lucide-react'
 import { useUIStore, useAuthStore, useSoundscape } from '../store'
@@ -176,6 +177,8 @@ export default function SignupModal() {
         }
     }
 
+    const focusTrapRef = useFocusTrap(signupModalOpen, closeSignupModal)
+
     if (!signupModalOpen || isAuthenticated) return null
 
     // FORGOT PASSWORD SCREEN
@@ -183,6 +186,10 @@ export default function SignupModal() {
         return (
             <AnimatePresence>
                 <motion.div
+                    ref={focusTrapRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Reset password"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5, 3, 1, 0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
                 >
@@ -284,6 +291,10 @@ export default function SignupModal() {
         return (
             <AnimatePresence>
                 <motion.div
+                    ref={focusTrapRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Check your email"
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5, 3, 1, 0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
                 >
@@ -398,6 +409,10 @@ export default function SignupModal() {
     return (
         <AnimatePresence>
             <motion.div
+                ref={focusTrapRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label={isLogin ? 'Sign in' : 'Create account'}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}

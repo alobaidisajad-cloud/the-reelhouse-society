@@ -26,6 +26,9 @@ const LetterboxdImport = lazy(() => import('./components/LetterboxdImport'))
 // Detect touch once — controls which desktop-only effects to mount
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
+// Detect prefers-reduced-motion — used to disable Framer Motion animations
+const PREFERS_REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
 // ── Route-level code splitting — pages load on demand, not all at once ──
 const HomePage = lazy(() => import('./pages/HomePage'))
 const FilmDetailPage = lazy(() => import('./pages/FilmDetailPage'))
@@ -66,8 +69,12 @@ function PageFallback() {
 }
 
 function PageWrapper({ children }) {
+  // Respect prefers-reduced-motion: skip all page animations
+  if (PREFERS_REDUCED_MOTION) {
+    return <div style={{ position: 'relative', background: 'var(--ink)' }}>{children}</div>
+  }
+
   if (IS_TOUCH) {
-    // Mobile: no clip-path, no aperture flash — just cheap opacity fade
     return (
       <motion.div
         initial="initial"
@@ -173,6 +180,26 @@ export default function App() {
 
   return (
     <div className={degradationClass}>
+      {/* Skip-to-content link — visible only on keyboard focus */}
+      <a
+        href="#main-content"
+        style={{
+          position: 'fixed', top: '-100%', left: '1rem', zIndex: 100000,
+          background: 'var(--ink)', color: 'var(--flicker)', padding: '0.75rem 1.5rem',
+          fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em',
+          border: '2px solid var(--sepia)', borderRadius: '2px', textDecoration: 'none',
+          transition: 'top 0.15s',
+        }}
+        onFocus={e => { e.currentTarget.style.top = '1rem' }}
+        onBlur={e => { e.currentTarget.style.top = '-100%' }}
+      >
+        SKIP TO CONTENT
+      </a>
+
+      {/* Screen-reader-only live region for toast announcements */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only"
+        style={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap' }}
+      />
       {/* Preloader: desktop only, skipped on mobile, fires once per session */}
       {showPreloader && <Preloader onComplete={() => {
         setShowPreloader(false)
@@ -208,6 +235,7 @@ export default function App() {
           <OnboardingModal />
           {letterboxdOpen && <LetterboxdImport onClose={() => setLetterboxdOpen(false)} />}
 
+          <main id="main-content" tabIndex={-1}>
           <AnimatePresence mode="wait" initial={false}>
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<ErrorBoundary key="home"><PageWrapper><HomePage /></PageWrapper></ErrorBoundary>} />
@@ -234,6 +262,7 @@ export default function App() {
 
             </Routes>
           </AnimatePresence>
+          </main>
         </ErrorBoundary>
       </Suspense>
 

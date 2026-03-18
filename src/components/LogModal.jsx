@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Star, BookOpen, EyeOff, Clock, Lock } from 'lucide-react'
@@ -258,10 +259,16 @@ export default function LogModal() {
 
     if (!logModalOpen) return null
 
+    const focusTrapRef = useFocusTrap(logModalOpen, closeLogModal)
+
     return (
         <AnimatePresence>
             <motion.div
                 key="modal-backdrop"
+                ref={focusTrapRef}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Log a film"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -269,9 +276,9 @@ export default function LogModal() {
                 onMouseUp={(e) => { if (e.target === e.currentTarget && e.currentTarget.dataset.backdropMouseDown === 'true') closeLogModal(); e.currentTarget.dataset.backdropMouseDown = 'false' }}
                 style={{
                     position: 'fixed', inset: 0, zIndex: 10000,
-                    background: 'rgba(10,7,3,0.85)', // Slightly more transparent to allow blur
-                    backdropFilter: 'blur(12px)', // Premium frosted glass effect
-                    WebkitBackdropFilter: 'blur(12px)', // Safari support
+                    background: 'rgba(10,7,3,0.85)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '1rem',
                 }}
