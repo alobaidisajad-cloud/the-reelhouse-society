@@ -9,6 +9,7 @@ import { useSEOSync } from '../components/useSEOSync'
 import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
+import SectionErrorBoundary from '../components/SectionErrorBoundary'
 
 // TMDB API key — MUST be set via VITE_TMDB_API_KEY in environment.
 // No hardcoded fallback shipped in bundle — prevents key abuse.
@@ -749,13 +750,12 @@ export default function FilmDetailPage() {
                 <div className="container" style={{ paddingTop: '3rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     <button onClick={() => {
                         navigate(-1)
-                    }} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', marginLeft: '-0.5rem', alignSelf: 'flex-start', transition: 'color 0.2s' }}
-                        onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
-                        onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
+                    }} className="back-btn">
                         <ArrowLeft size={12} /> GO BACK
                     </button>
                     <FilmDetails film={film} onPlayVideo={handlePlayVideo} />
 
+                    <SectionErrorBoundary label="SIMILAR FILMS">
                     {Array.isArray(similar) && similar.length > 0 && (
                         <section>
                             <div style={{ marginTop: '2rem' }}>
@@ -770,6 +770,7 @@ export default function FilmDetailPage() {
                             </div>
                         </section>
                     )}
+                    </SectionErrorBoundary>
                 </div>
             </main>
         </div>

@@ -11,6 +11,7 @@ import FeaturedReview from '../components/home/FeaturedReview'
 import FilmStripRow from '../components/home/FilmStripRow'
 import VenueSpotlight from '../components/home/VenueSpotlight'
 import SocialPulse from '../components/home/SocialPulse'
+import SectionErrorBoundary from '../components/SectionErrorBoundary'
 
 // Detect touch/mobile once at module level — never re-evaluated
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
@@ -183,6 +184,7 @@ export default function HomePage() {
                 <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '2.5rem' : '5rem' }}>
 
                     {/* Trending */}
+                    <SectionErrorBoundary label="NOW SHOWING">
                     {loadingTrend ? <FilmStripSkeleton count={8} /> : (
                         <FilmStripRow
                             films={films}
@@ -191,15 +193,19 @@ export default function HomePage() {
                             description="The features drawing the largest crowds this week across the globe."
                         />
                     )}
+                    </SectionErrorBoundary>
 
                     {/* Social Pulse */}
                     <div className="divider" style={{ margin: '1rem 0' }}>✦ THE FOYER ✦</div>
+                    <SectionErrorBoundary label="THE PULSE">
                     <SocialPulse />
+                    </SectionErrorBoundary>
 
                     {/* Divider */}
                     <div className="divider" style={{ margin: '1rem 0' }}>✦ TONIGHT'S PROGRAMME ✦</div>
 
                     {/* Featured review + film */}
+                    <SectionErrorBoundary label="FEATURED CRITIQUE">
                     {heroFilm && (
                         <section style={{ position: 'relative', margin: '2rem 0' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
@@ -280,9 +286,11 @@ export default function HomePage() {
                             </div>
                         </section>
                     )}
+                    </SectionErrorBoundary>
 
                     {/* Top rated */}
                     <div className="divider">✦ THE ARCHIVES ✦</div>
+                    <SectionErrorBoundary label="ESSENTIAL VIEWING">
                     {loadingTop ? <FilmStripSkeleton count={8} /> : (
                         <FilmStripRow
                             films={topFilms}
@@ -291,10 +299,13 @@ export default function HomePage() {
                             description="Timeless masterpieces that forever haunt the corridors of cinema."
                         />
                     )}
+                    </SectionErrorBoundary>
 
                     {/* Venue spotlight */}
                     <div className="divider">✦ THE PALACES ✦</div>
+                    <SectionErrorBoundary label="VENUE SPOTLIGHT">
                     <VenueSpotlight />
+                    </SectionErrorBoundary>
 
                     {/* Buster CTA */}
                     {!isAuthenticated && (

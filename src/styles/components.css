@@ -683,3 +683,97 @@
   position: relative;
   box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(139,105,20,0.15);
 }
+
+/* ============================================================
+   DESIGN TOKENS — Typography & Layout Patterns
+   Semantic classes for repeated inline style combos.
+   ============================================================ */
+
+/* ── Typography Scale ── */
+.ui-micro   { font-family: var(--font-ui); font-size: 0.5rem;  letter-spacing: 0.15em; }
+.ui-label   { font-family: var(--font-ui); font-size: 0.55rem; letter-spacing: 0.12em; }
+.ui-meta    { font-family: var(--font-ui); font-size: 0.6rem;  letter-spacing: 0.15em; }
+.ui-callout { font-family: var(--font-ui); font-size: 0.65rem; letter-spacing: 0.2em; }
+.ui-heading { font-family: var(--font-ui); font-size: 0.7rem;  letter-spacing: 0.15em; }
+
+/* ── Section Titles (sepia label above content blocks) ── */
+.section-title       { font-family: var(--font-ui); font-size: 0.6rem; letter-spacing: 0.2em; color: var(--sepia); margin-bottom: 1rem; }
+.section-title-sm    { font-family: var(--font-ui); font-size: 0.52rem; letter-spacing: 0.18em; color: var(--sepia); margin-bottom: 0.4rem; }
+.section-title-lg    { font-family: var(--font-ui); font-size: 0.65rem; letter-spacing: 0.4em; color: var(--sepia); margin-bottom: 1rem; }
+
+/* ── Empty State Panels ── */
+.empty-state {
+  text-align: center;
+  padding: 3rem;
+  border: 1px dashed var(--ash);
+  color: var(--fog);
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+/* ── Tab Buttons (profile, venue dashboard) ── */
+.tab-btn {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.9rem 1rem;
+  background: none;
+  border: none;
+  white-space: nowrap;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s;
+}
+
+.tab-btn.active {
+  color: var(--flicker);
+  border-bottom-color: var(--sepia);
+}
+
+.tab-btn:not(.active) { color: var(--fog); }
+
+/* ── Back Navigation Button ── */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  color: var(--fog);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-left: -0.5rem;
+  align-self: flex-start;
+  transition: color 0.2s;
+}
+
+.back-btn:hover { color: var(--parchment); }
+
+/* ── Metadata Row (year · director · runtime) ── */
+.meta-row {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+}
+
+/* ── Section Error Fallback ── */
+.section-error {
+  padding: 2rem;
+  text-align: center;
+  border: 1px dashed var(--ash);
+  border-radius: var(--radius-card);
+  background: rgba(92, 26, 11, 0.08);
+}
