@@ -286,9 +286,11 @@ export default function LogModal() {
 
     }
 
-    if (!logModalOpen) return null
 
     const focusTrapRef = useFocusTrap(logModalOpen, closeLogModal)
+
+    if (!logModalOpen) return null
+
 
     return (
         <AnimatePresence>
