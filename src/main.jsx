@@ -24,9 +24,14 @@ if (import.meta.env.PROD) {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30 * 60 * 1000, // 30 min — film data doesn't change frequently (was 5 min)
-      gcTime: 60 * 60 * 1000,    // 1 hour cache lifetime (was 10 min)
-      retry: 1,
+      staleTime: 30 * 60 * 1000, // 30 min — film data doesn't change frequently
+      gcTime: 60 * 60 * 1000,    // 1 hour cache lifetime
+      retry: 2,                   // retry failed requests twice before showing error
+    },
+    mutations: {
+      onError: () => {
+        toast.error('Something went wrong — please try again.')
+      },
     },
   },
 })

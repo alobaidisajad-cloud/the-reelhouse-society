@@ -12,6 +12,7 @@ import Soundscape from './components/Soundscape'
 import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
 import ErrorBoundary from './components/ErrorBoundary'
+import OfflineBanner from './components/OfflineBanner'
 
 // ── Heavy Global Modals (Lazy Loaded) ──
 // BootcampModal retired — onboarding content lives in the Handbook now
@@ -223,7 +224,8 @@ export default function App() {
           {/* Mount Modals inside Suspense so they lazy-load when their internal state flips to open */}
           <Navbar />
           {!IS_TOUCH && <Soundscape />}
-          <InstallPrompt />
+          <OfflineBanner />
+      <InstallPrompt />
           <QualityOfLife />
 
 
