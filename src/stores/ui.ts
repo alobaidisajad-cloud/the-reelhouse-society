@@ -2,7 +2,7 @@ import { create } from 'zustand'
 
 export interface UIStoreState {
     logModalOpen: boolean
-    logModalFilm: any | null
+    logModalFilm: Record<string, unknown> | null
     logModalEditLogId: string | null
     signupModalOpen: boolean
     signupRole: string
@@ -13,7 +13,7 @@ export interface UIStoreState {
     openHandbook: () => void
     closeHandbook: () => void
 
-    openLogModal: (film?: any | null, editLogId?: string | null) => void
+    openLogModal: (film?: Record<string, unknown> | null, editLogId?: string | null) => void
     closeLogModal: () => void
 
     openSignupModal: (role?: string) => void

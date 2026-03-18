@@ -7,12 +7,12 @@ import { User } from '../types'
 export interface AuthState {
     user: User | null
     isAuthenticated: boolean
-    login: (email: string, password: string) => Promise<any>
-    signup: (email: string, password: string, username: string, role?: string, persona?: string) => Promise<any>
+    login: (email: string, password: string) => Promise<{ user: unknown; session: unknown }>
+    signup: (email: string, password: string, username: string, role?: string, persona?: string) => Promise<{ user: unknown; session: unknown | null }>
     logout: () => Promise<void>
     updateUser: (updates: Partial<User>) => Promise<void>
-    setPreference: (key: string, value: any) => Promise<void>
-    getPreference: (key: string, fallback?: any) => any
+    setPreference: (key: string, value: unknown) => Promise<void>
+    getPreference: (key: string, fallback?: unknown) => unknown
     followUser: (targetUsername: string) => Promise<void>
     unfollowUser: (targetUsername: string) => Promise<void>
 }
@@ -128,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
             updateUser: async (updates) => {
                 const user = get().user
                 if (!user) return
-                const dbUpdates: any = {}
+                const dbUpdates: Record<string, unknown> = {}
                 if (updates.bio !== undefined) dbUpdates.bio = updates.bio
                 if (updates.username !== undefined) dbUpdates.username = updates.username
                 if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar

@@ -25,6 +25,8 @@ export default defineConfig({
           'vendor-motion': ['framer-motion'],
           'vendor-data': ['@tanstack/react-query', 'zustand'],
           'vendor-icons': ['lucide-react'],
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-sentry': ['@sentry/react'],
         },
       },
     },

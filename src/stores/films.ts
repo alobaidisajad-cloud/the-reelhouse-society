@@ -4,6 +4,15 @@ import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction } from '../types'
 
+/** Lightweight shape for TMDB film data passed into store methods */
+interface TMDBFilmInput {
+    id: number
+    title?: string
+    name?: string
+    poster_path?: string | null
+    release_date?: string
+}
+
 export interface FilmState {
     logs: FilmLog[]
     watchlist: WatchlistItem[]
@@ -11,7 +20,7 @@ export interface FilmState {
     lists: FilmList[]
     stubs: TicketStub[]
     interactions: Interaction[]
-    globalFeedLogs: any[]
+    globalFeedLogs: FilmLog[]
 
     toggleEndorse: (targetId: string) => Promise<void>
     hasEndorsed: (targetId: string) => boolean
@@ -22,17 +31,17 @@ export interface FilmState {
     fetchLists: () => Promise<void>
     fetchStubs: () => Promise<void>
     saveStub: (stub: Partial<TicketStub> & { showtimeId?: string, slotId?: string }) => Promise<string | null>
-    addStubLocal: (stub: any) => void
-    addLog: (log: any) => Promise<void>
+    addStubLocal: (stub: Partial<TicketStub>) => void
+    addLog: (log: Partial<FilmLog>) => Promise<void>
     getCinephileStats: () => { count: number, level: string, color: string, progress: number }
     updateLog: (id: string, updates: Partial<FilmLog>) => Promise<void>
     removeLog: (id: string) => Promise<void>
-    addToWatchlist: (film: any) => Promise<void>
+    addToWatchlist: (film: TMDBFilmInput) => Promise<void>
     removeFromWatchlist: (filmId: number) => Promise<void>
-    addToVault: (film: any, format?: string) => Promise<void>
+    addToVault: (film: TMDBFilmInput, format?: string) => Promise<void>
     removeFromVault: (filmId: number) => Promise<void>
-    createList: (list: any) => Promise<void>
-    addFilmToList: (listId: string, film: any) => Promise<void>
+    createList: (list: Partial<FilmList>) => Promise<void>
+    addFilmToList: (listId: string, film: TMDBFilmInput) => Promise<void>
 }
 
 export const useFilmStore = create<FilmState>()(
@@ -316,7 +325,7 @@ export const useFilmStore = create<FilmState>()(
                 if (!error) {
                     set((state) => ({
                         watchlist: state.watchlist.find((f) => f.id === film.id) ? state.watchlist
-                            : [...state.watchlist, { id: film.id, title: film.title || film.name, poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }],
+                            : [...state.watchlist, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }],
                     }))
                 }
             },
@@ -359,7 +368,7 @@ export const useFilmStore = create<FilmState>()(
                 if (!error) {
                     set((state) => ({
                         vault: state.vault.find((f) => f.id === film.id) ? state.vault
-                            : [...state.vault, { id: film.id, title: film.title || film.name, poster_path: film.poster_path, format }],
+                            : [...state.vault, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, format }],
                     }))
                 }
             },
@@ -390,7 +399,7 @@ export const useFilmStore = create<FilmState>()(
                 if (!error) {
                     set((state) => ({
                         lists: state.lists.map((l) => l.id === listId
-                            ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, film] }
+                            ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path }] }
                             : l
                         ),
                     }))
