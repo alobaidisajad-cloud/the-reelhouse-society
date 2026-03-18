@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Popcorn, Search, Calendar, Star, Film, User, Hash } from 'lucide-react'
+import { Popcorn, Search, Calendar, Star, Film, User, Hash, BookOpen, List } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { tmdb } from '../tmdb'
-import { useUIStore, useSoundscape } from '../store'
+import { useUIStore, useFilmStore, useSoundscape } from '../store'
+import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { PersonPlaceholder } from './UI'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
@@ -19,6 +20,8 @@ export default function CommandPalette() {
     const searchTimeout = useRef(null)
     const navigate = useNavigate()
     const openLogModal = useUIStore(state => state.openLogModal)
+    const logs = useFilmStore(state => state.logs)
+    const lists = useFilmStore(state => state.lists)
     const playShutter = useSoundscape(state => state.playShutter)
     const focusTrapRef = useFocusTrap(open, () => setOpen(false))
 
@@ -49,10 +52,45 @@ export default function CommandPalette() {
         clearTimeout(searchTimeout.current)
         if (!q.trim()) { setResults([]); return }
         setSearching(true)
+
         searchTimeout.current = setTimeout(async () => {
             try {
+                const lower = q.toLowerCase()
+
+                // Local: search user's own logs
+                const localLogMatches = logs
+                    .filter(l => l.title?.toLowerCase().includes(lower))
+                    .slice(0, 3)
+                    .map(l => ({ ...l, _source: 'log', id: l.filmId, title: l.title, poster_path: l.poster, media_type: 'movie' }))
+
+                // Local: search user's own lists
+                const localListMatches = (lists || [])
+                    .filter(l => l.name?.toLowerCase().includes(lower))
+                    .slice(0, 2)
+                    .map(l => ({ ...l, _source: 'list', title: l.name, media_type: 'list' }))
+
+                // Remote: search Supabase profiles
+                let userMatches = []
+                if (isSupabaseConfigured && q.length >= 2) {
+                    try {
+                        const { data } = await supabase
+                            .from('profiles')
+                            .select('username, avatar_url, role')
+                            .ilike('username', `%${q}%`)
+                            .limit(3)
+                        userMatches = (data || []).map(u => ({
+                            ...u, _source: 'user', id: u.username,
+                            title: `@${u.username}`, media_type: 'person',
+                            profile_path: u.avatar_url,
+                        }))
+                    } catch { /* silent */ }
+                }
+
+                // Remote: TMDB search
                 const data = await tmdb.search(q)
-                setResults(data.results?.slice(0, 5) || [])
+                const tmdbResults = (data.results?.slice(0, 5) || []).map(r => ({ ...r, _source: 'tmdb' }))
+
+                setResults([...localLogMatches, ...localListMatches, ...userMatches, ...tmdbResults])
                 setSearchType(data.searchType || 'exact')
                 setSearchContext(data.matchedContext || '')
             } catch { setResults([]); setSearchType('exact') }
@@ -62,7 +100,11 @@ export default function CommandPalette() {
 
     const executeAction = (item) => {
         setOpen(false)
-        if (item.media_type === 'person') {
+        if (item._source === 'list') {
+            navigate(`/lists/${item.id}`)
+        } else if (item._source === 'user') {
+            navigate(`/user/${item.id}`)
+        } else if (item.media_type === 'person') {
             navigate(`/person/${item.id}`)
         } else {
             navigate(`/film/${item.id}`)
@@ -143,7 +185,7 @@ export default function CommandPalette() {
                             ref={inputRef}
                             value={query}
                             onChange={(e) => handleSearch(e.target.value)}
-                            placeholder="Find a film, log it, or press Esc to close..."
+                            placeholder="Search films, people, your logs, lists, or users..."
                             style={{
                                 flex: 1, background: 'none', border: 'none', outline: 'none',
                                 color: 'var(--parchment)', fontFamily: 'var(--font-body)', fontSize: '1.2rem',
@@ -174,10 +216,13 @@ export default function CommandPalette() {
                                     )}
                                     {results.map((r, index) => {
                                         const isPerson = r.media_type === 'person'
+                                        const isList = r._source === 'list'
+                                        const isUser = r._source === 'user'
                                         const selected = index === selectedIndex
+                                        const sourceBadge = r._source === 'log' ? 'YOUR LOG' : r._source === 'list' ? 'YOUR LIST' : r._source === 'user' ? 'USER' : null
                                         return (
                                             <div
-                                                key={`${r.media_type || 'movie'}-${r.id}`}
+                                                key={`${r._source || r.media_type || 'movie'}-${r.id}-${index}`}
                                                 onMouseEnter={() => setSelectedIndex(index)}
                                                 onClick={() => executeAction(r)}
                                                 style={{
@@ -188,9 +233,13 @@ export default function CommandPalette() {
                                                     cursor: 'pointer', transition: 'all 0.1s'
                                                 }}
                                             >
-                                                {isPerson ? (
+                                                {isList ? (
+                                                    <div style={{ width: 32, height: 48, background: 'var(--ash)', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <List size={14} color="var(--sepia)" />
+                                                    </div>
+                                                ) : isPerson ? (
                                                     r.profile_path ? (
-                                                        <img src={tmdb.profile(r.profile_path, 'w185')} alt={r.name} style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: '50%', filter: 'sepia(0.3)' }} />
+                                                        <img src={isUser ? r.profile_path : tmdb.profile(r.profile_path, 'w185')} alt={r.name || r.title} style={{ width: 32, height: 48, objectFit: 'cover', borderRadius: '50%', filter: 'sepia(0.3)' }} />
                                                     ) : (
                                                         <div style={{ width: 32, height: 48, borderRadius: '50%', overflow: 'hidden' }}>
                                                             <PersonPlaceholder />
@@ -204,11 +253,18 @@ export default function CommandPalette() {
                                                     </div>
                                                 )}
                                                 <div style={{ flex: 1 }}>
-                                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1rem', color: selected ? 'var(--flicker)' : 'var(--parchment)' }}>
-                                                        {isPerson ? r.name : r.title}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                        <span style={{ fontFamily: 'var(--font-sub)', fontSize: '1rem', color: selected ? 'var(--flicker)' : 'var(--parchment)' }}>
+                                                            {isPerson ? r.name : r.title}
+                                                        </span>
+                                                        {sourceBadge && (
+                                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.1em', color: r._source === 'log' ? 'var(--flicker)' : r._source === 'user' ? '#7cb87a' : 'var(--sepia)', background: 'rgba(139,105,20,0.1)', padding: '0.15rem 0.35rem', borderRadius: '2px' }}>
+                                                                {sourceBadge}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.2rem' }}>
-                                                        {isPerson ? r.known_for_department?.toUpperCase() : `${r.release_date?.slice(0, 4)} · ${r.vote_average?.toFixed(1)} ★`}
+                                                        {isList ? `${r.films?.length || 0} FILMS` : isPerson ? (isUser ? (r.role?.toUpperCase() || 'MEMBER') : r.known_for_department?.toUpperCase()) : `${r.release_date?.slice(0, 4)} · ${r.vote_average?.toFixed(1)} ★`}
                                                     </div>
                                                 </div>
                                                 {!isPerson && (

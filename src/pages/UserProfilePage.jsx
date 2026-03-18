@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
-import { Star, Lock, Camera, Settings, Globe, Download } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download, Share2 } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
@@ -11,6 +11,7 @@ import { tmdb } from '../tmdb'
 import toast from 'react-hot-toast'
 
 import { ShareCardOverlay } from '../components/profile/ShareCardOverlay'
+import { CinemaDNACard } from '../components/profile/CinemaDNACard'
 import { WatchlistRoulette } from '../components/profile/WatchlistRoulette'
 import { TasteDNA } from '../components/profile/TasteDNA'
 import { NoirPassport } from '../components/profile/NoirPassport'
@@ -118,6 +119,7 @@ export default function UserProfilePage() {
     })
     const [activeTab, setActiveTab] = useState('diary')
     const [shareLog, setShareLog] = useState(null)
+    const [showDNA, setShowDNA] = useState(false)
     const [sieve, setSieve] = useState('all')
     const [isEditing, setIsEditing] = useState(false)
     const [editBio, setEditBio] = useState(profileUser?.bio || '')
@@ -528,6 +530,28 @@ export default function UserProfilePage() {
                                     const decades = Object.entries(decadeBuckets).sort(([a], [b]) => +a - +b)
                                     const maxDecadeCount = Math.max(...Object.values(decadeBuckets), 1)
                                     const totalHours = Math.floor(profileLogs.length * 115 / 60)
+                                    // Logging streak: count consecutive days logged (up to today)
+                                    const streakCount = (() => {
+                                        const logDates = [...new Set(profileLogs
+                                            .map(l => l.date || l.loggedAt)
+                                            .filter(Boolean)
+                                            .map(d => new Date(d).toISOString().slice(0, 10))
+                                        )].sort().reverse()
+                                        if (!logDates.length) return 0
+                                        const today = new Date().toISOString().slice(0, 10)
+                                        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+                                        // Streak must include today or yesterday
+                                        if (logDates[0] !== today && logDates[0] !== yesterday) return 0
+                                        let streak = 1
+                                        for (let i = 1; i < logDates.length; i++) {
+                                            const prev = new Date(logDates[i - 1])
+                                            const curr = new Date(logDates[i])
+                                            const diff = (prev - curr) / 86400000
+                                            if (diff === 1) streak++
+                                            else break
+                                        }
+                                        return streak
+                                    })()
                                     return (
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                                             <div className="card" style={{ padding: '1.75rem' }}>
@@ -557,7 +581,9 @@ export default function UserProfilePage() {
                                             <div className="card" style={{ padding: '1.75rem' }}>
                                                 <div className="section-title" style={{ marginBottom: '1.25rem' }}>CATALOG METRICS</div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-                                                    {[{ label: 'ESTIMATED RUNTIME', value: `${totalHours.toLocaleString()} hrs` }, { label: 'TOTAL FILMS LOGGED', value: profileLogs.length }, { label: 'WATCHLIST QUEUED', value: profileWatchlist.length }, { label: 'LISTS CURATED', value: profileLists.length }, { label: 'RATED 5 REELS', value: profileLogs.filter(l => l.rating === 5).length }, { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length }].map(({ label, value }) => (
+                                                    {[
+                                                        ...(streakCount > 0 ? [{ label: '🔥 LOGGING STREAK', value: `${streakCount} day${streakCount !== 1 ? 's' : ''}` }] : []),
+                                                        { label: 'ESTIMATED RUNTIME', value: `${totalHours.toLocaleString()} hrs` }, { label: 'TOTAL FILMS LOGGED', value: profileLogs.length }, { label: 'WATCHLIST QUEUED', value: profileWatchlist.length }, { label: 'LISTS CURATED', value: profileLists.length }, { label: 'RATED 5 REELS', value: profileLogs.filter(l => l.rating === 5).length }, { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length }].map(({ label, value }) => (
                                                         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.5rem' }}>
                                                             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>{label}</span>
                                                             <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)' }}>{value}</span>
@@ -615,6 +641,15 @@ export default function UserProfilePage() {
                     {/* Sidebar */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                         <TasteDNA logs={profileLogs} />
+                        {profileLogs.length >= 5 && isOwnProfile && (
+                            <button
+                                className="btn btn-ghost"
+                                onClick={() => setShowDNA(true)}
+                                style={{ width: '100%', justifyContent: 'center', fontSize: '0.6rem', letterSpacing: '0.15em', gap: '0.4rem', marginTop: '-0.75rem' }}
+                            >
+                                <Share2 size={12} /> SHARE CINEMA DNA
+                            </button>
+                        )}
                         <VaultSection vault={isOwnProfile ? currentWatchlist : []} user={profileUser} logs={profileLogs} />
                         {profileLogs.filter(l => l.rating >= 4).length > 0 && (
                             <div className="card">
@@ -639,6 +674,7 @@ export default function UserProfilePage() {
             <SocialModal socialModal={socialModal} socialLoading={socialLoading} onClose={() => setSocialModal(null)} />
 
             <ShareCardOverlay log={shareLog} user={profileUser} onClose={() => setShareLog(null)} />
+            {showDNA && <CinemaDNACard logs={profileLogs} user={profileUser} onClose={() => setShowDNA(false)} />}
 
             <ReviewModal
                 viewLog={viewLog}
