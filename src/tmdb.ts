@@ -1,15 +1,18 @@
 // TMDB API utilities
-// API requests are proxied through /api/tmdb — the key stays server-side
-const TMDB_PROXY = '/api/tmdb'
+// Uses VITE_TMDB_API_KEY env var — set in Vercel dashboard, .env.local for dev
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
+const TMDB_BASE = 'https://api.themoviedb.org/3'
 const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
-// Resilient fetch wrapper — 8s timeout, logs errors, always returns a safe fallback
+// Resilient fetch wrapper — 10s timeout, logs errors, always returns a safe fallback
 // `path` is the TMDB API path (e.g. /search/multi?query=...)
 async function fetchTMDB(path: any, fallback: any = null) {
     try {
+        const separator = path.includes('?') ? '&' : '?'
+        const url = `${TMDB_BASE}${path}${separator}api_key=${TMDB_API_KEY}`
         const controller = new AbortController()
         const timer = setTimeout(() => controller.abort(), 10000)
-        const res = await fetch(`${TMDB_PROXY}?path=${encodeURIComponent(path)}`, { signal: controller.signal })
+        const res = await fetch(url, { signal: controller.signal })
         clearTimeout(timer)
         if (!res.ok) {
             console.warn(`[TMDB] ${res.status} — ${path.split('?')[0]}`)
@@ -36,7 +39,7 @@ export const tmdb = {
     search: async (query: any, page: any = 1) => {
         // TIER 1: Omni-Search (Movies + Actors + Directors simultaneously)
         const res = await fetch(
-            `${TMDB_PROXY}?path=${encodeURIComponent(`/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`)}`
+            `${TMDB_BASE}/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false&api_key=${TMDB_API_KEY}`
         )
         if (!res.ok) throw new Error('TMDB search failed')
         let data = await res.json()
@@ -133,7 +136,7 @@ export const tmdb = {
             const fallbackResults = await Promise.all(fallbacks.map(async (fb: any) => {
                 try {
                     // Search both movies and people in fallback
-                    const fRes = await fetch(`${TMDB_PROXY}?path=${encodeURIComponent(`/search/multi?query=${encodeURIComponent(fb.text)}&page=1`)}`)
+                    const fRes = await fetch(`${TMDB_BASE}/search/multi?query=${encodeURIComponent(fb.text)}&page=1&api_key=${TMDB_API_KEY}`)
                     if (fRes.ok) {
                         const fData = await fRes.json()
                         if (fData.results?.length > 0) {
@@ -191,7 +194,7 @@ export const tmdb = {
             // Look up TMDB's internal keyword Dictionary for each word
             await Promise.all(words.map(async (word: any) => {
                 try {
-                    const kwRes = await fetch(`${TMDB_PROXY}?path=${encodeURIComponent(`/search/keyword?query=${encodeURIComponent(word)}`)}`)
+                    const kwRes = await fetch(`${TMDB_BASE}/search/keyword?query=${encodeURIComponent(word)}&api_key=${TMDB_API_KEY}`)
                     const kwData = await kwRes.json()
                     // Take the most popular exact keyword match
                     if (kwData.results?.length > 0) {
@@ -203,7 +206,7 @@ export const tmdb = {
             if (keywordIds.length > 0) {
                 // Use a 'Discover' query to mathematically group films that have these keywords!
                 // Using an OR (|) operator for fuzzier matching, AND (,) for strict.
-                const discoverRes = await fetch(`${TMDB_PROXY}?path=${encodeURIComponent(`/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1`)}`)
+                const discoverRes = await fetch(`${TMDB_BASE}/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1&api_key=${TMDB_API_KEY}`)
                 if (discoverRes.ok) {
                     const discoverData = await discoverRes.json()
                     if (discoverData.results?.length > 0) {

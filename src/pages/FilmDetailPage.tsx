@@ -182,8 +182,7 @@ function DirectorPanel({ director, onClose }: any) {
     const { data: filmography, isLoading } = useQuery({
         queryKey: ['person-films', director.id],
         queryFn: async () => {
-            const res = await fetch(`/api/tmdb?path=${encodeURIComponent(`/person/${director.id}/movie_credits`)}`)
-            const data = await res.json()
+            const data = await tmdb.personCredits(director.id)
             return (data.crew || []).filter((f: any) => f.job === 'Director' && f.poster_path).sort((a: any, b: any) => (b.release_date || '').localeCompare(a.release_date || ''))
         },
         staleTime: 1000 * 60 * 30,
