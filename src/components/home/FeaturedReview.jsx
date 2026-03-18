@@ -1,9 +1,10 @@
+import { memo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../supabaseClient'
 import { ReelRating } from '../UI'
 import Buster from '../Buster'
 
-export default function FeaturedReview({ film }) {
+const FeaturedReview = memo(function FeaturedReview({ film }) {
     const { data: communityReview } = useQuery({
         queryKey: ['featured-review', film?.id],
         queryFn: async () => {
@@ -73,4 +74,6 @@ export default function FeaturedReview({ film }) {
             </div>
         </div>
     )
-}
+})
+
+export default FeaturedReview

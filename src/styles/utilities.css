@@ -111,3 +111,22 @@
 .clickable { cursor: pointer; }
 .no-select { user-select: none; -webkit-user-select: none; }
 .hide-mobile { }
+
+/* Content-visibility — renders off-screen sections lazily for performance */
+.content-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
+}
+
+/* Screen-reader-only — visually hidden but accessible to assistive tech */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}

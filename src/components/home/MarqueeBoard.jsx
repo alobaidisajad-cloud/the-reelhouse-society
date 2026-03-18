@@ -1,3 +1,4 @@
+import { memo } from 'react'
 import { ReelRating } from '../UI'
 
 // Detect touch/mobile once at module level — never re-evaluated
@@ -6,7 +7,7 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 // Static — defined outside component so it's never re-created on re-render
 const MARQUEE_BULBS = Array.from({ length: IS_TOUCH ? 8 : 14 }) // fewer bulb animations on mobile
 
-export default function MarqueeBoard({ film }) {
+const MarqueeBoard = memo(function MarqueeBoard({ film }) {
     if (!film) return (
         <div style={{
             position: 'relative',
@@ -158,3 +159,6 @@ export default function MarqueeBoard({ film }) {
         </div>
     )
 }
+)
+
+export default MarqueeBoard
