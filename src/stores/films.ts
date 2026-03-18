@@ -2,8 +2,40 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
+import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction } from '../types'
 
-export const useFilmStore = create(
+export interface FilmState {
+    logs: FilmLog[]
+    watchlist: WatchlistItem[]
+    vault: VaultItem[]
+    lists: FilmList[]
+    stubs: TicketStub[]
+    interactions: Interaction[]
+    globalFeedLogs: any[]
+
+    toggleEndorse: (targetId: string) => Promise<void>
+    hasEndorsed: (targetId: string) => boolean
+    fetchEndorsements: () => Promise<void>
+    fetchLogs: () => Promise<void>
+    fetchWatchlist: () => Promise<void>
+    fetchVault: () => Promise<void>
+    fetchLists: () => Promise<void>
+    fetchStubs: () => Promise<void>
+    saveStub: (stub: Partial<TicketStub> & { showtimeId?: string, slotId?: string }) => Promise<string | null>
+    addStubLocal: (stub: any) => void
+    addLog: (log: any) => Promise<void>
+    getCinephileStats: () => { count: number, level: string, color: string, progress: number }
+    updateLog: (id: string, updates: Partial<FilmLog>) => Promise<void>
+    removeLog: (id: string) => Promise<void>
+    addToWatchlist: (film: any) => Promise<void>
+    removeFromWatchlist: (filmId: number) => Promise<void>
+    addToVault: (film: any, format?: string) => Promise<void>
+    removeFromVault: (filmId: number) => Promise<void>
+    createList: (list: any) => Promise<void>
+    addFilmToList: (listId: string, film: any) => Promise<void>
+}
+
+export const useFilmStore = create<FilmState>()(
     persist(
         (set, get) => ({
             logs: [],
@@ -216,7 +248,7 @@ export const useFilmStore = create(
                 if (error) return // Fail gracefully — error handled upstream by LogModal toast
 
                 set((state) => ({
-                    logs: [{ ...log, id: data.id, createdAt: data.created_at }, ...state.logs],
+                    logs: [{ ...log, id: data.id, createdAt: data.created_at } as FilmLog, ...state.logs],
                 }))
             },
 
@@ -232,7 +264,7 @@ export const useFilmStore = create(
             },
 
             updateLog: async (id, updates) => {
-                const dbUpdates = {}
+                const dbUpdates: any = {}
                 if (updates.rating !== undefined) dbUpdates.rating = updates.rating
                 if (updates.review !== undefined) dbUpdates.review = updates.review
                 if (updates.status !== undefined) dbUpdates.status = updates.status
@@ -255,12 +287,13 @@ export const useFilmStore = create(
                 // Optimistic remove with 5s undo toast (all users)
                 set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
                 let undone = false
-                const { default: toast } = await import('react-hot-toast')
+                const toastModule = await import('react-hot-toast')
+                const toast: any = toastModule.default || (toastModule as any)
                 toast(`"${logToRemove.title}" removed. Tap to undo.`, {
                     duration: 5000, id: `undo-${id}`,
                     style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
                 })
-                window.__rh_undo_log = () => {
+                (window as any).__rh_undo_log = () => {
                     undone = true
                     set((state) => ({ logs: [logToRemove, ...state.logs] }))
                     import('react-hot-toast').then((m) => {
@@ -283,7 +316,7 @@ export const useFilmStore = create(
                 if (!error) {
                     set((state) => ({
                         watchlist: state.watchlist.find((f) => f.id === film.id) ? state.watchlist
-                            : [...state.watchlist, { id: film.id, title: film.title || film.name, poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : null }],
+                            : [...state.watchlist, { id: film.id, title: film.title || film.name, poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }],
                     }))
                 }
             },
@@ -296,12 +329,13 @@ export const useFilmStore = create(
                 // Optimistic remove with 5s undo toast
                 set((state) => ({ watchlist: state.watchlist.filter((f) => f.id !== filmId) }))
                 let undone = false
-                const { default: toast } = await import('react-hot-toast')
+                const toastModule = await import('react-hot-toast')
+                const toast: any = toastModule.default || (toastModule as any)
                 toast(`"${itemToRemove?.title || 'Film'}" removed from watchlist. Tap to undo.`, {
                     duration: 5000, id: `undo-wl-${filmId}`,
                     style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
                 })
-                window.__rh_undo_watchlist = () => {
+                (window as any).__rh_undo_watchlist = () => {
                     undone = true
                     if (itemToRemove) set((state) => ({ watchlist: [...state.watchlist, itemToRemove] }))
                     import('react-hot-toast').then((m) => {

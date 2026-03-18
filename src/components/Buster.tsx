@@ -1,7 +1,7 @@
 // Pure CSS/SVG mascot — Buster the Ghost
 // "Slightly unsettling. Too many teeth when he smiles."
 
-export default function Buster({ size = 120, message = null, mood = 'neutral', className = '' }) {
+export default function Buster({ size = 120, message = null, mood = 'neutral', className = '' }: any) {
     const colors = {
         body: '#E8DFC8',
         eyes: '#0A0703',
@@ -95,7 +95,7 @@ export default function Buster({ size = 120, message = null, mood = 'neutral', c
                     strokeWidth="3"
                 />
                 {/* Face */}
-                {moodFace[mood] || moodFace.neutral}
+                {moodFace[mood as keyof typeof moodFace] || moodFace.neutral}
 
                 {/* Tiny crown/bow for personality */}
                 {mood === 'smiling' && (

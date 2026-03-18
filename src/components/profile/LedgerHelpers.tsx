@@ -7,14 +7,14 @@ import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
 
 // ── PROFILE BACKDROP ──
-export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }) {
-    const posters = logs.filter(l => l.poster).slice(0, 12).map(l => tmdb.poster(l.poster, 'w185'))
+export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }: any) {
+    const posters = logs.filter((l: any) => l.poster).slice(0, 12).map((l: any) => tmdb.poster(l.poster, 'w185'))
     if (posters.length < 4) return null
     return (
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
             <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 2, overflow: 'hidden' }}>
-                {posters.map((src, i) => (
-                    <img key={i} src={src} alt="" decoding="async" loading="lazy"
+                {posters.map((src: any, i: number) => (
+                    <img key={i} src={src || undefined} alt="" decoding="async" loading="lazy"
                         style={{ flex: '1 0 auto', height: '100%', objectFit: 'cover', filter: 'sepia(0.8) brightness(0.15) contrast(1.2)', transform: `rotate(${(i % 3 - 1) * 0.5}deg) scale(1.04)` }} />
                 ))}
             </div>
@@ -24,13 +24,13 @@ export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }) {
 })
 
 // ── FILM LOG ROW ──
-export const FilmLogRow = memo(function FilmLogRow({ log, onShare }) {
+export const FilmLogRow = memo(function FilmLogRow({ log, onShare }: any) {
     const isAbandoned = log.status === 'abandoned'
     return (
         <div className={`card ${isAbandoned ? 'log-abandoned' : ''}`} style={{ padding: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
             <div style={{ width: 44, height: 66, flexShrink: 0, borderRadius: 'var(--radius-card)', overflow: 'hidden', background: 'var(--ash)' }}>
                 {(log.altPoster || log.poster) ? (
-                    <img src={tmdb.poster(log.altPoster || log.poster, 'w92')} alt={log.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.3)' }} />
+                    <img src={tmdb.poster(log.altPoster || log.poster, 'w92') || undefined} alt={log.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.3)' }} />
                 ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)' }}><Film size={16} /></div>
                 )}
@@ -57,7 +57,7 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onShare }) {
                 </div>
                 {log.pullQuote && <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem', paddingLeft: '0.75rem', borderLeft: '3px solid var(--sepia)', fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--sepia)', fontStyle: 'italic', lineHeight: 1.2 }}>"{log.pullQuote}"</div>}
                 {log.review && <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.4rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{log.review}</p>}
-                {log.isAutopsied && log.autopsy && <div style={{ display: 'flex', justifyContent: 'flex-start' }}><RadarChart autopsy={log.autopsy} size={140} /></div>}
+                {log.isAutopsied && log.autopsy && <div style={{ display: 'flex', justifyContent: 'flex-start' }}><RadarChart {...{ autopsy: log.autopsy, size: 140 } as any} /></div>}
                 {log.privateNotes && (
                     <div style={{ marginTop: '0.75rem', padding: '0.5rem', background: 'rgba(212, 185, 117, 0.05)', borderRadius: '2px', borderLeft: '2px solid var(--sepia)' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginBottom: '0.2rem' }}><Lock size={10} /> THE CUTTING ROOM FLOOR (PRIVATE)</div>
@@ -70,7 +70,7 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onShare }) {
 })
 
 // ── LAZY LOG ROW (Intersection Observer virtualization) ──
-export function LazyLogRow({ log, onShare }) {
+export function LazyLogRow({ log, onShare }: any) {
     const ref = useRef(null)
     const [visible, setVisible] = useState(false)
     useEffect(() => {
@@ -84,7 +84,7 @@ export function LazyLogRow({ log, onShare }) {
 }
 
 // ── VAULT SECTION ──
-export const VaultSection = memo(function VaultSection({ vault }) {
+export const VaultSection = memo(function VaultSection({ vault }: any) {
     return (
         <div className="vault-box" style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div>
@@ -97,8 +97,8 @@ export const VaultSection = memo(function VaultSection({ vault }) {
 })
 
 // ── LISTS SECTION ──
-export function ListsSection({ lists, user }) {
-    const [posterMode, setPosterMode] = useState(null)
+export function ListsSection({ lists, user }: any) {
+    const [posterMode, setPosterMode] = useState<any>(null)
     const { isAuthenticated } = useAuthStore()
     if (!isAuthenticated) return <div style={{ textAlign: 'center', padding: '2rem', border: '1px dashed var(--ash)', borderRadius: 'var(--radius-card)' }}><p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)', fontSize: '0.85rem' }}>Sign in to create and manage your lists</p></div>
     if (posterMode) {
@@ -112,9 +112,9 @@ export function ListsSection({ lists, user }) {
                         <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1rem', color: 'var(--fog)', letterSpacing: '0.2em' }}>CURATED BY @{user.username}</div>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
-                        {posterMode.films.map(film => (
+                        {posterMode.films.map((film: any) => (
                             <div key={film.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <img src={tmdb.poster(film.poster_path, 'w185')} alt={film.title} loading="lazy" decoding="async" style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', border: '1px solid var(--ash)' }} />
+                                <img src={tmdb.poster(film.poster_path, 'w185') || undefined} alt={film.title} loading="lazy" decoding="async" style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', border: '1px solid var(--ash)' }} />
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{film.title.toUpperCase()}</div>
                             </div>
                         ))}
@@ -131,12 +131,12 @@ export function ListsSection({ lists, user }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {lists.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>No lists yet. The stacks are empty.</div>
-            ) : lists.map((list) => (
+            ) : lists.map((list: any) => (
                 <motion.div key={list.id} className="card" style={{ padding: 0, overflow: 'hidden' }} whileHover={{ y: -2, transition: { type: 'spring', damping: 14 } }}>
                     <div style={{ display: 'flex', gap: 2, height: 64, overflow: 'hidden' }}>
-                        {list.films.length > 0 ? list.films.slice(0, 4).map((f, i) => (
+                        {list.films.length > 0 ? list.films.slice(0, 4).map((f: any, i: number) => (
                             <div key={i} style={{ flex: 1, overflow: 'hidden' }}>
-                                {f.poster ? <img src={tmdb.poster(f.poster, 'w92')} alt="" decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4) brightness(0.7)' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--ash)' }} />}
+                                {f.poster ? <img src={tmdb.poster(f.poster, 'w92') || undefined} alt="" decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4) brightness(0.7)' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--ash)' }} />}
                             </div>
                         )) : <div style={{ flex: 1, background: 'linear-gradient(135deg, var(--soot), var(--ash))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.2em' }}>EMPTY REEL</span></div>}
                     </div>

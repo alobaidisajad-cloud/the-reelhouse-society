@@ -8,11 +8,11 @@ import '../styles/year-in-cinema.css'
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
-function useInView(ref) {
+function useInView(ref: any) {
     const [visible, setVisible] = useState(false)
     useEffect(() => {
         if (!ref.current) return
-        const obs = new IntersectionObserver(([e]) => {
+        const obs = new IntersectionObserver(([e]: any) => {
             if (e.isIntersecting) { setVisible(true); obs.disconnect() }
         }, { threshold: 0.15 })
         obs.observe(ref.current)
@@ -21,7 +21,7 @@ function useInView(ref) {
     return visible
 }
 
-function Section({ children, className = '' }) {
+function Section({ children, className = '' }: any) {
     const ref = useRef(null)
     const visible = useInView(ref)
     return (
@@ -37,8 +37,8 @@ export default function YearInCinemaPage() {
 
     // Available years from logs
     const availableYears = useMemo(() => {
-        const years = new Set()
-        logs.forEach(l => {
+        const years = new Set<number>()
+        logs.forEach((l: any) => {
             const d = l.loggedAt || l.created_at
             if (d) years.add(new Date(d).getFullYear())
         })
@@ -52,23 +52,23 @@ export default function YearInCinemaPage() {
 
     // Filter logs for the selected year
     const yearLogs = useMemo(() => {
-        return logs.filter(l => {
+        return logs.filter((l: any) => {
             const d = l.loggedAt || l.created_at
             return d && new Date(d).getFullYear() === selectedYear
-        }).sort((a, b) => new Date(a.loggedAt || a.created_at) - new Date(b.loggedAt || b.created_at))
+        }).sort((a: any, b: any) => new Date(a.loggedAt || a.created_at).getTime() - new Date(b.loggedAt || b.created_at).getTime())
     }, [logs, selectedYear])
 
     // ─── COMPUTED STATS ───
 
     const totalFilms = yearLogs.length
     const totalHours = useMemo(() => {
-        return Math.round(yearLogs.reduce((sum, l) => sum + (l.runtime || 110), 0) / 60)
+        return Math.round(yearLogs.reduce((sum: any, l: any) => sum + (l.runtime || 110), 0) / 60)
     }, [yearLogs])
 
     // Monthly breakdown
     const monthlyData = useMemo(() => {
         const counts = Array(12).fill(0)
-        yearLogs.forEach(l => {
+        yearLogs.forEach((l: any) => {
             const d = l.loggedAt || l.created_at
             if (d) counts[new Date(d).getMonth()]++
         })
@@ -79,69 +79,69 @@ export default function YearInCinemaPage() {
 
     // Top directors
     const topDirectors = useMemo(() => {
-        const map = {}
-        yearLogs.forEach(l => {
+        const map: any = {}
+        yearLogs.forEach((l: any) => {
             const dir = l.director || l.directors
             if (typeof dir === 'string' && dir) {
                 map[dir] = (map[dir] || 0) + 1
             } else if (Array.isArray(dir)) {
-                dir.forEach(d => { if (d) map[d] = (map[d] || 0) + 1 })
+                dir.forEach((d: any) => { if (d) map[d] = (map[d] || 0) + 1 })
             }
         })
-        return Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 5)
+        return Object.entries(map).sort((a: any, b: any) => b[1] - a[1]).slice(0, 5)
     }, [yearLogs])
 
     // Decade distribution
     const decadeData = useMemo(() => {
-        const map = {}
-        yearLogs.forEach(l => {
+        const map: any = {}
+        yearLogs.forEach((l: any) => {
             const y = l.year || (l.release_date && new Date(l.release_date).getFullYear())
             if (y) {
                 const decade = `${Math.floor(y / 10) * 10}s`
                 map[decade] = (map[decade] || 0) + 1
             }
         })
-        return Object.entries(map).sort((a, b) => a[0].localeCompare(b[0]))
+        return Object.entries(map).sort((a: any, b: any) => a[0].localeCompare(b[0]))
     }, [yearLogs])
 
     // Rating stats
     const ratingStats = useMemo(() => {
-        const rated = yearLogs.filter(l => l.rating && l.rating > 0)
+        const rated = yearLogs.filter((l: any) => l.rating && l.rating > 0)
         if (rated.length === 0) return { avg: 0, highest: null, lowest: null }
-        const avg = rated.reduce((s, l) => s + l.rating, 0) / rated.length
-        const sorted = [...rated].sort((a, b) => b.rating - a.rating)
+        const avg = rated.reduce((s: any, l: any) => s + l.rating, 0) / rated.length
+        const sorted = [...rated].sort((a: any, b: any) => b.rating - a.rating)
         return { avg: avg.toFixed(1), highest: sorted[0], lowest: sorted[sorted.length - 1] }
     }, [yearLogs])
 
     // Obscurity index
     const obscurityStats = useMemo(() => {
-        const scored = yearLogs.filter(l => l.popularity != null)
+        const scored = yearLogs.filter((l: any) => l.popularity != null)
         if (scored.length === 0) return { avg: 50, mostObscure: null }
-        const scores = scored.map(l => {
+        const scores = scored.map((l: any) => {
             const pop = l.popularity || 0
             if (pop <= 0) return 99
             return Math.max(2, Math.min(99, Math.round(100 - (Math.log10(Math.max(pop, 1)) / Math.log10(5000)) * 98)))
         })
-        const avg = Math.round(scores.reduce((s, v) => s + v, 0) / scores.length)
+        const avg = Math.round(scores.reduce((s: any, v: any) => s + v, 0) / scores.length)
         const maxIdx = scores.indexOf(Math.max(...scores))
         return { avg, mostObscure: scored[maxIdx] }
     }, [yearLogs])
 
     // Genre map
     const genreData = useMemo(() => {
-        const map = {}
-        yearLogs.forEach(l => {
+        const map: any = {}
+        yearLogs.forEach((l: any) => {
             const genres = l.genres || l.genre_ids
             if (Array.isArray(genres)) {
-                genres.forEach(g => {
+                genres.forEach((g: any) => {
                     const name = typeof g === 'object' ? g.name : g
                     if (name) map[name] = (map[name] || 0) + 1
                 })
             }
         })
-        const sorted = Object.entries(map).sort((a, b) => b[1] - a[1]).slice(0, 6)
-        const total = sorted.reduce((s, [, c]) => s + c, 0)
-        return sorted.map(([name, count]) => ({ name, count, pct: Math.round((count / total) * 100) }))
+        const sorted = Object.entries(map).sort((a: any, b: any) => (b[1] as number) - (a[1] as number)).slice(0, 6)
+        const total = sorted.reduce((s: any, [, c]: any) => s + c, 0)
+        return sorted.map(([name, count]: any) => ({ name, count, pct: Math.round((count / total) * 100) }))
     }, [yearLogs])
 
     // First & Last
@@ -234,7 +234,7 @@ export default function YearInCinemaPage() {
                         {topDirectors.map(([name, count], i) => (
                             <div key={name} className="yic-director">
                                 <div className="yic-director-rank">{i + 1}</div>
-                                <div className="yic-director-name">{name}</div>
+                                <div className="yic-director-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(name)}</div>
                                 <div className="yic-director-count">{count} {count === 1 ? 'FILM' : 'FILMS'}</div>
                             </div>
                         ))}
@@ -252,7 +252,7 @@ export default function YearInCinemaPage() {
                     <div className="yic-decades">
                         {decadeData.map(([decade, count]) => (
                             <div key={decade} className="yic-decade">
-                                <span className="yic-decade-label">{decade}</span>
+                                <span className="yic-decade-label">{String(decade)}</span>
                                 <span className="yic-decade-count">{count}</span>
                             </div>
                         ))}
@@ -343,15 +343,15 @@ export default function YearInCinemaPage() {
                     <div className="yic-bookend-row">
                         <div className="yic-bookend">
                             <div className="yic-bookend-label">FIRST REEL</div>
-                            {firstLog.poster && <img src={tmdb.poster(firstLog.poster)} alt="" className="yic-bookend-poster" loading="lazy" />}
+                            {firstLog.poster && <img src={tmdb.poster(firstLog.poster) || undefined} alt="" className="yic-bookend-poster" loading="lazy" />}
                             <div className="yic-bookend-title">{firstLog.title}</div>
-                            <div className="yic-bookend-date">{new Date(firstLog.loggedAt || firstLog.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</div>
+                            <div className="yic-bookend-date">{new Date((firstLog.loggedAt || firstLog.created_at) as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</div>
                         </div>
                         <div className="yic-bookend">
                             <div className="yic-bookend-label">LAST REEL</div>
-                            {lastLog.poster && <img src={tmdb.poster(lastLog.poster)} alt="" className="yic-bookend-poster" loading="lazy" />}
+                            {lastLog.poster && <img src={tmdb.poster(lastLog.poster) || undefined} alt="" className="yic-bookend-poster" loading="lazy" />}
                             <div className="yic-bookend-title">{lastLog.title}</div>
-                            <div className="yic-bookend-date">{new Date(lastLog.loggedAt || lastLog.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</div>
+                            <div className="yic-bookend-date">{new Date((lastLog.loggedAt || lastLog.created_at) as string).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()}</div>
                         </div>
                     </div>
                 </Section>
@@ -364,7 +364,7 @@ export default function YearInCinemaPage() {
                     <div className="yic-section-title">The Favorite</div>
                     <div className="yic-section-desc" style={{ marginInline: 'auto' }}>The one that stayed with you.</div>
 
-                    {favorite.poster && <img src={tmdb.poster(favorite.poster)} alt={favorite.title} className="yic-favorite-poster" loading="lazy" />}
+                    {favorite.poster && <img src={tmdb.poster(favorite.poster) || undefined} alt={favorite.title} className="yic-favorite-poster" loading="lazy" />}
                     <div className="yic-favorite-title">{favorite.title}</div>
                     <div className="yic-favorite-year">{favorite.year}</div>
                     <div className="yic-favorite-rating">{'✦'.repeat(Math.round(favorite.rating))}</div>

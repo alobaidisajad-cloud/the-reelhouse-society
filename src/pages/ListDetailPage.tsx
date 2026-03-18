@@ -11,7 +11,7 @@ export default function ListDetailPage() {
     const { lists: userLists } = useFilmStore()
 
     // Check local user lists first — fast, no network needed
-    const localList = userLists.find(l => l.id.toString() === id)
+    const localList = userLists.find((l: any) => l.id.toString() === id)
 
     // Fetch from Supabase for any community list (only fires when not found locally)
     const { data: remoteList, isLoading } = useQuery({
@@ -37,7 +37,7 @@ export default function ListDetailPage() {
                 title: data.title,
                 description: data.description,
                 user: profile?.username || 'anonymous',
-                films: (items || []).map(item => ({
+                films: (items || []).map((item: any) => ({
                     id: item.film_id,
                     title: item.film_title,
                     poster_path: item.poster_path,
@@ -116,7 +116,7 @@ export default function ListDetailPage() {
                         </div>
                     ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.5rem' }}>
-                            {films.map((f, i) => (
+                            {films.map((f: any, i: number) => (
                                 <Link key={i} to={`/film/${f.id}`} style={{ textDecoration: 'none', display: 'block' }} className="fade-in-up">
                                     <div style={{ position: 'relative' }}>
                                         <div style={{ position: 'absolute', top: -10, left: -10, width: 30, height: 30, background: 'var(--sepia)', color: 'var(--ink)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', fontWeight: 'bold', zIndex: 10, boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>

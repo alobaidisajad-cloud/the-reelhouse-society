@@ -1,9 +1,17 @@
 import { create } from 'zustand'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
+import { Dossier, Programme } from '../types'
+
+export interface DispatchState {
+    dossiers: Partial<Dossier>[] & { fullContent?: string, author?: string, date?: string }[]
+    loading: boolean
+    fetchDossiers: () => Promise<void>
+    addDossier: (dossier: Partial<Dossier> & { fullContent?: string }) => Promise<void>
+}
 
 // ── DISPATCH STORE — Auteur dossiers ──
-export const useDispatchStore = create((set) => ({
+export const useDispatchStore = create<DispatchState>((set) => ({
     dossiers: [],
     loading: false,
 
@@ -81,8 +89,16 @@ export const useDispatchStore = create((set) => ({
     },
 }))
 
+export interface ProgrammeState {
+    programmes: Programme[]
+    loading: boolean
+    fetchProgrammes: () => Promise<void>
+    addProgramme: (programme: Partial<Programme> & { isPublic?: boolean }) => Promise<void>
+    removeProgramme: (id: string) => Promise<void>
+}
+
 // ── PROGRAMME STORE — Auteur curated film pairings ──
-export const useProgrammeStore = create((set) => ({
+export const useProgrammeStore = create<ProgrammeState>((set) => ({
     programmes: [],
     loading: false,
 

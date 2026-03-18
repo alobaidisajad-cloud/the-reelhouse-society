@@ -17,12 +17,12 @@ export default function FeedPage() {
     const openLogModal = useUIStore(state => state.openLogModal)
 
     // Fix 1: Real community feed from Supabase — all users' logs
-    const [communityFeed, setCommunityFeed] = useState([])
+    const [communityFeed, setCommunityFeed] = useState<any[]>([])
     const [feedLoading, setFeedLoading] = useState(true)
 
     // Fix 2: Real sidebar data from Supabase
-    const [recentLists, setRecentLists] = useState([])
-    const [activeAgents, setActiveAgents] = useState([])
+    const [recentLists, setRecentLists] = useState<any[]>([])
+    const [activeAgents, setActiveAgents] = useState<any[]>([])
 
     const fetchCommunityFeed = useCallback(async () => {
         if (!isSupabaseConfigured) { setFeedLoading(false); return }
@@ -37,7 +37,7 @@ export default function FeedPage() {
 
             if (!error && data) {
                     // Resolve usernames in a single batch query
-                    const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
+                    const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
                     let usernameMap = {}
                     if (userIds.length > 0) {
                         const { data: profilesData } = await supabase
@@ -45,7 +45,7 @@ export default function FeedPage() {
                             .select('id, username, role')
                             .in('id', userIds)
                         if (profilesData) {
-                            usernameMap = Object.fromEntries(profilesData.map(p => [p.id, p]))
+                            usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p]))
                         }
                     }
                     const mapped = data.map(l => ({
@@ -74,7 +74,7 @@ export default function FeedPage() {
                     }))
                     // Deduplicate: one card per user+film — keeps only the most recent log
                     const seen = new Set()
-                    const deduped = mapped.filter(entry => {
+                    const deduped = mapped.filter((entry: any) => {
                         const key = `${entry.user}:${entry.film.id}`
                         if (seen.has(key)) return false
                         seen.add(key)
@@ -100,14 +100,14 @@ export default function FeedPage() {
 
             if (listsData) {
                 // Resolve curators in a single batch query
-                const curatorIds = [...new Set(listsData.map(l => l.user_id).filter(Boolean))]
-                let curatorMap = {}
+                const curatorIds = [...new Set(listsData.map((l: any) => l.user_id).filter(Boolean))]
+                let curatorMap: { [key: string]: string } = {}
                 if (curatorIds.length > 0) {
                     const { data: curatorsData } = await supabase
                         .from('profiles').select('id, username').in('id', curatorIds)
-                    if (curatorsData) curatorMap = Object.fromEntries(curatorsData.map(p => [p.id, p.username]))
+                    if (curatorsData) curatorMap = Object.fromEntries(curatorsData.map((p: { id: string, username: string }) => [p.id, p.username]))
                 }
-                setRecentLists(listsData.map(l => ({
+                setRecentLists(listsData.map((l: { id: string, title: string, user_id: string }) => ({
                     id: l.id,
                     title: l.title,
                     curator: curatorMap[l.user_id] || 'The Society'
@@ -123,7 +123,7 @@ export default function FeedPage() {
                 .limit(5)
 
             if (agentsData) {
-                setActiveAgents(agentsData.map(p => p.username).filter(Boolean))
+                setActiveAgents(agentsData.map((p: any) => p.username).filter(Boolean))
             }
         } catch (e) {
             console.error('Sidebar fetch error:', e)
@@ -254,7 +254,7 @@ export default function FeedPage() {
 
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                {communityFeed.map((log) => (
+                                {communityFeed.map((log: any) => (
                                     <ActivityCard key={log.id} log={log} />
                                 ))}
                             </div>
@@ -277,7 +277,7 @@ export default function FeedPage() {
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.6 }}>
                                         No lists yet. Start curating.
                                     </div>
-                                ) : recentLists.map((list) => (
+                                ) : recentLists.map((list: any) => (
                                     <Link key={list.id} to={`/lists`} style={{ textDecoration: 'none' }}>
                                         <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}>
                                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
@@ -305,7 +305,7 @@ export default function FeedPage() {
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.6 }}>
                                         No activity yet.
                                     </div>
-                                ) : activeAgents.map((agent) => (
+                                ) : activeAgents.map((agent: any) => (
                                     <Link
                                         key={agent}
                                         to={`/user/${agent}`}

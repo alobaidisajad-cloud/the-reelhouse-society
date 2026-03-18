@@ -37,7 +37,7 @@ export default function MembershipPage() {
 
     const [isRedirecting, setIsRedirecting] = useState(false)
 
-    const handleAscend = async (tier) => {
+    const handleAscend = async (tier: any) => {
         if (!isAuthenticated) return openSignupModal(tier)
         if (user?.role === tier || (tier === 'archivist' && user?.role === 'auteur')) return
 
@@ -61,7 +61,7 @@ export default function MembershipPage() {
             } else {
                 throw new Error(data.error || 'No redirect URL returned')
             }
-        } catch (error) {
+        } catch (error: any) {
             toast.error(`Checkout failed: ${error.message}`, { id: 'checkout' })
             setIsRedirecting(false)
         }

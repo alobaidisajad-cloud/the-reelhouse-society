@@ -9,12 +9,15 @@ export interface User {
     email?: string
     bio?: string
     avatar?: string
+    avatar_url?: string
     role: 'free' | 'archivist' | 'auteur'
     following?: string[]
     followers_count?: number
     following_count?: number
     isSocialPrivate?: boolean
+    is_social_private?: boolean
     created_at?: string
+    preferences?: any
 }
 
 // ── Film Log ──
@@ -38,9 +41,22 @@ export interface FilmLog {
     release_date?: string
     loggedAt?: string
     created_at?: string
+    createdAt?: string
     user_id?: string
     // Half-life tracking
     genre_ids?: number[]
+    
+    // UI mapping properties
+    isSpoiler?: boolean
+    watchedDate?: string
+    watchedWith?: string | null
+    privateNotes?: string | null
+    abandonedReason?: string | null
+    physicalMedia?: string | null
+    isAutopsied?: boolean
+    autopsy?: string | null
+    editorialHeader?: string | null
+    dropCap?: boolean
 }
 
 // ── Watchlist ──
@@ -56,6 +72,7 @@ export interface VaultItem {
     id: number
     title: string
     poster_path?: string | null
+    year?: number
     format: string
 }
 
@@ -80,11 +97,19 @@ export interface Interaction {
 // ── Ticket Stub ──
 export interface TicketStub {
     id: string
-    film_title: string
-    venue_name: string
-    showtime_date: string
+    filmTitle?: string
+    film_title?: string
+    venue_name?: string
+    showtime_date?: string
+    date?: string
     seat_label?: string
+    seat?: string
+    ticketType?: string
+    amount?: number
+    qrCode?: string | null
+    screenName?: string | null
     poster_path?: string | null
+    createdAt?: string
     created_at?: string
 }
 
@@ -126,7 +151,8 @@ export interface Notification {
     from_avatar?: string
     target_id?: string
     read: boolean
-    created_at: string
+    created_at?: string
+    timestamp: string
 }
 
 // ── Venue ──
@@ -175,7 +201,7 @@ export interface Showtime {
     time?: string
     venue_id?: string
     screen_name?: string
-    slots: Array<{ label: string; booked: boolean }>
+    slots: Array<any>
     durationMins: number
     price?: number
 }
@@ -183,12 +209,14 @@ export interface Showtime {
 // ── Cinema Review ──
 export interface CinemaReview {
     id: string
-    venue_id: string
-    user_id: string
+    venue_id?: string
+    user_id?: string
     username: string
     rating: number
-    text: string
-    created_at: string
+    text?: string
+    review?: string
+    created_at?: string
+    createdAt?: string
 }
 
 // ── TMDB API Types ──

@@ -47,7 +47,7 @@ export default function HomePage() {
     const films = trending?.results || []
     const topFilms = topRated?.results || []
 
-    const tickerItems = films.slice(0, 10).map((f) => f.title).filter(Boolean)
+    const tickerItems = films.slice(0, 10).map((f: any) => f.title).filter(Boolean)
 
     return (
         <>
@@ -241,11 +241,11 @@ export default function HomePage() {
                                                 transition: 'all 0.3s ease',
                                                 borderBottom: '1px solid var(--sepia)'
                                             }}
-                                            onMouseEnter={(e) => {
+                                            onMouseEnter={(e: any) => {
                                                 e.currentTarget.style.color = 'var(--flicker)';
                                                 e.currentTarget.style.textShadow = '0 0 8px rgba(242,232,160,0.5)';
                                             }}
-                                            onMouseLeave={(e) => {
+                                            onMouseLeave={(e: any) => {
                                                 e.currentTarget.style.color = 'var(--parchment)';
                                                 e.currentTarget.style.textShadow = 'none';
                                             }}
@@ -269,11 +269,11 @@ export default function HomePage() {
                                                 gap: '0.5rem',
                                                 transition: 'all 0.3s ease'
                                             }}
-                                            onMouseEnter={(e) => {
+                                            onMouseEnter={(e: any) => {
                                                 e.currentTarget.style.color = 'var(--parchment)';
                                                 e.currentTarget.style.textShadow = '0 0 8px rgba(242,232,160,0.5)';
                                             }}
-                                            onMouseLeave={(e) => {
+                                            onMouseLeave={(e: any) => {
                                                 e.currentTarget.style.color = 'var(--fog)';
                                                 e.currentTarget.style.textShadow = 'none';
                                             }}

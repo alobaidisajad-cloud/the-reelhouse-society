@@ -7,18 +7,18 @@ import { useMemo } from 'react'
 const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 // Weekly Revenue Bar Chart — SVG bars per day of week
-export function WeeklyRevenueChart({ showtimes = [], events = [] }) {
+export function WeeklyRevenueChart({ showtimes = [], events = [] }: { showtimes?: any[]; events?: any[] }) {
     const data = useMemo(() => {
         const totals = Array(7).fill(0)
-        showtimes.forEach(st => {
+        showtimes.forEach((st: any) => {
             const d = new Date(st.date + 'T12:00')
             const dayIdx = (d.getDay() + 6) % 7 // 0=Mon
-            st.slots?.forEach(sl => {
-                const lowestP = Math.min(...(sl.ticketTypes?.map(t => t.price) || [0]))
+            st.slots?.forEach((sl: any) => {
+                const lowestP = Math.min(...(sl.ticketTypes?.map((t: any) => t.price) || [0]))
                 totals[dayIdx] += sl.bookedSeats?.length * lowestP || 0
             })
         })
-        events.forEach(ev => {
+        events.forEach((ev: any) => {
             const d = new Date(ev.date + 'T12:00')
             const dayIdx = (d.getDay() + 6) % 7
             totals[dayIdx] += (ev.totalTickets - (ev.ticketsLeft ?? ev.totalTickets)) * ev.price || 0
@@ -27,7 +27,7 @@ export function WeeklyRevenueChart({ showtimes = [], events = [] }) {
     }, [showtimes, events])
 
     const max = Math.max(...data, 1)
-    const totalRevenue = data.reduce((a, b) => a + b, 0)
+    const totalRevenue = data.reduce((a: any, b: any) => a + b, 0)
     const today = (new Date().getDay() + 6) % 7
 
     return (
@@ -81,13 +81,13 @@ export function WeeklyRevenueChart({ showtimes = [], events = [] }) {
 }
 
 // Circular Occupancy Gauge — SVG circle
-export function OccupancyGauge({ showtimes = [] }) {
+export function OccupancyGauge({ showtimes = [] }: { showtimes?: any[] }) {
     const { booked, capacity, pct } = useMemo(() => {
-        const booked = showtimes.reduce((a, st) => a + st.slots?.reduce((b, sl) => b + (sl.bookedSeats?.length || 0), 0), 0)
-        const capacity = showtimes.reduce((a, st) => a + st.slots?.reduce((b, sl) => {
+        const booked = showtimes.reduce((a: any, st: any) => a + st.slots?.reduce((b: any, sl: any) => b + (sl.bookedSeats?.length || 0), 0), 0)
+        const capacity = showtimes.reduce((a: any, st: any) => a + st.slots?.reduce((b: any, sl: any) => {
             const layout = sl.seatLayout || { rows: 10, cols: 15 }
             return b + (layout.rows * layout.cols - (sl.seatLayout?.blockedSeats?.length || 0))
-        }, 0), 0) || showtimes.reduce((a, st) => a + st.slots?.length * 150, 0)
+        }, 0), 0) || showtimes.reduce((a: any, st: any) => a + (st.slots?.length || 0) * 150, 0)
         const pct = capacity > 0 ? Math.round((booked / capacity) * 100) : 0
         return { booked, capacity, pct }
     }, [showtimes])
@@ -134,26 +134,26 @@ export function OccupancyGauge({ showtimes = [] }) {
 }
 
 // Top Films ranked by revenue with mini bars
-export function TopFilmsChart({ showtimes = [] }) {
+export function TopFilmsChart({ showtimes = [] }: { showtimes?: any[] }) {
     const films = useMemo(() => {
-        const map = {}
-        showtimes.forEach(st => {
-            const rev = st.slots?.reduce((a, sl) => {
-                const p = Math.min(...(sl.ticketTypes?.map(t => t.price) || [0]))
+        const map: any = {}
+        showtimes.forEach((st: any) => {
+            const rev = st.slots?.reduce((a: any, sl: any) => {
+                const p = Math.min(...(sl.ticketTypes?.map((t: any) => t.price) || [0]))
                 return a + (sl.bookedSeats?.length || 0) * p
             }, 0) || 0
-            const sold = st.slots?.reduce((a, sl) => a + (sl.bookedSeats?.length || 0), 0) || 0
+            const sold = st.slots?.reduce((a: any, sl: any) => a + (sl.bookedSeats?.length || 0), 0) || 0
             map[st.film] = (map[st.film] || { rev: 0, sold: 0 })
             map[st.film].rev += rev
             map[st.film].sold += sold
         })
         return Object.entries(map)
-            .map(([film, d]) => ({ film, ...d }))
-            .sort((a, b) => b.rev - a.rev)
+            .map(([film, d]: any) => ({ film, ...d }))
+            .sort((a: any, b: any) => b.rev - a.rev)
             .slice(0, 5)
     }, [showtimes])
 
-    const maxRev = Math.max(...films.map(f => f.rev), 1)
+    const maxRev = Math.max(...films.map((f: any) => f.rev), 1)
 
     return (
         <div style={{ background: 'var(--soot)', border: '1px solid var(--ash)', padding: '1.5rem', borderTop: '3px solid var(--bone)' }}>
@@ -187,12 +187,12 @@ export function TopFilmsChart({ showtimes = [] }) {
 }
 
 // Ticket Type Breakdown — horizontal stacked bar
-export function TicketTypeBreakdown({ showtimes = [], events = [] }) {
+export function TicketTypeBreakdown({ showtimes = [], events = [] }: { showtimes?: any[]; events?: any[] }) {
     const breakdown = useMemo(() => {
-        const map = {}
-        showtimes.forEach(st => {
-            st.slots?.forEach(sl => {
-                sl.ticketTypes?.forEach(tt => {
+        const map: any = {}
+        showtimes.forEach((st: any) => {
+            st.slots?.forEach((sl: any) => {
+                sl.ticketTypes?.forEach((tt: any) => {
                     // Count booked seats matching this type (approximation)
                     map[tt.type] = (map[tt.type] || { count: 0, rev: 0 })
                     // We can't know which seats are which type, so distribute proportionally
@@ -202,17 +202,17 @@ export function TicketTypeBreakdown({ showtimes = [], events = [] }) {
                 })
             })
         })
-        events.forEach(ev => {
+        events.forEach((ev: any) => {
             const sold = ev.totalTickets - (ev.ticketsLeft ?? ev.totalTickets)
             map['Event'] = (map['Event'] || { count: 0, rev: 0 })
             map['Event'].count += sold
             map['Event'].rev += sold * ev.price
         })
-        return Object.entries(map).map(([type, d]) => ({ type, ...d }))
+        return Object.entries(map).map(([type, d]: any) => ({ type, ...d }))
     }, [showtimes, events])
 
-    const total = breakdown.reduce((a, b) => a + b.count, 0)
-    const TYPE_COLORS = { VIP: 'var(--flicker)', Standard: 'var(--sepia)', Student: 'var(--fog)', Event: 'var(--bone)' }
+    const total = breakdown.reduce((a: any, b: any) => a + b.count, 0)
+    const TYPE_COLORS: any = { VIP: 'var(--flicker)', Standard: 'var(--sepia)', Student: 'var(--fog)', Event: 'var(--bone)' }
 
     if (total === 0) return null
 

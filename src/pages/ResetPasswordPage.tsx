@@ -25,7 +25,7 @@ export default function ResetPasswordPage() {
     const strengthLabel = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'][passed]
     const strengthColor = ['', 'var(--blood-reel)', '#c4a000', '#c4a000', 'var(--sepia)', '#4caf50'][passed]
 
-    const handleReset = async (e) => {
+    const handleReset = async (e: any) => {
         e.preventDefault()
         if (!strong) { toast.error('Password does not meet security requirements.'); return }
         if (password !== confirm) { toast.error('Passwords do not match.'); return }
@@ -37,7 +37,7 @@ export default function ResetPasswordPage() {
             setSuccess(true)
             toast.success('Password updated successfully!')
             setTimeout(() => navigate('/'), 3000)
-        } catch (err) {
+        } catch (err: any) {
             toast.error(err.message || 'Failed to reset password.')
         } finally {
             setLoading(false)
@@ -99,7 +99,7 @@ export default function ResetPasswordPage() {
                             type={showPassword ? 'text' : 'password'}
                             placeholder="New password"
                             value={password}
-                            onChange={e => setPassword(e.target.value)}
+                            onChange={(e: any) => setPassword(e.target.value)}
                             autoComplete="new-password"
                             style={{ width: '100%', paddingRight: '3rem', boxSizing: 'border-box' }}
                         />
@@ -144,7 +144,7 @@ export default function ResetPasswordPage() {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="Confirm new password"
                         value={confirm}
-                        onChange={e => setConfirm(e.target.value)}
+                        onChange={(e: any) => setConfirm(e.target.value)}
                         autoComplete="new-password"
                         style={{ width: '100%', boxSizing: 'border-box' }}
                     />

@@ -37,7 +37,7 @@ const queryClient = new QueryClient({
 })
 
 // ── Custom Nitrate Noir Toast Renderer ──
-function NoirToast({ t, message, icon }) {
+function NoirToast({ t, message, icon }: any) {
   return (
     <div
       style={{
@@ -68,10 +68,10 @@ function NoirToast({ t, message, icon }) {
 }
 
 // Expose custom toast helpers globally
-window.__rh_toast = {
-  log: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="✦" />),
-  err: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="†" />),
-  info: (msg) => toast.custom((t) => <NoirToast t={t} message={msg} icon="◈" />),
+(window as any).__rh_toast = {
+  log: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="✦" />),
+  err: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="†" />),
+  info: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="◈" />),
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(

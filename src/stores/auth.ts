@@ -2,8 +2,20 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { logError } from '../errorLogger'
+import { User } from '../types'
 
-
+export interface AuthState {
+    user: User | null
+    isAuthenticated: boolean
+    login: (email: string, password: string) => Promise<any>
+    signup: (email: string, password: string, username: string, role?: string, persona?: string) => Promise<any>
+    logout: () => Promise<void>
+    updateUser: (updates: Partial<User>) => Promise<void>
+    setPreference: (key: string, value: any) => Promise<void>
+    getPreference: (key: string, fallback?: any) => any
+    followUser: (targetUsername: string) => Promise<void>
+    unfollowUser: (targetUsername: string) => Promise<void>
+}
 // Load the user's following list from the interactions table
 export async function hydrateFollowing() {
     const userId = useAuthStore.getState().user?.id
@@ -16,7 +28,7 @@ export async function hydrateFollowing() {
             .eq('user_id', userId)
             .eq('type', 'follow')
         if (!followRows || followRows.length === 0) {
-            useAuthStore.setState(s => ({ user: { ...s.user, following: [] } }))
+            useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: [] } : null }))
             return
         }
         // Resolve target IDs to usernames
@@ -26,8 +38,8 @@ export async function hydrateFollowing() {
             .select('username')
             .in('id', targetIds)
         const usernames = (profiles || []).map(p => p.username).filter(Boolean)
-        useAuthStore.setState(s => ({ user: { ...s.user, following: usernames } }))
-    } catch (e) {
+        useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: usernames } : null }))
+    } catch (e: any) {
         logError({ type: 'store', message: `Failed to hydrate following list: ${e.message}`, stack: e.stack, component: 'auth.hydrateFollowing' })
     }
 }
@@ -48,7 +60,7 @@ async function hydrateUserData() {
     ])
 }
 
-export const useAuthStore = create(
+export const useAuthStore = create<AuthState>()(
     persist(
         (set, get) => ({
             user: null,
@@ -64,7 +76,7 @@ export const useAuthStore = create(
                     .eq('id', data.user.id)
                     .single()
 
-                set({ user: { ...data.user, ...profile, following: [] }, isAuthenticated: true })
+                set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true })
                 // Hydration is handled by initAuthSync() via SIGNED_IN event —
                 // no explicit hydrateUserData() call here to prevent double-fetch.
                 return data
@@ -98,9 +110,9 @@ export const useAuthStore = create(
                         role,
                         persona: persona || (role === 'cinephile' ? 'The Cinephile' : 'The Society'),
                         tier: role === 'venue_owner' ? 'free' : 'free',
-                    }).eq('id', data.user.id)
-                    const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user.id).single()
-                    set({ user: { ...data.user, ...profile, following: [] }, isAuthenticated: true })
+                    }).eq('id', data.user!.id)
+                    const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user!.id).single()
+                    set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true })
                     hydrateUserData()
                 }
                 // Return data — SignupModal checks data.session to decide
@@ -116,7 +128,7 @@ export const useAuthStore = create(
             updateUser: async (updates) => {
                 const user = get().user
                 if (!user) return
-                const dbUpdates = {}
+                const dbUpdates: any = {}
                 if (updates.bio !== undefined) dbUpdates.bio = updates.bio
                 if (updates.username !== undefined) dbUpdates.username = updates.username
                 if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar
@@ -137,7 +149,7 @@ export const useAuthStore = create(
                 if (!user) return
                 const prefs = { ...(user.preferences || {}), [key]: value }
                 set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }))
-                await supabase.from('profiles').update({ preferences: prefs }).eq('id', user.id).catch(() => {})
+                try { await supabase.from('profiles').update({ preferences: prefs }).eq('id', user.id) } catch { /* ignore */ }
             },
 
             getPreference: (key, fallback = null) => {
@@ -155,7 +167,7 @@ export const useAuthStore = create(
 
                 // Optimistic update — UI responds instantly
                 set((s) => ({
-                    user: { ...s.user, following: [...(s.user?.following || []), targetUsername] },
+                    user: s.user ? { ...s.user, following: [...(s.user.following || []), targetUsername] } : null,
                 }))
 
                 // Background sync — rollback on failure
@@ -171,14 +183,14 @@ export const useAuthStore = create(
                             supabase.from('notifications').insert([{
                                 user_id: targetProfile.id, type: 'follow',
                                 from_username: fromUsername, message: `${fromUsername} followed you`,
-                            }]).catch(() => {}),
+                            }])
                         ])
                         if (followErr && !followErr.message?.includes('duplicate')) throw followErr
                     }
                 } catch {
                     // Rollback
                     set((s) => ({
-                        user: { ...s.user, following: (s.user?.following || []).filter(u => u !== targetUsername) },
+                        user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null,
                     }))
                     const { default: toast } = await import('react-hot-toast')
                     toast.error('Follow failed — please try again.')
@@ -191,7 +203,7 @@ export const useAuthStore = create(
 
                 // Optimistic update
                 set((s) => ({
-                    user: { ...s.user, following: (s.user?.following || []).filter(u => u !== targetUsername) },
+                    user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null,
                 }))
 
                 // Background sync — rollback on failure
@@ -210,7 +222,7 @@ export const useAuthStore = create(
                 } catch {
                     // Rollback
                     set((s) => ({
-                        user: { ...s.user, following: prevFollowing },
+                        user: s.user ? { ...s.user, following: prevFollowing } : null,
                     }))
                     const { default: toast } = await import('react-hot-toast')
                     toast.error('Unfollow failed — please try again.')

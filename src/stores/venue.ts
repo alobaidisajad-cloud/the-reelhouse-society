@@ -2,9 +2,29 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
+import { Venue, Showtime, CinemaReview } from '../types'
+
+export interface VenueStoreState {
+    venue: Venue
+    showtimes: Showtime[]
+    events: any[]
+    fetchVenueData: () => Promise<void>
+    updateVenue: (updates: Partial<Venue>) => Promise<void>
+    saveScreens: (data: { screens: any[], seatLayout: any }) => Promise<void>
+    addShowtime: (st: Partial<Showtime> & { filmId?: number, screenName?: string, durationMins?: number }) => Promise<void>
+    removeShowtime: (id: string) => Promise<void>
+    addSlot: (stId: string, slot: any) => Promise<void>
+    removeSlot: (stId: string, slotId: string) => Promise<void>
+    updateSlot: (stId: string, slotId: string, updates: any) => Promise<void>
+    bookSeat: (stId: string, slotId: string, seatId: string) => Promise<void>
+    addEvent: (ev: any) => void
+    removeEvent: (id: string) => void
+    updateEvent: (id: string, u: any) => void
+    connectPayment: (info: any) => void
+}
 
 // ── VENUE STORE — owner data + showtime management ──
-export const useVenueStore = create(
+export const useVenueStore = create<VenueStoreState>()(
     persist(
         (set, get) => ({
             venue: {
@@ -76,7 +96,7 @@ export const useVenueStore = create(
 
             addShowtime: async (st) => {
                 const venueId = get().venue.id
-                const optimistic = { ...st, id: 'st-' + Date.now(), slots: [], film: st.film, screenName: st.screenName || '', durationMins: st.durationMins || 0 }
+                const optimistic = { ...st, id: 'st-' + Date.now(), slots: [], film: st.film || '', screenName: st.screenName || '', durationMins: st.durationMins || 0 } as Showtime
                 set((s) => ({ showtimes: [optimistic, ...s.showtimes] }))
                 if (venueId) {
                     const { data } = await supabase.from('showtimes').insert([{
@@ -114,7 +134,7 @@ export const useVenueStore = create(
             },
 
             bookSeat: async (stId, slotId, seatId) => {
-                set((s) => ({ showtimes: s.showtimes.map((st) => st.id === stId ? { ...st, slots: st.slots.map((sl) => sl.id === slotId ? { ...sl, bookedSeats: [...sl.bookedSeats, seatId] } : sl) } : st) }))
+                set((s) => ({ showtimes: s.showtimes.map((st) => st.id === stId ? { ...st, slots: st.slots.map((sl) => sl.id === slotId ? { ...sl, bookedSeats: [...(sl.bookedSeats || []), seatId] } : sl) } : st) }))
                 const showtime = get().showtimes.find((s) => s.id === stId)
                 if (showtime) await supabase.from('showtimes').update({ slots: showtime.slots }).eq('id', stId)
             },
@@ -128,8 +148,16 @@ export const useVenueStore = create(
     )
 )
 
+export interface CinemaReviewState {
+    reviews: Record<string, CinemaReview[]>
+    fetchReviews: (cinemaId: string) => Promise<void>
+    addReview: (cinemaId: string, cinemaName: string, data: { username: string, rating: number, review: string }) => Promise<void>
+    getReviews: (cinemaId: string) => CinemaReview[]
+    getAvgRating: (cinemaId: string) => number
+}
+
 // ── CINEMA REVIEW STORE — community cinema ratings ──
-export const useCinemaReviewStore = create((set, get) => ({
+export const useCinemaReviewStore = create<CinemaReviewState>((set, get) => ({
     reviews: {},
 
     fetchReviews: async (cinemaId) => {
@@ -148,7 +176,7 @@ export const useCinemaReviewStore = create((set, get) => ({
                         rating: r.rating,
                         review: r.review,
                         createdAt: r.created_at,
-                    })),
+                    })) as CinemaReview[],
                 },
             }))
         }
@@ -168,7 +196,7 @@ export const useCinemaReviewStore = create((set, get) => ({
                 return {
                     reviews: {
                         ...state.reviews,
-                        [cinemaId]: [{ id: data.id, username, rating, review, createdAt: data.created_at }, ...filtered],
+                        [cinemaId]: [{ id: data.id, username, rating, review, createdAt: data.created_at } as CinemaReview, ...filtered],
                     },
                 }
             })

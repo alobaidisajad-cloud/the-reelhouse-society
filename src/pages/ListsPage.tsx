@@ -15,7 +15,7 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 // Community lists are fetched live from Supabase
 
 
-function UnbreakablePoster({ posterPath, title, isTop }) {
+function UnbreakablePoster({ posterPath, title, isTop }: any) {
     const [failed, setFailed] = useState(!posterPath)
 
     // If it's the top poster, we want it to be more vibrant
@@ -61,7 +61,7 @@ function UnbreakablePoster({ posterPath, title, isTop }) {
     )
 }
 
-function CommunityListCard({ list }) {
+function CommunityListCard({ list }: any) {
     // Deterministic gradient fallback — no external image dependency, zero 404 risk
     const gradients = [
         'linear-gradient(135deg, #1a0e05 0%, #3a2010 40%, #0a0703 100%)',
@@ -177,7 +177,7 @@ function CommunityListCard({ list }) {
     )
 }
 
-function CreateListModal({ onClose, onCreate }) {
+function CreateListModal({ onClose, onCreate }: any) {
     const [title, setTitle] = useState('')
     const [desc, setDesc] = useState('')
     const [isPrivate, setIsPrivate] = useState(false)
@@ -254,42 +254,42 @@ export default function ListsPage() {
             if (error || !data || data.length === 0) return []
 
             // Batch-resolve usernames
-            const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
+            const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
             let usernameMap = {}
             if (userIds.length > 0) {
                 const { data: p } = await supabase.from('profiles').select('id, username').in('id', userIds)
-                if (p) usernameMap = Object.fromEntries(p.map(x => [x.id, x.username]))
+                if (p) usernameMap = Object.fromEntries(p.map((x: any) => [x.id, x.username]))
             }
 
             // Batch-resolve list items
-            const listIds = data.map(l => l.id)
+            const listIds = data.map((l: any) => l.id)
             let itemsMap = {}
             if (listIds.length > 0) {
                 const { data: items } = await supabase.from('list_items').select('list_id, film_id, film_title').in('list_id', listIds)
                 if (items) {
-                    items.forEach(item => {
+                    items.forEach((item: any) => {
                         if (!itemsMap[item.list_id]) itemsMap[item.list_id] = []
                         itemsMap[item.list_id].push(item)
                     })
                 }
             }
 
-            return data.map(l => ({
+            return data.map((l: any) => ({
                 id: l.id,
                 title: l.title,
                 desc: l.description || '',
                 user: usernameMap[l.user_id] || 'anonymous',
-                films: (itemsMap[l.id] || []).map(item => ({ id: item.film_id, title: item.film_title, poster_path: null })),
+                films: (itemsMap[l.id] || []).map((item: any) => ({ id: item.film_id, title: item.film_title, poster_path: null })),
                 count: (itemsMap[l.id] || []).length,
             }))
         },
         staleTime: 1000 * 60 * 2,
     })
 
-    const filterLists = (listArray) => {
+    const filterLists = (listArray: any[]) => {
         if (!query.trim()) return listArray
         const q = query.toLowerCase()
-        return listArray.filter(l =>
+        return listArray.filter((l: any) =>
             l.title.toLowerCase().includes(q) ||
             (l.desc && l.desc.toLowerCase().includes(q)) ||
             (l.description && l.description.toLowerCase().includes(q)) ||
@@ -342,9 +342,9 @@ export default function ListsPage() {
                             style={{ width: '100%', padding: IS_TOUCH ? '0.9rem 2.5rem 0.9rem 3rem' : '1.4rem 3rem 1.4rem 4rem', fontSize: IS_TOUCH ? '1rem' : '1.2rem', fontFamily: 'var(--font-sub)', background: 'var(--soot)', borderColor: 'var(--ash)', color: 'var(--parchment)', borderRadius: 'var(--radius-card)', boxShadow: 'inset 0 4px 20px rgba(0,0,0,0.8)', outline: 'none', transition: 'border-color 0.3s', boxSizing: 'border-box' }}
                             placeholder="Search specific lists, curators, or keywords..."
                             value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            onFocus={e => e.target.style.borderColor = 'var(--sepia)'}
-                            onBlur={e => e.target.style.borderColor = 'var(--ash)'}
+                            onChange={(e: any) => setQuery(e.target.value)}
+                            onFocus={(e: any) => e.target.style.borderColor = 'var(--sepia)'}
+                            onBlur={(e: any) => e.target.style.borderColor = 'var(--ash)'}
                         />
                         {query && (
                             <button type="button" onClick={() => setQuery('')} style={{ position: 'absolute', right: '1.25rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -365,7 +365,7 @@ export default function ListsPage() {
                         <section>
                             <SectionHeader label="YOUR ARCHIVE" title="My Collections" />
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
-                                {filteredMyLists.map((list) => (
+                                {filteredMyLists.map((list: any) => (
                                     <Link
                                         key={list.id}
                                         to={`/lists/${list.id}`}
@@ -378,11 +378,11 @@ export default function ListsPage() {
                                             padding: '1.5rem', position: 'relative', borderLeft: '4px solid var(--flicker)',
                                             transition: 'transform 0.2s, border-color 0.2s'
                                         }}
-                                        onMouseEnter={e => {
+                                        onMouseEnter={(e: any) => {
                                             e.currentTarget.style.transform = 'translateY(-4px)'
                                             e.currentTarget.style.borderColor = 'var(--sepia)'
                                         }}
-                                        onMouseLeave={e => {
+                                        onMouseLeave={(e: any) => {
                                             e.currentTarget.style.transform = 'translateY(0)'
                                             e.currentTarget.style.borderColor = 'var(--ash)'
                                         }}
@@ -440,7 +440,7 @@ export default function ListsPage() {
                             </div>
                         ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '3rem' }}>
-                                {filteredCommunity.map((list) => (
+                                {filteredCommunity.map((list: any) => (
                                     <CommunityListCard key={list.id} list={list} />
                                 ))}
                             </div>

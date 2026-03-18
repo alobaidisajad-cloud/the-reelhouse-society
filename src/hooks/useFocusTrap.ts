@@ -9,8 +9,8 @@ import { useEffect, useRef } from 'react'
  * @param {Function} onClose - Called when Escape is pressed
  * @returns {React.RefObject} - Attach to the modal container
  */
-export function useFocusTrap(isOpen, onClose) {
-    const containerRef = useRef(null)
+export function useFocusTrap(isOpen: any, onClose: any) {
+    const containerRef = useRef<any>(null)
     const previousFocusRef = useRef(null)
 
     useEffect(() => {
@@ -29,7 +29,7 @@ export function useFocusTrap(isOpen, onClose) {
             else container.focus()
         }, 50)
 
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: any) => {
             if (e.key === 'Escape') {
                 e.stopPropagation()
                 onClose?.()
@@ -77,10 +77,10 @@ export function useFocusTrap(isOpen, onClose) {
     return containerRef
 }
 
-function getFocusable(container) {
+function getFocusable(container: any) {
     return Array.from(
         container.querySelectorAll(
             'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
         )
-    ).filter(el => el.offsetParent !== null) // visible elements only
+    ).filter((el: any) => el.offsetParent !== null) // visible elements only
 }

@@ -117,7 +117,7 @@ export const initRealtime = () => {
                 useNotificationStore.getState().push({
                     id: payload.new.id,
                     type: payload.new.type,
-                    from: payload.new.from_username,
+                    from_user: payload.new.from_username,
                     message: payload.new.message,
                     timestamp: payload.new.created_at,
                 })

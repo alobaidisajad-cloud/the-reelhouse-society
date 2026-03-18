@@ -9,7 +9,7 @@ import { LoadingReel } from '../components/UI'
 import toast from 'react-hot-toast'
 
 // Haversine distance in km between two lat/lng points
-function haversineKm(lat1, lng1, lat2, lng2) {
+function haversineKm(lat1: any, lng1: any, lat2: any, lng2: any) {
     const R = 6371
     const dLat = (lat2 - lat1) * Math.PI / 180
     const dLng = (lng2 - lng1) * Math.PI / 180
@@ -18,7 +18,7 @@ function haversineKm(lat1, lng1, lat2, lng2) {
 }
 
 // ── STAR RATING ──
-function StarRating({ value, onChange, readonly = false, size = 20 }) {
+function StarRating({ value, onChange, readonly = false, size = 20 }: any) {
     const [hovered, setHovered] = useState(0)
     return (
         <div style={{ display: 'flex', gap: 3 }}>
@@ -39,7 +39,7 @@ function StarRating({ value, onChange, readonly = false, size = 20 }) {
 }
 
 // ── CINEMA CARD ──
-function CinemaCard({ cinema, avgRating, reviewCount, distanceKm }) {
+function CinemaCard({ cinema, avgRating, reviewCount, distanceKm }: any) {
     const [imgFailed, setImgFailed] = useState(!cinema.image)
 
     // deterministic gradient from name
@@ -116,7 +116,7 @@ function CinemaCard({ cinema, avgRating, reviewCount, distanceKm }) {
                 {/* Vibes */}
                 {cinema.vibes?.length > 0 && (
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
-                        {cinema.vibes.slice(0, 3).map(v => (
+                        {cinema.vibes.slice(0, 3).map((v: any) => (
                             <span key={v} className="tag tag-vibe" style={{ fontSize: '0.48rem', padding: '2px 6px' }}>⟡ {v}</span>
                         ))}
                     </div>
@@ -134,7 +134,7 @@ function CinemaCard({ cinema, avgRating, reviewCount, distanceKm }) {
 }
 
 // ── REVIEW MODAL ──
-function ReviewModal({ cinema, onClose }) {
+function ReviewModal({ cinema, onClose }: any) {
     const { user, isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
     const { addReview, reviews: allReviews, fetchReviews } = useCinemaReviewStore()
@@ -145,7 +145,7 @@ function ReviewModal({ cinema, onClose }) {
 
     useEffect(() => { fetchReviews(cinema.id) }, [cinema.id])
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: any) => {
         e.preventDefault()
         if (!isAuthenticated) { openSignupModal(); return }
         if (!myRating) { toast.error('Please select a star rating first'); return }
@@ -186,7 +186,7 @@ function ReviewModal({ cinema, onClose }) {
                                 className="input"
                                 placeholder="Tell the community what makes this cinema worth entering..."
                                 value={myReview}
-                                onChange={e => setMyReview(e.target.value)}
+                                onChange={(e: any) => setMyReview(e.target.value)}
                                 style={{ minHeight: 100 }}
                             />
                             <button type="submit" className="btn btn-primary" style={{ alignSelf: 'flex-start' }}>
@@ -205,7 +205,7 @@ function ReviewModal({ cinema, onClose }) {
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {cinemaReviews.map((r, i) => (
+                                {cinemaReviews.map((r: any, i: number) => (
                                     <div key={i} style={{ background: 'var(--ink)', border: '1px solid var(--ash)', padding: '1.1rem', borderLeft: '2px solid var(--sepia)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                                             <div>
@@ -236,13 +236,13 @@ function ReviewModal({ cinema, onClose }) {
 export default function CinemasPage() {
     const { reviews: allReviews, fetchReviews } = useCinemaReviewStore()
 
-    const getAvg = (id) => {
+    const getAvg = (id: any) => {
         const r = allReviews[id] || []
-        return r.length ? r.reduce((a, x) => a + x.rating, 0) / r.length : 0
+        return r.length ? r.reduce((a: any, x: any) => a + x.rating, 0) / r.length : 0
     }
 
     const [query, setQuery] = useState('')
-    const [selectedVibes, setSelectedVibes] = useState([])
+    const [selectedVibes, setSelectedVibes] = useState<any[]>([])
     const [minRating, setMinRating] = useState(0)
     const [sortBy, setSortBy] = useState('newest')
     const [showFilters, setShowFilters] = useState(false)
@@ -256,13 +256,13 @@ export default function CinemasPage() {
         if (!navigator.geolocation) { toast.error('Geolocation not supported by your browser'); return }
         setGeoLoading(true)
         navigator.geolocation.getCurrentPosition(
-            (pos) => {
+            (pos: any) => {
                 setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
                 setSortBy('distance')
                 setGeoLoading(false)
                 toast.success('Location detected — sorting by distance')
             },
-            (err) => {
+            (err: any) => {
                 setGeoLoading(false)
                 if (err.code === 1) toast.error('Location access denied. Enable it in your browser settings.')
                 else toast.error('Could not get your location')
@@ -286,40 +286,40 @@ export default function CinemasPage() {
 
     // Fetch reviews for each loaded venue
     useEffect(() => {
-        venues.forEach(v => { if (!allReviews[v.id]) fetchReviews(v.id) })
+        venues.forEach((v: any) => { if (!allReviews[v.id]) fetchReviews(v.id) })
     }, [venues, fetchReviews]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // Derive unique vibes from real venue data
     const allVibes = useMemo(() => {
         const vibeSet = new Set()
-        venues.forEach(v => (v.vibes || []).forEach(vibe => vibeSet.add(vibe)))
+        venues.forEach((v: any) => (v.vibes || []).forEach((vibe: any) => vibeSet.add(vibe)))
         return [...vibeSet].sort()
     }, [venues])
 
-    const toggleVibe = (v) => setSelectedVibes(prev => prev.includes(v) ? prev.filter(x => x !== v) : [...prev, v])
+    const toggleVibe = (v: any) => setSelectedVibes((prev: any) => prev.includes(v) ? prev.filter((x: any) => x !== v) : [...prev, v])
 
     const filtered = useMemo(() => {
         let list = [...venues]
         if (query.trim()) {
             const q = query.toLowerCase()
-            list = list.filter(c =>
+            list = list.filter((c: any) =>
                 (c.name || '').toLowerCase().includes(q) ||
                 (c.location || '').toLowerCase().includes(q) ||
-                (c.vibes || []).some(v => v.toLowerCase().includes(q))
+                (c.vibes || []).some((v: any) => v.toLowerCase().includes(q))
             )
         }
-        if (selectedVibes.length) list = list.filter(c => selectedVibes.every(v => (c.vibes || []).includes(v)))
-        if (minRating > 0) list = list.filter(c => getAvg(c.id) >= minRating)
+        if (selectedVibes.length) list = list.filter((c: any) => selectedVibes.every((v: any) => (c.vibes || []).includes(v)))
+        if (minRating > 0) list = list.filter((c: any) => getAvg(c.id) >= minRating)
 
         // Compute distance for each venue if user location known
         if (userLocation) {
-            list = list.map(c => ({
+            list = list.map((c: any) => ({
                 ...c,
                 _distKm: (c.lat && c.lng) ? haversineKm(userLocation.lat, userLocation.lng, c.lat, c.lng) : null
             }))
         }
 
-        list.sort((a, b) => {
+        list.sort((a: any, b: any) => {
             if (sortBy === 'distance' && userLocation) {
                 // venues without lat/lng go to end
                 if (a._distKm == null && b._distKm == null) return 0
@@ -361,7 +361,7 @@ export default function CinemasPage() {
                                 className="input"
                                 placeholder="Search cinema name, location, or vibe..."
                                 value={query}
-                                onChange={e => setQuery(e.target.value)}
+                                onChange={(e: any) => setQuery(e.target.value)}
                                 style={{ paddingLeft: '2.5rem' }}
                             />
                         </div>
@@ -422,7 +422,7 @@ export default function CinemasPage() {
                             <div>
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>VIBE TAGS</div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                    {allVibes.map(v => (
+                                    {allVibes.map((v: any) => (
                                         <button key={v} type="button"
                                             className={`tag ${selectedVibes.includes(v) ? 'tag-flicker' : 'tag-vibe'}`}
                                             onClick={() => toggleVibe(v)} style={{ cursor: 'pointer' }}
@@ -472,7 +472,7 @@ export default function CinemasPage() {
                         ) : (
                             <motion.div layout style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                                 <AnimatePresence>
-                                    {filtered.map((cinema, i) => {
+                                    {filtered.map((cinema: any, i: number) => {
                                         const avg = getAvg(cinema.id)
                                         const count = (allReviews[cinema.id] || []).length
                                         const mapped = {

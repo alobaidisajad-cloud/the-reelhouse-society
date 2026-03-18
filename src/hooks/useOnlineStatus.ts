@@ -4,7 +4,7 @@ import { useSyncExternalStore } from 'react'
  * useOnlineStatus — reactive hook for navigator.onLine.
  * React re-renders when the user goes offline or comes back online.
  */
-function subscribe(callback) {
+function subscribe(callback: any) {
     window.addEventListener('online', callback)
     window.addEventListener('offline', callback)
     return () => {

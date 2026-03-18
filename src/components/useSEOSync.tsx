@@ -9,14 +9,14 @@ import { tmdb } from '../tmdb'
  * NOTE: For fully static crawlers (Twitter/iMessage), a Vercel/Netlify Edge 
  * function must be deployed to intercept the initial HTML request.
  */
-export function useSEOSync(customTitle, description, ogImage) {
+export function useSEOSync(customTitle: any, description: any, ogImage: any) {
     useEffect(() => {
         // Build Base Title
         const base = "The ReelHouse Society — Track, Discover, and Live Cinema"
         document.title = customTitle ? `${customTitle} | The ReelHouse Society` : base
 
         // Safely update Meta Tags
-        const setMeta = (property, content) => {
+        const setMeta = (property: any, content: any) => {
             if (!content) return;
             const element = document.querySelector(`meta[property="${property}"], meta[name="${property}"]`)
             if (element) {

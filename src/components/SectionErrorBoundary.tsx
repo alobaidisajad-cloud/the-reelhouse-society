@@ -6,8 +6,8 @@ import Buster from './Buster'
  * If a section crashes, only that section shows a compact retry panel.
  * The rest of the page stays fully functional.
  */
-class SectionErrorBoundary extends React.Component {
-    constructor(props) {
+class SectionErrorBoundary extends React.Component<any, any> {
+    constructor(props: any) {
         super(props)
         this.state = { hasError: false }
     }
@@ -16,7 +16,7 @@ class SectionErrorBoundary extends React.Component {
         return { hasError: true }
     }
 
-    componentDidCatch(error, errorInfo) {
+    componentDidCatch(error: any, errorInfo: any) {
         console.error('Section Error:', error)
         import('../errorLogger').then(m => m.logError({
             type: 'section_boundary',

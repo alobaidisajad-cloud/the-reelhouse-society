@@ -31,7 +31,7 @@ if (!isSupabaseConfigured) {
 // Supabase fires TOKEN_REFRESH_FAILED which causes an AuthApiError in the console.
 // We catch it here and clear the dead session from localStorage gracefully.
 if (isSupabaseConfigured) {
-    supabase.auth.onAuthStateChange((event) => {
+    supabase.auth.onAuthStateChange((event: any) => {
         if (event === 'TOKEN_REFRESH_FAILED') {
             // Sign out locally only (no server round-trip needed)
             supabase.auth.signOut({ scope: 'local' }).catch(() => { })

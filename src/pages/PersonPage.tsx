@@ -52,8 +52,8 @@ export default function PersonPage() {
 
     // Sort by popularity and filter out films with no poster or very low votes to keep quality high
     const sortedCredits = uniqueCredits
-        .filter(f => f.poster_path && f.vote_count > 5)
-        .sort((a, b) => b.popularity - a.popularity)
+        .filter((f: any) => f.poster_path && f.vote_count > 5)
+        .sort((a: any, b: any) => b.popularity - a.popularity)
 
     return (
         <div className="page-top" style={{ minHeight: '100vh', paddingBottom: '4rem' }}>
@@ -104,7 +104,7 @@ export default function PersonPage() {
 
                 {sortedCredits.length > 0 ? (
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1.25rem' }}>
-                        {sortedCredits.map((film, idx) => (
+                        {sortedCredits.map((film: any, idx: number) => (
                             <motion.div
                                 key={film.id}
                                 initial={{ opacity: 0, scale: 0.9 }}

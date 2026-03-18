@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from './supabaseClient'
  * Log errors to Supabase error_logs table for production monitoring.
  * Silently fails if Supabase isn't configured or table doesn't exist.
  */
-export async function logError({ type = 'runtime', message, stack, component, userId }) {
+export async function logError({ type = 'runtime', message, stack, component, userId }: { type?: string, message: any, stack?: any, component?: string, userId?: string }) {
     if (!isSupabaseConfigured) return
 
     try {
@@ -16,7 +16,7 @@ export async function logError({ type = 'runtime', message, stack, component, us
             component: component || null,
             url: typeof window !== 'undefined' ? window.location.href : null,
             user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-        }]).catch(() => { })
+        }])
     } catch { /* Never let error logging crash the app */ }
 }
 
@@ -53,7 +53,7 @@ export function initGlobalErrorLogging() {
  */
 const _throttleMap = new Map()
 
-export function throttleAction(key, fn, cooldownMs = 2000) {
+export function throttleAction(key: string, fn: Function, cooldownMs = 2000) {
     const lastCall = _throttleMap.get(key) || 0
     const now = Date.now()
 

@@ -17,7 +17,7 @@ const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || ''
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
 // ── COMMUNITY REVIEWS (Dynamic from Supabase) ──
-function CommunityReviews({ filmId }) {
+function CommunityReviews({ filmId }: any) {
     const { logs } = useFilmStore()
     const { user: authUser } = useAuthStore()
     const { data: dbReviews } = useQuery({
@@ -33,23 +33,23 @@ function CommunityReviews({ filmId }) {
                 .limit(6)
             if (!data || data.length === 0) return []
             // Batch resolve usernames
-            const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
-            let usernameMap = {}
+            const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
+            let usernameMap: any = {}
             if (userIds.length > 0) {
                 const { data: profilesData } = await supabase
                     .from('profiles').select('id, username, role').in('id', userIds)
-                if (profilesData) usernameMap = Object.fromEntries(profilesData.map(p => [p.id, p]))
+                if (profilesData) usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p]))
             }
-            return data.map(r => ({ ...r, profiles: usernameMap[r.user_id] || { username: 'anonymous', role: 'cinephile' } }))
+            return data.map((r: any) => ({ ...r, profiles: usernameMap[r.user_id] || { username: 'anonymous', role: 'cinephile' } }))
         },
         staleTime: 1000 * 60 * 5,
     })
 
     // Local user's review for this film (immediate feedback before DB refetch)
-    const localReview = logs.find(l => (l.filmId === filmId || String(l.filmId) === String(filmId)) && l.review)
+    const localReview = logs.find((l: any) => (l.filmId === filmId || String(l.filmId) === String(filmId)) && l.review)
     const currentUsername = authUser?.username || null
 
-    const reviews = []
+    const reviews: any[] = []
     if (localReview) {
         reviews.push({
             author: currentUsername || 'you',
@@ -59,7 +59,7 @@ function CommunityReviews({ filmId }) {
         })
     }
     if (dbReviews) {
-        dbReviews.forEach(r => {
+        dbReviews.forEach((r: any) => {
             const dbUsername = r.profiles?.username
             // Deduplicate: skip DB entry if it matches the local optimistic review
             if (localReview && currentUsername && dbUsername === currentUsername) return
@@ -82,7 +82,7 @@ function CommunityReviews({ filmId }) {
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>The projection box awaits.</div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic' }}>No transmissions yet. Log this film to be the first voice in the archive.</div>
                 </div>
-            ) : reviews.map((r, i) => (
+            ) : reviews.map((r: any, i: number) => (
                 <div key={r.author + i} className="review-manuscript" style={{ marginBottom: '1rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem' }}>
                         <div>
@@ -99,7 +99,7 @@ function CommunityReviews({ filmId }) {
 }
 
 // ── VIRAL EXPORT MODAL ──
-function DossierExportModal({ film, log, onClose }) {
+function DossierExportModal({ film, log, onClose }: any) {
     if (!log) return null;
     return (
         <AnimatePresence>
@@ -123,7 +123,7 @@ function DossierExportModal({ film, log, onClose }) {
                     <div style={{ position: 'absolute', bottom: '2rem', left: '1.5rem', right: '1.5rem', zIndex: 2 }}>
                         <div className="section-title" style={{ marginBottom: '0.5rem', borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.3rem' }}>REELHOUSE · DECLASSIFIED</div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 5vw, 2.8rem)', color: 'var(--parchment)', lineHeight: 1, margin: '0 0 0.5rem 0' }}>{film.title}</h2>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', marginBottom: '1rem' }}>{film.release_date?.slice(0, 4)} · DIR. {film.credits?.crew?.find(c => c.job === 'Director')?.name?.toUpperCase()}</div>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', marginBottom: '1rem' }}>{film.release_date?.slice(0, 4)} · DIR. {film.credits?.crew?.find((c: any) => c.job === 'Director')?.name?.toUpperCase()}</div>
                         {log.rating > 0 && <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.1rem', color: 'var(--flicker)', marginBottom: '1rem', letterSpacing: '0.1em' }}>{'✦'.repeat(Math.round(log.rating))}{'·'.repeat(5 - Math.round(log.rating))}</div>}
                         <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 8, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>"{log.review || "Classified Analysis"}"</p>
                     </div>
@@ -138,7 +138,7 @@ function DossierExportModal({ film, log, onClose }) {
 }
 
 // ── TRAILER MODAL ──
-function TrailerModal({ trailerKey, onClose }) {
+function TrailerModal({ trailerKey, onClose }: any) {
     return (
         <AnimatePresence>
             <motion.div
@@ -180,14 +180,14 @@ function TrailerModal({ trailerKey, onClose }) {
 }
 
 // ── DIRECTOR FILMOGRAPHY PANEL ──
-function DirectorPanel({ director, onClose }) {
+function DirectorPanel({ director, onClose }: any) {
     const { logs } = useFilmStore()
     const { data: filmography, isLoading } = useQuery({
         queryKey: ['person-films', director.id],
         queryFn: async () => {
             const res = await fetch(`https://api.themoviedb.org/3/person/${director.id}/movie_credits?api_key=${TMDB_API_KEY}`)
             const data = await res.json()
-            return (data.crew || []).filter(f => f.job === 'Director' && f.poster_path).sort((a, b) => (b.release_date || '').localeCompare(a.release_date || ''))
+            return (data.crew || []).filter((f: any) => f.job === 'Director' && f.poster_path).sort((a: any, b: any) => (b.release_date || '').localeCompare(a.release_date || ''))
         },
         staleTime: 1000 * 60 * 30,
     })
@@ -205,7 +205,7 @@ function DirectorPanel({ director, onClose }) {
                         <div className="section-title" style={{ marginBottom: '0.3rem' }}>DIRECTOR DOSSIER</div>
                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--parchment)', lineHeight: 1.2 }}>{director.name}</div>
                         {filmography && (() => {
-                            const seenCount = logs.filter(l => filmography.some(f => f.id === l.filmId)).length
+                            const seenCount = logs.filter((l: any) => filmography.some((f: any) => f.id === l.filmId)).length
                             const pct = Math.round((seenCount / Math.max(filmography.length, 1)) * 100)
                             return (
                                 <div style={{ marginTop: '0.75rem' }}>
@@ -223,16 +223,16 @@ function DirectorPanel({ director, onClose }) {
                 </div>
                 <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     {isLoading ? Array.from({ length: 6 }).map((_, i) => <div key={i} style={{ height: 72, background: 'var(--ash)', borderRadius: 'var(--radius-card)', opacity: 1 - i * 0.12 }} />) :
-                        filmography?.map((film) => (
+                        filmography?.map((film: any) => (
                             <Link key={film.id} to={`/film/${film.id}`} onClick={onClose}
                                 style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', padding: '0.6rem', textDecoration: 'none', borderRadius: 'var(--radius-card)', border: '1px solid transparent', transition: 'border-color 0.2s, background 0.2s' }}
                                 onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.background = 'rgba(255,255,255,0.02)' }}
                                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'transparent'; e.currentTarget.style.background = 'transparent' }}
                             >
-                                <img src={tmdb.poster(film.poster_path, 'w92')} alt={film.title} decoding="async" loading="lazy" style={{ width: 36, height: 54, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)', flexShrink: 0 }} />
+                                <img src={tmdb.poster(film.poster_path, 'w92') || undefined} alt={film.title} decoding="async" loading="lazy" style={{ width: 36, height: 54, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)', flexShrink: 0 }} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: logs.some(l => l.filmId === film.id) ? 'var(--parchment)' : 'var(--bone)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        {film.title}{logs.some(l => l.filmId === film.id) && <span style={{ color: 'var(--sepia)', fontSize: '0.6rem' }}>✓</span>}
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: logs.some((l: any) => l.filmId === film.id) ? 'var(--parchment)' : 'var(--bone)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                        {film.title}{logs.some((l: any) => l.filmId === film.id) && <span style={{ color: 'var(--sepia)', fontSize: '0.6rem' }}>✓</span>}
                                     </div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.15rem' }}>{film.release_date?.slice(0, 4) || '—'}</div>
                                 </div>
@@ -247,7 +247,7 @@ function DirectorPanel({ director, onClose }) {
 }
 
 // ── STREAMING PROVIDERS SECTION ──
-function WatchProviders({ providers }) {
+function WatchProviders({ providers }: any) {
     const countryData = providers ? (providers['US'] || providers[Object.keys(providers)[0]]) : null
 
     const flatrate = countryData?.flatrate || []
@@ -256,7 +256,7 @@ function WatchProviders({ providers }) {
     const hasAny = flatrate.length > 0 || rent.length > 0 || buy.length > 0
     const link = countryData?.link
 
-    const ProviderLogo = ({ p, link }) => (
+    const ProviderLogo = ({ p, link }: any) => (
         <a href={link} target="_blank" rel="noopener noreferrer" title={`Watch on ${p.provider_name}`} style={{ flexShrink: 0, textDecoration: 'none', transition: 'transform 0.2s', display: 'block', cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'} onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
             {p.logo_path ? (
                 <img
@@ -294,7 +294,7 @@ function WatchProviders({ providers }) {
                         <div style={{ marginBottom: '1rem' }}>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', marginBottom: '0.6rem' }}>STREAM FREE</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
-                                {flatrate.slice(0, 6).map(p => <ProviderLogo key={p.provider_id} p={p} link={link} />)}
+                                {flatrate.slice(0, 6).map((p: any) => <ProviderLogo key={p.provider_id} p={p} link={link} />)}
                             </div>
                         </div>
                     )}
@@ -303,7 +303,7 @@ function WatchProviders({ providers }) {
                         <div style={{ marginBottom: '1rem' }}>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', marginBottom: '0.6rem' }}>RENT</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
-                                {rent.slice(0, 6).map(p => <ProviderLogo key={p.provider_id} p={p} link={link} />)}
+                                {rent.slice(0, 6).map((p: any) => <ProviderLogo key={p.provider_id} p={p} link={link} />)}
                             </div>
                         </div>
                     )}
@@ -312,7 +312,7 @@ function WatchProviders({ providers }) {
                         <div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', marginBottom: '0.6rem' }}>BUY</div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
-                                {buy.slice(0, 4).map(p => <ProviderLogo key={p.provider_id} p={p} link={link} />)}
+                                {buy.slice(0, 4).map((p: any) => <ProviderLogo key={p.provider_id} p={p} link={link} />)}
                             </div>
                         </div>
                     )}
@@ -332,13 +332,13 @@ function WatchProviders({ providers }) {
 }
 
 // ── COUNTRY RELEASES ──
-function CountryReleases({ releaseDates }) {
+function CountryReleases({ releaseDates }: any) {
     const [expanded, setExpanded] = useState(false)
     if (!releaseDates?.results?.length) return null
 
     const releases = releaseDates.results
-        .filter(r => r.release_dates?.some(d => d.type <= 3))
-        .sort((a, b) => {
+        .filter((r: any) => r.release_dates?.some((d: any) => d.type <= 3))
+        .sort((a: any, b: any) => {
             // US first, then alphabetical
             if (a.iso_3166_1 === 'US') return -1
             if (b.iso_3166_1 === 'US') return 1
@@ -347,7 +347,7 @@ function CountryReleases({ releaseDates }) {
 
     const visible = expanded ? releases : releases.slice(0, 6)
 
-    const types = { 1: 'PREMIERE', 2: 'LIMITED', 3: 'THEATRICAL', 4: 'DIGITAL', 5: 'PHYSICAL', 6: 'TV' }
+    const types: any = { 1: 'PREMIERE', 2: 'LIMITED', 3: 'THEATRICAL', 4: 'DIGITAL', 5: 'PHYSICAL', 6: 'TV' }
 
     return (
         <div className="card">
@@ -355,8 +355,8 @@ function CountryReleases({ releaseDates }) {
                 <Globe size={12} /> INTERNATIONAL RELEASES
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                {visible.map(({ iso_3166_1, release_dates }) => {
-                    const mainRelease = release_dates.find(d => d.type === 3) || release_dates[0]
+                {visible.map(({ iso_3166_1, release_dates }: any) => {
+                    const mainRelease = release_dates.find((d: any) => d.type === 3) || release_dates[0]
                     if (!mainRelease?.release_date) return null
                     const date = new Date(mainRelease.release_date)
                     const cert = mainRelease.certification
@@ -386,17 +386,17 @@ function CountryReleases({ releaseDates }) {
 }
 
 // ── FILM HERO ──
-function FilmHero({ film, onPlayTrailer }) {
+function FilmHero({ film, onPlayTrailer }: any) {
     const { openLogModal } = useUIStore()
     const { watchlist, addToWatchlist, removeFromWatchlist, logs } = useFilmStore()
     const [showExport, setShowExport] = useState(false)
-    const isWatchlisted = watchlist.some(f => f.id === film.id)
+    const isWatchlisted = watchlist.some((f: any) => f.id === film.id)
     const score = obscurityScore(film)
-    const director = film.credits?.crew?.find(c => c.job === 'Director')
-    const trailer = film.videos?.results?.find(v => v.type === 'Trailer' && v.site === 'YouTube')
-        || film.videos?.results?.find(v => v.site === 'YouTube')
-    const existingLog = logs.find(l => l.filmId === film.id || String(l.filmId) === String(film.id))
-    const statusLabel = { watched: '✓ WATCHED', rewatched: '↩ REWATCHED', abandoned: '✕ ABANDONED' }
+    const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
+    const trailer = film.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
+        || film.videos?.results?.find((v: any) => v.site === 'YouTube')
+    const existingLog = logs.find((l: any) => l.filmId === film.id || String(l.filmId) === String(film.id))
+    const statusLabel: any = { watched: '✓ WATCHED', rewatched: '↩ REWATCHED', abandoned: '✕ ABANDONED' }
 
     const toggleWatchlist = () => {
         if (isWatchlisted) { removeFromWatchlist(film.id); toast(`Removed from watchlist`) }
@@ -432,7 +432,7 @@ function FilmHero({ film, onPlayTrailer }) {
                         )}
                         <div className="card-film scanlines" style={{ position: 'relative', zIndex: 1, boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.2)' }}>
                             {film.poster_path ? (
-                                <img src={tmdb.poster(film.poster_path, 'w342')} alt={film.title} fetchPriority="high" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.2) contrast(1.1)' }} />
+                                <img src={tmdb.poster(film.poster_path, 'w342') || undefined} alt={film.title} fetchPriority="high" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.2) contrast(1.1)' }} />
                             ) : (
                                 <div style={{ width: '100%', height: '100%', background: 'var(--soot)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)' }}>NO POSTER</span>
@@ -469,7 +469,7 @@ function FilmHero({ film, onPlayTrailer }) {
                                 <Globe size={10} style={{ display: 'inline', marginRight: '0.25rem' }} />{film.production_countries[0].name}
                             </span>
                         )}
-                        {film.production_companies?.some(c => ['a24', 'neon', 'mubi', 'criterion'].some(l => c.name.toLowerCase().includes(l))) && (
+                        {film.production_companies?.some((c: any) => ['a24', 'neon', 'mubi', 'criterion'].some((l: any) => c.name.toLowerCase().includes(l))) && (
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--ink)', background: 'var(--sepia)', padding: '0.1rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem', boxShadow: '0 0 10px rgba(139,105,20,0.5)' }}>
                                 <Film size={8} /> PRESTIGE LABEL
                             </div>
@@ -522,13 +522,13 @@ function FilmHero({ film, onPlayTrailer }) {
     )
 }
 
-function FilmDetails({ film, onPlayVideo }) {
-    const director = film.credits?.crew?.find(c => c.job === 'Director')
+function FilmDetails({ film, onPlayVideo }: any) {
+    const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
     const cast = film.credits?.cast?.slice(0, 8) || []
 
     // Grab all trailers + teasers for a richer video section
-    const allVideos = film.videos?.results?.filter(v => v.site === 'YouTube') || []
-    const trailer = allVideos.find(v => v.type === 'Trailer') || allVideos[0]
+    const allVideos = film.videos?.results?.filter((v: any) => v.site === 'YouTube') || []
+    const trailer = allVideos.find((v: any) => v.type === 'Trailer') || allVideos[0]
 
     // Watch providers (already in detail via append_to_response)
     const providers = film['watch/providers']?.results || null
@@ -551,14 +551,14 @@ function FilmDetails({ film, onPlayVideo }) {
                     <div>
                         <SectionHeader label="CAST" title="The Players" />
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.75rem' }}>
-                            {cast.map(member => (
+                            {cast.map((member: any) => (
                                 <Link key={member.id} to={`/person/${member.id}`} style={{ textAlign: 'center', textDecoration: 'none', color: 'inherit', display: 'block' }}
                                     onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
                                     onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                                 >
                                     <div style={{ width: '100%', aspectRatio: '1', borderRadius: '50%', overflow: 'hidden', background: 'var(--ash)', marginBottom: '0.4rem', border: '1px solid var(--ash)', transition: 'transform 0.2s' }}>
                                         {member.profile_path ? (
-                                            <img src={tmdb.profile(member.profile_path)} alt={member.name} decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4)' }} />
+                                            <img src={tmdb.profile(member.profile_path) || undefined} alt={member.name} decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4)' }} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)' }}>
                                                 <Film size={24} opacity={0.3} />
@@ -578,7 +578,7 @@ function FilmDetails({ film, onPlayVideo }) {
                     <div>
                         <SectionHeader label="FOOTAGE" title="More Videos" />
                         <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '0.5rem', marginLeft: IS_TOUCH ? '-1.25rem' : 0, paddingLeft: IS_TOUCH ? '1.25rem' : 0 }}>
-                            {allVideos.slice(0, 6).map(v => (
+                            {allVideos.slice(0, 6).map((v: any) => (
                                 <button key={v.id} onClick={() => onPlayVideo(v.key)}
                                     style={{ flexShrink: 0, width: 200, background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '2px', cursor: 'pointer', overflow: 'hidden', textAlign: 'left', padding: 0, position: 'relative' }}
                                     onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'}
@@ -645,14 +645,14 @@ function FilmDetails({ film, onPlayVideo }) {
                 <div className="card glass-panel">
                     <div className="section-title">FILM DOSSIER</div>
                     {[
-                        { label: 'GENRES', value: film.genres?.map(g => g.name).join(', ') },
+                        { label: 'GENRES', value: film.genres?.map((g: any) => g.name).join(', ') },
                         { label: 'RELEASE', value: film.release_date ? new Date(film.release_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase() : '—' },
                         { label: 'RUNTIME', value: formatRuntime(film.runtime) },
                         { label: 'STATUS', value: film.status },
                         { label: 'LANGUAGE', value: film.original_language?.toUpperCase() },
                         { label: 'BUDGET', value: film.budget > 0 ? `$${(film.budget / 1e6).toFixed(1)}M` : 'Unknown' },
                         { label: 'REVENUE', value: film.revenue > 0 ? `$${(film.revenue / 1e6).toFixed(1)}M` : 'Unknown' },
-                    ].map(({ label, value }) => (
+                    ].map(({ label, value }: any) => (
                         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--ash)' }}>
                             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{label}</span>
                             <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)' }}>{value || '—'}</span>
@@ -667,7 +667,7 @@ function FilmDetails({ film, onPlayVideo }) {
                             <Film size={12} /> PRODUCTION STUDIOS
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                            {studios.slice(0, 5).map(studio => (
+                            {studios.slice(0, 5).map((studio: any) => (
                                 <div key={studio.id} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                     {studio.logo_path ? (
                                         <div style={{ width: 40, height: 24, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: '2px', padding: '2px' }}>
@@ -700,10 +700,10 @@ export default function FilmDetailPage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const location = useLocation()
-    const [activeVideo, setActiveVideo] = useState(null)
+    const [activeVideo, setActiveVideo] = useState<any>(null)
 
     // Single handler — both the hero play button and FilmDetails video pickers route here
-    const handlePlayVideo = (key) => setActiveVideo(key)
+    const handlePlayVideo = (key: any) => setActiveVideo(key)
 
     const { data: film, isLoading, error } = useQuery({
         queryKey: ['film', id],
@@ -761,7 +761,7 @@ export default function FilmDetailPage() {
                             <div style={{ marginTop: '2rem' }}>
                                 <SectionHeader label="SIMILAR FILMS" title="You May Also Like" />
                                 <div style={IS_TOUCH ? { display: 'flex', gap: '1rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '1rem', marginLeft: '-1.25rem', paddingLeft: '1.25rem' } : { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
-                                    {similar.slice(0, IS_TOUCH ? 10 : 6).map(f => (
+                                    {similar.slice(0, IS_TOUCH ? 10 : 6).map((f: any) => (
                                         <Link key={f.id} to={`/film/${f.id}`} style={IS_TOUCH ? { flexShrink: 0, width: 120, display: 'block', textDecoration: 'none' } : { textDecoration: 'none' }}>
                                             <FilmCard film={f} />
                                         </Link>

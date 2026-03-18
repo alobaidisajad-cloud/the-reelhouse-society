@@ -1,8 +1,20 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
+import { Notification } from '../types'
+
+export interface NotificationState {
+    notifications: Notification[]
+    push: (notif: Partial<Notification>) => void
+    setNotifications: (notifs: Notification[]) => void
+    markRead: (id: string) => void
+    markAllRead: () => void
+    dismiss: (id: string) => void
+    clearAll: () => void
+    unreadCount: () => number
+}
 
 // ── NOTIFICATION STORE — in-app notifications ──
-export const useNotificationStore = create(
+export const useNotificationStore = create<NotificationState>()(
     persist(
         (set, get) => ({
             notifications: [],
@@ -14,7 +26,7 @@ export const useNotificationStore = create(
                         read: false,
                         timestamp: new Date().toISOString(),
                         ...notif,
-                    },
+                    } as unknown as Notification,
                     ...state.notifications,
                 ].slice(0, 50), // Cap at 50 — prevents unbounded localStorage growth
             })),

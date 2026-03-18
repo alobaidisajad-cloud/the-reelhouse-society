@@ -57,7 +57,7 @@ export default function AuthCallbackPage() {
                         throw new Error('No valid token found in this link. It may have expired.')
                     }
                 }
-            } catch (err) {
+            } catch (err: any) {
                 setErrorMsg(err.message || 'Verification failed. The link may have expired.')
                 setStatus('error')
             }

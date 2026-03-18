@@ -29,7 +29,7 @@ const IconArrowRight = () => (
 export default function DispatchPage() {
     const { user } = useAuthStore()
     const { dossiers, addDossier, fetchDossiers } = useDispatchStore()
-    const [news, setNews] = useState([])
+    const [news, setNews] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedArticle, setSelectedArticle] = useState(null)
     const [isWriting, setIsWriting] = useState(false)
@@ -58,7 +58,7 @@ export default function DispatchPage() {
         return () => { document.body.style.overflow = 'unset' }
     }, [])
 
-    const openArticle = (item) => {
+    const openArticle = (item: any) => {
         scrollPos.current = window.scrollY
         setSelectedArticle(item)
         document.body.style.overflow = 'hidden'
@@ -138,7 +138,7 @@ export default function DispatchPage() {
                     </div>
 
                     <div className="auteur-dossier-list">
-                        {dossiers.map((report) => (
+                        {dossiers.map((report: any) => (
                             <article key={report.id} onClick={() => openArticle(report)} className="dossier-card">
                                 <div className="dossier-meta">
                                     <span className="dm-author">BY {report.author.toUpperCase()}</span>
@@ -218,7 +218,7 @@ export default function DispatchPage() {
                         {loading ? (
                             <div className="wire-loader">Decrypting incoming signals...</div>
                         ) : (
-                            news.map((item) => (
+                            news.map((item: any) => (
                                 <article key={item.id} onClick={() => openArticle(item)} className="wire-item">
                                     <div className="wire-bullet"></div>
                                     <div className="wire-content">
@@ -306,14 +306,17 @@ export default function DispatchPage() {
                                     className="wp-input-title"
                                     placeholder="Enter your headline..."
                                     value={formValues.title}
-                                    onChange={e => setFormValues({ ...formValues, title: e.target.value })}
+                                    onChange={(e: any) => setFormValues({ ...formValues, title: e.target.value })}
                                 />
-                                <div className="wp-divider"></div>
+
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                                    DOSSIER CONTENTS
+                                </div>
                                 <textarea
-                                    className="wp-input-body"
-                                    placeholder="Transmit your cinematic thoughts to The ReelHouse Society..."
+                                    className="input"
+                                    placeholder="Type your dossier in Markdown. Italics, bold, and blockquotes supported."
                                     value={formValues.content}
-                                    onChange={e => setFormValues({ ...formValues, content: e.target.value })}
+                                    onChange={(e: any) => setFormValues({ ...formValues, content: e.target.value })}
                                 />
                             </div>
 

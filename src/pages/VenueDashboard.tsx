@@ -1,6 +1,7 @@
 import { useState, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuthStore, useVenueStore } from '../store'
+import { useAuthStore } from '../stores/auth'
+import { useVenueStore } from '../stores/venue'
 import { Link } from 'react-router-dom'
 import {
     BarChart2, Calendar, Ticket, Settings, Plus, Trash2,
@@ -25,7 +26,15 @@ const TABS = [
     { id: 'payment', label: 'Payment', icon: CreditCard },
 ]
 
-function StatCard({ icon: Icon, label, value, sub, color = 'var(--sepia)' }) {
+interface StatCardProps {
+    icon: any;
+    label: string;
+    value: string | number;
+    sub?: string;
+    color?: string;
+}
+
+function StatCard({ icon: Icon, label, value, sub, color = 'var(--sepia)' }: StatCardProps) {
     return (
         <div style={{ background: 'var(--soot)', border: '1px solid var(--ash)', borderTop: `3px solid ${color}`, padding: '1.4rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -39,11 +48,12 @@ function StatCard({ icon: Icon, label, value, sub, color = 'var(--sepia)' }) {
 }
 
 // ── SLOT EDITOR ROW ──
-function SlotEditor({ slot, stId, onRemove, onUpdate }) {
+interface SlotEditorProps { slot: any; stId: string; onRemove: any; onUpdate: any; }
+function SlotEditor({ slot, stId, onRemove, onUpdate }: SlotEditorProps) {
     const [editing, setEditing] = useState(false)
     const [draft, setDraft] = useState({ time: slot.time, format: slot.format, notes: slot.notes || '' })
-    const pct = Math.round((slot.bookedSeats.length / 150) * 100)
-    const lowestPrice = Math.min(...(slot.ticketTypes?.map(t => t.price) || [0]))
+    const pct = Math.round(((slot.bookedSeats?.length || 0) / 150) * 100)
+    const lowestPrice = Math.min(...(slot.ticketTypes?.map((t: any) => t.price) || [0]))
     if (editing) return (
         <div style={{ padding: '0.75rem 1rem', background: 'rgba(139,105,20,0.08)', borderBottom: '1px solid var(--ash)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.4rem', marginBottom: '0.4rem' }}>
@@ -76,10 +86,11 @@ function SlotEditor({ slot, stId, onRemove, onUpdate }) {
 }
 
 // ── FILM EDIT PANEL ──
-function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, onRemoveSlot, onUpdate }) {
+interface FilmEditPanelProps { showtime: any; onClose: any; onRemove: any; onAddSlot: any; onRemoveSlot: any; onUpdate: any; }
+function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, onRemoveSlot, onUpdate }: FilmEditPanelProps) {
     const [addingSlot, setAddingSlot] = useState(false)
     const [slotForm, setSlotForm] = useState({ time: '20:00', format: '35mm', notes: '' })
-    const totalBooked = showtime.slots.reduce((a, s) => a + s.bookedSeats.length, 0)
+    const totalBooked = showtime.slots.reduce((a: any, s: any) => a + (s.bookedSeats?.length || 0), 0)
 
     // Using a fixed drawer approach for the edit panel so it works beautifully on mobile
     return (
@@ -100,7 +111,7 @@ function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, onRemoveSlot, o
                 </div>
                 <div className="ui-micro" style={{ color: 'var(--sepia)', padding: '0.75rem 1.25rem 0.4rem' }}>TIME SLOTS</div>
                 <div>
-                    {showtime.slots.map(sl => (
+                    {showtime.slots.map((sl: any) => (
                         <SlotEditor key={sl.id} slot={sl} stId={showtime.id} onRemove={onRemoveSlot} onUpdate={onUpdate} />
                     ))}
                     {showtime.slots.length === 0 && (
@@ -142,7 +153,7 @@ function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, onRemoveSlot, o
 }
 
 // ── WEEKLY CALENDAR ──
-function getWeekDates(offset = 0) {
+function getWeekDates(offset = 0): string[] {
     const now = new Date()
     const day = now.getDay()
     const monday = new Date(now)
@@ -154,20 +165,21 @@ function getWeekDates(offset = 0) {
     })
 }
 
-function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdateSlot, onAddFilmToDate }) {
+interface WeeklyCalendarProps { showtimes: any[]; screens?: any[]; onRemove: any; onAddSlot: any; onRemoveSlot: any; onUpdateSlot: any; onAddFilmToDate: any; }
+function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdateSlot, onAddFilmToDate }: WeeklyCalendarProps) {
     const [weekOffset, setWeekOffset] = useState(0)
-    const [selectedFilm, setSelectedFilm] = useState(null)
+    const [selectedFilm, setSelectedFilm] = useState<any>(null)
     const weekDates = getWeekDates(weekOffset)
     const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-    const byDate = {}
+    const byDate: Record<string, any[]> = {}
     showtimes.forEach(st => {
         if (!byDate[st.date]) byDate[st.date] = []
         byDate[st.date].push(st)
     })
 
-    const totalSlots = showtimes.reduce((a, s) => a + s.slots.length, 0)
-    const totalBooked = showtimes.reduce((a, s) => a + s.slots.reduce((b, sl) => b + sl.bookedSeats.length, 0), 0)
+    const totalSlots = showtimes.reduce((a: any, s: any) => a + s.slots.length, 0)
+    const totalBooked = showtimes.reduce((a: any, s: any) => a + s.slots.reduce((b: any, sl: any) => b + (sl.bookedSeats?.length || 0), 0), 0)
 
     return (
         <div>
@@ -208,7 +220,7 @@ function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdate
                                     </div>
                                 </div>
                                 {/* Films */}
-                                {films.map(st => (
+                                {films.map((st: any) => (
                                     <button key={st.id} onClick={() => setSelectedFilm(selectedFilm?.id === st.id ? null : st)}
                                         style={{
                                             background: selectedFilm?.id === st.id ? 'rgba(139,105,20,0.2)' : 'var(--ink)',
@@ -223,8 +235,8 @@ function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdate
                                 {/* Add film */}
                                 <button onClick={() => onAddFilmToDate(date)}
                                     style={{ background: 'none', border: '1px dashed var(--ash)', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.48rem', padding: '0.35rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem', transition: 'all 0.15s', letterSpacing: '0.05em' }}
-                                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.color = 'var(--sepia)' }}
-                                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.color = 'var(--fog)' }}
+                                    onMouseEnter={(e: any) => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.color = 'var(--sepia)' }}
+                                    onMouseLeave={(e: any) => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.color = 'var(--fog)' }}
                                 >
                                     <Plus size={10} /> Add
                                 </button>
@@ -238,7 +250,7 @@ function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdate
                         <FilmEditPanel
                             showtime={selectedFilm}
                             onClose={() => setSelectedFilm(null)}
-                            onRemove={(id) => { onRemove(id); setSelectedFilm(null) }}
+                            onRemove={(id: any) => { onRemove(id); setSelectedFilm(null) }}
                             onAddSlot={onAddSlot}
                             onRemoveSlot={onRemoveSlot}
                             onUpdate={onUpdateSlot}
@@ -251,7 +263,8 @@ function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdate
 }
 
 // ── ADD SHOWTIME MODAL — now with screen + duration ──
-function AddShowtimeModal({ onClose, onAdd, defaultDate = '', screens = [] }) {
+interface AddShowtimeModalProps { onClose: any; onAdd: any; defaultDate?: string; screens?: any[]; }
+function AddShowtimeModal({ onClose, onAdd, defaultDate = '', screens = [] }: AddShowtimeModalProps) {
     const [film, setFilm] = useState('')
     const [date, setDate] = useState(defaultDate)
     const [screenName, setScreenName] = useState(screens[0]?.name || 'Screen 1')
@@ -304,13 +317,14 @@ function AddShowtimeModal({ onClose, onAdd, defaultDate = '', screens = [] }) {
 }
 
 // ── PAYMENT TAB ──
-function PaymentTab({ venue, onConnect }) {
+interface PaymentTabProps { venue: any; onConnect: any; }
+function PaymentTab({ venue, onConnect }: PaymentTabProps) {
     const [form, setForm] = useState({ accountName: '', accountNumber: '', routingNumber: '', brand: 'visa' })
     const [submitted, setSubmitted] = useState(false)
-    const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
+    const set = (k: string, v: any) => setForm(p => ({ ...p, [k]: v }))
     const VENUE_CUT = 100 - venue.platformFeePercent
 
-    const handleConnect = (e) => {
+    const handleConnect = (e: any) => {
         e.preventDefault()
         if (!form.accountName || !form.accountNumber || !form.routingNumber) { toast.error('All fields required'); return }
         onConnect({ paymentAccountName: form.accountName, paymentLast4: form.accountNumber.slice(-4), paymentBrand: form.brand })
@@ -371,7 +385,8 @@ function PaymentTab({ venue, onConnect }) {
     )
 }
 
-function RevenueBreakdown({ pct }) {
+interface RevenueBreakdownProps { pct: number; }
+function RevenueBreakdown({ pct }: RevenueBreakdownProps) {
     const venueCut = 100 - pct
     return (
         <div style={{ background: 'var(--ink)', border: '1px solid var(--ash)', padding: '1.5rem' }}>
@@ -398,23 +413,24 @@ function RevenueBreakdown({ pct }) {
 }
 
 // ── PROFILE TAB ──
-function ProfileTab({ venue, onSave }) {
-    const [draft, setDraft] = useState({ ...venue })
+interface ProfileTabProps { venue: any; onSave: any; }
+function ProfileTab({ venue, onSave }: ProfileTabProps) {
+    const [draft, setDraft] = useState<any>({ ...venue })
     const [editing, setEditing] = useState(false)
-    const logoRef = useRef()
-    const set = (k, v) => setDraft(p => ({ ...p, [k]: v }))
+    const logoRef = useRef<HTMLInputElement>(null)
+    const set = (k: string, v: any) => setDraft((p: any) => ({ ...p, [k]: v }))
 
-    const handleLogo = (e) => {
+    const handleLogo = (e: any) => {
         const file = e.target.files?.[0]
         if (!file) return
         const reader = new FileReader()
-        reader.onload = (ev) => set('logo', ev.target.result)
+        reader.onload = (ev: any) => set('logo', ev.target.result)
         reader.readAsDataURL(file)
     }
 
-    const toggleVibe = (v) => {
+    const toggleVibe = (v: string) => {
         const cur = draft.vibes || []
-        set('vibes', cur.includes(v) ? cur.filter(x => x !== v) : [...cur, v])
+        set('vibes', cur.includes(v) ? cur.filter((x: any) => x !== v) : [...cur, v])
     }
 
     const fields = [
@@ -539,20 +555,20 @@ export default function VenueDashboard() {
     const [showAddFilm, setShowAddFilm] = useState(false)
     const [addFilmDate, setAddFilmDate] = useState('')
     const [showAddEvent, setShowAddEvent] = useState(false)
-    const [eventForm, setEventForm] = useState({ title: '', desc: '', date: '', time: '20:00', type: 'Special', price: '', totalTickets: 60 })
+    const [eventForm, setEventForm] = useState<any>({ title: '', desc: '', date: '', time: '20:00', type: 'Special', price: '', totalTickets: 60 })
 
     // Computed stats
-    const totalBooked = showtimes.reduce((a, st) => a + st.slots.reduce((b, sl) => b + sl.bookedSeats.length, 0), 0)
-    const totalCap = showtimes.reduce((a, st) => a + st.slots.length * 150, 0)
+    const totalBooked = showtimes.reduce((a: any, st: any) => a + st.slots.reduce((b: any, sl: any) => b + (sl.bookedSeats?.length || 0), 0), 0)
+    const totalCap = showtimes.reduce((a: any, st: any) => a + st.slots.length * 150, 0)
     const occPct = totalCap > 0 ? Math.round((totalBooked / totalCap) * 100) : 0
-    const showtimeRevenue = showtimes.reduce((a, st) =>
-        a + st.slots.reduce((b, sl) => {
-            const lowestPrice = Math.min(...(sl.ticketTypes?.map(t => t.price) || [0]))
-            return b + sl.bookedSeats.length * lowestPrice
+    const showtimeRevenue = showtimes.reduce((a: any, st: any) =>
+        a + st.slots.reduce((b: any, sl: any) => {
+            const lowestPrice = Math.min(...(sl.ticketTypes?.map((t: any) => t.price) || [0]))
+            return b + (sl.bookedSeats?.length || 0) * lowestPrice
         }, 0), 0)
-    const eventRevenue = events.reduce((a, e) => a + (e.totalTickets - e.ticketsLeft) * e.price, 0)
+    const eventRevenue = events.reduce((a: any, e: any) => a + (e.totalTickets - e.ticketsLeft) * e.price, 0)
 
-    const submitEvent = (e) => {
+    const submitEvent = (e: any) => {
         e.preventDefault()
         if (!eventForm.title || !eventForm.date || !eventForm.price) { toast.error('Fill all required fields'); return }
         addEvent({ ...eventForm, price: parseFloat(eventForm.price), totalTickets: parseInt(eventForm.totalTickets) })
@@ -567,7 +583,7 @@ export default function VenueDashboard() {
             <div style={{ background: 'var(--soot)', borderBottom: '1px solid var(--ash)', padding: '2rem 0 0' }}>
                 <div className="container">
                     <div className="venue-dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '1rem', paddingBottom: '1.5rem' }}>
-                        <div style={{ display: 'flex', items: 'center', gap: '1rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                             {venue.logo ? (
                                 <img src={venue.logo} alt="logo" style={{ width: 52, height: 52, borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--sepia)', flexShrink: 0 }} />
                             ) : (
@@ -639,12 +655,12 @@ export default function VenueDashboard() {
                                 </div>
                                 <div>
                                     <div className="section-title" style={{ marginBottom: '0.75rem' }}>UPCOMING SCHEDULE</div>
-                                    {showtimes.slice(0, 3).map(st => (
+                                    {showtimes.slice(0, 3).map((st: any) => (
                                         <div key={st.id} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', padding: '0.9rem 1.2rem', marginBottom: '0.4rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                             <div>
                                                 <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{st.film}</div>
                                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', marginTop: 3, letterSpacing: '0.08em' }}>
-                                                    {st.date} · {st.screenName || 'Screen 1'} · {st.slots.map(s => s.time).join(', ')}
+                                                    {st.date} · {st.screen_name || st.screenName || 'Screen 1'} · {st.slots.map((s: any) => s.time).join(', ')}
                                                 </div>
                                             </div>
                                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--sepia)' }}>{st.slots.length} SLOT{st.slots.length !== 1 ? 'S' : ''}</div>
@@ -671,7 +687,7 @@ export default function VenueDashboard() {
                                 {(venue.screens?.length > 0) && (
                                     <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>SCREENS:</span>
-                                        {venue.screens.map(sc => (
+                                        {venue.screens.map((sc: any) => (
                                             <span key={sc.id} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', border: `1px solid ${sc.color}`, color: sc.color, padding: '2px 8px' }}>{sc.name}</span>
                                         ))}
                                     </div>
@@ -679,11 +695,11 @@ export default function VenueDashboard() {
                                 <WeeklyCalendar
                                     showtimes={showtimes}
                                     screens={venue.screens || []}
-                                    onRemove={(id) => { removeShowtime(id); toast.success('Film removed from schedule') }}
+                                    onRemove={(id: any) => { removeShowtime(id); toast.success('Film removed from schedule') }}
                                     onAddSlot={addSlot}
-                                    onRemoveSlot={(stId, slId) => { removeSlot(stId, slId); toast.success('Slot removed') }}
-                                    onUpdateSlot={(stId, slId, updates) => { updateSlot(stId, slId, updates) }}
-                                    onAddFilmToDate={(date) => { setAddFilmDate(date); setShowAddFilm(true) }}
+                                    onRemoveSlot={(stId: any, slId: any) => { removeSlot(stId, slId); toast.success('Slot removed') }}
+                                    onUpdateSlot={(stId: any, slId: any, updates: any) => { updateSlot(stId, slId, updates) }}
+                                    onAddFilmToDate={(date: string) => { setAddFilmDate(date); setShowAddFilm(true) }}
                                 />
                             </div>
                         )}
@@ -699,16 +715,42 @@ export default function VenueDashboard() {
                                     <div style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', padding: '1.5rem' }}>
                                         <div className="section-title">NEW SPECIAL EVENT</div>
                                         <form onSubmit={submitEvent} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                            <input className="input" placeholder="Event title *" value={eventForm.title} onChange={e => setEventForm(p => ({ ...p, title: e.target.value }))} />
-                                            <textarea className="input" placeholder="Description" value={eventForm.desc} onChange={e => setEventForm(p => ({ ...p, desc: e.target.value }))} style={{ minHeight: 70 }} />
-                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.6rem' }}>
-                                                <input className="input" type="date" value={eventForm.date} onChange={e => setEventForm(p => ({ ...p, date: e.target.value }))} />
-                                                <input className="input" type="time" value={eventForm.time} onChange={e => setEventForm(p => ({ ...p, time: e.target.value }))} />
-                                                <select className="input" value={eventForm.type} onChange={e => setEventForm(p => ({ ...p, type: e.target.value }))}>
-                                                    {EVENT_TYPES.map(t => <option key={t}>{t}</option>)}
-                                                </select>
-                                                <input className="input" type="number" placeholder="Price ($) *" value={eventForm.price} onChange={e => setEventForm(p => ({ ...p, price: e.target.value }))} min="0" />
-                                                <input className="input" type="number" placeholder="Total tickets" value={eventForm.totalTickets} onChange={e => setEventForm(p => ({ ...p, totalTickets: e.target.value }))} min="1" />
+                                            <div>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>TITLE</div>
+                                                <input className="retro-input" placeholder="Event title" value={eventForm.title} onChange={e => setEventForm((p: any) => ({ ...p, title: e.target.value }))} />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>DESCRIPTION</div>
+                                                <input className="retro-input" placeholder="Brief description" value={eventForm.desc} onChange={e => setEventForm((p: any) => ({ ...p, desc: e.target.value }))} />
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                                <div>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>DATE</div>
+                                                    <input type="date" className="retro-input" value={eventForm.date} onChange={e => setEventForm((p: any) => ({ ...p, date: e.target.value }))} />
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>TIME</div>
+                                                    <input type="time" className="retro-input" value={eventForm.time} onChange={e => setEventForm((p: any) => ({ ...p, time: e.target.value }))} />
+                                                </div>
+                                            </div>
+                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                                                <div>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>TYPE</div>
+                                                    <select className="retro-input" value={eventForm.type} onChange={e => setEventForm((p: any) => ({ ...p, type: e.target.value }))}>
+                                                        <option>Special</option>
+                                                        <option>Q&A</option>
+                                                        <option>Workshop</option>
+                                                        <option>Party</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>PRICE</div>
+                                                    <input type="number" className="retro-input" placeholder="$" value={eventForm.price} onChange={e => setEventForm((p: any) => ({ ...p, price: e.target.value }))} />
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.3rem' }}>CAPACITY</div>
+                                                    <input type="number" className="retro-input" value={eventForm.totalTickets} onChange={e => setEventForm((p: any) => ({ ...p, totalTickets: parseInt(e.target.value) || 0 }))} />
+                                                </div>
                                             </div>
                                             <div style={{ display: 'flex', gap: '0.5rem' }}>
                                                 <button type="submit" className="btn btn-primary"><Check size={12} /> Add Event</button>
@@ -717,7 +759,7 @@ export default function VenueDashboard() {
                                         </form>
                                     </div>
                                 )}
-                                {events.map(ev => {
+                                {events.map((ev: any) => {
                                     const sold = ev.totalTickets - ev.ticketsLeft
                                     return (
                                         <div key={ev.id} style={{ background: 'var(--ink)', border: '1px solid var(--ash)', borderTop: '2px solid var(--sepia)', padding: '1rem 1.25rem', display: 'grid', gridTemplateColumns: '1fr auto auto auto', gap: '1rem', alignItems: 'center' }}>
@@ -759,13 +801,13 @@ export default function VenueDashboard() {
                                 </div>
                                 <div>
                                     <div className="section-title">SHOWTIME BREAKDOWN</div>
-                                    {showtimes.map(st => (
+                                    {showtimes.map((st: any) => (
                                         <div key={st.id} style={{ marginBottom: '1rem' }}>
                                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)', marginBottom: '0.4rem' }}>{st.film} · {st.date}</div>
-                                            {st.slots.map(sl => {
-                                                const lowestP = Math.min(...(sl.ticketTypes?.map(t => t.price) || [0]))
-                                                const rev = sl.bookedSeats.length * lowestP
-                                                const pct = Math.round((sl.bookedSeats.length / 150) * 100)
+                                            {st.slots.map((sl: any) => {
+                                                const lowestP = Math.min(...(sl.ticketTypes?.map((t: any) => t.price) || [0]))
+                                                const rev = (sl.bookedSeats?.length || 0) * lowestP
+                                                const pct = Math.round(((sl.bookedSeats?.length || 0) / 150) * 100)
                                                 return (
                                                     <div key={sl.id} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', padding: '0.9rem 1.2rem', marginBottom: '0.35rem' }}>
                                                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
@@ -776,7 +818,7 @@ export default function VenueDashboard() {
                                                             <div style={{ height: '100%', width: `${pct}%`, background: pct > 80 ? 'var(--blood-reel)' : 'var(--sepia)', borderRadius: 2, transition: 'width 0.5s' }} />
                                                         </div>
                                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.47rem', color: 'var(--fog)', marginTop: '0.25rem', letterSpacing: '0.08em' }}>
-                                                            {sl.bookedSeats.length}/150 SEATS · {pct}% CAPACITY
+                                                            {sl.bookedSeats?.length || 0}/150 SEATS · {pct}% CAPACITY
                                                         </div>
                                                     </div>
                                                 )

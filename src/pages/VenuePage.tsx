@@ -73,12 +73,12 @@ const DEMO_VENUES = {
 const DEFAULT_SEAT_LAYOUT = { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 }
 
 // Map a date string to a short day label
-function getDayLabel(dateStr) {
+function getDayLabel(dateStr: any) {
     const d = new Date(dateStr + 'T12:00:00')
     return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
-function MarqueeLetterBoard({ name, tagline }) {
+function MarqueeLetterBoard({ name, tagline }: any) {
     const letters = name.toUpperCase().split('')
     return (
         <div style={{
@@ -92,7 +92,7 @@ function MarqueeLetterBoard({ name, tagline }) {
             margin: '0 auto',
         }}>
             <div style={{ display: 'flex', gap: 3, justifyContent: 'center', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                {letters.map((char, i) => (
+                {letters.map((char: any, i: number) => (
                     <div
                         key={i}
                         style={{
@@ -123,19 +123,19 @@ function MarqueeLetterBoard({ name, tagline }) {
 }
 
 // ── FULL SCHEDULE SECTION ──
-function ScheduleSection({ showtimes, seatLayout, onChooseSeat }) {
+function ScheduleSection({ showtimes, seatLayout, onChooseSeat }: any) {
     // Get all unique dates, sorted
     const dates = useMemo(() => {
-        const all = new Set(showtimes.map(s => s.date))
+        const all = new Set(showtimes.map((s: any) => s.date))
         return [...all].sort()
     }, [showtimes])
 
-    const [selectedDate, setSelectedDate] = useState(dates[0] || '')
+    const [selectedDate, setSelectedDate] = useState<any>(dates[0] || '')
 
     // Group showtimes by date
     const byDate = useMemo(() => {
-        const map = {}
-        showtimes.forEach(st => {
+        const map: any = {}
+        showtimes.forEach((st: any) => {
             if (!map[st.date]) map[st.date] = []
             map[st.date].push(st)
         })
@@ -161,7 +161,7 @@ function ScheduleSection({ showtimes, seatLayout, onChooseSeat }) {
                     const dayLabel = getDayLabel(date)
                     return (
                         <button
-                            key={date}
+                            key={date as any}
                             onClick={() => setSelectedDate(date)}
                             style={{
                                 background: isActive ? 'rgba(139,105,20,0.18)' : 'transparent',
@@ -176,7 +176,7 @@ function ScheduleSection({ showtimes, seatLayout, onChooseSeat }) {
                         >
                             {dayLabel}
                             <span style={{ display: 'block', fontSize: '0.42rem', opacity: 0.7, marginTop: '0.15rem', letterSpacing: '0.05em' }}>
-                                {(byDate[date] || []).reduce((a, st) => a + st.slots.length, 0)} SCREENINGS
+                                {(byDate[date as any] || []).reduce((a: any, st: any) => a + st.slots.length, 0)} SCREENINGS
                             </span>
                         </button>
                     )
@@ -198,7 +198,7 @@ function ScheduleSection({ showtimes, seatLayout, onChooseSeat }) {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                            {todaysFilms.map((showtime, fi) => (
+                            {todaysFilms.map((showtime: any, fi: number) => (
                                 <FilmProgramme
                                     key={showtime.id}
                                     showtime={showtime}
@@ -215,7 +215,7 @@ function ScheduleSection({ showtimes, seatLayout, onChooseSeat }) {
     )
 }
 
-function FilmProgramme({ showtime, seatLayout, onChooseSeat, index }) {
+function FilmProgramme({ showtime, seatLayout, onChooseSeat, index }: any) {
     const totalSeats = (seatLayout?.rows || 10) * (seatLayout?.cols || 15)
 
     return (
@@ -239,12 +239,12 @@ function FilmProgramme({ showtime, seatLayout, onChooseSeat, index }) {
             {/* Slots */}
             <div>
                 {showtime.slots && showtime.slots.length > 0 ? (
-                    showtime.slots.map((slot, si) => {
+                    showtime.slots.map((slot: any, si: number) => {
                         const taken = slot.bookedSeats?.length || 0
                         const avail = totalSeats - taken
                         const pct = Math.round((taken / totalSeats) * 100)
                         const lowestPrice = slot.ticketTypes?.length
-                            ? Math.min(...slot.ticketTypes.map(t => t.price))
+                            ? Math.min(...slot.ticketTypes.map((t: any) => t.price))
                             : null
                         return (
                             <div
@@ -269,7 +269,7 @@ function FilmProgramme({ showtime, seatLayout, onChooseSeat, index }) {
                                 <div>
                                     {/* Ticket types */}
                                     <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: slot.notes ? '0.35rem' : 0 }}>
-                                        {slot.ticketTypes?.map(tt => (
+                                        {slot.ticketTypes?.map((tt: any) => (
                                             <span key={tt.id} style={{
                                                 fontFamily: 'var(--font-ui)', fontSize: '0.46rem', letterSpacing: '0.08em',
                                                 border: `1px solid ${tt.type === 'VIP' ? 'var(--flicker)' : 'var(--ash)'}`,
@@ -318,8 +318,8 @@ function FilmProgramme({ showtime, seatLayout, onChooseSeat, index }) {
     )
 }
 
-function EventCard({ event }) {
-    const typeColors = {
+function EventCard({ event }: any) {
+    const typeColors: any = {
         Marathon: 'var(--blood-reel)', Series: 'var(--sepia)',
         Retrospective: 'var(--fog)', Special: 'var(--flicker)', 'Q&A': 'var(--bone)', Premiere: 'var(--flicker)',
     }
@@ -357,7 +357,7 @@ function EventCard({ event }) {
 }
 
 // ── OTHER PALACES SIDEBAR — live from Supabase ──
-function OtherPalacesSidebar({ currentId }) {
+function OtherPalacesSidebar({ currentId }: any) {
     const { data: venues = [], isLoading } = useQuery({
         queryKey: ['other-palaces', currentId],
         queryFn: async () => {
@@ -380,7 +380,7 @@ function OtherPalacesSidebar({ currentId }) {
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic', lineHeight: 1.6 }}>
                     The Society is growing. More Palaces are joining the atlas soon.
                 </div>
-            ) : venues.map(v => (
+            ) : venues.map((v: any) => (
                 <Link
                     key={v.id}
                     to={`/venue/${v.id}`}
@@ -404,10 +404,10 @@ export default function VenuePage() {
     const liveShowtimes = useVenueStore(s => s.showtimes)
     const liveEvents = useVenueStore(s => s.events)
     const [following, setFollowing] = useState(false)
-    const [ticketTarget, setTicketTarget] = useState(null)
+    const [ticketTarget, setTicketTarget] = useState<any>(null)
 
     const isOwnerVenue = String(id) === '1'
-    const demoVenue = DEMO_VENUES[parseInt(id)] || DEMO_VENUES[1]
+    const demoVenue = (DEMO_VENUES as any)[parseInt(id as string)] || DEMO_VENUES[1]
 
     const venue = isOwnerVenue ? {
         ...demoVenue,
@@ -450,9 +450,9 @@ export default function VenuePage() {
         toast.success(following ? `Unfollowed ${venue.name}` : `Following ${venue.name}!`)
     }
 
-    const handleChooseSeat = (showtime, slot) => {
+    const handleChooseSeat = (showtime: any, slot: any) => {
         if (!isAuthenticated) { openSignupModal(); return }
-        setTicketTarget({ showtime, slot })
+        setTicketTarget({ showtime, slot } as any)
     }
 
     return (
@@ -462,7 +462,7 @@ export default function VenuePage() {
                     <TicketFlow
                         showtime={ticketTarget.showtime}
                         slot={ticketTarget.slot}
-                        venueSeatLayout={seatLayout}
+                        venueSeatLayout={seatLayout as any}
                         onClose={() => setTicketTarget(null)}
                     />
                 )}
@@ -480,7 +480,7 @@ export default function VenuePage() {
                     <MarqueeLetterBoard name={venue.name} tagline={venue.location} />
 
                     <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                        {venue.vibes.map(v => (
+                        {venue.vibes.map((v: any) => (
                             <span key={v} className="tag tag-vibe">⟡ {v}</span>
                         ))}
                         {venue.verified && (
@@ -530,7 +530,7 @@ export default function VenuePage() {
                             <section>
                                 <SectionHeader label="SPECIAL EVENTS" title="The Programme" />
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1rem' }}>
-                                    {eventsToShow.map((event, i) => (
+                                    {eventsToShow.map((event: any, i: number) => (
                                         <EventCard key={event.id || i} event={event} />
                                     ))}
                                 </div>
@@ -560,9 +560,9 @@ export default function VenuePage() {
                                 { label: 'FOLLOWERS', value: venue.followers.toLocaleString() },
                                 { label: 'STATUS', value: venue.verified ? '✦ VERIFIED HOUSE' : 'Community Listed' },
                                 { label: 'FILMS THIS WEEK', value: `${showtimesToShow.length} film${showtimesToShow.length !== 1 ? 's' : ''}` },
-                                { label: 'SCREENINGS', value: `${showtimesToShow.reduce((a, s) => a + s.slots.length, 0)} total` },
+                                { label: 'SCREENINGS', value: `${showtimesToShow.reduce((a: any, s: any) => a + s.slots.length, 0)} total` },
                                 { label: 'EVENTS', value: `${eventsToShow.length} upcoming` },
-                            ].map(({ label, value }) => (
+                            ].map(({ label, value }: any) => (
                                 <div key={label} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: '1px solid var(--ash)' }}>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.52rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{label}</span>
                                     <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--bone)' }}>{value}</span>

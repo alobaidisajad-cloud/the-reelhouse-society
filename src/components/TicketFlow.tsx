@@ -7,17 +7,17 @@ import SeatSelector from './SeatSelector'
 import TicketStubGallery from './TicketStubGallery'
 import toast from 'react-hot-toast'
 
-export default function TicketFlow({ showtime, slot, onClose }) {
+export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }: any) {
     const { isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
     const { venue, bookSeat } = useVenueStore()
 
     const [step, setStep] = useState(1) // 1=type, 2=seat, 3=confirm, 4=success
-    const [ticketType, setTicketType] = useState(null)
-    const [selectedSeat, setSelectedSeat] = useState(null)
-    const [createdStub, setCreatedStub] = useState(null)
+    const [ticketType, setTicketType] = useState<any>(null)
+    const [selectedSeat, setSelectedSeat] = useState<any>(null)
+    const [createdStub, setCreatedStub] = useState<any>(null)
 
-    const seatLayout = venue.seatLayout || { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 }
+    const seatLayout = venueSeatLayout || venue.seatLayout || { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 }
     const totalSeats = (seatLayout.rows || 10) * (seatLayout.cols || 15)
     const takenSeats = slot.bookedSeats?.length || 0
     const availableSeats = totalSeats - takenSeats

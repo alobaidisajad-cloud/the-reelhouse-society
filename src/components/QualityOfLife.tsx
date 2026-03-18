@@ -27,9 +27,9 @@ export default function QualityOfLife() {
         window.addEventListener('online', handleOnline)
 
         // 3. Global Hotkeys Tracker
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: any) => {
             // Ignore keystrokes if the user is typing in an input or textarea
-            if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return
+            if (['INPUT', 'TEXTAREA'].includes((document.activeElement as any)?.tagName)) return
 
             // L -> Quick Log Film
             if (e.key === 'l' || e.key === 'L') {

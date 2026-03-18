@@ -30,7 +30,7 @@ import ReviewModal from '../components/profile/ReviewModal'
 export default function UserProfilePage() {
     const { username: routeUsername } = useParams()
     const queryClient = useQueryClient()
-    const { user: currentUser, isAuthenticated, updateUser, community } = useAuthStore()
+    const { user: currentUser, isAuthenticated, updateUser } = useAuthStore()
     const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, getCinephileStats } = useFilmStore()
     const { programmes: currentProgrammes } = useProgrammeStore()
     const { openSignupModal, openLogModal } = useUIStore()
@@ -70,7 +70,7 @@ export default function UserProfilePage() {
             const { data } = await supabase
                 .from('profiles')
                 .select('followers_count, following_count')
-                .eq('id', currentUser.id)
+                .eq('id', (currentUser as any)?.id)
                 .single()
             return { followersCount: data?.followers_count || 0, followingCount: data?.following_count || 0 }
         },
@@ -94,7 +94,7 @@ export default function UserProfilePage() {
                 .eq('user_id', prof.id)
                 .order('created_at', { ascending: false })
                 .limit(100)
-            return (data || []).map(l => ({
+            return (data || []).map((l: any) => ({
                 id: l.id,
                 filmId: l.film_id,
                 title: l.film_title,
@@ -128,7 +128,7 @@ export default function UserProfilePage() {
     const [editUsername, setEditUsername] = useState(profileUser?.username || '')
     const [editAvatar, setEditAvatar] = useState(profileUser?.avatar || 'smiling')
     const [editIsSocialPrivate, setEditIsSocialPrivate] = useState(profileUser?.isSocialPrivate || false)
-    const [viewLog, setViewLog] = useState(null)
+    const [viewLog, setViewLog] = useState<any>(null)
 
     useEffect(() => {
         if (profileUser) { setEditAvatar(profileUser.avatar || 'smiling'); setEditIsSocialPrivate(profileUser.isSocialPrivate || false) }
@@ -140,7 +140,7 @@ export default function UserProfilePage() {
         toast.success("Identity updated.")
     }
 
-    const handleFileChange = async (e) => {
+    const handleFileChange = async (e: any) => {
         const file = e.target.files[0]
         if (!file) return
         if (!file.type.startsWith('image/')) return toast.error("Only archival image formats supported.")
@@ -187,7 +187,7 @@ export default function UserProfilePage() {
     const MOODS = ['smiling', 'neutral', 'dead', 'peeking', 'surprised', 'crying']
     const isFollowing = currentUser?.following?.includes(profileUser?.username)
     const [followLoading, setFollowLoading] = useState(false)
-    const [socialModal, setSocialModal] = useState(null)
+    const [socialModal, setSocialModal] = useState<any>(null)
     const [socialLoading, setSocialLoading] = useState(false)
 
     // Progressive log rendering: reset on filter change, load more on scroll
@@ -202,19 +202,20 @@ export default function UserProfilePage() {
         return () => obs.disconnect()
     }, [visibleLogCount])
 
-    const openSocialModal = async (type) => {
+    const openSocialModal = async (type: string) => {
         setSocialLoading(true)
         setSocialModal({ title: type === 'followers' ? 'Followers' : 'Following', list: [] })
         try {
+            const pUser: any = profileUser
             if (type === 'followers') {
                 // Step 1: get IDs of people who follow this profile
                 const { data: rows } = await supabase
                     .from('interactions')
                     .select('user_id')
-                    .eq('target_user_id', profileUser.id)
+                    .eq('target_user_id', pUser.id)
                     .eq('type', 'follow')
                     .limit(100)
-                const ids = (rows || []).map(r => r.user_id)
+                const ids = (rows || []).map((r: any) => r.user_id)
                 if (ids.length > 0) {
                     const { data: profiles } = await supabase
                         .from('profiles')
@@ -229,10 +230,10 @@ export default function UserProfilePage() {
                 const { data: rows } = await supabase
                     .from('interactions')
                     .select('target_user_id')
-                    .eq('user_id', profileUser.id)
+                    .eq('user_id', pUser.id)
                     .eq('type', 'follow')
                     .limit(100)
-                const ids = (rows || []).map(r => r.target_user_id)
+                const ids = (rows || []).map((r: any) => r.target_user_id)
                 if (ids.length > 0) {
                     const { data: profiles } = await supabase
                         .from('profiles')
@@ -243,7 +244,7 @@ export default function UserProfilePage() {
                     setSocialModal({ title: 'Following', list: [] })
                 }
             }
-        } catch { setSocialModal(prev => prev ? { ...prev, list: [] } : null) }
+        } catch { setSocialModal((prev: any) => prev ? { ...prev, list: [] } : null) }
         finally { setSocialLoading(false) }
     }
 
@@ -251,39 +252,40 @@ export default function UserProfilePage() {
         if (!currentUser) { openSignupModal(); return }
         if (followLoading || isOwnProfile) return
         setFollowLoading(true)
+        const pUser: any = profileUser
         try {
             if (isFollowing) {
                 // Update local state FIRST so UI responds immediately
-                updateUser({ following: (currentUser.following || []).filter(u => u !== profileUser.username) })
-                queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
+                updateUser({ following: (currentUser.following || []).filter(u => u !== pUser.username) })
+                queryClient.setQueryData(['profile-by-username', routeUsername], (old: any) =>
                     old ? { ...old, followersCount: Math.max(0, (old.followersCount || 1) - 1) } : old
                 )
-                toast.success(`Unfollowed @${profileUser.username}`)
+                toast.success(`Unfollowed @${pUser.username}`)
                 // DB: remove follow interaction (trigger handles count update)
                 await supabase.from('interactions').delete()
                     .eq('user_id', currentUser.id)
-                    .eq('target_user_id', profileUser.id)
+                    .eq('target_user_id', pUser.id)
                     .eq('type', 'follow')
             } else {
                 // Update local state FIRST so UI responds immediately
-                updateUser({ following: [...(currentUser.following || []), profileUser.username] })
-                queryClient.setQueryData(['profile-by-username', routeUsername], (old) =>
+                updateUser({ following: [...(currentUser.following || []), pUser.username] })
+                queryClient.setQueryData(['profile-by-username', routeUsername], (old: any) =>
                     old ? { ...old, followersCount: (old.followersCount || 0) + 1 } : old
                 )
-                toast.success(`Now following @${profileUser.username} ✦`)
+                toast.success(`Now following @${pUser.username} ✦`)
                 // DB: insert follow interaction (trigger handles count update)
                 await supabase.from('interactions').insert({
                     user_id: currentUser.id,
-                    target_user_id: profileUser.id,
+                    target_user_id: pUser.id,
                     type: 'follow'
                 })
                 // Send notification
-                supabase.from('notifications').insert({
-                    user_id: profileUser.id,
+                void supabase.from('notifications').insert({
+                    user_id: pUser.id,
                     type: 'follow',
                     from_username: currentUser.username,
                     message: `@${currentUser.username} is now following you.`,
-                }).catch(() => {})
+                })
             }
         } catch (err) {
             console.error('Follow error:', err)
@@ -293,7 +295,7 @@ export default function UserProfilePage() {
         }
     }
 
-    const renderAvatar = (avatarValue, size = 90) => {
+    const renderAvatar = (avatarValue: any, size = 90) => {
         if (!avatarValue) return <Buster size={size} mood="smiling" />
         if (avatarValue.startsWith('data:image/') || avatarValue.startsWith('http')) return <img src={avatarValue} alt="User avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
         return <Buster size={size} mood={avatarValue} />
@@ -312,18 +314,18 @@ export default function UserProfilePage() {
 
     // useMemo must be called unconditionally (before any early returns) — rules of hooks
     const halfLifeMap = useMemo(() => {
-        const byFilm = {}
-        for (const log of profileLogs) {
+        const byFilm: any = {}
+        for (const log of profileLogs as any[]) {
             if (!log.filmId || !log.rating) continue
             if (!byFilm[log.filmId]) byFilm[log.filmId] = []
             byFilm[log.filmId].push({ rating: log.rating, date: log.createdAt || log.watchedDate })
         }
-        const result = {}
+        const result: any = {}
         for (const [filmId, entries] of Object.entries(byFilm)) {
-            if (entries.length < 2) continue
-            const sorted = [...entries].sort((a, b) => new Date(a.date) - new Date(b.date))
+            if ((entries as any[]).length < 2) continue
+            const sorted = [...(entries as any[])].sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime())
             const first = sorted[0].rating, last = sorted[sorted.length - 1].rating
-            result[filmId] = { count: entries.length, trajectory: last > first ? 'ASCENDING' : last < first ? 'DECAYING' : 'ETERNAL', delta: last - first }
+            result[filmId] = { count: sorted.length, trajectory: last > first ? 'ASCENDING' : last < first ? 'DECAYING' : 'ETERNAL', delta: last - first }
         }
         return result
     }, [profileLogs])
@@ -378,7 +380,7 @@ export default function UserProfilePage() {
         <div className={`page-top ${stats.count > 50 ? 'level-obsessed' : stats.count > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100vh' }}>
             {/* Header */}
             <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
-                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
+                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <div className="profile-hero" style={{ display: 'flex', gap: '3rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                         {/* Avatar */}
@@ -394,8 +396,8 @@ export default function UserProfilePage() {
                                                 </div>
                                             ))}
                                         </div>
-                                        <input type="file" ref={fileRef} onChange={handleFileChange} accept="image/*" capture="user" style={{ display: 'none' }} />
-                                        <button className="btn btn-ghost" style={{ fontSize: '0.45rem', padding: '0.3rem 0.6rem', border: '1px solid var(--sepia)', width: 'auto' }} onClick={() => fileRef.current?.click()}><Camera size={10} style={{ marginRight: '0.2rem' }} /> UPLOAD PHOTO</button>
+                                        <input type="file" ref={fileRef as any} onChange={handleFileChange} accept="image/*" capture="user" style={{ display: 'none' }} />
+                                        <button className="btn btn-ghost" style={{ fontSize: '0.45rem', padding: '0.3rem 0.6rem', border: '1px solid var(--sepia)', width: 'auto' }} onClick={() => (fileRef.current as any)?.click()}><Camera size={10} style={{ marginRight: '0.2rem' }} /> UPLOAD PHOTO</button>
                                         <span style={{ fontSize: '0.35rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', textAlign: 'center' }}>CHOOSE A PERSONA OR UPLOAD A NEW FRAME</span>
                                     </div>
                                 )}
@@ -474,11 +476,11 @@ export default function UserProfilePage() {
                             <div className="profile-stats-row" style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
                                 {[
                                     { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
-                                    { value: isOwnProfile ? (ownCounts?.followersCount ?? currentUser?.followers_count ?? 0) : (profileUser?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
-                                    { value: isOwnProfile ? (ownCounts?.followingCount ?? currentUser?.following_count ?? 0) : (profileUser?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
+                                    { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
+                                    { value: isOwnProfile ? (ownCounts?.followingCount ?? (currentUser as any)?.following_count ?? 0) : ((profileUser as any)?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
                                     { value: profileStubs.length, label: 'STUBS', onClick: null },
                                 ].map(({ value, label, onClick }) => (
-                                    <div key={label} onClick={onClick} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default' }}>
+                                    <div key={label} onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default' }}>
                                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', color: 'var(--sepia)' }}>{value}</div>
                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>{label}</div>
                                     </div>
@@ -540,18 +542,18 @@ export default function UserProfilePage() {
                                     return (
                                         <>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gridAutoRows: 'minmax(210px, auto)', gap: '1rem' }}>
-                                            {shown.map((log, index) => {
+                                            {shown.map((log: any, index: number) => {
                                                 let gridColumnSpan = 'span 1', gridRowSpan = 'span 1'
                                                 if (sieve === 'all' && index === 0) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 2' }
                                                 else if (sieve === 'all' && (index === 1 || index === 2)) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 1' }
-                                                const hl = halfLifeMap[log.filmId]
+                                                const hl: any = halfLifeMap[log.filmId]
                                                 return (
                                                     <div
                                                         key={log.id}
                                                         onClick={() => setViewLog(log)}
                                                         style={{ gridColumn: gridColumnSpan, gridRow: gridRowSpan, position: 'relative', cursor: 'pointer' }}
                                                     >
-                                                        <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status }} />
+                                                        <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status } as any} />
                                                         {hl && (
                                                             <div style={{ position: 'absolute', bottom: 6, left: 4, right: 4, background: 'rgba(10,7,3,0.88)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.25rem 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem', pointerEvents: 'none' }}>
                                                                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', whiteSpace: 'nowrap', color: hl.trajectory === 'ASCENDING' ? '#7cb87a' : hl.trajectory === 'DECAYING' ? 'var(--blood-reel)' : 'var(--sepia)' }}>{hl.trajectory === 'ASCENDING' ? '↑' : hl.trajectory === 'DECAYING' ? '↓' : '—'} {hl.trajectory}</span>
@@ -581,17 +583,17 @@ export default function UserProfilePage() {
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                 <SectionHeader label="DEVOTEE ANALYTICS" title="Projector Room" />
                                 {profileLogs.length > 0 && (() => {
-                                    const ratingBuckets = [1, 2, 3, 4, 5].map(r => ({ star: r, count: profileLogs.filter(l => Math.round(l.rating) === r).length }))
+                                    const ratingBuckets = [1, 2, 3, 4, 5].map(r => ({ star: r, count: profileLogs.filter((l: any) => Math.round(l.rating) === r).length }))
                                     const maxRatingCount = Math.max(...ratingBuckets.map(b => b.count), 1)
-                                    const decadeBuckets = {}
-                                    profileLogs.forEach(l => { if (!l.year) return; const decade = Math.floor(l.year / 10) * 10; decadeBuckets[decade] = (decadeBuckets[decade] || 0) + 1 })
-                                    const decades = Object.entries(decadeBuckets).sort(([a], [b]) => +a - +b)
-                                    const maxDecadeCount = Math.max(...Object.values(decadeBuckets), 1)
+                                    const decadeBuckets: any = {}
+                                    profileLogs.forEach((l: any) => { if (!l.year) return; const decade = Math.floor(l.year / 10) * 10; decadeBuckets[decade] = (decadeBuckets[decade] || 0) + 1 })
+                                    const decades = Object.entries(decadeBuckets).sort(([a]: any, [b]: any) => +a - +b)
+                                    const maxDecadeCount = Math.max(...(Object.values(decadeBuckets) as number[]), 1)
                                     const totalHours = Math.floor(profileLogs.length * 115 / 60)
                                     // Logging streak: count consecutive days logged (up to today)
                                     const streakCount = (() => {
                                         const logDates = [...new Set(profileLogs
-                                            .map(l => l.date || l.loggedAt)
+                                            .map((l: any) => l.date || l.loggedAt)
                                             .filter(Boolean)
                                             .map(d => new Date(d).toISOString().slice(0, 10))
                                         )].sort().reverse()
@@ -602,8 +604,8 @@ export default function UserProfilePage() {
                                         if (logDates[0] !== today && logDates[0] !== yesterday) return 0
                                         let streak = 1
                                         for (let i = 1; i < logDates.length; i++) {
-                                            const prev = new Date(logDates[i - 1])
-                                            const curr = new Date(logDates[i])
+                                            const prev: any = new Date(logDates[i - 1])
+                                            const curr: any = new Date(logDates[i])
                                             const diff = (prev - curr) / 86400000
                                             if (diff === 1) streak++
                                             else break
@@ -627,7 +629,7 @@ export default function UserProfilePage() {
                                             <div className="card" style={{ padding: '1.75rem' }}>
                                                 <div className="section-title" style={{ marginBottom: '1.25rem' }}>ERA DISTRIBUTION</div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                                                    {decades.map(([decade, count]) => (
+                                                    {decades.map(([decade, count]: any) => (
                                                         <div key={decade} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', width: 38, flexShrink: 0 }}>{decade}s</div>
                                                             <div style={{ flex: 1, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden' }}><div style={{ height: '100%', borderRadius: 3, width: `${(count / maxDecadeCount) * 100}%`, background: 'linear-gradient(90deg, var(--blood-reel), var(--sepia))', transition: 'width 0.6s ease' }} /></div>
@@ -671,9 +673,9 @@ export default function UserProfilePage() {
                                     <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>{isOwnProfile ? "Your watchlist is empty. Start saving films." : "This member hasn't saved any films yet."}</div>
                                 ) : (
                                     <>
-                                        <WatchlistRoulette watchlist={profileWatchlist} />
+                                        <WatchlistRoulette watchlist={profileWatchlist as any[]} />
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
-                                            {profileWatchlist.map((film) => (
+                                            {profileWatchlist.map((film: any) => (
                                                 <Link key={film.id} to={`/film/${film.id}`}>
                                                     <motion.div whileHover={{ y: -3, transition: { type: 'spring', damping: 12 } }}><FilmCard film={film} /></motion.div>
                                                 </Link>
@@ -685,13 +687,13 @@ export default function UserProfilePage() {
                         )}
 
                         {activeTab === 'programmes' && (
-                            <div><SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" /><ProgrammesSection programmes={currentProgrammes} user={profileUser} /></div>
+                            <div><SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" /><ProgrammesSection {...{ programmes: currentProgrammes, user: profileUser } as any} /></div>
                         )}
 
                         {activeTab === 'calendar' && (
                             <div>
                                 <SectionHeader label="ARCHIVIST · VIEWING HISTORY" title="The Projectionist's Calendar" />
-                                <ProjectionistCalendar logs={profileLogs} isPremium={isPremium} />
+                                <ProjectionistCalendar {...{ logs: profileLogs, isPremium } as any} />
                             </div>
                         )}
                     </div>
@@ -708,14 +710,14 @@ export default function UserProfilePage() {
                                 <Share2 size={12} /> SHARE CINEMA DNA
                             </button>
                         )}
-                        <VaultSection vault={isOwnProfile ? currentWatchlist : []} user={profileUser} logs={profileLogs} />
-                        {profileLogs.filter(l => l.rating >= 4).length > 0 && (
+                        <VaultSection {...{ vault: isOwnProfile ? currentWatchlist : [], user: profileUser, logs: profileLogs } as any} />
+                        {profileLogs.filter((l: any) => l.rating >= 4).length > 0 && (
                             <div className="card">
                                 <div className="section-title" style={{ marginBottom: '0.75rem' }}>YOUR FAVOURITES</div>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {profileLogs.filter(l => l.rating >= 4).slice(0, 4).map((log) => (
+                                    {profileLogs.filter((l: any) => l.rating >= 4).slice(0, 4).map((log: any) => (
                                         <Link key={log.id} to={`/film/${log.filmId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-                                            {log.poster && <img src={tmdb.poster(log.poster, 'w92')} alt={log.title} loading="lazy" decoding="async" style={{ width: 28, height: 42, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)', flexShrink: 0 }} />}
+                                            {log.poster && <img src={tmdb.poster(log.poster, 'w92') || undefined} alt={log.title} loading="lazy" decoding="async" style={{ width: 28, height: 42, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)', flexShrink: 0 }} />}
                                             <div>
                                                 <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--parchment)', lineHeight: 1.2 }}>{log.title}</div>
                                                 <ReelRating value={log.rating} size="sm" />
@@ -740,7 +742,7 @@ export default function UserProfilePage() {
                 isOwnProfile={isOwnProfile}
                 routeUsername={routeUsername}
                 onClose={() => setViewLog(null)}
-                onEdit={(log) => {
+                onEdit={(log: any) => {
                     setViewLog(null)
                     openLogModal({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' }, log.id)
                 }}

@@ -60,7 +60,7 @@ const MOODS = [
     { label: 'Hilarious', sub: 'Pure joy and laughter.', glyph: '◎', genre: 35, sort: 'vote_average.desc', voteGte: 200, color: '#0A1A0A', accent: '#4A8B3A' },
 ]
 
-const Chip = ({ active, onClick, children, color }) => (
+const Chip = ({ active, onClick, children, color }: any) => (
     <button onClick={onClick} style={{
         flexShrink: 0, padding: '0.35rem 0.7rem',
         background: active ? (color || 'var(--sepia)') : 'var(--soot)',
@@ -75,7 +75,7 @@ const Chip = ({ active, onClick, children, color }) => (
 )
 
 // ── FILTER PANEL COMPONENT ──
-function FilterPanel({ filters, onChange, onClear, isSearching, style }) {
+function FilterPanel({ filters, onChange, onClear, isSearching, style }: any) {
     const { genreId, decade, sortBy, language, minRating } = filters
     const hasFilters = genreId || decade || language || minRating > 0
 
@@ -85,7 +85,7 @@ function FilterPanel({ filters, onChange, onClear, isSearching, style }) {
             <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.6rem' }}>GENRE</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                    {GENRES.map(g => (
+                    {GENRES.map((g: any) => (
                         <Chip key={g.id} active={genreId === g.id} onClick={() => onChange({ genreId: genreId === g.id ? null : g.id })}>{g.name}</Chip>
                     ))}
                 </div>
@@ -95,7 +95,7 @@ function FilterPanel({ filters, onChange, onClear, isSearching, style }) {
             <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.6rem' }}>DECADE</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                    {DECADES.map(d => (
+                    {DECADES.map((d: any) => (
                         <Chip key={d.label} active={decade?.label === d.label} onClick={() => onChange({ decade: decade?.label === d.label ? null : d })}>{d.label}</Chip>
                     ))}
                 </div>
@@ -105,7 +105,7 @@ function FilterPanel({ filters, onChange, onClear, isSearching, style }) {
             <div style={{ marginBottom: '1.25rem' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.6rem' }}>LANGUAGE</div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
-                    {LANGUAGES.map(l => (
+                    {LANGUAGES.map((l: any) => (
                         <Chip key={l.iso} active={language === l.iso} onClick={() => onChange({ language: language === l.iso ? null : l.iso })}>{l.name}</Chip>
                     ))}
                 </div>
@@ -116,13 +116,13 @@ function FilterPanel({ filters, onChange, onClear, isSearching, style }) {
                 <div>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>SORT BY</div>
                     <select value={sortBy} onChange={e => onChange({ sortBy: e.target.value })} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.08em', background: 'var(--soot)', border: '1px solid var(--ash)', color: 'var(--parchment)', padding: '0.5rem 0.75rem', borderRadius: '2px', cursor: 'pointer', appearance: 'none', minWidth: 140 }}>
-                        {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                        {SORT_OPTIONS.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                 </div>
                 <div>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>MIN RATING: {minRating > 0 ? `${minRating}+` : 'ANY'}</div>
                     <div style={{ display: 'flex', gap: '0.35rem' }}>
-                        {[0, 6, 7, 7.5, 8, 8.5].map(r => (
+                        {[0, 6, 7, 7.5, 8, 8.5].map((r: any) => (
                             <Chip key={r} active={minRating === r} onClick={() => onChange({ minRating: minRating === r ? 0 : r })}>
                                 {r === 0 ? 'Any' : `${r}✦`}
                             </Chip>
@@ -151,9 +151,9 @@ const desktopGridStyle = {
     gap: '1.25rem',
 }
 
-const FilmGrid = ({ films }) => (
+const FilmGrid = ({ films }: { films: any[] }) => (
     <div style={IS_TOUCH ? mobileGridStyle : desktopGridStyle}>
-        {films.map((item, idx) => {
+        {films.map((item: any, idx) => {
             const isPerson = item.media_type === 'person'
             return (
                 <Link
@@ -166,7 +166,7 @@ const FilmGrid = ({ films }) => (
                         <div style={{ textAlign: 'center' }}>
                             <div style={{ width: '100%', aspectRatio: '1', borderRadius: '2px', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--soot)', position: 'relative' }}>
                                 {item.profile_path
-                                    ? <img src={tmdb.profile(item.profile_path, 'w185')} alt={item.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
+                                    ? <img src={tmdb.profile(item.profile_path, 'w185') || undefined} alt={item.name} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }} />
                                     : <PersonPlaceholder />}
                             </div>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.6rem' : '0.9rem', color: 'var(--parchment)', marginTop: '0.4rem', lineHeight: 1.2 }}>{item.name}</div>
@@ -189,7 +189,7 @@ export default function DiscoverPage() {
 
     const page = useDiscoverStore(s => s.page)
     const setPage = useDiscoverStore(s => s.setPage)
-    const mood = useDiscoverStore(s => s.mood)
+    const mood: any = useDiscoverStore(s => s.mood)
     const setMood = useDiscoverStore(s => s.setMood)
     const query = useDiscoverStore(s => s.query)
     const setQuery = useDiscoverStore(s => s.setQuery)
@@ -197,13 +197,13 @@ export default function DiscoverPage() {
     const setInputVal = useDiscoverStore(s => s.setInputVal)
     const accumulatedFilms = useDiscoverStore(s => s.accumulatedFilms)
     const setAccumulatedFilms = useDiscoverStore(s => s.setAccumulatedFilms)
-    const filters = useDiscoverStore(s => s.filters)
+    const filters: any = useDiscoverStore(s => s.filters)
     const setFilters = useDiscoverStore(s => s.setFilters)
     const clearFilters = useDiscoverStore(s => s.clearFilters)
     const updateFilter = useDiscoverStore(s => s.updateFilter)
     const clearSearch = useDiscoverStore(s => s.clearSearch)
 
-    const [suggestions, setSuggestions] = useState([])
+    const [suggestions, setSuggestions] = useState<any[]>([])
     const [showFilters, setShowFilters] = useState(false)
 
     const isSearching = !!query
@@ -240,8 +240,8 @@ export default function DiscoverPage() {
                 const data = await res.json()
                 // Filter to only movies and known people, sort by popularity, show top 6
                 const raw = (data.results || [])
-                    .filter(r => r.media_type === 'movie' || (r.media_type === 'person' && r.profile_path))
-                    .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
+                    .filter((r: any) => r.media_type === 'movie' || (r.media_type === 'person' && r.profile_path))
+                    .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
                     .slice(0, 6)
                 setSuggestions(raw)
             } catch { }
@@ -249,17 +249,16 @@ export default function DiscoverPage() {
         return () => clearTimeout(id)
     }, [inputVal])
 
-    const { data: searchResults, isLoading: searchLoading, isFetching: searchFetching } = useQuery({
+    const { data: searchResults, isLoading: searchLoading, isFetching: searchFetching } = useQuery<any>({
         queryKey: ['search', query, page],
         queryFn: () => tmdb.search(query, page),
         enabled: !!query,
-        keepPreviousData: true,
     })
 
-    const { data: discoverResults, isLoading: discoverLoading, isFetching: discoverFetching } = useQuery({
+    const { data: discoverResults, isLoading: discoverLoading, isFetching: discoverFetching } = useQuery<any>({
         queryKey: ['discover', filters, mood?.label, page],
         queryFn: () => {
-            const params = {
+            const params: any = {
                 sort_by: mood ? mood.sort : filters.sortBy,
                 page,
                 'vote_count.gte': mood?.voteGte ?? 20,
@@ -275,7 +274,6 @@ export default function DiscoverPage() {
             return tmdb.discover(params)
         },
         enabled: !query,
-        keepPreviousData: true,
     })
 
     const currentResults = isSearching ? searchResults : discoverResults
@@ -287,19 +285,19 @@ export default function DiscoverPage() {
             if (page === 1) {
                 setAccumulatedFilms(currentResults.results)
             } else {
-                setAccumulatedFilms(prev => {
-                    const keys = new Set(prev.map(f => `${f.media_type || 'movie'}-${f.id}`))
-                    return [...prev, ...currentResults.results.filter(f => !keys.has(`${f.media_type || 'movie'}-${f.id}`))]
+                setAccumulatedFilms((prev: any[]) => {
+                    const keys = new Set(prev.map((f: any) => `${f.media_type || 'movie'}-${f.id}`))
+                    return [...prev, ...currentResults.results.filter((f: any) => !keys.has(`${f.media_type || 'movie'}-${f.id}`))]
                 })
             }
         }
     }, [currentResults, page])
 
-    const handleSearch = (e) => { e.preventDefault(); setQuery(inputVal); setSuggestions([]) }
+    const handleSearch = (e: any) => { e.preventDefault(); setQuery(inputVal); setSuggestions([]) }
     // clearSearch is imported from useDiscoverStore
-    const selectMood = (m) => {
+    const selectMood = (m: any) => {
         if (!m) { setMood(null); clearFilters(); return }
-        setMood(m); setFilters(prev => ({ ...prev, genreId: m.genre })); clearSearch()
+        setMood(m); setFilters((prev: any) => ({ ...prev, genreId: m.genre })); clearSearch()
     }
 
     const sectionLabel = isSearching
@@ -342,7 +340,7 @@ export default function DiscoverPage() {
                                     initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 8 }}
                                     style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'rgba(10,7,3,0.98)', border: '1px solid var(--ash)', borderRadius: '0 0 var(--radius-card) var(--radius-card)', zIndex: 10000, marginTop: '2px', overflow: 'hidden' }}
                                 >
-                                    {suggestions.map(item => {
+                                    {suggestions.map((item: any) => {
                                         const isPerson = item.media_type === 'person'
                                         return (
                                             <Link key={`${item.media_type}-${item.id}`} to={isPerson ? `/person/${item.id}` : `/film/${item.id}`} onClick={() => setSuggestions([])}
@@ -350,8 +348,8 @@ export default function DiscoverPage() {
                                                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(242,232,160,0.04)'}
                                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                             >
-                                                {item.poster_path || item.profile_path
-                                                    ? <img src={isPerson ? tmdb.profile(item.profile_path, 'w92') : tmdb.poster(item.poster_path, 'w92')} alt={isPerson ? item.name : item.title} loading="lazy" decoding="async" style={{ width: isPerson ? 24 : 18, height: isPerson ? 24 : 28, objectFit: 'cover', borderRadius: isPerson ? '50%' : '2px', flexShrink: 0 }} />
+                                                                {item.poster_path || item.profile_path
+                                                    ? <img src={isPerson ? tmdb.profile(item.profile_path, 'w92') || undefined : tmdb.poster(item.poster_path, 'w92') || undefined} alt={isPerson ? item.name : item.title} loading="lazy" decoding="async" style={{ width: isPerson ? 24 : 18, height: isPerson ? 24 : 28, objectFit: 'cover', borderRadius: isPerson ? '50%' : '2px', flexShrink: 0 }} />
                                                     : <div style={{ width: 18, height: 28, background: 'var(--ash)', flexShrink: 0, borderRadius: '2px' }} />
                                                 }
                                                 <div style={{ flex: 1, overflow: 'hidden', textAlign: 'left' }}>
@@ -377,7 +375,7 @@ export default function DiscoverPage() {
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: IS_TOUCH ? '0.6rem' : '1.25rem', textAlign: 'center' }}>✦ DEVELOP BY MOOD ✦</div>
                             {IS_TOUCH ? (
                                 <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '0.5rem', marginLeft: '-1.25rem', marginRight: '-1.25rem', paddingLeft: '1.25rem', paddingRight: '1.25rem' }}>
-                                    {MOODS.map(m => {
+                                    {MOODS.map((m: any) => {
                                         const active = mood?.label === m.label
                                         return (
                                             <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.9rem', background: active ? 'var(--sepia)' : 'var(--soot)', border: `1px solid ${active ? 'var(--parchment)' : 'var(--ash)'}`, color: active ? 'var(--ink)' : 'var(--parchment)', borderRadius: '20px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.08em', transition: 'all 0.2s' }}>
@@ -388,7 +386,7 @@ export default function DiscoverPage() {
                                 </div>
                             ) : (
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.75rem' }}>
-                                    {MOODS.map(m => {
+                                    {MOODS.map((m: any) => {
                                         const active = mood?.label === m.label
                                         return (
                                             <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ background: active ? 'var(--sepia)' : 'var(--soot)', border: `1px solid ${active ? 'var(--parchment)' : 'var(--ash)'}`, color: active ? 'var(--ink)' : 'var(--parchment)', padding: '1.5rem 0.75rem', borderRadius: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', transition: 'all 0.25s', cursor: 'pointer' }}
@@ -458,7 +456,7 @@ export default function DiscoverPage() {
                     </AnimatePresence>
 
                     {/* ── SECTION HEADER ── */}
-                    <SectionHeader label={sectionLabel} title={sectionTitle} />
+                    <SectionHeader label={String(sectionLabel)} title={sectionTitle} />
 
                     {/* ── FILM GRID ── */}
                     {isLoading ? <LoadingReel /> : (
