@@ -866,3 +866,71 @@
   .handbook-content { padding: 2rem 1.5rem; }
   .hb-title { font-size: 2.8rem; }
 }
+
+/* ── UTILITY CLASSES — Extracted from repeated inline styles ── */
+
+/* Label used above form fields and section headers (STATUS, YOUR RATING, etc.) */
+.field-label {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.2em;
+  color: var(--fog);
+  text-transform: uppercase;
+  margin-bottom: 0.5rem;
+}
+
+/* Gradient divider line between content sections */
+.section-divider {
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--sepia), transparent);
+  margin: 2rem 0;
+  opacity: 0.3;
+}
+
+/* Lock overlay for premium-gated content */
+.premium-gate {
+  position: relative;
+  pointer-events: none;
+  user-select: none;
+}
+.premium-gate::after {
+  content: '🔒';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(10, 7, 3, 0.7);
+  backdrop-filter: blur(4px);
+  font-size: 1.5rem;
+  border-radius: var(--radius-card);
+}
+
+/* Error state container — centered, themed */
+.section-error {
+  text-align: center;
+  padding: 3rem 2rem;
+  border: 1px solid rgba(139, 105, 20, 0.15);
+  border-radius: var(--radius-card);
+  background: rgba(10, 7, 3, 0.5);
+}
+
+/* Toggle/expand button pattern */
+.toggle-btn {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--sepia);
+  background: none;
+  border: 1px solid rgba(139, 105, 20, 0.2);
+  padding: 0.4em 1em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border-radius: 2px;
+}
+.toggle-btn:hover {
+  background: rgba(139, 105, 20, 0.08);
+  border-color: var(--sepia);
+}
+

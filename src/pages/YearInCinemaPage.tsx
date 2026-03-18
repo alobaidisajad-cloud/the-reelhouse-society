@@ -2,7 +2,8 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useFilmStore, useAuthStore } from '../store'
 import { tmdb } from '../tmdb'
-import { Film, ArrowLeft } from 'lucide-react'
+import { Film, ArrowLeft, Share2 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import '../styles/year-in-cinema.css'
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
@@ -150,6 +151,32 @@ export default function YearInCinemaPage() {
 
     // Favorite (highest rated)
     const favorite = ratingStats.highest
+
+    const [sharing, setSharing] = useState(false)
+    const shareYIC = async () => {
+        setSharing(true)
+        try {
+            const el = document.querySelector('.yic-hero') as HTMLElement
+            if (!el) return
+            const html2canvas = (await import('html2canvas')).default
+            const canvas = await html2canvas(el, { backgroundColor: '#0A0703', scale: 2, useCORS: true })
+            canvas.toBlob(async (blob: Blob | null) => {
+                if (!blob) return
+                const file = new File([blob], `reelhouse-${selectedYear}.png`, { type: 'image/png' })
+                if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                    await navigator.share({ files: [file], title: `My ${selectedYear} Year In Cinema` })
+                } else {
+                    const a = document.createElement('a')
+                    a.href = URL.createObjectURL(blob)
+                    a.download = `reelhouse-${selectedYear}.png`
+                    a.click()
+                    URL.revokeObjectURL(a.href)
+                    toast.success('Year In Cinema card saved!')
+                }
+            }, 'image/png')
+        } catch { toast.error('Could not generate share card.') }
+        finally { setSharing(false) }
+    }
 
     if (totalFilms < 10) {
         const progress = Math.round((totalFilms / 10) * 100)
@@ -392,9 +419,12 @@ export default function YearInCinemaPage() {
                     Your {selectedYear} archive is sealed.
                 </div>
 
-                <Link to={user ? `/u/${user.username}` : '/'} className="btn btn-ghost yic-share-btn">
+                <Link to={user ? `/u/${user.username}` : '/'} className="btn btn-ghost yic-share-btn" style={{ fontSize: '0.65rem', letterSpacing: '0.15em' }}>
                     <ArrowLeft size={14} /> RETURN TO PROFILE
                 </Link>
+                <button onClick={shareYIC} disabled={sharing} className="btn btn-primary yic-share-btn" style={{ fontSize: '0.65rem', letterSpacing: '0.15em', opacity: sharing ? 0.6 : 1 }}>
+                    <Share2 size={14} /> {sharing ? 'GENERATING...' : 'SHARE YOUR RETROSPECTIVE'}
+                </button>
             </Section>
         </div>
     )

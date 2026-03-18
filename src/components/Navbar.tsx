@@ -128,6 +128,16 @@ export default function Navbar() {
 
     return (
         <>
+            {/* Skip-to-content for keyboard users — WCAG 2.1 Level A */}
+            <a href="#main-content" className="skip-to-content" style={{
+                position: 'absolute', left: '-9999px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden',
+                zIndex: 100010, background: 'var(--ink)', color: 'var(--sepia)', padding: '0.75rem 1.5rem',
+                fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', textDecoration: 'none',
+                border: '1px solid var(--sepia)',
+            }} onFocus={(e) => { e.currentTarget.style.left = '1rem'; e.currentTarget.style.top = '1rem'; e.currentTarget.style.width = 'auto'; e.currentTarget.style.height = 'auto' }}
+               onBlur={(e) => { e.currentTarget.style.left = '-9999px'; e.currentTarget.style.width = '1px'; e.currentTarget.style.height = '1px' }}>
+                SKIP TO CONTENT
+            </a>
             {/* Navbar styles are defined in index.css — .navbar, .navbar-inner, .nav-link, etc. */}
             <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} style={{
                 transform: hidden ? 'translateY(-100%)' : 'translateY(0)',

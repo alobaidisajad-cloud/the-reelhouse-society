@@ -6,6 +6,7 @@ import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import CSVImport from '../components/CSVImport'
 import toast from 'react-hot-toast'
+import { supabase } from '../supabaseClient'
 import '../styles/membership.css'
 
 const features = [
@@ -36,33 +37,25 @@ export default function MembershipPage() {
     }
 
     const [isRedirecting, setIsRedirecting] = useState(false)
+    const [waitlistEmail, setWaitlistEmail] = useState('')
+    const [waitlistTier, setWaitlistTier] = useState('')
+    const [waitlistSent, setWaitlistSent] = useState(false)
 
-    const handleAscend = async (tier: any) => {
-        if (!isAuthenticated) return openSignupModal(tier)
-        if (user?.role === tier || (tier === 'archivist' && user?.role === 'auteur')) return
-
+    const handleWaitlist = async (tier: string) => {
+        const email = waitlistEmail.trim()
+        if (!email || !email.includes('@')) {
+            toast.error('Enter a valid email address.')
+            return
+        }
         try {
             setIsRedirecting(true)
-            toast.loading('Preparing your Patronage ledger...', { id: 'checkout' })
-
-            const backendUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paytabs-handler/create`
-
-            const response = await fetch(backendUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ user_id: user.id, tier })
-            })
-
-            const data = await response.json()
-
-            if (data.redirect_url) {
-                toast.dismiss('checkout')
-                window.location.href = data.redirect_url
-            } else {
-                throw new Error(data.error || 'No redirect URL returned')
-            }
-        } catch (error: any) {
-            toast.error(`Checkout failed: ${error.message}`, { id: 'checkout' })
+            await supabase.from('waitlist').insert({ email, tier, created_at: new Date().toISOString() })
+            toast.success('You\'re on the list. We\'ll be in touch.', { icon: '✦' })
+            setWaitlistSent(true)
+            setWaitlistEmail('')
+        } catch {
+            toast.error('Something went wrong. Try again.')
+        } finally {
             setIsRedirecting(false)
         }
     }
@@ -170,14 +163,31 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        <button
-                            className="btn btn-primary tier-btn"
-                            style={{ opacity: isRedirecting ? 0.7 : 1 }}
-                            disabled={isRedirecting}
-                            onClick={() => handleAscend('archivist')}
-                        >
-                            {isRedirecting ? 'INITIALIZING...' : isAuthenticated ? (user?.role === 'archivist' || user?.role === 'auteur' ? 'CURRENT RANK' : 'ASCEND TO ARCHIVIST') : 'CLAIM ARCHIVIST STATUS'}
-                        </button>
+                        {waitlistSent ? (
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
+                                ✦ YOU'RE ON THE LIST ✦
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
+                                <input
+                                    type="email"
+                                    className="input"
+                                    placeholder="your@email.com"
+                                    value={waitlistTier === 'archivist' ? waitlistEmail : ''}
+                                    onFocus={() => setWaitlistTier('archivist')}
+                                    onChange={e => { setWaitlistTier('archivist'); setWaitlistEmail(e.target.value) }}
+                                    style={{ textAlign: 'center', fontSize: '0.75rem' }}
+                                />
+                                <button
+                                    className="btn btn-primary tier-btn"
+                                    style={{ opacity: isRedirecting ? 0.7 : 1 }}
+                                    disabled={isRedirecting}
+                                    onClick={() => handleWaitlist('archivist')}
+                                >
+                                    {isRedirecting ? 'JOINING...' : 'JOIN THE ARCHIVIST WAITLIST'}
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
 
                     {/* The Patron Tier */}
@@ -219,14 +229,31 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        <button
-                            className="btn btn-primary tier-btn tier-btn--auteur"
-                            style={{ opacity: isRedirecting ? 0.7 : 1 }}
-                            disabled={isRedirecting}
-                            onClick={() => handleAscend('auteur')}
-                        >
-                            {isRedirecting ? 'INITIALIZING...' : isAuthenticated ? (user?.role === 'auteur' ? 'CURRENT RANK' : 'ASCEND TO AUTEUR') : 'BECOME A PATRON'}
-                        </button>
+                        {waitlistSent ? (
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
+                                ✦ YOU'RE ON THE LIST ✦
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
+                                <input
+                                    type="email"
+                                    className="input"
+                                    placeholder="your@email.com"
+                                    value={waitlistTier === 'auteur' ? waitlistEmail : ''}
+                                    onFocus={() => setWaitlistTier('auteur')}
+                                    onChange={e => { setWaitlistTier('auteur'); setWaitlistEmail(e.target.value) }}
+                                    style={{ textAlign: 'center', fontSize: '0.75rem' }}
+                                />
+                                <button
+                                    className="btn btn-primary tier-btn tier-btn--auteur"
+                                    style={{ opacity: isRedirecting ? 0.7 : 1 }}
+                                    disabled={isRedirecting}
+                                    onClick={() => handleWaitlist('auteur')}
+                                >
+                                    {isRedirecting ? 'JOINING...' : 'JOIN THE AUTEUR WAITLIST'}
+                                </button>
+                            </div>
+                        )}
                     </motion.div>
                 </motion.div>
 
@@ -265,7 +292,10 @@ export default function MembershipPage() {
 
                     <button
                         className="btn btn-primary founding-btn"
-                        onClick={() => isAuthenticated ? handleAscend('archivist') : openSignupModal('archivist')}
+                        onClick={() => {
+                            const el = document.querySelector('.tier-card input[type=email]') as HTMLInputElement
+                            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus() }
+                        }}
                     >
                         CLAIM A FOUNDING SEAT
                     </button>
