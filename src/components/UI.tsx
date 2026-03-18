@@ -86,7 +86,12 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
                             const x = e.clientX - rect.left
                             setHovered(x < rect.width / 2 ? reel - 0.5 : reel)
                         } : undefined}
-                        onClick={onChange ? () => onChange(hovered !== null ? hovered : reel) : undefined}
+                        onClick={onChange ? () => {
+                            const v = hovered !== null ? hovered : reel
+                            // Haptic feedback on touch devices — feels like a mechanical reel click
+                            if (navigator.vibrate) navigator.vibrate(10)
+                            onChange(v)
+                        } : undefined}
                     >
                         <ReelSegmentSVG size={s} filled={full ? 'full' : half ? 'half' : 'empty'} />
                     </div>
@@ -181,6 +186,15 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
             tabIndex={onClick ? 0 : undefined}
         >
             {posterUrl ? (
+                <div style={{
+                    position: 'absolute', inset: 0,
+                    backgroundImage: `url(${tmdb.poster(film.altPoster || film.poster_path, 'w92')})`,
+                    backgroundSize: 'cover', backgroundPosition: 'center',
+                    filter: 'blur(12px) saturate(0.6)', transform: 'scale(1.1)',
+                }}>
+                </div>
+            ) : null}
+            {posterUrl ? (
                 <img
                     src={posterUrl}
                     alt={film.title}
@@ -190,12 +204,12 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
                     onLoad={() => setIsLoaded(true)}
                     className={isLoaded ? 'developing-poster' : ''}
                     style={{
+                        position: 'relative', zIndex: 1,
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
                         opacity: isLoaded ? 0.95 : 0,
-                        transition: 'opacity 0.3s ease-in',
-                        backgroundColor: '#1a1a1a' // Solid constructivist block while loading
+                        transition: 'opacity 0.4s ease-in',
                     }}
                 />
             ) : (
@@ -470,6 +484,20 @@ export function RadarChart({ autopsy }: RadarChartProps) {
             </div>
 
             <div className="scanlines" style={{ position: 'absolute', inset: 0, opacity: 0.1, pointerEvents: 'none' }} />
+        </div>
+    )
+}
+
+// ── Query Error Banner — themed error state with retry ──
+export function QueryErrorBanner({ message, onRetry }: { message?: string; onRetry?: () => void }) {
+    return (
+        <div className="section-error" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--blood-reel)', lineHeight: 1 }}>✕</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)' }}>The Projector Has Jammed</div>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', lineHeight: 1.5, maxWidth: 340 }}>
+                {message || 'Something went wrong while loading this section. The reel can be reloaded.'}
+            </p>
+            {onRetry && <button onClick={onRetry} className="btn btn-ghost" style={{ fontSize: '0.6rem' }}>↻ TRY AGAIN</button>}
         </div>
     )
 }

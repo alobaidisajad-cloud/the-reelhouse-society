@@ -439,8 +439,18 @@ export default function CinemasPage() {
             <main className="container" style={{ paddingTop: '2.5rem', paddingBottom: '6rem' }}>
 
                 {isLoading ? (
-                    <div style={{ display: 'flex', justifyContent: 'center', paddingTop: '5rem' }}>
-                        <LoadingReel />
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <div key={i} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '2px', padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                <div className="shimmer" style={{ height: 48, width: 48, borderRadius: '6px', animationDelay: `${i * 0.08}s` }} />
+                                <div className="shimmer" style={{ height: '1.1rem', width: '65%', borderRadius: '2px', animationDelay: `${i * 0.08 + 0.1}s` }} />
+                                <div className="shimmer" style={{ height: '0.65rem', width: '40%', borderRadius: '2px', animationDelay: `${i * 0.08 + 0.15}s` }} />
+                                <div className="shimmer" style={{ height: '0.6rem', width: '80%', borderRadius: '2px', animationDelay: `${i * 0.08 + 0.2}s` }} />
+                                <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
+                                    {[1, 2, 3].map(j => <div key={j} className="shimmer" style={{ height: '1rem', width: 50, borderRadius: '2px', animationDelay: `${i * 0.08 + 0.25}s` }} />)}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ) : venues.length === 0 && !hasFilters ? (
                     /* Empty state — no venues in DB yet */

@@ -281,3 +281,26 @@
 .text-flicker-anim {
   animation: flicker-text 6s ease-in-out infinite;
 }
+
+/* ── 5-STAR GOLDEN SPARK CELEBRATION ── */
+@keyframes spark-burst {
+  0%   { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--sx), var(--sy)) scale(0); opacity: 0; }
+}
+
+.spark-container {
+  position: fixed;
+  pointer-events: none;
+  z-index: 99999;
+}
+
+.spark-particle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: var(--flicker);
+  border-radius: 50%;
+  box-shadow: 0 0 6px 2px rgba(242, 232, 160, 0.6);
+  animation: spark-burst 0.6s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+

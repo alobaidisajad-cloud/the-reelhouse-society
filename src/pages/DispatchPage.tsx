@@ -84,9 +84,12 @@ function NightlyTransmission() {
                     </>
                 ) : (
                     <>
-                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5vw, 3rem)', color: 'var(--parchment)', lineHeight: 1, marginBottom: '1rem', letterSpacing: '0.02em' }}>
-                            Loading Transmission...
-                        </h2>
+                        <div className="shimmer" style={{ height: '2.5rem', width: '45%', margin: '0 auto 0.75rem', borderRadius: '2px' }} />
+                        <div className="shimmer" style={{ height: '0.65rem', width: '20%', margin: '0 auto 1.5rem', borderRadius: '2px' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'center' }}>
+                            <div className="shimmer" style={{ height: '0.8rem', width: '55%', borderRadius: '2px' }} />
+                            <div className="shimmer" style={{ height: '0.8rem', width: '40%', borderRadius: '2px' }} />
+                        </div>
                     </>
                 )}
 
@@ -102,6 +105,55 @@ function NightlyTransmission() {
                 </div>
             </div>
         </div>
+    )
+}
+
+/* ── DAILY FRAME — A cinematic still that changes every day ── */
+function DailyFrame() {
+    const { data: trending } = useQuery({
+        queryKey: ['trending-dispatch'],
+        queryFn: () => tmdb.trending('week'),
+        staleTime: 1000 * 60 * 30,
+    })
+
+    const daysSinceEpoch = Math.floor(Date.now() / (24 * 60 * 60 * 1000))
+    const films = (trending?.results || []).filter((f: any) => f.backdrop_path)
+    // Offset by 3 so it's a different film than NightlyTransmission
+    const film: any = films.length > 0 ? films[(daysSinceEpoch + 3) % films.length] : null
+
+    if (!film) return null
+
+    return (
+        <section className="dispatch-section" style={{ padding: 0, overflow: 'hidden' }}>
+            <div className="section-header-block" style={{ paddingBottom: '1rem' }}>
+                <h2 className="sh-title">The Daily Frame</h2>
+                <p className="sh-sub">Today's chosen still from the reels.</p>
+            </div>
+            <Link to={`/film/${film.id}`} style={{ textDecoration: 'none', display: 'block', position: 'relative', aspectRatio: '21/9', overflow: 'hidden', border: '1px solid rgba(139,105,20,0.2)' }}>
+                <img
+                    src={tmdb.backdrop(film.backdrop_path)}
+                    alt={film.title || film.name}
+                    loading="lazy"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.35) contrast(1.1) brightness(0.9)' }}
+                />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,7,3,0.95) 0%, rgba(10,7,3,0.3) 40%, transparent 100%)' }} />
+                {/* Film grain */}
+                <div className="scanlines" style={{ position: 'absolute', inset: 0, opacity: 0.15, pointerEvents: 'none' }} />
+                {/* Caption */}
+                <div style={{ position: 'absolute', bottom: '1.25rem', left: '1.5rem', right: '1.5rem', zIndex: 2 }}>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.2rem, 3vw, 2rem)', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
+                        {film.title || film.name}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span>{(film.release_date || film.first_air_date)?.slice(0, 4)}</span>
+                        <span>VIEW THIS FILM →</span>
+                    </div>
+                </div>
+            </Link>
+            <div className="ornamental-divider" style={{ marginTop: '2rem' }}>
+                <span></span><div className="diamond"></div><span></span>
+            </div>
+        </section>
     )
 }
 
@@ -243,6 +295,9 @@ export default function DispatchPage() {
                 <div className="ornamental-divider">
                     <span></span><div className="diamond"></div><span></span>
                 </div>
+
+                {/* ── DAILY FRAME — A cinematic still that changes every day ── */}
+                <DailyFrame />
 
                 {/* GLOBAL INDUSTRY WIRE (TMDB NEWS) */}
 

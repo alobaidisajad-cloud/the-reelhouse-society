@@ -50,7 +50,30 @@ export default function ListDetailPage() {
         staleTime: 1000 * 60 * 5,
     })
 
-    if (!localList && isLoading) return <LoadingReel />
+    if (!localList && isLoading) return (
+        <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
+            <div style={{ maxWidth: 1000, margin: '0 auto', padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+                <div className="shimmer" style={{ height: '0.6rem', width: 100, borderRadius: '2px' }} />
+                <div>
+                    <div className="shimmer" style={{ height: '0.65rem', width: '20%', borderRadius: '2px', marginBottom: '1rem' }} />
+                    <div className="shimmer" style={{ height: '3rem', width: '55%', borderRadius: '2px', marginBottom: '1.5rem' }} />
+                    <div style={{ display: 'flex', gap: '1.5rem' }}>
+                        <div className="shimmer" style={{ height: '0.6rem', width: 80, borderRadius: '2px' }} />
+                        <div className="shimmer" style={{ height: '0.6rem', width: 60, borderRadius: '2px' }} />
+                        <div className="shimmer" style={{ height: '0.6rem', width: 90, borderRadius: '2px' }} />
+                    </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.5rem' }}>
+                    {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <div className="shimmer" style={{ aspectRatio: '2/3', width: '100%', borderRadius: '2px', animationDelay: `${i * 0.06}s` }} />
+                            <div className="shimmer" style={{ height: '0.7rem', width: '70%', borderRadius: '2px', animationDelay: `${i * 0.06 + 0.1}s` }} />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    )
 
     const list = localList || remoteList
 

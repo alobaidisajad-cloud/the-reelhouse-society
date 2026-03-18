@@ -65,7 +65,7 @@ export default function LogModal() {
     const [availableBackdrops, setAvailableBackdrops] = useState([])
     const [autopsyOpen, setAutopsyOpen] = useState(false) // Toggle to hide bloat
     const [isAutopsied, setIsAutopsied] = useState(false) // Master flag for 0/10 intentionality
-    const [moreOpen, setMoreOpen] = useState(false) // Progressive disclosure for secondary fields
+    const [moreOpen, setMoreOpen] = useState(() => typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches) // Auto-expand on mobile — scrolling is free
     const searchTimeout = useRef(null)
 
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
@@ -186,7 +186,11 @@ export default function LogModal() {
             toast('Sign in to log films.', { icon: '✦' })
             return
         }
-
+        // Prevent accidental empty logs — at least rate or write something
+        if (rating === 0 && !review.trim() && status !== 'abandoned') {
+            toast('Rate the film or write a review before logging.', { icon: '✦' })
+            return
+        }
 
         const logData = {
             filmId: film.id,
@@ -257,6 +261,28 @@ export default function LogModal() {
         }
 
         closeLogModal()
+
+        // ── Golden spark celebration for 5-star logs ──
+        if (rating === 5 && !logModalEditLogId) {
+            if (navigator.vibrate) navigator.vibrate([15, 30, 15])
+            const container = document.createElement('div')
+            container.className = 'spark-container'
+            const cx = window.innerWidth / 2, cy = window.innerHeight / 2
+            container.style.left = cx + 'px'
+            container.style.top = cy + 'px'
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2 + (Math.random() - 0.5) * 0.5
+                const dist = 40 + Math.random() * 60
+                const p = document.createElement('div')
+                p.className = 'spark-particle'
+                p.style.setProperty('--sx', `${Math.cos(angle) * dist}px`)
+                p.style.setProperty('--sy', `${Math.sin(angle) * dist}px`)
+                p.style.animationDelay = `${Math.random() * 0.1}s`
+                container.appendChild(p)
+            }
+            document.body.appendChild(container)
+            setTimeout(() => container.remove(), 700)
+        }
 
     }
 

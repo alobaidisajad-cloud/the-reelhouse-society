@@ -723,8 +723,33 @@ export default function FilmDetailPage() {
     )
 
     if (isLoading) return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
-            <LoadingReel />
+        <div style={{ minHeight: '100vh', background: 'var(--ink)' }}>
+            {/* Hero skeleton */}
+            <div style={{ height: '70vh', position: 'relative', overflow: 'hidden' }}>
+                <div className="shimmer" style={{ position: 'absolute', inset: 0, opacity: 0.3 }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--ink) 30%, transparent 70%)' }} />
+                <div className="container" style={{ position: 'relative', zIndex: 2, height: '100%', display: 'flex', alignItems: 'flex-end', paddingBottom: '3rem' }}>
+                    <div className="hero-grid" style={{ width: '100%' }}>
+                        <div>
+                            <div className="shimmer" style={{ width: '100%', maxWidth: 220, aspectRatio: '2/3', borderRadius: '2px' }} />
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', justifyContent: 'flex-end' }}>
+                            <div className="shimmer" style={{ height: '2.5rem', width: '60%', borderRadius: '2px' }} />
+                            <div className="shimmer" style={{ height: '1rem', width: '35%', borderRadius: '2px' }} />
+                            <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>
+                                <div className="shimmer" style={{ height: '2rem', width: 100, borderRadius: '2px' }} />
+                                <div className="shimmer" style={{ height: '2rem', width: 100, borderRadius: '2px' }} />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {/* Content skeleton */}
+            <div className="container" style={{ paddingTop: '3rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <div className="shimmer" style={{ height: '0.7rem', width: '15%', borderRadius: '2px' }} />
+                <div className="shimmer" style={{ height: '1.2rem', width: '30%', borderRadius: '2px' }} />
+                {[1, 2, 3].map(i => <div key={i} className="shimmer" style={{ height: '0.8rem', width: `${90 - i * 15}%`, borderRadius: '2px' }} />)}
+            </div>
         </div>
     )
     if (error || !film) return (

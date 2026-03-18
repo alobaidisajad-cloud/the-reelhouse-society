@@ -330,6 +330,26 @@ export default function UserProfilePage() {
         return result
     }, [profileLogs])
 
+    // ── Daily Streak — consecutive days with ≥1 log ──
+    const streak = useMemo(() => {
+        const dates = new Set<string>()
+        for (const log of profileLogs as any[]) {
+            const d = log.watchedDate || log.createdAt
+            if (d) dates.add(new Date(d).toISOString().slice(0, 10))
+        }
+        let count = 0
+        const now = new Date()
+        for (let i = 0; i < 365; i++) {
+            const check = new Date(now)
+            check.setDate(check.getDate() - i)
+            const key = check.toISOString().slice(0, 10)
+            if (dates.has(key)) count++
+            else if (i === 0) continue // today doesn't break streak — allow logging later
+            else break
+        }
+        return count
+    }, [profileLogs])
+
     // Show a loading state while fetching another user's profile
     if (!isOwnProfile && profileLoading) return (
         <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
@@ -474,10 +494,11 @@ export default function UserProfilePage() {
                             {/* Stats bar */}
                             <div className="profile-stats-row" style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
                                 {[
-                                    { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
-                                    { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
-                                    { value: isOwnProfile ? (ownCounts?.followingCount ?? (currentUser as any)?.following_count ?? 0) : ((profileUser as any)?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
-                                    { value: profileStubs.length, label: 'STUBS', onClick: null },
+                                    { value: profileLogs.length, label: 'ACTIVITY', onClick: null, icon: null },
+                                    { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers'), icon: null },
+                                    { value: isOwnProfile ? (ownCounts?.followingCount ?? (currentUser as any)?.following_count ?? 0) : ((profileUser as any)?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following'), icon: null },
+                                    { value: profileStubs.length, label: 'STUBS', onClick: null, icon: null },
+                                    ...(streak > 0 ? [{ value: streak, label: streak >= 30 ? '🔥 OBSESSED' : streak >= 7 ? '🔥 POSSESSED' : streak >= 3 ? '🔥 DEDICATED' : '🔥 STREAK', onClick: null, icon: null }] : []),
                                 ].map(({ value, label, onClick }) => (
                                     <div key={label} onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default' }}>
                                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', color: 'var(--sepia)' }}>{value}</div>
