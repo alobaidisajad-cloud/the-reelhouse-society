@@ -21,7 +21,7 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
                 return (
                     <div
                         key={reel}
-                        style={{ position: 'relative', width: s, height: s, cursor: onChange ? 'none' : 'default' }}
+                        style={{ position: 'relative', width: s, height: s, cursor: onChange ? 'pointer' : 'default' }}
                         onMouseMove={onChange ? (e) => {
                             const rect = e.currentTarget.getBoundingClientRect()
                             const x = e.clientX - rect.left
@@ -103,7 +103,7 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
                 queryFn: () => tmdb.movieDetails(film.id),
                 staleTime: 1000 * 60 * 10
             })
-        }, 300) // 300ms debounce prevents API hammering
+        }, 500) // 500ms debounce prevents API hammering during fast scrolling
     }, [film?.id, queryClient])
 
     const handleMouseLeave = useCallback(() => {

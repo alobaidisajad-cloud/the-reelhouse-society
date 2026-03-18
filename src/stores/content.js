@@ -30,7 +30,7 @@ export const useDispatchStore = create((set) => ({
             })
         }
         // Seed data only when table genuinely has no published content yet
-        if (!error && data?.length === 0) {
+        if (!error && Array.isArray(data) && data.length === 0) {
             set({
                 dossiers: [
                     {

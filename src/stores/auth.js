@@ -65,8 +65,8 @@ export const useAuthStore = create(
                     .single()
 
                 set({ user: { ...data.user, ...profile, following: [] }, isAuthenticated: true })
-                // Parallel fetch — all data loads simultaneously (including following list)
-                hydrateUserData()
+                // Hydration is handled by initAuthSync() via SIGNED_IN event —
+                // no explicit hydrateUserData() call here to prevent double-fetch.
                 return data
             },
 

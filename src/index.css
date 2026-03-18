@@ -555,7 +555,7 @@ a:hover {
   border: none;
   padding: 0.75em 1.8em;
   font-size: 0.7rem;
-  cursor: none;
+  cursor: pointer; /* Global @media(any-pointer:fine) handles cursor:none */
   transition: all 0.4s cubic-bezier(0.19, 1, 0.22, 1);
   position: relative;
   display: inline-flex;

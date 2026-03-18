@@ -6,7 +6,7 @@ import { tmdb } from '../tmdb'
 import { Heart, MessageSquare, Bookmark, Download, Send, RefreshCw } from 'lucide-react'
 import ReactionBar from '../components/ReactionBar'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
-import html2canvas from 'html2canvas'
+// html2canvas loaded on demand — see exportDossier() below
 import toast from 'react-hot-toast'
 
 // ── ACTIVITY CARD ──
@@ -132,6 +132,7 @@ function ActivityCard({ log }) {
             // Give React a tick to display the hidden dossier offscreen
             await new Promise(resolve => setTimeout(resolve, 50))
 
+            const { default: html2canvas } = await import('html2canvas')
             const canvas = await html2canvas(dossierRef.current, {
                 backgroundColor: '#0a0703', // var(--ink)
                 scale: 2, // High-res export
@@ -276,7 +277,7 @@ function ActivityCard({ log }) {
                 {/* Social Interaction Bar */}
                 <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap' }}>
                     <div style={{ position: 'relative' }}>
-                        <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: endorsed ? 'var(--sepia)' : 'var(--fog)', cursor: 'none', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)'}>
+                        <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: endorsed ? 'var(--sepia)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)'}>
                             <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />
                             {endorsed ? 'ENDORSED' : 'ENDORSE'} ({endorsementCount})
                         </button>
@@ -305,7 +306,7 @@ function ActivityCard({ log }) {
                     </div>
                     <button
                         onClick={handleAnnotateToggle}
-                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'none', transition: 'color 0.2s' }}
+                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }}
                         onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
                         onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
                     >
@@ -320,7 +321,7 @@ function ActivityCard({ log }) {
                         <RefreshCw size={12} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
                     </button>
                     {log.isAutopsied && log.autopsy && (
-                        <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'none', transition: 'color 0.2s', opacity: isExporting ? 0.5 : 1 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--flicker)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--sepia)'}>
+                        <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', transition: 'color 0.2s', opacity: isExporting ? 0.5 : 1 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--flicker)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--sepia)'}>
                             <Download size={12} /> {isExporting ? 'ENCODING...' : 'TRANSMIT DOSSIER'}
                         </button>
                     )}
@@ -491,7 +492,7 @@ function RatingLegend() {
                 onClick={dismiss}
                 style={{
                     marginLeft: 'auto', background: 'none', border: 'none',
-                    color: 'var(--fog)', cursor: 'none', padding: '0 0.2rem',
+                    color: 'var(--fog)', cursor: 'pointer', padding: '0 0.2rem',
                     fontFamily: 'var(--font-ui)', fontSize: '0.6rem', opacity: 0.5,
                     transition: 'opacity 0.2s',
                 }}

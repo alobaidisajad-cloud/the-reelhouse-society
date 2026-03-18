@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Download, Check, Film, Maximize2 } from 'lucide-react'
-import html2canvas from 'html2canvas'
+// html2canvas loaded on demand in handleDownload()
 
 export default function TicketStubGallery({ stub, onClose }) {
     const stubRef = useRef(null)
@@ -16,6 +16,7 @@ export default function TicketStubGallery({ stub, onClose }) {
         setIsDownloading(true)
 
         try {
+            const { default: html2canvas } = await import('html2canvas')
             const canvas = await html2canvas(stubRef.current, {
                 scale: 3, // High-res export for Instagram Story
                 backgroundColor: '#0E0B08', // Ink background

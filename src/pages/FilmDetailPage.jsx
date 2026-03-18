@@ -10,7 +10,9 @@ import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 
-const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
+// TMDB API key — MUST be set via VITE_TMDB_API_KEY in environment.
+// No hardcoded fallback shipped in bundle — prevents key abuse.
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || ''
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
 // ── COMMUNITY REVIEWS (Dynamic from Supabase) ──
@@ -481,7 +483,7 @@ function FilmHero({ film, onPlayTrailer }) {
                     <ObscurityBadge score={score} />
 
                     {director && (
-                        <Link to={`/person/${director.id}`} style={{ textDecoration: 'none', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'none' }}
+                        <Link to={`/person/${director.id}`} style={{ textDecoration: 'none', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.12em', color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
                             onMouseEnter={e => e.currentTarget.style.color = 'var(--flicker)'}
                             onMouseLeave={e => e.currentTarget.style.color = 'var(--bone)'}
                         >
@@ -549,7 +551,7 @@ function FilmDetails({ film, onPlayVideo }) {
                         <SectionHeader label="CAST" title="The Players" />
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.75rem' }}>
                             {cast.map(member => (
-                                <Link key={member.id} to={`/person/${member.id}`} style={{ textAlign: 'center', textDecoration: 'none', color: 'inherit', display: 'block', cursor: 'none' }}
+                                <Link key={member.id} to={`/person/${member.id}`} style={{ textAlign: 'center', textDecoration: 'none', color: 'inherit', display: 'block' }}
                                     onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
                                     onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                                 >

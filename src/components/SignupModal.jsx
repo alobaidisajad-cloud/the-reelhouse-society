@@ -14,11 +14,11 @@ const PERSONAS = [
 ]
 
 const VIBE_TAGS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace', 'Repertory', 'Horror House', 'Indie']
-// Invite codes — read from env so they're not exposed in the public repo.
-// Set VITE_INVITE_CODES in Vercel as a comma-separated list, e.g. "CODE1,CODE2,CODE3"
+// Invite codes — MUST be set via VITE_INVITE_CODES in Vercel (comma-separated).
+// No fallback codes shipped in the bundle — prevents view-source discovery.
 const VALID_CODES = import.meta.env.VITE_INVITE_CODES
     ? import.meta.env.VITE_INVITE_CODES.split(',').map(c => c.trim().toUpperCase())
-    : ['NITRATE', 'OMEN', 'REELHOUSE', 'AUTEUR', 'GHOST']
+    : []
 
 export default function SignupModal() {
     const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
@@ -153,7 +153,6 @@ export default function SignupModal() {
                 msg = 'Username is already taken by another patron. Choose another.';
             }
             toast.error(msg)
-        } finally {
         }
     }
 
@@ -461,7 +460,12 @@ export default function SignupModal() {
                                     ].map(({ val, label, sub, icon }) => (
                                         <button
                                             key={val}
-                                            onClick={() => setRole(val)}
+                                            onClick={() => {
+                                                setRole(val)
+                                                // Reset role-specific state to prevent cross-contamination
+                                                if (val === 'venue_owner') { setPersona('') }
+                                                if (val === 'cinephile') { setVenueName(''); setVenueDesc(''); setVibes([]) }
+                                            }}
                                             style={{
                                                 background: role === val ? 'rgba(139,105,20,0.15)' : 'var(--ink)',
                                                 border: `1px solid ${role === val ? 'var(--sepia)' : 'var(--ash)'}`,

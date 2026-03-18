@@ -73,27 +73,35 @@ export const initAuthSync = () => {
 export const initRealtime = () => {
     if (!isSupabaseConfigured) return
 
-    // 1. Live global feed — new log inserts from any user appear immediately
+    // 1. Live global feed — new log inserts from other users go into a
+    //    SEPARATE feed array so the current user's personal `logs` store
+    //    is never polluted. The user's own inserts are handled by addLog().
     supabase
         .channel('global_logs_feed')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'logs' }, (payload) => {
-            const currentLogs = useFilmStore.getState().logs
             const currentUserId = useAuthStore.getState().user?.id
-            if (!currentLogs.find((l) => l.id === payload.new.id) && payload.new.user_id !== currentUserId) {
-                useFilmStore.setState({
-                    logs: [{
-                        id: payload.new.id,
-                        filmId: payload.new.film_id,
-                        title: payload.new.film_title,
-                        poster: payload.new.poster_path,
-                        year: payload.new.year,
-                        rating: payload.new.rating,
-                        review: payload.new.review,
-                        watchedDate: payload.new.watched_date,
-                        createdAt: payload.new.created_at,
-                    }, ...currentLogs],
-                })
-            }
+
+            // Own logs are already handled via addLog() — skip entirely
+            if (payload.new.user_id === currentUserId) return
+
+            const feedLogs = useFilmStore.getState().globalFeedLogs || []
+            // Deduplicate by ID
+            if (feedLogs.some(l => l.id === payload.new.id)) return
+
+            useFilmStore.setState({
+                globalFeedLogs: [{
+                    id: payload.new.id,
+                    userId: payload.new.user_id,
+                    filmId: payload.new.film_id,
+                    title: payload.new.film_title,
+                    poster: payload.new.poster_path,
+                    year: payload.new.year,
+                    rating: payload.new.rating,
+                    review: payload.new.review,
+                    watchedDate: payload.new.watched_date,
+                    createdAt: payload.new.created_at,
+                }, ...feedLogs].slice(0, 100), // Cap at 100 to prevent memory bloat
+            })
         })
         .subscribe()
 

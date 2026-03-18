@@ -10,8 +10,9 @@ export const useFilmStore = create(
             watchlist: [],
             vault: [],
             lists: [],
-            stubs: [],       // Supabase-backed digital tickets — fetched on login
-            interactions: [], // { type: 'endorse', targetId, timestamp }
+            stubs: [],           // Supabase-backed digital tickets — fetched on login
+            interactions: [],    // { type: 'endorse', targetId, timestamp }
+            globalFeedLogs: [],  // Realtime feed from other users — NEVER mixed with personal logs
 
             toggleEndorse: async (targetId) => {
                 const user = useAuthStore.getState().user

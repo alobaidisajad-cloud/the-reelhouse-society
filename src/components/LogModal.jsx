@@ -7,6 +7,11 @@ import { tmdb } from '../tmdb'
 import { ReelRating } from './UI'
 import toast from 'react-hot-toast'
 
+// ── Single source of truth for autopsy categories ──
+// Every init, edit-load, and reset references this constant.
+// Adding a field here automatically propagates everywhere.
+const AUTOPSY_INIT = Object.freeze({ story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 })
+
 const ABANDONED_REASONS = [
     'Too Slow',
     'Too Upsetting',
@@ -51,7 +56,7 @@ export default function LogModal() {
     const [watchedWith, setWatchedWith] = useState('')
     const [privateNotes, setPrivateNotes] = useState('')
     const [physicalMedia, setPhysicalMedia] = useState('None')
-    const [autopsy, setAutopsy] = useState({ story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 })
+    const [autopsy, setAutopsy] = useState({ ...AUTOPSY_INIT })
     const [altPoster, setAltPoster] = useState(null)
     const [availablePosters, setAvailablePosters] = useState([])
     const [editorialHeader, setEditorialHeader] = useState(null)
@@ -102,7 +107,7 @@ export default function LogModal() {
                 setWatchedWith(existingLog.watchedWith || '')
                 setPrivateNotes(existingLog.privateNotes || '')
                 setPhysicalMedia(existingLog.physicalMedia || 'None')
-                setAutopsy(existingLog.autopsy || { story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 })
+                setAutopsy(existingLog.autopsy || { ...AUTOPSY_INIT })
                 setAltPoster(existingLog.altPoster || null)
                 setEditorialHeader(existingLog.editorialHeader || null)
                 setDropCap(existingLog.dropCap || false)
@@ -132,7 +137,7 @@ export default function LogModal() {
             setStatus('watched'); setAbandoned('')
             setWatchedWith(''); setPrivateNotes('')
             setPhysicalMedia('None')
-            setAutopsy({ cinematography: 0, screenplay: 0, sound: 0, direction: 0, pacing: 0 })
+            setAutopsy({ ...AUTOPSY_INIT })
             setAltPoster(null)
             setAvailablePosters([])
             setEditorialHeader(null)
@@ -456,7 +461,7 @@ export default function LogModal() {
                                                     key={r}
                                                     onClick={() => setAbandoned(r)}
                                                     className={`tag ${abandoned === r ? 'tag-flicker' : ''}`}
-                                                    style={{ cursor: 'none' }}
+                                                    style={{ cursor: 'pointer' }}
                                                 >
                                                     {r}
                                                 </button>
@@ -522,7 +527,7 @@ export default function LogModal() {
                                         maxLength={2000}
                                     />
                                     <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.25rem' }}>
-                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em', cursor: 'none' }}>
+                                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em', cursor: 'pointer' }}>
                                             <input
                                                 type="checkbox"
                                                 checked={isSpoiler}
@@ -666,7 +671,7 @@ export default function LogModal() {
                                                                             min="0" max="10" step="1"
                                                                             value={autopsy[axis]}
                                                                             onChange={(e) => setAutopsy({ ...autopsy, [axis]: parseInt(e.target.value) })}
-                                                                            style={{ flex: 1, accentColor: 'var(--blood-reel)', height: '4px', background: 'var(--ash)', appearance: 'none', borderRadius: '2px', cursor: 'none' }}
+                                                                            style={{ flex: 1, accentColor: 'var(--blood-reel)', height: '4px', background: 'var(--ash)', appearance: 'none', borderRadius: '2px', cursor: 'pointer' }}
                                                                         />
                                                                         <div style={{ width: '20px', textAlign: 'right', fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--bone)' }}>
                                                                             {autopsy[axis] || '-'}

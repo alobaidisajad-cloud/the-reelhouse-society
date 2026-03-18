@@ -391,7 +391,7 @@ export default function DiscoverPage() {
                                     {MOODS.map(m => {
                                         const active = mood?.label === m.label
                                         return (
-                                            <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ background: active ? 'var(--sepia)' : 'var(--soot)', border: `1px solid ${active ? 'var(--parchment)' : 'var(--ash)'}`, color: active ? 'var(--ink)' : 'var(--parchment)', padding: '1.5rem 0.75rem', borderRadius: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', transition: 'all 0.25s', cursor: 'none' }}
+                                            <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ background: active ? 'var(--sepia)' : 'var(--soot)', border: `1px solid ${active ? 'var(--parchment)' : 'var(--ash)'}`, color: active ? 'var(--ink)' : 'var(--parchment)', padding: '1.5rem 0.75rem', borderRadius: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', transition: 'all 0.25s', cursor: 'pointer' }}
                                                 onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = 'var(--sepia)' }}
                                                 onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = 'var(--ash)' }}
                                             >

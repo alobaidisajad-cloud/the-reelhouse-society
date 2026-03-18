@@ -78,7 +78,7 @@ export function ProjectorRoom({ stats, user }) {
                         else if (day.count >= 3) { bg = 'var(--flicker)'; border = '1px solid var(--flicker)' }
                         return (
                             <div key={day.date} title={`${day.count} film${day.count !== 1 ? 's' : ''} on ${day.date}`}
-                                style={{ width: 12, height: 12, background: bg, border, borderRadius: '2px', transition: 'all 0.2s ease', cursor: 'none' }}
+                                style={{ width: 12, height: 12, background: bg, border, borderRadius: '2px', transition: 'all 0.2s ease', cursor: 'pointer' }}
                                 onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.2)'; e.currentTarget.style.zIndex = '10'; e.currentTarget.style.boxShadow = '0 0 10px var(--flicker)' }}
                                 onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.zIndex = '1'; e.currentTarget.style.boxShadow = 'none' }}
                             />
