@@ -6,7 +6,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap'
  * Inline review/log detail modal — shows full details of a logged film.
  * @param {{ viewLog: object, profileUser: object, isOwnProfile: boolean, routeUsername: string, onClose: Function, onEdit: Function }} props
  */
-export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeUsername, onClose, onEdit }) {
+export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeUsername, onClose, onEdit }: { viewLog: any; profileUser: any; isOwnProfile: boolean; routeUsername: string; onClose: () => void; onEdit: (log: any) => void }) {
     const focusTrapRef = useFocusTrap(!!viewLog, onClose)
     if (!viewLog) return null
 
@@ -172,14 +172,14 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {Object.entries(viewLog.autopsy).map(([axis, val]) => {
-                                    const labels = { story: 'STORY', script: 'SCRIPT', acting: 'ACTING', cinematography: 'CINEMA', editing: 'EDITING', sound: 'SOUND' }
+                                const labels: Record<string, string> = { story: 'STORY', script: 'SCRIPT', acting: 'ACTING', cinematography: 'CINEMA', editing: 'EDITING', sound: 'SOUND' }
                                     return (
                                         <div key={axis} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                             <div style={{ width: 60, fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.05em', color: 'var(--fog)' }}>{labels[axis] || axis.toUpperCase()}</div>
                                             <div style={{ flex: 1, height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
-                                                <div style={{ width: `${val * 10}%`, height: '100%', background: 'linear-gradient(90deg, var(--blood-reel), var(--sepia))', borderRadius: 2 }} />
+                                                <div style={{ width: `${Number(val) * 10}%`, height: '100%', background: 'linear-gradient(90deg, var(--blood-reel), var(--sepia))', borderRadius: 2 }} />
                                             </div>
-                                            <div style={{ width: 20, textAlign: 'right', fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--bone)' }}>{val}</div>
+                                            <div style={{ width: 20, textAlign: 'right', fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--bone)' }}>{String(val)}</div>
                                         </div>
                                     )
                                 })}

@@ -9,9 +9,9 @@ import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import toast from 'react-hot-toast'
 import { throttleAction } from '../../errorLogger'
 
-export default function ActivityCard({ log }) {
+export default function ActivityCard({ log }: { log: any }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
-    const openViewLog = useUIStore(state => state.openViewLog)
+    const openViewLog = (useUIStore as any)((state: any) => state.openViewLog)
     // Memoize stamp rotation so Math.random() doesn't fire on every re-render
     const stampRotation = React.useMemo(() => `${(Math.random() * 8 - 4).toFixed(2)}deg`, [])
     const storeEndorsed = useFilmStore(state => state.interactions.some(i => i.targetId === log.id && i.type === 'endorse'))
@@ -29,19 +29,19 @@ export default function ActivityCard({ log }) {
         throttleAction(`endorse-${log.id}`, () => {
             // Optimistic update
             setOptimisticEndorsed(!optimisticEndorsed)
-            setEndorsementCount(p => optimisticEndorsed ? Math.max(0, p - 1) : p + 1)
+            setEndorsementCount((p: number) => optimisticEndorsed ? Math.max(0, p - 1) : p + 1)
             // Background sync (rollback handled in store)
             toggleEndorse(log.id)
         })
     }
 
     const [isExporting, setIsExporting] = useState(false)
-    const dossierRef = useRef(null)
+    const dossierRef = useRef<HTMLDivElement>(null)
 
     // ── ANNOTATE ──
     const [annotateOpen, setAnnotateOpen] = useState(false)
     const [annotateText, setAnnotateText] = useState('')
-    const [comments, setComments] = useState([])
+    const [comments, setComments] = useState<any[]>([])
     const [commentsLoading, setCommentsLoading] = useState(false)
     const [submittingComment, setSubmittingComment] = useState(false)
     const { user: currentUser } = useAuthStore()

@@ -72,7 +72,7 @@ function CommunityListCard({ list }: any) {
     const cardGradient = gradients[Math.abs(list.id.charCodeAt(0)) % gradients.length]
 
     // Check if we have at least one valid poster path from TMDB (these are reliable)
-    const primaryPoster = list.films.find(f => f.poster_path)?.poster_path
+    const primaryPoster = list.films.find((f: any) => f.poster_path)?.poster_path
     const [imgSrc, setImgSrc] = useState(primaryPoster ? tmdb.poster(primaryPoster, 'w500') : null)
     const [failed, setFailed] = useState(!primaryPoster)
 
@@ -91,21 +91,21 @@ function CommunityListCard({ list }: any) {
             onMouseEnter={(e) => {
                 e.currentTarget.style.borderColor = 'var(--sepia)'
                 e.currentTarget.style.transform = 'translateY(-12px) scale(1.02)'
-                const poster = e.currentTarget.querySelector('.main-poster')
+                const poster = e.currentTarget.querySelector('.main-poster') as HTMLElement
                 if (poster) poster.style.transform = 'scale(1.1) rotate(1deg)'
-                const pane = e.currentTarget.querySelector('.content-pane')
+                const pane = e.currentTarget.querySelector('.content-pane') as HTMLElement
                 if (pane) pane.style.transform = 'translateY(0)'
-                const glow = e.currentTarget.querySelector('.card-glow')
+                const glow = e.currentTarget.querySelector('.card-glow') as HTMLElement
                 if (glow) glow.style.opacity = '0.6'
             }}
             onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--ash)'
                 e.currentTarget.style.transform = 'translateY(0) scale(1)'
-                const poster = e.currentTarget.querySelector('.main-poster')
+                const poster = e.currentTarget.querySelector('.main-poster') as HTMLElement
                 if (poster) poster.style.transform = 'scale(1) rotate(0deg)'
-                const pane = e.currentTarget.querySelector('.content-pane')
+                const pane = e.currentTarget.querySelector('.content-pane') as HTMLElement
                 if (pane) pane.style.transform = 'translateY(10px)'
-                const glow = e.currentTarget.querySelector('.card-glow')
+                const glow = e.currentTarget.querySelector('.card-glow') as HTMLElement
                 if (glow) glow.style.opacity = '0.3'
             }}
         >
@@ -255,7 +255,7 @@ export default function ListsPage() {
 
             // Batch-resolve usernames
             const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
-            let usernameMap = {}
+            let usernameMap: Record<string, string> = {}
             if (userIds.length > 0) {
                 const { data: p } = await supabase.from('profiles').select('id, username').in('id', userIds)
                 if (p) usernameMap = Object.fromEntries(p.map((x: any) => [x.id, x.username]))
@@ -263,7 +263,7 @@ export default function ListsPage() {
 
             // Batch-resolve list items
             const listIds = data.map((l: any) => l.id)
-            let itemsMap = {}
+            let itemsMap: Record<string, any[]> = {}
             if (listIds.length > 0) {
                 const { data: items } = await supabase.from('list_items').select('list_id, film_id, film_title').in('list_id', listIds)
                 if (items) {

@@ -51,7 +51,7 @@ export default function Searchlight() {
         const searchFilms = async () => {
             try {
                 const data = await tmdb.search(query)
-                const filmResults = (data.results || []).slice(0, 5).map(f => ({
+                const filmResults = (data.results || []).slice(0, 5).map((f: any) => ({
                     id: f.id,
                     label: f.title,
                     path: `/film/${f.id}`,
