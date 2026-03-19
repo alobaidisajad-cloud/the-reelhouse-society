@@ -8,16 +8,34 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { PersonPlaceholder } from './UI'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
+interface SearchResult {
+    id: string | number
+    title?: string
+    name?: string
+    poster_path?: string
+    profile_path?: string | null
+    media_type?: string
+    release_date?: string
+    vote_average?: number
+    known_for_department?: string
+    _source?: string
+    films?: any[]
+    role?: string
+    filmId?: number
+    poster?: string
+    [key: string]: any
+}
+
 export default function CommandPalette() {
     const [open, setOpen] = useState(false)
     const [query, setQuery] = useState('')
-    const [results, setResults] = useState([])
+    const [results, setResults] = useState<SearchResult[]>([])
     const [searchType, setSearchType] = useState('exact')
     const [searchContext, setSearchContext] = useState('')
     const [selectedIndex, setSelectedIndex] = useState(0)
     const [searching, setSearching] = useState(false)
-    const inputRef = useRef(null)
-    const searchTimeout = useRef(null)
+    const inputRef = useRef<HTMLInputElement>(null)
+    const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
     const navigate = useNavigate()
     const openLogModal = useUIStore(state => state.openLogModal)
     const logs = useFilmStore(state => state.logs)
@@ -25,7 +43,7 @@ export default function CommandPalette() {
     const focusTrapRef = useFocusTrap(open, () => setOpen(false))
 
     useEffect(() => {
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: KeyboardEvent) => {
             if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
                 e.preventDefault()
                 setOpen(o => !o)
@@ -44,10 +62,10 @@ export default function CommandPalette() {
         }
     }, [open])
 
-    const handleSearch = (q) => {
+    const handleSearch = (q: string) => {
         setQuery(q)
         setSelectedIndex(0)
-        clearTimeout(searchTimeout.current)
+        if (searchTimeout.current) clearTimeout(searchTimeout.current)
         if (!q.trim()) { setResults([]); return }
         setSearching(true)
 
@@ -76,7 +94,7 @@ export default function CommandPalette() {
                             .select('username, avatar_url, role')
                             .ilike('username', `%${q}%`)
                             .limit(3)
-                        userMatches = (data || []).map(u => ({
+                        userMatches = (data || []).map((u: any) => ({
                             ...u, _source: 'user', id: u.username,
                             title: `@${u.username}`, media_type: 'person',
                             profile_path: u.avatar_url,
@@ -86,7 +104,7 @@ export default function CommandPalette() {
 
                 // Remote: TMDB search
                 const data = await tmdb.search(q)
-                const tmdbResults = (data.results?.slice(0, 5) || []).map(r => ({ ...r, _source: 'tmdb' }))
+                const tmdbResults = (data.results?.slice(0, 5) || []).map((r: any) => ({ ...r, _source: 'tmdb' }))
 
                 setResults([...localLogMatches, ...localListMatches, ...userMatches, ...tmdbResults])
                 setSearchType(data.searchType || 'exact')
@@ -96,7 +114,7 @@ export default function CommandPalette() {
         }, 300)
     }
 
-    const executeAction = (item) => {
+    const executeAction = (item: SearchResult) => {
         setOpen(false)
         if (item._source === 'list') {
             navigate(`/lists/${item.id}`)
@@ -109,7 +127,7 @@ export default function CommandPalette() {
         }
     }
 
-    const logAction = (film, e) => {
+    const logAction = (film: SearchResult, e: React.MouseEvent) => {
         e.stopPropagation()
         setOpen(false)
         openLogModal(film)
@@ -117,7 +135,7 @@ export default function CommandPalette() {
 
     useEffect(() => {
         if (!open) return
-        const handleKeyDown = (e) => {
+        const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') setOpen(false)
             if (e.key === 'ArrowDown') {
                 e.preventDefault()

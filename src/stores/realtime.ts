@@ -98,6 +98,7 @@ export const initRealtime = () => {
                     year: payload.new.year,
                     rating: payload.new.rating,
                     review: payload.new.review,
+                    status: payload.new.status || 'watched',
                     watchedDate: payload.new.watched_date,
                     createdAt: payload.new.created_at,
                 }, ...feedLogs].slice(0, 100), // Cap at 100 to prevent memory bloat

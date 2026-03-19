@@ -10,7 +10,22 @@ import toast from 'react-hot-toast'
 const ROW_LABELS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T']
 const SCREEN_COLORS = ['#8B6914','#1d6e34','#5c1a0b','#1a3a6d','#5c3a0b','#2a0b5c']
 
-function ScreenBadge({ name, color, active, onClick }) {
+interface SeatLayoutConfig {
+    rows: number
+    cols: number
+    vipRows: number
+    aisleAfterCol: number
+    blockedSeats: string[]
+}
+
+interface ScreenConfig {
+    id: string
+    name: string
+    color: string
+    seatLayout: SeatLayoutConfig
+}
+
+function ScreenBadge({ name, color, active, onClick }: { name: string; color: string; active: boolean; onClick: () => void }) {
     return (
         <button
             onClick={onClick}
@@ -30,7 +45,7 @@ function ScreenBadge({ name, color, active, onClick }) {
 }
 
 // Preview of the seat map based on current config
-function SeatMapPreview({ config, screenColor }) {
+function SeatMapPreview({ config, screenColor }: { config: SeatLayoutConfig; screenColor: string }) {
     const { rows, cols, vipRows, aisleAfterCol, blockedSeats } = config
     const rowLabels = ROW_LABELS.slice(0, Math.min(rows, 20))
     const colNums = Array.from({ length: Math.min(cols, 20) }, (_, i) => i + 1)
@@ -125,7 +140,7 @@ function SeatMapPreview({ config, screenColor }) {
 }
 
 // The seat grid editor — click to block/unblock seats
-function BlockedSeatEditor({ config, onToggleBlock }) {
+function BlockedSeatEditor({ config, onToggleBlock }: { config: SeatLayoutConfig; onToggleBlock: (seatId: string) => void }) {
     const { rows, cols, vipRows, aisleAfterCol, blockedSeats } = config
     const rowLabels = ROW_LABELS.slice(0, Math.min(rows, 20))
     const colNums = Array.from({ length: Math.min(cols, 20) }, (_, i) => i + 1)
@@ -192,7 +207,7 @@ function BlockedSeatEditor({ config, onToggleBlock }) {
 }
 
 // Slider input with label
-function SliderField({ label, value, min, max, onChange, hint }) {
+function SliderField({ label, value, min, max, onChange, hint }: { label: string; value: number; min: number; max: number; onChange: (v: number) => void; hint?: string | ((v: number) => string) }) {
     return (
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.3rem' }}>
@@ -204,17 +219,17 @@ function SliderField({ label, value, min, max, onChange, hint }) {
                 onChange={e => onChange(parseInt(e.target.value))}
                 style={{ width: '100%', accentColor: 'var(--sepia)' }}
             />
-            {hint && <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.62rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.2rem' }}>{hint}</div>}
+            {hint && <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.62rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.2rem' }}>{typeof hint === 'function' ? hint(value) : hint}</div>}
         </div>
     )
 }
 
-export default function SeatMapEditor({ venue, onSave }) {
+export default function SeatMapEditor({ venue, onSave }: { venue: any; onSave: (data: { screens: ScreenConfig[]; seatLayout: SeatLayoutConfig }) => void }) {
     const initScreens = venue.screens && venue.screens.length > 0
         ? venue.screens
         : [{ id: 'sc-1', name: 'Screen 1', seatLayout: { ...venue.seatLayout }, color: SCREEN_COLORS[0], blockedSeats: [] }]
 
-    const [screens, setScreens] = useState(initScreens)
+    const [screens, setScreens] = useState<ScreenConfig[]>(initScreens)
     const [activeScreenIdx, setActiveScreenIdx] = useState(0)
     const [editingScreenName, setEditingScreenName] = useState(false)
     const [nameDraft, setNameDraft] = useState('')
@@ -224,18 +239,18 @@ export default function SeatMapEditor({ venue, onSave }) {
     const activeScreen = screens[activeScreenIdx] || screens[0]
     const config = activeScreen.seatLayout
 
-    const updateConfig = useCallback((key, val) => {
-        setScreens(prev => prev.map((sc, i) => i === activeScreenIdx
+    const updateConfig = useCallback((key: string, val: number) => {
+        setScreens((prev: ScreenConfig[]) => prev.map((sc: ScreenConfig, i: number) => i === activeScreenIdx
             ? { ...sc, seatLayout: { ...sc.seatLayout, [key]: val } }
             : sc
         ))
     }, [activeScreenIdx])
 
-    const toggleBlocked = useCallback((seatId) => {
-        setScreens(prev => prev.map((sc, i) => {
+    const toggleBlocked = useCallback((seatId: string) => {
+        setScreens(prev => prev.map((sc: ScreenConfig, i: number) => {
             if (i !== activeScreenIdx) return sc
             const cur = sc.seatLayout.blockedSeats || []
-            const next = cur.includes(seatId) ? cur.filter(s => s !== seatId) : [...cur, seatId]
+            const next = cur.includes(seatId) ? cur.filter((s: string) => s !== seatId) : [...cur, seatId]
             return { ...sc, seatLayout: { ...sc.seatLayout, blockedSeats: next } }
         }))
     }, [activeScreenIdx])
@@ -248,13 +263,13 @@ export default function SeatMapEditor({ venue, onSave }) {
             color: SCREEN_COLORS[screens.length % SCREEN_COLORS.length],
             seatLayout: { rows: 8, cols: 12, vipRows: 2, aisleAfterCol: 6, blockedSeats: [] },
         }
-        setScreens(prev => [...prev, newScreen])
+        setScreens((prev: ScreenConfig[]) => [...prev, newScreen])
         setActiveScreenIdx(screens.length)
     }
 
-    const removeScreen = (idx) => {
+    const removeScreen = (idx: number) => {
         if (screens.length === 1) { toast.error('You need at least one screen'); return }
-        setScreens(prev => prev.filter((_, i) => i !== idx))
+        setScreens((prev: ScreenConfig[]) => prev.filter((_: ScreenConfig, i: number) => i !== idx))
         setActiveScreenIdx(Math.max(0, activeScreenIdx - 1))
     }
 
@@ -298,7 +313,7 @@ export default function SeatMapEditor({ venue, onSave }) {
                                         onKeyDown={e => {
                                             if (e.key === 'Enter') {
                                                 if (nameDraft.trim()) {
-                                                    setScreens(prev => prev.map((s, si) => si === i ? { ...s, name: nameDraft.trim() } : s))
+                                                    setScreens((prev: ScreenConfig[]) => prev.map((s: ScreenConfig, si: number) => si === i ? { ...s, name: nameDraft.trim() } : s))
                                                 }
                                                 setEditingScreenName(false)
                                             }
@@ -309,7 +324,7 @@ export default function SeatMapEditor({ venue, onSave }) {
                                     />
                                     <button
                                         onClick={() => {
-                                            if (nameDraft.trim()) setScreens(prev => prev.map((s, si) => si === i ? { ...s, name: nameDraft.trim() } : s))
+                                            if (nameDraft.trim()) setScreens((prev: ScreenConfig[]) => prev.map((s: ScreenConfig, si: number) => si === i ? { ...s, name: nameDraft.trim() } : s))
                                             setEditingScreenName(false)
                                         }}
                                         style={{ background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', padding: '0.2rem' }}
@@ -418,7 +433,7 @@ export default function SeatMapEditor({ venue, onSave }) {
                             ) : (
                                 <div>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.75rem' }}>
-                                        {(config.blockedSeats || []).map(s => (
+                                        {(config.blockedSeats || []).map((s: string) => (
                                             <span
                                                 key={s}
                                                 onClick={() => toggleBlocked(s)}
@@ -430,7 +445,7 @@ export default function SeatMapEditor({ venue, onSave }) {
                                         ))}
                                     </div>
                                     <button
-                                        onClick={() => setScreens(prev => prev.map((sc, i) => i === activeScreenIdx ? { ...sc, seatLayout: { ...sc.seatLayout, blockedSeats: [] } } : sc))}
+                                        onClick={() => setScreens((prev: ScreenConfig[]) => prev.map((sc: ScreenConfig, i: number) => i === activeScreenIdx ? { ...sc, seatLayout: { ...sc.seatLayout, blockedSeats: [] } } : sc))}
                                         className="btn btn-ghost"
                                         style={{ fontSize: '0.52rem' }}
                                     >
