@@ -27,6 +27,7 @@ export async function hydrateFollowing() {
             .select('target_user_id')
             .eq('user_id', userId)
             .eq('type', 'follow')
+            .limit(5000)
         if (!followRows || followRows.length === 0) {
             useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: [] } : null }))
             return
@@ -37,6 +38,7 @@ export async function hydrateFollowing() {
             .from('profiles')
             .select('username')
             .in('id', targetIds)
+            .limit(5000)
         const usernames = (profiles || []).map(p => p.username).filter(Boolean)
         useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: usernames } : null }))
     } catch (e: any) {

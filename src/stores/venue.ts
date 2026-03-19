@@ -54,7 +54,7 @@ export const useVenueStore = create<VenueStoreState>()(
                 if (venueData) {
                     set((s) => ({ venue: { ...s.venue, ...venueData, id: venueData.id, screens: venueData.screens || [], lat: venueData.lat || null, lng: venueData.lng || null } }))
                     const { data: stData } = await supabase
-                        .from('showtimes').select('*').eq('venue_id', venueData.id).order('date', { ascending: true })
+                        .from('showtimes').select('*').eq('venue_id', venueData.id).order('date', { ascending: true }).limit(500)
                     if (stData) set({ showtimes: stData.map((st) => ({ ...st, film: st.film_title, slots: st.slots || [], screenName: st.screen_name || '', durationMins: st.duration_minutes || 0 })) })
                 }
             },

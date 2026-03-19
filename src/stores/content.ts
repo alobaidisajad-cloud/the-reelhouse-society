@@ -111,6 +111,7 @@ export const useProgrammeStore = create<ProgrammeState>((set) => ({
             .select('*')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
+            .limit(100)
         if (!error && data) {
             set({
                 programmes: data.map((p) => ({

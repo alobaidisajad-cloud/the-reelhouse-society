@@ -98,6 +98,7 @@ export const useFilmStore = create<FilmState>()(
                     .select('target_log_id, created_at')
                     .eq('user_id', user.id)
                     .eq('type', 'endorse_log')
+                    .limit(2000)
                 if (!error && data) {
                     set({
                         interactions: data.map(r => ({
@@ -113,7 +114,7 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data, error } = await supabase
-                    .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+                    .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5000)
                 if (!error && data) {
                     set({
                         logs: data.map((dbLog) => ({
@@ -147,7 +148,7 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data, error } = await supabase
-                    .from('watchlists').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+                    .from('watchlists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(2000)
                 if (!error && data) {
                     set({ watchlist: data.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null })) })
                 }
@@ -157,7 +158,7 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data, error } = await supabase
-                    .from('vaults').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+                    .from('vaults').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(2000)
                 if (!error && data) {
                     set({ vault: data.map((v) => ({ id: v.film_id, title: v.film_title, poster_path: v.poster_path || null, year: v.year || null, format: v.format || 'Digital' })) })
                 }
@@ -167,10 +168,10 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data: lists, error } = await supabase
-                    .from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+                    .from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200)
                 if (!error && lists) {
                     const fullLists = await Promise.all(lists.map(async (list) => {
-                        const { data: items } = await supabase.from('list_items').select('*').eq('list_id', list.id)
+                        const { data: items } = await supabase.from('list_items').select('*').eq('list_id', list.id).limit(500)
                         return {
                             id: list.id, title: list.title, description: list.description,
                             isRanked: list.is_ranked, isPrivate: list.is_private || false, createdAt: list.created_at,
@@ -189,18 +190,19 @@ export const useFilmStore = create<FilmState>()(
                     .select('*, showtimes(film_title, date)')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
+                    .limit(500)
                 if (!error && data) {
                     set({
                         stubs: data.map((t) => ({
-                            id: t.id,
+                            id: t.id || '',
                             filmTitle: t.showtimes?.film_title || 'Unknown Film',
                             date: t.showtimes?.date || '',
-                            seat: t.seat,
-                            ticketType: t.ticket_type,
-                            amount: t.amount,
+                            seat: t.seat || '—',
+                            ticketType: t.ticket_type || 'Standard',
+                            amount: t.amount || 0,
                             qrCode: t.qr_code || null,
                             screenName: t.screen_name || null,
-                            createdAt: t.created_at,
+                            createdAt: t.created_at || new Date().toISOString(),
                         })),
                     })
                 }
@@ -231,7 +233,7 @@ export const useFilmStore = create<FilmState>()(
 
             addStubLocal: (stub) => {
                 // Used for demo/mock venues without a real Supabase showtime UUID
-                set((state) => ({ stubs: [stub, ...state.stubs] }))
+                set((state) => ({ stubs: [{ id: stub.id || crypto.randomUUID(), filmTitle: stub.filmTitle || 'Unknown Film', date: stub.date || '', seat: stub.seat || '\u2014', ticketType: stub.ticketType || 'Standard', amount: stub.amount || 0, qrCode: stub.qrCode || null, screenName: stub.screenName || null, createdAt: stub.createdAt || new Date().toISOString() }, ...state.stubs] }))
             },
 
             addLog: async (log) => {
@@ -387,7 +389,7 @@ export const useFilmStore = create<FilmState>()(
                     user_id: user.id, title: list.title, description: list.description || '',
                 }]).select().single()
                 if (!error && data) {
-                    set((state) => ({ lists: [{ ...list, id: data.id, films: [], createdAt: data.created_at }, ...state.lists] }))
+                    set((state) => ({ lists: [{ id: data.id, title: list.title || 'Untitled', description: list.description || '', isRanked: false, isPrivate: false, films: [], createdAt: data.created_at }, ...state.lists] }))
                 }
             },
 
