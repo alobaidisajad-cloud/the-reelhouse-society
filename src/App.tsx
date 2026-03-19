@@ -8,11 +8,16 @@ import Footer from './components/Footer'
 import Preloader from './components/Preloader'
 import FilmStripLoader from './components/FilmStripLoader'
 import CustomCursor from './components/CustomCursor'
-import { useFilmStore, useUIStore, initRealtime, initAuthSync } from './store'
+import { useFilmStore, useUIStore, useAuthStore, initRealtime, initAuthSync } from './store'
 import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
 import ErrorBoundary from './components/ErrorBoundary'
 import OfflineBanner from './components/OfflineBanner'
+import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
+import ShortcutsHelp from './components/ShortcutsHelp'
+import { useAnalytics } from './hooks/useAnalytics'
+import { useAchievements } from './hooks/useAchievements'
+import AchievementToast from './components/AchievementToast'
 
 // ── Heavy Global Modals (Lazy Loaded) ──
 // BootcampModal retired — onboarding content lives in the Handbook now
@@ -49,6 +54,7 @@ const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const YearInCinemaPage = lazy(() => import('./pages/YearInCinemaPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
+const DebugPanel = lazy(() => import('./pages/DebugPanel'))
 
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
@@ -106,8 +112,19 @@ export default function App() {
   const location = useLocation()
   // Granular selector — only re-renders App when logs.length changes, not on every store write
   const logCount = useFilmStore(state => state.logs.length)
+  const logs = useFilmStore(state => state.logs)
   const { openLogModal, showPaywall, paywallFeature, closePaywall, openHandbook } = useUIStore()
+  const { user } = useAuthStore()
   const [csvImportOpen, setCsvImportOpen] = useState(false)
+
+  // ── Enhanced Keyboard Shortcuts (G+key navigation) ──
+  const { showHelp, setShowHelp } = useKeyboardShortcuts()
+
+  // ── Analytics — auto page views + manual tracking ──
+  const { trackEvent } = useAnalytics()
+
+  // ── Persistent Achievements — detect new badge unlocks ──
+  const { newBadges, dismissNewBadge } = useAchievements(user?.id, logs)
 
   const degradationClass = useMemo(() => {
     if (logCount > 40) return 'level-obsessed'
@@ -161,21 +178,12 @@ export default function App() {
     import('./errorLogger').then(m => m.initGlobalErrorLogging())
   }, [])
 
-  // ── Global Keyboard Shortcuts ──
-  // L = log a film, ? = handbook, I = import CSV
+  // ── Custom event listeners for keyboard shortcuts ──
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      // Ignore when user is typing in an input, textarea, or contenteditable
-      const tag = document.activeElement?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || (document.activeElement as HTMLElement)?.isContentEditable) return
-      if (e.metaKey || e.ctrlKey || e.altKey) return
-      if (e.key === 'l' || e.key === 'L') { e.preventDefault(); openLogModal() }
-      if (e.key === '?') { e.preventDefault(); openHandbook() }
-      if (e.key === 'i' || e.key === 'I') { e.preventDefault(); setCsvImportOpen(true) }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [openLogModal, openHandbook])
+    const handleOpenLog = () => openLogModal()
+    window.addEventListener('reelhouse:openLogModal', handleOpenLog)
+    return () => window.removeEventListener('reelhouse:openLogModal', handleOpenLog)
+  }, [openLogModal])
 
   return (
     <div className={degradationClass}>
@@ -233,6 +241,8 @@ export default function App() {
           <HandbookModal />
           <OnboardingModal />
           {csvImportOpen && <CSVImport onClose={() => setCsvImportOpen(false)} />}
+          {showHelp && <ShortcutsHelp onClose={() => setShowHelp(false)} />}
+          {newBadges.length > 0 && <AchievementToast badge={newBadges[0]} onDismiss={() => dismissNewBadge(newBadges[0].key)} />}
 
           <main id="main-content" tabIndex={-1}>
           <AnimatePresence mode="wait" initial={false}>
@@ -259,6 +269,7 @@ export default function App() {
               <Route path="/membership" element={<Navigate to="/patronage" replace />} />
               <Route path="/year-in-cinema" element={<ErrorBoundary key="yic"><PageWrapper><YearInCinemaPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/settings" element={<ErrorBoundary key="settings"><PageWrapper><SettingsPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/admin" element={<ErrorBoundary key="admin"><PageWrapper><DebugPanel /></PageWrapper></ErrorBoundary>} />
               <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
 
             </Routes>
