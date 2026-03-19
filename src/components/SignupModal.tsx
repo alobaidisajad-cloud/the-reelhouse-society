@@ -126,16 +126,16 @@ export default function SignupModal() {
                 if (result?.session) {
                     // Email confirmation disabled — user is logged in immediately
                     // For venue owners: create their venue row in Supabase
-                    if (role === 'venue_owner' && venueName.trim() && result.user?.id) {
+                    if (role === 'venue_owner' && venueName.trim() && (result as any).user?.id) {
                         const slug = venueName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
                         await supabase.from('venues').insert([{
-                            owner_id: result.user.id,
+                            owner_id: (result as any).user.id,
                             name: venueName.trim(),
                             slug,
                             location: 'TBD',
                             description: venueDesc.trim() || null,
                             vibes: vibes.length > 0 ? vibes : null,
-                        }]).catch(() => {})
+                        }]).then(() => {}).catch(() => {})
                     }
                     toast.success(`Welcome to The ReelHouse Society, ${formattedUsername}! 🎬`)
                     closeSignupModal()
@@ -184,7 +184,7 @@ export default function SignupModal() {
             <ForgotPasswordScreen
                 onClose={closeSignupModal}
                 onBackToLogin={() => { setForgotMode(false); setIsLogin(true) }}
-                focusTrapRef={focusTrapRef}
+                focusTrapRef={focusTrapRef as any}
             />
         )
     }
@@ -196,7 +196,7 @@ export default function SignupModal() {
                 resending={resending}
                 onResend={handleResend}
                 onClose={closeSignupModal}
-                focusTrapRef={focusTrapRef}
+                focusTrapRef={focusTrapRef as any}
             />
         )
     }
@@ -359,7 +359,7 @@ export default function SignupModal() {
                                             [passwordChecks.number,    'Number'],
                                             [passwordChecks.special,   'Special character'],
                                         ].map(([ok, label]) => (
-                                            <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: ok ? '#4caf50' : 'var(--fog)', transition: 'color 0.2s' }}>
+                                            <div key={String(label)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: ok ? '#4caf50' : 'var(--fog)', transition: 'color 0.2s' }}>
                                                 <span style={{ fontSize: '0.55rem' }}>{ok ? '✓' : '○'}</span>
                                                 {label}
                                             </div>
@@ -425,7 +425,7 @@ export default function SignupModal() {
                         </button>
                         {isLogin && (
                             <button
-                                onClick={() => { setForgotMode(true); setForgotEmail(email) }}
+                                onClick={() => { setForgotMode(true); setEmail(email) }}
                                 style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', background: 'none', border: 'none', textDecoration: 'underline', textAlign: 'center', cursor: 'pointer', marginTop: '0.25rem', opacity: 0.8 }}
                             >
                                 Forgot your password?

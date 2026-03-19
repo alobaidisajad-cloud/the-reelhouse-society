@@ -283,13 +283,13 @@ export const tmdb = {
         return fetchTMDB(`/discover/movie?${qs}`, { results: [] })
     },
 
-    poster: (path: any, size: any = 'w342') => path ? `${TMDB_IMG}/${size}${path}` : null,
-    backdrop: (path: any, size: any = 'w1280') => path ? `${TMDB_IMG}/${size}${path}` : null,
-    profile: (path: any, size: any = 'w185') => path ? `${TMDB_IMG}/${size}${path}` : null,
+    poster: (path: any, size: any = 'w342') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
+    backdrop: (path: any, size: any = 'w1280') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
+    profile: (path: any, size: any = 'w185') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
 
     // Responsive poster — picks smallest size that still looks good at current viewport
     responsivePoster: (path: any) => {
-        if (!path) return null
+        if (!path) return undefined
         const w = typeof window !== 'undefined' ? window.innerWidth : 1280
         const size = w < 480 ? 'w185' : w < 900 ? 'w342' : 'w500'
         return `${TMDB_IMG}/${size}${path}`
