@@ -5,6 +5,9 @@ import { X, Film, Building, Lock, Terminal, Mail, RefreshCw } from 'lucide-react
 import { useUIStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
+import VelvetRopeGate from './signup/VelvetRopeGate'
+import ForgotPasswordScreen from './signup/ForgotPasswordScreen'
+import EmailConfirmationScreen from './signup/EmailConfirmationScreen'
 
 const PERSONAS = [
     { id: 'The Midnight Devotee', desc: 'Haunts 3AM screenings. Darkness is your element.' },
@@ -48,9 +51,6 @@ export default function SignupModal() {
 
     // Forgot password state
     const [forgotMode, setForgotMode] = useState(false)
-    const [forgotEmail, setForgotEmail] = useState('')
-    const [forgotSent, setForgotSent] = useState(false)
-    const [forgotLoading, setForgotLoading] = useState(false)
 
     useEffect(() => {
         // Reset state when modal opens
@@ -160,7 +160,7 @@ export default function SignupModal() {
         setPersona(''); setVenueName(''); setVenueDesc(''); setVibes([])
         setHasClearance(false); setClearanceCode(''); setClearanceStatus('idle')
         setAwaitingConfirmation(false); setConfirmedEmail('')
-        setForgotMode(false); setForgotEmail(''); setForgotSent(false)
+        setForgotMode(false)
     }
 
     const handleResend = async () => {
@@ -179,227 +179,38 @@ export default function SignupModal() {
 
     if (!signupModalOpen || isAuthenticated) return null
 
-    // FORGOT PASSWORD SCREEN
     if (forgotMode) {
         return (
-            <AnimatePresence>
-                <motion.div
-                    ref={focusTrapRef}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Reset password"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5, 3, 1, 0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-                >
-                    <motion.div
-                        initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        style={{ width: '100%', maxWidth: 480, background: 'var(--ink)', border: '1px solid var(--sepia)', borderRadius: '4px', padding: '3rem 2rem', position: 'relative', boxShadow: '0 0 40px rgba(139,105,20,0.15)', textAlign: 'center' }}
-                    >
-                        <button onClick={closeSignupModal} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', opacity: 0.5 }}>
-                            <X size={16} />
-                        </button>
-
-                        <div style={{ display: 'inline-flex', marginBottom: '1.5rem', background: 'rgba(139,105,20,0.1)', padding: '1.25rem', borderRadius: '50%', border: '1px solid var(--sepia)' }}>
-                            <Lock size={32} color="var(--sepia)" />
-                        </div>
-
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
-                            CREDENTIAL RECOVERY
-                        </div>
-                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>
-                            {forgotSent ? 'Check Your Inbox.' : 'Reset Your Password'}
-                        </h2>
-
-                        {forgotSent ? (
-                            <>
-                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6, marginBottom: '0.5rem' }}>
-                                    We sent a password reset link to:
-                                </p>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.08em', color: 'var(--flicker)', background: 'var(--soot)', padding: '0.6rem 1rem', borderRadius: '2px', border: '1px solid var(--ash)', marginBottom: '1.5rem', wordBreak: 'break-all' }}>
-                                    {forgotEmail}
-                                </div>
-                                <p style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.08em', color: 'var(--fog)', lineHeight: 1.7, marginBottom: '2rem' }}>
-                                    CLICK THE LINK IN YOUR EMAIL TO SET A NEW PASSWORD.<br />
-                                    CHECK YOUR SPAM FOLDER IF IT DOESN'T ARRIVE WITHIN 2 MINUTES.
-                                </p>
-                                <button
-                                    onClick={() => { setForgotMode(false); setForgotSent(false); setIsLogin(true) }}
-                                    style={{ background: 'none', border: '1px solid var(--ash)', color: 'var(--bone)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', cursor: 'pointer', padding: '0.6rem 1.25rem', borderRadius: '2px' }}
-                                >
-                                    BACK TO SIGN IN
-                                </button>
-                            </>
-                        ) : (
-                            <>
-                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', lineHeight: 1.6, marginBottom: '1.5rem' }}>
-                                    Enter the email associated with your account and we'll send you a classified reset link.
-                                </p>
-                                <form onSubmit={async (e) => {
-                                    e.preventDefault()
-                                    if (!forgotEmail.trim()) { toast.error('Please enter your email.'); return }
-                                    setForgotLoading(true)
-                                    try {
-                                        const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-                                            redirectTo: `${window.location.origin}/auth/reset-password`,
-                                        })
-                                        if (error) throw error
-                                        setForgotSent(true)
-                                        toast.success('Reset link sent!')
-                                    } catch (err) {
-                                        toast.error(err.message || 'Could not send reset link.')
-                                    } finally {
-                                        setForgotLoading(false)
-                                    }
-                                }} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    <input
-                                        className="input"
-                                        type="email"
-                                        placeholder="Your email address"
-                                        autoComplete="email"
-                                        value={forgotEmail}
-                                        onChange={e => setForgotEmail(e.target.value)}
-                                        autoFocus
-                                        style={{ textAlign: 'center' }}
-                                    />
-                                    <button
-                                        className="btn btn-primary"
-                                        type="submit"
-                                        disabled={forgotLoading}
-                                        style={{ width: '100%', justifyContent: 'center', padding: '0.7em', opacity: forgotLoading ? 0.5 : 1 }}
-                                    >
-                                        {forgotLoading ? 'SENDING...' : 'SEND RESET LINK'}
-                                    </button>
-                                </form>
-                                <button
-                                    onClick={() => { setForgotMode(false); setIsLogin(true) }}
-                                    style={{ marginTop: '1.5rem', background: 'none', border: 'none', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', textDecoration: 'underline', cursor: 'pointer' }}
-                                >
-                                    BACK TO SIGN IN
-                                </button>
-                            </>
-                        )}
-                    </motion.div>
-                </motion.div>
-            </AnimatePresence>
+            <ForgotPasswordScreen
+                onClose={closeSignupModal}
+                onBackToLogin={() => { setForgotMode(false); setIsLogin(true) }}
+                focusTrapRef={focusTrapRef}
+            />
         )
     }
 
-    // EMAIL CONFIRMATION PENDING: show 'Check your inbox' screen
     if (awaitingConfirmation) {
         return (
-            <AnimatePresence>
-                <motion.div
-                    ref={focusTrapRef}
-                    role="dialog"
-                    aria-modal="true"
-                    aria-label="Check your email"
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5, 3, 1, 0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-                >
-                    <motion.div
-                        initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        style={{ width: '100%', maxWidth: 480, background: 'var(--ink)', border: '1px solid var(--sepia)', borderRadius: '4px', padding: '3rem 2rem', position: 'relative', boxShadow: '0 0 40px rgba(139,105,20,0.15)', textAlign: 'center' }}
-                    >
-                        <button onClick={closeSignupModal} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', opacity: 0.5 }}>
-                            <X size={16} />
-                        </button>
-
-                        <motion.div
-                            animate={{ y: [0, -6, 0] }}
-                            transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                            style={{ display: 'inline-flex', marginBottom: '1.5rem', background: 'rgba(139,105,20,0.1)', padding: '1.25rem', borderRadius: '50%', border: '1px solid var(--sepia)' }}
-                        >
-                            <Mail size={32} color="var(--sepia)" />
-                        </motion.div>
-
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
-                            CLEARANCE PENDING
-                        </div>
-                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.9rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>
-                            Check Your Inbox.
-                        </h2>
-                        <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6, marginBottom: '0.5rem' }}>
-                            We sent a classified verification link to:
-                        </p>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.08em', color: 'var(--flicker)', background: 'var(--soot)', padding: '0.6rem 1rem', borderRadius: '2px', border: '1px solid var(--ash)', marginBottom: '1.5rem', wordBreak: 'break-all' }}>
-                            {confirmedEmail}
-                        </div>
-                        <p style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.08em', color: 'var(--fog)', lineHeight: 1.7, marginBottom: '2rem' }}>
-                            CLICK THE LINK IN YOUR EMAIL TO COMPLETE YOUR ENROLLMENT.<br />
-                            CHECK YOUR SPAM FOLDER IF IT DOESN'T ARRIVE WITHIN 2 MINUTES.
-                        </p>
-
-                        <button
-                            onClick={handleResend}
-                            disabled={resending}
-                            style={{ background: 'none', border: '1px solid var(--ash)', color: resending ? 'var(--fog)' : 'var(--bone)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', cursor: resending ? 'default' : 'pointer', padding: '0.6rem 1.25rem', borderRadius: '2px', display: 'inline-flex', alignItems: 'center', gap: '0.4rem', transition: 'all 0.2s' }}
-                        >
-                            <RefreshCw size={12} style={{ animation: resending ? 'spin 1s linear infinite' : 'none' }} />
-                            {resending ? 'SENDING...' : 'RESEND LINK'}
-                        </button>
-                    </motion.div>
-                </motion.div>
-            </AnimatePresence>
+            <EmailConfirmationScreen
+                confirmedEmail={confirmedEmail}
+                resending={resending}
+                onResend={handleResend}
+                onClose={closeSignupModal}
+                focusTrapRef={focusTrapRef}
+            />
         )
     }
 
-    // VELVET ROPE: TERMINAL UI
     if (!isLogin && !hasClearance) {
         return (
-            <AnimatePresence>
-                <motion.div
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5, 3, 1, 0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
-                >
-                    <motion.div
-                        initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        className="scanlines"
-                        style={{ width: '100%', maxWidth: 500, background: 'var(--ink)', border: '1px solid var(--sepia)', borderRadius: '2px', padding: '3rem 2rem', position: 'relative', overflow: 'hidden', boxShadow: '0 0 40px rgba(139,105,20,0.1)' }}
-                    >
-                        <button onClick={closeSignupModal} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', opacity: 0.5 }}>
-                            <X size={16} />
-                        </button>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '2rem' }}>
-                            <Lock size={18} color="var(--blood-reel)" />
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.3em', color: 'var(--blood-reel)' }}>RESTRICTED ACCESS</div>
-                        </div>
-
-                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '1rem', lineHeight: 1.1 }}>
-                            The Archives are currently closed to the public.
-                        </h2>
-                        <p style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', color: 'var(--fog)', letterSpacing: '0.1em', lineHeight: 1.6, marginBottom: '2.5rem' }}>
-                            REELHOUSE IS AN INVITE-ONLY SOCIETY.<br />PLEASE ENTER YOUR CLASSIFIED DOSSIER CLEARANCE CODE TO PROCEED.
-                        </p>
-
-                        <form onSubmit={handleClearanceSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', borderBottom: `2px solid ${clearanceStatus === 'denied' ? 'var(--blood-reel)' : clearanceStatus === 'granted' ? 'var(--sepia)' : 'var(--ash)'}`, transition: 'border-color 0.3s' }}>
-                                <Terminal size={16} color="var(--fog)" style={{ marginRight: '0.75rem', opacity: 0.5 }} />
-                                <input
-                                    autoFocus
-                                    placeholder="Enter Access Key..."
-                                    value={clearanceCode}
-                                    onChange={e => setClearanceCode(e.target.value.toUpperCase())}
-                                    style={{ flex: 1, background: 'transparent', border: 'none', outline: 'none', color: 'var(--bone)', fontFamily: 'var(--font-ui)', fontSize: '1.2rem', letterSpacing: '0.2em', padding: '0.75rem 0' }}
-                                    disabled={clearanceStatus !== 'idle' && clearanceStatus !== 'denied'}
-                                />
-                            </div>
-
-                            <div style={{ height: 20, fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', marginTop: '0.5rem' }}>
-                                {clearanceStatus === 'checking' && <span style={{ color: 'var(--fog)', animation: 'pulse 1s infinite' }}>DECRYPTING CIPHER...</span>}
-                                {clearanceStatus === 'granted' && <span style={{ color: 'var(--sepia)' }}>CLEARANCE GRANTED. INITIATING PROTOCOL.</span>}
-                                {clearanceStatus === 'denied' && <span style={{ color: 'var(--blood-reel)' }}>ACCESS DENIED. INVALID CREDENTIALS.</span>}
-                            </div>
-                        </form>
-
-                        <div style={{ marginTop: '3rem', borderTop: '1px dashed rgba(139,105,20,0.2)', paddingTop: '1.5rem', textAlign: 'center' }}>
-                            <button onClick={() => setIsLogin(true)} style={{ background: 'none', border: 'none', color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', textDecoration: 'underline', cursor: 'pointer' }}>
-                                ALREADY A MEMBER? SIGN IN
-                            </button>
-                        </div>
-                    </motion.div>
-                </motion.div>
-            </AnimatePresence>
+            <VelvetRopeGate
+                clearanceCode={clearanceCode}
+                setClearanceCode={setClearanceCode}
+                clearanceStatus={clearanceStatus}
+                onSubmit={handleClearanceSubmit}
+                onSwitchToLogin={() => setIsLogin(true)}
+                onClose={closeSignupModal}
+            />
         )
     }
 
