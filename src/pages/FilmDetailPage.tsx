@@ -14,6 +14,7 @@ import SectionErrorBoundary from '../components/SectionErrorBoundary'
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
 import CommunityReviews from '../components/film/CommunityReviews'
+import PageSEO from '../components/PageSEO'
 
 // ── VIRAL EXPORT MODAL ──
 function DossierExportModal({ film, log, onClose }: { film: Record<string, any>; log: Record<string, any> | null; onClose: () => void }) {

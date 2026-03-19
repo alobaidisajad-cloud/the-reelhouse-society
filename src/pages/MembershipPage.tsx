@@ -8,6 +8,7 @@ import CSVImport from '../components/CSVImport'
 import toast from 'react-hot-toast'
 import { supabase } from '../supabaseClient'
 import '../styles/membership.css'
+import PageSEO from '../components/PageSEO'
 
 const features = [
     { icon: Key, title: 'The Vault', description: 'Unlock the "Cutting Room Floor" for private notes and thoughts.' },

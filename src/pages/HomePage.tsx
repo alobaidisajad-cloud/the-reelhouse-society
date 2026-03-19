@@ -12,6 +12,7 @@ import FilmStripRow from '../components/home/FilmStripRow'
 import VenueSpotlight from '../components/home/VenueSpotlight'
 import SocialPulse from '../components/home/SocialPulse'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
+import PageSEO from '../components/PageSEO'
 
 // Detect touch/mobile once at module level — never re-evaluated
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches

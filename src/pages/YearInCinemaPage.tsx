@@ -5,6 +5,7 @@ import { tmdb } from '../tmdb'
 import { Film, ArrowLeft, Share2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import '../styles/year-in-cinema.css'
+import PageSEO from '../components/PageSEO'
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']

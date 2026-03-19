@@ -7,6 +7,7 @@ import { supabase } from '../supabaseClient'
 import { useQuery } from '@tanstack/react-query'
 import { LoadingReel } from '../components/UI'
 import toast from 'react-hot-toast'
+import PageSEO from '../components/PageSEO'
 
 // Haversine distance in km between two lat/lng points
 function haversineKm(lat1: any, lng1: any, lat2: any, lng2: any) {

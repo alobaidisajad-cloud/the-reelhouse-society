@@ -6,6 +6,7 @@ import { Search, X, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import { tmdb, obscurityScore } from '../tmdb'
 import { FilmCard, SectionHeader, LoadingReel, ObscurityBadge, PersonPlaceholder } from '../components/UI'
 import { useUIStore, useDiscoverStore } from '../store'
+import PageSEO from '../components/PageSEO'
 
 // Detect touch/mobile once at module level
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches

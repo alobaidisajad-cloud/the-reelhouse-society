@@ -3,6 +3,7 @@ import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Eye, EyeOff, Check } from 'lucide-react'
 import toast from 'react-hot-toast'
+import PageSEO from '../components/PageSEO'
 
 export default function ResetPasswordPage() {
     const navigate = useNavigate()

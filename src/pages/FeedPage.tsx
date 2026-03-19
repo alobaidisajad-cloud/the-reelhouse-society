@@ -8,6 +8,7 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import ActivityCard from '../components/feed/ActivityCard'
 import RatingLegend from '../components/feed/RatingLegend'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
+import PageSEO from '../components/PageSEO'
 
 // ── FEED PAGE ──
 export default function FeedPage() {

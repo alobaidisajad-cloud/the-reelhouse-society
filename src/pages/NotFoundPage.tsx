@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import Buster from '../components/Buster'
+import PageSEO from '../components/PageSEO'
 
 export default function NotFoundPage() {
     return (

@@ -4,6 +4,7 @@ import { FilmCard, SectionHeader, LoadingReel } from '../components/UI'
 import { ArrowLeft, Clock, Film } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
+import PageSEO from '../components/PageSEO'
 
 export default function ListDetailPage() {
     const { id } = useParams()

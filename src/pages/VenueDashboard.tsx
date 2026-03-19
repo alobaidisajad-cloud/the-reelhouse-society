@@ -13,6 +13,7 @@ import toast from 'react-hot-toast'
 import SeatMapEditor from '../components/SeatMapEditor'
 import { WeeklyRevenueChart, OccupancyGauge, TopFilmsChart, TicketTypeBreakdown } from '../components/AnalyticsCharts'
 import WeeklyCalendar from '../components/venue-dashboard/WeeklyCalendar'
+import PageSEO from '../components/PageSEO'
 
 const VIBE_OPTIONS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace', 'Repertory', 'Horror House', 'Indie', 'Experimental', 'Family']
 const FORMAT_OPTIONS = ['35mm', 'DCP 4K', 'DCP 2K', '70mm', 'Blu-ray', '16mm', 'VHS (Special)']

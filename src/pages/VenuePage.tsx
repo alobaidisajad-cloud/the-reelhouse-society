@@ -8,6 +8,7 @@ import TicketFlow from '../components/TicketFlow'
 import toast from 'react-hot-toast'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
+import PageSEO from '../components/PageSEO'
 
 // ── DEMO VENUES ──
 const DEMO_VENUES = {

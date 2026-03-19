@@ -4,6 +4,7 @@ import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
 import { motion } from 'framer-motion'
 import { CheckCircle2, XCircle, Loader } from 'lucide-react'
+import PageSEO from '../components/PageSEO'
 
 // ── AUTH CALLBACK PAGE ──
 // Supabase sends users here after clicking the confirmation email link.

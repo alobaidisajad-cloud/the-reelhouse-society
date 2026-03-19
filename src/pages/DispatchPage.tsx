@@ -6,6 +6,7 @@ import { tmdb } from '../tmdb'
 import { useAuthStore, useDispatchStore } from '../store'
 import Buster from '../components/Buster'
 import '../styles/dispatch.css'
+import PageSEO from '../components/PageSEO'
 
 /* ── REFINED NOIR ICONS ── */
 const IconFeather = () => (

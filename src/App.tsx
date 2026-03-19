@@ -6,6 +6,7 @@ import { tmdb } from './tmdb'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import Preloader from './components/Preloader'
+import FilmStripLoader from './components/FilmStripLoader'
 import CustomCursor from './components/CustomCursor'
 import { useFilmStore, useUIStore, initRealtime, initAuthSync } from './store'
 import InstallPrompt from './components/InstallPrompt'
@@ -51,9 +52,9 @@ const YearInCinemaPage = lazy(() => import('./pages/YearInCinemaPage'))
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
 const pageVariantsDesktop = {
-  initial: { opacity: 0 },
-  in: { opacity: 1 },
-  out: { opacity: 0 },
+  initial: { opacity: 0, filter: 'sepia(0.4) brightness(1.1)' },
+  in: { opacity: 1, filter: 'sepia(0) brightness(1)' },
+  out: { opacity: 0, filter: 'sepia(0.3)' },
 }
 
 const pageVariantsMobile = {
@@ -62,11 +63,11 @@ const pageVariantsMobile = {
   out: { opacity: 0 },
 }
 
-const pageTransitionDesktop = { type: 'tween', ease: 'easeInOut', duration: 0.15 }
+const pageTransitionDesktop = { type: 'tween', ease: 'easeInOut', duration: 0.2 }
 const pageTransitionMobile = { type: 'tween', ease: 'easeOut', duration: 0.15 }
 
 function PageFallback() {
-  return <div style={{ minHeight: '100vh', background: 'var(--ink)' }} />
+  return <FilmStripLoader message="THREADING REEL…" />
 }
 
 function PageWrapper({ children }: { children: React.ReactNode }) {

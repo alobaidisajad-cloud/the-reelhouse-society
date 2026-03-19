@@ -23,6 +23,7 @@ import { ProfileBackdrop, FilmLogRow, LazyLogRow, VaultSection, ListsSection } f
 import exportLogsCSV from '../components/profile/exportLogsCSV'
 import SocialModal from '../components/profile/SocialModal'
 import ReviewModal from '../components/profile/ReviewModal'
+import PageSEO from '../components/PageSEO'
 
 
 

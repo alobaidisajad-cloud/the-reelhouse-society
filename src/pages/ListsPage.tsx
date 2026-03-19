@@ -8,6 +8,7 @@ import { Plus, Lock, Globe, Search as SearchIcon, X } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
+import PageSEO from '../components/PageSEO'
 
 // Detect touch/mobile once at module level
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches

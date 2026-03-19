@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowLeft } from 'lucide-react'
 import { tmdb, obscurityScore } from '../tmdb'
 import { FilmCard, LoadingReel, SectionHeader, ObscurityBadge, PersonPlaceholder } from '../components/UI'
+import PageSEO from '../components/PageSEO'
 
 export default function PersonPage() {
     const { id } = useParams()
