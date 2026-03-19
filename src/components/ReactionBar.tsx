@@ -12,9 +12,9 @@ const REACTIONS = [
     { emoji: '⌀', label: 'Void' },
 ]
 
-export default function ReactionBar({ logId, logAuthor, filmTitle }) {
-    const [hoveredEmoji, setHoveredEmoji] = useState(null)
-    const [reactions, setReactions] = useState({})  // { emoji: [username, ...] }
+export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: string; logAuthor?: string; filmTitle?: string }) {
+    const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null)
+    const [reactions, setReactions] = useState<Record<string, string[]>>({})  // { emoji: [username, ...] }
     const [loading, setLoading] = useState(false)
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
@@ -36,15 +36,15 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }) {
 
             // Batch resolve usernames
             const userIds = [...new Set((data || []).map(r => r.user_id).filter(Boolean))]
-            let usernameMap = {}
+            let usernameMap: Record<string, string> = {}
             if (userIds.length > 0) {
                 const { data: profilesData } = await supabase
                     .from('profiles').select('id, username').in('id', userIds)
-                if (profilesData) usernameMap = Object.fromEntries(profilesData.map(p => [p.id, p.username]))
+                if (profilesData) usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p.username]))
             }
 
             // Group by emoji
-            const grouped = {}
+            const grouped: Record<string, string[]> = {}
             for (const row of (data || [])) {
                 const emoji = row.type.replace('react_', '')
                 const username = usernameMap[row.user_id] || 'anon'
@@ -58,7 +58,7 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }) {
         return () => { cancelled = true }
     }, [logId])
 
-    const handleReact = async (emoji) => {
+    const handleReact = async (emoji: string) => {
         if (!isAuthenticated || !user || loading) return
         setLoading(true)
 
@@ -78,9 +78,9 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }) {
                     .eq('type', reactionType)
 
                 // Optimistic update
-                setReactions(prev => {
+                setReactions((prev: Record<string, string[]>) => {
                     const updated = { ...prev }
-                    updated[emoji] = (updated[emoji] || []).filter(u => u !== username)
+                    updated[emoji] = (updated[emoji] || []).filter((u: string) => u !== username)
                     if (updated[emoji].length === 0) delete updated[emoji]
                     return updated
                 })

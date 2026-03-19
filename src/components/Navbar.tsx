@@ -8,7 +8,7 @@ import Buster from './Buster'
 import NotificationBell from './NotificationBell'
 
 // Route prefetch map — loads chunks on hover for instant navigation
-const prefetchRoute = (path) => {
+const prefetchRoute = (path: string) => {
     const routes = {
         '/': () => import('../pages/HomePage'),
         '/discover': () => import('../pages/DiscoverPage'),
@@ -20,7 +20,7 @@ const prefetchRoute = (path) => {
         '/cinemas': () => import('../pages/CinemasPage'),
         '/patronage': () => import('../pages/MembershipPage'),
     }
-    routes[path]?.()
+    ;(routes as Record<string, (() => Promise<any>) | undefined>)[path]?.()
 }
 
 const NAV_LINKS = [
@@ -48,14 +48,14 @@ export default function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false)
     const [searchOpen, setSearchOpen] = useState(false)
     const [query, setQuery] = useState('')
-    const [suggestions, setSuggestions] = useState([])
+    const [suggestions, setSuggestions] = useState<any[]>([])
     const [scrolled, setScrolled] = useState(false)
     const [hidden, setHidden] = useState(false)
     const [searching, setSearching] = useState(false)
     const lastScrollY = useRef(0)
 
     useEffect(() => {
-        let rafId = null
+        let rafId: number | null = null
         const onScroll = () => {
             if (rafId) return
             rafId = requestAnimationFrame(() => {
@@ -113,7 +113,7 @@ export default function Navbar() {
         return () => clearTimeout(timer)
     }, [query])
 
-    const handleSearch = (e) => {
+    const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
         if (query.trim()) {
             const match = suggestions[0]
@@ -157,9 +157,9 @@ export default function Navbar() {
                     <ul className="nav-links hide-mobile">
                         {NAV_LINKS.map(({ path, label }) => {
                             const ALIASES = { '/society': ['/patronage', '/membership'] }
-                            const isActive = (p) => {
+                            const isActive = (p: string) => {
                                 if (location.pathname === p) return true
-                                const al = ALIASES[p] || []
+                                const al = (ALIASES as Record<string, string[]>)[p] || []
                                 if (al.includes(location.pathname)) return true
                                 if (p !== '/' && location.pathname.startsWith(p + '/')) return true
                                 return false
@@ -198,7 +198,7 @@ export default function Navbar() {
                                     + <span className="hide-mobile">LOG FILM</span>
                                 </button>
                                 <NotificationBell />
-                                {user?.role === 'venue_owner' && (
+                                {(user as any)?.role === 'venue_owner' && (
                                     <Link
                                         to="/venue-dashboard"
                                         className="user-badge hide-mobile"
