@@ -3,7 +3,7 @@ import { Lock } from 'lucide-react'
 import { useFilmStore, useProgrammeStore } from '../../store'
 import { tmdb } from '../../tmdb'
 
-export function ProgrammesSection({ programmes, user, isOwnProfile }) {
+export function ProgrammesSection({ programmes, user, isOwnProfile }: { programmes: any[]; user: any; isOwnProfile: boolean }) {
     const { logs, vault, watchlist } = useFilmStore()
     const { addProgramme, removeProgramme } = useProgrammeStore()
     const [isCreating, setIsCreating] = useState(false)
@@ -12,10 +12,10 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }) {
     const [film1Id, setFilm1Id] = useState('')
     const [film2Id, setFilm2Id] = useState('')
 
-    const allFilms = [...logs, ...vault, ...watchlist]
+    const allFilms: any[] = [...logs, ...vault, ...watchlist]
     const uniqueFilmsMap = new Map()
     allFilms.forEach(f => {
-        const id = f.filmId || f.id
+        const id = (f as any).filmId || f.id
         if (!uniqueFilmsMap.has(id)) uniqueFilmsMap.set(id, f)
     })
     const uniqueFilms = Array.from(uniqueFilmsMap.values())
@@ -28,7 +28,7 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }) {
             username: user.username, title, playbill,
             film1: { id: f1.filmId || f1.id, title: f1.title || f1.name, poster_path: f1.poster || f1.poster_path },
             film2: { id: f2.filmId || f2.id, title: f2.title || f2.name, poster_path: f2.poster || f2.poster_path },
-        })
+        } as any)
         setIsCreating(false)
         setTitle(''); setPlaybill(''); setFilm1Id(''); setFilm2Id('')
     }
@@ -86,7 +86,7 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }) {
 
             {programmes.length > 0 && !isCreating && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                    {programmes.map(prog => (
+                    {programmes.map((prog: any) => (
                         <div key={prog.id} className="card" style={{ display: 'flex', gap: '2.5rem', padding: '2.5rem', background: 'linear-gradient(135deg, var(--soot) 0%, var(--ink) 100%)', position: 'relative' }}>
                             {isOwnProfile && (
                                 <button className="btn btn-ghost" onClick={() => removeProgramme(prog.id)} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>✕ REMOVE</button>

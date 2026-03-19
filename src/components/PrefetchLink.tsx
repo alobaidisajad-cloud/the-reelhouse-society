@@ -17,9 +17,9 @@ const routeMap = {
     '/venue': () => import('../pages/VenuePage'),
 }
 
-export default function PrefetchLink({ to, children, ...props }) {
+export default function PrefetchLink({ to, children, ...props }: { to: string; children: React.ReactNode; [key: string]: any }) {
     const handleHover = useCallback(() => {
-        const loader = routeMap[to]
+        const loader = (routeMap as any)[to]
         if (loader) loader() // Triggers Vite to load the chunk
     }, [to])
 

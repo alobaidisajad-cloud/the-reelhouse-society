@@ -7,7 +7,7 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 // Static — defined outside component so it's never re-created on re-render
 const MARQUEE_BULBS = Array.from({ length: IS_TOUCH ? 8 : 14 }) // fewer bulb animations on mobile
 
-const MarqueeBoard = memo(function MarqueeBoard({ film }) {
+const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
     if (!film) return (
         <div style={{
             position: 'relative',

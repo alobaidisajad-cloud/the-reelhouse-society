@@ -23,7 +23,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
     const availableSeats = totalSeats - takenSeats
     const BOOKING_FEE = 1.50
 
-    const handleSeatSelect = (seatId, _seatKind) => {
+    const handleSeatSelect = (seatId: string, _seatKind: string) => {
         if (ticketType?.type === 'VIP') {
             const vipRowCount = seatLayout.vipRows || 2
             const rowLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
@@ -126,7 +126,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
                                 {availableSeats} SEATS AVAILABLE
                             </div>
-                            {slot.ticketTypes?.map(tt => (
+                            {slot.ticketTypes?.map((tt: any) => (
                                 <div
                                     key={tt.id}
                                     onClick={() => setTicketType(tt)}

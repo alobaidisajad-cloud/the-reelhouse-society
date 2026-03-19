@@ -122,13 +122,13 @@ export default function ResetPasswordPage() {
                                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: strengthColor, marginLeft: '0.5rem', minWidth: '6rem', transition: 'color 0.3s' }}>{strengthLabel}</span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.2rem 0.75rem' }}>
-                                {[
+                                {([
                                     [checks.length, '8+ characters'],
                                     [checks.uppercase, 'Uppercase letter'],
                                     [checks.lowercase, 'Lowercase letter'],
                                     [checks.number, 'Number'],
                                     [checks.special, 'Special character'],
-                                ].map(([ok, label]) => (
+                                ] as Array<[boolean, string]>).map(([ok, label]) => (
                                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: ok ? '#4caf50' : 'var(--fog)', transition: 'color 0.2s' }}>
                                         <span style={{ fontSize: '0.55rem' }}>{ok ? '✓' : '○'}</span>
                                         {label}

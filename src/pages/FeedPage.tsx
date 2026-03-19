@@ -38,7 +38,7 @@ export default function FeedPage() {
             if (!error && data) {
                     // Resolve usernames in a single batch query
                     const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
-                    let usernameMap = {}
+                    let usernameMap: Record<string, any> = {}
                     if (userIds.length > 0) {
                         const { data: profilesData } = await supabase
                             .from('profiles')

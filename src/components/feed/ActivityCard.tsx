@@ -290,7 +290,7 @@ export default function ActivityCard({ log }: { log: any }) {
 
                         {/* ── SOCIETY STAMP OVERLAY ── */}
                         {endorsed && (
-                            <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '2.5rem', right: '1.5rem', zIndex: 100 }}>
+                            <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '2.5rem', right: '1.5rem', zIndex: 100 } as React.CSSProperties}>
                                 <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
                                     <g transform="rotate(-2 150 60)">
                                         <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />

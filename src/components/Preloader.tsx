@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-export default function Preloader({ onComplete }) {
+export default function Preloader({ onComplete }: { onComplete: () => void }) {
     const [count, setCount] = useState(3)
     const [loading, setLoading] = useState(true)
 

@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { tmdb } from '../../tmdb'
 
-export function WatchlistRoulette({ watchlist }) {
+export function WatchlistRoulette({ watchlist }: { watchlist: any[] }) {
     const [picking, setPicking] = useState(false)
-    const [result, setResult] = useState(null)
+    const [result, setResult] = useState<any>(null)
     const [reason, setReason] = useState('')
 
     const spin = () => {

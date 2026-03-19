@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import Buster from '../Buster'
 import { tmdb } from '../../tmdb'
 
-export function TicketBooth({ stubs }) {
+export function TicketBooth({ stubs }: { stubs: any[] }) {
     if (stubs.length === 0) {
         return (
             <div style={{ textAlign: 'center', padding: '4rem' }}>
@@ -13,7 +13,7 @@ export function TicketBooth({ stubs }) {
 
     return (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1.5rem' }}>
-            {stubs.map(stub => (
+            {stubs.map((stub: any) => (
                 <motion.div
                     key={stub.id}
                     className="admission-stub"

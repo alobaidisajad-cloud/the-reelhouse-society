@@ -34,7 +34,7 @@ export default function LogModalSearch({ query, searching, results, searchType, 
                 <motion.div
                     initial={{ opacity: 0.4 }}
                     animate={{ opacity: 1 }}
-                    transition={{ repeat: Infinity, duration: 0.8, direction: 'alternate' }}
+                    transition={{ repeat: Infinity, duration: 0.8, direction: 'alternate' } as any}
                     style={{ textAlign: 'center', padding: '1.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', color: 'var(--sepia)', letterSpacing: '0.2em' }}
                 >
                     TRANSMITTING QUERY...

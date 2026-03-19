@@ -269,7 +269,7 @@ export default function YearInCinemaPage() {
                             <div key={name} className="yic-director">
                                 <div className="yic-director-rank">{i + 1}</div>
                                 <div className="yic-director-name" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{String(name)}</div>
-                                <div className="yic-director-count">{count} {count === 1 ? 'FILM' : 'FILMS'}</div>
+                                <div className="yic-director-count">{String(count)} {Number(count) === 1 ? 'FILM' : 'FILMS'}</div>
                             </div>
                         ))}
                     </div>

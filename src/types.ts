@@ -80,6 +80,7 @@ export interface VaultItem {
 export interface FilmList {
     id: string
     title: string
+    name?: string
     description?: string
     films: Array<{ id: number; title: string; poster_path?: string | null }>
     user_id?: string
@@ -145,8 +146,9 @@ export interface Programme {
 // ── Notification ──
 export interface Notification {
     id: string
-    type: 'endorse' | 'follow' | 'annotate' | 'retransmit' | 'system'
+    type: 'endorse' | 'follow' | 'annotate' | 'retransmit' | 'system' | 'reaction'
     message?: string
+    from?: string
     from_user?: string
     from_avatar?: string
     target_id?: string

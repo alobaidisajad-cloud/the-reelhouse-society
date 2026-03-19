@@ -6,7 +6,7 @@ import { useFocusTrap } from '../../hooks/useFocusTrap'
  * Social modal — shows a list of followers or following.
  * @param {{ socialModal: object, socialLoading: boolean, onClose: Function }} props
  */
-export default function SocialModal({ socialModal, socialLoading, onClose }) {
+export default function SocialModal({ socialModal, socialLoading, onClose }: { socialModal: any; socialLoading: boolean; onClose: () => void }) {
     const focusTrapRef = useFocusTrap(!!socialModal, onClose)
     if (!socialModal) return null
 
@@ -30,7 +30,7 @@ export default function SocialModal({ socialModal, socialLoading, onClose }) {
                         <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>This archive is empty.</div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                            {socialModal.list.map(member => (
+                            {socialModal.list.map((member: any) => (
                                 <Link key={member.username} to={`/user/${member.username}`} onClick={onClose} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', background: 'rgba(255,255,255,0.02)', textDecoration: 'none', borderRadius: '4px' }}>
                                     <div style={{ width: 32, height: 32, borderRadius: '50%', overflow: 'hidden', border: '1px solid var(--ash)', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {member.avatar_url?.startsWith('http') ? <img src={member.avatar_url} alt={member.username} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Buster size={20} mood={member.avatar_url || 'smiling'} />}

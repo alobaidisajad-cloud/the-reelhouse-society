@@ -13,7 +13,7 @@ export default function PersonPage() {
         queryKey: ['person', id],
         queryFn: () => tmdb.person(id),
         staleTime: 1000 * 60 * 30, // 30 mins
-        enabled: !!id && !isNaN(id) && id !== 'discover' // Safety guard
+        enabled: !!id && !isNaN(Number(id)) && id !== 'discover' // Safety guard
     })
 
     const { data: credits, isLoading: loadingCredits } = useQuery({

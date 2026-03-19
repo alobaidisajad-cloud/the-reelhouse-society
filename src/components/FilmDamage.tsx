@@ -20,7 +20,7 @@ function FilmDamageDesktop() {
 
   // Trigger rare "Cigarette Burn" flashes — independent of render cycle
   useEffect(() => {
-    let timerId
+    let timerId: ReturnType<typeof setTimeout>
 
     const triggerBurn = () => {
       setBurnActive(true)

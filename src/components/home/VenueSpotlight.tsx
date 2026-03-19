@@ -52,7 +52,7 @@ const VenueSpotlight = memo(function VenueSpotlight() {
                                 ◈ {v.location || 'Location TBC'}
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem', marginBottom: '0.75rem' }}>
-                                {(v.vibes || []).slice(0, 3).map((vibe) => (
+                                {(v.vibes || []).slice(0, 3).map((vibe: string) => (
                                     <span key={vibe} className="tag tag-vibe" style={{ fontSize: '0.55rem' }}>⟡ {vibe}</span>
                                 ))}
                             </div>

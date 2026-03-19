@@ -270,10 +270,9 @@ export default function OnboardingModal() {
                                             // Save taste seeds to Supabase profile
                                             if (user?.id && selectedFilms.length > 0) {
                                                 const seeds = selectedFilms.map((f: OnboardFilm) => ({ id: f.id, title: f.title, poster: f.poster_path }))
-                                                await supabase.from('profiles')
+                                                await (supabase.from('profiles')
                                                     .update({ taste_seeds: seeds })
-                                                    .eq('id', user.id)
-                                                    .catch(() => { })  // Graceful if column doesn't exist yet
+                                                    .eq('id', user.id) as any).catch(() => { })  // Graceful if column doesn't exist yet
                                             }
                                             setStep(1)
                                         }}

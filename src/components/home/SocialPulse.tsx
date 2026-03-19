@@ -110,7 +110,7 @@ const SocialPulse = memo(function SocialPulse() {
                                     </div>
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.05rem', color: 'var(--parchment)', marginBottom: '1rem' }}>{act.title}</div>
                                     <div className="cine-card" style={{ display: 'flex', gap: 4, height: 60, overflow: 'hidden', borderRadius: '3px' }}>
-                                        {act.films.map((f, fi) => (
+                                        {act.films.map((f: any, fi: number) => (
                                             <img key={fi} src={tmdb.poster(f.poster_path, 'w92')} loading="lazy" alt={f.title} style={{ flex: 1, objectFit: 'cover', filter: 'sepia(0.3) brightness(0.8)', borderRight: fi < act.films.length - 1 ? '1px solid rgba(0,0,0,0.5)' : 'none' }} />
                                         ))}
                                     </div>

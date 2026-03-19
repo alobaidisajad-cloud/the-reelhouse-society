@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { Download, Check, Film, Maximize2 } from 'lucide-react'
 // html2canvas loaded on demand in handleDownload()
 
-export default function TicketStubGallery({ stub, onClose }) {
+export default function TicketStubGallery({ stub, onClose }: { stub: any; onClose: () => void }) {
     const stubRef = useRef(null)
     const [isDownloading, setIsDownloading] = useState(false)
     const [downloaded, setDownloaded] = useState(false)

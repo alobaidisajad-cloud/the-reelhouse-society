@@ -69,7 +69,7 @@ function PageFallback() {
   return <div style={{ minHeight: '100vh', background: 'var(--ink)' }} />
 }
 
-function PageWrapper({ children }) {
+function PageWrapper({ children }: { children: React.ReactNode }) {
   // Respect prefers-reduced-motion: skip all page animations
   if (PREFERS_REDUCED_MOTION) {
     return <div style={{ position: 'relative', background: 'var(--ink)' }}>{children}</div>
@@ -92,7 +92,7 @@ function PageWrapper({ children }) {
       animate="in"
       exit="out"
       variants={pageVariantsDesktop}
-      transition={pageTransitionDesktop}
+      transition={pageTransitionDesktop as any}
       style={{ position: 'relative', background: 'var(--ink)' }}
     >
       {children}
@@ -162,10 +162,10 @@ export default function App() {
   // ── Global Keyboard Shortcuts ──
   // L = log a film, ? = handbook, I = import CSV
   useEffect(() => {
-    const handler = (e) => {
+    const handler = (e: KeyboardEvent) => {
       // Ignore when user is typing in an input, textarea, or contenteditable
       const tag = document.activeElement?.tagName
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement?.isContentEditable) return
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || (document.activeElement as HTMLElement)?.isContentEditable) return
       if (e.metaKey || e.ctrlKey || e.altKey) return
       if (e.key === 'l' || e.key === 'L') { e.preventDefault(); openLogModal() }
       if (e.key === '?') { e.preventDefault(); openHandbook() }

@@ -128,14 +128,14 @@ export default function SignupModal() {
                     // For venue owners: create their venue row in Supabase
                     if (role === 'venue_owner' && venueName.trim() && (result as any).user?.id) {
                         const slug = venueName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-                        await supabase.from('venues').insert([{
+                        await (supabase.from('venues').insert([{
                             owner_id: (result as any).user.id,
                             name: venueName.trim(),
                             slug,
                             location: 'TBD',
                             description: venueDesc.trim() || null,
                             vibes: vibes.length > 0 ? vibes : null,
-                        }]).then(() => {}).catch(() => {})
+                        }]) as any).catch(() => {})
                     }
                     toast.success(`Welcome to The ReelHouse Society, ${formattedUsername}! 🎬`)
                     closeSignupModal()

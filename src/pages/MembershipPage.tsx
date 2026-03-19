@@ -91,13 +91,13 @@ export default function MembershipPage() {
 
                 {/* Tiers Grid */}
                 <motion.div
-                    variants={containerVariants}
+                    variants={containerVariants as any}
                     initial="hidden"
                     animate="visible"
                     className="tiers-grid"
                 >
                     {/* The Free Tier */}
-                    <motion.div variants={itemVariants} className="card card-tier tier-card" style={{ border: 'none' }}>
+                    <motion.div variants={itemVariants as any} className="card card-tier tier-card" style={{ border: 'none' }}>
                         <h3 className="tier-name">The<br/>Cinephile</h3>
                         <div className="tier-label tier-label--free">BASIC ACCESS</div>
 
@@ -125,7 +125,7 @@ export default function MembershipPage() {
                     </motion.div>
 
                     {/* The Pro Tier */}
-                    <motion.div variants={itemVariants} className="card card-tier tier-card tier-card--archivist">
+                    <motion.div variants={itemVariants as any} className="card card-tier tier-card tier-card--archivist">
                         <div className="popular-badge">MOST POPULAR</div>
 
                         <h3 className="tier-name tier-name--archivist">The<br/>Archivist</h3>
@@ -191,7 +191,7 @@ export default function MembershipPage() {
                     </motion.div>
 
                     {/* The Patron Tier */}
-                    <motion.div variants={itemVariants} className="card card-tier tier-card tier-card--auteur">
+                    <motion.div variants={itemVariants as any} className="card card-tier tier-card tier-card--auteur">
                         <h3 className="tier-name tier-name--auteur">The Auteur</h3>
                         <div className="tier-label tier-label--auteur">ULTIMATE PATRONAGE</div>
 

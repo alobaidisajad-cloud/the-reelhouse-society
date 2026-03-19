@@ -246,10 +246,10 @@ export default function CinemasPage() {
     const [minRating, setMinRating] = useState(0)
     const [sortBy, setSortBy] = useState('newest')
     const [showFilters, setShowFilters] = useState(false)
-    const [reviewModal, setReviewModal] = useState(null)
+    const [reviewModal, setReviewModal] = useState<any>(null)
 
     // Geolocation state
-    const [userLocation, setUserLocation] = useState(null)  // { lat, lng }
+    const [userLocation, setUserLocation] = useState<{lat:number;lng:number}|null>(null)  // { lat, lng }
     const [geoLoading, setGeoLoading] = useState(false)
 
     const findNearest = useCallback(() => {

@@ -4,7 +4,7 @@ import { supabase } from '../../supabaseClient'
 import { ReelRating } from '../UI'
 import Buster from '../Buster'
 
-const FeaturedReview = memo(function FeaturedReview({ film }) {
+const FeaturedReview = memo(function FeaturedReview({ film }: { film: any }) {
     const { data: communityReview } = useQuery({
         queryKey: ['featured-review', film?.id],
         queryFn: async () => {

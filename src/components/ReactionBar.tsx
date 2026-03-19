@@ -106,12 +106,12 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: st
                         .single()
 
                     if (authorProfile) {
-                        await supabase.from('notifications').insert([{
+                        await (supabase.from('notifications').insert([{
                             user_id: authorProfile.id,
                             type: 'reaction',
                             from_username: username,
                             message: `${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
-                        }]).catch(() => { })  // Graceful if table doesn't exist yet
+                        }]) as any).catch(() => { })  // Graceful if table doesn't exist yet
                     }
 
                     // Also push locally for immediate feedback

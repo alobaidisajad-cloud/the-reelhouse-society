@@ -3,11 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Download, X } from 'lucide-react'
 
 export default function InstallPrompt() {
-    const [deferredPrompt, setDeferredPrompt] = useState(null)
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null)
     const [showPrompt, setShowPrompt] = useState(false)
 
     useEffect(() => {
-        const handler = (e) => {
+        const handler = (e: any) => {
             e.preventDefault()
             setDeferredPrompt(e)
             const timer = setTimeout(() => setShowPrompt(true), 5000)

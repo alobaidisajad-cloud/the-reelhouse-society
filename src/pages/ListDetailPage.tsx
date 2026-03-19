@@ -87,7 +87,7 @@ export default function ListDetailPage() {
         )
     }
 
-    const { title, description, desc, user, films = [], createdAt } = list
+    const { title, description, desc, user, films = [], createdAt } = list as any
     const displayDesc = description || desc
     const authorParam = user || 'YOU'
 
