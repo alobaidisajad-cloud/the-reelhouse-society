@@ -2,7 +2,7 @@ import { motion } from 'framer-motion'
 import { RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
 
-export function TasteDNA({ logs }) {
+export function TasteDNA({ logs }: { logs: any[] }) {
     if (logs.length === 0) {
         return (
             <div className="taste-dna-poster">
@@ -16,15 +16,15 @@ export function TasteDNA({ logs }) {
         )
     }
 
-    const decades = {}
-    logs.forEach((log) => {
+    const decades: Record<string, number> = {}
+    logs.forEach((log: any) => {
         const year = parseInt(log.year || '2000')
         const decade = `${Math.floor(year / 10) * 10}s`
         decades[decade] = (decades[decade] || 0) + 1
     })
-    const topDecade = Object.entries(decades).sort((a, b) => b[1] - a[1])[0]?.[0] || '2000s'
-    const rated = logs.filter(l => l.rating > 0)
-    const avgRating = rated.length ? rated.reduce((s, l) => s + l.rating, 0) / rated.length : 0
+    const topDecade = Object.entries(decades).sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] || '2000s'
+    const rated = logs.filter((l: any) => l.rating > 0)
+    const avgRating = rated.length ? rated.reduce((s: number, l: any) => s + l.rating, 0) / rated.length : 0
     const obscurityScore = Math.round(40 + (5 - avgRating) * 12 + Math.min(logs.length, 30))
     const archetypes = [
         { min: 0, label: 'Initiate' }, { min: 5, label: 'Devotee' }, { min: 15, label: 'Archivist' },
@@ -33,13 +33,13 @@ export function TasteDNA({ logs }) {
     const archetype = archetypes.filter(a => logs.length >= a.min).pop()?.label || 'Initiate'
     const tones = avgRating >= 4 ? 'Romanticism' : avgRating >= 3 ? 'Realism' : avgRating >= 2 ? 'Dark Romanticism' : 'Nihilism'
     const topDecades = Object.entries(decades).sort((a, b) => b[1] - a[1]).slice(0, 4)
-    const autopsies = logs.filter(l => l.isAutopsied && l.autopsy).map(l => l.autopsy)
-    let avgAutopsy = null
+    const autopsies = logs.filter((l: any) => l.isAutopsied && l.autopsy).map((l: any) => l.autopsy)
+    let avgAutopsy: { story: number; cinematography: number; sound: number } | null = null
     if (autopsies.length > 0) {
         avgAutopsy = {
-            story: Math.round(autopsies.reduce((s, a) => s + (a.story || a.screenplay || a.script || 0), 0) / autopsies.length),
-            cinematography: Math.round(autopsies.reduce((s, a) => s + (a.cinematography || a.visuals || a.acting || 0), 0) / autopsies.length),
-            sound: Math.round(autopsies.reduce((s, a) => s + (a.sound || a.score || a.editing || 0), 0) / autopsies.length),
+            story: Math.round(autopsies.reduce((s: number, a: any) => s + (a.story || a.screenplay || a.script || 0), 0) / autopsies.length),
+            cinematography: Math.round(autopsies.reduce((s: number, a: any) => s + (a.cinematography || a.visuals || a.acting || 0), 0) / autopsies.length),
+            sound: Math.round(autopsies.reduce((s: number, a: any) => s + (a.sound || a.score || a.editing || 0), 0) / autopsies.length),
         }
     }
 
@@ -60,7 +60,7 @@ export function TasteDNA({ logs }) {
                 <span style={{ fontFamily: 'var(--font-display-alt)', fontSize: '1rem', color: 'var(--sepia)' }}>{obscurityScore}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                {topDecades.map(([decade, count]) => {
+                {topDecades.map(([decade, count]: [string, number]) => {
                     const pct = Math.round((count / logs.length) * 100)
                     return (
                         <div key={decade}>

@@ -8,20 +8,20 @@ import { RadarChart } from '../UI'
  * Shows archetype, top decades, obscurity index, radar chart, and branding.
  * Designed as a 9:16 Instagram Story-sized overlay.
  */
-export function CinemaDNACard({ logs, user, onClose }) {
+export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any; onClose: () => void }) {
     if (!logs || logs.length < 5) return null
 
     // Compute Cinema DNA stats
-    const decades = {}
-    logs.forEach(log => {
+    const decades: Record<string, number> = {}
+    logs.forEach((log: any) => {
         const year = parseInt(log.year || '2000')
         const decade = `${Math.floor(year / 10) * 10}s`
         decades[decade] = (decades[decade] || 0) + 1
     })
-    const topDecades = Object.entries(decades).sort((a, b) => b[1] - a[1]).slice(0, 3)
-    const rated = logs.filter(l => l.rating > 0)
-    const avgRating = rated.length ? (rated.reduce((s, l) => s + l.rating, 0) / rated.length).toFixed(1) : '—'
-    const obscurityScore = Math.round(40 + (5 - parseFloat(avgRating || 3)) * 12 + Math.min(logs.length, 30))
+    const topDecades = Object.entries(decades).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3)
+    const rated = logs.filter((l: any) => l.rating > 0)
+    const avgRating = rated.length ? (rated.reduce((s: number, l: any) => s + l.rating, 0) / rated.length).toFixed(1) : '—'
+    const obscurityScore = Math.round(40 + (5 - parseFloat(avgRating || '3')) * 12 + Math.min(logs.length, 30))
 
     const archetypes = [
         { min: 0, label: 'Initiate' }, { min: 5, label: 'Devotee' }, { min: 15, label: 'Archivist' },
@@ -32,13 +32,13 @@ export function CinemaDNACard({ logs, user, onClose }) {
     const tones = parseFloat(avgRating) >= 4 ? 'Romanticism' : parseFloat(avgRating) >= 3 ? 'Realism' : parseFloat(avgRating) >= 2 ? 'Dark Romanticism' : 'Nihilism'
 
     // Aggregate autopsy data for radar
-    const autopsies = logs.filter(l => l.isAutopsied && l.autopsy).map(l => l.autopsy)
-    let avgAutopsy = null
+    const autopsies = logs.filter((l: any) => l.isAutopsied && l.autopsy).map((l: any) => l.autopsy)
+    let avgAutopsy: { story: number; cinematography: number; sound: number } | null = null
     if (autopsies.length > 0) {
         avgAutopsy = {
-            story: Math.round(autopsies.reduce((s, a) => s + (a.story || a.screenplay || a.script || 0), 0) / autopsies.length),
-            cinematography: Math.round(autopsies.reduce((s, a) => s + (a.cinematography || a.visuals || a.acting || 0), 0) / autopsies.length),
-            sound: Math.round(autopsies.reduce((s, a) => s + (a.sound || a.score || a.editing || 0), 0) / autopsies.length),
+            story: Math.round(autopsies.reduce((s: number, a: any) => s + (a.story || a.screenplay || a.script || 0), 0) / autopsies.length),
+            cinematography: Math.round(autopsies.reduce((s: number, a: any) => s + (a.cinematography || a.visuals || a.acting || 0), 0) / autopsies.length),
+            sound: Math.round(autopsies.reduce((s: number, a: any) => s + (a.sound || a.score || a.editing || 0), 0) / autopsies.length),
         }
     }
 
@@ -155,7 +155,7 @@ export function CinemaDNACard({ logs, user, onClose }) {
                     <div style={{ marginBottom: 'auto' }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>DOMINANT ERAS</div>
                         <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            {topDecades.map(([decade, count]) => {
+                            {topDecades.map(([decade, count]: [string, number]) => {
                                 const pct = Math.round((count / logs.length) * 100)
                                 return (
                                     <div key={decade} style={{

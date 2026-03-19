@@ -59,6 +59,7 @@ interface PersonPlaceholderProps {
 
 interface RadarChartProps {
     autopsy: Record<string, number> | null
+    size?: number
 }
 
 // Film reel rating — 5 segments, half-reels allowed

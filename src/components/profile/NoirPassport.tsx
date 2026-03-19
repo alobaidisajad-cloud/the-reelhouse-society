@@ -1,17 +1,17 @@
 import { useMemo } from 'react'
 
 const PASSPORT_STAMPS = [
-    { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', test: (logs) => logs.length >= 100 },
-    { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', test: (logs) => logs.length >= 500 },
-    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs) => logs.filter(l => l.year && parseInt(l.year) < 1960).length >= 20 },
-    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs) => logs.filter(l => l.rating === 5).length >= 10 },
-    { id: 'vault_keeper', label: 'VAULT KEEPER', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs) => logs.some(l => l.physicalMedia) },
-    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', test: (logs) => logs.some(l => l.status === 'abandoned') },
-    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs) => new Set(logs.filter(l => l.year).map(l => Math.floor(parseInt(l.year) / 10) * 10)).size >= 7 },
-    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↩', test: (logs) => { const seen = new Set(); return logs.some(l => { if (seen.has(l.filmId)) return true; seen.add(l.filmId); return false }) } },
+    { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', test: (logs: any[]) => logs.length >= 100 },
+    { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', test: (logs: any[]) => logs.length >= 500 },
+    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs: any[]) => logs.filter((l: any) => l.year && parseInt(l.year) < 1960).length >= 20 },
+    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs: any[]) => logs.filter((l: any) => l.rating === 5).length >= 10 },
+    { id: 'vault_keeper', label: 'VAULT KEEPER', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: any[]) => logs.some((l: any) => l.physicalMedia) },
+    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', test: (logs: any[]) => logs.some((l: any) => l.status === 'abandoned') },
+    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs: any[]) => new Set(logs.filter((l: any) => l.year).map((l: any) => Math.floor(parseInt(l.year) / 10) * 10)).size >= 7 },
+    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↩', test: (logs: any[]) => { const seen = new Set(); return logs.some((l: any) => { if (seen.has(l.filmId)) return true; seen.add(l.filmId); return false }) } },
 ]
 
-function PassportStamp({ stamp, earned, index }) {
+function PassportStamp({ stamp, earned, index }: { stamp: any; earned: boolean; index: number }) {
     const rotation = ['-4', '3', '-2', '5', '-3', '2', '-5', '4'][index % 8]
     return (
         <div
@@ -42,7 +42,7 @@ function PassportStamp({ stamp, earned, index }) {
     )
 }
 
-export function NoirPassport({ logs }) {
+export function NoirPassport({ logs }: { logs: any[] }) {
     const earned = useMemo(() =>
         PASSPORT_STAMPS.map(s => ({ ...s, earned: s.test(logs) })),
         [logs])
@@ -56,7 +56,7 @@ export function NoirPassport({ logs }) {
                 background: 'linear-gradient(135deg, rgba(139,105,20,0.04) 0%, transparent 60%)',
                 position: 'relative', overflow: 'hidden',
             }}>
-                {[['top', 'left'], ['top', 'right'], ['bottom', 'left'], ['bottom', 'right']].map(([v, h]) => (
+                {[['top', 'left'], ['top', 'right'], ['bottom', 'left'], ['bottom', 'right']].map(([v, h]: string[]) => (
                     <div key={`${v}-${h}`} style={{
                         position: 'absolute', [v]: '0.75rem', [h]: '0.75rem', width: 16, height: 16,
                         borderTop: v === 'top' ? '1px solid rgba(139,105,20,0.4)' : 'none',

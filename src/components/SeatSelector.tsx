@@ -5,6 +5,12 @@ import { useState, useEffect } from 'react'
 
 const ROW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
 
+interface SeatTooltip {
+    id: string
+    isVip: boolean
+    isBooked: boolean
+}
+
 const SCREEN_GLOW_STYLE = `
 @keyframes screenPulse {
   0%, 100% { box-shadow: 0 0 28px 6px rgba(242,232,160,0.35), 0 0 60px 8px rgba(242,232,160,0.1); }
@@ -23,14 +29,14 @@ const SCREEN_GLOW_STYLE = `
 }
 `
 
-export default function SeatSelector({ slot, seatLayout = {}, selectedSeat, onSeatSelect }) {
+export default function SeatSelector({ slot, seatLayout = {}, selectedSeat, onSeatSelect }: { slot?: any; seatLayout?: any; selectedSeat?: string | null; onSeatSelect?: (seatId: string, kind: string) => void }) {
     const { rows = 10, cols = 15, vipRows = 2, aisleAfterCol = 7 } = seatLayout
     const rowLabels = ROW_LABELS.slice(0, rows)
     const colNums = Array.from({ length: cols }, (_, i) => i + 1)
     const vipRowSet = new Set(ROW_LABELS.slice(0, vipRows))
     const bookedSet = new Set(slot?.bookedSeats || [])
-    const [tooltip, setTooltip] = useState(null)
-    const [justSelected, setJustSelected] = useState(null)
+    const [tooltip, setTooltip] = useState<SeatTooltip | null>(null)
+    const [justSelected, setJustSelected] = useState<string | null>(null)
 
     // Inject animation keyframes
     useEffect(() => {
@@ -43,13 +49,13 @@ export default function SeatSelector({ slot, seatLayout = {}, selectedSeat, onSe
         }
     }, [])
 
-    const handleSelect = (seatId, kind) => {
+    const handleSelect = (seatId: string, kind: string) => {
         onSeatSelect?.(seatId, kind)
         setJustSelected(seatId)
         setTimeout(() => setJustSelected(null), 500)
     }
 
-    const getSeatStyle = (seatId, isVip, isBooked, isSelected) => {
+    const getSeatStyle = (seatId: string, isVip: boolean, isBooked: boolean, isSelected: boolean): any => {
         const isPopping = justSelected === seatId
         let bg, border, boxShadow = 'none'
         if (isBooked) {
