@@ -48,6 +48,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const YearInCinemaPage = lazy(() => import('./pages/YearInCinemaPage'))
+const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
@@ -257,6 +258,7 @@ export default function App() {
               <Route path="/darkroom" element={<Navigate to="/discover" replace />} />
               <Route path="/membership" element={<Navigate to="/patronage" replace />} />
               <Route path="/year-in-cinema" element={<ErrorBoundary key="yic"><PageWrapper><YearInCinemaPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/settings" element={<ErrorBoundary key="settings"><PageWrapper><SettingsPage /></PageWrapper></ErrorBoundary>} />
               <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
 
             </Routes>
