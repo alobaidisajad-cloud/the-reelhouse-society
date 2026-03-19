@@ -1,0 +1,82 @@
+<!--
+  ReelHouse — Welcome Email Template (D3)
+  Sent when a new member joins The ReelHouse Society.
+  Uses inline styles for maximum email client compatibility.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Welcome to The ReelHouse Society</title>
+</head>
+<body style="margin:0;padding:0;background:#0A0703;font-family:'Georgia',serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#0A0703;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background:#0F0B07;border:1px solid #3A3228;border-radius:4px;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:40px 40px 20px;text-align:center;border-bottom:1px solid #3A3228;">
+              <div style="font-family:'Georgia',serif;font-size:28px;color:#F2E8A0;letter-spacing:0.15em;margin-bottom:8px;">
+                THE REELHOUSE SOCIETY
+              </div>
+              <div style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.3em;color:#8B6914;">
+                EST. 2024 · ADMISSION GRANTED
+              </div>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px;">
+              <div style="font-family:'Georgia',serif;font-size:22px;color:#E8DFC8;line-height:1.4;margin-bottom:20px;">
+                Welcome, {{USERNAME}}
+              </div>
+              <p style="font-family:'Georgia',serif;font-size:15px;color:#B8AFA0;line-height:1.75;margin:0 0 20px;">
+                Your admission into The ReelHouse Society has been processed. You now have access to the house — a place where cinema is not merely watched, but dissected, debated, and revered.
+              </p>
+              <p style="font-family:'Georgia',serif;font-size:15px;color:#B8AFA0;line-height:1.75;margin:0 0 30px;">
+                Begin by logging your first film. Every entry becomes part of your permanent cinematic record — a ledger that grows richer with each viewing.
+              </p>
+
+              <!-- CTA -->
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td align="center">
+                    <a href="{{APP_URL}}/discover" style="display:inline-block;padding:14px 36px;background:#8B6914;color:#0A0703;font-family:'Courier New',monospace;font-size:11px;letter-spacing:0.2em;text-decoration:none;border-radius:2px;font-weight:bold;">
+                      ENTER THE HOUSE
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 40px;">
+              <div style="height:1px;background:linear-gradient(to right,transparent,#8B6914,transparent);"></div>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:30px 40px;text-align:center;">
+              <div style="font-family:'Courier New',monospace;font-size:9px;letter-spacing:0.2em;color:#6B6560;margin-bottom:12px;">
+                THE REELHOUSE SOCIETY · CINEMATIC PRESERVATION
+              </div>
+              <div style="font-family:'Georgia',serif;font-size:12px;color:#4A4540;line-height:1.6;">
+                You're receiving this because you created an account at
+                <a href="{{APP_URL}}" style="color:#8B6914;text-decoration:none;">The ReelHouse Society</a>.
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

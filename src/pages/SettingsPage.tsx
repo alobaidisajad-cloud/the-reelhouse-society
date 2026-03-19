@@ -13,9 +13,9 @@ import toast from 'react-hot-toast'
 export default function SettingsPage() {
     const { user, isAuthenticated } = useAuthStore()
     const navigate = useNavigate()
-    const [displayName, setDisplayName] = useState((user as any)?.displayName || user?.username || '')
-    const [bio, setBio] = useState((user as any)?.bio || '')
-    const [socialVisibility, setSocialVisibility] = useState<string>((user as any)?.socialVisibility || 'public')
+    const [displayName, setDisplayName] = useState(user?.displayName || user?.username || '')
+    const [bio, setBio] = useState(user?.bio || '')
+    const [socialVisibility, setSocialVisibility] = useState<string>(user?.socialVisibility || 'public')
     const [saving, setSaving] = useState(false)
 
     useEffect(() => {

@@ -198,7 +198,7 @@ export default function Navbar() {
                                     + <span className="hide-mobile">LOG FILM</span>
                                 </button>
                                 <NotificationBell />
-                                {(user as any)?.role === 'venue_owner' && (
+                                {user?.role === 'venue_owner' && (
                                     <Link
                                         to="/venue-dashboard"
                                         className="user-badge hide-mobile"

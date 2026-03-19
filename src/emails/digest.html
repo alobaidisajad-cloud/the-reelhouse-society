@@ -1,0 +1,117 @@
+<!--
+  ReelHouse — Notification Digest Email (D3)
+  Sent as a daily/weekly digest of unread notifications.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your ReelHouse Digest</title>
+</head>
+<body style="margin:0;padding:0;background:#0A0703;font-family:'Georgia',serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#0A0703;">
+    <tr>
+      <td align="center" style="padding:40px 20px;">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="600" style="max-width:600px;background:#0F0B07;border:1px solid #3A3228;border-radius:4px;">
+
+          <!-- Header -->
+          <tr>
+            <td style="padding:30px 40px 16px;border-bottom:1px solid #3A3228;">
+              <div style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.3em;color:#8B6914;">
+                THE REELHOUSE SOCIETY
+              </div>
+              <div style="font-family:'Georgia',serif;font-size:22px;color:#E8DFC8;margin-top:8px;">
+                Your Weekly Dispatch
+              </div>
+            </td>
+          </tr>
+
+          <!-- Notifications -->
+          <tr>
+            <td style="padding:30px 40px;">
+              <div style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.2em;color:#6B6560;margin-bottom:20px;">
+                UNREAD NOTIFICATIONS
+              </div>
+
+              <!-- Notification item (repeat per notification) -->
+              {{#NOTIFICATIONS}}
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-bottom:16px;">
+                <tr>
+                  <td width="32" valign="top" style="padding-right:12px;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:#1C1710;border:1px solid #8B6914;text-align:center;line-height:28px;font-size:14px;">
+                      {{ICON}}
+                    </div>
+                  </td>
+                  <td valign="top">
+                    <div style="font-family:'Georgia',serif;font-size:14px;color:#E8DFC8;line-height:1.5;">
+                      {{MESSAGE}}
+                    </div>
+                    <div style="font-family:'Courier New',monospace;font-size:9px;color:#6B6560;letter-spacing:0.1em;margin-top:4px;">
+                      {{TIME_AGO}}
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              {{/NOTIFICATIONS}}
+
+              <!-- CTA -->
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="margin-top:24px;">
+                <tr>
+                  <td align="center">
+                    <a href="{{APP_URL}}/feed" style="display:inline-block;padding:12px 30px;background:#8B6914;color:#0A0703;font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.2em;text-decoration:none;border-radius:2px;font-weight:bold;">
+                      VIEW ALL ACTIVITY
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Weekly Stats -->
+          <tr>
+            <td style="padding:0 40px;">
+              <div style="height:1px;background:linear-gradient(to right,transparent,#8B6914,transparent);"></div>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px 40px;">
+              <div style="font-family:'Courier New',monospace;font-size:10px;letter-spacing:0.2em;color:#6B6560;margin-bottom:16px;">
+                THIS WEEK'S STATS
+              </div>
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%">
+                <tr>
+                  <td width="33%" style="text-align:center;padding:12px;">
+                    <div style="font-family:'Georgia',serif;font-size:28px;color:#F2E8A0;">{{FILMS_LOGGED}}</div>
+                    <div style="font-family:'Courier New',monospace;font-size:9px;color:#6B6560;letter-spacing:0.15em;margin-top:4px;">FILMS LOGGED</div>
+                  </td>
+                  <td width="33%" style="text-align:center;padding:12px;border-left:1px solid #3A3228;border-right:1px solid #3A3228;">
+                    <div style="font-family:'Georgia',serif;font-size:28px;color:#F2E8A0;">{{AVG_RATING}}</div>
+                    <div style="font-family:'Courier New',monospace;font-size:9px;color:#6B6560;letter-spacing:0.15em;margin-top:4px;">AVG RATING</div>
+                  </td>
+                  <td width="33%" style="text-align:center;padding:12px;">
+                    <div style="font-family:'Georgia',serif;font-size:28px;color:#F2E8A0;">{{ENDORSEMENTS}}</div>
+                    <div style="font-family:'Courier New',monospace;font-size:9px;color:#6B6560;letter-spacing:0.15em;margin-top:4px;">ENDORSEMENTS</div>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 40px 30px;text-align:center;">
+              <div style="font-family:'Georgia',serif;font-size:11px;color:#4A4540;">
+                <a href="{{APP_URL}}/settings" style="color:#8B6914;text-decoration:none;">Manage notifications</a>
+                &nbsp;·&nbsp;
+                <a href="{{UNSUBSCRIBE_URL}}" style="color:#4A4540;text-decoration:none;">Unsubscribe</a>
+              </div>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

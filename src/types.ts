@@ -10,14 +10,20 @@ export interface User {
     bio?: string
     avatar?: string
     avatar_url?: string
-    role: 'free' | 'archivist' | 'auteur'
+    role: 'free' | 'cinephile' | 'archivist' | 'auteur' | 'venue_owner'
+    tier?: 'free' | 'cinephile' | 'archivist' | 'auteur'
+    displayName?: string
+    display_name?: string
+    persona?: string
+    socialVisibility?: 'public' | 'members' | 'private'
+    social_visibility?: string
     following?: string[]
     followers_count?: number
     following_count?: number
     isSocialPrivate?: boolean
     is_social_private?: boolean
     created_at?: string
-    preferences?: any
+    preferences?: Record<string, unknown>
 }
 
 // ── Film Log ──
