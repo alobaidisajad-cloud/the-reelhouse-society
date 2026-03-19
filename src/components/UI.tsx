@@ -74,6 +74,12 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
         <div
             style={{ display: 'flex', gap: 3, alignItems: 'center', userSelect: 'none' }}
             onMouseLeave={() => setHovered(null)}
+            role="slider"
+            aria-label={`Rating: ${value} out of 5 reels`}
+            aria-valuemin={0}
+            aria-valuemax={5}
+            aria-valuenow={value}
+            aria-valuetext={`${value} out of 5 reels`}
         >
             {[1, 2, 3, 4, 5].map((reel) => {
                 const full = display >= reel
@@ -177,7 +183,7 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
 
     return (
         <div
-            className="card-film cine-card"
+            className="card-film cine-card projector-glow"
             style={{ aspectRatio: '2/3' }}
             onClick={onClick}
             onMouseEnter={handleMouseEnter}
