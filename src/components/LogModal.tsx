@@ -45,11 +45,11 @@ export default function LogModal() {
 
     const [step, setStep] = useState(0) // 0=search, 1=log
     const [query, setQuery] = useState('')
-    const [results, setResults] = useState([])
+    const [results, setResults] = useState<any[]>([])
     const [searchType, setSearchType] = useState('exact')
     const [searchContext, setSearchContext] = useState('')
     const [searching, setSearching] = useState(false)
-    const [film, setFilm] = useState(logModalFilm)
+    const [film, setFilm] = useState<any>(logModalFilm)
     const [status, setStatus] = useState('watched')
     const [rating, setRating] = useState(0)
     const [review, setReview] = useState('')
@@ -59,17 +59,17 @@ export default function LogModal() {
     const [watchedWith, setWatchedWith] = useState('')
     const [privateNotes, setPrivateNotes] = useState('')
     const [physicalMedia, setPhysicalMedia] = useState('None')
-    const [autopsy, setAutopsy] = useState({ ...AUTOPSY_INIT })
-    const [altPoster, setAltPoster] = useState(null)
-    const [availablePosters, setAvailablePosters] = useState([])
-    const [editorialHeader, setEditorialHeader] = useState(null)
+    const [autopsy, setAutopsy] = useState<Record<string, number>>({ ...AUTOPSY_INIT })
+    const [altPoster, setAltPoster] = useState<string | null>(null)
+    const [availablePosters, setAvailablePosters] = useState<any[]>([])
+    const [editorialHeader, setEditorialHeader] = useState<string | null>(null)
     const [dropCap, setDropCap] = useState(false)
     const [pullQuote, setPullQuote] = useState('')
-    const [availableBackdrops, setAvailableBackdrops] = useState([])
+    const [availableBackdrops, setAvailableBackdrops] = useState<any[]>([])
     const [autopsyOpen, setAutopsyOpen] = useState(false) // Toggle to hide bloat
     const [isAutopsied, setIsAutopsied] = useState(false) // Master flag for 0/10 intentionality
     const [moreOpen, setMoreOpen] = useState(() => typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches) // Auto-expand on mobile — scrolling is free
-    const searchTimeout = useRef(null)
+    const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
     const isAuteur = user?.role === 'auteur'
@@ -79,7 +79,7 @@ export default function LogModal() {
             tmdb.movieImages(film.id).then(imgs => {
                 // Poster curation — Auteur-only (matches MembershipPage)
                 if (isAuteur && imgs.posters) {
-                    const validPosters = imgs.posters.filter(p => p.iso_639_1 === 'en' || !p.iso_639_1).slice(0, 15)
+                    const validPosters = imgs.posters.filter((p: any) => p.iso_639_1 === 'en' || !p.iso_639_1).slice(0, 15)
                     setAvailablePosters(validPosters)
                 } else {
                     setAvailablePosters([])

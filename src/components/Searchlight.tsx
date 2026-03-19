@@ -16,7 +16,7 @@ const QUICK_LINKS = [
 export default function Searchlight() {
     const [open, setOpen] = useState(false)
     const [query, setQuery] = useState('')
-    const [results, setResults] = useState([])
+    const [results, setResults] = useState<any[]>([])
     const [selectedIndex, setSelectedIndex] = useState(0)
     const navigate = useNavigate()
     const user = useAuthStore(s => s.user)
@@ -27,7 +27,7 @@ export default function Searchlight() {
         : QUICK_LINKS
 
     useEffect(() => {
-        const down = (e) => {
+        const down = (e: KeyboardEvent) => {
             if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault()
                 setOpen((open) => !open)
@@ -69,7 +69,7 @@ export default function Searchlight() {
         return () => clearTimeout(timer)
     }, [query])
 
-    const handleSelect = useCallback((item) => {
+    const handleSelect = useCallback((item: any) => {
         navigate(item.path)
         setOpen(false)
         setQuery('')
@@ -79,7 +79,7 @@ export default function Searchlight() {
         setSelectedIndex(0)
     }, [results])
 
-    const onKeyDown = (e) => {
+    const onKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'ArrowDown') {
             e.preventDefault()
             setSelectedIndex((i) => (i + 1) % results.length)

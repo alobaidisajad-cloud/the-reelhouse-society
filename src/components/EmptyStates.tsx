@@ -6,7 +6,7 @@ import { useUIStore } from '../store'
  * Themed empty states for when user has no content.
  * Each variant matches the Nitrate Noir aesthetic with Buster mascot.
  */
-const emptyStateStyles = {
+const emptyStateStyles: Record<string, React.CSSProperties> = {
     container: {
         display: 'flex',
         flexDirection: 'column',
@@ -119,7 +119,7 @@ export function ProfileSkeleton() {
 /**
  * Feed/film grid skeleton — shows while films are loading.
  */
-export function FilmGridSkeleton({ count = 6 }) {
+export function FilmGridSkeleton({ count = 6 }: { count?: number }) {
     return (
         <div style={{
             display: 'grid',
