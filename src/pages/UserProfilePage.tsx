@@ -766,7 +766,7 @@ export default function UserProfilePage() {
                 viewLog={viewLog}
                 profileUser={profileUser}
                 isOwnProfile={isOwnProfile}
-                routeUsername={routeUsername}
+                routeUsername={routeUsername || ''}
                 onClose={() => setViewLog(null)}
                 onEdit={(log: any) => {
                     setViewLog(null)

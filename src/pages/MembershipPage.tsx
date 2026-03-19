@@ -115,7 +115,7 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        {isAuthenticated && (!user?.role || user?.role === 'cinephile') ? (
+                        {isAuthenticated && (!user?.role || (user?.role as string) === 'cinephile') ? (
                             <div className="current-rank">YOUR CURRENT RANK</div>
                         ) : (
                             <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.8rem', letterSpacing: '0.2em' }} onClick={() => openSignupModal('cinephile')}>

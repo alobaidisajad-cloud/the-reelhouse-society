@@ -287,7 +287,7 @@ export default function YearInCinemaPage() {
                         {decadeData.map(([decade, count]) => (
                             <div key={decade} className="yic-decade">
                                 <span className="yic-decade-label">{String(decade)}</span>
-                                <span className="yic-decade-count">{count}</span>
+                                <span className="yic-decade-count">{String(count)}</span>
                             </div>
                         ))}
                     </div>

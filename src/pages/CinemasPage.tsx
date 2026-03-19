@@ -149,7 +149,7 @@ function ReviewModal({ cinema, onClose }: any) {
         e.preventDefault()
         if (!isAuthenticated) { openSignupModal(); return }
         if (!myRating) { toast.error('Please select a star rating first'); return }
-        await addReview(cinema.id, cinema.name, { username: user.username, rating: myRating, review: myReview.trim() })
+        await addReview(cinema.id, cinema.name, { username: user?.username || '', rating: myRating, review: myReview.trim() })
         toast.success('Review submitted to the archive')
         setMyRating(0); setMyReview('')
     }

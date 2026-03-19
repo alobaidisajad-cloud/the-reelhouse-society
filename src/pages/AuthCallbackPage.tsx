@@ -24,7 +24,7 @@ export default function AuthCallbackPage() {
                 if (tokenHash && type) {
                     const { data, error } = await supabase.auth.verifyOtp({
                         token_hash: tokenHash,
-                        type,
+                        type: type as any,
                     })
                     if (error) throw error
 

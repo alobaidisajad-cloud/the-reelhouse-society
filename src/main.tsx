@@ -74,7 +74,7 @@ function NoirToast({ t, message, icon }: any) {
   info: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="◈" />),
 }
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
