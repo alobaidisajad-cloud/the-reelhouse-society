@@ -6,6 +6,9 @@ import { Search, X, Star, BookOpen, EyeOff, Clock, Lock } from 'lucide-react'
 import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { tmdb } from '../tmdb'
 import { ReelRating } from './UI'
+import LogModalSearch from './log-modal/LogModalSearch'
+import EditorialDesk from './log-modal/EditorialDesk'
+import AuteurToolkit from './log-modal/AuteurToolkit'
 import toast from 'react-hot-toast'
 
 // ── Single source of truth for autopsy categories ──
@@ -358,82 +361,15 @@ export default function LogModal() {
                     <div style={{ padding: '1.5rem' }}>
                         {/* Step 0: Search */}
                         {step === 0 && (
-                            <div>
-                                <div style={{ position: 'relative' }}>
-                                    <Search
-                                        size={16}
-                                        style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--fog)' }}
-                                    />
-                                    <input
-                                        className="input"
-                                        style={{ paddingLeft: '2.25rem' }}
-                                        placeholder="Search for a film..."
-                                        value={query}
-                                        onChange={(e) => handleSearch(e.target.value)}
-                                        autoFocus
-                                    />
-                                </div>
-
-                                {searching && (
-                                    <motion.div
-                                        initial={{ opacity: 0.4 }}
-                                        animate={{ opacity: 1 }}
-                                        transition={{ repeat: Infinity, duration: 0.8, direction: 'alternate' }}
-                                        style={{ textAlign: 'center', padding: '1.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', color: 'var(--sepia)', letterSpacing: '0.2em' }}
-                                    >
-                                        TRANSMITTING QUERY...
-                                    </motion.div>
-                                )}
-
-                                {results.length > 0 && (
-                                    <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                        {searchType === 'person' && (
-                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--sepia)', letterSpacing: '0.1em', padding: '0.25rem 0' }}>✦ ACTOR/DIRECTOR MATCH: {searchContext.toUpperCase()}</div>
-                                        )}
-                                        {searchType === 'typo' && (
-                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--flicker)', letterSpacing: '0.1em', padding: '0.25rem 0' }}>✦ FUZZY RESCUE: {searchContext.toUpperCase()}</div>
-                                        )}
-                                        {searchType === 'semantic' && (
-                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--parchment)', letterSpacing: '0.1em', padding: '0.25rem 0' }}>✦ SEMANTIC MATCH: {searchContext.toUpperCase()}</div>
-                                        )}
-                                        {results.map((r) => (
-                                            <button
-                                                key={r.id}
-                                                onClick={() => selectFilm(r)}
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', gap: '0.75rem',
-                                                    background: 'var(--ink)', border: '1px solid var(--ash)',
-                                                    borderRadius: 'var(--radius-wobbly)',
-                                                    padding: '0.6rem 0.75rem',
-                                                    textAlign: 'left', transition: 'border-color 0.2s, background 0.2s',
-                                                }}
-                                                onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--sepia)'}
-                                                onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--ash)'}
-                                            >
-                                                {r.poster_path && (
-                                                    <img
-                                                        src={tmdb.poster(r.poster_path, 'w92')}
-                                                        alt={r.title}
-                                                        style={{ width: 36, height: 54, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)' }}
-                                                    />
-                                                )}
-                                                <div>
-                                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{r.title}</div>
-                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
-                                                        {r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)} ✦
-                                                    </div>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-
-                                {!searching && query && results.length === 0 && (
-                                    <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--fog)', fontFamily: 'var(--font-sub)', fontSize: '0.85rem' }}>
-                                        No films found for "{query}"
-                                    </div>
-                                )}
-                            </div>
+                            <LogModalSearch
+                                query={query}
+                                searching={searching}
+                                results={results}
+                                searchType={searchType}
+                                searchContext={searchContext}
+                                onSearch={handleSearch}
+                                onSelect={selectFilm}
+                            />
                         )}
 
                         {/* Step 1: Log form */}
@@ -612,180 +548,32 @@ export default function LogModal() {
 
                                 {/* Editorial Desk (Archivist+) */}
                                 {(isPremium) && status !== 'abandoned' && review.length > 0 && (
-                                    <div style={{ padding: '1.25rem', border: '1px solid var(--sepia)', borderRadius: 'var(--radius-card)', background: 'rgba(139,105,20,0.05)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--sepia)' }}>
-                                                ✦ The Editorial Desk
-                                            </div>
-                                        </div>
-
-                                        {/* Drop Cap */}
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                            <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)' }}>
-                                                STYLIZED DROP CAP
-                                            </label>
-                                            <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', cursor: 'pointer' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={dropCap}
-                                                    onChange={(e) => setDropCap(e.target.checked)}
-                                                    style={{ accentColor: 'var(--sepia)' }}
-                                                />
-                                                ENABLE
-                                            </label>
-                                        </div>
-
-                                        {/* Pull Quote */}
-                                        <div>
-                                            <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block', marginBottom: '0.5rem' }}>
-                                                PULL QUOTE
-                                            </label>
-                                            <input
-                                                className="input"
-                                                placeholder="Highlight a memorable line from your review..."
-                                                value={pullQuote}
-                                                onChange={(e) => setPullQuote(e.target.value)}
-                                                maxLength={120}
-                                                style={{ borderStyle: 'dashed', borderColor: 'var(--sepia)', fontFamily: 'var(--font-sub)', fontStyle: 'italic' }}
-                                            />
-                                        </div>
-
-                                        {/* Header Still */}
-                                        <div>
-                                            <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block', marginBottom: '0.75rem' }}>
-                                                ARTICLE HEADER (STILL)
-                                            </label>
-                                            {availableBackdrops.length > 0 ? (
-                                                <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
-                                                    <button
-                                                        onClick={() => setEditorialHeader(null)}
-                                                        style={{ flexShrink: 0, width: 80, height: 45, background: editorialHeader === null ? 'var(--sepia)' : 'var(--ink)', border: editorialHeader === null ? '2px solid var(--sepia)' : '1px solid var(--ash)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: editorialHeader === null ? 'var(--ink)' : 'var(--fog)' }}
-                                                    >
-                                                        NONE
-                                                    </button>
-                                                    {availableBackdrops.map(p => (
-                                                        <img
-                                                            key={p.file_path}
-                                                            src={tmdb.backdrop(p.file_path, 'w300')}
-                                                            onClick={() => setEditorialHeader(p.file_path)}
-                                                            style={{
-                                                                flexShrink: 0, width: 80, height: 45, objectFit: 'cover', borderRadius: '2px', cursor: 'pointer',
-                                                                border: editorialHeader === p.file_path ? '2px solid var(--sepia)' : '1px solid transparent',
-                                                                opacity: editorialHeader && editorialHeader !== p.file_path ? 0.4 : 1
-                                                            }}
-                                                        />
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)' }}>
-                                                    No stills found.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
+                                <EditorialDesk
+                                    dropCap={dropCap}
+                                    setDropCap={setDropCap}
+                                    pullQuote={pullQuote}
+                                    setPullQuote={setPullQuote}
+                                    editorialHeader={editorialHeader}
+                                    setEditorialHeader={setEditorialHeader}
+                                    availableBackdrops={availableBackdrops}
+                                />
                                 )}
 
                                 {/* Auteur Features - Collapsed by default to prevent bloat */}
                                 {status !== 'abandoned' && (
-                                    <div style={{ padding: '1rem', border: '1px solid var(--blood-reel)', borderRadius: 'var(--radius-card)', background: 'rgba(162,36,36,0.05)', display: 'flex', flexDirection: 'column', gap: '1.5rem', opacity: isAuteur ? 1 : 0.6 }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setAutopsyOpen(!autopsyOpen)}>
-                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--blood-reel)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                ✦ Auteur Toolkit {autopsyOpen ? '[-]' : '[+]'}
-                                            </div>
-                                            {!isAuteur && (
-                                                <button onClick={(e) => { e.stopPropagation(); closeLogModal(); navigate('/patronage') }} style={{ background: 'none', border: 'none', color: 'var(--blood-reel)', textDecoration: 'underline', fontSize: '0.6rem', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
-                                                    <Lock size={10} /> UPGRADE
-                                                </button>
-                                            )}
-                                        </div>
-
-                                        <AnimatePresence>
-                                            {autopsyOpen && (
-                                                <motion.div
-                                                    initial={{ height: 0, opacity: 0 }}
-                                                    animate={{ height: 'auto', opacity: 1 }}
-                                                    exit={{ height: 0, opacity: 0 }}
-                                                    style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', overflow: 'hidden' }}
-                                                >
-                                                    {/* Autopsy Engine */}
-                                                    <div style={{ opacity: isAuteur ? 1 : 0.4, pointerEvents: isAuteur ? 'auto' : 'none' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '1rem' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block' }}>
-                                                                    THE AUTOPSY ENGINE (1-10)
-                                                                </label>
-                                                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--blood-reel)', letterSpacing: '0.1em' }}>
-                                                                    <input type="checkbox" checked={isAutopsied} onChange={(e) => setIsAutopsied(e.target.checked)} style={{ accentColor: 'var(--blood-reel)' }} />
-                                                                    ENABLE
-                                                                </label>
-                                                            </div>
-                                                            <button onClick={(e) => {
-                                                                e.preventDefault()
-                                                                toast("STORY: Narrative & Structure\nSCRIPT: Dialogue & Theme\nACTING: Micro-expressions & Presence\nCINEMATOGRAPHY: Light, Shadow & Framing\nEDITING: Rhythm & Pacing\nSOUND: Score & Silence", { duration: 8000, icon: '📖', style: { background: 'var(--ink)', border: '1px solid var(--sepia)', color: 'var(--parchment)', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', textAlign: 'left', minWidth: '300px' } })
-                                                            }} className="btn btn-ghost" style={{ fontSize: '0.45rem', padding: '0.2rem 0.4rem', color: 'var(--fog)' }}>
-                                                                ✦ FIELD MANUAL
-                                                            </button>
-                                                        </div>
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                                            {Object.keys(autopsy).map(axis => {
-                                                                const labels = { story: 'STORY', script: 'SCRIPT/DIALOGUE', acting: 'ACTING/CHAR', cinematography: 'CINEMATOGRAPHY', editing: 'EDITING/PACING', sound: 'SOUND DESIGN' };
-                                                                return (
-                                                                    <div key={axis} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                                                        <div style={{ width: '100px', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.05em', color: 'var(--fog)' }}>
-                                                                            {labels[axis] || axis.toUpperCase()}
-                                                                        </div>
-                                                                        <input
-                                                                            type="range"
-                                                                            min="0" max="10" step="1"
-                                                                            value={autopsy[axis]}
-                                                                            onChange={(e) => setAutopsy({ ...autopsy, [axis]: parseInt(e.target.value) })}
-                                                                            style={{ flex: 1, accentColor: 'var(--blood-reel)', height: '4px', background: 'var(--ash)', appearance: 'none', borderRadius: '2px', cursor: 'pointer' }}
-                                                                        />
-                                                                        <div style={{ width: '20px', textAlign: 'right', fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--bone)' }}>
-                                                                            {autopsy[axis] || '-'}
-                                                                        </div>
-                                                                    </div>
-                                                                )
-                                                            })}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Curatorial Control */}
-                                                    <div style={{ opacity: isAuteur ? 1 : 0.4, pointerEvents: isAuteur ? 'auto' : 'none' }}>
-                                                        <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block', marginBottom: '0.75rem' }}>
-                                                            CURATORIAL CONTROL (ALT POSTER)
-                                                        </label>
-                                                        {availablePosters.length > 0 ? (
-                                                            <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
-                                                                <button
-                                                                    onClick={() => setAltPoster(null)}
-                                                                    style={{ flexShrink: 0, width: 44, height: 66, background: altPoster === null ? 'var(--sepia)' : 'var(--ink)', border: altPoster === null ? '2px solid var(--sepia)' : '1px solid var(--ash)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: altPoster === null ? 'var(--ink)' : 'var(--fog)' }}
-                                                                >
-                                                                    DEFAULT
-                                                                </button>
-                                                                {availablePosters.map(p => (
-                                                                    <img
-                                                                        key={p.file_path}
-                                                                        src={tmdb.poster(p.file_path, 'w92')}
-                                                                        onClick={() => setAltPoster(p.file_path)}
-                                                                        style={{
-                                                                            flexShrink: 0, width: 44, height: 66, objectFit: 'cover', borderRadius: '2px', cursor: 'pointer',
-                                                                            border: altPoster === p.file_path ? '2px solid var(--blood-reel)' : '1px solid transparent',
-                                                                            opacity: altPoster && altPoster !== p.file_path ? 0.4 : 1
-                                                                        }}
-                                                                    />
-                                                                ))}
-                                                            </div>
-                                                        ) : (
-                                                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)' }}>
-                                                                No alternative active posters found on TMDB.
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </motion.div>
-                                            )}
-                                        </AnimatePresence>
-                                    </div>
+                                <AuteurToolkit
+                                    isAuteur={isAuteur}
+                                    autopsyOpen={autopsyOpen}
+                                    setAutopsyOpen={setAutopsyOpen}
+                                    isAutopsied={isAutopsied}
+                                    setIsAutopsied={setIsAutopsied}
+                                    autopsy={autopsy}
+                                    setAutopsy={setAutopsy}
+                                    altPoster={altPoster}
+                                    setAltPoster={setAltPoster}
+                                    availablePosters={availablePosters}
+                                    onUpgrade={() => { closeLogModal(); navigate('/patronage') }}
+                                />
                                 )}
 
                                 {/* Physical Media */}
