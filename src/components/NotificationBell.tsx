@@ -12,7 +12,7 @@ const NOTIF_ICONS = {
     system: '✦',
 }
 
-const timeAgo = (ts) => {
+const timeAgo = (ts: string) => {
     const diff = Date.now() - new Date(ts).getTime()
     const mins = Math.floor(diff / 60000)
     if (mins < 1) return 'now'
@@ -24,7 +24,7 @@ const timeAgo = (ts) => {
 
 export default function NotificationBell() {
     const [open, setOpen] = useState(false)
-    const ref = useRef(null)
+    const ref = useRef<HTMLDivElement>(null)
     const navigate = useNavigate()
     const user = useAuthStore(s => s.user)
     const notifications = useNotificationStore(s => s.notifications)
@@ -88,7 +88,7 @@ export default function NotificationBell() {
 
     // Close on outside click
     useEffect(() => {
-        const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false) }
+        const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
         document.addEventListener('mousedown', handler)
         return () => document.removeEventListener('mousedown', handler)
     }, [])
@@ -108,7 +108,7 @@ export default function NotificationBell() {
         }
     }
 
-    const handleDismiss = async (id) => {
+    const handleDismiss = async (id: string) => {
         dismiss(id)
         const { error } = await supabase.from('notifications').delete().eq('id', id)
         if (error) console.error('[NotifBell] dismiss failed:', error.message)
@@ -215,7 +215,7 @@ export default function NotificationBell() {
                                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.08)'}
                                     onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(139,105,20,0.04)'}
                                 >
-                                    <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>{NOTIF_ICONS[n.type] || '✦'}</span>
+                                    <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>{(NOTIF_ICONS as Record<string, string>)[n.type] || '✦'}</span>
                                     <div style={{ flex: 1, minWidth: 0 }}>
                                         <div style={{
                                             fontFamily: 'var(--font-sub)', fontSize: '0.8rem',

@@ -36,7 +36,7 @@ export default function SignupModal() {
     const [persona, setPersona] = useState('')
     const [venueName, setVenueName] = useState('')
     const [venueDesc, setVenueDesc] = useState('')
-    const [vibes, setVibes] = useState([])
+    const [vibes, setVibes] = useState<string[]>([])
     const [isLogin, setIsLogin] = useState(false)
 
     // Velvet Rope State

@@ -6,8 +6,17 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
  * Uses IntersectionObserver for efficient scroll detection.
  * Activates only when items.length > threshold (default: 60).
  */
-export default function VirtualLogGrid({ items, renderItem, threshold = 60, rowHeight = 230, columns = 'repeat(auto-fill, minmax(140px, 1fr))', gap = '1rem' }) {
-    const containerRef = useRef(null)
+interface VirtualLogGridProps {
+    items: any[]
+    renderItem: (item: any, index: number) => React.ReactNode
+    threshold?: number
+    rowHeight?: number
+    columns?: string
+    gap?: string
+}
+
+export default function VirtualLogGrid({ items, renderItem, threshold = 60, rowHeight = 230, columns = 'repeat(auto-fill, minmax(140px, 1fr))', gap = '1rem' }: VirtualLogGridProps) {
+    const containerRef = useRef<HTMLDivElement>(null)
     const [visibleRange, setVisibleRange] = useState({ start: 0, end: 40 })
     const BUFFER = 12 // extra items above/below viewport
 
