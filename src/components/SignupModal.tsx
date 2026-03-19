@@ -21,7 +21,7 @@ const VIBE_TAGS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace'
 // Invite codes — MUST be set via VITE_INVITE_CODES in Vercel (comma-separated).
 // No fallback codes shipped in the bundle — prevents view-source discovery.
 const VALID_CODES = import.meta.env.VITE_INVITE_CODES
-    ? import.meta.env.VITE_INVITE_CODES.split(',').map(c => c.trim().toUpperCase())
+    ? import.meta.env.VITE_INVITE_CODES.split(',').map((c: string) => c.trim().toUpperCase())
     : []
 
 export default function SignupModal() {
@@ -69,7 +69,7 @@ export default function SignupModal() {
     }, [signupModalOpen, isAuthenticated])
 
     const [showPassword, setShowPassword] = useState(false)
-    const toggleVibe = (v) => setVibes((prev) =>
+    const toggleVibe = (v: string) => setVibes((prev) =>
         prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
     )
 
@@ -86,7 +86,7 @@ export default function SignupModal() {
     const strengthLabel = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'][passedChecks]
     const strengthColor = ['', 'var(--blood-reel)', '#c4a000', '#c4a000', 'var(--sepia)', '#4caf50'][passedChecks]
 
-    const handleClearanceSubmit = (e) => {
+    const handleClearanceSubmit = (e: React.FormEvent) => {
         e.preventDefault()
         if (!clearanceCode.trim()) return
 
@@ -147,7 +147,7 @@ export default function SignupModal() {
                 }
             }
         } catch (error) {
-            let msg = error.message || 'Authentication failed.';
+            let msg = (error as any).message || 'Authentication failed.';
             if (msg.includes('Database error saving new user')) {
                 msg = 'Username is already taken by another patron. Choose another.';
             }

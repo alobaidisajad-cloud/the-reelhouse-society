@@ -2,7 +2,7 @@ import Buster from '../Buster'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
 
-export function ShareCardOverlay({ log, onClose, user }) {
+export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: () => void; user: any }) {
     if (!log) return null
     return (
         <div style={{

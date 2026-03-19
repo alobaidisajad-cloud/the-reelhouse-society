@@ -29,13 +29,15 @@ const SocialPulse = memo(function SocialPulse() {
         )
     }
 
-    const activities = logs.slice(0, 5).map((log, i) => ({
+    const activities: any[] = logs.slice(0, 5).map((log, i) => ({
         id: log.id || i,
         type: 'log',
         user: user?.username || 'cinephile',
         film: { id: log.filmId, title: log.title, poster_path: log.poster },
         rating: log.rating,
         text: log.review,
+        status: log.status,
+        watchedWith: log.watchedWith,
         time: new Date(log.createdAt || Date.now()).toLocaleDateString()
     }))
 

@@ -162,7 +162,7 @@ export default function DispatchPage() {
     const { dossiers, addDossier, fetchDossiers } = useDispatchStore()
     const [news, setNews] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
-    const [selectedArticle, setSelectedArticle] = useState(null)
+    const [selectedArticle, setSelectedArticle] = useState<any>(null)
     const [isWriting, setIsWriting] = useState(false)
     const [formValues, setFormValues] = useState({ title: '', content: '' })
 
