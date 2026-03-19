@@ -39,7 +39,7 @@ export default function LogModal() {
     const logs = useFilmStore(state => state.logs)
 
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
-    const openSignupModal = useAuthStore(state => state.openSignupModal)
+    const openSignupModal = (useAuthStore as any)((state: any) => state.openSignupModal)
     const user = useAuthStore(state => state.user)
 
 
@@ -50,7 +50,7 @@ export default function LogModal() {
     const [searchContext, setSearchContext] = useState('')
     const [searching, setSearching] = useState(false)
     const [film, setFilm] = useState<any>(logModalFilm)
-    const [status, setStatus] = useState('watched')
+    const [status, setStatus] = useState<'watched' | 'rewatched' | 'abandoned'>('watched')
     const [rating, setRating] = useState(0)
     const [review, setReview] = useState('')
     const [isSpoiler, setIsSpoiler] = useState(false)
@@ -111,7 +111,7 @@ export default function LogModal() {
                 setWatchedWith(existingLog.watchedWith || '')
                 setPrivateNotes(existingLog.privateNotes || '')
                 setPhysicalMedia(existingLog.physicalMedia || 'None')
-                setAutopsy(existingLog.autopsy || { ...AUTOPSY_INIT })
+                setAutopsy((existingLog as any).autopsy || { ...AUTOPSY_INIT })
                 setAltPoster(existingLog.altPoster || null)
                 setEditorialHeader(existingLog.editorialHeader || null)
                 setDropCap(existingLog.dropCap || false)
@@ -157,16 +157,16 @@ export default function LogModal() {
         }
     }, [logModalOpen])
 
-    const handleSearch = (q) => {
+    const handleSearch = (q: string) => {
         setQuery(q)
-        clearTimeout(searchTimeout.current)
+        if (searchTimeout.current) clearTimeout(searchTimeout.current)
         if (!q.trim()) { setResults([]); return }
         setSearching(true)
         searchTimeout.current = setTimeout(async () => {
             try {
                 const data = await tmdb.search(q)
                 // Filter out people for the log modal
-                const filmsOnly = data.results?.filter(i => i.media_type !== 'person') || []
+                const filmsOnly = data.results?.filter((i: any) => i.media_type !== 'person') || []
                 setResults(filmsOnly.slice(0, 6))
                 setSearchType(data.searchType || 'exact')
                 setSearchContext(data.matchedContext || '')
@@ -175,7 +175,7 @@ export default function LogModal() {
         }, 400)
     }
 
-    const selectFilm = (f) => {
+    const selectFilm = (f: any) => {
         setFilm(f)
         setStep(1)
         setResults([])
@@ -218,11 +218,11 @@ export default function LogModal() {
         }
 
         if (logModalEditLogId) {
-            updateLog(logModalEditLogId, logData)
+            updateLog(logModalEditLogId, logData as any)
             toast.success(`Log updated for ${film.title}`)
         } else {
-            addLog(logData)
-            const statusLabel = { watched: '[ LOGGED ]', rewatched: '[ REWATCH ]', abandoned: '[ ABANDONED ]' }
+            addLog(logData as any)
+            const statusLabel: Record<string, string> = { watched: '[ LOGGED ]', rewatched: '[ REWATCH ]', abandoned: '[ ABANDONED ]' }
 
             // ── One-tap share after log ──
             const shareText = rating > 0
@@ -413,7 +413,7 @@ export default function LogModal() {
                                         ].map(({ val, label, icon }) => (
                                             <button
                                                 key={val}
-                                                onClick={() => setStatus(val)}
+                                                onClick={() => setStatus(val as 'watched' | 'rewatched' | 'abandoned')}
                                                 className={`btn ${status === val ? 'btn-primary' : 'btn-ghost'}`}
                                                 style={{ fontSize: '0.6rem', padding: '0.35em 0.7em', gap: '0.3em', flex: 1, justifyContent: 'center' }}
                                             >

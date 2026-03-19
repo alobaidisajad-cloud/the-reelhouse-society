@@ -10,7 +10,15 @@ import { memo } from 'react'
  *   <Skeleton variant="text" />      — single line of text
  *   <Skeleton variant="card" />      — full card block
  */
-const Skeleton = memo(({ width, height, variant, style, count = 1 }) => {
+interface SkeletonProps {
+    width?: string
+    height?: string
+    variant?: 'text' | 'title' | 'poster' | 'card' | 'avatar' | 'button'
+    style?: React.CSSProperties
+    count?: number
+}
+
+const Skeleton = memo(({ width, height, variant, style, count = 1 }: SkeletonProps) => {
     const variants = {
         text: { width: '100%', height: '14px', borderRadius: '2px' },
         title: { width: '60%', height: '22px', borderRadius: '2px' },
