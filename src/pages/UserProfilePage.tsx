@@ -23,6 +23,9 @@ import { ProfileBackdrop, FilmLogRow, LazyLogRow, VaultSection, ListsSection } f
 import exportLogsCSV from '../components/profile/exportLogsCSV'
 import SocialModal from '../components/profile/SocialModal'
 import ReviewModal from '../components/profile/ReviewModal'
+import Achievements from '../components/profile/Achievements'
+import TasteMatch from '../components/profile/TasteMatch'
+import FilmRecommendations from '../components/profile/FilmRecommendations'
 import PageSEO from '../components/PageSEO'
 
 
@@ -738,6 +741,18 @@ export default function UserProfilePage() {
                             </button>
                         )}
                         <VaultSection {...{ vault: isOwnProfile ? currentWatchlist : [], user: profileUser, logs: profileLogs } as any} />
+
+                        {/* E1: Achievement Badges */}
+                        <Achievements logs={profileLogs} />
+
+                        {/* E3: Taste Match (other users only) */}
+                        {!isOwnProfile && currentLogs.length >= 5 && (
+                            <TasteMatch myLogs={currentLogs} theirLogs={profileLogs} theirUsername={profileUser?.username || ''} />
+                        )}
+
+                        {/* E4: Film Recommendations (own profile only) */}
+                        {isOwnProfile && <FilmRecommendations />}
+
                         {profileLogs.filter((l: any) => l.rating >= 4).length > 0 && (
                             <div className="card">
                                 <div className="section-title" style={{ marginBottom: '0.75rem' }}>YOUR FAVOURITES</div>

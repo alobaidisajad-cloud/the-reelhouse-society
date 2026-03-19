@@ -6,10 +6,13 @@ import { useNotificationStore, useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 
 const NOTIF_ICONS = {
-    follow: '👤',
-    reaction: '🎬',
-    endorse: '🔥',
-    system: '✦',
+    follow: '◆',
+    reaction: '✧',
+    endorse: '✦',
+    system: '§',
+    annotate: '¶',
+    retransmit: '⟐',
+    achievement: '◈',
 }
 
 const timeAgo = (ts: string) => {

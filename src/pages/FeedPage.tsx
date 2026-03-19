@@ -8,6 +8,7 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import ActivityCard from '../components/feed/ActivityCard'
 import RatingLegend from '../components/feed/RatingLegend'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
+import WeeklyChallenge from '../components/profile/WeeklyChallenge'
 import PageSEO from '../components/PageSEO'
 
 // ── FEED PAGE ──
@@ -266,6 +267,9 @@ export default function FeedPage() {
                     {/* Sidebar */}
                     <SectionErrorBoundary label="SIDEBAR">
                     <div className="feed-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                        {/* E2: Weekly Film Challenge */}
+                        <WeeklyChallenge logs={communityFeed} />
 
 
                         {/* Curated Lists — Real Supabase data */}
