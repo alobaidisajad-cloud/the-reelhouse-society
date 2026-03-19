@@ -295,6 +295,33 @@ export const tmdb = {
         return `${TMDB_IMG}/${size}${path}`
     },
 
+    // B1: Responsive poster srcSet — browser picks the optimal size automatically
+    posterSrcSet: (path: any) => {
+        if (!path) return { src: undefined, srcSet: undefined, sizes: undefined }
+        const widths = [92, 185, 342, 500, 780] as const
+        const srcSet = widths.map(w => `${TMDB_IMG}/w${w}${path} ${w}w`).join(', ')
+        return {
+            src: `${TMDB_IMG}/w342${path}`,
+            srcSet,
+            sizes: '(max-width: 480px) 185px, (max-width: 900px) 342px, 500px',
+        }
+    },
+
+    // B1: Responsive backdrop srcSet
+    backdropSrcSet: (path: any) => {
+        if (!path) return { src: undefined, srcSet: undefined, sizes: undefined }
+        const widths = [300, 780, 1280] as const
+        const srcSet = widths.map(w => `${TMDB_IMG}/w${w}${path} ${w}w`).join(', ')
+        return {
+            src: `${TMDB_IMG}/w1280${path}`,
+            srcSet,
+            sizes: '(max-width: 768px) 780px, 1280px',
+        }
+    },
+
+    // B2: Tiny placeholder URL for blur-up effect
+    posterThumb: (path: any) => path ? `${TMDB_IMG}/w92${path}` : undefined,
+
 
     // Separate similar endpoint (avoids double-fetching detail)
     similar: async (id: any) => {
