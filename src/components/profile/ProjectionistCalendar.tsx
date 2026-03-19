@@ -1,22 +1,45 @@
 import { useMemo, useState } from 'react'
 import { Lock } from 'lucide-react'
 
+interface CalendarLog {
+    watchedDate?: string
+    createdAt?: string
+    title?: string
+    [key: string]: any
+}
+
+interface TooltipData {
+    x: number
+    y: number
+    date: string
+    films: string[]
+    count: number
+}
+
+interface DayCell {
+    date: string
+    count: number
+    films: string[]
+    isFuture: boolean
+    display: Date
+}
+
 // ── PROJECTIONIST'S CALENDAR ──
 // GitHub-style 52-week film activity heatmap, Archivist tier
-export function ProjectionistCalendar({ logs = [], isPremium = false }) {
-    const [tooltip, setTooltip] = useState(null) // { x, y, date, films }
+export function ProjectionistCalendar({ logs = [], isPremium = false }: { logs?: CalendarLog[]; isPremium?: boolean }) {
+    const [tooltip, setTooltip] = useState<TooltipData | null>(null)
 
     // Build a map of date -> films watched
     const activityMap = useMemo(() => {
-        const map = {}
+        const map: Record<string, string[]> = {}
         for (const log of logs) {
             const raw = log.watchedDate || log.createdAt
             if (!raw) continue
             const d = new Date(raw)
-            if (isNaN(d)) continue
+            if (isNaN(d.getTime())) continue
             const key = d.toISOString().slice(0, 10) // 'YYYY-MM-DD'
             if (!map[key]) map[key] = []
-            map[key].push(log.title)
+            map[key].push(log.title || 'Untitled')
         }
         return map
     }, [logs])
@@ -32,16 +55,16 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }) {
         // Roll back to the nearest Sunday
         start.setDate(start.getDate() - start.getDay())
 
-        const weeks = []
-        const monthLabels = [] // { weekIndex, label }
+        const weeks: DayCell[][] = []
+        const monthLabels: { weekIndex: number; label: string }[] = []
         let lastMonth = -1
 
         let cursor = new Date(start)
         for (let w = 0; w < 53; w++) {
-            const week = []
+            const week: DayCell[] = []
             for (let d = 0; d < 7; d++) {
                 const dateKey = cursor.toISOString().slice(0, 10)
-                const isFuture = cursor > today
+                const isFuture = cursor.getTime() > today.getTime()
                 week.push({
                     date: dateKey,
                     count: isFuture ? -1 : (activityMap[dateKey]?.length || 0),
@@ -67,19 +90,19 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }) {
 
     const maxCount = useMemo(() => {
         let max = 0
-        for (const films of Object.values(activityMap)) max = Math.max(max, films.length)
+        for (const films of Object.values(activityMap)) max = Math.max(max, (films as string[]).length)
         return Math.max(max, 1)
     }, [activityMap])
 
     const totalFilmsThisYear = useMemo(() => {
         const yearAgo = new Date()
         yearAgo.setFullYear(yearAgo.getFullYear() - 1)
-        return Object.entries(activityMap).filter(([date]) => new Date(date) >= yearAgo).reduce((s, [, films]) => s + films.length, 0)
+        return Object.entries(activityMap).filter(([date]) => new Date(date) >= yearAgo).reduce((s, [, films]) => s + (films as string[]).length, 0)
     }, [activityMap])
 
     const activeDays = Object.keys(activityMap).length
 
-    const getCellColor = (count) => {
+    const getCellColor = (count: number) => {
         if (count <= 0) return 'rgba(255,255,255,0.04)'
         const intensity = Math.min(count / maxCount, 1)
         if (intensity < 0.25) return 'rgba(139,105,20,0.25)'
@@ -169,7 +192,7 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }) {
                                         key={di}
                                         onMouseEnter={(e) => {
                                             if (day.isFuture || day.count < 0) return
-                                            const rect = e.target.getBoundingClientRect()
+                                            const rect = (e.target as HTMLElement).getBoundingClientRect()
                                             setTooltip({
                                                 x: rect.left + window.scrollX,
                                                 y: rect.top + window.scrollY,
@@ -229,7 +252,7 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }) {
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--bone)', marginBottom: '0.3rem' }}>
                                     {tooltip.count} film{tooltip.count !== 1 ? 's' : ''} watched
                                 </div>
-                                {tooltip.films.slice(0, 3).map((title, i) => (
+                                {tooltip.films.slice(0, 3).map((title: string, i: number) => (
                                     <div key={i} style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)', fontStyle: 'italic', lineHeight: 1.4 }}>
                                         · {title}
                                     </div>
@@ -249,14 +272,14 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }) {
 }
 
 // Compute longest streak (consecutive days with at least 1 film)
-function computeStreak(activityMap) {
+function computeStreak(activityMap: Record<string, string[]>): number {
     const dates = Object.keys(activityMap).sort()
     if (dates.length === 0) return 0
     let maxStreak = 1, cur = 1
     for (let i = 1; i < dates.length; i++) {
         const prev = new Date(dates[i - 1])
         const curr = new Date(dates[i])
-        const diff = (curr - prev) / (1000 * 60 * 60 * 24)
+        const diff = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24)
         if (diff === 1) { cur++; maxStreak = Math.max(maxStreak, cur) }
         else cur = 1
     }

@@ -9,15 +9,15 @@ import { useEffect, useRef } from 'react'
  * @param {Function} onClose - Called when Escape is pressed
  * @returns {React.RefObject} - Attach to the modal container
  */
-export function useFocusTrap(isOpen: any, onClose: any) {
-    const containerRef = useRef<any>(null)
-    const previousFocusRef = useRef(null)
+export function useFocusTrap(isOpen: boolean, onClose?: () => void) {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const previousFocusRef = useRef<Element | null>(null)
 
     useEffect(() => {
         if (!isOpen) return
 
         // Save the element that was focused before the modal opened
-        previousFocusRef.current = document.activeElement
+        previousFocusRef.current = document.activeElement as Element
 
         const container = containerRef.current
         if (!container) return
@@ -29,7 +29,7 @@ export function useFocusTrap(isOpen: any, onClose: any) {
             else container.focus()
         }, 50)
 
-        const handleKeyDown = (e: any) => {
+        const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'Escape') {
                 e.stopPropagation()
                 onClose?.()
@@ -68,8 +68,8 @@ export function useFocusTrap(isOpen: any, onClose: any) {
             document.removeEventListener('keydown', handleKeyDown, true)
             document.body.style.overflow = ''
             // Restore focus to the previously focused element
-            if (previousFocusRef.current && typeof previousFocusRef.current.focus === 'function') {
-                previousFocusRef.current.focus()
+            if (previousFocusRef.current && typeof (previousFocusRef.current as HTMLElement).focus === 'function') {
+                (previousFocusRef.current as HTMLElement).focus()
             }
         }
     }, [isOpen, onClose])
@@ -77,10 +77,10 @@ export function useFocusTrap(isOpen: any, onClose: any) {
     return containerRef
 }
 
-function getFocusable(container: any) {
+function getFocusable(container: HTMLElement): HTMLElement[] {
     return Array.from(
         container.querySelectorAll(
             'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
         )
-    ).filter((el: any) => el.offsetParent !== null) // visible elements only
+    ).filter((el) => (el as HTMLElement).offsetParent !== null) as HTMLElement[]
 }

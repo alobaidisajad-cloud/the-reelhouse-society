@@ -8,6 +8,14 @@ import Buster from './Buster'
 import toast from 'react-hot-toast'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 
+interface OnboardFilm {
+    id: number
+    title?: string
+    poster_path?: string
+    media_type?: string
+    [key: string]: any
+}
+
 const STEPS = [
     { label: 'PICK YOUR FIVE', sub: 'Choose 5 films that define your taste.' },
     { label: 'LOG YOUR FIRST', sub: 'Record your last watched film.' },
@@ -22,11 +30,11 @@ export default function OnboardingModal() {
 
     const [open, setOpen] = useState(false)
     const [step, setStep] = useState(0)
-    const [selectedFilms, setSelectedFilms] = useState([])
+    const [selectedFilms, setSelectedFilms] = useState<OnboardFilm[]>([])
     const [query, setQuery] = useState('')
-    const [results, setResults] = useState([])
+    const [results, setResults] = useState<OnboardFilm[]>([])
     const [searching, setSearching] = useState(false)
-    const searchTimeout = useRef(null)
+    const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     // Show onboarding ONLY for brand new users (0 logs, hasn't dismissed before)
     useEffect(() => {
@@ -40,22 +48,22 @@ export default function OnboardingModal() {
         }
     }, [isAuthenticated, user, logs.length])
 
-    const handleSearch = (q) => {
+    const handleSearch = (q: string) => {
         setQuery(q)
-        clearTimeout(searchTimeout.current)
+        if (searchTimeout.current) clearTimeout(searchTimeout.current)
         if (!q.trim()) { setResults([]); return }
         setSearching(true)
         searchTimeout.current = setTimeout(async () => {
             try {
                 const data = await tmdb.search(q)
-                const moviesOnly = data.results?.filter(i => i.media_type !== 'person').slice(0, 8) || []
+                const moviesOnly = data.results?.filter((i: any) => i.media_type !== 'person').slice(0, 8) || []
                 setResults(moviesOnly)
             } catch { setResults([]) }
             finally { setSearching(false) }
         }, 350)
     }
 
-    const toggleFilm = (film) => {
+    const toggleFilm = (film: OnboardFilm) => {
         const exists = selectedFilms.find(f => f.id === film.id)
         if (exists) {
             setSelectedFilms(s => s.filter(f => f.id !== film.id))
@@ -261,7 +269,7 @@ export default function OnboardingModal() {
                                         onClick={async () => {
                                             // Save taste seeds to Supabase profile
                                             if (user?.id && selectedFilms.length > 0) {
-                                                const seeds = selectedFilms.map(f => ({ id: f.id, title: f.title, poster: f.poster_path }))
+                                                const seeds = selectedFilms.map((f: OnboardFilm) => ({ id: f.id, title: f.title, poster: f.poster_path }))
                                                 await supabase.from('profiles')
                                                     .update({ taste_seeds: seeds })
                                                     .eq('id', user.id)
