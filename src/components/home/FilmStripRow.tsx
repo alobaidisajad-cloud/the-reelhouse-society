@@ -5,7 +5,7 @@ import { FilmCard, SectionHeader } from '../UI'
 
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
-const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, description }) {
+const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, description }: { films?: any[]; title: string; label: string; description?: string }) {
     const navigate = useNavigate()
     return (
         <section style={{ position: 'relative', margin: '3rem 0 1rem', contain: 'layout style' }}>

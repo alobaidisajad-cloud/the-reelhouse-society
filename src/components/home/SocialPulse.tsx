@@ -52,7 +52,7 @@ const SocialPulse = memo(function SocialPulse() {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: IS_TOUCH ? '1rem' : '2rem' }}>
                 {activities.map((act, i) => {
-                    const cardStyle = {
+                    const cardStyle: React.CSSProperties = {
                         position: 'relative',
                         padding: IS_TOUCH ? '1rem' : '1.5rem',
                         background: 'rgba(18,14,9,0.95)',

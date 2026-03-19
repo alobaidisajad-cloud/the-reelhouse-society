@@ -47,14 +47,14 @@ export default function CustomCursor() {
     document.body.appendChild(outer)
     document.body.appendChild(dot)
 
-    let raf
+    let raf: number
     let mx = -200, my = -200
     let ox = -200, oy = -200
 
-    const isInteractive = (el) =>
+    const isInteractive = (el: Element) =>
       !!el.closest('a, button, input, textarea, select, [role="button"], .card-film, .btn, .dossier-card, .wire-item')
 
-    const onMove = (e) => {
+    const onMove = (e: MouseEvent) => {
       mx = e.clientX
       my = e.clientY
       dot.style.transform = 'translate3d(' + mx + 'px,' + my + 'px,0) translate(-50%,-50%)'
@@ -63,8 +63,8 @@ export default function CustomCursor() {
     const onDown = () => { outer.classList.add('cursor-click'); dot.classList.add('cursor-click') }
     const onUp = () => { outer.classList.remove('cursor-click'); dot.classList.remove('cursor-click') }
 
-    const onOver = (e) => { if (isInteractive(e.target)) outer.classList.add('cursor-hover') }
-    const onOut = (e) => { if (isInteractive(e.target)) outer.classList.remove('cursor-hover') }
+    const onOver = (e: MouseEvent) => { if (isInteractive(e.target as Element)) outer.classList.add('cursor-hover') }
+    const onOut = (e: MouseEvent) => { if (isInteractive(e.target as Element)) outer.classList.remove('cursor-hover') }
 
     // Hide custom cursor + restore real cursor when mouse leaves / window loses focus
     // Must use setProperty with 'important' to override `cursor: none !important` in index.css

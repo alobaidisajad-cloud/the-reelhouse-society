@@ -4,7 +4,7 @@ import { Lock } from 'lucide-react'
 import { useFilmStore, useUIStore } from '../../store'
 import toast from 'react-hot-toast'
 
-export function ProjectorRoom({ stats, user }) {
+export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     const isMaster = stats.count > 50
     const { logs } = useFilmStore()
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
@@ -42,8 +42,8 @@ export function ProjectorRoom({ stats, user }) {
             if (log.watchedDate) acc[log.watchedDate] = (acc[log.watchedDate] || 0) + 1
             else if (log.createdAt) { const d = log.createdAt.split('T')[0]; acc[d] = (acc[d] || 0) + 1 }
             return acc
-        }, {})
-        const days = []
+        }, {} as Record<string, number>)
+        const days: { date: string; count: number }[] = []
         for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
             const dateStr = d.toISOString().split('T')[0]
             days.push({ date: dateStr, count: logDates[dateStr] || 0 })
