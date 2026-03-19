@@ -457,3 +457,9 @@
   }
   .scroll-reveal { opacity: 1; transform: none; }
 }
+
+/* ── ACHIEVEMENT BADGE SHIMMER ── */
+@keyframes achievementShimmer {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.4) drop-shadow(0 0 8px rgba(242, 232, 160, 0.4)); }
+}
