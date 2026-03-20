@@ -233,47 +233,70 @@
   .discover-filters::-webkit-scrollbar { display: none; }
   .discover-filters .tag { font-size: 0.6rem !important; padding: 0.35em 0.75em !important; min-height: 36px !important; display: inline-flex !important; align-items: center !important; }
 
-  /* === FILM DETAIL HERO === */
-  /* Kill dead space — let content dictate height */
-  .page-top > div[style*="minHeight"] { min-height: auto !important; }
-  /* Center and enlarge poster on mobile */
+  /* ═══ FILM DETAIL — NATIVE APP FEEL ═══ */
+
+  /* Full-bleed hero — edge to edge, no min-height dead space */
+  .page-top > div:first-child { min-height: auto !important; padding-bottom: 1.25rem !important; }
+
+  /* Poster: centered, generous size like Apple TV+ */
   .hero-grid { text-align: center !important; }
-  .hero-grid > div:first-child { max-width: 180px !important; margin: 0 auto !important; }
-  .hero-grid > div:first-child .card-film { box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 20px rgba(139,105,20,0.15) !important; }
-  /* Film detail layout */
-  .film-detail-hero { flex-direction: column !important; gap: 1.5rem !important; align-items: flex-start !important; }
-  .film-detail-poster { width: 140px !important; flex-shrink: 0 !important; margin: 0 auto !important; display: block !important; }
-  .film-detail-meta { text-align: left !important; padding-left: 0 !important; }
-  .film-detail-layout { grid-template-columns: 1fr !important; gap: 2rem !important; }
-  div[style*="backdropFilter: 'blur"] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
-  div[style*="padding: '2rem 2.5rem'"] { padding: 1.25rem !important; }
-  /* CTA buttons: compact 2-column grid instead of stacked */
+  .hero-grid > div:first-child { max-width: 200px !important; margin: 0 auto 0.5rem !important; }
+  .hero-grid > div:first-child .card-film {
+    box-shadow: 0 16px 48px rgba(0,0,0,0.8), 0 0 24px rgba(139,105,20,0.2) !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+  }
+
+  /* Hide hero play button overlay — CTA row has "Watch Trailer" button */
+  .hero-play-overlay { display: none !important; }
+
+  /* Center info block like a native detail screen */
+  .hero-grid > div:last-child { text-align: center !important; align-items: center !important; }
+  .hero-grid > div:last-child > div { justify-content: center !important; }
+
+  /* Genre tags: compact pill strip */
+  .hero-grid .genre-tags { justify-content: center !important; }
+
+  /* CTA buttons: 2-column grid, LOG spans full width */
   .hero-cta-row {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
     gap: 0.5rem !important;
     width: 100% !important;
-    margin-top: 0.5rem !important;
+    margin-top: 0.75rem !important;
   }
   .hero-cta-row .btn {
     width: 100% !important;
     justify-content: center !important;
-    font-size: 0.6rem !important;
-    padding: 0.7em 0.5em !important;
-    text-align: center !important;
+    font-size: 0.65rem !important;
+    padding: 0.75em 0.5em !important;
+    min-height: 44px !important; /* iOS touch target */
+    border-radius: 6px !important;
   }
-  /* Make primary LOG button span full width for prominence */
   .hero-cta-row .btn-primary {
     grid-column: 1 / -1 !important;
-    font-size: 0.7rem !important;
-    padding: 0.8em 1em !important;
+    font-size: 0.75rem !important;
+    padding: 0.85em 1em !important;
   }
-  /* Hide GO BACK on narrow screens — navbar handles navigation */
+
+  /* Hide GO BACK — navbar handles navigation */
   .back-btn { display: none !important; }
-  /* Hide sidebar trailer card on narrow screens — already have "Watch Trailer" CTA button */
+
+  /* Hide sidebar trailer (desktop-only element) */
   .layout-sidebar.reversed > div:last-child > .card:first-child { display: none !important; }
-  /* Reduce main content area padding */
-  .page-top main .container { padding-top: 1rem !important; gap: 1.5rem !important; }
+
+  /* Collapse excessive sidebar info cards for mobile */
+  /* Keep Director + Where to Watch, hide Film Dossier, Studios, Country Releases */
+  .layout-sidebar.reversed > div:last-child > .card.glass-panel { display: none !important; }
+
+  /* Main content padding — app-like reduced spacing */
+  .page-top main .container {
+    padding-top: 0.75rem !important;
+    gap: 1.25rem !important;
+  }
+
+  /* Container edge-to-edge padding for immersive feel */
+  .page-top main .container { padding-left: 1rem !important; padding-right: 1rem !important; }
 
   /* Cast grid → horizontal scroll strip on mobile */
   .cast-grid {
