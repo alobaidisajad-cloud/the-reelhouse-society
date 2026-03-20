@@ -433,8 +433,46 @@
   div[style*="marginBottom: '4rem'"] { margin-bottom: 2rem !important; }
   .teletype-container { gap: 1.25rem !important; }
 
+  /* === PERSON PAGE === */
+  .person-hero-grid { flex-direction: column !important; align-items: center !important; text-align: center !important; gap: 1.25rem !important; }
+  .person-hero-grid h1 { font-size: clamp(1.8rem, 7vw, 2.5rem) !important; }
+  .person-hero-grid > div:last-child > div:nth-child(3) { justify-content: center !important; flex-wrap: wrap !important; }
+  /* Person page BACK button — hide on mobile */
+  .btn-ghost[style*="marginBottom"] { display: none !important; }
+
+  /* === LIST DETAIL === */
+  /* Hide GO BACK button on list detail */
+  div[style*="maxWidth: 1000"] > button:first-child { display: none !important; }
+  /* Reduce top padding */
+  div[style*="maxWidth: 1000"][style*="padding: '3rem"] { padding-top: 1rem !important; }
+
+  /* === SETTINGS PAGE === */
+  div[style*="maxWidth: 600"][style*="padding: '6rem"] { padding-top: 4.5rem !important; }
+
+  /* === ALL FILM GRIDS — mobile-safe columns === */
+  div[style*="gridTemplateColumns: 'repeat(auto-fill, minmax(180px"] { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)) !important; gap: 1rem !important; }
+  div[style*="gridTemplateColumns: 'repeat(auto-fill, minmax(140px"] { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)) !important; gap: 0.75rem !important; }
+
   /* Community list cards — adapt for mobile */
   .fade-in-up[style*="height: 480"] { height: 320px !important; }
+
+  /* === MEMBERSHIP PAGE === */
+  .membership-header { padding-top: 1.5rem !important; }
+  .membership-title { font-size: clamp(1.8rem, 7vw, 2.5rem) !important; }
+  .membership-subtitle { font-size: 0.85rem !important; }
+  .founding-banner { padding: 2rem 1.25rem !important; }
+  .founding-title { font-size: clamp(1.5rem, 6vw, 2rem) !important; }
+  .philosophy-title { font-size: clamp(1.3rem, 5vw, 1.8rem) !important; }
+
+  /* === HOMEPAGE === */
+  .homepage-hero .hero-title { font-size: clamp(2rem, 8vw, 3rem) !important; }
+  section[style*="padding: '5rem"] { padding: 2rem 1rem !important; }
+  section[style*="padding: '4rem"] { padding: 1.5rem 1rem !important; }
+  section[style*="padding: '6rem"] { padding: 2rem 1rem !important; }
+
+  /* === GLOBAL BACK BUTTONS — all hidden on mobile (navbar handles navigation) === */
+  .back-btn { display: none !important; }
+  button[class*="ghost"][style*="gap: '0.5rem'"][style*="marginBottom"] { display: none !important; }
 
   /* === MISC === */
   .install-prompt { left: 1rem !important; right: 1rem !important; bottom: 5.5rem !important; width: auto !important; max-width: none !important; }
@@ -445,6 +483,10 @@
   .filter-tabs { overflow-x: auto !important; flex-wrap: nowrap !important; -webkit-overflow-scrolling: touch !important; scrollbar-width: none !important; padding-bottom: 0.25rem; }
   .filter-tabs::-webkit-scrollbar { display: none; }
   section[style*="textAlign: 'center'"] { padding: 2rem 1rem !important; }
+
+  /* === GLOBAL OVERFLOW SAFETY NET === */
+  * { max-width: 100vw; box-sizing: border-box; }
+  img, video, iframe { max-width: 100% !important; height: auto; }
 }
 
 /* ═══════════════════════════════════════════
