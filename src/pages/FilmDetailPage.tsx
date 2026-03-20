@@ -455,7 +455,7 @@ function FilmDetails({ film, onPlayVideo }: any) {
 
     return (
         <div className="layout-sidebar reversed">
-            <div className="teletype-container" style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+            <div className="teletype-container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '1.5rem' : '2.5rem' }}>
                 <div>
                     <SectionHeader label="SYNOPSIS" title="About the Film" />
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--bone)', lineHeight: 1.8 }}>
@@ -502,7 +502,7 @@ function FilmDetails({ film, onPlayVideo }: any) {
                         <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '0.5rem', marginLeft: IS_TOUCH ? '-1.25rem' : 0, paddingLeft: IS_TOUCH ? '1.25rem' : 0 }}>
                             {allVideos.slice(0, 6).map((v: any) => (
                                 <button key={v.id} onClick={() => onPlayVideo(v.key)}
-                                    style={{ flexShrink: 0, width: 200, background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '2px', cursor: 'pointer', overflow: 'hidden', textAlign: 'left', padding: 0, position: 'relative' }}
+                                    style={{ flexShrink: 0, width: IS_TOUCH ? 160 : 200, background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '2px', cursor: 'pointer', overflow: 'hidden', textAlign: 'left', padding: 0, position: 'relative' }}
                                     onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'}
                                     onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}
                                 >
@@ -680,7 +680,7 @@ export default function FilmDetailPage() {
     )
     if (error || !film) return (
         <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
-            <div style={{ textAlign: 'center', border: '1px solid var(--ash)', padding: '4rem 3rem', maxWidth: 440, background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)' }}>
+            <div style={{ textAlign: 'center', border: '1px solid var(--ash)', padding: IS_TOUCH ? '2rem 1.5rem' : '4rem 3rem', maxWidth: 440, background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)' }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '4rem', color: 'var(--ash)', marginBottom: '1.5rem', lineHeight: 1 }}>∅</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '0.75rem' }}>Not in the Archive</div>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', lineHeight: 1.6 }}>This reel could not be found. It may have been withdrawn from circulation.</p>

@@ -6,6 +6,8 @@ import { tmdb, obscurityScore } from '../tmdb'
 import { FilmCard, LoadingReel, SectionHeader, ObscurityBadge, PersonPlaceholder } from '../components/UI'
 import PageSEO from '../components/PageSEO'
 
+const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+
 export default function PersonPage() {
     const { id } = useParams()
     const navigate = useNavigate()
@@ -64,20 +66,20 @@ export default function PersonPage() {
                 </button>
 
                 {/* Profile Header */}
-                <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start', flexWrap: 'wrap', marginBottom: '4rem' }}>
+                <div className="person-hero-grid" style={{ display: 'flex', gap: IS_TOUCH ? '1.5rem' : '2rem', alignItems: IS_TOUCH ? 'center' : 'flex-start', flexWrap: 'wrap', marginBottom: IS_TOUCH ? '2rem' : '4rem', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
                     {person.profile_path ? (
                         <img
                             src={tmdb.profile(person.profile_path, 'w500')}
                             alt={person.name}
-                            style={{ width: 200, height: 300, objectFit: 'cover', borderRadius: 'var(--radius-card)', border: '1px solid var(--sepia)', filter: 'sepia(0.2) contrast(1.1)' }}
+                            style={{ width: IS_TOUCH ? 120 : 200, height: IS_TOUCH ? 180 : 300, objectFit: 'cover', borderRadius: 'var(--radius-card)', border: '1px solid var(--sepia)', filter: 'sepia(0.2) contrast(1.1)' }}
                         />
                     ) : (
-                        <div style={{ width: 200, height: 300, borderRadius: 'var(--radius-card)', border: '1px solid var(--sepia)', overflow: 'hidden' }}>
+                        <div style={{ width: IS_TOUCH ? 120 : 200, height: IS_TOUCH ? 180 : 300, borderRadius: 'var(--radius-card)', border: '1px solid var(--sepia)', overflow: 'hidden' }}>
                             <PersonPlaceholder />
                         </div>
                     )}
 
-                    <div style={{ flex: 1, minWidth: 280 }}>
+                    <div style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 280, textAlign: IS_TOUCH ? 'center' : undefined }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.25em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
                             {person.known_for_department?.toUpperCase()}
                         </div>
@@ -92,7 +94,8 @@ export default function PersonPage() {
                         {person.biography && (
                             <div style={{
                                 fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6, maxWidth: 800,
-                                display: '-webkit-box', WebkitLineClamp: 8, WebkitBoxOrient: 'vertical', overflow: 'hidden'
+                                display: '-webkit-box', WebkitLineClamp: IS_TOUCH ? 5 : 8, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                                textAlign: IS_TOUCH ? 'left' : undefined
                             }}>
                                 {person.biography}
                             </div>

@@ -28,6 +28,8 @@ import TasteMatch from '../components/profile/TasteMatch'
 import FilmRecommendations from '../components/profile/FilmRecommendations'
 import PageSEO from '../components/PageSEO'
 
+const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+
 
 
 // ── MAIN PAGE ──
@@ -402,10 +404,10 @@ export default function UserProfilePage() {
     return (
         <div className={`page-top ${stats.count > 50 ? 'level-obsessed' : stats.count > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100vh' }}>
             {/* Header */}
-            <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
+            <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
                 {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-                    <div className="profile-hero" style={{ display: 'flex', gap: '3rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                    <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.5rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
                         {/* Avatar */}
                         <div style={{ position: 'relative', flexShrink: 0 }}>
                             <div style={{ width: 140, height: 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}20`, overflow: 'hidden' }}>
@@ -429,7 +431,7 @@ export default function UserProfilePage() {
                         </div>
 
                         {/* Identity */}
-                        <div style={{ flex: 1, minWidth: 300 }}>
+                        <div style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 300 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                                 {isEditing ? (
                                     <input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} style={{ background: 'var(--ink)', border: '1px solid var(--sepia)', color: 'var(--parchment)', fontFamily: 'var(--font-display)', fontSize: '1.8rem', padding: '0.2rem 0.5rem', width: 'auto' }} />
@@ -496,7 +498,7 @@ export default function UserProfilePage() {
                             )}
 
                             {/* Stats bar */}
-                            <div className="profile-stats-row" style={{ display: 'flex', gap: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1.5rem' }}>
+                            <div className="profile-stats-row" style={{ display: 'flex', gap: IS_TOUCH ? '1rem' : '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: IS_TOUCH ? '1rem' : '1.5rem', justifyContent: IS_TOUCH ? 'center' : undefined, flexWrap: IS_TOUCH ? 'wrap' : undefined }}>
                                 {[
                                     { value: profileLogs.length, label: 'ACTIVITY', onClick: null, icon: null },
                                     { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers'), icon: null },
@@ -513,8 +515,8 @@ export default function UserProfilePage() {
                         </div>
 
                         {/* Log button */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', alignSelf: 'center' }}>
-                            <button className="btn btn-primary" style={{ padding: '1rem 2rem', fontSize: '0.75rem', boxShadow: `0 0 20px ${stats.color}30` }} onClick={() => openLogModal()}>+ RECORD NEW LOG</button>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '0.5rem' : '1rem', alignSelf: 'center', width: IS_TOUCH ? '100%' : undefined }}>
+                            <button className="btn btn-primary" style={{ padding: IS_TOUCH ? '0.75rem 1.5rem' : '1rem 2rem', fontSize: IS_TOUCH ? '0.65rem' : '0.75rem', boxShadow: `0 0 20px ${stats.color}30`, width: IS_TOUCH ? '100%' : undefined, justifyContent: IS_TOUCH ? 'center' : undefined }} onClick={() => openLogModal()}>+ RECORD NEW LOG</button>
                             {isOwnProfile && (
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     <button className="btn btn-ghost" style={{ flex: 1, padding: '0.6rem', fontSize: '0.6rem' }}><Settings size={12} style={{ marginRight: '0.4rem' }} /> SETTINGS</button>
