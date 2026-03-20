@@ -321,7 +321,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
     }
 
     return (
-        <div style={{ position: 'relative', minHeight: IS_TOUCH ? '60vh' : '70vh', display: 'flex', alignItems: 'flex-end', paddingBottom: IS_TOUCH ? '2rem' : '3rem' }}>
+        <div style={{ position: 'relative', minHeight: IS_TOUCH ? 'auto' : '70vh', display: 'flex', alignItems: 'flex-end', paddingBottom: IS_TOUCH ? '1.5rem' : '3rem' }}>
             {/* Backdrop */}
             {film.backdrop_path && (
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.5) brightness(0.25) contrast(1.15)', zIndex: 0 }} />
@@ -370,7 +370,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 </div>
 
                 {/* Info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '0.5rem' : '0.75rem' }}>
                     <GenreTags genres={film.genres} />
                     <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 3rem)', color: 'var(--parchment)', lineHeight: 1.1 }}>{film.title}</h1>
                     {film.tagline && <p style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)', fontStyle: 'italic' }}>"{film.tagline}"</p>}

@@ -234,16 +234,43 @@
   .discover-filters::-webkit-scrollbar { display: none; }
   .discover-filters .tag { font-size: 0.6rem !important; padding: 0.35em 0.75em !important; min-height: 36px !important; display: inline-flex !important; align-items: center !important; }
 
-  /* === FILM DETAIL === */
+  /* === FILM DETAIL HERO === */
+  /* Kill dead space — let content dictate height */
+  .page-top > div[style*="minHeight"] { min-height: auto !important; }
+  /* Center and enlarge poster on mobile */
+  .hero-grid { text-align: center !important; }
+  .hero-grid > div:first-child { max-width: 180px !important; margin: 0 auto !important; }
+  .hero-grid > div:first-child .card-film { box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 20px rgba(139,105,20,0.15) !important; }
+  /* Film detail layout */
   .film-detail-hero { flex-direction: column !important; gap: 1.5rem !important; align-items: flex-start !important; }
   .film-detail-poster { width: 140px !important; flex-shrink: 0 !important; margin: 0 auto !important; display: block !important; }
   .film-detail-meta { text-align: left !important; padding-left: 0 !important; }
   .film-detail-layout { grid-template-columns: 1fr !important; gap: 2rem !important; }
   div[style*="backdropFilter: 'blur"] { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
   div[style*="padding: '2rem 2.5rem'"] { padding: 1.25rem !important; }
-  /* Film action buttons — stack vertically with breathing room */
-  .film-detail-meta [style*="display: 'flex'"][style*="gap"] { flex-direction: column !important; gap: 0.75rem !important; }
-  .film-detail-meta .btn { width: 100% !important; justify-content: center !important; }
+  /* CTA buttons: compact 2-column grid instead of stacked */
+  .hero-cta-row {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    margin-top: 0.5rem !important;
+  }
+  .hero-cta-row .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 0.6rem !important;
+    padding: 0.7em 0.5em !important;
+    text-align: center !important;
+  }
+  /* Make primary LOG button span full width for prominence */
+  .hero-cta-row .btn-primary {
+    grid-column: 1 / -1 !important;
+    font-size: 0.7rem !important;
+    padding: 0.8em 1em !important;
+  }
+  /* Hide GO BACK on mobile — navbar handles navigation */
+  .page-top > .container > button:first-child[class*="ghost"] { display: none !important; }
 
   /* Cast grid → horizontal scroll strip on mobile */
   .cast-grid {
@@ -342,6 +369,18 @@
   /* === SOCIAL PULSE === */
   .social-pulse-entry { flex-wrap: nowrap !important; gap: 0.5rem !important; }
 
+  /* === FEED === */
+  .feed-grid { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
+  .feed-sidebar { order: 2 !important; }
+
+  /* === DISPATCH === */
+  .dispatch-document { padding: 0 1rem !important; }
+  .dispatch-masthead .masthead-title { font-size: clamp(2rem, 8vw, 3.5rem) !important; }
+  .dispatch-section { padding: 1.5rem 0 !important; }
+  .dossier-card { padding: 1.25rem !important; }
+  .dispatch-buster-note { padding: 1rem !important; flex-direction: column !important; text-align: center !important; }
+  .dispatch-writer-bar .wb-content { padding: 0 1rem !important; }
+
   /* === FOOTER === */
   footer .container { padding: 0 1rem !important; }
   footer .container > div:first-child { display: none !important; }
@@ -356,6 +395,9 @@
   div[style*="gap: '3rem'"] { gap: 1.5rem !important; }
   div[style*="marginBottom: '4rem'"] { margin-bottom: 2rem !important; }
   .teletype-container { gap: 1.25rem !important; }
+
+  /* Community list cards — adapt for mobile */
+  .fade-in-up[style*="height: 480"] { height: 320px !important; }
 
   /* === MISC === */
   .install-prompt { left: 1rem !important; right: 1rem !important; bottom: 5.5rem !important; width: auto !important; max-width: none !important; }

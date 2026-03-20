@@ -11,6 +11,8 @@ import SectionErrorBoundary from '../components/SectionErrorBoundary'
 import WeeklyChallenge from '../components/profile/WeeklyChallenge'
 import PageSEO from '../components/PageSEO'
 
+const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+
 // ── FEED PAGE ──
 export default function FeedPage() {
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
@@ -143,7 +145,7 @@ export default function FeedPage() {
             <div style={{
                 background: 'var(--ink)',
                 borderBottom: '1px solid var(--ash)',
-                padding: '4rem 0 3rem',
+                padding: IS_TOUCH ? '1.5rem 0 1rem' : '4rem 0 3rem',
                 position: 'relative',
                 overflow: 'hidden'
             }}>
@@ -152,7 +154,7 @@ export default function FeedPage() {
                     <div className="section-title-lg" style={{ textAlign: 'center' }}>
                         THE REEL
                     </div>
-                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.5rem, 6vw, 4.5rem)', color: 'var(--parchment)', marginBottom: '1.5rem', lineHeight: 1, textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.8rem, 6vw, 2.5rem)' : 'clamp(2.5rem, 6vw, 4.5rem)', color: 'var(--parchment)', marginBottom: IS_TOUCH ? '0.75rem' : '1.5rem', lineHeight: 1, textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
                         Community Intelligence
                     </h1>
                     <p style={{ fontFamily: 'var(--font-sub)', fontSize: '1.1rem', color: 'var(--fog)', maxWidth: 600, margin: '0 auto' }}>
@@ -161,7 +163,7 @@ export default function FeedPage() {
                 </div>
             </div>
 
-            <main className="page-top" style={{ paddingBottom: '7rem', paddingTop: '3rem' }}>
+            <main className="page-top" style={{ paddingBottom: '7rem', paddingTop: IS_TOUCH ? '1.5rem' : '3rem' }}>
                 <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '3rem', alignItems: 'start' }}>
 
                     {/* Main Feed */}

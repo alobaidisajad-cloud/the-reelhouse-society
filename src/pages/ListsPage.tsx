@@ -307,7 +307,7 @@ export default function ListsPage() {
             <div style={{
                 background: 'var(--ink)',
                 borderBottom: '1px solid var(--ash)',
-                padding: '4rem 0 3rem',
+                padding: IS_TOUCH ? '1.5rem 0 1rem' : '4rem 0 3rem',
                 position: 'relative',
                 overflow: 'hidden'
             }}>
@@ -318,10 +318,10 @@ export default function ListsPage() {
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '1rem' }}>
                         THE STACKS
                     </div>
-                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(3rem, 7vw, 5.5rem)', color: 'var(--parchment)', marginBottom: '1.5rem', lineHeight: 1.1, textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.8rem, 7vw, 2.5rem)' : 'clamp(3rem, 7vw, 5.5rem)', color: 'var(--parchment)', marginBottom: IS_TOUCH ? '0.75rem' : '1.5rem', lineHeight: 1.1, textShadow: '0 10px 30px rgba(0,0,0,0.8)' }}>
                         Curated <span style={{ color: 'var(--sepia)', fontStyle: 'italic', fontFamily: 'var(--font-sub)', fontWeight: 'normal' }}>Anthologies</span>
                     </h1>
-                    <p style={{ fontFamily: 'var(--font-sub)', fontSize: '1.2rem', color: 'var(--bone)', maxWidth: 650, margin: '0 auto', marginBottom: '2.5rem', lineHeight: 1.6 }}>
+                    <p style={{ fontFamily: 'var(--font-sub)', fontSize: IS_TOUCH ? '0.9rem' : '1.2rem', color: 'var(--bone)', maxWidth: 650, margin: '0 auto', marginBottom: IS_TOUCH ? '1.25rem' : '2.5rem', lineHeight: 1.6 }}>
                         The definitive archives of the Society. Discover essential anthologies meticulously assembled by our devoted members.
                     </p>
 
@@ -336,7 +336,7 @@ export default function ListsPage() {
                     )}
 
                     {/* Smart Search Bar */}
-                    <div style={{ marginTop: '3rem', position: 'relative', textAlign: 'left' }}>
+                    <div style={{ marginTop: IS_TOUCH ? '1.5rem' : '3rem', position: 'relative', textAlign: 'left' }}>
                         <SearchIcon size={IS_TOUCH ? 16 : 22} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--sepia)', opacity: 0.8, zIndex: 1 }} />
                         <input
                             className="input"
