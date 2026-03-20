@@ -268,8 +268,12 @@
     font-size: 0.7rem !important;
     padding: 0.8em 1em !important;
   }
-  /* Hide GO BACK on mobile — navbar handles navigation */
-  .page-top > .container > button:first-child[class*="ghost"] { display: none !important; }
+  /* Hide GO BACK on narrow screens — navbar handles navigation */
+  .back-btn { display: none !important; }
+  /* Hide sidebar trailer card on narrow screens — already have "Watch Trailer" CTA button */
+  .layout-sidebar.reversed > div:last-child > .card:first-child { display: none !important; }
+  /* Reduce main content area padding */
+  .page-top main .container { padding-top: 1rem !important; gap: 1.5rem !important; }
 
   /* Cast grid → horizontal scroll strip on mobile */
   .cast-grid {
