@@ -642,15 +642,15 @@
 .mobile-fab {
   display: none;
   position: fixed;
-  bottom: 2rem;
-  right: 1.5rem;
-  width: 56px;
-  height: 56px;
+  bottom: 1.25rem;
+  right: 1rem;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: var(--flicker);
   color: var(--ink);
   font-family: var(--font-display);
-  font-size: 2rem;
+  font-size: 1.5rem;
   border: 2px solid var(--bone);
   z-index: 99999;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.8), 0 0 15px rgba(242, 232, 160, 0.4);

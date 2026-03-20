@@ -132,7 +132,7 @@ export default function HomePage() {
                     )}
 
                     {/* CTA row */}
-                    <div style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: IS_TOUCH ? '1.5rem' : '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div className="hero-cta-row" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: IS_TOUCH ? '1.5rem' : '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                         {isAuthenticated ? (
                             <button
                                 className="btn btn-primary"

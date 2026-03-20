@@ -411,7 +411,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         </Link>
                     )}
 
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                    <div className="hero-cta-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
                         <button className="btn btn-primary" style={{ fontSize: '0.75rem' }} onClick={() => openLogModal(film)}>
                             <Plus size={14} /> {existingLog ? 'Edit Log' : 'Log This Film'}
                         </button>

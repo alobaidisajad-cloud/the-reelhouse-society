@@ -404,3 +404,26 @@
   background: var(--flicker);
   align-self: center;
 }
+
+/* ── Mobile Refinements ── */
+@media (max-width: 768px) {
+  .membership-page { padding-top: 70px; padding-bottom: 2rem; }
+  .membership-header { margin-bottom: 2.5rem; }
+  .membership-title { font-size: clamp(1.8rem, 5vw, 3rem); }
+  .membership-subtitle { font-size: 1rem; margin-top: 1rem; }
+  .tiers-grid { grid-template-columns: 1fr !important; gap: 1.5rem; margin-bottom: 2.5rem; }
+  .tier-card { padding: 1.75rem; }
+  .tier-card--archivist { padding: 2.5rem 1.75rem 1.75rem; }
+  .tier-name { font-size: 1.6rem; }
+  .price-amount { font-size: 3rem; }
+  .price-amount--free { font-size: 2.5rem; }
+  .price-currency { font-size: 1.2rem; }
+  .founding-banner { padding: 2rem 1.5rem; margin-bottom: 3rem; }
+  .founding-title { font-size: clamp(1.5rem, 4vw, 2.2rem); }
+  .founding-price-amount { font-size: 2.5rem; }
+  .founding-desc { font-size: 0.95rem; }
+  .founding-btn { padding: 0.8rem 2rem; font-size: 0.7rem; }
+  .philosophy-section { padding-top: 2.5rem; }
+  .philosophy-title { font-size: 1.8rem; }
+  .philosophy-body { font-size: 1rem; }
+}

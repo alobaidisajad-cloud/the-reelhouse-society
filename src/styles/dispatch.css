@@ -57,7 +57,22 @@
   position: relative; z-index: 10;
 }
 @media (max-width: 768px) {
-  .dispatch-document { margin: 2rem 1rem 0; padding: 3rem 1.5rem; }
+  .dispatch-document { margin: 2rem 1rem 0; padding: 2rem 1.25rem; }
+  .dispatch-masthead { margin-bottom: 2.5rem; }
+  .masthead-title { font-size: clamp(2rem, 8vw, 3rem) !important; margin-bottom: 1rem; }
+  .masthead-subtitle { font-size: 0.7rem; }
+  .masthead-meta { font-size: 0.6rem; letter-spacing: 0.2em; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .section-header-block { margin-bottom: 2rem; }
+  .sh-title { font-size: 1.8rem; }
+  .sh-sub { font-size: 0.7rem; }
+  .dossier-card { padding: 1.5rem; }
+  .dossier-title { font-size: 1.5rem; }
+  .dossier-excerpt { font-size: 1rem; margin-bottom: 1.25rem; }
+  .dossier-meta { font-size: 0.55rem; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .ornamental-divider { margin: 2.5rem 0; }
+  .wire-title { font-size: 1.2rem; }
+  .wire-excerpt { font-size: 0.95rem; }
+  .dispatch-buster-note { margin-top: 3rem; padding: 2rem 0; }
 }
 
 /* MASTHEAD */
