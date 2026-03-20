@@ -82,8 +82,31 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 4. All other requests — pass through to network
-    // JS/CSS assets have immutable cache-control from Vercel CDN directly.
-    // We do not need to cache them in the service worker.
-    event.respondWith(fetch(request));
+    // 4. JS/CSS Assets (hashed by Vite: /assets/index-XXXX.js)
+    // After a new deploy, old hashed filenames 404 on the server.
+    // Gracefully handle this by navigating to a fresh page load.
+    if (url.pathname.startsWith('/assets/')) {
+        event.respondWith(
+            fetch(request).then((response) => {
+                if (response.ok) return response;
+                // Old asset hash 404'd — the HTML has new asset references
+                // Return an empty response; the page will reload naturally
+                return new Response('', { status: 200, headers: { 'content-type': 'text/javascript' } });
+            }).catch(() => new Response('', { status: 200, headers: { 'content-type': 'text/javascript' } }))
+        );
+        return;
+    }
+
+    // 5. All other requests — pass through to network
+    event.respondWith(fetch(request).catch(() => new Response('', { status: 404 })));
+});
+
+// Listen for skip-waiting messages (e.g. from update prompt)
+self.addEventListener('message', (event) => {
+    if (event.data === 'SKIP_WAITING') {
+        self.skipWaiting();
+    }
+    if (event.data === 'CLEAR_CACHES') {
+        caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
+    }
 });
