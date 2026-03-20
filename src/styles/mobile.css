@@ -245,6 +245,41 @@
   .film-detail-meta [style*="display: 'flex'"][style*="gap"] { flex-direction: column !important; gap: 0.75rem !important; }
   .film-detail-meta .btn { width: 100% !important; justify-content: center !important; }
 
+  /* Cast grid → horizontal scroll strip on mobile */
+  .cast-grid {
+    display: flex !important;
+    gap: 1rem !important;
+    overflow-x: auto !important;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 0.5rem !important;
+    grid-template-columns: unset !important;
+  }
+  .cast-grid::-webkit-scrollbar { display: none; }
+  .cast-item {
+    flex-shrink: 0 !important;
+    width: 72px !important;
+    scroll-snap-align: start;
+  }
+  .cast-photo {
+    width: 72px !important;
+    height: 72px !important;
+    aspect-ratio: unset !important;
+  }
+  .cast-name {
+    font-size: 0.55rem !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .cast-role {
+    font-size: 0.4rem !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   /* === CINEMAS === */
   .cinemas-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
   .cinemas-search-row { flex-direction: column !important; gap: 0.6rem !important; }

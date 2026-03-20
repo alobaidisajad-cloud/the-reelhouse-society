@@ -467,28 +467,23 @@ function FilmDetails({ film, onPlayVideo }: any) {
                 {cast.length > 0 && (
                     <div>
                         <SectionHeader label="CAST" title="The Players" />
-                        <div style={IS_TOUCH
-                            ? { display: 'flex', gap: '1rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '0.5rem', marginLeft: '-1.25rem', paddingLeft: '1.25rem' }
-                            : { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', gap: '0.75rem' }
-                        }>
+                        <div className="cast-grid">
                             {cast.map((member: any) => (
-                                <Link key={member.id} to={`/person/${member.id}`} style={IS_TOUCH
-                                    ? { textAlign: 'center', textDecoration: 'none', color: 'inherit', display: 'block', flexShrink: 0, width: 72 }
-                                    : { textAlign: 'center', textDecoration: 'none', color: 'inherit', display: 'block' }}
+                                <Link key={member.id} to={`/person/${member.id}`} className="cast-item"
                                     onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
                                     onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
                                 >
-                                    <div style={{ width: IS_TOUCH ? 72 : '100%', height: IS_TOUCH ? 72 : undefined, aspectRatio: IS_TOUCH ? undefined : '1', borderRadius: '50%', overflow: 'hidden', background: 'var(--ash)', marginBottom: '0.4rem', border: '1px solid var(--ash)', transition: 'transform 0.2s' }}>
+                                    <div className="cast-photo">
                                         {member.profile_path ? (
                                             <img src={tmdb.profile(member.profile_path) || undefined} alt={member.name} decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4)' }} />
                                         ) : (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)' }}>
-                                                <Film size={IS_TOUCH ? 18 : 24} opacity={0.3} />
+                                                <Film size={24} opacity={0.3} />
                                             </div>
                                         )}
                                     </div>
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: IS_TOUCH ? '0.6rem' : '0.7rem', color: 'var(--parchment)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: IS_TOUCH ? 'nowrap' : undefined }}>{member.name}</div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.45rem' : '0.55rem', letterSpacing: '0.05em', color: 'var(--fog)', marginTop: '0.1rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: IS_TOUCH ? 'nowrap' : undefined }}>{member.character}</div>
+                                    <div className="cast-name">{member.name}</div>
+                                    <div className="cast-role">{member.character}</div>
                                 </Link>
                             ))}
                         </div>
