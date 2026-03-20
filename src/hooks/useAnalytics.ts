@@ -28,20 +28,26 @@ export function useAnalytics() {
 
   // Flush buffer to Supabase
   const flush = useCallback(async () => {
-    if (isDNT || !isSupabaseConfigured || buffer.current.length === 0) return
+    // Only flush for authenticated users — RLS requires a valid session
+    if (isDNT || !isSupabaseConfigured || buffer.current.length === 0 || !user?.id) return
 
     const events = buffer.current.splice(0, MAX_BATCH_SIZE)
     const rows = events.map(e => ({
-      user_id: user?.id || null,
+      user_id: user.id,
       event_name: e.event_name,
       properties: e.properties || {},
       created_at: e.created_at,
     }))
 
     try {
-      await supabase.from('analytics_events').insert(rows)
+      const { error } = await supabase.from('analytics_events').insert(rows)
+      if (error) {
+        // Re-queue events if insert failed (e.g. transient auth issue)
+        buffer.current.unshift(...events)
+      }
     } catch {
       // Silently fail — analytics should never break the app
+      buffer.current.unshift(...events)
     }
   }, [user?.id])
 
