@@ -3,7 +3,7 @@
  * Calculates badges from user logs, compares with stored badges in Supabase,
  * detects new unlocks, and persists them.
  */
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import type { FilmLog } from '../types'
 
@@ -48,28 +48,43 @@ export function useAchievements(userId: string | undefined, logs: FilmLog[]) {
   const [storedBadges, setStoredBadges] = useState<string[]>([])
   const [newBadges, setNewBadges] = useState<Badge[]>([])
   const [loaded, setLoaded] = useState(false)
+  // Ref to track stored badges for comparison without triggering re-renders
+  const storedBadgesRef = useRef<string[]>([])
 
   // Load stored badges from Supabase
   useEffect(() => {
-    if (!userId || !isSupabaseConfigured) return
-    supabase.from('profiles').select('badges').eq('id', userId).single()
-      .then(({ data }) => {
+    if (!userId || !isSupabaseConfigured) {
+      setLoaded(true) // Mark as loaded even without user so badge calc can run
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data } = await supabase.from('profiles').select('badges').eq('id', userId).single()
+        if (cancelled) return
         const existing = (data?.badges as string[]) || []
+        storedBadgesRef.current = existing
         setStoredBadges(existing)
         setLoaded(true)
-      })
+      } catch {
+        if (!cancelled) setLoaded(true)
+      }
+    })()
+    return () => { cancelled = true }
   }, [userId])
 
   // Calculate earned badges and detect new unlocks
+  // Uses ref for comparison to avoid dependency on storedBadges (prevents infinite loop)
   useEffect(() => {
     if (!loaded || logs.length === 0) return
 
     const earned = BADGE_DEFS.filter(b => b.check(logs)).map(b => b.key)
-    const fresh = earned.filter(k => !storedBadges.includes(k))
+    const fresh = earned.filter(k => !storedBadgesRef.current.includes(k))
 
     if (fresh.length > 0) {
       const newBadgeObjects = BADGE_DEFS.filter(b => fresh.includes(b.key))
       setNewBadges(newBadgeObjects)
+      storedBadgesRef.current = earned
       setStoredBadges(earned)
 
       // Persist to Supabase
@@ -77,7 +92,7 @@ export function useAchievements(userId: string | undefined, logs: FilmLog[]) {
         supabase.from('profiles').update({ badges: earned }).eq('id', userId).then(() => {})
       }
     }
-  }, [loaded, logs, storedBadges, userId])
+  }, [loaded, logs, userId]) // Removed storedBadges — use ref instead
 
   const dismissNewBadge = useCallback((key: string) => {
     setNewBadges(prev => prev.filter(b => b.key !== key))
