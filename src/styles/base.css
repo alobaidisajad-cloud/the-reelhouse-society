@@ -44,12 +44,7 @@
   padding: 0;
 }
 
-/* ── CUSTOM CURSOR & ACCESSIBILITY ── */
-@media (any-pointer: fine) {
-  * {
-    cursor: none !important;
-  }
-}
+/* Custom cursor hiding is now managed by CustomCursor.tsx to prevent invisible cursor if JS fails */
 
 /* ── CUSTOM SCROLLBAR ── */
 ::-webkit-scrollbar {

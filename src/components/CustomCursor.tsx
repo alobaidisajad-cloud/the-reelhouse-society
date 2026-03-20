@@ -47,6 +47,12 @@ export default function CustomCursor() {
     document.body.appendChild(outer)
     document.body.appendChild(dot)
 
+    // Only hide cursor AFTER custom cursor elements exist in the DOM
+    const cursorStyle = document.createElement('style')
+    cursorStyle.id = 'custom-cursor-hide'
+    cursorStyle.textContent = '* { cursor: none !important; }'
+    document.head.appendChild(cursorStyle)
+
     let raf: number
     let mx = -200, my = -200
     let ox = -200, oy = -200
@@ -117,6 +123,7 @@ export default function CustomCursor() {
       cancelAnimationFrame(raf)
       outer.remove()
       dot.remove()
+      cursorStyle.remove()
     }
   }, [])
 
