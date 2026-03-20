@@ -171,7 +171,6 @@
 
   /* === LAYOUT === */
   .layout-sidebar, .layout-sidebar.reversed { grid-template-columns: 1fr !important; gap: 1.5rem !important; }
-  .layout-sidebar > div:first-child { max-width: 200px !important; margin: 0 auto !important; }
 
   /* === SECTIONS === */
   .section-header { flex-wrap: wrap; gap: 0.5rem; overflow: visible; }
