@@ -3,8 +3,7 @@ name: CI — Lighthouse Performance Gate
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
+  workflow_dispatch: # Manual trigger only — no more email spam on every push
 
 jobs:
   lighthouse:
