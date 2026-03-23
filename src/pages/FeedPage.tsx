@@ -59,7 +59,7 @@ export default function FeedPage() {
 
     // ── Feed Tab State ──
     type FeedTab = 'for-you' | 'following'
-    const [feedTab, setFeedTab] = useState<FeedTab>(isAuthenticated ? 'following' : 'for-you')
+    const [feedTab, setFeedTab] = useState<FeedTab>('for-you')
 
     // ── Feed Data ──
     const [communityFeed, setCommunityFeed] = useState<any[]>([])
@@ -242,6 +242,26 @@ export default function FeedPage() {
                         borderBottom: '1px solid rgba(139,105,20,0.15)',
                     }}
                 >
+                    <button
+                        onClick={() => setFeedTab('for-you')}
+                        style={{
+                            flex: 1,
+                            maxWidth: 240,
+                            padding: '1rem 1.5rem',
+                            background: 'none',
+                            border: 'none',
+                            borderBottom: feedTab === 'for-you' ? '2px solid var(--sepia)' : '2px solid transparent',
+                            fontFamily: 'var(--font-ui)',
+                            fontSize: '0.6rem',
+                            letterSpacing: '0.2em',
+                            color: feedTab === 'for-you' ? 'var(--parchment)' : 'var(--fog)',
+                            cursor: 'pointer',
+                            transition: 'color 0.2s, border-color 0.3s',
+                            fontWeight: feedTab === 'for-you' ? 700 : 400,
+                        }}
+                    >
+                        THE ARCHIVE
+                    </button>
                     {isAuthenticated && (
                         <button
                             onClick={() => setFeedTab('following')}
@@ -264,26 +284,6 @@ export default function FeedPage() {
                             FOLLOWING
                         </button>
                     )}
-                    <button
-                        onClick={() => setFeedTab('for-you')}
-                        style={{
-                            flex: 1,
-                            maxWidth: 240,
-                            padding: '1rem 1.5rem',
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: feedTab === 'for-you' ? '2px solid var(--sepia)' : '2px solid transparent',
-                            fontFamily: 'var(--font-ui)',
-                            fontSize: '0.6rem',
-                            letterSpacing: '0.2em',
-                            color: feedTab === 'for-you' ? 'var(--parchment)' : 'var(--fog)',
-                            cursor: 'pointer',
-                            transition: 'color 0.2s, border-color 0.3s',
-                            fontWeight: feedTab === 'for-you' ? 700 : 400,
-                        }}
-                    >
-                        FOR YOU
-                    </button>
                 </div>
             </div>
 
@@ -299,7 +299,7 @@ export default function FeedPage() {
 
                         {/* Section Header + Rating Legend Toggle */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
-                            <SectionHeader label={feedTab === 'following' ? 'FOLLOWING DISPATCHES' : 'RECENT TRANSMISSIONS'} title="The Log" />
+                            <SectionHeader label={feedTab === 'following' ? 'FOLLOWING DISPATCHES' : 'ALL TRANSMISSIONS'} title="The Log" />
                             <button
                                 onClick={() => setShowLegend(!showLegend)}
                                 style={{
@@ -367,7 +367,7 @@ export default function FeedPage() {
                                     onClick={() => setFeedTab('for-you')}
                                     style={{ padding: '0.7rem 2rem', letterSpacing: '0.15em', fontSize: '0.6rem' }}
                                 >
-                                    BROWSE FOR YOU →
+                                    BROWSE THE ARCHIVE →
                                 </button>
                                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                             </div>
