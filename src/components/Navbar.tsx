@@ -1,9 +1,10 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Film, BookOpen, Compass, User, Menu, X, LogIn, Star, Crown, FileText, MapPin, Loader } from 'lucide-react'
+import { Search, Film, BookOpen, Compass, User, Users, Menu, X, LogIn, Star, Crown, FileText, MapPin, Loader } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
+import { tmdb } from '../tmdb'
 import Buster from './Buster'
 import NotificationBell from './NotificationBell'
 
@@ -47,11 +48,15 @@ export default function Navbar() {
 
     const [mobileOpen, setMobileOpen] = useState(false)
     const [searchOpen, setSearchOpen] = useState(false)
+    const [peopleSearchOpen, setPeopleSearchOpen] = useState(false)
     const [query, setQuery] = useState('')
+    const [peopleQuery, setPeopleQuery] = useState('')
     const [suggestions, setSuggestions] = useState<any[]>([])
+    const [peopleSuggestions, setPeopleSuggestions] = useState<any[]>([])
     const [scrolled, setScrolled] = useState(false)
     const [hidden, setHidden] = useState(false)
     const [searching, setSearching] = useState(false)
+    const [searchingPeople, setSearchingPeople] = useState(false)
     const lastScrollY = useRef(0)
 
     useEffect(() => {
@@ -78,51 +83,73 @@ export default function Navbar() {
         setSearchOpen(false)
     }, [location.pathname])
 
-    // Debounced search — 250ms delay, queries Supabase profiles for real results
+    // ── MAIN SEARCH: TMDB multi-search for movies, actors, directors ──
     useEffect(() => {
         if (!query.trim()) {
             setSuggestions([])
             setSearching(false)
             return
         }
-
         setSearching(true)
         const timer = setTimeout(async () => {
             try {
-                if (!isSupabaseConfigured) {
-                    setSearching(false)
-                    return
-                }
-                const { data, error } = await supabase
-                    .from('profiles')
-                    .select('username, role, bio, avatar_url')
-                    .or(`username.ilike.%${query}%,bio.ilike.%${query}%`)
-                    .order('username', { ascending: true })
-                    .limit(8)
-
-                if (!error && data) {
-                    setSuggestions(data)
-                }
+                const results = await tmdb.searchMulti(query)
+                setSuggestions(results || [])
             } catch (e) {
                 console.error('Search error:', e)
             } finally {
                 setSearching(false)
             }
         }, 250)
-
         return () => clearTimeout(timer)
     }, [query])
 
+    // ── PEOPLE SEARCH: Supabase profiles for members ──
+    useEffect(() => {
+        if (!peopleQuery.trim()) {
+            setPeopleSuggestions([])
+            setSearchingPeople(false)
+            return
+        }
+        setSearchingPeople(true)
+        const timer = setTimeout(async () => {
+            try {
+                if (!isSupabaseConfigured) { setSearchingPeople(false); return }
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('username, role, bio, avatar_url')
+                    .or(`username.ilike.%${peopleQuery}%,bio.ilike.%${peopleQuery}%`)
+                    .order('username', { ascending: true })
+                    .limit(8)
+                if (!error && data) setPeopleSuggestions(data)
+            } catch (e) {
+                console.error('People search error:', e)
+            } finally {
+                setSearchingPeople(false)
+            }
+        }, 250)
+        return () => clearTimeout(timer)
+    }, [peopleQuery])
+
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault()
-        if (query.trim()) {
+        if (query.trim() && suggestions.length > 0) {
             const match = suggestions[0]
-            if (match) {
-                navigate(`/user/${match.username}`)
-                setQuery('')
-                setSearchOpen(false)
-                setSuggestions([])
+            if (match.media_type === 'person') {
+                // Navigate to discover with person filter (closest match)
+                navigate(`/discover?person=${match.id}`)
+            } else {
+                navigate(`/film/${match.id}`)
             }
+            setQuery(''); setSearchOpen(false); setSuggestions([])
+        }
+    }
+
+    const handlePeopleSearch = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (peopleQuery.trim() && peopleSuggestions.length > 0) {
+            navigate(`/user/${peopleSuggestions[0].username}`)
+            setPeopleQuery(''); setPeopleSearchOpen(false); setPeopleSuggestions([])
         }
     }
 
@@ -182,12 +209,27 @@ export default function Navbar() {
                     <div className="nav-actions">
                         <button
                             className="nav-icon-btn"
-                            onClick={() => setSearchOpen((v) => !v)}
-                            title="Search films"
+                            onClick={() => { setSearchOpen((v) => !v); setPeopleSearchOpen(false) }}
+                            title="Search films, actors, directors"
                             aria-label="Search films"
                         >
                             <Search size={18} />
                         </button>
+
+                        {/* People Search Button */}
+                        {isAuthenticated && (
+                            <button
+                                className="nav-icon-btn nav-people-search-btn"
+                                onClick={() => { setPeopleSearchOpen((v) => !v); setSearchOpen(false) }}
+                                title="Search members"
+                                aria-label="Search members"
+                            >
+                                <span className="nav-people-icon">
+                                    <Buster size={18} mood="peeking" />
+                                    <span className="nav-people-plus">+</span>
+                                </span>
+                            </button>
+                        )}
 
                         {isAuthenticated ? (
                             <>
@@ -219,15 +261,7 @@ export default function Navbar() {
                                     {(user?.role === 'auteur' || user?.role === 'archivist') ? <span style={{ fontSize: '0.6rem' }}>✦</span> : <User size={12} />}
                                     {user?.username || 'Profile'}
                                 </Link>
-                                <button
-                                    className="nav-icon-btn hide-mobile"
-                                    onClick={logout}
-                                    title="Sign out"
-                                    aria-label="Sign out"
-                                    style={{ fontSize: '0.6rem', fontFamily: 'var(--font-ui)', letterSpacing: '0.1em', color: 'var(--fog)' }}
-                                >
-                                    EXIT
-                                </button>
+
                             </>
                         ) : (
                             <>
@@ -272,7 +306,7 @@ export default function Navbar() {
                         </button>
                     </div>
 
-                    {/* Search Bar */}
+                    {/* Main Search Bar — TMDB Films, Actors, Directors */}
                     <AnimatePresence>
                         {searchOpen && (
                             <motion.div
@@ -284,90 +318,147 @@ export default function Navbar() {
                                 style={{ flexDirection: 'column', gap: 0 }}
                             >
                                 <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
-                                    <Search size={16} style={{ color: 'var(--fog)', alignSelf: 'center', flexShrink: 0 }} />
+                                    <Search size={16} style={{ color: 'var(--sepia)', alignSelf: 'center', flexShrink: 0 }} />
                                     <input
                                         className="input"
-                                        placeholder="Search members, curators, archives..."
+                                        placeholder="Search films, actors, directors..."
                                         value={query}
                                         onChange={(e) => setQuery(e.target.value)}
                                         autoFocus
                                     />
-                                    <button className="btn btn-primary" type="submit">
-                                        Search
-                                    </button>
-                                    <button
-                                        type="button"
-                                        className="nav-icon-btn"
-                                        onClick={() => { setSearchOpen(false); setSuggestions([]) }}
-                                    >
+                                    <button className="btn btn-primary" type="submit">Search</button>
+                                    <button type="button" className="nav-icon-btn" onClick={() => { setSearchOpen(false); setSuggestions([]) }}>
                                         <X size={16} />
                                     </button>
                                 </form>
 
-                                {/* Suggestions Dropdown */}
+                                {/* TMDB Results Dropdown */}
                                 <AnimatePresence>
-                                    {(searching || suggestions.length > 0) && (
+                                    {(searching || suggestions.length > 0 || (query.trim() && !searching)) && (
                                         <motion.div
                                             initial={{ opacity: 0, height: 0 }}
                                             animate={{ opacity: 1, height: 'auto' }}
                                             exit={{ opacity: 0, height: 0 }}
                                             className="glass-panel"
-                                            style={{
-                                                marginTop: '0.5rem',
-                                                borderTop: '1px solid var(--sepia)',
-                                                maxHeight: '300px',
-                                                overflowY: 'auto',
-                                                borderRadius: 'var(--radius-card)',
-                                                transformOrigin: 'top center',
-                                            }}
+                                            style={{ marginTop: '0.5rem', borderTop: '1px solid var(--sepia)', maxHeight: '360px', overflowY: 'auto', borderRadius: 'var(--radius-card)' }}
                                         >
                                             {searching && (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
                                                     <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
-                                                    SEARCHING ARCHIVES...
+                                                    SCANNING ARCHIVES...
                                                 </div>
                                             )}
                                             {!searching && suggestions.length === 0 && query.trim() && (
                                                 <div style={{ padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
+                                                    NO RESULTS FOUND IN THE ARCHIVE
+                                                </div>
+                                            )}
+                                            {!searching && suggestions.map((item: any) => {
+                                                const isPerson = item.media_type === 'person'
+                                                const title = item.title || item.name || ''
+                                                const year = item.release_date?.slice(0, 4)
+                                                const imgPath = isPerson ? item.profile_path : item.poster_path
+                                                const imgUrl = imgPath ? `https://image.tmdb.org/t/p/w92${imgPath}` : null
+                                                const dept = isPerson ? (item.known_for_department || 'Acting').toUpperCase() : null
+
+                                                return (
+                                                    <Link
+                                                        key={`${item.media_type}-${item.id}`}
+                                                        to={isPerson ? `/discover?person=${item.id}` : `/film/${item.id}`}
+                                                        onClick={() => { setQuery(''); setSearchOpen(false); setSuggestions([]) }}
+                                                        style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 1.25rem', gap: '1rem', textDecoration: 'none', borderBottom: '1px solid rgba(139,105,20,0.1)', transition: 'background 0.2s' }}
+                                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(242,232,160,0.03)'}
+                                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                                    >
+                                                        {/* Poster / Photo */}
+                                                        <div style={{ width: 40, height: isPerson ? 40 : 56, borderRadius: isPerson ? '50%' : '2px', overflow: 'hidden', background: 'var(--ash)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: isPerson ? '1px solid var(--sepia)' : 'none' }}>
+                                                            {imgUrl ? (
+                                                                <img src={imgUrl} alt={title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                            ) : (
+                                                                isPerson ? <User size={18} color="var(--fog)" /> : <Film size={18} color="var(--fog)" />
+                                                            )}
+                                                        </div>
+                                                        {/* Info */}
+                                                        <div style={{ flex: 1, minWidth: 0 }}>
+                                                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--parchment)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                                {title}
+                                                            </div>
+                                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.2rem' }}>
+                                                                {isPerson ? `🎭 ${dept}` : `🎬 ${year || 'FILM'}`}
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                )
+                                            })}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* People Search Bar — Members */}
+                    <AnimatePresence>
+                        {peopleSearchOpen && (
+                            <motion.div
+                                className="search-bar"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                transition={{ duration: 0.2 }}
+                                style={{ flexDirection: 'column', gap: 0 }}
+                            >
+                                <form onSubmit={handlePeopleSearch} style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
+                                    <Users size={16} style={{ color: 'var(--sepia)', alignSelf: 'center', flexShrink: 0 }} />
+                                    <input
+                                        className="input"
+                                        placeholder="Search members of The Society..."
+                                        value={peopleQuery}
+                                        onChange={(e) => setPeopleQuery(e.target.value)}
+                                        autoFocus
+                                    />
+                                    <button type="button" className="nav-icon-btn" onClick={() => { setPeopleSearchOpen(false); setPeopleSuggestions([]) }}>
+                                        <X size={16} />
+                                    </button>
+                                </form>
+
+                                {/* People Results */}
+                                <AnimatePresence>
+                                    {(searchingPeople || peopleSuggestions.length > 0 || (peopleQuery.trim() && !searchingPeople)) && (
+                                        <motion.div
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            exit={{ opacity: 0, height: 0 }}
+                                            className="glass-panel"
+                                            style={{ marginTop: '0.5rem', borderTop: '1px solid var(--sepia)', maxHeight: '300px', overflowY: 'auto', borderRadius: 'var(--radius-card)' }}
+                                        >
+                                            {searchingPeople && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
+                                                    <Loader size={12} style={{ animation: 'spin 1s linear infinite' }} />
+                                                    SEARCHING MEMBERS...
+                                                </div>
+                                            )}
+                                            {!searchingPeople && peopleSuggestions.length === 0 && peopleQuery.trim() && (
+                                                <div style={{ padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
                                                     NO MEMBERS FOUND
                                                 </div>
                                             )}
-                                            {!searching && suggestions.map((member) => (
+                                            {!searchingPeople && peopleSuggestions.map((member: any) => (
                                                 <Link
                                                     key={member.username}
                                                     to={`/user/${member.username}`}
-                                                    onClick={() => { setQuery(''); setSearchOpen(false); setSuggestions([]) }}
-                                                    style={{
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        padding: '0.9rem 1.25rem',
-                                                        gap: '1.25rem',
-                                                        textDecoration: 'none',
-                                                        borderBottom: '1px solid rgba(139,105,20,0.1)',
-                                                        transition: 'background 0.2s',
-                                                    }}
+                                                    onClick={() => { setPeopleQuery(''); setPeopleSearchOpen(false); setPeopleSuggestions([]) }}
+                                                    style={{ display: 'flex', alignItems: 'center', padding: '0.9rem 1.25rem', gap: '1.25rem', textDecoration: 'none', borderBottom: '1px solid rgba(139,105,20,0.1)', transition: 'background 0.2s' }}
                                                     onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(242,232,160,0.03)'}
                                                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                                 >
-                                                    <div style={{
-                                                        width: 40, height: 40, borderRadius: '50%', overflow: 'hidden',
-                                                        background: 'var(--ink)', border: '1px solid var(--sepia)',
-                                                        display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                                    }}>
+                                                    <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', background: 'var(--ink)', border: '1px solid var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                         <Buster size={28} mood="smiling" />
                                                     </div>
                                                     <div style={{ flex: 1 }}>
-                                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1 }}>
-                                                            @{member.username.toUpperCase()}
-                                                        </div>
-                                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.15em', marginTop: '0.3rem' }}>
-                                                            {(member.role || 'cinephile').toUpperCase()}
-                                                        </div>
-                                                        {member.bio && (
-                                                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>
-                                                                "{member.bio}"
-                                                            </div>
-                                                        )}
+                                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1 }}>@{member.username.toUpperCase()}</div>
+                                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.15em', marginTop: '0.3rem' }}>{(member.role || 'cinephile').toUpperCase()}</div>
+                                                        {member.bio && <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>"{member.bio}"</div>}
                                                     </div>
                                                 </Link>
                                             ))}
@@ -414,13 +505,7 @@ export default function Navbar() {
                                     <button className="btn btn-primary" onClick={() => { openLogModal(); setMobileOpen(false) }}>
                                         + Log a Film
                                     </button>
-                                    <button
-                                        className="btn btn-ghost"
-                                        onClick={() => { logout(); setMobileOpen(false) }}
-                                        style={{ fontSize: '0.7rem' }}
-                                    >
-                                        EXIT HOUSE
-                                    </button>
+
                                 </>
                             ) : (
                                 <button

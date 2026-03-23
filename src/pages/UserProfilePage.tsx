@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams } from 'react-router-dom'
-import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
@@ -520,6 +520,13 @@ export default function UserProfilePage() {
                             {isOwnProfile && (
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                                     <button className="btn btn-ghost" style={{ flex: 1, padding: '0.6rem', fontSize: '0.6rem' }}><Settings size={12} style={{ marginRight: '0.4rem' }} /> SETTINGS</button>
+                                    <button
+                                        className="btn btn-ghost"
+                                        onClick={() => { useAuthStore.getState().logout(); }}
+                                        style={{ padding: '0.6rem', fontSize: '0.6rem', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
+                                    >
+                                        <LogOut size={12} /> SIGN OUT
+                                    </button>
                                 </div>
                             )}
                         </div>
