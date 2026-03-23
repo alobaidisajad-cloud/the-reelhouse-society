@@ -340,7 +340,7 @@ export default function Navbar() {
                                             animate={{ opacity: 1, height: 'auto' }}
                                             exit={{ opacity: 0, height: 0 }}
                                             className="glass-panel"
-                                            style={{ marginTop: '0.5rem', borderTop: '1px solid var(--sepia)', maxHeight: '360px', overflowY: 'auto', borderRadius: 'var(--radius-card)' }}
+                                            style={{ marginTop: '0.5rem', borderTop: '1px solid var(--sepia)', maxHeight: '400px', overflowY: 'auto', borderRadius: 'var(--radius-card)', width: '100%' }}
                                         >
                                             {searching && (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
@@ -366,24 +366,24 @@ export default function Navbar() {
                                                         key={`${item.media_type}-${item.id}`}
                                                         to={isPerson ? `/discover?person=${item.id}` : `/film/${item.id}`}
                                                         onClick={() => { setQuery(''); setSearchOpen(false); setSuggestions([]) }}
-                                                        style={{ display: 'flex', alignItems: 'center', padding: '0.75rem 1.25rem', gap: '1rem', textDecoration: 'none', borderBottom: '1px solid rgba(139,105,20,0.1)', transition: 'background 0.2s' }}
+                                                        style={{ display: 'flex', alignItems: 'center', padding: '0.65rem 1.5rem', gap: '1rem', textDecoration: 'none', borderBottom: '1px solid rgba(139,105,20,0.08)', transition: 'background 0.2s' }}
                                                         onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(242,232,160,0.03)'}
                                                         onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                                     >
                                                         {/* Poster / Photo */}
-                                                        <div style={{ width: 40, height: isPerson ? 40 : 56, borderRadius: isPerson ? '50%' : '2px', overflow: 'hidden', background: 'var(--ash)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: isPerson ? '1px solid var(--sepia)' : 'none' }}>
+                                                        <div style={{ width: isPerson ? 44 : 48, height: isPerson ? 44 : 68, borderRadius: isPerson ? '50%' : '3px', overflow: 'hidden', background: 'var(--ash)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: isPerson ? '2px solid rgba(139,105,20,0.4)' : '1px solid rgba(139,105,20,0.15)' }}>
                                                             {imgUrl ? (
                                                                 <img src={imgUrl} alt={title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                                             ) : (
-                                                                isPerson ? <User size={18} color="var(--fog)" /> : <Film size={18} color="var(--fog)" />
+                                                                isPerson ? <User size={20} color="var(--fog)" /> : <Film size={20} color="var(--fog)" />
                                                             )}
                                                         </div>
                                                         {/* Info */}
                                                         <div style={{ flex: 1, minWidth: 0 }}>
-                                                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--parchment)', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.95rem', color: 'var(--parchment)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                 {title}
                                                             </div>
-                                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.2rem' }}>
+                                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginTop: '0.25rem' }}>
                                                                 {isPerson ? `🎭 ${dept}` : `🎬 ${year || 'FILM'}`}
                                                             </div>
                                                         </div>
@@ -430,7 +430,7 @@ export default function Navbar() {
                                             animate={{ opacity: 1, height: 'auto' }}
                                             exit={{ opacity: 0, height: 0 }}
                                             className="glass-panel"
-                                            style={{ marginTop: '0.5rem', borderTop: '1px solid var(--sepia)', maxHeight: '300px', overflowY: 'auto', borderRadius: 'var(--radius-card)' }}
+                                            style={{ marginTop: '0.5rem', borderTop: '1px solid var(--sepia)', maxHeight: '300px', overflowY: 'auto', borderRadius: 'var(--radius-card)', width: '100%' }}
                                         >
                                             {searchingPeople && (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem 1.25rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>
@@ -452,13 +452,13 @@ export default function Navbar() {
                                                     onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(242,232,160,0.03)'}
                                                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                                 >
-                                                    <div style={{ width: 40, height: 40, borderRadius: '50%', overflow: 'hidden', background: 'var(--ink)', border: '1px solid var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                        <Buster size={28} mood="smiling" />
+                                                    <div style={{ width: 46, height: 46, borderRadius: '50%', overflow: 'hidden', background: 'var(--ink)', border: '2px solid rgba(139,105,20,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                        <Buster size={32} mood="smiling" />
                                                     </div>
                                                     <div style={{ flex: 1 }}>
-                                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1 }}>@{member.username.toUpperCase()}</div>
-                                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.15em', marginTop: '0.3rem' }}>{(member.role || 'cinephile').toUpperCase()}</div>
-                                                        {member.bio && <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.2rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '300px' }}>"{member.bio}"</div>}
+                                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: 'var(--parchment)', lineHeight: 1 }}>@{member.username.toUpperCase()}</div>
+                                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.15em', marginTop: '0.35rem' }}>{(member.role || 'cinephile').toUpperCase()}</div>
+                                                        {member.bio && <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px' }}>"{member.bio}"</div>}
                                                     </div>
                                                 </Link>
                                             ))}
