@@ -49,7 +49,7 @@ export default function UserProfilePage() {
         queryFn: async () => {
             const { data } = await supabase
                 .from('profiles')
-                .select('id, username, role, bio, avatar_url, followers_count, following_count, is_social_private, created_at, tier')
+                .select('id, username, role, bio, avatar_url, followers_count, following_count, is_social_private, preferences, created_at, tier')
                 .eq('username', routeUsername)
                 .single()
             if (!data) return null
@@ -62,6 +62,7 @@ export default function UserProfilePage() {
                 followersCount: data.followers_count || 0,
                 followingCount: data.following_count || 0,
                 isSocialPrivate: data.is_social_private || false,
+                socialVisibility: (data as any).preferences?.social_visibility || (data.is_social_private ? 'private' : 'public'),
                 createdAt: data.created_at,
             }
         },
@@ -86,6 +87,15 @@ export default function UserProfilePage() {
     })
 
     const profileUser = isOwnProfile ? currentUser : fetchedProfile
+
+    // ── Privacy Enforcement ──
+    const currentFollowing = currentUser?.following || []
+    const profileVisibility = (fetchedProfile as any)?.socialVisibility || 'public'
+    const isFollower = profileUser?.username ? currentFollowing.includes(profileUser.username) : false
+    const isPrivacyBlocked = !isOwnProfile && (
+        (profileVisibility === 'followers' && !isFollower) ||
+        (profileVisibility === 'private')
+    )
 
     // Fetch other user's public logs from Supabase (own logs come from Zustand)
     const { data: otherUserLogs = [] } = useQuery({
@@ -375,6 +385,30 @@ export default function UserProfilePage() {
         <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
             <Buster size={120} mood="peeking" message="Who goes there? Sign in to see your profile." />
             <div style={{ marginTop: '2rem' }}><button className="btn btn-primary" onClick={() => openSignupModal()}>Enter The House</button></div>
+        </div>
+    )
+
+    // ── Privacy Gate — block non-followers if profile is restricted ──
+    if (isPrivacyBlocked && profileUser) return (
+        <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem', maxWidth: 500, margin: '0 auto' }}>
+            <Lock size={48} color="var(--sepia)" style={{ marginBottom: '1rem', opacity: 0.6 }} />
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: 'var(--parchment)', marginBottom: '0.75rem' }}>
+                @{profileUser.username?.toUpperCase()}
+            </div>
+            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--bone)', opacity: 0.7, lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                {profileVisibility === 'private'
+                    ? 'This profile is private. Only the owner can view their activity.'
+                    : 'This profile is visible to followers only. Follow to see their activity.'}
+            </div>
+            {profileVisibility === 'followers' && isAuthenticated && (
+                <button
+                    className="btn btn-primary"
+                    onClick={handleFollow}
+                    style={{ padding: '0.75rem 2rem', fontSize: '0.7rem', letterSpacing: '0.15em' }}
+                >
+                    FOLLOW TO VIEW
+                </button>
+            )}
         </div>
     )
 

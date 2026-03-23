@@ -33,7 +33,9 @@ export default function SettingsPage() {
     const [changingPassword, setChangingPassword] = useState(false)
 
     // ── Privacy ──
-    const [socialVisibility, setSocialVisibility] = useState<string>(user?.socialVisibility || user?.is_social_private ? 'private' : 'public')
+    const [socialVisibility, setSocialVisibility] = useState<string>(
+        (user?.preferences as any)?.social_visibility || (user?.is_social_private ? 'private' : 'public')
+    )
 
     // ── Notifications ──
     const prefs = user?.preferences || {}
@@ -44,7 +46,7 @@ export default function SettingsPage() {
 
     // ── General ──
     const [saving, setSaving] = useState(false)
-    const [dangerExpanded, setDangerExpanded] = useState(false)
+
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/')
@@ -99,7 +101,6 @@ export default function SettingsPage() {
                     bio,
                     avatar_url: avatarUrl,
                     is_social_private: socialVisibility === 'private',
-                    social_visibility: socialVisibility,
                 })
                 .eq('id', user.id)
             if (error) throw error
@@ -109,6 +110,7 @@ export default function SettingsPage() {
             await useAuthStore.getState().setPreference('notif_endorsements', notifEndorsements)
             await useAuthStore.getState().setPreference('notif_comments', notifComments)
             await useAuthStore.getState().setPreference('notif_system', notifSystem)
+            await useAuthStore.getState().setPreference('social_visibility', socialVisibility)
 
             // Update local state
             useAuthStore.getState().updateUser({
@@ -353,7 +355,7 @@ export default function SettingsPage() {
                 <label style={{ ...labelStyle, marginBottom: '0.75rem' }}>SOCIAL VISIBILITY</label>
                 {[
                     { value: 'public', label: 'Public — Visible to everyone' },
-                    { value: 'members', label: 'Members Only — Society members can see your profile' },
+                    { value: 'followers', label: 'Followers Only — Only your followers can see your profile' },
                     { value: 'private', label: 'Private — Only you can see your activity' },
                 ].map(opt => (
                     <label key={opt.value} style={{
@@ -409,55 +411,37 @@ export default function SettingsPage() {
             </div>
 
             {/* ════════════════════════════════════════ */}
-            {/*   SECTION 5 — DATA & DANGER ZONE        */}
+            {/*   SECTION 5 — ACCOUNT ACTIONS            */}
             {/* ════════════════════════════════════════ */}
-            <div style={{
-                ...sectionStyle,
-                borderColor: dangerExpanded ? 'rgba(162,36,36,0.2)' : 'rgba(139,105,20,0.08)',
-            }}>
-                <div
-                    onClick={() => setDangerExpanded(!dangerExpanded)}
-                    style={{ ...sectionHeaderStyle, cursor: 'pointer', marginBottom: dangerExpanded ? '1.25rem' : 0, borderBottom: dangerExpanded ? '1px solid rgba(162,36,36,0.1)' : 'none' }}
-                >
-                    <AlertTriangle size={14} color="#a82424" /> <span style={{ color: '#a82424' }}>DANGER ZONE</span>
-                    <span style={{ marginLeft: 'auto', color: 'var(--fog)' }}>
-                        {dangerExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </span>
+            <div style={sectionStyle}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                    <button
+                        className="btn btn-ghost"
+                        onClick={handleSignOut}
+                        style={{ fontSize: '0.6rem', padding: '0.65rem 1rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', width: '100%' }}
+                    >
+                        <LogOut size={12} /> SIGN OUT
+                    </button>
+                    <button
+                        className="btn btn-ghost"
+                        onClick={() => { toast.success('CSV export available from your profile page') }}
+                        style={{ fontSize: '0.6rem', padding: '0.65rem 1rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', width: '100%' }}
+                    >
+                        <Download size={12} /> EXPORT DATA (CSV)
+                    </button>
+                    <div style={{ height: 1, background: 'rgba(139,105,20,0.08)', margin: '0.25rem 0' }} />
+                    <button
+                        className="btn btn-ghost"
+                        onClick={handleDeleteAccount}
+                        style={{
+                            fontSize: '0.6rem', padding: '0.65rem 1rem', letterSpacing: '0.1em',
+                            borderColor: 'rgba(162,36,36,0.25)', color: '#a82424',
+                            display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', width: '100%',
+                        }}
+                    >
+                        <Trash2 size={12} /> DELETE ACCOUNT
+                    </button>
                 </div>
-
-                {dangerExpanded && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        <button
-                            className="btn btn-ghost"
-                            onClick={handleSignOut}
-                            style={{ fontSize: '0.6rem', padding: '0.6rem 1rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}
-                        >
-                            <LogOut size={12} /> SIGN OUT
-                        </button>
-                        <button
-                            className="btn btn-ghost"
-                            onClick={() => { toast.success('CSV export available from your profile page') }}
-                            style={{ fontSize: '0.6rem', padding: '0.6rem 1rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}
-                        >
-                            <Download size={12} /> EXPORT DATA (CSV)
-                        </button>
-                        <div style={{ height: 1, background: 'rgba(162,36,36,0.1)', margin: '0.25rem 0' }} />
-                        <button
-                            className="btn btn-ghost"
-                            onClick={handleDeleteAccount}
-                            style={{
-                                fontSize: '0.6rem', padding: '0.6rem 1rem', letterSpacing: '0.1em',
-                                borderColor: 'rgba(162,36,36,0.3)', color: '#a82424',
-                                display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start',
-                            }}
-                        >
-                            <Trash2 size={12} /> DELETE ACCOUNT PERMANENTLY
-                        </button>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.1em', color: 'var(--fog)', opacity: 0.6 }}>
-                            This will permanently erase all your logs, lists, reviews, and profile data. This action cannot be undone.
-                        </div>
-                    </div>
-                )}
             </div>
 
             {/* ── GOLD DIVIDER ── */}
