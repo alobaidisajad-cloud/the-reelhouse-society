@@ -1,0 +1,117 @@
+<!-- 
+  ReelHouse Society — Email Confirmation Template
+  ────────────────────────────────────────────────
+  Paste this into Supabase → Authentication → Email Templates → "Confirm signup"
+  
+  The {{ .ConfirmationURL }} token is replaced by Supabase automatically.
+-->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your Enrollment — The ReelHouse Society</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0a0703;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  
+  <!-- Outer wrapper -->
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#0a0703;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        
+        <!-- Inner card -->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background-color:#12100d;border:1px solid #2a2520;border-radius:4px;">
+          
+          <!-- Gold accent bar -->
+          <tr>
+            <td style="height:3px;background:linear-gradient(90deg,#8b6914,#c4a035,#8b6914);"></td>
+          </tr>
+          
+          <!-- Logo / Header -->
+          <tr>
+            <td style="padding:40px 32px 24px;text-align:center;">
+              <div style="font-size:11px;letter-spacing:0.35em;color:#8b6914;font-weight:600;margin-bottom:8px;">
+                THE REELHOUSE SOCIETY
+              </div>
+              <div style="font-size:10px;letter-spacing:0.2em;color:#6b6050;margin-bottom:0;">
+                EST. MMXXV
+              </div>
+            </td>
+          </tr>
+          
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 32px;">
+              <div style="height:1px;background-color:#2a2520;"></div>
+            </td>
+          </tr>
+          
+          <!-- Main Content -->
+          <tr>
+            <td style="padding:32px 32px 24px;text-align:center;">
+              <h1 style="font-size:24px;color:#f5f0e8;margin:0 0 16px;font-weight:400;letter-spacing:0.02em;">
+                Confirm Your Enrollment
+              </h1>
+              <p style="font-size:14px;color:#a09888;line-height:1.7;margin:0 0 32px;">
+                Your clearance application has been received.<br>
+                Click below to verify your identity and gain entry to the Society.
+              </p>
+              
+              <!-- CTA Button -->
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;">
+                <tr>
+                  <td style="background-color:#8b6914;border-radius:3px;">
+                    <a href="{{ .ConfirmationURL }}" 
+                       target="_blank"
+                       style="display:inline-block;padding:14px 40px;font-size:12px;letter-spacing:0.2em;color:#0a0703;text-decoration:none;font-weight:700;">
+                      CONFIRM ENROLLMENT
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          
+          <!-- Secondary info -->
+          <tr>
+            <td style="padding:0 32px 32px;text-align:center;">
+              <p style="font-size:11px;color:#6b6050;line-height:1.8;margin:0;">
+                If you didn't request this, you can safely ignore this message.<br>
+                This link expires in 24 hours.
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Divider -->
+          <tr>
+            <td style="padding:0 32px;">
+              <div style="height:1px;background-color:#2a2520;"></div>
+            </td>
+          </tr>
+          
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 32px 32px;text-align:center;">
+              <p style="font-size:10px;letter-spacing:0.15em;color:#4a4540;margin:0 0 8px;">
+                EVERY FRAME TELLS A STORY.
+              </p>
+              <p style="font-size:10px;color:#3a3530;margin:0;">
+                © 2025 The ReelHouse Society · thereelhousesociety.com
+              </p>
+            </td>
+          </tr>
+          
+          <!-- Bottom gold accent -->
+          <tr>
+            <td style="height:2px;background:linear-gradient(90deg,transparent,#8b6914,transparent);"></td>
+          </tr>
+          
+        </table>
+        
+      </td>
+    </tr>
+  </table>
+  
+</body>
+</html>

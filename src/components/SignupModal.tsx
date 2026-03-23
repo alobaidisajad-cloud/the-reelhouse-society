@@ -5,6 +5,7 @@ import { X, Film, Building, Lock, Terminal, Mail, RefreshCw } from 'lucide-react
 import { useUIStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
+import { isDisposableEmail, isValidEmailFormat } from '../utils/disposableEmails'
 import VelvetRopeGate from './signup/VelvetRopeGate'
 import ForgotPasswordScreen from './signup/ForgotPasswordScreen'
 import EmailConfirmationScreen from './signup/EmailConfirmationScreen'
@@ -105,6 +106,14 @@ export default function SignupModal() {
     const handleSubmit = async () => {
         if (!email || !password || (!isLogin && !username)) {
             toast.error('Please fill all fields')
+            return
+        }
+        if (!isValidEmailFormat(email)) {
+            toast.error('Please enter a valid email address.')
+            return
+        }
+        if (isDisposableEmail(email)) {
+            toast.error('Disposable emails are not permitted. Use a permanent address to join the Society.')
             return
         }
         if (!isLogin && !passwordStrong) {
