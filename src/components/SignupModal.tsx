@@ -69,6 +69,50 @@ export default function SignupModal() {
         }
     }, [signupModalOpen, isAuthenticated])
 
+    // ── AUTO-DETECT EMAIL CONFIRMATION ──
+    // Polls every 5s to check if the user confirmed their email.
+    // When they click the link (even in a new tab), the next poll succeeds
+    // and logs them in automatically on the original page.
+    useEffect(() => {
+        if (!awaitingConfirmation || !email || !password) return
+        let cancelled = false
+        let attempts = 0
+        const maxAttempts = 120 // 10 minutes of polling
+
+        const poll = setInterval(async () => {
+            if (cancelled || attempts >= maxAttempts) {
+                clearInterval(poll)
+                return
+            }
+            attempts++
+            try {
+                const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+                if (!error && data?.session) {
+                    clearInterval(poll)
+                    if (cancelled) return
+                    // Fetch profile and set auth state
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('*')
+                        .eq('id', data.session.user.id)
+                        .single()
+                    useAuthStore.setState({
+                        user: { ...data.session.user, ...profile, following: [] } as any,
+                        isAuthenticated: true,
+                    })
+                    toast.success(`Welcome to The ReelHouse Society! 🎬`)
+                    setAwaitingConfirmation(false)
+                    closeSignupModal()
+                    resetForm()
+                }
+            } catch {
+                // Silently retry — email not yet confirmed
+            }
+        }, 5000)
+
+        return () => { cancelled = true; clearInterval(poll) }
+    }, [awaitingConfirmation, email, password])
+
     const [showPassword, setShowPassword] = useState(false)
     const toggleVibe = (v: string) => setVibes((prev) =>
         prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]

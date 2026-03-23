@@ -61,6 +61,9 @@ export default function EmailConfirmationScreen({ confirmedEmail, resending, onR
                         <RefreshCw size={12} style={{ animation: resending ? 'spin 1s linear infinite' : 'none' }} />
                         {resending ? 'SENDING...' : 'RESEND LINK'}
                     </button>
+                    <p style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '1.5rem', opacity: 0.6 }}>
+                        THIS PAGE WILL AUTOMATICALLY LOG YOU IN ONCE CONFIRMED.
+                    </p>
                 </motion.div>
             </motion.div>
         </AnimatePresence>
