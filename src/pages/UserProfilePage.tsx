@@ -519,7 +519,7 @@ export default function UserProfilePage() {
                             <button className="btn btn-primary" style={{ padding: IS_TOUCH ? '0.75rem 1.5rem' : '1rem 2rem', fontSize: IS_TOUCH ? '0.65rem' : '0.75rem', boxShadow: `0 0 20px ${stats.color}30`, width: IS_TOUCH ? '100%' : undefined, justifyContent: IS_TOUCH ? 'center' : undefined }} onClick={() => openLogModal()}>+ RECORD NEW LOG</button>
                             {isOwnProfile && (
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button className="btn btn-ghost" style={{ flex: 1, padding: '0.6rem', fontSize: '0.6rem' }}><Settings size={12} style={{ marginRight: '0.4rem' }} /> SETTINGS</button>
+                                    <button className="btn btn-ghost" style={{ flex: 1, padding: '0.6rem', fontSize: '0.6rem' }} onClick={() => { window.location.href = '/settings' }}><Settings size={12} style={{ marginRight: '0.4rem' }} /> SETTINGS</button>
                                     <button
                                         className="btn btn-ghost"
                                         onClick={() => { useAuthStore.getState().logout(); }}
