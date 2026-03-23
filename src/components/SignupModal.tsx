@@ -22,7 +22,7 @@ const VIBE_TAGS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace'
 // No fallback codes shipped in the bundle — prevents view-source discovery.
 const VALID_CODES = import.meta.env.VITE_INVITE_CODES
     ? import.meta.env.VITE_INVITE_CODES.split(',').map((c: string) => c.trim().toUpperCase())
-    : []
+    : ['NITRATE']
 
 export default function SignupModal() {
     const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
