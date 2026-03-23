@@ -1,12 +1,13 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Film, BookOpen, Compass, User, Users, Menu, X, LogIn, Star, Crown, FileText, MapPin, Loader } from 'lucide-react'
+import { Search, Film, BookOpen, Compass, User, Users, Menu, X, LogIn, Star, Crown, FileText, MapPin, Loader, UserPlus, UserCheck } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { tmdb } from '../tmdb'
 import Buster from './Buster'
 import NotificationBell from './NotificationBell'
+import toast from 'react-hot-toast'
 
 // Route prefetch map — loads chunks on hover for instant navigation
 const prefetchRoute = (path: string) => {
@@ -57,6 +58,7 @@ export default function Navbar() {
     const [hidden, setHidden] = useState(false)
     const [searching, setSearching] = useState(false)
     const [searchingPeople, setSearchingPeople] = useState(false)
+    const [followingLoading, setFollowingLoading] = useState<Record<string, boolean>>({})
     const lastScrollY = useRef(0)
 
     useEffect(() => {
@@ -117,7 +119,7 @@ export default function Navbar() {
                 if (!isSupabaseConfigured) { setSearchingPeople(false); return }
                 const { data, error } = await supabase
                     .from('profiles')
-                    .select('username, role, bio, avatar_url')
+                    .select('id, username, role, bio, avatar_url')
                     .or(`username.ilike.%${peopleQuery}%,bio.ilike.%${peopleQuery}%`)
                     .order('username', { ascending: true })
                     .limit(8)
@@ -452,14 +454,56 @@ export default function Navbar() {
                                                     onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(242,232,160,0.03)'}
                                                     onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                                 >
-                                                    <div style={{ width: 46, height: 46, borderRadius: '50%', overflow: 'hidden', background: 'var(--ink)', border: '2px solid rgba(139,105,20,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                    <div style={{ width: 46, height: 46, borderRadius: '50%', overflow: 'hidden', background: 'var(--ink)', border: '2px solid rgba(139,105,20,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                                         <Buster size={32} mood="smiling" />
                                                     </div>
-                                                    <div style={{ flex: 1 }}>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
                                                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: 'var(--parchment)', lineHeight: 1 }}>@{member.username.toUpperCase()}</div>
                                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--sepia)', letterSpacing: '0.15em', marginTop: '0.35rem' }}>{(member.role || 'cinephile').toUpperCase()}</div>
                                                         {member.bio && <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.25rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '400px' }}>"{member.bio}"</div>}
                                                     </div>
+                                                    {/* Quick Follow Button */}
+                                                    {user && member.username !== user.username && (
+                                                        <button
+                                                            className={`btn ${(user.following || []).includes(member.username) ? 'btn-ghost' : 'btn-primary'}`}
+                                                            onClick={async (e) => {
+                                                                e.preventDefault()
+                                                                e.stopPropagation()
+                                                                if (followingLoading[member.username]) return
+                                                                setFollowingLoading(prev => ({ ...prev, [member.username]: true }))
+                                                                const alreadyFollowing = (user.following || []).includes(member.username)
+                                                                try {
+                                                                    if (alreadyFollowing) {
+                                                                        useAuthStore.getState().updateUser({ following: (user.following || []).filter((u: string) => u !== member.username) })
+                                                                        toast.success(`Unfollowed @${member.username}`)
+                                                                        await supabase.from('interactions').delete()
+                                                                            .eq('user_id', user.id)
+                                                                            .eq('target_user_id', member.id)
+                                                                            .eq('type', 'follow')
+                                                                    } else {
+                                                                        useAuthStore.getState().updateUser({ following: [...(user.following || []), member.username] })
+                                                                        toast.success(`Now following @${member.username} ✦`)
+                                                                        await supabase.from('interactions').insert({
+                                                                            user_id: user.id,
+                                                                            target_user_id: member.id,
+                                                                            type: 'follow'
+                                                                        })
+                                                                        void supabase.from('notifications').insert({
+                                                                            user_id: member.id,
+                                                                            type: 'follow',
+                                                                            from_username: user.username,
+                                                                            message: `@${user.username} is now following you.`,
+                                                                        })
+                                                                    }
+                                                                } catch { toast.error('Something went wrong.') }
+                                                                finally { setFollowingLoading(prev => ({ ...prev, [member.username]: false })) }
+                                                            }}
+                                                            style={{ flexShrink: 0, fontSize: '0.5rem', padding: '0.35rem 0.7rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.3rem', minWidth: 'auto' }}
+                                                            disabled={followingLoading[member.username]}
+                                                        >
+                                                            {followingLoading[member.username] ? '...' : (user.following || []).includes(member.username) ? <><UserCheck size={11} /> FOLLOWING</> : <><UserPlus size={11} /> FOLLOW</>}
+                                                        </button>
+                                                    )}
                                                 </Link>
                                             ))}
                                         </motion.div>
