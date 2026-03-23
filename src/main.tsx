@@ -84,8 +84,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <App />
         </ErrorBoundary>
         <Toaster
-          position="bottom-right"
+          position="top-center"
           gutter={8}
+          containerStyle={{ zIndex: 99999, top: 80 }}
           toastOptions={{
             duration: 3000,
             style: {
@@ -102,13 +103,13 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
                 border: '1px solid #3A3228',
                 borderLeft: '3px solid #F2E8A0',
                 borderRadius: '2px 6px 3px 5px / 3px 4px 5px 3px',
-                padding: '0.6rem 1rem',
+                padding: '0.75rem 1.25rem',
                 fontFamily: "'Bungee', sans-serif",
-                fontSize: '0.62rem',
+                fontSize: '0.65rem',
                 letterSpacing: '0.12em',
                 color: '#E8DFC8',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
-                maxWidth: '320px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(242,232,160,0.15)',
+                maxWidth: '360px',
               },
             },
             error: {
@@ -116,16 +117,16 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
               icon: null,
               style: {
                 background: 'linear-gradient(135deg, #1C1710 0%, #0A0703 100%)',
-                border: '1px solid #3A3228',
-                borderLeft: '3px solid #5C1A0B',
+                border: '1px solid #5C1A0B',
+                borderLeft: '3px solid #a82424',
                 borderRadius: '2px 6px 3px 5px / 3px 4px 5px 3px',
-                padding: '0.6rem 1rem',
+                padding: '0.75rem 1.25rem',
                 fontFamily: "'Bungee', sans-serif",
-                fontSize: '0.62rem',
+                fontSize: '0.65rem',
                 letterSpacing: '0.12em',
                 color: '#E8DFC8',
-                boxShadow: '0 4px 24px rgba(0,0,0,0.6)',
-                maxWidth: '320px',
+                boxShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(162,36,36,0.2)',
+                maxWidth: '360px',
               },
             },
           }}
