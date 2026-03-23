@@ -70,7 +70,6 @@ export default function FeedPage() {
 
     // ── Sidebar Data ──
     const [recentLists, setRecentLists] = useState<any[]>([])
-    const [activeAgents, setActiveAgents] = useState<any[]>([])
 
     // Tab indicator ref for animated underline
     const tabBarRef = useRef<HTMLDivElement>(null)
@@ -170,17 +169,6 @@ export default function FeedPage() {
                     title: l.title,
                     curator: curatorMap[l.user_id] || 'The Society'
                 })))
-            }
-
-            const { data: agentsData } = await supabase
-                .from('profiles')
-                .select('username')
-                .neq('username', user?.username || '')
-                .order('updated_at', { ascending: false })
-                .limit(5)
-
-            if (agentsData) {
-                setActiveAgents(agentsData.map((p: any) => p.username).filter(Boolean))
             }
         } catch (e) {
             console.error('Sidebar fetch error:', e)
@@ -504,38 +492,6 @@ export default function FeedPage() {
                             </Link>
                         </div>
 
-                        {/* Active Field Agents — Real Supabase data */}
-                        <div>
-                            <div className="section-title" style={{ borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
-                                ACTIVE FIELD AGENTS
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {activeAgents.length === 0 ? (
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--fog)', opacity: 0.4, fontStyle: 'italic' }}>
-                                        Awaiting the first arrivals...
-                                    </div>
-                                ) : activeAgents.map((agent: any) => (
-                                    <Link
-                                        key={agent}
-                                        to={`/user/${agent}`}
-                                        style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.5rem', background: 'var(--soot)', border: '1px solid var(--ash)', textDecoration: 'none', borderRadius: '2px', transition: 'background 0.2s' }}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(28,23,16,0.8)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'var(--soot)'}
-                                    >
-                                        <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--ash)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                                <circle cx="6" cy="6" r="4.5" stroke="var(--sepia)" strokeWidth="1" />
-                                                <circle cx="6" cy="6" r="2" fill="var(--sepia)" opacity="0.6" />
-                                                <circle cx="7" cy="5" r="0.5" fill="var(--parchment)" opacity="0.8" />
-                                            </svg>
-                                        </div>
-                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--bone)' }}>
-                                            @{agent.toUpperCase()}
-                                        </span>
-                                    </Link>
-                                ))}
-                            </div>
-                        </div>
 
                     </div>
                     </SectionErrorBoundary>
