@@ -18,7 +18,7 @@ export default function SettingsPage() {
     const navigate = useNavigate()
 
     // ── Profile ──
-    const [displayName, setDisplayName] = useState(user?.displayName || user?.username || '')
+    const [displayName, setDisplayName] = useState(user?.display_name || user?.displayName || user?.username || '')
     const [bio, setBio] = useState(user?.bio || '')
     const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null)
     const [avatarFile, setAvatarFile] = useState<File | null>(null)
@@ -47,6 +47,20 @@ export default function SettingsPage() {
     // ── General ──
     const [saving, setSaving] = useState(false)
 
+
+    // ── Re-sync local state when the user object updates (e.g. after initAuthSync re-fetches from Supabase) ──
+    useEffect(() => {
+        if (!user) return
+        setDisplayName(user.display_name || (user as any).displayName || user.username || '')
+        setBio(user.bio || '')
+        setAvatarPreview(user.avatar_url || null)
+        const p = user.preferences || {} as any
+        setSocialVisibility(p.social_visibility || (user.is_social_private ? 'private' : 'public'))
+        setNotifFollows(p.notif_follows !== undefined ? p.notif_follows : true)
+        setNotifEndorsements(p.notif_endorsements !== undefined ? p.notif_endorsements : true)
+        setNotifComments(p.notif_comments !== undefined ? p.notif_comments : true)
+        setNotifSystem(p.notif_system !== undefined ? p.notif_system : true)
+    }, [user?.id, user?.preferences, user?.bio, user?.display_name, user?.avatar_url])
 
     useEffect(() => {
         if (!isAuthenticated) navigate('/')
@@ -114,7 +128,8 @@ export default function SettingsPage() {
 
             // Update local state
             useAuthStore.getState().updateUser({
-                bio, displayName, avatar_url: avatarUrl,
+                bio, avatar_url: avatarUrl,
+                display_name: displayName,
                 is_social_private: socialVisibility === 'private',
             } as any)
 
