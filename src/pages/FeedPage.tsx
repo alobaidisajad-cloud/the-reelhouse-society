@@ -235,7 +235,7 @@ export default function FeedPage() {
                         gap: 0,
                         marginTop: IS_TOUCH ? '1rem' : '1.5rem',
                         position: 'sticky',
-                        top: 64,
+                        top: IS_TOUCH ? 56 : 64,
                         zIndex: 100,
                         background: 'rgba(8,6,4,0.95)',
                         backdropFilter: 'blur(8px)',
