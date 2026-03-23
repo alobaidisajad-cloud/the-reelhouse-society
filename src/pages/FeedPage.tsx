@@ -260,7 +260,7 @@ export default function FeedPage() {
                             fontWeight: feedTab === 'for-you' ? 700 : 400,
                         }}
                     >
-                        THE WIRE
+                        MAIN REEL
                     </button>
                     {isAuthenticated && (
                         <button
@@ -367,7 +367,7 @@ export default function FeedPage() {
                                     onClick={() => setFeedTab('for-you')}
                                     style={{ padding: '0.7rem 2rem', letterSpacing: '0.15em', fontSize: '0.6rem' }}
                                 >
-                                    BROWSE THE WIRE →
+                                    BROWSE MAIN REEL →
                                 </button>
                                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                             </div>
