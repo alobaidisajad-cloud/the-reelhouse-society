@@ -13,6 +13,17 @@ export default function ResetPasswordPage() {
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
 
+    // Hide navbar while on this page — reset needs a clean, isolated experience
+    useEffect(() => {
+        const nav = document.querySelector('.navbar') as HTMLElement
+        if (nav) nav.style.display = 'none'
+        document.body.style.overflow = 'hidden'
+        return () => {
+            if (nav) nav.style.display = ''
+            document.body.style.overflow = ''
+        }
+    }, [])
+
     // Password strength checks (same as SignupModal)
     const checks = {
         length:    password.length >= 8,
@@ -47,7 +58,7 @@ export default function ResetPasswordPage() {
 
     if (success) {
         return (
-            <div style={{ minHeight: '100vh', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
                 <div style={{ width: '100%', maxWidth: 440, textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', padding: '1.25rem', borderRadius: '50%', background: 'rgba(76,175,80,0.1)', border: '1px solid #4caf50', marginBottom: '1.5rem' }}>
                         <Check size={32} color="#4caf50" />
@@ -67,7 +78,7 @@ export default function ResetPasswordPage() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
             <div style={{
                 width: '100%', maxWidth: 440,
                 background: 'var(--soot)', border: '1px solid var(--ash)',
