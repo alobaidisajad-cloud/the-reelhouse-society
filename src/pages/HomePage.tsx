@@ -66,14 +66,14 @@ export default function HomePage() {
                 alignItems: 'center',
                 position: 'relative'
             }}>
-                {heroFilm?.backdrop_path && !IS_TOUCH && (
+                {heroFilm?.backdrop_path && (
                     <div style={{
                         position: 'absolute',
                         inset: 0,
-                        backgroundImage: `url(${tmdb.backdrop(heroFilm.backdrop_path, 'w1280')})`,
+                        backgroundImage: `url(${tmdb.backdrop(heroFilm.backdrop_path, IS_TOUCH ? 'w780' : 'w1280')})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 15%',
-                        opacity: 0.55,
+                        opacity: IS_TOUCH ? 0.35 : 0.55,
                         filter: 'sepia(0.2) brightness(0.60)',
                         maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
@@ -81,16 +81,14 @@ export default function HomePage() {
                         pointerEvents: 'none',
                     }} />
                 )}
-                {/* Spotlight ambient glow — desktop only */}
-                {!IS_TOUCH && (
-                    <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        background: 'radial-gradient(circle at center, transparent 0%, var(--ink) 90%)',
-                        zIndex: 0,
-                        pointerEvents: 'none',
-                    }} />
-                )}
+                {/* Spotlight ambient glow */}
+                <div style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'radial-gradient(circle at center, transparent 0%, var(--ink) 90%)',
+                    zIndex: 0,
+                    pointerEvents: 'none',
+                }} />
 
                 <div className="container" style={{ width: '100%', position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' }}>
 
