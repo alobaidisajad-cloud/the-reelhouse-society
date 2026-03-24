@@ -23,7 +23,7 @@ export default function Footer() {
                 {/* Brand */}
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                        <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ height: '20px', width: 'auto', opacity: 0.9 }} />
+                        <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ height: '40px', width: 'auto', opacity: 0.9 }} />
                         <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.85rem', color: 'var(--parchment)' }}>
                             ReelHouse
                         </span>

@@ -115,22 +115,13 @@ function ReelSegmentSVG({ size, filled }: { size: number; filled: 'full' | 'half
         position: 'absolute', top: 0, left: 0,
         pointerEvents: 'none'
     }
-    const fullStyle: React.CSSProperties = {
-        width: size, height: size, objectFit: 'contain',
-        filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8)) saturate(1.2)',
-        position: 'absolute', top: 0, left: 0,
-        pointerEvents: 'none'
-    }
+    const srcPath = filled === 'full' ? '/rating-full.png' 
+                  : filled === 'half' ? '/rating-half.png' 
+                  : '/rating-empty.png';
 
     return (
         <div style={{ position: 'relative', width: size, height: size }}>
-            <img src="/rating-reel.svg" alt="" style={emptyStyle} loading="lazy" decoding="async" />
-            {filled === 'full' && (
-                <img src="/rating-reel.svg" alt="" style={fullStyle} loading="lazy" decoding="async" />
-            )}
-            {filled === 'half' && (
-                <img src="/rating-reel.svg" alt="" style={{ ...fullStyle, clipPath: 'inset(0 50% 0 0)' }} loading="lazy" decoding="async" />
-            )}
+            <img src={srcPath} alt={`Rating: ${filled}`} style={{ width: size, height: size, objectFit: 'contain' }} loading="lazy" decoding="async" />
         </div>
     )
 }
