@@ -124,12 +124,12 @@ function ReelSegmentSVG({ size, filled }: { size: number; filled: 'full' | 'half
 
     return (
         <div style={{ position: 'relative', width: size, height: size }}>
-            <img src="/rating-reel.svg" alt="" style={emptyStyle} loading="lazy" decoding="async" />
+            <img src="/rating-reel.png" alt="" style={emptyStyle} loading="lazy" decoding="async" />
             {filled === 'full' && (
-                <img src="/rating-reel.svg" alt="" style={fullStyle} loading="lazy" decoding="async" />
+                <img src="/rating-reel.png" alt="" style={fullStyle} loading="lazy" decoding="async" />
             )}
             {filled === 'half' && (
-                <img src="/rating-reel.svg" alt="" style={{ ...fullStyle, clipPath: 'inset(0 50% 0 0)' }} loading="lazy" decoding="async" />
+                <img src="/rating-reel.png" alt="" style={{ ...fullStyle, clipPath: 'inset(0 50% 0 0)' }} loading="lazy" decoding="async" />
             )}
         </div>
     )
