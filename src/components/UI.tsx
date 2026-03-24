@@ -109,29 +109,29 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
 })
 
 function ReelSegmentSVG({ size, filled }: { size: number; filled: 'full' | 'half' | 'empty' }) {
-    const colors = {
-        full: { outer: '#8B6914', inner: '#F2E8A0', hub: '#F2E8A0' },
-        half: { outer: '#8B6914', inner: '#8B6914', hub: '#F2E8A0' },
-        empty: { outer: '#3A3228', inner: '#1C1710', hub: '#3A3228' },
+    const emptyStyle: React.CSSProperties = {
+        width: size, height: size, objectFit: 'contain', 
+        filter: 'grayscale(100%) brightness(0.25) opacity(0.5)',
+        position: 'absolute', top: 0, left: 0,
+        pointerEvents: 'none'
     }
-    const c = colors[filled]
+    const fullStyle: React.CSSProperties = {
+        width: size, height: size, objectFit: 'contain',
+        filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.8)) saturate(1.2)',
+        position: 'absolute', top: 0, left: 0,
+        pointerEvents: 'none'
+    }
 
     return (
-        <svg width={size} height={size} viewBox="0 0 22 22" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="11" cy="11" r="10" stroke={c.outer} strokeWidth="1.5" fill="#0A0703" />
-            {/* Film holes */}
-            <circle cx="11" cy="4" r="1.8" fill={c.inner} />
-            <circle cx="11" cy="18" r="1.8" fill={c.inner} />
-            <circle cx="4" cy="11" r="1.8" fill={c.inner} />
-            <circle cx="18" cy="11" r="1.8" fill={c.inner} />
-            <circle cx="6.5" cy="6.5" r="1.5" fill={c.inner} opacity="0.7" />
-            <circle cx="15.5" cy="6.5" r="1.5" fill={c.inner} opacity="0.7" />
-            <circle cx="6.5" cy="15.5" r="1.5" fill={c.inner} opacity="0.7" />
-            <circle cx="15.5" cy="15.5" r="1.5" fill={c.inner} opacity="0.7" />
-            {/* Center hub */}
-            <circle cx="11" cy="11" r="4" fill={filled === 'full' ? '#8B6914' : '#1C1710'} stroke={c.outer} strokeWidth="1" />
-            <circle cx="11" cy="11" r="2" fill={c.hub} />
-        </svg>
+        <div style={{ position: 'relative', width: size, height: size }}>
+            <img src="/rating-reel.png" alt="" style={emptyStyle} loading="lazy" decoding="async" />
+            {filled === 'full' && (
+                <img src="/rating-reel.png" alt="" style={fullStyle} loading="lazy" decoding="async" />
+            )}
+            {filled === 'half' && (
+                <img src="/rating-reel.png" alt="" style={{ ...fullStyle, clipPath: 'inset(0 50% 0 0)' }} loading="lazy" decoding="async" />
+            )}
+        </div>
     )
 }
 
@@ -271,15 +271,7 @@ export function PersonPlaceholder({ size = '100%' }: PersonPlaceholderProps) {
 
 function FilmReelIcon() {
     return (
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-            <circle cx="16" cy="16" r="14" stroke="#3A3228" strokeWidth="1.5" fill="#1C1710" />
-            <circle cx="16" cy="16" r="5" stroke="#3A3228" strokeWidth="1.5" />
-            <circle cx="16" cy="16" r="2" fill="#3A3228" />
-            <circle cx="16" cy="7" r="2.5" fill="#3A3228" />
-            <circle cx="16" cy="25" r="2.5" fill="#3A3228" />
-            <circle cx="7" cy="16" r="2.5" fill="#3A3228" />
-            <circle cx="25" cy="16" r="2.5" fill="#3A3228" />
-        </svg>
+        <img src="/reelhouse-logo.svg" alt="ReelHouse Frame" width="32" height="32" style={{ opacity: 0.3, filter: 'grayscale(100%)' }} />
     )
 }
 

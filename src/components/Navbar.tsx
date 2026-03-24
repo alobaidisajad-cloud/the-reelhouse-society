@@ -175,7 +175,7 @@ export default function Navbar() {
                 <div className="navbar-inner" style={{ position: 'relative' }}>
                     {/* Logo */}
                     <Link to="/" className="nav-logo">
-                        <ReelIcon />
+                        <img src="/reelhouse-logo.svg" alt="ReelHouse Logo" width="28" height="28" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
                         <span className="nav-logo-text">The ReelHouse Society</span>
                         <div className="nav-logo-buster">
                             <Buster size={40} mood="peeking" />
@@ -578,16 +578,3 @@ export default function Navbar() {
     )
 }
 
-function ReelIcon() {
-    return (
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="14" cy="14" r="12" stroke="#8B6914" strokeWidth="1.5" fill="#0A0703" />
-            <circle cx="14" cy="14" r="5" stroke="#8B6914" strokeWidth="1.5" fill="#1C1710" />
-            <circle cx="14" cy="14" r="2" fill="#F2E8A0" />
-            <circle cx="14" cy="6" r="2.5" fill="#3A3228" stroke="#8B6914" strokeWidth="0.8" />
-            <circle cx="14" cy="22" r="2.5" fill="#3A3228" stroke="#8B6914" strokeWidth="0.8" />
-            <circle cx="6" cy="14" r="2.5" fill="#3A3228" stroke="#8B6914" strokeWidth="0.8" />
-            <circle cx="22" cy="14" r="2.5" fill="#3A3228" stroke="#8B6914" strokeWidth="0.8" />
-        </svg>
-    )
-}
