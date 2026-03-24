@@ -441,10 +441,10 @@ export default function UserProfilePage() {
             <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
                 {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
-                    <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.5rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
+                    <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.25rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
                         {/* Avatar */}
                         <div style={{ position: 'relative', flexShrink: 0 }}>
-                            <div style={{ width: 140, height: 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}20`, overflow: 'hidden' }}>
+                            <div className="profile-avatar-ring" style={{ width: IS_TOUCH ? 110 : 140, height: IS_TOUCH ? 110 : 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}20`, overflow: 'hidden' }}>
                                 {renderAvatar(isEditing ? editAvatar : (profileUser?.avatar || 'smiling'), 90)}
                                 {isEditing && (
                                     <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', padding: '0.5rem' }}>
@@ -466,11 +466,11 @@ export default function UserProfilePage() {
 
                         {/* Identity */}
                         <div className="profile-identity" style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 300 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: IS_TOUCH ? '0.5rem' : '1rem', marginBottom: '0.5rem', flexWrap: 'wrap', justifyContent: IS_TOUCH ? 'center' : undefined }}>
                                 {isEditing ? (
                                     <input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} style={{ background: 'var(--ink)', border: '1px solid var(--sepia)', color: 'var(--parchment)', fontFamily: 'var(--font-display)', fontSize: '1.8rem', padding: '0.2rem 0.5rem', width: 'auto' }} />
                                 ) : (
-                                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: 'var(--parchment)', lineHeight: 1, display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.6rem, 6vw, 2.2rem)' : '2.5rem', color: 'var(--parchment)', lineHeight: 1.1, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: IS_TOUCH ? 'center' : undefined, flexWrap: 'wrap', textAlign: IS_TOUCH ? 'center' as const : undefined }}>
                                         @{profileUser.username.toUpperCase()}
                                         {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem', verticalAlign: 'middle', height: 'fit-content' }}><Star size={10} fill="currentColor" /> AUTEUR</span>}
                                     </h1>
@@ -510,11 +510,11 @@ export default function UserProfilePage() {
                                 )}
                             </div>
 
-                            <div style={{ marginBottom: '1.5rem' }}>
+                            <div style={{ marginBottom: IS_TOUCH ? '1rem' : '1.5rem' }}>
                                 {isEditing ? (
                                     <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Add your cinematic manifesto..." style={{ background: 'var(--ink)', border: '1px solid var(--ash)', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', width: '100%', height: '80px', padding: '0.75rem', borderRadius: '4px', resize: 'none' }} />
                                 ) : (
-                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 600, lineHeight: 1.5, opacity: profileUser.bio ? 1 : 0.5 }}>
+                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.9rem' : '1rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 600, lineHeight: 1.5, opacity: profileUser.bio ? 1 : 0.5, textAlign: IS_TOUCH ? 'center' as const : undefined, margin: IS_TOUCH ? '0 auto' : undefined }}>
                                         {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
                                     </p>
                                 )}
@@ -532,7 +532,7 @@ export default function UserProfilePage() {
                             )}
 
                             {/* Stats bar */}
-                            <div className="profile-stats-row" style={{ display: 'flex', gap: IS_TOUCH ? '1rem' : '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: IS_TOUCH ? '1rem' : '1.5rem', justifyContent: IS_TOUCH ? 'center' : undefined, flexWrap: IS_TOUCH ? 'wrap' : undefined }}>
+                            <div className="profile-stats-row" style={{ display: IS_TOUCH ? 'grid' : 'flex', gridTemplateColumns: IS_TOUCH ? 'repeat(3, 1fr)' : undefined, gap: IS_TOUCH ? '1rem' : '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: IS_TOUCH ? '1rem' : '1.5rem', justifyContent: IS_TOUCH ? 'center' : undefined, justifyItems: IS_TOUCH ? 'center' as const : undefined, textAlign: IS_TOUCH ? 'center' as const : undefined }}>
                                 {[
                                     { value: profileLogs.length, label: 'ACTIVITY', onClick: null, icon: null },
                                     { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers'), icon: null },
@@ -540,9 +540,9 @@ export default function UserProfilePage() {
                                     { value: profileStubs.length, label: 'STUBS', onClick: null, icon: null },
                                     ...(streak > 0 ? [{ value: streak, label: streak >= 30 ? '🔥 OBSESSED' : streak >= 7 ? '🔥 POSSESSED' : streak >= 3 ? '🔥 DEDICATED' : '🔥 STREAK', onClick: null, icon: null }] : []),
                                 ].map(({ value, label, onClick }) => (
-                                    <div key={label} onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default' }}>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.6rem', color: 'var(--sepia)' }}>{value}</div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>{label}</div>
+                                    <div key={label} onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', cursor: onClick ? 'pointer' : 'default', alignItems: IS_TOUCH ? 'center' : undefined }}>
+                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.4rem' : '1.6rem', color: 'var(--sepia)' }}>{value}</div>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.5rem' : '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>{label}</div>
                                     </div>
                                 ))}
                             </div>
