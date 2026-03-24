@@ -12,6 +12,28 @@ export const initAuthSync = () => {
     if (!isSupabaseConfigured) return
 
     supabase.auth.onAuthStateChange(async (event, session) => {
+        // ── PASSWORD RECOVERY: don't auto-login, just redirect to reset page ──
+        // Supabase creates a valid session from the recovery link, but we don't
+        // want the user to appear logged in until they actually set their new password.
+        if (event === 'PASSWORD_RECOVERY') {
+            // Set a flag so the reset page knows we're in recovery mode
+            window.__reelhouseRecoveryMode = true
+            // Keep the user signed out in our app state
+            useAuthStore.setState({ user: null, isAuthenticated: false })
+            // Navigate to the reset page if not already there
+            if (!window.location.pathname.includes('reset-password')) {
+                window.location.href = '/reset-password'
+            }
+            return
+        }
+
+        // If we're in recovery mode, suppress SIGNED_IN / INITIAL_SESSION
+        // until the password is actually updated (ResetPasswordPage clears this flag)
+        if (window.__reelhouseRecoveryMode && (event === 'SIGNED_IN' || event === 'INITIAL_SESSION')) {
+            useAuthStore.setState({ user: null, isAuthenticated: false })
+            return
+        }
+
         if (event === 'INITIAL_SESSION') {
             // Page load/refresh — always re-fetch from Supabase so localStorage
             // stale cache never beats live data

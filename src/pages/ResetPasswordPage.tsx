@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Eye, EyeOff, Check } from 'lucide-react'
@@ -12,17 +12,6 @@ export default function ResetPasswordPage() {
     const [showPassword, setShowPassword] = useState(false)
     const [loading, setLoading] = useState(false)
     const [success, setSuccess] = useState(false)
-
-    // Hide navbar while on this page — reset needs a clean, isolated experience
-    useEffect(() => {
-        const nav = document.querySelector('.navbar') as HTMLElement
-        if (nav) nav.style.display = 'none'
-        document.body.style.overflow = 'hidden'
-        return () => {
-            if (nav) nav.style.display = ''
-            document.body.style.overflow = ''
-        }
-    }, [])
 
     // Password strength checks (same as SignupModal)
     const checks = {
@@ -47,8 +36,16 @@ export default function ResetPasswordPage() {
             const { error } = await supabase.auth.updateUser({ password })
             if (error) throw error
             setSuccess(true)
+            // Clear recovery mode so the auth listener can properly sign the user in
+            window.__reelhouseRecoveryMode = false
             toast.success('Password updated successfully!')
-            setTimeout(() => navigate('/'), 3000)
+            // Re-trigger auth so the user gets properly logged in with their new password
+            const { data: { session } } = await supabase.auth.getSession()
+            if (session) {
+                // Force a re-auth by refreshing the session
+                await supabase.auth.refreshSession()
+            }
+            setTimeout(() => navigate('/'), 2500)
         } catch (err: any) {
             toast.error(err.message || 'Failed to reset password.')
         } finally {
@@ -58,7 +55,7 @@ export default function ResetPasswordPage() {
 
     if (success) {
         return (
-            <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ minHeight: '100vh', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
                 <div style={{ width: '100%', maxWidth: 440, textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', padding: '1.25rem', borderRadius: '50%', background: 'rgba(76,175,80,0.1)', border: '1px solid #4caf50', marginBottom: '1.5rem' }}>
                         <Check size={32} color="#4caf50" />
@@ -78,7 +75,7 @@ export default function ResetPasswordPage() {
     }
 
     return (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <div style={{ minHeight: '100vh', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
             <div style={{
                 width: '100%', maxWidth: 440,
                 background: 'var(--soot)', border: '1px solid var(--ash)',

@@ -9,3 +9,8 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv
 }
+
+// Recovery mode flag — used to suppress auto-login during password reset
+interface Window {
+  __reelhouseRecoveryMode?: boolean
+}
