@@ -546,6 +546,16 @@ export default function Navbar() {
                                     <Link to={`/user/${user?.username}`} className="mobile-nav-link" onClick={() => setMobileOpen(false)} style={{ fontSize: '1.2rem', color: 'var(--bone)' }}>
                                         My Profile
                                     </Link>
+                                    <button
+                                        className="mobile-nav-link"
+                                        onClick={() => { setPeopleSearchOpen(true); setMobileOpen(false) }}
+                                        style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-ui)', letterSpacing: '0.15em', color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                                    >
+                                        <Users size={16} /> Find Members
+                                    </button>
+                                    <Link to="/notifications" className="mobile-nav-link" onClick={() => setMobileOpen(false)} style={{ color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        🔔 Notifications
+                                    </Link>
                                     <button className="btn btn-primary" onClick={() => { openLogModal(); setMobileOpen(false) }}>
                                         + Log a Film
                                     </button>
