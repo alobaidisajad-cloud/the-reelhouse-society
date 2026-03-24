@@ -175,7 +175,7 @@ export default function Navbar() {
                 <div className="navbar-inner" style={{ position: 'relative' }}>
                     {/* Logo */}
                     <Link to="/" className="nav-logo">
-                        <img src="/reelhouse-logo.svg" alt="ReelHouse Logo" width="28" height="28" style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
+                        <img src="/reelhouse-logo.svg" alt="ReelHouse Logo" style={{ height: '38px', width: 'auto', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
                         <span className="nav-logo-text">The ReelHouse Society</span>
                         <div className="nav-logo-buster">
                             <Buster size={40} mood="peeking" />
