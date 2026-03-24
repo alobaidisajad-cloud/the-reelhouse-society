@@ -528,9 +528,7 @@
   .mobile-fab { width: 44px !important; height: 44px !important; font-size: 1.3rem !important; bottom: 1rem !important; right: 0.75rem !important; }
 }
 
-/* ═══════════════════════════════════════════
-   EXTRA SMALL (≤360px)
-   ═══════════════════════════════════════════ */
+/* ===== EXTRA SMALL (<=360px) ===== */
 @media (max-width: 360px) {
   .nav-logo-text { font-size: 1rem !important; }
   .marquee-board { padding: 1rem 0.75rem !important; }
@@ -539,6 +537,87 @@
   .grid-films, .grid { grid-template-columns: repeat(2, 1fr) !important; gap: 0.4rem !important; }
 }
 
+/* ===== PROFILE PAGE PREMIUM MOBILE ===== */
+@media (max-width: 768px) {
+  .profile-hero {
+    text-align: center !important;
+    gap: 1rem !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  .profile-hero > div:first-child > div:first-child {
+    width: 100px !important;
+    height: 100px !important;
+  }
+  .profile-hero h1 {
+    font-size: clamp(1.4rem, 5.5vw, 2rem) !important;
+    word-break: break-all !important;
+    justify-content: center !important;
+    flex-wrap: wrap !important;
+    text-align: center !important;
+  }
+  .profile-identity > div:first-child {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 0.5rem !important;
+  }
+  .profile-hero p {
+    text-align: center !important;
+    font-size: 0.9rem !important;
+    max-width: 100% !important;
+  }
+  .profile-stats-row {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 0.75rem !important;
+    text-align: center !important;
+    justify-items: center !important;
+    width: 100% !important;
+  }
+  .profile-stats-row > div { align-items: center !important; }
+  .profile-stats-row > div > div:first-child { font-size: 1.3rem !important; }
+  .profile-stats-row > div > div:last-child { font-size: 0.5rem !important; }
+  .profile-tabs {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .profile-tabs::-webkit-scrollbar { display: none !important; }
+  .profile-tabs button {
+    flex-shrink: 0 !important;
+    font-size: 0.5rem !important;
+    padding: 0.75rem 0.8rem !important;
+    white-space: nowrap !important;
+  }
+  .profile-hero .btn-primary {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+  .profile-log-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)) !important;
+    gap: 0.75rem !important;
+  }
+  .profile-log-grid > div {
+    grid-column: span 1 !important;
+    grid-row: span 1 !important;
+  }
+  .profile-sieve-strip {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .profile-sieve-strip::-webkit-scrollbar { display: none !important; }
+  .profile-sieve-strip .btn {
+    flex-shrink: 0 !important;
+    font-size: 0.55rem !important;
+    padding: 0.35rem 0.65rem !important;
+    white-space: nowrap !important;
+  }
+  .profile-analytics-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
 /* ═══════════════════════════════════════════
    LANDSCAPE PHONE
    ═══════════════════════════════════════════ */

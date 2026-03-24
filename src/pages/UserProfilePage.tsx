@@ -465,7 +465,7 @@ export default function UserProfilePage() {
                         </div>
 
                         {/* Identity */}
-                        <div style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 300 }}>
+                        <div className="profile-identity" style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 300 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem' }}>
                                 {isEditing ? (
                                     <input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} style={{ background: 'var(--ink)', border: '1px solid var(--sepia)', color: 'var(--parchment)', fontFamily: 'var(--font-display)', fontSize: '1.8rem', padding: '0.2rem 0.5rem', width: 'auto' }} />
@@ -590,7 +590,7 @@ export default function UserProfilePage() {
                             <div>
                                 <SectionHeader label="CHRONOLOGICAL" title="The Ledger" />
                                 {profileLogs.length > 0 && (
-                                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ash)' }}>
+                                    <div className="profile-sieve-strip" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ash)' }}>
                                         {[{ id: 'all', label: 'All Logs' }, { id: 'masterpieces', label: '✦✦✦✦✦ Masterpieces' }, { id: 'rewatched', label: '↩ Rewatched' }, { id: 'abandoned', label: '✕ Abandoned' }, { id: 'companion', label: '♡ Companions' }].map(s => (
                                             <button key={s.id} onClick={() => setSieve(s.id)} className={`btn ${sieve === s.id ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', whiteSpace: 'nowrap' }}>{s.label}</button>
                                         ))}
@@ -608,7 +608,7 @@ export default function UserProfilePage() {
                                     const shown = filteredLogs.slice(0, visibleLogCount)
                                     return (
                                         <>
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gridAutoRows: 'minmax(210px, auto)', gap: '1rem' }}>
+                                        <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gridAutoRows: 'minmax(210px, auto)', gap: '1rem' }}>
                                             {shown.map((log: any, index: number) => {
                                                 let gridColumnSpan = 'span 1', gridRowSpan = 'span 1'
                                                 if (sieve === 'all' && index === 0) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 2' }
@@ -680,7 +680,7 @@ export default function UserProfilePage() {
                                         return streak
                                     })()
                                     return (
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
+                                        <div className="profile-analytics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
                                             <div className="card" style={{ padding: '1.75rem' }}>
                                                 <div className="section-title" style={{ marginBottom: '1.25rem' }}>RATINGS REGISTER</div>
                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
