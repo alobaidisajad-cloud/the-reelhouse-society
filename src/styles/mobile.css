@@ -97,6 +97,13 @@
   .navbar-inner { padding: 0 1.5rem; }
   .nav-logo-buster { display: none; }
 
+  /* ── NAVBAR: switch to hamburger at tablet breakpoint ──
+     7 nav links + action buttons overflow between 768-1024px.
+     Show hamburger menu at ≤1024px to prevent horizontal overflow. */
+  .nav-links { display: none !important; }
+  .nav-mobile-toggle { display: flex !important; }
+  .hide-mobile { display: none !important; }
+
   .venue-tab-strip {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
