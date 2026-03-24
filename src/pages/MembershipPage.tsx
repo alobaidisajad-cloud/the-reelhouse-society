@@ -153,7 +153,7 @@ export default function MembershipPage() {
                             {[
                                 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)', 
                                 'The Vault (Private Notes)', 
-                                'The Splicer (Edit Logs)', 
+                                'Letterboxd Import\n(Migrate Your Reviews)', 
                                 'Archival Record (.CSV\nExport)', 
                                 'The Projectionist\'s\nCalendar'
                             ].map((feature, i) => (
