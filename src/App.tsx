@@ -132,11 +132,9 @@ export default function App() {
     return ''
   }, [logCount])
 
-  // Mobile: skip preloader entirely — show content instantly
-  // Desktop: show 3-count clapperboard preloader only once per session
+  // Desktop and Mobile: show 3-count clapperboard preloader only once per session
   const [showPreloader, setShowPreloader] = useState(() => {
     if (typeof window === 'undefined') return false
-    if (IS_TOUCH) return false
     if (sessionStorage.getItem('reelhouse_init_loaded')) return false
     return true
   })
