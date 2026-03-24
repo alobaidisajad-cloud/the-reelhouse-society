@@ -218,10 +218,10 @@ export default function Navbar() {
                             <Search size={18} />
                         </button>
 
-                        {/* People Search Button */}
+                        {/* People Search Button — hidden on mobile to save navbar space */}
                         {isAuthenticated && (
                             <button
-                                className="nav-icon-btn nav-people-search-btn"
+                                className="nav-icon-btn nav-people-search-btn hide-mobile"
                                 onClick={() => { setPeopleSearchOpen((v) => !v); setSearchOpen(false) }}
                                 title="Search members"
                                 aria-label="Search members"
@@ -241,7 +241,7 @@ export default function Navbar() {
                                 >
                                     + <span className="hide-mobile">LOG FILM</span>
                                 </button>
-                                <NotificationBell />
+                                <span className="hide-mobile"><NotificationBell /></span>
                                 {user?.role === 'venue_owner' && (
                                     <Link
                                         to="/venue-dashboard"
