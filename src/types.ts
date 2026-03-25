@@ -82,6 +82,19 @@ export interface VaultItem {
     format: string
 }
 
+// ── Physical Archive ──
+export interface PhysicalArchiveItem {
+    id: string
+    filmId: number
+    title: string
+    poster_path?: string | null
+    year?: number
+    formats: string[]
+    notes?: string
+    condition?: string
+    createdAt?: string
+}
+
 // ── List ──
 export interface FilmList {
     id: string

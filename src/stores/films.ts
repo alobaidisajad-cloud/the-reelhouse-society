@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
-import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction } from '../types'
+import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction, PhysicalArchiveItem } from '../types'
 
 /** Lightweight shape for TMDB film data passed into store methods */
 interface TMDBFilmInput {
@@ -21,6 +21,7 @@ export interface FilmState {
     stubs: TicketStub[]
     interactions: Interaction[]
     globalFeedLogs: FilmLog[]
+    physicalArchive: PhysicalArchiveItem[]
 
     toggleEndorse: (targetId: string) => Promise<void>
     hasEndorsed: (targetId: string) => boolean
@@ -42,6 +43,10 @@ export interface FilmState {
     removeFromVault: (filmId: number) => Promise<void>
     createList: (list: Partial<FilmList>) => Promise<void>
     addFilmToList: (listId: string, film: TMDBFilmInput) => Promise<void>
+    fetchPhysicalArchive: (userId?: string) => Promise<PhysicalArchiveItem[]>
+    addToPhysicalArchive: (film: TMDBFilmInput, formats: string[], notes?: string, condition?: string) => Promise<void>
+    removeFromPhysicalArchive: (filmId: number) => Promise<void>
+    updatePhysicalArchiveItem: (filmId: number, updates: Partial<PhysicalArchiveItem>) => Promise<void>
 }
 
 export const useFilmStore = create<FilmState>()(
@@ -54,6 +59,7 @@ export const useFilmStore = create<FilmState>()(
             stubs: [],           // Supabase-backed digital tickets — fetched on login
             interactions: [],    // { type: 'endorse', targetId, timestamp }
             globalFeedLogs: [],  // Realtime feed from other users — NEVER mixed with personal logs
+            physicalArchive: [], // Physical media collection — 4K, Blu-ray, DVD, VHS, etc.
 
             toggleEndorse: async (targetId) => {
                 const user = useAuthStore.getState().user
@@ -406,6 +412,76 @@ export const useFilmStore = create<FilmState>()(
                         ),
                     }))
                 }
+            },
+
+            // ── PHYSICAL ARCHIVE ──
+            fetchPhysicalArchive: async (userId?: string) => {
+                const uid = userId || useAuthStore.getState().user?.id
+                if (!uid) return []
+                const { data, error } = await supabase
+                    .from('physical_archive').select('*').eq('user_id', uid)
+                    .order('created_at', { ascending: false }).limit(2000)
+                if (!error && data) {
+                    const items = data.map((item: any) => ({
+                        id: item.id,
+                        filmId: item.film_id,
+                        title: item.film_title,
+                        poster_path: item.poster_path || null,
+                        year: item.year || null,
+                        formats: item.formats || [],
+                        notes: item.notes || '',
+                        condition: item.condition || 'good',
+                        createdAt: item.created_at,
+                    }))
+                    if (!userId || userId === useAuthStore.getState().user?.id) {
+                        set({ physicalArchive: items })
+                    }
+                    return items
+                }
+                return []
+            },
+
+            addToPhysicalArchive: async (film, formats, notes = '', condition = 'good') => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                // Upsert — if film already exists, update formats
+                const { data, error } = await supabase.from('physical_archive').upsert([{
+                    user_id: user.id,
+                    film_id: film.id,
+                    film_title: film.title || film.name || 'Unknown',
+                    poster_path: film.poster_path || null,
+                    year: film.release_date ? new Date(film.release_date).getFullYear() : null,
+                    formats,
+                    notes,
+                    condition,
+                }], { onConflict: 'user_id,film_id' }).select().single()
+                if (!error && data) {
+                    set((state) => {
+                        const exists = state.physicalArchive.find(a => a.filmId === film.id)
+                        if (exists) {
+                            return { physicalArchive: state.physicalArchive.map(a => a.filmId === film.id ? { ...a, formats, notes, condition } : a) }
+                        }
+                        return { physicalArchive: [{ id: data.id, filmId: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path || null, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined, formats, notes, condition, createdAt: data.created_at }, ...state.physicalArchive] }
+                    })
+                }
+            },
+
+            removeFromPhysicalArchive: async (filmId) => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const { error } = await supabase.from('physical_archive').delete().eq('user_id', user.id).eq('film_id', filmId)
+                if (!error) set((state) => ({ physicalArchive: state.physicalArchive.filter(a => a.filmId !== filmId) }))
+            },
+
+            updatePhysicalArchiveItem: async (filmId, updates) => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const dbUpdates: any = {}
+                if (updates.formats) dbUpdates.formats = updates.formats
+                if (updates.notes !== undefined) dbUpdates.notes = updates.notes
+                if (updates.condition !== undefined) dbUpdates.condition = updates.condition
+                const { error } = await supabase.from('physical_archive').update(dbUpdates).eq('user_id', user.id).eq('film_id', filmId)
+                if (!error) set((state) => ({ physicalArchive: state.physicalArchive.map(a => a.filmId === filmId ? { ...a, ...updates } : a) }))
             },
         }),
         {

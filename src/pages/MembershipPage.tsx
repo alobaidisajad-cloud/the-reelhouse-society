@@ -108,7 +108,7 @@ export default function MembershipPage() {
                         </div>
 
                         <div className="tier-features">
-                            {['Log & Rate Films', 'The Diary & Watchlist', 'Basic Profile', 'Unlimited Custom Lists'].map((feature, i) => (
+                            {['Log & Rate Films', 'The Diary & Watchlist', 'Basic Profile', 'Unlimited Custom Lists', 'Import & Export Archive'].map((feature, i) => (
                                 <div key={i} className="feature-item">
                                     <div className="feature-dot feature-dot--free" />
                                     <span className="feature-text feature-text--free">{feature}</span>
@@ -153,8 +153,8 @@ export default function MembershipPage() {
                             {[
                                 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)', 
                                 'The Vault (Private Notes)', 
-                                'Letterboxd Import\n(Migrate Your Reviews)', 
-                                'Archival Record (.CSV\nExport)', 
+                                'Ad-Free Experience', 
+                                'Priority Support &\nEarly Access', 
                                 'The Projectionist\'s\nCalendar'
                             ].map((feature, i) => (
                                 <div key={i} className="feature-item feature-item--pro">

@@ -26,6 +26,7 @@ import ReviewModal from '../components/profile/ReviewModal'
 import Achievements from '../components/profile/Achievements'
 import TasteMatch from '../components/profile/TasteMatch'
 import FilmRecommendations from '../components/profile/FilmRecommendations'
+import PhysicalArchiveTab from '../components/profile/PhysicalArchiveTab'
 import PageSEO from '../components/PageSEO'
 
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
@@ -37,7 +38,7 @@ export default function UserProfilePage() {
     const { username: routeUsername } = useParams()
     const queryClient = useQueryClient()
     const { user: currentUser, isAuthenticated, updateUser } = useAuthStore()
-    const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, getCinephileStats } = useFilmStore()
+    const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, physicalArchive, getCinephileStats } = useFilmStore()
     const { programmes: currentProgrammes } = useProgrammeStore()
     const { openSignupModal, openLogModal } = useUIStore()
     const fileRef = useRef(null)
@@ -432,6 +433,7 @@ export default function UserProfilePage() {
         { id: 'lists', label: 'Lists', count: profileLists.length },
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
         { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length > 0 ? profileStubs.length : null },
+        { id: 'archive', label: 'The Archive', count: physicalArchive.length > 0 ? physicalArchive.length : null },
         ...(isOwnProfile ? [{ id: 'calendar', label: isPremium ? '✦ The Calendar' : '🔒 The Calendar', count: null }] : []),
     ]
 
@@ -478,7 +480,7 @@ export default function UserProfilePage() {
                                 {isOwnProfile ? (
                                     <>
                                         <button onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)} className="btn btn-ghost" style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', height: 'fit-content' }}>{isEditing ? 'SAVE DOSSIER' : 'EDIT PROFILE'}</button>
-                                        {!isEditing && isPremium && (
+                                        {!isEditing && (
                                             <button
                                                 onClick={() => exportLogsCSV(profileLogs, profileUser.username)}
                                                 className="btn btn-ghost"
@@ -762,6 +764,13 @@ export default function UserProfilePage() {
                         )}
 
 
+
+                        {activeTab === 'archive' && (
+                            <div>
+                                <SectionHeader label="PHYSICAL MEDIA COLLECTION" title="The Archive" />
+                                <PhysicalArchiveTab isOwnProfile={isOwnProfile} archive={physicalArchive} userId={profileUser?.id} />
+                            </div>
+                        )}
 
                         {activeTab === 'calendar' && (
                             <div>

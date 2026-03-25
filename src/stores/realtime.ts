@@ -51,6 +51,7 @@ export const initAuthSync = () => {
                     useFilmStore.getState().fetchLists(),
                     useFilmStore.getState().fetchStubs(),
                     useFilmStore.getState().fetchEndorsements(),
+                    useFilmStore.getState().fetchPhysicalArchive(),
                     useProgrammeStore.getState().fetchProgrammes(),
                     hydrateFollowing(),
                 ])
@@ -79,6 +80,7 @@ export const initAuthSync = () => {
                     useFilmStore.getState().fetchLists(),
                     useFilmStore.getState().fetchStubs(),
                     useFilmStore.getState().fetchEndorsements(),
+                    useFilmStore.getState().fetchPhysicalArchive(),
                     useProgrammeStore.getState().fetchProgrammes(),
                     hydrateFollowing(),
                 ])
