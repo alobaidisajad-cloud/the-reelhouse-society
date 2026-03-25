@@ -80,6 +80,12 @@
   border: 1px solid #7d1f1f;
   border-radius: var(--radius-card);
 }
+.tier-card--projectionist {
+  border: 1px solid #c4872a;
+  border-radius: var(--radius-card);
+  position: relative;
+  background: linear-gradient(180deg, rgba(196,135,42,0.06) 0%, rgba(18,14,9,0.95) 30%);
+}
 
 .tier-name {
   font-family: var(--font-display);
@@ -89,6 +95,7 @@
 }
 .tier-name--auteur { color: #7d1f1f; }
 .tier-name--archivist { line-height: 1.1; }
+.tier-name--projectionist { color: #c4872a; line-height: 1.1; }
 
 .tier-label {
   font-family: var(--font-ui);
@@ -99,6 +106,7 @@
 .tier-label--free { color: var(--fog); opacity: 0.7; }
 .tier-label--archivist { color: var(--sepia); }
 .tier-label--auteur { color: #7d1f1f; }
+.tier-label--projectionist { color: #c4872a; }
 
 /* ── Pricing ── */
 .tier-price {
@@ -155,6 +163,7 @@
 }
 .tier-includes--archivist { color: var(--sepia); }
 .tier-includes--auteur { color: #7d1f1f; }
+.tier-includes--projectionist { color: #c4872a; }
 
 .feature-item {
   display: flex;
@@ -171,6 +180,7 @@
 .feature-dot--free { background: var(--fog); }
 .feature-dot--archivist { background: var(--bone); margin-top: 0.4rem; }
 .feature-dot--auteur { background: #7d1f1f; margin-top: 0.5rem; }
+.feature-dot--projectionist { background: #c4872a; margin-top: 0.5rem; }
 .feature-text {
   font-family: var(--font-sub);
   font-size: 0.9rem;
@@ -192,6 +202,7 @@
 }
 .featured-feature--archivist { border: 1px solid rgba(139,105,20,0.15); }
 .featured-feature--auteur { border: 1px solid rgba(125,31,31,0.2); }
+.featured-feature--projectionist { border: 1px solid rgba(196,135,42,0.2); }
 .featured-feature-title {
   font-family: var(--font-sub);
   font-size: 1.05rem;
@@ -200,6 +211,7 @@
 }
 .featured-feature-title--archivist { color: var(--parchment); }
 .featured-feature-title--auteur { color: #7d1f1f; }
+.featured-feature-title--projectionist { color: #c4872a; }
 .featured-feature-desc {
   font-family: var(--font-sub);
   font-size: 0.85rem;
@@ -248,6 +260,39 @@
   background: #7d1f1f;
   color: var(--parchment);
   border: none;
+}
+.tier-btn--projectionist {
+  background: linear-gradient(135deg, #c4872a, #a06a1e);
+  color: var(--parchment);
+  border: none;
+}
+
+/* Projectionist icon */
+.projectionist-icon {
+  width: 8px;
+  height: 8px;
+  margin-top: 0.3rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* NEW badge */
+.new-badge {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(135deg, #c4872a, #e6a83c);
+  color: var(--ink);
+  padding: 0.4rem 1.2rem;
+  font-family: var(--font-ui);
+  font-size: 0.65rem;
+  letter-spacing: 0.2em;
+  border-radius: 100px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(196,135,42,0.3);
 }
 
 /* ── Star Icon ── */

@@ -56,6 +56,7 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const YearInCinemaPage = lazy(() => import('./pages/YearInCinemaPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const DebugPanel = lazy(() => import('./pages/DebugPanel'))
+const StudioPage = lazy(() => import('./pages/StudioPage'))
 
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
@@ -263,6 +264,7 @@ export default function App() {
               <Route path="/year-in-cinema" element={<ErrorBoundary key="yic"><PageWrapper><YearInCinemaPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/settings" element={<ErrorBoundary key="settings"><PageWrapper><SettingsPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/admin" element={<ErrorBoundary key="admin"><PageWrapper><DebugPanel /></PageWrapper></ErrorBoundary>} />
+              <Route path="/studio" element={<ErrorBoundary key="studio"><PageWrapper><StudioPage /></PageWrapper></ErrorBoundary>} />
               <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
 
             </Routes>

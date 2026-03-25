@@ -21,6 +21,7 @@ import DirectorPanel from '../components/film/DirectorPanel'
 import WatchProviders from '../components/film/WatchProviders'
 import CountryReleases from '../components/film/CountryReleases'
 import Poster from '../components/film/Poster'
+import CriticsBooth from '../components/film/CriticsBooth'
 
 
 
@@ -418,6 +419,10 @@ export default function FilmDetailPage() {
                         <ArrowLeft size={12} /> GO BACK
                     </button>
                     <FilmDetails film={film} onPlayVideo={handlePlayVideo} />
+
+                    <SectionErrorBoundary label="VIDEO REVIEWS">
+                        <CriticsBooth filmId={film.id} />
+                    </SectionErrorBoundary>
 
                     <SectionErrorBoundary label="SIMILAR FILMS">
                     {Array.isArray(similar) && similar.length > 0 && (

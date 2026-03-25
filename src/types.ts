@@ -10,8 +10,8 @@ export interface User {
     bio?: string
     avatar?: string
     avatar_url?: string
-    role: 'free' | 'cinephile' | 'archivist' | 'auteur' | 'venue_owner'
-    tier?: 'free' | 'cinephile' | 'archivist' | 'auteur'
+    role: 'free' | 'cinephile' | 'archivist' | 'auteur' | 'projectionist' | 'venue_owner'
+    tier?: 'free' | 'cinephile' | 'archivist' | 'auteur' | 'projectionist'
     displayName?: string
     display_name?: string
     persona?: string
@@ -285,4 +285,34 @@ export interface UIState {
     handbookSection: string | null
     onboardingOpen: boolean
     theme: string
+}
+
+// ── Video Review (Projectionist Tier) ──
+export interface VideoReview {
+    id: string
+    user_id: string
+    username: string
+    avatar?: string
+    film_id: number
+    film_title: string
+    film_poster?: string | null
+    title: string
+    video_url: string
+    thumbnail_url?: string | null
+    duration_seconds: number
+    views: number
+    tip_total: number
+    created_at?: string
+}
+
+// ── Tip ──
+export interface Tip {
+    id: string
+    from_user_id: string
+    from_username?: string
+    to_user_id: string
+    video_id: string
+    amount: number
+    message?: string
+    created_at?: string
 }

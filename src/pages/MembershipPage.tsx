@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Crown, Star, Key, EyeOff, LayoutTemplate, Database, Upload } from 'lucide-react'
+import { Crown, Star, Key, EyeOff, LayoutTemplate, Database, Upload, Video } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import CSVImport from '../components/CSVImport'
@@ -252,6 +252,74 @@ export default function MembershipPage() {
                                     onClick={() => handleWaitlist('auteur')}
                                 >
                                     {isRedirecting ? 'JOINING...' : 'JOIN THE AUTEUR WAITLIST'}
+                                </button>
+                            </div>
+                        )}
+                    </motion.div>
+
+                    {/* The Creator Tier */}
+                    <motion.div variants={itemVariants as any} className="card card-tier tier-card tier-card--projectionist">
+                        <div className="new-badge">NEW</div>
+
+                        <h3 className="tier-name tier-name--projectionist">The<br/>Projectionist</h3>
+                        <div className="tier-label tier-label--projectionist">CREATOR ECONOMY</div>
+
+                        <div className="tier-price">
+                            <span className="price-currency">$</span>
+                            <span className="price-amount">9.99</span>
+                            <span className="price-period">/ MO</span>
+                        </div>
+                        <div className="price-billing">BILLED ANNUALLY ($99.99/YR)</div>
+
+                        <div className="tier-features tier-features--pro">
+                            <div className="tier-includes tier-includes--projectionist">Everything in Auteur, plus:</div>
+                            
+                            <div className="featured-feature featured-feature--projectionist">
+                                <div className="feature-dot feature-dot--projectionist" />
+                                <div>
+                                    <div className="featured-feature-title featured-feature-title--projectionist">The Screening<br/>Room</div>
+                                    <div className="featured-feature-desc">Upload video reviews up to 10 minutes in 1080p. Build your audience and earn directly from your critics.</div>
+                                </div>
+                            </div>
+
+                            {[
+                                'Video Upload Studio\n(Up to 10 Min / 1080p)', 
+                                'Audience Tips &\nDirect Earnings', 
+                                'Creator Analytics\nDashboard', 
+                                'Priority Homepage\nPlacement', 
+                                'Exclusive "Projectionist"\nProfile Badge',
+                            ].map((feature, i) => (
+                                <div key={i} className="feature-item feature-item--pro">
+                                    <div className="projectionist-icon">
+                                        <Video size={8} color="#c4872a" />
+                                    </div>
+                                    <span className="feature-text">{feature}</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {waitlistSent ? (
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
+                                ✦ YOU'RE ON THE LIST ✦
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
+                                <input
+                                    type="email"
+                                    className="input"
+                                    placeholder="your@email.com"
+                                    value={waitlistTier === 'projectionist' ? waitlistEmail : ''}
+                                    onFocus={() => setWaitlistTier('projectionist')}
+                                    onChange={e => { setWaitlistTier('projectionist'); setWaitlistEmail(e.target.value) }}
+                                    style={{ textAlign: 'center', fontSize: '0.75rem' }}
+                                />
+                                <button
+                                    className="btn btn-primary tier-btn tier-btn--projectionist"
+                                    style={{ opacity: isRedirecting ? 0.7 : 1 }}
+                                    disabled={isRedirecting}
+                                    onClick={() => handleWaitlist('projectionist')}
+                                >
+                                    {isRedirecting ? 'JOINING...' : 'JOIN THE PROJECTIONISTS'}
                                 </button>
                             </div>
                         )}
