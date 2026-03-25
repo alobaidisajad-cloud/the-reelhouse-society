@@ -160,7 +160,7 @@ export default function StudioPage() {
                         <div style={{ background: 'var(--ink)', border: '1px solid var(--ash)', borderRadius: '2px', padding: '2rem', marginBottom: '2rem', textAlign: 'center' }}>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>TOTAL EARNINGS</div>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--flicker)' }}>${myEarnings.total.toFixed(2)}</div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--fog)', letterSpacing: '0.1em', marginTop: '0.5rem' }}>PLATFORM FEE: 15% · CREATOR RECEIVES: 85%</div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--sepia)', letterSpacing: '0.1em', marginTop: '0.5rem' }}>CREATORS KEEP 100% OF TIPS · ZERO PLATFORM FEES</div>
                         </div>
 
                         {/* Tip History */}
