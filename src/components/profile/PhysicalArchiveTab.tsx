@@ -17,8 +17,8 @@ const FORMATS = [
 ]
 
 /** Returns a meaningful Lucide icon for each physical media format */
-function FormatIcon({ id, size = 11 }: { id: string; size?: number }) {
-    const props = { size, strokeWidth: 1.8 }
+function FormatIcon({ id, size = 13 }: { id: string; size?: number }) {
+    const props = { size, strokeWidth: 2.2 }
     switch (id) {
         case '4k':        return <Disc3 {...props} />       // premium disc
         case 'bluray':    return <Disc {...props} />         // standard disc
