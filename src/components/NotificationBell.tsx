@@ -25,8 +25,21 @@ const timeAgo = (ts: string) => {
     return `${Math.floor(hrs / 24)}d`
 }
 
-export default function NotificationBell() {
-    const [open, setOpen] = useState(false)
+interface NotificationBellProps {
+    isOpen?: boolean
+    onOpenChange?: (open: boolean) => void
+    forceMount?: boolean
+}
+
+export default function NotificationBell({ isOpen, onOpenChange, forceMount }: NotificationBellProps = {}) {
+    const [internalOpen, setInternalOpen] = useState(false)
+    const open = isOpen !== undefined ? isOpen : internalOpen
+    const setOpen = (val: boolean | ((prev: boolean) => boolean)) => {
+        const next = typeof val === 'function' ? val(open) : val
+        if (onOpenChange) onOpenChange(next)
+        else setInternalOpen(next)
+    }
+    
     const ref = useRef<HTMLDivElement>(null)
     const navigate = useNavigate()
     const user = useAuthStore(s => s.user)
