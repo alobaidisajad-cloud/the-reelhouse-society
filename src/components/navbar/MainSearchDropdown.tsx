@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Loader, User, Film } from 'lucide-react'
 import { tmdb } from '../../tmdb'
+import Poster from '../film/Poster'
 
 export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
     const navigate = useNavigate()
@@ -111,8 +112,8 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
                                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                                         >
                                             <div style={{ width: isPerson ? 44 : 48, height: isPerson ? 44 : 68, borderRadius: isPerson ? '50%' : '3px', overflow: 'hidden', background: 'var(--ash)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: isPerson ? '2px solid rgba(139,105,20,0.4)' : '1px solid rgba(139,105,20,0.15)' }}>
-                                                {imgUrl ? (
-                                                    <img src={imgUrl} alt={title} loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                {imgPath ? (
+                                                    <Poster path={imgPath} title={title} aspectRatio={isPerson ? 'square' : 'poster'} sizeHint="sm" />
                                                 ) : (
                                                     isPerson ? <User size={20} color="var(--fog)" /> : <Film size={20} color="var(--fog)" />
                                                 )}

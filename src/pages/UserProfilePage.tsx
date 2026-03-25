@@ -29,6 +29,7 @@ import FilmRecommendations from '../components/profile/FilmRecommendations'
 import PhysicalArchiveTab from '../components/profile/PhysicalArchiveTab'
 import { ProfileProjectorTab } from '../components/profile/ProfileProjectorTab'
 import PageSEO from '../components/PageSEO'
+import Poster from '../components/film/Poster'
 
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
@@ -741,7 +742,11 @@ export default function UserProfilePage() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {profileLogs.filter((l: any) => l.rating >= 4).slice(0, 4).map((log: any) => (
                                         <Link key={log.id} to={`/film/${log.filmId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-                                            {log.poster && <img src={tmdb.poster(log.poster, 'w92') || undefined} alt={log.title} loading="lazy" decoding="async" style={{ width: 28, height: 42, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)', flexShrink: 0 }} />}
+                                            {log.poster && (
+                                                <div style={{ width: 28, height: 42, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', filter: 'sepia(0.3)' }}>
+                                                    <Poster path={log.poster} title={log.title} sizeHint="sm" />
+                                                </div>
+                                            )}
                                             <div>
                                                 <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--parchment)', lineHeight: 1.2 }}>{log.title}</div>
                                                 <ReelRating value={log.rating} size="sm" />

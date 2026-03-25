@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { tmdb } from '../../tmdb'
+import Poster from '../film/Poster'
 
 export function WatchlistRoulette({ watchlist }: { watchlist: any[] }) {
     const [picking, setPicking] = useState(false)
@@ -61,7 +61,9 @@ export function WatchlistRoulette({ watchlist }: { watchlist: any[] }) {
                     </div>
                     <Link to={`/film/${result.id}`} style={{ textDecoration: 'none' }}>
                         <motion.div whileHover={{ scale: 1.05 }} style={{ display: 'inline-block' }}>
-                            <img src={tmdb.poster(result.poster_path, 'w185')} alt={result.title} loading="lazy" decoding="async" style={{ width: 140, borderRadius: 4, filter: 'sepia(0.3) contrast(1.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }} />
+                            <div style={{ width: 140, overflow: 'hidden', borderRadius: 4, filter: 'sepia(0.3) contrast(1.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
+                                <Poster path={result.poster_path} title={result.title} sizeHint="md" />
+                            </div>
                         </motion.div>
                     </Link>
                     <Link to={`/film/${result.id}`} style={{ textDecoration: 'none' }}>

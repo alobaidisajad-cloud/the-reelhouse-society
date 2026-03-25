@@ -2,6 +2,7 @@ import { useState, memo, useCallback, useRef, ReactNode, CSSProperties } from 'r
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from '../tmdb'
 import type { TMDBMovie } from '../types'
+import Poster from './film/Poster'
 
 // ── Prop Interfaces ──
 
@@ -183,45 +184,12 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
             role="button"
             tabIndex={onClick ? 0 : undefined}
         >
-            {posterUrl ? (
-                <div style={{
-                    position: 'absolute', inset: 0,
-                    backgroundImage: `url(${tmdb.poster(film.altPoster || film.poster_path, 'w92')})`,
-                    backgroundSize: 'cover', backgroundPosition: 'center',
-                    filter: 'blur(12px) saturate(0.6)', transform: 'scale(1.1)',
-                }}>
-                </div>
-            ) : null}
-            {posterUrl ? (
-                <img
-                    src={posterUrl}
-                    alt={film.title}
-                    loading="lazy"
-                    decoding="async"
-                    fetchPriority="low"
-                    onLoad={() => setIsLoaded(true)}
-                    className={isLoaded ? 'developing-poster' : ''}
-                    style={{
-                        position: 'relative', zIndex: 1,
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        opacity: isLoaded ? 0.95 : 0,
-                        transition: 'opacity 0.4s ease-in',
-                    }}
-                />
-            ) : (
-                <div className="shimmer" style={{
-                    width: '100%', height: '100%',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    flexDirection: 'column', gap: '0.5rem',
-                }}>
-                    <FilmReelIcon />
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', textAlign: 'center', padding: '0 0.5rem' }}>
-                        NO POSTER ON FILE
-                    </span>
-                </div>
-            )}
+            <Poster 
+                path={film.altPoster || film.poster_path} 
+                title={film.title || 'Film'} 
+                sizeHint="md" 
+                style={{ position: 'absolute', inset: 0, zIndex: 1 }}
+            />
             <div className="card-film-overlay">
                 <div style={{ fontFamily: 'var(--font-sub)', fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', color: 'var(--parchment)', lineHeight: 1.3 }}>
                     {film.title}

@@ -7,6 +7,7 @@ import { tmdb, obscurityScore } from '../tmdb'
 import { FilmCard, SectionHeader, LoadingReel, ObscurityBadge, PersonPlaceholder } from '../components/UI'
 import { useUIStore, useDiscoverStore } from '../store'
 import PageSEO from '../components/PageSEO'
+import Poster from '../components/film/Poster'
 
 // Detect touch/mobile once at module level
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
@@ -336,10 +337,17 @@ export default function DiscoverPage() {
                                                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(242,232,160,0.04)'}
                                                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                                             >
-                                                                {item.poster_path || item.profile_path
-                                                    ? <img src={isPerson ? tmdb.profile(item.profile_path, 'w92') || undefined : tmdb.poster(item.poster_path, 'w92') || undefined} alt={isPerson ? item.name : item.title} loading="lazy" decoding="async" style={{ width: isPerson ? 24 : 18, height: isPerson ? 24 : 28, objectFit: 'cover', borderRadius: isPerson ? '50%' : '2px', flexShrink: 0 }} />
-                                                    : <div style={{ width: 18, height: 28, background: 'var(--ash)', flexShrink: 0, borderRadius: '2px' }} />
-                                                }
+                                                {item.poster_path || item.profile_path ? (
+                                                    <div style={{ width: isPerson ? 24 : 18, height: isPerson ? 24 : 28, flexShrink: 0, borderRadius: isPerson ? '50%' : '2px', overflow: 'hidden' }}>
+                                                        {isPerson ? (
+                                                            <Poster path={item.profile_path} title={item.name} aspectRatio="square" sizeHint="sm" />
+                                                        ) : (
+                                                            <Poster path={item.poster_path} title={item.title} sizeHint="sm" />
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ width: 18, height: 28, background: 'var(--ash)', flexShrink: 0, borderRadius: '2px' }} />
+                                                )}
                                                 <div style={{ flex: 1, overflow: 'hidden', textAlign: 'left' }}>
                                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{isPerson ? item.name : item.title}</div>
                                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.05em' }}>{isPerson ? 'ARTIST' : `${item.release_date?.slice(0, 4) || 'TBA'} · FILM`}</div>

@@ -20,6 +20,7 @@ import TrailerModal from '../components/film/TrailerModal'
 import DirectorPanel from '../components/film/DirectorPanel'
 import WatchProviders from '../components/film/WatchProviders'
 import CountryReleases from '../components/film/CountryReleases'
+import Poster from '../components/film/Poster'
 
 
 
@@ -70,7 +71,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         )}
                         <div className="card-film scanlines" style={{ position: 'relative', zIndex: 1, boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.2)' }}>
                             {film.poster_path ? (
-                                <img src={tmdb.poster(film.poster_path, 'w342') || undefined} alt={film.title} fetchPriority="high" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.2) contrast(1.1)' }} />
+                                <Poster path={film.poster_path} title={film.title} sizeHint="hero" style={{ filter: 'sepia(0.2) contrast(1.1)' }} />
                             ) : (
                                 <div style={{ width: '100%', height: '100%', background: 'var(--soot)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)' }}>NO POSTER</span>

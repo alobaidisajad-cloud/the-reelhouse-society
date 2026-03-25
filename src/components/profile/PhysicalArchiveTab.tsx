@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, X, Disc, Disc2, Disc3, Film, Archive, Trash2, CircleDot, Clapperboard, Box, Award } from 'lucide-react'
 import { useFilmStore } from '../../stores/films'
 import { tmdb } from '../../tmdb'
+import Poster from '../film/Poster'
 import toast from 'react-hot-toast'
 import type { PhysicalArchiveItem } from '../../types'
 
@@ -257,7 +258,9 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                                     onMouseLeave={e => e.currentTarget.style.background = 'none'}
                                                 >
                                                     {film.poster_path ? (
-                                                        <img src={`https://image.tmdb.org/t/p/w92${film.poster_path}`} alt="" style={{ width: 36, height: 54, objectFit: 'cover', borderRadius: '2px', border: '1px solid var(--ash)' }} />
+                                                        <div style={{ width: 36, height: 54, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', border: '1px solid var(--ash)' }}>
+                                                            <Poster path={film.poster_path} title={film.title || film.name} sizeHint="sm" />
+                                                        </div>
                                                     ) : (
                                                         <div style={{ width: 36, height: 54, background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                             <Film size={14} color="var(--fog)" />
@@ -279,7 +282,9 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                     {/* Film Selected — Format Picker */}
                                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
                                         {selectedFilm.poster_path && (
-                                            <img src={`https://image.tmdb.org/t/p/w154${selectedFilm.poster_path}`} alt="" style={{ width: 80, height: 120, objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--ash)' }} />
+                                            <div style={{ width: 80, height: 120, flexShrink: 0, borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--ash)' }}>
+                                                <Poster path={selectedFilm.poster_path} title={selectedFilm.title || selectedFilm.name} sizeHint="sm" />
+                                            </div>
                                         )}
                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.1em', alignSelf: 'flex-end' }}>
                                             {selectedFilm.release_date ? new Date(selectedFilm.release_date).getFullYear() : '—'}
@@ -392,11 +397,9 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                             <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem' }}>
                                 {/* Poster */}
                                 {item.poster_path ? (
-                                    <img
-                                        src={`https://image.tmdb.org/t/p/w154${item.poster_path}`}
-                                        alt={item.title}
-                                        style={{ width: 55, height: 82, objectFit: 'cover', borderRadius: '3px', border: '1px solid var(--ash)', flexShrink: 0 }}
-                                    />
+                                    <div style={{ width: 55, height: 82, flexShrink: 0, borderRadius: '3px', overflow: 'hidden', border: '1px solid var(--ash)' }}>
+                                        <Poster path={item.poster_path} title={item.title} sizeHint="sm" />
+                                    </div>
                                 ) : (
                                     <div style={{ width: 55, height: 82, background: 'var(--ink)', border: '1px solid var(--ash)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                                         <Disc size={20} color="var(--fog)" />
