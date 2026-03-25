@@ -123,8 +123,23 @@ export const useAuthStore = create<AuthState>()(
             },
 
             logout: async () => {
-                await supabase.auth.signOut()
+                // 1. Sign out from Supabase
+                try { await supabase.auth.signOut() } catch { /* continue even if this fails */ }
+
+                // 2. Clear zustand persisted auth state
                 set({ user: null, isAuthenticated: false })
+
+                // 3. Nuke all Supabase auth tokens from localStorage
+                Object.keys(localStorage).forEach(key => {
+                    if (key.startsWith('sb-') && key.includes('-auth-token')) {
+                        localStorage.removeItem(key)
+                    }
+                })
+                // Also clear our own persist key
+                localStorage.removeItem('reelhouse-auth')
+
+                // 4. Force full page reload to clear any in-memory state
+                window.location.href = '/'
             },
 
             updateUser: async (updates) => {
