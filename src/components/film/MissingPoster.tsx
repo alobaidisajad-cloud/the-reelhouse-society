@@ -104,24 +104,6 @@ export default function MissingPoster({ text = "NO POSTER ON\nFILE", className =
                     <path d="M 77 62 L 88 94 L 70 64 Z" fill="url(#holo)" />
                     <path d="M 94 53 L 105 82 L 88 58 Z" fill="url(#holo)" />
                 </svg>
-
-                {/* Stencil Text - Restored per request but matched to foil aesthetic */}
-                <div style={{
-                    fontFamily: '"Bungee", "Arial Black", sans-serif',
-                    fontSize: '0.6rem',
-                    letterSpacing: '0.05em',
-                    color: 'transparent',
-                    backgroundImage: 'linear-gradient(90deg, #d2f0e0, #f5f0b5, #f0cdcd)',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    textTransform: 'uppercase',
-                    textAlign: 'center',
-                    lineHeight: 1.4,
-                    textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-                    transform: 'scaleY(0.9)',
-                }}>
-                    NO POSTER ON FILE
-                </div>
             </div>
         </div>
     )
