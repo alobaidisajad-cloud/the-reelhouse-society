@@ -95,6 +95,108 @@ export function EmptyLists() {
     )
 }
 
+export function EmptyFeed() {
+    return (
+        <div style={emptyStateStyles.container}>
+            <Buster size={80} mood="peeking" />
+            <p style={emptyStateStyles.title}>THE FLOOR IS QUIET</p>
+            <p style={emptyStateStyles.subtitle}>
+                No activity yet. Follow other members of the society to see their logs, reviews, and endorsements here.
+            </p>
+            <p style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '0.6rem',
+                letterSpacing: '0.15em',
+                color: 'rgba(139,105,20,0.5)',
+                marginTop: '0.5rem',
+            }}>
+                The projection booth awaits its audience.
+            </p>
+        </div>
+    )
+}
+
+export function EmptyStacks() {
+    return (
+        <div style={emptyStateStyles.container}>
+            <Buster size={70} mood="crying" />
+            <p style={emptyStateStyles.title}>THE SHELVES ARE BARE</p>
+            <p style={emptyStateStyles.subtitle}>
+                No collections found. Create your first stack — a curated anthology of cinema worth preserving.
+            </p>
+        </div>
+    )
+}
+
+export function EmptyNotifications() {
+    return (
+        <div style={emptyStateStyles.container}>
+            <Buster size={60} mood="neutral" />
+            <p style={emptyStateStyles.title}>NO SIGNALS FROM THE BOOTH</p>
+            <p style={emptyStateStyles.subtitle}>
+                All caught up. When someone endorses your work or follows you, the dispatch arrives here.
+            </p>
+        </div>
+    )
+}
+
+export function EmptySearch() {
+    return (
+        <div style={emptyStateStyles.container}>
+            <Buster size={70} mood="crying" />
+            <p style={emptyStateStyles.title}>NO PRINTS FOUND</p>
+            <p style={emptyStateStyles.subtitle}>
+                The archive has no matches. Try a different title, director, or year.
+            </p>
+            <p style={{
+                fontFamily: 'var(--font-ui)',
+                fontSize: '0.6rem',
+                letterSpacing: '0.15em',
+                color: 'rgba(139,105,20,0.5)',
+                marginTop: '0.5rem',
+            }}>
+                Even the best film scouts come up empty sometimes.
+            </p>
+        </div>
+    )
+}
+
+export function EmptyStudio() {
+    return (
+        <div style={emptyStateStyles.container}>
+            <Buster size={80} mood="peeking" />
+            <p style={emptyStateStyles.title}>THE BOOTH IS EMPTY</p>
+            <p style={emptyStateStyles.subtitle}>
+                No video reviews yet. Step behind the camera — record your first critique and share it with the society.
+            </p>
+        </div>
+    )
+}
+
+export function EmptyReviews() {
+    return (
+        <div style={emptyStateStyles.container}>
+            <Buster size={60} mood="neutral" />
+            <p style={emptyStateStyles.title}>NO CRITICS HAVE SCREENED THIS</p>
+            <p style={emptyStateStyles.subtitle}>
+                Be the first to share your take. The screening room is waiting for its first projectionist.
+            </p>
+        </div>
+    )
+}
+
+export function EmptyArchive() {
+    return (
+        <div style={emptyStateStyles.container}>
+            <Buster size={70} mood="crying" />
+            <p style={emptyStateStyles.title}>NOTHING ON THE SHELF</p>
+            <p style={emptyStateStyles.subtitle}>
+                This collection is empty — like an abandoned theatre waiting for its next screening.
+            </p>
+        </div>
+    )
+}
+
 /**
  * Profile skeleton — shows while user data is loading.
  */

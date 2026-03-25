@@ -5,6 +5,7 @@ import { Upload, Video, DollarSign, Eye, Trash2, Film, BarChart3, ArrowLeft } fr
 import { useAuthStore } from '../store'
 import { useVideoStore } from '../stores/video'
 import VideoUploadModal from '../components/video/VideoUploadModal'
+import { EmptyStudio } from '../components/EmptyStates'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
 
@@ -107,14 +108,7 @@ export default function StudioPage() {
                 {tab === 'videos' && (
                     <>
                         {myVideos.length === 0 ? (
-                            <div style={{ textAlign: 'center', padding: '5rem 2rem', border: '1px dashed var(--ash)', borderRadius: '2px' }}>
-                                <Film size={40} color="var(--sepia)" style={{ marginBottom: '1rem', opacity: 0.4 }} />
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>No Screenings Yet</div>
-                                <p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)', fontSize: '0.85rem', marginBottom: '1.5rem' }}>Upload your first video review and build your audience.</p>
-                                <button className="btn btn-primary" onClick={() => setUploadOpen(true)}>
-                                    <Upload size={14} /> Upload Your First Review
-                                </button>
-                            </div>
+                            <EmptyStudio />
                         ) : (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
                                 {myVideos.map(video => (

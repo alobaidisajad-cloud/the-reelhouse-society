@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Bell, Check } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
+import { EmptyNotifications } from './EmptyStates'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 
 interface Notification {
@@ -167,13 +168,7 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
                   RECEIVING TRANSMISSIONS…
                 </div>
               ) : notifications.length === 0 ? (
-                <div style={{
-                  padding: '3rem', textAlign: 'center',
-                  fontFamily: 'var(--font-body)', fontSize: '0.85rem',
-                  color: 'var(--fog)', fontStyle: 'italic',
-                }}>
-                  No transmissions yet. Your signal awaits.
-                </div>
+                <EmptyNotifications />
               ) : (
                 Object.entries(grouped).map(([day, items]) => (
                   <div key={day}>
