@@ -7,12 +7,12 @@ import toast from 'react-hot-toast'
 import type { PhysicalArchiveItem } from '../../types'
 
 const FORMATS = [
-    { id: '4k', label: '4K UHD', icon: '📀', color: '#a855f7' },
-    { id: 'bluray', label: 'Blu-ray', icon: '💿', color: '#3b82f6' },
-    { id: 'dvd', label: 'DVD', icon: '📀', color: '#f59e0b' },
-    { id: 'vhs', label: 'VHS', icon: '📼', color: '#ef4444' },
-    { id: 'laserdisc', label: 'LaserDisc', icon: '💽', color: '#10b981' },
-    { id: 'steelbook', label: 'Steelbook', icon: '🔩', color: '#6366f1' },
+    { id: '4k', label: '4K UHD', icon: '◈', color: '#a855f7' },
+    { id: 'bluray', label: 'Blu-ray', icon: '◉', color: '#3b82f6' },
+    { id: 'dvd', label: 'DVD', icon: '○', color: '#f59e0b' },
+    { id: 'vhs', label: 'VHS', icon: '▮', color: '#ef4444' },
+    { id: 'laserdisc', label: 'LaserDisc', icon: '◎', color: '#10b981' },
+    { id: 'steelbook', label: 'Steelbook', icon: '⬡', color: '#6366f1' },
     { id: 'criterion', label: 'Criterion', icon: '✦', color: 'var(--sepia)' },
 ]
 
