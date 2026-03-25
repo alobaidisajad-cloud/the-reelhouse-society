@@ -1,20 +1,35 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Plus, X, Disc, Film, Archive, Trash2 } from 'lucide-react'
+import { Search, Plus, X, Disc, Disc2, Disc3, Film, Archive, Trash2, CircleDot, Clapperboard, Box, Award } from 'lucide-react'
 import { useFilmStore } from '../../stores/films'
 import { tmdb } from '../../tmdb'
 import toast from 'react-hot-toast'
 import type { PhysicalArchiveItem } from '../../types'
 
 const FORMATS = [
-    { id: '4k', label: '4K UHD', icon: '⧫', color: '#a855f7' },
-    { id: 'bluray', label: 'Blu-ray', icon: '⦿', color: '#3b82f6' },
-    { id: 'dvd', label: 'DVD', icon: '⊘', color: '#f59e0b' },
-    { id: 'vhs', label: 'VHS', icon: '▮', color: '#ef4444' },
-    { id: 'laserdisc', label: 'LaserDisc', icon: '⬮', color: '#10b981' },
-    { id: 'steelbook', label: 'Steelbook', icon: '⎔', color: '#6366f1' },
-    { id: 'criterion', label: 'Criterion', icon: '⩔', color: 'var(--sepia)' },
+    { id: '4k', label: '4K UHD', color: '#a855f7' },
+    { id: 'bluray', label: 'Blu-ray', color: '#3b82f6' },
+    { id: 'dvd', label: 'DVD', color: '#f59e0b' },
+    { id: 'vhs', label: 'VHS', color: '#ef4444' },
+    { id: 'laserdisc', label: 'LaserDisc', color: '#10b981' },
+    { id: 'steelbook', label: 'Steelbook', color: '#6366f1' },
+    { id: 'criterion', label: 'Criterion', color: 'var(--sepia)' },
 ]
+
+/** Returns a meaningful Lucide icon for each physical media format */
+function FormatIcon({ id, size = 11 }: { id: string; size?: number }) {
+    const props = { size, strokeWidth: 1.8 }
+    switch (id) {
+        case '4k':        return <Disc3 {...props} />       // premium disc
+        case 'bluray':    return <Disc {...props} />         // standard disc
+        case 'dvd':       return <CircleDot {...props} />    // simple disc
+        case 'vhs':       return <Clapperboard {...props} /> // retro / analog
+        case 'laserdisc': return <Disc2 {...props} />        // vintage disc
+        case 'steelbook': return <Box {...props} />          // metal case
+        case 'criterion': return <Award {...props} />        // collector's edition
+        default:          return <Disc {...props} />
+    }
+}
 
 const CONDITIONS = [
     { id: 'mint', label: 'Mint', color: '#10b981' },
@@ -171,7 +186,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                 transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '0.3rem',
                             }}
                         >
-                            {f.icon} {f.label} ({f.count})
+                            <FormatIcon id={f.id} /> {f.label} ({f.count})
                         </button>
                     ))}
                 </div>
@@ -293,7 +308,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                                     transition: 'all 0.15s', display: 'flex', alignItems: 'center', gap: '0.3rem',
                                                 }}
                                             >
-                                                {f.icon} {f.label}
+                                                <FormatIcon id={f.id} /> {f.label}
                                             </button>
                                         ))}
                                     </div>
@@ -413,7 +428,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                                         transition: 'all 0.15s',
                                                     }}
                                                 >
-                                                    {f.icon} {f.label}
+                                                    <FormatIcon id={f.id} /> {f.label}
                                                 </button>
                                             ))}
                                         </div>
@@ -432,7 +447,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                                             color: fmt.color,
                                                         }}
                                                     >
-                                                        {fmt.icon} {fmt.label}
+                                                        <FormatIcon id={fId} /> {fmt.label}
                                                     </span>
                                                 ) : null
                                             })}
