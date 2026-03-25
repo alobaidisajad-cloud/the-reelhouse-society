@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Users } from 'lucide-react'
+import { X, Users, Bell } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../../store'
 import Buster from '../Buster'
 
@@ -14,7 +14,7 @@ const NAV_LINKS = [
     { path: '/society', label: 'The Society' },
 ]
 
-export default function MobileNavDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+export default function MobileNavDrawer({ isOpen, onClose, onOpenNotifications }: { isOpen: boolean; onClose: () => void; onOpenNotifications?: () => void }) {
     const user = useAuthStore(state => state.user)
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
     const openLogModal = useUIStore(state => state.openLogModal)
@@ -52,6 +52,15 @@ export default function MobileNavDrawer({ isOpen, onClose }: { isOpen: boolean; 
                                 <Link to={`/user/${user?.username}`} className="mobile-nav-link" onClick={onClose} style={{ fontSize: '1.2rem', color: 'var(--bone)' }}>
                                     My Profile
                                 </Link>
+                                {onOpenNotifications && (
+                                    <button
+                                        className="mobile-nav-link"
+                                        onClick={() => { onOpenNotifications(); onClose() }}
+                                        style={{ color: 'var(--sepia)', background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-ui)', letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}
+                                    >
+                                        <Bell size={14} /> TRANSMISSIONS
+                                    </button>
+                                )}
                                 <button className="btn btn-primary" onClick={() => { openLogModal(); onClose() }}>
                                     + Log a Film
                                 </button>

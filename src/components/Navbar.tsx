@@ -53,6 +53,7 @@ export default function Navbar() {
     const [mobileOpen, setMobileOpen] = useState(false)
     const [searchOpen, setSearchOpen] = useState(false)
     const [peopleSearchOpen, setPeopleSearchOpen] = useState(false)
+    const [notificationsOpen, setNotificationsOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false);
     const [hidden, setHidden] = useState(false);
     
@@ -169,7 +170,12 @@ export default function Navbar() {
                                 >
                                     + <span className="hide-mobile">LOG FILM</span>
                                 </button>
-                                <span className="hide-mobile"><NotificationBell /></span>
+                                <span className="hide-mobile">
+                                    <NotificationBell
+                                        isOpen={notificationsOpen}
+                                        onOpenChange={setNotificationsOpen}
+                                    />
+                                </span>
                                 {user?.role === 'venue_owner' && (
                                     <Link
                                         to="/venue-dashboard"
@@ -247,7 +253,22 @@ export default function Navbar() {
             </nav>
 
             {/* Mobile Menu */}
-            <MobileNavDrawer isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+            <MobileNavDrawer
+                isOpen={mobileOpen}
+                onClose={() => setMobileOpen(false)}
+                onOpenNotifications={() => setNotificationsOpen(true)}
+            />
+            
+            {/* Mobile Notifications Panel — renders outside the desktop span when triggered from mobile menu */}
+            {notificationsOpen && mobileOpen === false && (
+                <div className="mobile-only-notifications">
+                    <NotificationBell
+                        isOpen={notificationsOpen}
+                        onOpenChange={setNotificationsOpen}
+                        forceMount={true}
+                    />
+                </div>
+            )}
         </>
     )
 }

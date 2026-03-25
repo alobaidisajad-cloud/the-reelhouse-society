@@ -215,13 +215,14 @@ export default function ActivityCard({ log }: { log: any }) {
 
             {/* Content Body */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem' }}>
-                    <Link to={`/user/${log.user}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.2rem', paddingRight: '5.5rem', overflow: 'hidden' }}>
+                    <Link to={`/user/${log.user}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                         @{(log.user || 'anonymous').toUpperCase()}
                     </Link>
                     <span style={{
                         fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em',
-                        color: log.userRole === 'auteur' ? 'var(--sepia)' : 'var(--fog)'
+                        color: log.userRole === 'auteur' ? 'var(--sepia)' : 'var(--fog)',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>
                         — {(log.userRole || 'cinephile').toUpperCase()} {log.userRole === 'auteur' && '✦'}
                     </span>
