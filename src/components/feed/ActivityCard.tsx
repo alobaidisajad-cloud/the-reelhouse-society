@@ -8,7 +8,6 @@ import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import toast from 'react-hot-toast'
 import { throttleAction } from '../../errorLogger'
-import MissingPoster from '../film/MissingPoster'
 
 export default function ActivityCard({ log }: { log: any }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
@@ -197,7 +196,9 @@ export default function ActivityCard({ log }: { log: any }) {
                         style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9, mixBlendMode: 'luminosity' }}
                     />
                 ) : (
-                    <MissingPoster sizeHint="sm" className="activity-missing-poster" style={{ borderRadius: '2px' }} />
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0b09', borderRadius: '2px' }}>
+                        <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '75%', height: 'auto', opacity: 0.9 }} />
+                    </div>
                 )}
                 <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none' }} />
             </div>

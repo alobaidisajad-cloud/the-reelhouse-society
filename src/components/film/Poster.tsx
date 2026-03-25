@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { Film } from 'lucide-react'
 import { tmdb } from '../../tmdb'
-import MissingPoster from './MissingPoster'
 
 interface PosterProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     path: string | null | undefined
@@ -30,7 +29,11 @@ export default function Poster({ path, title, aspectRatio = 'poster', sizeHint =
 
     // Default missing artwork state
     if (!path || error) {
-        return <MissingPoster sizeHint={sizeHint} className={className} style={containerStyle} />
+        return (
+            <div className={`poster-fallback ${className || ''}`} style={{ ...containerStyle, background: '#0d0b09', border: '1px solid rgba(139,105,20,0.12)' }}>
+                <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '75%', height: 'auto', opacity: 0.9 }} />
+            </div>
+        )
     }
 
     // Determine srcSet and responsive sizes based on orientation and intent
