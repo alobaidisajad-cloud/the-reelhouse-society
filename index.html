@@ -45,12 +45,16 @@
   <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
   <!-- font-display=swap: text shows in fallback font immediately, swaps when loaded.
        Prevents invisible text (FOIT) — critical for mobile perceived performance -->
-  <!-- Preload critical font CSS for faster First Contentful Paint -->
-  <link rel="preload" as="style"
+  <!-- Preload critical font CSS as async (non-render-blocking) for faster LCP -->
+  <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"
     href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bungee&family=Bungee+Shade&display=swap" />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bungee&family=Bungee+Shade&display=swap"
-    rel="stylesheet" />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bungee&family=Bungee+Shade&display=swap"
+      rel="stylesheet" />
+  </noscript>
+  <!-- DNS prefetch for Supabase -->
+  <link rel="dns-prefetch" href="https://wihyqkpoymwcvbprslyz.supabase.co" />
 
   <!-- Critical inline CSS: prevents flash of unstyled background on mobile -->
   <style>

@@ -7,7 +7,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
     useEffect(() => {
         if (count > 0) {
-            const timer = setTimeout(() => setCount(count - 1), 350)
+            const timer = setTimeout(() => setCount(count - 1), 200)
             return () => clearTimeout(timer)
         } else {
             const timer = setTimeout(() => setLoading(false), 200)

@@ -72,6 +72,7 @@ export default function Poster({ path, title, aspectRatio = 'poster', sizeHint =
                 sizes={srcData.sizes}
                 alt={title}
                 loading={sizeHint === 'hero' ? 'eager' : 'lazy'}
+                fetchPriority={sizeHint === 'hero' ? 'high' : undefined}
                 decoding="async"
                 onLoad={() => setLoaded(true)}
                 onError={() => setError(true)}
