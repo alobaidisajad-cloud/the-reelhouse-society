@@ -72,15 +72,18 @@ export const useAuthStore = create<AuthState>()(
                 const { data, error } = await supabase.auth.signInWithPassword({ email, password })
                 if (error) throw error
 
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', data.user.id)
-                    .single()
+                // Set authenticated IMMEDIATELY with minimal auth data so the UI responds instantly
+                set({ user: { ...data.user, following: [] } as unknown as User, isAuthenticated: true })
 
-                set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true })
-                // Hydration is handled by initAuthSync() via SIGNED_IN event —
-                // no explicit hydrateUserData() call here to prevent double-fetch.
+                // Fetch full profile in the background — UI is already updated
+                Promise.resolve(supabase.from('profiles').select('*').eq('id', data.user.id).single())
+                    .then(({ data: profile }) => {
+                        if (profile) {
+                            set((s) => ({ user: s.user ? { ...s.user, ...profile } : null }))
+                        }
+                    })
+                    .catch(() => { /* profile enrichment is non-critical */ })
+
                 return data
             },
 

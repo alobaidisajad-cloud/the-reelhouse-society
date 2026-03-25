@@ -44,7 +44,8 @@ export const initAuthSync = () => {
                     user: { ...session.user, ...profile },
                     isAuthenticated: true,
                 })
-                await Promise.all([
+                // Fire-and-forget: hydrate stores in background, don't block the UI
+                Promise.all([
                     useFilmStore.getState().fetchLogs(),
                     useFilmStore.getState().fetchWatchlist(),
                     useFilmStore.getState().fetchVault(),
@@ -54,7 +55,7 @@ export const initAuthSync = () => {
                     useFilmStore.getState().fetchPhysicalArchive(),
                     useProgrammeStore.getState().fetchProgrammes(),
                     hydrateFollowing(),
-                ])
+                ]).catch(() => { /* background hydration failure is non-critical */ })
             } else {
                 // No session on load — clear any stale localStorage auth
                 useAuthStore.setState({ user: null, isAuthenticated: false })
@@ -64,27 +65,28 @@ export const initAuthSync = () => {
 
         if (event === 'SIGNED_IN' && session) {
             const currentUser = useAuthStore.getState().user
-            // Only re-hydrate on SIGNED_IN if the user actually changed
-            // (prevents double-fetch when INITIAL_SESSION already handled it)
-            if (!currentUser || currentUser.id !== session.user.id) {
-                const { data: profile } = await supabase
-                    .from('profiles').select('*').eq('id', session.user.id).single()
-                useAuthStore.setState({
-                    user: { ...session.user, ...profile },
-                    isAuthenticated: true,
-                })
-                await Promise.all([
-                    useFilmStore.getState().fetchLogs(),
-                    useFilmStore.getState().fetchWatchlist(),
-                    useFilmStore.getState().fetchVault(),
-                    useFilmStore.getState().fetchLists(),
-                    useFilmStore.getState().fetchStubs(),
-                    useFilmStore.getState().fetchEndorsements(),
-                    useFilmStore.getState().fetchPhysicalArchive(),
-                    useProgrammeStore.getState().fetchProgrammes(),
-                    hydrateFollowing(),
-                ])
-            }
+            // Skip if login() already set the user with matching ID
+            if (currentUser && currentUser.id === session.user.id) return
+
+            // New sign-in (e.g. from email confirmation callback)
+            const { data: profile } = await supabase
+                .from('profiles').select('*').eq('id', session.user.id).single()
+            useAuthStore.setState({
+                user: { ...session.user, ...profile },
+                isAuthenticated: true,
+            })
+            // Fire-and-forget: hydrate stores in background
+            Promise.all([
+                useFilmStore.getState().fetchLogs(),
+                useFilmStore.getState().fetchWatchlist(),
+                useFilmStore.getState().fetchVault(),
+                useFilmStore.getState().fetchLists(),
+                useFilmStore.getState().fetchStubs(),
+                useFilmStore.getState().fetchEndorsements(),
+                useFilmStore.getState().fetchPhysicalArchive(),
+                useProgrammeStore.getState().fetchProgrammes(),
+                hydrateFollowing(),
+            ]).catch(() => { /* background hydration failure is non-critical */ })
         }
 
         if (event === 'SIGNED_OUT') {
