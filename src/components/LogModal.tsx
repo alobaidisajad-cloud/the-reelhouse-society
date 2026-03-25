@@ -9,6 +9,7 @@ import { ReelRating } from './UI'
 import LogModalSearch from './log-modal/LogModalSearch'
 import EditorialDesk from './log-modal/EditorialDesk'
 import AuteurToolkit from './log-modal/AuteurToolkit'
+import ShareCardModal from './film/ShareCardModal'
 import toast from 'react-hot-toast'
 
 // ── Single source of truth for autopsy categories ──
@@ -58,6 +59,7 @@ export default function LogModal() {
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
     const [watchedWith, setWatchedWith] = useState('')
     const [privateNotes, setPrivateNotes] = useState('')
+    const [shareCardData, setShareCardData] = useState<any>(null)
     const [physicalMedia, setPhysicalMedia] = useState('None')
     const [autopsy, setAutopsy] = useState<Record<string, number>>({ ...AUTOPSY_INIT })
     const [altPoster, setAltPoster] = useState<string | null>(null)
@@ -224,43 +226,18 @@ export default function LogModal() {
             addLog(logData as any)
             const statusLabel: Record<string, string> = { watched: '[ LOGGED ]', rewatched: '[ REWATCH ]', abandoned: '[ ABANDONED ]' }
 
-            // ── One-tap share after log ──
-            const shareText = rating > 0
-                ? `${statusLabel[status]} ${film.title} (${film.year ?? ''}) — ${rating}/5 ✦ The ReelHouse Society`
-                : `${statusLabel[status]} Just logged ${film.title} on The ReelHouse Society`
-            const shareUrl = 'https://thereelhousesociety.com'
+            toast.success(`${statusLabel[status]} ${film.title} logged to the archive.`)
 
-            toast(
-                (t) => (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.62rem', letterSpacing: '0.1em', color: '#E8DFC8' }}>
-                            {statusLabel[status]} {film.title} logged to the archive.
-                        </div>
-                        <button
-                            onClick={() => {
-                                toast.dismiss(t.id)
-                                if (navigator.share) {
-                                    navigator.share({ title: film.title, text: shareText, url: shareUrl }).catch(() => { })
-                                } else {
-                                    navigator.clipboard.writeText(`${shareText}\n${shareUrl}`).then(() => {
-                                        toast.success('Copied to clipboard')
-                                    }).catch(() => { })
-                                }
-                            }}
-                            style={{
-                                background: 'rgba(139,105,20,0.2)', border: '1px solid rgba(139,105,20,0.4)',
-                                color: '#E8DFC8', fontFamily: 'var(--font-ui)', fontSize: '0.55rem',
-                                letterSpacing: '0.15em', padding: '0.4rem 0.8rem', cursor: 'pointer',
-                                borderRadius: '2px', alignSelf: 'flex-start',
-                                transition: 'background 0.2s',
-                            }}
-                        >
-                            ✦ SHARE THIS LOG
-                        </button>
-                    </div>
-                ),
-                { duration: 5000 }
-            )
+            // Show visual share card modal
+            setShareCardData({
+                filmTitle: film.title,
+                filmYear: film.release_date?.slice(0, 4) || film.year,
+                posterPath: film.poster_path,
+                rating,
+                review: review.trim(),
+                username: user?.username || 'cinephile',
+                status,
+            })
         }
 
         closeLogModal()
@@ -292,10 +269,10 @@ export default function LogModal() {
 
     const focusTrapRef = useFocusTrap(logModalOpen, closeLogModal)
 
-    if (!logModalOpen) return null
-
 
     return (
+        <>
+        {logModalOpen && (
         <AnimatePresence>
             <motion.div
                 key="modal-backdrop"
@@ -683,6 +660,15 @@ export default function LogModal() {
                     </div>
                 </motion.div>
             </motion.div>
-        </AnimatePresence >
+        </AnimatePresence>
+        )}
+
+            {shareCardData && (
+                <ShareCardModal
+                    data={shareCardData}
+                    onClose={() => setShareCardData(null)}
+                />
+            )}
+        </>
     )
 }
