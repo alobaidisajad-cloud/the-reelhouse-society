@@ -1,6 +1,6 @@
 // TMDB API utilities
 // Uses VITE_TMDB_API_KEY env var — set in Vercel dashboard, .env.local for dev
-const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || '3fd2be6f0c70a2a598f084ddfb75487c'
+const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || ''
 const TMDB_BASE = 'https://api.themoviedb.org/3'
 const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
@@ -14,13 +14,10 @@ async function fetchTMDB(path: any, fallback: any = null) {
         const timer = setTimeout(() => controller.abort(), 10000)
         const res = await fetch(url, { signal: controller.signal })
         clearTimeout(timer)
-        if (!res.ok) {
-            console.warn(`[TMDB] ${res.status} — ${path.split('?')[0]}`)
-            return fallback
-        }
+        if (!res.ok) return fallback
         return await res.json()
     } catch (e: any) {
-        if (e.name !== 'AbortError') console.warn('[TMDB] Fetch error:', e.message)
+        if (e.name !== 'AbortError') { /* silently swallow — fallback returned */ }
         return fallback
     }
 }
