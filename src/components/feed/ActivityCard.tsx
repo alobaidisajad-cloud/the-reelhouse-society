@@ -8,7 +8,6 @@ import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import toast from 'react-hot-toast'
 import { throttleAction } from '../../errorLogger'
-import MissingPoster from '../film/MissingPoster'
 
 export default function ActivityCard({ log }: { log: any }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
@@ -197,7 +196,19 @@ export default function ActivityCard({ log }: { log: any }) {
                         style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9, mixBlendMode: 'luminosity' }}
                     />
                 ) : (
-                    <MissingPoster sizeHint="sm" className="activity-missing-poster" style={{ borderRadius: '2px' }} text="NO REEL" />
+                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)', gap: '0.4rem' }}>
+                        {/* Film frame placeholder SVG */}
+                        <svg width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity: 0.25 }}>
+                            <rect x="1" y="1" width="30" height="38" rx="1" stroke="var(--sepia)" strokeWidth="1.2" strokeDasharray="3 2" />
+                            <rect x="4" y="4" width="5" height="4" rx="0.5" fill="var(--sepia)" opacity="0.6" />
+                            <rect x="23" y="4" width="5" height="4" rx="0.5" fill="var(--sepia)" opacity="0.6" />
+                            <rect x="4" y="32" width="5" height="4" rx="0.5" fill="var(--sepia)" opacity="0.6" />
+                            <rect x="23" y="32" width="5" height="4" rx="0.5" fill="var(--sepia)" opacity="0.6" />
+                            <line x1="4" y1="10" x2="28" y2="10" stroke="var(--ash)" strokeWidth="0.5" />
+                            <line x1="4" y1="30" x2="28" y2="30" stroke="var(--ash)" strokeWidth="0.5" />
+                        </svg>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15em', color: 'var(--fog)', opacity: 0.5, textAlign: 'center', lineHeight: 1.4 }}>NO REEL<br />ON FILE</span>
+                    </div>
                 )}
                 <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none' }} />
             </div>
