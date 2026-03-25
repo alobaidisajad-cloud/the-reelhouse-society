@@ -1,0 +1,31 @@
+src/components/Navbar.tsx(65,17): error TS2304: Cannot find name 'setScrolled'.
+src/components/Navbar.tsx(85,14): error TS2304: Cannot find name 'query'.
+src/components/Navbar.tsx(86,13): error TS2304: Cannot find name 'setSuggestions'.
+src/components/Navbar.tsx(87,13): error TS2304: Cannot find name 'setSearching'.
+src/components/Navbar.tsx(90,9): error TS2304: Cannot find name 'setSearching'.
+src/components/Navbar.tsx(93,56): error TS2304: Cannot find name 'query'.
+src/components/Navbar.tsx(94,17): error TS2304: Cannot find name 'setSuggestions'.
+src/components/Navbar.tsx(98,17): error TS2304: Cannot find name 'setSearching'.
+src/components/Navbar.tsx(102,9): error TS2304: Cannot find name 'query'.
+src/components/Navbar.tsx(106,14): error TS2304: Cannot find name 'peopleQuery'.
+src/components/Navbar.tsx(107,13): error TS2304: Cannot find name 'setPeopleSuggestions'.
+src/components/Navbar.tsx(108,13): error TS2304: Cannot find name 'setSearchingPeople'.
+src/components/Navbar.tsx(111,9): error TS2552: Cannot find name 'setSearchingPeople'. Did you mean 'setSearchOpen'?
+src/components/Navbar.tsx(114,46): error TS2304: Cannot find name 'setSearchingPeople'.
+src/components/Navbar.tsx(118,44): error TS2304: Cannot find name 'peopleQuery'.
+src/components/Navbar.tsx(118,71): error TS2304: Cannot find name 'peopleQuery'.
+src/components/Navbar.tsx(121,37): error TS2304: Cannot find name 'setPeopleSuggestions'.
+src/components/Navbar.tsx(125,17): error TS2552: Cannot find name 'setSearchingPeople'. Did you mean 'setSearchOpen'?
+src/components/Navbar.tsx(129,9): error TS2304: Cannot find name 'peopleQuery'.
+src/components/Navbar.tsx(133,13): error TS2304: Cannot find name 'query'.
+src/components/Navbar.tsx(133,29): error TS2304: Cannot find name 'suggestions'.
+src/components/Navbar.tsx(134,27): error TS2304: Cannot find name 'suggestions'.
+src/components/Navbar.tsx(141,13): error TS2304: Cannot find name 'setQuery'.
+src/components/Navbar.tsx(141,49): error TS2304: Cannot find name 'setSuggestions'.
+src/components/Navbar.tsx(147,13): error TS2304: Cannot find name 'peopleQuery'.
+src/components/Navbar.tsx(147,35): error TS2304: Cannot find name 'peopleSuggestions'.
+src/components/Navbar.tsx(148,31): error TS2304: Cannot find name 'peopleSuggestions'.
+src/components/Navbar.tsx(149,13): error TS2304: Cannot find name 'setPeopleQuery'.
+src/components/Navbar.tsx(149,61): error TS2304: Cannot find name 'setPeopleSuggestions'.
+src/components/Navbar.tsx(166,39): error TS2304: Cannot find name 'scrolled'.
+src/components/Navbar.tsx(167,28): error TS2304: Cannot find name 'hidden'.

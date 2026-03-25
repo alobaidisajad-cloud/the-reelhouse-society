@@ -140,7 +140,9 @@
   .nav-links { display: none !important; }
   .hide-mobile { display: none !important; }
   .mobile-only { display: block !important; }
-  .mobile-fab { display: flex; z-index: 10000 !important; }
+  .mobile-fab { display: none !important; }
+  .bottom-nav { display: flex !important; }
+  body { padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
   .nav-actions { gap: 0.75rem !important; }
 
   /* === TYPOGRAPHY === */

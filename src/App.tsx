@@ -12,6 +12,7 @@ import { useFilmStore, useUIStore, useAuthStore, initRealtime, initAuthSync } fr
 import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
 import ErrorBoundary from './components/ErrorBoundary'
+import BottomNav from './components/BottomNav'
 import OfflineBanner from './components/OfflineBanner'
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts'
 import ShortcutsHelp from './components/ShortcutsHelp'
@@ -213,14 +214,8 @@ export default function App() {
 
       <CustomCursor />
 
-      {/* Floating Action Button — mobile only */}
-      <button
-        className="mobile-fab"
-        onClick={() => openLogModal()}
-        aria-label="Log a Film"
-      >
-        +
-      </button>
+      {/* Bottom Tab Navigation — mobile only */}
+      <BottomNav />
 
       {/* Suspense wrapper handles BOTH global modals AND route-level pages */}
       <Suspense fallback={<PageFallback />}>
@@ -277,6 +272,7 @@ export default function App() {
       </Suspense>
 
       <Footer />
+
     </div>
   )
 }
