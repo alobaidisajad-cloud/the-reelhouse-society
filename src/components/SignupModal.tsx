@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Film, Building, Lock, Terminal, Mail, RefreshCw } from 'lucide-react'
+import { X, Film, Building, Lock, Terminal, Mail, RefreshCw, Check, AlertCircle } from 'lucide-react'
 import { useUIStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
@@ -31,7 +31,7 @@ export default function SignupModal() {
 
     const [role, setRole] = useState(signupRole || 'cinephile')
     const [step, setStep] = useState(0)
-    const [email, setEmail] = useState('')
+    const [emailOrUsername, setEmailOrUsername] = useState('')
     const [password, setPassword] = useState('')
     const [username, setUsername] = useState('')
     const [persona, setPersona] = useState('')
@@ -39,6 +39,10 @@ export default function SignupModal() {
     const [venueDesc, setVenueDesc] = useState('')
     const [vibes, setVibes] = useState<string[]>([])
     const [isLogin, setIsLogin] = useState(false)
+
+    // Username availability state
+    const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
+    const usernameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     // Velvet Rope State
     const [hasClearance, setHasClearance] = useState(false)
@@ -62,19 +66,39 @@ export default function SignupModal() {
         }
     }, [signupModalOpen])
 
-    // Close the modal if the user is already logged in (prevents showing gate to auth'd users)
+    // Close the modal if the user is already logged in
     useEffect(() => {
         if (signupModalOpen && isAuthenticated) {
             closeSignupModal()
         }
     }, [signupModalOpen, isAuthenticated])
 
+    // ── DEBOUNCED USERNAME AVAILABILITY CHECK ──
+    const checkUsernameAvailability = (value: string) => {
+        if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current)
+        const trimmed = value.trim().toLowerCase().replace(/\s+/g, '_')
+        if (trimmed.length < 3) { setUsernameStatus('idle'); return }
+        setUsernameStatus('checking')
+        usernameCheckTimer.current = setTimeout(async () => {
+            try {
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('username')
+                    .eq('username', trimmed)
+                    .maybeSingle()
+                setUsernameStatus(data ? 'taken' : 'available')
+            } catch {
+                setUsernameStatus('idle')
+            }
+        }, 500)
+    }
+
     // ── AUTO-DETECT EMAIL CONFIRMATION ──
     // Polls every 5s to check if the user confirmed their email.
     // When they click the link (even in a new tab), the next poll succeeds
     // and logs them in automatically on the original page.
     useEffect(() => {
-        if (!awaitingConfirmation || !email || !password) return
+        if (!awaitingConfirmation || !emailOrUsername || !password) return
         let cancelled = false
         let attempts = 0
         const maxAttempts = 120 // 10 minutes of polling
@@ -86,7 +110,7 @@ export default function SignupModal() {
             }
             attempts++
             try {
-                const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+                const { data, error } = await supabase.auth.signInWithPassword({ email: emailOrUsername, password })
                 if (!error && data?.session) {
                     clearInterval(poll)
                     if (cancelled) return
@@ -111,7 +135,7 @@ export default function SignupModal() {
         }, 5000)
 
         return () => { cancelled = true; clearInterval(poll) }
-    }, [awaitingConfirmation, email, password])
+    }, [awaitingConfirmation, emailOrUsername, password])
 
     const [showPassword, setShowPassword] = useState(false)
     const toggleVibe = (v: string) => setVibes((prev) =>
@@ -148,33 +172,65 @@ export default function SignupModal() {
     }
 
     const handleSubmit = async () => {
-        if (!email || !password || (!isLogin && !username)) {
+        if (!emailOrUsername || !password || (!isLogin && !username)) {
             toast.error('Please fill all fields')
             return
         }
-        if (!isValidEmailFormat(email)) {
-            toast.error('Please enter a valid email address.')
-            return
-        }
-        if (isDisposableEmail(email)) {
-            toast.error('Disposable emails are not permitted. Use a permanent address to join the Society.')
-            return
-        }
-        if (!isLogin && !passwordStrong) {
-            toast.error('Password does not meet security requirements.')
-            return
-        }
 
+        // Username availability guard for signup
+        if (!isLogin && usernameStatus === 'taken') {
+            toast.error('That username is already taken. Choose another.')
+            return
+        }
 
         try {
             if (isLogin) {
-                await login(email, password)
+                // ── LOGIN: email or username ──
+                let loginEmail = emailOrUsername.trim()
+                if (!loginEmail.includes('@')) {
+                    // Input is a username — resolve to email
+                    const lookupUsername = loginEmail.toLowerCase().replace(/\s+/g, '_')
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('email')
+                        .eq('username', lookupUsername)
+                        .maybeSingle()
+                    if (!profile?.email) {
+                        toast.error('No account found with that username.')
+                        return
+                    }
+                    loginEmail = profile.email
+                } else {
+                    if (!isValidEmailFormat(loginEmail)) {
+                        toast.error('Please enter a valid email address.')
+                        return
+                    }
+                }
+                await login(loginEmail, password)
                 toast.success('Welcome back to the House.')
                 closeSignupModal()
                 resetForm()
             } else {
+                // ── SIGNUP: validate email, password, and username ──
+                const signupEmail = emailOrUsername.trim()
+                if (!isValidEmailFormat(signupEmail)) {
+                    toast.error('Please enter a valid email address.')
+                    return
+                }
+                if (isDisposableEmail(signupEmail)) {
+                    toast.error('Disposable emails are not permitted. Use a permanent address to join the Society.')
+                    return
+                }
+                if (!passwordStrong) {
+                    toast.error('Password does not meet security requirements.')
+                    return
+                }
                 const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '_')
-                const result = await useAuthStore.getState().signup(email, password, formattedUsername, role, persona)
+                if (formattedUsername.length < 3) {
+                    toast.error('Username must be at least 3 characters.')
+                    return
+                }
+                const result = await useAuthStore.getState().signup(signupEmail, password, formattedUsername, role, persona)
 
                 if (result?.session) {
                     // Email confirmation disabled — user is logged in immediately
@@ -195,7 +251,7 @@ export default function SignupModal() {
                     resetForm()
                 } else {
                     // Email confirmation required — show inbox screen
-                    setConfirmedEmail(email)
+                    setConfirmedEmail(signupEmail)
                     setAwaitingConfirmation(true)
                 }
             }
@@ -209,11 +265,11 @@ export default function SignupModal() {
     }
 
     const resetForm = () => {
-        setStep(0); setEmail(''); setPassword(''); setUsername('')
+        setStep(0); setEmailOrUsername(''); setPassword(''); setUsername('')
         setPersona(''); setVenueName(''); setVenueDesc(''); setVibes([])
         setHasClearance(false); setClearanceCode(''); setClearanceStatus('idle')
         setAwaitingConfirmation(false); setConfirmedEmail('')
-        setForgotMode(false)
+        setForgotMode(false); setUsernameStatus('idle')
     }
 
     const handleResend = async () => {
@@ -369,9 +425,33 @@ export default function SignupModal() {
                             style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
                             autoComplete="on"
                         >
-                            <input className="input" placeholder="Email address" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                            <input className="input" placeholder={isLogin ? 'Email or Username' : 'Email address'} type={isLogin ? 'text' : 'email'} autoComplete={isLogin ? 'username' : 'email'} value={emailOrUsername} onChange={(e) => setEmailOrUsername(e.target.value)} />
                             {!isLogin && (
-                                <input className="input" placeholder="Username / Handle" autoComplete="username" value={username} onChange={(e) => setUsername(e.target.value)} />
+                                <div style={{ position: 'relative' }}>
+                                    <input
+                                        className="input"
+                                        placeholder="Username / Handle"
+                                        autoComplete="username"
+                                        value={username}
+                                        onChange={(e) => {
+                                            setUsername(e.target.value)
+                                            checkUsernameAvailability(e.target.value)
+                                        }}
+                                        style={{ width: '100%', paddingRight: '2.5rem', boxSizing: 'border-box' }}
+                                    />
+                                    {usernameStatus !== 'idle' && (
+                                        <span style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', display: 'flex', alignItems: 'center' }}>
+                                            {usernameStatus === 'checking' && <RefreshCw size={14} color="var(--fog)" style={{ animation: 'spin 1s linear infinite' }} />}
+                                            {usernameStatus === 'available' && <Check size={14} color="#4caf50" />}
+                                            {usernameStatus === 'taken' && <AlertCircle size={14} color="var(--blood-reel)" />}
+                                        </span>
+                                    )}
+                                    {usernameStatus === 'taken' && (
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: 'var(--blood-reel)', marginTop: '0.25rem' }}>
+                                            USERNAME ALREADY TAKEN
+                                        </div>
+                                    )}
+                                </div>
                             )}
                             {/* Password field with show/hide toggle */}
                             <div style={{ position: 'relative' }}>
@@ -478,7 +558,7 @@ export default function SignupModal() {
                         </button>
                         {isLogin && (
                             <button
-                                onClick={() => { setForgotMode(true); setEmail(email) }}
+                                onClick={() => { setForgotMode(true) }}
                                 style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', background: 'none', border: 'none', textDecoration: 'underline', textAlign: 'center', cursor: 'pointer', marginTop: '0.25rem', opacity: 0.8 }}
                             >
                                 Forgot your password?
