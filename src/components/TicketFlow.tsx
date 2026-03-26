@@ -67,7 +67,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
             format: slot.format,
             qrCode: null,
         }
-        // Try to persist to Supabase; fall back to local-only for demo venues
+        // Rigidly persist to Supabase; do not use fake local stubs.
         try {
             const dbId = await useFilmStore.getState().saveStub(stub)
             if (dbId) {
@@ -75,10 +75,12 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
                     stubs: [{ ...stub, id: dbId }, ...s.stubs.filter(x => x.id !== dbId)]
                 }))
             } else {
-                useFilmStore.getState().addStubLocal({ ...stub, id: 'stub-' + Date.now() })
+                toast.error('Transaction Failed: Rejected by Core System')
+                return
             }
         } catch {
-            useFilmStore.getState().addStubLocal({ ...stub, id: 'stub-' + Date.now() })
+            toast.error('Transaction Failed: Connection Interrupted')
+            return
         }
         setCreatedStub(stub)
         setStep(4)

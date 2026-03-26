@@ -38,7 +38,6 @@ export interface FilmState {
     fetchLists: () => Promise<void>
     fetchStubs: () => Promise<void>
     saveStub: (stub: Partial<TicketStub> & { showtimeId?: string, slotId?: string }) => Promise<string | null>
-    addStubLocal: (stub: Partial<TicketStub>) => void
     addLog: (log: Partial<FilmLog>) => Promise<void>
     getCinephileStats: () => { count: number, level: string, color: string, progress: number }
     updateLog: (id: string, updates: Partial<FilmLog>) => Promise<void>
@@ -245,11 +244,6 @@ export const useFilmStore = create<FilmState>()(
                     return data.id
                 }
                 return null
-            },
-
-            addStubLocal: (stub) => {
-                // Used for demo/mock venues without a real Supabase showtime UUID
-                set((state) => ({ stubs: [{ id: stub.id || crypto.randomUUID(), filmTitle: stub.filmTitle || 'Unknown Film', date: stub.date || '', seat: stub.seat || '\u2014', ticketType: stub.ticketType || 'Standard', amount: stub.amount || 0, qrCode: stub.qrCode || null, screenName: stub.screenName || null, createdAt: stub.createdAt || new Date().toISOString() }, ...state.stubs] }))
             },
 
             addLog: async (log) => {

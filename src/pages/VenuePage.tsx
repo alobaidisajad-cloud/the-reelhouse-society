@@ -10,65 +10,6 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 
-// ── DEMO VENUES ──
-const DEMO_VENUES = {
-    1: {
-        id: 1, name: 'The Oracle Palace', location: 'Brooklyn, NY',
-        slug: 'oracle-palace',
-        description: 'Established in 1934 in a converted Masonic lodge, The Oracle Palace has screened everything from early talkie debuts to underground horror marathons. Our 35mm projection booth has never gone dark. We believe cinema is not entertainment — it is ritual.',
-        vibes: ['Arthouse', 'Midnight Palace', 'Repertory'],
-        verified: true, followers: 1247,
-        events: [
-            { id: 'ev1', title: 'MIDNIGHT HORROR MARATHON', desc: '6 films. No sleep. No mercy.', date: '2026-03-15', time: '23:00', type: 'Marathon', price: 45, ticketsLeft: 40, totalTickets: 60 },
-            { id: 'ev2', title: 'GERMAN EXPRESSIONISM SERIES', desc: '4-week deep dive into the movement that gave us shadows, madness, and modern horror.', date: '2026-03-20', time: '20:00', type: 'Series', price: 18, ticketsLeft: 25, totalTickets: 50 },
-        ],
-    },
-    2: {
-        id: 2, name: 'Lighthouse Cinema', location: 'Austin, TX',
-        slug: 'lighthouse-cinema',
-        description: 'A beloved indie cinema showing the films your local multiplex is afraid of. We program for the curious, the patient, and the adventurous.',
-        vibes: ['Indie', 'Repertory', 'Arthouse'],
-        verified: false, followers: 892,
-        showtimes: [
-            {
-                id: 'lh-st1', film: 'Akira (1988)', date: '2026-03-14',
-                slots: [
-                    { id: 'lh-sl1', time: '19:30', format: 'DCP 4K', notes: 'Newly restored print', bookedSeats: ['A1', 'A2', 'B3', 'C1'], ticketTypes: [{ id: 'lh-tt1', type: 'Standard', price: 14, perks: 'General seating' }] },
-                    { id: 'lh-sl2', time: '22:00', format: 'DCP 4K', notes: 'Late screening', bookedSeats: ['A1'], ticketTypes: [{ id: 'lh-tt2', type: 'Standard', price: 14, perks: 'General seating' }] },
-                ]
-            },
-            {
-                id: 'lh-st2', film: 'Perfect Blue (1997)', date: '2026-03-15',
-                slots: [
-                    { id: 'lh-sl3', time: '21:00', format: '35mm', notes: '', bookedSeats: ['A1', 'B1', 'C2', 'D3', 'D4', 'E5'], ticketTypes: [{ id: 'lh-tt3', type: 'Standard', price: 16, perks: 'General seating' }, { id: 'lh-tt4', type: 'VIP', price: 25, perks: 'Rows A–B + drink' }] },
-                ]
-            },
-        ],
-        events: [{ id: 'lh-ev1', title: 'SATOSHI KON RETROSPECTIVE', desc: 'Every film. All four of them.', date: '2026-03-14', time: '18:00', type: 'Retrospective', price: 22, ticketsLeft: 15, totalTickets: 40 }],
-    },
-    3: {
-        id: 3, name: 'The Neon Coffin', location: 'Chicago, IL',
-        slug: 'neon-coffin',
-        description: 'We only show horror. We never apologize for it.',
-        vibes: ['Horror House', 'Drive-In'],
-        verified: true, followers: 2103,
-        showtimes: [
-            {
-                id: 'nc-st1', film: 'Deep Red (1975)', date: '2026-03-14',
-                slots: [
-                    { id: 'nc-sl1', time: '22:30', format: '35mm', notes: 'Argento Giallo Night', bookedSeats: ['A1', 'A2', 'A3', 'B1', 'C4', 'C7'], ticketTypes: [{ id: 'nc-tt1', type: 'Standard', price: 15, perks: 'General seating' }, { id: 'nc-tt2', type: 'VIP', price: 28, perks: 'Front rows + Complimentary drink' }] },
-                ]
-            },
-            {
-                id: 'nc-st2', film: 'Bay of Blood (1971)', date: '2026-03-15',
-                slots: [
-                    { id: 'nc-sl2', time: '23:00', format: '35mm', notes: '', bookedSeats: ['A1', 'B2', 'B3'], ticketTypes: [{ id: 'nc-tt3', type: 'Standard', price: 15, perks: 'General seating' }] },
-                ]
-            },
-        ],
-        events: [{ id: 'nc-ev1', title: 'GIALLO NIGHT VOL. 7', desc: 'Argento & Bava. 35mm prints.', date: '2026-03-16', time: '21:00', type: 'Special', price: 30, ticketsLeft: 8, totalTickets: 60 }],
-    },
-}
 
 // Default seat layout for demo venues
 const DEFAULT_SEAT_LAYOUT = { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 }
@@ -401,49 +342,96 @@ export default function VenuePage() {
     const { id } = useParams()
     const { isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
-    const liveVenue = useVenueStore(s => s.venue)
-    const liveShowtimes = useVenueStore(s => s.showtimes)
-    const liveEvents = useVenueStore(s => s.events)
+
+    const { data: venue, isLoading: loadingVenue } = useQuery({
+        queryKey: ['venue', id],
+        enabled: !!id,
+        queryFn: async () => {
+            const { data, error } = await supabase.from('venues').select('*').eq('id', id).single()
+            if (error) throw error
+            return {
+                id: data.id,
+                name: data.name,
+                location: data.location || 'Unknown Location',
+                description: data.description || 'Welcome to our cinema.',
+                vibes: data.vibes || [],
+                followers: data.followers || 0,
+                verified: data.verified || false,
+                logo: data.logo || '',
+                seatLayout: data.seat_layout || { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 },
+                paymentConnected: !!data.stripe_account_id
+            }
+        }
+    })
+
+    const { data: rawShowtimes = [] } = useQuery({
+        queryKey: ['showtimes', id],
+        enabled: !!id,
+        queryFn: async () => {
+            const { data, error } = await supabase.from('showtimes')
+                .select('*')
+                .eq('venue_id', id)
+                .gte('date', new Date().toISOString().split('T')[0])
+                .order('date', { ascending: true })
+            if (error) return []
+            return data
+        }
+    })
+
+    const { data: eventsToShow = [] } = useQuery({
+        queryKey: ['venue-events', id],
+        enabled: !!id,
+        queryFn: async () => {
+            // Fails gracefully if venue_events does not exist gracefully.
+            const { data, error } = await supabase.from('venue_events').select('*').eq('venue_id', id).gte('date', new Date().toISOString().split('T')[0])
+            if (error) return []
+            return data
+        }
+    })
+
     const [following, setFollowing] = useState(false)
     const [ticketTarget, setTicketTarget] = useState<any>(null)
 
-    const isOwnerVenue = String(id) === '1'
-    const demoVenue = (DEMO_VENUES as any)[parseInt(id as string)] || DEMO_VENUES[1]
+    const showtimesToShow = useMemo(() => {
+        const grouped: any = {}
+        rawShowtimes.forEach((st: any) => {
+            const key = `${st.film_id || st.film_title}-${st.date}`
+            if (!grouped[key]) {
+                grouped[key] = {
+                    dbId: st.id,
+                    id: st.id,
+                    film: st.film_title || 'Unknown Film',
+                    date: st.date,
+                    screenName: st.screen_name || 'Main Screen',
+                    slots: []
+                }
+            }
+            grouped[key].slots.push({
+                id: st.id,
+                time: st.time,
+                format: st.format || 'Digital',
+                notes: st.notes || '',
+                bookedSeats: st.booked_seats || [],
+                ticketTypes: st.ticket_types || [{ id: 'std', type: 'Standard', price: 15, perks: 'General admission' }]
+            })
+        })
+        return Object.values(grouped)
+    }, [rawShowtimes])
 
-    const venue = isOwnerVenue ? {
-        ...demoVenue,
-        name: liveVenue.name,
-        location: liveVenue.location,
-        description: liveVenue.description,
-        vibes: liveVenue.vibes,
-        followers: liveVenue.followers,
-        verified: liveVenue.verified,
-        logo: liveVenue.logo,
-    } : demoVenue
+    if (loadingVenue) {
+        return <div style={{ minHeight: '100dvh', background: 'var(--ink)' }}></div>
+    }
 
-    const seatLayout = isOwnerVenue ? (liveVenue.seatLayout || DEFAULT_SEAT_LAYOUT) : DEFAULT_SEAT_LAYOUT
+    if (!venue) {
+        return <div style={{ minHeight: '100dvh', padding: '10rem 0', textAlign: 'center', background: 'var(--ink)' }}>
+            <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--fog)', letterSpacing: '0.1em' }}>404 · VENUE NOT FOUND</h1>
+            <p style={{ fontFamily: 'var(--font-ui)', color: 'var(--ash)', fontSize: '0.7rem', marginTop: '1rem', letterSpacing: '0.1em' }}>
+                <Link to="/discover" style={{ color: 'var(--sepia)', textDecoration: 'none' }}>RETURN TO CIVILIZATION</Link>
+            </p>
+        </div>
+    }
 
-    // Fallback demo showtimes for venue/1 so the schedule always shows films
-    const VENUE1_DEMO_SHOWTIMES = [
-        {
-            id: 'demo-st1', film: 'Nosferatu (1922)', date: '2026-03-14',
-            slots: [
-                { id: 'demo-sl1', time: '14:00', format: '35mm', notes: 'With live organ accompaniment', bookedSeats: ['A1', 'A3', 'B2', 'C4', 'C7', 'D1', 'D8', 'E3'], ticketTypes: [{ id: 'tt-std', type: 'Standard', price: 15, perks: 'General seating rows C-J' }, { id: 'tt-vip', type: 'VIP', price: 28, perks: 'Priority rows A-B + Drink' }, { id: 'tt-stu', type: 'Student', price: 10, perks: 'Valid student ID required' }] },
-                { id: 'demo-sl2', time: '21:00', format: '35mm', notes: 'Late night. Doors open 20 min before.', bookedSeats: ['A1', 'A2', 'A3', 'A4', 'B1', 'B2', 'B3', 'C1', 'C2', 'D4', 'E5'], ticketTypes: [{ id: 'tt-std2', type: 'Standard', price: 18, perks: 'General seating rows C-J' }, { id: 'tt-vip2', type: 'VIP', price: 32, perks: 'Priority rows A-B + Drink' }] },
-            ]
-        },
-        {
-            id: 'demo-st2', film: 'M (1931)', date: '2026-03-15',
-            slots: [
-                { id: 'demo-sl3', time: '20:00', format: '35mm', notes: '', bookedSeats: ['A1', 'A2', 'B3', 'C1', 'C5'], ticketTypes: [{ id: 'tt-std3', type: 'Standard', price: 15, perks: 'General seating' }, { id: 'tt-vip3', type: 'VIP', price: 25, perks: 'Priority rows A-B + Drink' }] },
-            ]
-        },
-    ]
-
-    const showtimesToShow = isOwnerVenue
-        ? (liveShowtimes.length > 0 ? liveShowtimes : VENUE1_DEMO_SHOWTIMES)
-        : (demoVenue.showtimes || [])
-    const eventsToShow = isOwnerVenue ? liveEvents : (demoVenue.events || [])
+    const seatLayout = venue.seatLayout
 
     const handleFollow = () => {
         if (!isAuthenticated) { openSignupModal(); return }
