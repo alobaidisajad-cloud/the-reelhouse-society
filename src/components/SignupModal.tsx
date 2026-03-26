@@ -88,11 +88,12 @@ export default function SignupModal() {
         setUsernameStatus('checking')
         usernameCheckTimer.current = setTimeout(async () => {
             try {
-                const { data } = await supabase
+                const { data, error } = await supabase
                     .from('profiles')
                     .select('username')
                     .eq('username', trimmed)
                     .maybeSingle()
+                if (error) throw error
                 setUsernameStatus(data ? 'taken' : 'available')
             } catch {
                 setUsernameStatus('idle')
@@ -164,7 +165,7 @@ export default function SignupModal() {
 
     const handleClearanceSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        if (!clearanceCode.trim()) return
+        if (!clearanceCode.trim() || clearanceStatus === 'checking') return
 
         setClearanceStatus('checking')
         setTimeout(() => {
@@ -183,6 +184,7 @@ export default function SignupModal() {
             toast.error('Please fill all fields')
             return
         }
+        if (submitting) return
 
         // Rate limiting check
         const now = Date.now()

@@ -16,6 +16,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
     const [ticketType, setTicketType] = useState<any>(null)
     const [selectedSeat, setSelectedSeat] = useState<any>(null)
     const [createdStub, setCreatedStub] = useState<any>(null)
+    const [purchasing, setPurchasing] = useState(false)
 
     const seatLayout = venueSeatLayout || venue.seatLayout || { rows: 10, cols: 15, vipRows: 2, aisleAfterCol: 7 }
     const totalSeats = (seatLayout.rows || 10) * (seatLayout.cols || 15)
@@ -49,6 +50,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
     const handlePurchase = async () => {
         if (!selectedSeat || !ticketType) return
         if (!isAuthenticated) { openSignupModal(); return }
+        if (purchasing) return  // Block double-tap
         bookSeat(showtime.id, slot.id, selectedSeat)
         const stub = {
             showtimeId: showtime.dbId || showtime.id || null,   // real Supabase UUID if available
@@ -68,6 +70,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
             qrCode: null,
         }
         // Rigidly persist to Supabase; do not use fake local stubs.
+        setPurchasing(true)
         try {
             const dbId = await useFilmStore.getState().saveStub(stub)
             if (dbId) {
@@ -81,6 +84,8 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
         } catch {
             toast.error('Transaction Failed: Connection Interrupted')
             return
+        } finally {
+            setPurchasing(false)
         }
         setCreatedStub(stub)
         setStep(4)
@@ -216,9 +221,14 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
                                 </div>
                             )}
                             <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                <button className="btn btn-ghost" onClick={() => setStep(2)}>← Back</button>
-                                <button className="btn btn-primary" onClick={handlePurchase} style={{ flex: 1, justifyContent: 'center' }}>
-                                    Confirm Purchase
+                                <button className="btn btn-ghost" onClick={() => setStep(2)} disabled={purchasing}>← Back</button>
+                                <button
+                                    className="btn btn-primary"
+                                    onClick={handlePurchase}
+                                    disabled={purchasing}
+                                    style={{ flex: 1, justifyContent: 'center', opacity: purchasing ? 0.6 : 1 }}
+                                >
+                                    {purchasing ? 'PROCESSING TRANSACTION...' : 'Confirm Purchase'}
                                 </button>
                             </div>
                         </div>

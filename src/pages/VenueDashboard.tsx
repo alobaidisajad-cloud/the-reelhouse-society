@@ -364,8 +364,13 @@ export default function VenueDashboard() {
 
     const submitEvent = (e: any) => {
         e.preventDefault()
-        if (!eventForm.title || !eventForm.date || !eventForm.price) { toast.error('Fill all required fields'); return }
-        addEvent({ ...eventForm, price: parseFloat(eventForm.price), totalTickets: parseInt(eventForm.totalTickets) })
+        const parsedPrice = parseFloat(eventForm.price)
+        const parsedTickets = parseInt(eventForm.totalTickets) || 60
+        if (!eventForm.title || !eventForm.date || isNaN(parsedPrice) || parsedPrice <= 0) {
+            toast.error('Fill all required fields — price must be a positive number')
+            return
+        }
+        addEvent({ ...eventForm, price: parsedPrice, totalTickets: parsedTickets })
         setEventForm({ title: '', desc: '', date: '', time: '20:00', type: 'Special', price: '', totalTickets: 60 })
         setShowAddEvent(false)
         toast.success('Event added to programme')

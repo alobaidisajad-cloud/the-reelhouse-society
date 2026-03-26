@@ -66,6 +66,8 @@ export default function UserProfilePage() {
                 followingCount: data.following_count || 0,
                 isSocialPrivate: data.is_social_private || false,
                 socialVisibility: (data as any).preferences?.social_visibility || (data.is_social_private ? 'private' : 'public'),
+                privacyEndorsements: (data as any).preferences?.privacy_endorsements || 'everyone',
+                privacyAnnotations: (data as any).preferences?.privacy_annotations || 'everyone',
                 createdAt: data.created_at,
             }
         },
@@ -130,6 +132,8 @@ export default function UserProfilePage() {
                 autopsy: l.autopsy || null,
                 altPoster: l.alt_poster || null,
                 physicalMedia: l.physical_media || null,
+                privacyEndorsements: (fetchedProfile as any)?.privacyEndorsements || 'everyone',
+                privacyAnnotations: (fetchedProfile as any)?.privacyAnnotations || 'everyone',
                 // private_notes intentionally excluded — never visible to other users
             }))
         },
@@ -300,8 +304,7 @@ export default function UserProfilePage() {
                 })
                 // DB Trigger automatically dispatches the follow notification globally.
             }
-        } catch (err) {
-            console.error('Follow error:', err)
+        } catch {
             toast.error('Something went wrong.')
         } finally {
             setFollowLoading(false)

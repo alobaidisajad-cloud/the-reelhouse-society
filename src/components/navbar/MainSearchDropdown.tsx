@@ -33,8 +33,8 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
             try {
                 const results = await tmdb.searchMulti(query)
                 setSuggestions(results || [])
-            } catch (e) {
-                console.error('Search error:', e)
+            } catch {
+                setSuggestions([]) // Network failure — show empty results, fail silently
             } finally {
                 setSearching(false)
             }

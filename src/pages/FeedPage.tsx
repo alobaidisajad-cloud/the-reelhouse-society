@@ -17,13 +17,15 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 
 // ── Helper: map raw log rows to feed entries ──
 function mapLogsToFeed(data: any[], usernameMap: Record<string, any>) {
-    const mapped = data.map(l => ({
+    const mapped = (data || []).map(l => ({
         ...l,
         profiles: usernameMap[l.user_id] || { username: 'anonymous', role: 'cinephile' },
     })).map(l => ({
         id: l.id,
         user: l.profiles?.username || 'anonymous',
         userRole: l.profiles?.role || 'cinephile',
+        privacyEndorsements: l.profiles?.preferences?.privacy_endorsements || 'everyone',
+        privacyAnnotations: l.profiles?.preferences?.privacy_annotations || 'everyone',
         film: {
             id: l.film_id,
             title: l.film_title,
@@ -93,7 +95,7 @@ export default function FeedPage() {
         const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
         let usernameMap: Record<string, any> = {}
         if (userIds.length > 0) {
-            const { data: profilesData } = await supabase.from('profiles').select('id, username, role').in('id', userIds)
+            const { data: profilesData } = await supabase.from('profiles').select('id, username, role, preferences').in('id', userIds)
             if (profilesData) usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p]))
         }
         
@@ -184,8 +186,8 @@ export default function FeedPage() {
                     curator: curatorMap[l.user_id] || 'The Society'
                 })))
             }
-        } catch (e) {
-            console.error('Sidebar fetch error:', e)
+        } catch {
+            // Sidebar is non-critical — fail silently so the feed still renders
         }
     }, [user?.username])
 

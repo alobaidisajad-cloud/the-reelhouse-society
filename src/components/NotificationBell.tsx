@@ -120,14 +120,14 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
                 .update({ is_read: true })
                 .eq('user_id', user.id)
                 .eq('is_read', false)
-            if (error) console.error('[NotifBell] mark-read failed:', error.message)
+            // mark-read is a background op — fail silently if Supabase is unreachable
         }
     }
 
     const handleDismiss = async (id: string) => {
         dismiss(id)
         const { error } = await supabase.from('notifications').delete().eq('id', id)
-        if (error) console.error('[NotifBell] dismiss failed:', error.message)
+        // dismiss is a background op — fail silently
     }
 
     return (
@@ -188,7 +188,7 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
                                         if (user?.id) {
                                             const { error } = await supabase.from('notifications').update({ is_read: true })
                                                 .eq('user_id', user.id).eq('is_read', false)
-                                            if (error) console.error('[NotifBell] mark-all failed:', error.message)
+                                            // mark-all is a background op — fail silently
                                         }
                                     }}
                                     style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fog)', fontSize: '0.55rem', fontFamily: 'var(--font-ui)', letterSpacing: '0.1em' }}
@@ -212,7 +212,7 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
                                         markRead(n.id)
                                         // Sync read status to DB
                                         const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
-                                        if (error) console.error('[NotifBell] mark-read single failed:', error.message)
+                                        // mark-read is a background op — fail silently
                                         if (n.type === 'follow' && n.from) {
                                             navigate(`/user/${n.from}`)
                                             setOpen(false)

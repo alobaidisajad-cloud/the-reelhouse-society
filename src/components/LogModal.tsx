@@ -43,7 +43,7 @@ export default function LogModal() {
     const removeFilmFromList = useFilmStore(state => state.removeFilmFromList)
 
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
-    const openSignupModal = (useAuthStore as any)((state: any) => state.openSignupModal)
+    const openSignupModal = useUIStore(state => state.openSignupModal)
     const user = useAuthStore(state => state.user)
 
 
@@ -220,7 +220,10 @@ export default function LogModal() {
         setQuery('')
     }
 
+    const [submitting, setSubmitting] = useState(false)
+
     const handleLog = () => {
+        if (submitting) return
         if (!film) return
         if (!isAuthenticated) {
             closeLogModal()
@@ -281,7 +284,9 @@ export default function LogModal() {
             localStorage.removeItem(`reelhouse_draft_${film.id}`)
         }
 
+        setSubmitting(true)
         closeLogModal()
+        setTimeout(() => setSubmitting(false), 1000)
 
         // ── Golden spark celebration for 5-star logs ──
         if (rating === 5 && !logModalEditLogId) {
@@ -726,8 +731,8 @@ export default function LogModal() {
 
                                 {/* Submit */}
                                 <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                    <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleLog}>
-                                        {logModalEditLogId ? 'Save Changes' : 'Log This Film'}
+                                    <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleLog} disabled={submitting}>
+                                        {submitting ? 'SAVING...' : (logModalEditLogId ? 'Save Changes' : 'Log This Film')}
                                     </button>
                                     <button className="btn btn-ghost" onClick={closeLogModal}>
                                         Cancel

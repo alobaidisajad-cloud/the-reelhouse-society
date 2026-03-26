@@ -37,6 +37,12 @@ export default function SettingsPage() {
     const [socialVisibility, setSocialVisibility] = useState<string>(
         (user?.preferences as any)?.social_visibility || (user?.is_social_private ? 'private' : 'public')
     )
+    const [privacyEndorsements, setPrivacyEndorsements] = useState<string>(
+        (user?.preferences as any)?.privacy_endorsements || 'everyone'
+    )
+    const [privacyAnnotations, setPrivacyAnnotations] = useState<string>(
+        (user?.preferences as any)?.privacy_annotations || 'everyone'
+    )
 
     // ── Notifications ──
     const prefs = user?.preferences || {}
@@ -80,6 +86,8 @@ export default function SettingsPage() {
             setAvatarPreview(user.avatar_url || null)
             const p = (user.preferences || {}) as Record<string, any>
             setSocialVisibility(p.social_visibility || (user.is_social_private ? 'private' : 'public'))
+            setPrivacyEndorsements(p.privacy_endorsements || 'everyone')
+            setPrivacyAnnotations(p.privacy_annotations || 'everyone')
             setNotifFollows(p.notif_follows !== undefined ? !!p.notif_follows : true)
             setNotifEndorsements(p.notif_endorsements !== undefined ? !!p.notif_endorsements : true)
             setNotifComments(p.notif_comments !== undefined ? !!p.notif_comments : true)
@@ -123,6 +131,9 @@ export default function SettingsPage() {
     // ── Save All ──
     const handleSave = async () => {
         if (!isSupabaseConfigured || !user) return
+        // Guard against extreme-length strings that would blow the DB column
+        if (displayName.trim().length > 50) { toast.error('Display name must be 50 characters or fewer.'); return }
+        if (bio.trim().length > 500) { toast.error('Bio must be 500 characters or fewer.'); return }
         setSaving(true)
         try {
             // Upload avatar if changed
@@ -150,6 +161,8 @@ export default function SettingsPage() {
             await useAuthStore.getState().setPreference('notif_comments', notifComments)
             await useAuthStore.getState().setPreference('notif_system', notifSystem)
             await useAuthStore.getState().setPreference('social_visibility', socialVisibility)
+            await useAuthStore.getState().setPreference('privacy_endorsements', privacyEndorsements)
+            await useAuthStore.getState().setPreference('privacy_annotations', privacyAnnotations)
 
             // Update local state
             useAuthStore.getState().updateUser({
@@ -409,6 +422,52 @@ export default function SettingsPage() {
                             type="radio" name="visibility"
                             checked={socialVisibility === opt.value}
                             onChange={() => setSocialVisibility(opt.value)}
+                            style={{ accentColor: 'var(--sepia)' }}
+                        />
+                        {opt.label}
+                    </label>
+                ))}
+
+                <label style={{ ...labelStyle, marginTop: '1.5rem', marginBottom: '0.75rem' }}>WHO CAN ENDORSE</label>
+                {[
+                    { value: 'everyone', label: 'Everyone' },
+                    { value: 'followers', label: 'Followers Only' },
+                    { value: 'nobody', label: 'Nobody' },
+                ].map(opt => (
+                    <label key={opt.value} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.75rem',
+                        padding: '0.4rem 0', cursor: 'pointer',
+                        color: privacyEndorsements === opt.value ? 'var(--parchment)' : 'var(--fog)',
+                        fontFamily: 'var(--font-body)', fontSize: '0.85rem',
+                        transition: 'color 0.2s',
+                    }}>
+                        <input
+                            type="radio" name="privacyEndorse"
+                            checked={privacyEndorsements === opt.value}
+                            onChange={() => setPrivacyEndorsements(opt.value)}
+                            style={{ accentColor: 'var(--sepia)' }}
+                        />
+                        {opt.label}
+                    </label>
+                ))}
+
+                <label style={{ ...labelStyle, marginTop: '1.5rem', marginBottom: '0.75rem' }}>WHO CAN ANNOTATE</label>
+                {[
+                    { value: 'everyone', label: 'Everyone' },
+                    { value: 'followers', label: 'Followers Only' },
+                    { value: 'nobody', label: 'Nobody' },
+                ].map(opt => (
+                    <label key={opt.value} style={{
+                        display: 'flex', alignItems: 'center', gap: '0.75rem',
+                        padding: '0.4rem 0', cursor: 'pointer',
+                        color: privacyAnnotations === opt.value ? 'var(--parchment)' : 'var(--fog)',
+                        fontFamily: 'var(--font-body)', fontSize: '0.85rem',
+                        transition: 'color 0.2s',
+                    }}>
+                        <input
+                            type="radio" name="privacyAnnotate"
+                            checked={privacyAnnotations === opt.value}
+                            onChange={() => setPrivacyAnnotations(opt.value)}
                             style={{ accentColor: 'var(--sepia)' }}
                         />
                         {opt.label}

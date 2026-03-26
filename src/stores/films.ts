@@ -116,7 +116,7 @@ export const useFilmStore = create<FilmState>()(
                     .limit(2000)
                 if (!error && data) {
                     set({
-                        interactions: data.map(r => ({
+                        interactions: (data || []).map(r => ({
                             type: 'endorse',
                             targetId: r.target_log_id,
                             timestamp: r.created_at,
@@ -132,7 +132,7 @@ export const useFilmStore = create<FilmState>()(
                     .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5000)
                 if (!error && data) {
                     set({
-                        logs: data.map((dbLog) => ({
+                        logs: (data || []).map((dbLog) => ({
                             id: dbLog.id,
                             filmId: dbLog.film_id,
                             title: dbLog.film_title,

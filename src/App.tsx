@@ -144,7 +144,7 @@ export default function App() {
   // Persistent scroll position — save on leave, restore on return
   useEffect(() => {
     const savedPos = sessionStorage.getItem(`scroll:${location.pathname}`)
-    const scrollY = savedPos ? parseInt(savedPos, 10) : 0
+    const scrollY = savedPos ? (parseInt(savedPos, 10) || 0) : 0
     const id = requestAnimationFrame(() => window.scrollTo(0, scrollY))
     return () => {
       sessionStorage.setItem(`scroll:${location.pathname}`, String(window.scrollY))

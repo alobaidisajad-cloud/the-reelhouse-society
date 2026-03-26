@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Download, Check, Film, Maximize2 } from 'lucide-react'
+import { Download, Check, Film } from 'lucide-react'
+import toast from 'react-hot-toast'
 // html2canvas loaded on demand in handleDownload()
 
 export default function TicketStubGallery({ stub, onClose }: { stub: any; onClose: () => void }) {
@@ -31,8 +32,8 @@ export default function TicketStubGallery({ stub, onClose }: { stub: any; onClos
             a.click()
             setDownloaded(true)
             setTimeout(() => setDownloaded(false), 3000)
-        } catch (error) {
-            console.error("Failed to generate ticket stub", error)
+        } catch {
+            toast.error('Failed to generate your ticket stub. Please try again.')
         } finally {
             setIsDownloading(false)
         }

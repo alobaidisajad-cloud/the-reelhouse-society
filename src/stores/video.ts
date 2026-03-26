@@ -114,8 +114,7 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
             // Refresh my videos
             await get().fetchMyVideos(userId)
             return true
-        } catch (err) {
-            console.error('Video upload failed:', err)
+        } catch {
             return false
         } finally {
             set({ uploading: false, uploadProgress: 0 })
@@ -154,8 +153,7 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
             }
 
             return true
-        } catch (err) {
-            console.error('Tip failed:', err)
+        } catch {
             return false
         }
     },

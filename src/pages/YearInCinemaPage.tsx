@@ -422,7 +422,7 @@ export default function YearInCinemaPage() {
                     Your {selectedYear} archive is sealed.
                 </div>
 
-                <Link to={user ? `/u/${user.username}` : '/'} className="btn btn-ghost yic-share-btn" style={{ fontSize: '0.65rem', letterSpacing: '0.15em' }}>
+                <Link to={user ? `/user/${user.username}` : '/'} className="btn btn-ghost yic-share-btn" style={{ fontSize: '0.65rem', letterSpacing: '0.15em' }}>
                     <ArrowLeft size={14} /> RETURN TO PROFILE
                 </Link>
                 <button onClick={shareYIC} disabled={sharing} className="btn btn-primary yic-share-btn" style={{ fontSize: '0.65rem', letterSpacing: '0.15em', opacity: sharing ? 0.6 : 1 }}>

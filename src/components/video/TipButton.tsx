@@ -155,7 +155,7 @@ export default function TipButton({ videoId, creatorUserId, creatorUsername }: T
                                 disabled={sending}
                                 style={{ width: '100%', justifyContent: 'center', padding: '0.9rem', fontSize: '0.75rem', letterSpacing: '0.2em', opacity: sending ? 0.6 : 1 }}
                             >
-                                {sending ? 'SENDING...' : `SEND $${(customAmount ? parseFloat(customAmount) || 0 : selectedAmount).toFixed(2)} ✦`}
+                                {sending ? 'SENDING...' : `SEND $${(customAmount ? (isNaN(parseFloat(customAmount)) ? 0 : parseFloat(customAmount)) : selectedAmount).toFixed(2)} ✦`}
                             </button>
 
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)', textAlign: 'center', marginTop: '0.75rem', opacity: 0.6 }}>

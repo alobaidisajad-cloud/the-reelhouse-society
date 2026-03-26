@@ -13,7 +13,6 @@ import { DossierExportHTML } from './DossierExportHTML'
 
 export default function ActivityCard({ log }: { log: any }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
-    const openViewLog = (useUIStore as any)((state: any) => state.openViewLog)
     // Memoize stamp rotation so Math.random() doesn't fire on every re-render
     const stampRotation = React.useMemo(() => `${(Math.random() * 8 - 4).toFixed(2)}deg`, [])
     const storeEndorsed = useFilmStore(state => state.interactions.some(i => i.targetId === log.id && i.type === 'endorse'))
@@ -28,6 +27,7 @@ export default function ActivityCard({ log }: { log: any }) {
     }, [storeEndorsed])
 
     const handleEndorse = () => {
+        if (!canEndorse) return toast.error('This dossier is locked to followers only ✦')
         throttleAction(`endorse-${log.id}`, () => {
             // Optimistic update
             setOptimisticEndorsed(!optimisticEndorsed)
@@ -44,7 +44,21 @@ export default function ActivityCard({ log }: { log: any }) {
     const [annotateOpen, setAnnotateOpen] = useState(false)
     const { user: currentUser } = useAuthStore()
 
+    // ── SPOILER GUARD & EXPANSION ──
+    const [spoilersRevealed, setSpoilersRevealed] = useState(false)
+    const [isExpanded, setIsExpanded] = useState(false)
+
+    // ── PRIVACY ENFORCEMENT ──
+    const privacyEndorsements = log.privacyEndorsements || 'everyone'
+    const privacyAnnotations = log.privacyAnnotations || 'everyone'
+    const isOwner = currentUser?.username === log.user
+    const isFollowing = currentUser?.following?.includes(log.user)
+    
+    const canEndorse = isOwner || privacyEndorsements === 'everyone' || (privacyEndorsements === 'followers' && isFollowing) || log.user === 'anonymous'
+    const canAnnotate = isOwner || privacyAnnotations === 'everyone' || (privacyAnnotations === 'followers' && isFollowing) || log.user === 'anonymous'
+
     const handleAnnotateToggle = () => {
+        if (!canAnnotate) return toast.error('This dossier is locked to followers only ✦')
         setAnnotateOpen(!annotateOpen)
     }
 
@@ -78,22 +92,10 @@ export default function ActivityCard({ log }: { log: any }) {
 
     const endorsed = optimisticEndorsed
 
-    // ── Open full log view modal ──
-    const handleOpenLog = () => openViewLog({
-        log: {
-            id: log.id, filmId: log.film?.id, title: log.film?.title,
-            poster: log.film?.poster, year: log.film?.year,
-            rating: log.rating, review: log.review, status: log.status || 'watched',
-            isSpoiler: log.isSpoiler, watchedDate: log.watchedDate,
-            watchedWith: log.watchedWith, physicalMedia: log.physicalMedia,
-            isAutopsied: log.isAutopsied, autopsy: log.autopsy,
-            altPoster: log.altPoster, editorialHeader: log.editorialHeader,
-            dropCap: log.dropCap, pullQuote: log.pullQuote,
-            abandonedReason: log.abandonedReason,
-        },
-        film: log.film ? { id: log.film.id, title: log.film.title, poster_path: log.film.poster } : null,
-        ownerUsername: log.user,
-    })
+    // ── Toggle full log text ──
+    const handleToggleExpand = () => {
+        setIsExpanded(!isExpanded)
+    }
 
     const exportDossier = async () => {
         if (!dossierRef.current) return
@@ -129,7 +131,7 @@ export default function ActivityCard({ log }: { log: any }) {
     return (
         <div
             className="fade-in-up"
-            onClick={handleOpenLog}
+            onClick={handleToggleExpand}
             style={{
                 background: 'var(--soot)',
                 border: '1px solid var(--ash)',
@@ -218,7 +220,26 @@ export default function ActivityCard({ log }: { log: any }) {
                         fontFamily: 'var(--font-body)', fontSize: '0.82rem',
                         color: 'var(--bone)', marginTop: '0.75rem', lineHeight: 1.6,
                     }}>
-                        {log.dropCap ? (
+                        {log.isSpoiler && !spoilersRevealed ? (
+                            <div 
+                                onClick={(e) => { e.stopPropagation(); setSpoilersRevealed(true); }}
+                                style={{ 
+                                    background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(139,105,20,0.2)',
+                                    padding: '1.5rem 1rem', textAlign: 'center', cursor: 'pointer',
+                                    borderRadius: '2px', display: 'flex', flexDirection: 'column', 
+                                    alignItems: 'center', gap: '0.4rem', transition: 'background 0.2s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
+                            >
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>
+                                    [ CLASSIFIED DOSSIER ]
+                                </span>
+                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic' }}>
+                                    This transmission contains spoilers. Tap to decode.
+                                </span>
+                            </div>
+                        ) : log.dropCap ? (
                             <>
                                 <span style={{
                                     float: 'left', fontSize: '3rem', lineHeight: '2.5rem',
@@ -227,10 +248,10 @@ export default function ActivityCard({ log }: { log: any }) {
                                 }}>
                                     {log.review.charAt(0)}
                                 </span>
-                                {log.review.slice(1)}
+                                <span>{isExpanded ? log.review.slice(1) : (log.review.length > 300 ? log.review.slice(1, 300) + '… Read more' : log.review.slice(1))}</span>
                             </>
                         ) : (
-                            <span>{log.review.length > 300 ? log.review.slice(0, 300) + '…' : log.review}</span>
+                            <span>{isExpanded ? log.review : (log.review.length > 300 ? log.review.slice(0, 300) + '… Read more' : log.review)}</span>
                         )}
                     </div>
                 )}
@@ -242,9 +263,13 @@ export default function ActivityCard({ log }: { log: any }) {
                 {/* Social Interaction Bar */}
                 <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap', flexShrink: 0, position: 'relative' }}>
                     <div style={{ position: 'relative' }}>
-                        <button onClick={handleEndorse} aria-label={endorsed ? 'Remove endorsement' : 'Endorse this log'} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: endorsed ? 'var(--sepia)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)'}>
-                            <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />
-                            {endorsed ? 'ENDORSED' : 'ENDORSE'} ({endorsementCount})
+                        <button onClick={handleEndorse} aria-label={endorsed ? 'Remove endorsement' : 'Endorse this log'} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed', transition: 'color 0.2s' }} onMouseEnter={e => { if (canEndorse) e.currentTarget.style.color = 'var(--parchment)' }} onMouseLeave={e => { if (canEndorse) e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)' }}>
+                            {canEndorse ? (
+                                <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />
+                            ) : (
+                                <span style={{ fontSize: '10px' }}>🔒</span>
+                            )}
+                            {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
                         </button>
 
                         {/* ── SOCIETY STAMP OVERLAY ── */}
@@ -269,15 +294,21 @@ export default function ActivityCard({ log }: { log: any }) {
                             </div>
                         )}
                     </div>
-                    <button
-                        onClick={handleAnnotateToggle}
-                        aria-label="Annotate this log"
-                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }}
-                        onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
-                        onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
-                    >
-                        <MessageSquare size={12} /> ANNOTATE
-                    </button>
+                    {canAnnotate ? (
+                        <button
+                            onClick={handleAnnotateToggle}
+                            aria-label="Annotate this log"
+                            style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
+                            onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
+                        >
+                            <MessageSquare size={12} /> ANNOTATE
+                        </button>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
+                            <span style={{ fontSize: '10px' }}>🔒</span> RESTRICTED
+                        </div>
+                    )}
                     <button
                         onClick={handleRetransmit}
                         aria-label="Retransmit this log"

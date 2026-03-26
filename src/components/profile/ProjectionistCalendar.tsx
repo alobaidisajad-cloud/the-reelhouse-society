@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Lock } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 interface CalendarLog {
     watchedDate?: string
@@ -130,9 +131,9 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }: { logs?:
                     Your complete visual history of film activity — every film, every day, across an entire year.
                     Available with the Archivist membership.
                 </div>
-                <a href="/society" style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', border: '1px solid var(--sepia)', padding: '0.6rem 1.4rem', borderRadius: '2px', textDecoration: 'none', transition: 'background 0.2s' }}>
-                    UNLOCK WITH ARCHIVIST
-                </a>
+                <Link to="/society" style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', border: '1px solid var(--sepia)', padding: '0.6rem 1.4rem', borderRadius: '2px', textDecoration: 'none', transition: 'background 0.2s', display: 'inline-block' }}>
+                    JOIN THE SOCIETY
+                </Link>
             </div>
         )
     }

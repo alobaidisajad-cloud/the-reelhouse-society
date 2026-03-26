@@ -182,12 +182,20 @@ function CreateListModal({ onClose, onCreate }: any) {
     const [title, setTitle] = useState('')
     const [desc, setDesc] = useState('')
     const [isPrivate, setIsPrivate] = useState(false)
+    const [submitting, setSubmitting] = useState(false)
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         if (!title.trim()) { toast.error('Give your list a name'); return }
-        onCreate({ title: title.trim(), description: desc.trim(), isPrivate })
-        toast.success(`List "${title}" created!`)
-        onClose()
+        if (submitting) return
+        setSubmitting(true)
+        try {
+            await onCreate({ title: title.trim(), description: desc.trim(), isPrivate })
+            toast.success(`List "${title}" created!`)
+            onClose()
+        } catch (error) {
+            toast.error('Failed to create list.')
+            setSubmitting(false)
+        }
     }
 
     return (
@@ -222,8 +230,8 @@ function CreateListModal({ onClose, onCreate }: any) {
                         {isPrivate ? <><Lock size={12} /> Private</> : <><Globe size={12} /> Public</>}
                     </label>
                     <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleCreate}>
-                            Create List
+                        <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleCreate} disabled={submitting}>
+                            {submitting ? 'CREATING...' : 'CREATE LIST'}
                         </button>
                         <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
                     </div>

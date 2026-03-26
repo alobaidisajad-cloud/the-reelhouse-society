@@ -36,8 +36,8 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
                     .order('username', { ascending: true })
                     .limit(8)
                 if (!error && data) setSuggestions(data)
-            } catch (e) {
-                console.error('People search error:', e)
+            } catch {
+                // Autocomplete search failed — return no results, UI handles empty state
             } finally {
                 setSearching(false)
             }

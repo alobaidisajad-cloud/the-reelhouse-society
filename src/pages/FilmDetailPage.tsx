@@ -348,14 +348,14 @@ export default function FilmDetailPage() {
     const { data: film, isLoading, error } = useQuery({
         queryKey: ['film', id],
         queryFn: () => tmdb.detail(Number(id!)),
-        enabled: !!id,
+        enabled: !!id && !isNaN(Number(id)),
         staleTime: 1000 * 60 * 10,
     })
 
     const { data: similar } = useQuery({
         queryKey: ['film-similar', id],
         queryFn: () => tmdb.similar(Number(id!)),
-        enabled: !!id,
+        enabled: !!id && !isNaN(Number(id)),
         staleTime: 1000 * 60 * 10,
     })
 

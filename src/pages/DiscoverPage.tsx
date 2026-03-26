@@ -220,10 +220,14 @@ export default function DiscoverPage() {
     }, [query, filters, mood, setPage])
 
     useEffect(() => {
-        const urlQ = searchParams.get('q')
-        if (urlQ && urlQ !== query) {
-            setQuery(urlQ)
-            setInputVal(urlQ)
+        const raw = searchParams.get('q')
+        if (raw) {
+            // Sanitize: trim whitespace, cap at 100 chars to prevent TMDB API abuse
+            const urlQ = raw.trim().slice(0, 100)
+            if (urlQ && urlQ !== query) {
+                setQuery(urlQ)
+                setInputVal(urlQ)
+            }
         }
     }, [searchParams])
 

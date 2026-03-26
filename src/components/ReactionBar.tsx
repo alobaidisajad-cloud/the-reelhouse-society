@@ -117,8 +117,8 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: st
                     })
                 }
             }
-        } catch (err) {
-            console.error('[ReactionBar] Error:', err)
+        } catch {
+            // Reaction write failed — optimistic state already applied, fail silently
         } finally {
             setLoading(false)
         }
