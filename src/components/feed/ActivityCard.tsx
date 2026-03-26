@@ -195,7 +195,11 @@ export default function ActivityCard({ log }: { log: any }) {
                     )}
                 </div>
 
-                {log.rating > 0 && <ReelRating value={log.rating} size="sm" />}
+                {log.rating > 0 && (
+                    <div style={{ display: 'block', marginBottom: '0.2rem', width: '100%', flexShrink: 0 }}>
+                        <ReelRating value={log.rating} size="sm" />
+                    </div>
+                )}
 
                 {/* Pull Quote */}
                 {log.pullQuote && (
@@ -236,7 +240,7 @@ export default function ActivityCard({ log }: { log: any }) {
                 )}
 
                 {/* Social Interaction Bar */}
-                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap' }}>
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap', flexShrink: 0, position: 'relative' }}>
                     <div style={{ position: 'relative' }}>
                         <button onClick={handleEndorse} aria-label={endorsed ? 'Remove endorsement' : 'Endorse this log'} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: endorsed ? 'var(--sepia)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)'}>
                             <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />

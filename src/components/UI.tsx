@@ -68,8 +68,8 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
     const [hovered, setHovered] = useState<number | null>(null)
     const display = hovered !== null ? hovered : value
 
-    const sizes = { sm: 16, md: 22, lg: 30 }
-    const s = sizes[size] || 22
+    const sizes = { sm: 18, md: 24, lg: 32 }
+    const s = sizes[size] || 24
 
     return (
         <div
@@ -121,8 +121,8 @@ function ReelSegmentSVG({ size, filled }: { size: number; filled: 'full' | 'half
                   : '/rating-empty.png';
 
     return (
-        <div style={{ position: 'relative', width: size, height: size }}>
-            <img src={srcPath} alt={`Rating: ${filled}`} style={{ width: size, height: size, objectFit: 'contain' }} loading="lazy" decoding="async" />
+        <div style={{ position: 'relative', width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <img src={srcPath} alt={`Rating: ${filled}`} style={{ width: '100%', height: '100%', objectFit: 'contain', imageRendering: 'crisp-edges', WebkitFontSmoothing: 'antialiased', filter: filled === 'full' ? 'drop-shadow(0 0 4px rgba(218,165,32,0.4))' : 'none' }} loading="lazy" decoding="async" />
         </div>
     )
 }
