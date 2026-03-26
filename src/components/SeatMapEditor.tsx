@@ -224,7 +224,7 @@ function SliderField({ label, value, min, max, onChange, hint }: { label: string
     )
 }
 
-export default function SeatMapEditor({ venue, onSave }: { venue: any; onSave: (data: { screens: ScreenConfig[]; seatLayout: SeatLayoutConfig }) => void }) {
+export default function SeatMapEditor({ venue, onSave }: { venue: any; onSave: (data: { screens: ScreenConfig[]; seatLayout: SeatLayoutConfig }) => Promise<void> | void }) {
     const initScreens = venue.screens && venue.screens.length > 0
         ? venue.screens
         : [{ id: 'sc-1', name: 'Screen 1', seatLayout: { ...venue.seatLayout }, color: SCREEN_COLORS[0], blockedSeats: [] }]
@@ -235,6 +235,7 @@ export default function SeatMapEditor({ venue, onSave }: { venue: any; onSave: (
     const [nameDraft, setNameDraft] = useState('')
     const [mode, setMode] = useState('configure') // 'configure' | 'block'
     const [saved, setSaved] = useState(false)
+    const [isSaving, setIsSaving] = useState(false)
 
     const activeScreen = screens[activeScreenIdx] || screens[0]
     const config = activeScreen.seatLayout
@@ -273,11 +274,19 @@ export default function SeatMapEditor({ venue, onSave }: { venue: any; onSave: (
         setActiveScreenIdx(Math.max(0, activeScreenIdx - 1))
     }
 
-    const handleSave = () => {
-        onSave({ screens, seatLayout: screens[0].seatLayout })
-        setSaved(true)
-        setTimeout(() => setSaved(false), 2500)
-        toast.success('Seat map saved')
+    const handleSave = async () => {
+        if (isSaving) return
+        setIsSaving(true)
+        try {
+            await onSave({ screens, seatLayout: screens[0].seatLayout })
+            setSaved(true)
+            toast.success('Seat map layout synchronized')
+            setTimeout(() => setSaved(false), 2500)
+        } catch (error) {
+            toast.error('Failed to sync seat map. Try again.')
+        } finally {
+            setIsSaving(false)
+        }
     }
 
     return (
@@ -292,9 +301,10 @@ export default function SeatMapEditor({ venue, onSave }: { venue: any; onSave: (
                 <button
                     className="btn btn-primary"
                     onClick={handleSave}
-                    style={{ gap: '0.4rem', minWidth: 110 }}
+                    disabled={isSaving}
+                    style={{ gap: '0.4rem', minWidth: 110, opacity: isSaving ? 0.6 : 1 }}
                 >
-                    {saved ? <><Check size={12} /> Saved!</> : <><Check size={12} /> Save Map</>}
+                    {isSaving ? 'SYNCING...' : saved ? <><Check size={12} /> SAVED!</> : <><Check size={12} /> SAVE MAP</>}
                 </button>
             </div>
 
