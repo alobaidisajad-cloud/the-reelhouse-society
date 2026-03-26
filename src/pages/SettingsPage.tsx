@@ -10,8 +10,9 @@ import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
-import { Camera, User, Lock, Eye, Bell, AlertTriangle, LogOut, Download, Trash2, ChevronDown, ChevronUp } from 'lucide-react'
+import { Camera, User, Lock, Eye, Bell, AlertTriangle, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone } from 'lucide-react'
 import Buster from '../components/Buster'
+import { subscribeToWebPush } from '../utils/push'
 
 export default function SettingsPage() {
     const { user, isAuthenticated, logout } = useAuthStore()
@@ -43,6 +44,28 @@ export default function SettingsPage() {
     const [notifEndorsements, setNotifEndorsements] = useState(prefs.notif_endorsements !== false)
     const [notifComments, setNotifComments] = useState(prefs.notif_comments !== false)
     const [notifSystem, setNotifSystem] = useState(prefs.notif_system !== false)
+    const [pushEnabled, setPushEnabled] = useState(false)
+
+    // Check if push is already enabled in the browser locally
+    useEffect(() => {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+            navigator.serviceWorker.ready.then(reg => {
+                reg.pushManager.getSubscription().then(sub => {
+                    if (sub) setPushEnabled(true)
+                })
+            })
+        }
+    }, [])
+    
+    const handleEnablePush = async () => {
+        const success = await subscribeToWebPush()
+        if (success) {
+            setPushEnabled(true)
+            toast.success('Mobile Push Notifications activated! ✦')
+        } else {
+            toast.error('Failed to enable push. Check browser permissions.')
+        }
+    }
 
     // ── General ──
     const [saving, setSaving] = useState(false)
@@ -425,6 +448,23 @@ export default function SettingsPage() {
                         </button>
                     </div>
                 ))}
+
+                <div style={{ padding: '1.25rem 0 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid rgba(139,105,20,0.1)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
+                        <Smartphone size={10} /> MOBILE INTEGRATION
+                    </div>
+                    <button 
+                        className="btn btn-primary"
+                        onClick={handleEnablePush}
+                        disabled={pushEnabled}
+                        style={{ fontSize: '0.55rem', padding: '0.6rem', letterSpacing: '0.1em', opacity: pushEnabled ? 0.5 : 1, width: '100%', justifyContent: 'center' }}
+                    >
+                        {pushEnabled ? 'PUSH NOTIFICATIONS ACTIVE' : 'ENABLE SECURE PUSH NOTIFICATIONS'}
+                    </button>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--ash)', lineHeight: 1.4 }}>
+                        Receive immediate cinematic alerts directly to your device lock screen when the society interacts with your archive.
+                    </div>
+                </div>
             </div>
 
             {/* ════════════════════════════════════════ */}

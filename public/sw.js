@@ -103,3 +103,54 @@ self.addEventListener('message', (event) => {
         caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
     }
 });
+
+// ============================================================
+// WEB PUSH NOTIFICATIONS
+// ============================================================
+
+self.addEventListener('push', (event) => {
+    let payload = { title: 'ReelHouse', body: 'New cinematic activity.', url: '/' };
+    try {
+        if (event.data) {
+            payload = event.data.json();
+        }
+    } catch (e) {
+        // Fallback to text if JSON parse fails
+        payload.body = event.data ? event.data.text() : payload.body;
+    }
+
+    const options = {
+        body: payload.body,
+        icon: '/icon-192.png',
+        badge: '/icon-32-new.png',
+        vibrate: [100, 50, 100],
+        data: {
+            url: payload.url || '/'
+        }
+    };
+
+    event.waitUntil(
+        self.registration.showNotification(payload.title, options)
+    );
+});
+
+self.addEventListener('notificationclick', (event) => {
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+            const urlToOpen = event.notification.data.url;
+            // If reelhouse is already open, focus it and navigate
+            for (let client of windowClients) {
+                if (client.url.includes('thereelhouse.io') && 'focus' in client) {
+                    client.focus();
+                    if (urlToOpen && urlToOpen !== '/') client.navigate(urlToOpen);
+                    return;
+                }
+            }
+            // Otherwise open a new window
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen || '/');
+            }
+        })
+    );
+});

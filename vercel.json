@@ -141,6 +141,28 @@
     ],
     "rewrites": [
         {
+            "source": "/film/:id",
+            "has": [
+                {
+                    "type": "header",
+                    "key": "user-agent",
+                    "value": "(?i).*(bot|facebook|twitter|slack|discord|whatsapp|telegram|skype).*"
+                }
+            ],
+            "destination": "/api/og?type=film&id=:id"
+        },
+        {
+            "source": "/person/:id",
+            "has": [
+                {
+                    "type": "header",
+                    "key": "user-agent",
+                    "value": "(?i).*(bot|facebook|twitter|slack|discord|whatsapp|telegram|skype).*"
+                }
+            ],
+            "destination": "/api/og?type=person&id=:id"
+        },
+        {
             "source": "/((?!api|assets|sw.js|manifest.json|.*\\..*).*)",
             "destination": "/index.html"
         }
