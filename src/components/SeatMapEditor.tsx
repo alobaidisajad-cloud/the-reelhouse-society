@@ -156,6 +156,9 @@ function BlockedSeatEditor({ config, onToggleBlock }: { config: SeatLayoutConfig
             <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginBottom: '0.75rem' }}>
                 Click any seat to mark it as blocked (wall, pillar, reserved space).
             </div>
+            <div className="mobile-only" style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', textAlign: 'center', margin: '0.5rem 0 1rem', animation: 'pulse 2.5s infinite ease-in-out' }}>
+                ✦ SWIPE HORIZONTALLY TO EXPLORE CINEMA ROWS ✦
+            </div>
             {/* Screen */}
             <div style={{ padding: '0 2rem', marginBottom: '0.75rem' }}>
                 <div style={{ height: 4, background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.5) 30%, var(--flicker) 50%, rgba(139,105,20,0.5) 70%, transparent)', borderRadius: '50% 50% 0 0 / 100% 100% 0 0' }} />
