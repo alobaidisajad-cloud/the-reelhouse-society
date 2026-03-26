@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Loader, User, Film } from 'lucide-react'
@@ -10,6 +10,13 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
     const [query, setQuery] = useState('')
     const [suggestions, setSuggestions] = useState<any[]>([])
     const [searching, setSearching] = useState(false)
+    const inputRef = useRef<HTMLInputElement>(null)
+
+    useEffect(() => {
+        if (isOpen && inputRef.current) {
+            setTimeout(() => inputRef.current?.focus(), 100)
+        }
+    }, [isOpen])
 
     useEffect(() => {
         if (!isOpen) { setQuery(''); setSuggestions([]) }
@@ -62,6 +69,7 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
                     <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0.75rem', width: '100%' }}>
                         <Search size={16} style={{ color: 'var(--sepia)', alignSelf: 'center', flexShrink: 0 }} />
                         <input
+                            ref={inputRef}
                             className="input"
                             placeholder="Search films, actors, directors..."
                             value={query}

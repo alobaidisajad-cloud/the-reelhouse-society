@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Lock } from 'lucide-react'
 import { tmdb } from '../../tmdb'
 import toast from 'react-hot-toast'
+import { RadarChart } from '../UI'
 
 interface AuteurToolkitProps {
     isAuteur: boolean
@@ -28,9 +29,9 @@ export default function AuteurToolkit({
 }: AuteurToolkitProps) {
     return (
         <div style={{ padding: '1rem', border: '1px solid var(--blood-reel)', borderRadius: 'var(--radius-card)', background: 'rgba(162,36,36,0.05)', display: 'flex', flexDirection: 'column', gap: '1.5rem', opacity: isAuteur ? 1 : 0.6 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setAutopsyOpen(!autopsyOpen)}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => { setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); }}>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--blood-reel)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    ✦ Auteur Toolkit {autopsyOpen ? '[-]' : '[+]'}
+                    {autopsyOpen ? '[-] HIDE DEEP AUTOPSY' : '[+] PERFORM DEEP AUTOPSY (Auteur Feature)'}
                 </div>
                 {!isAuteur && (
                     <button onClick={(e) => { e.stopPropagation(); onUpgrade() }} style={{ background: 'none', border: 'none', color: 'var(--blood-reel)', textDecoration: 'underline', fontSize: '0.6rem', fontFamily: 'var(--font-ui)', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
@@ -53,10 +54,6 @@ export default function AuteurToolkit({
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--bone)', display: 'block' }}>
                                         THE AUTOPSY ENGINE (1-10)
-                                    </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--blood-reel)', letterSpacing: '0.1em' }}>
-                                        <input type="checkbox" checked={isAutopsied} onChange={(e) => setIsAutopsied(e.target.checked)} style={{ accentColor: 'var(--blood-reel)' }} />
-                                        ENABLE
                                     </label>
                                 </div>
                                 <button onClick={(e) => {
@@ -84,6 +81,16 @@ export default function AuteurToolkit({
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                            
+                            {/* Live Target Preview */}
+                            <div style={{ marginTop: '1.5rem', background: 'var(--ink)', border: '1px solid var(--ash)', borderRadius: 'var(--radius-card)', padding: '1rem' }}>
+                                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'block', marginBottom: '0.5rem' }}>
+                                    LIVE DOSSIER PREVIEW
+                                </label>
+                                <div style={{ transform: 'scale(0.85)', transformOrigin: 'top left', width: '117%' }}>
+                                    <RadarChart autopsy={autopsy} />
+                                </div>
                             </div>
                         </div>
 

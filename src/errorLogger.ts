@@ -53,7 +53,7 @@ export function initGlobalErrorLogging() {
  */
 const _throttleMap = new Map()
 
-export function throttleAction(key: string, fn: Function, cooldownMs = 2000) {
+export function throttleAction(key: string, fn: () => void, cooldownMs = 2000) {
     const lastCall = _throttleMap.get(key) || 0
     const now = Date.now()
 

@@ -152,8 +152,8 @@ export const useAuthStore = create<AuthState>()(
                 if (updates.bio !== undefined) dbUpdates.bio = updates.bio
                 if (updates.username !== undefined) dbUpdates.username = updates.username
                 if (updates.avatar !== undefined) dbUpdates.avatar_url = updates.avatar
-                if ((updates as any).avatar_url !== undefined) dbUpdates.avatar_url = (updates as any).avatar_url
-                if ((updates as any).display_name !== undefined) dbUpdates.display_name = (updates as any).display_name
+                if (updates.avatar_url !== undefined) dbUpdates.avatar_url = updates.avatar_url
+                if (updates.display_name !== undefined) dbUpdates.display_name = updates.display_name
                 if (updates.isSocialPrivate !== undefined) dbUpdates.is_social_private = updates.isSocialPrivate
                 // NOTE: role is intentionally excluded — role changes only happen via payment flow
                 if (Object.keys(dbUpdates).length > 0) {
@@ -261,10 +261,10 @@ export const useAuthStore = create<AuthState>()(
                     username: state.user.username,
                     role: state.user.role,
                     avatar_url: state.user.avatar_url,
-                    display_name: (state.user as any).display_name,
+                    display_name: state.user.display_name,
                     bio: state.user.bio,
                     is_social_private: state.user.is_social_private,
-                    created_at: (state.user as any).created_at,
+                    created_at: state.user.created_at,
                     following: state.user.following,
                     preferences: state.user.preferences || {},
                 } : null,

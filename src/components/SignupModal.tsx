@@ -44,6 +44,13 @@ export default function SignupModal() {
     const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle')
     const usernameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+    // Login rate limiting
+    const [loginAttempts, setLoginAttempts] = useState(0)
+    const [lockoutUntil, setLockoutUntil] = useState(0)
+    const [submitting, setSubmitting] = useState(false)
+    const MAX_LOGIN_ATTEMPTS = 5
+    const LOCKOUT_DURATION_MS = 30_000
+
     // Velvet Rope State
     const [hasClearance, setHasClearance] = useState(false)
     const [clearanceCode, setClearanceCode] = useState('')
@@ -177,29 +184,42 @@ export default function SignupModal() {
             return
         }
 
+        // Rate limiting check
+        const now = Date.now()
+        if (isLogin && now < lockoutUntil) {
+            const remaining = Math.ceil((lockoutUntil - now) / 1000)
+            toast.error(`Too many attempts. Try again in ${remaining}s.`)
+            return
+        }
+
         // Username availability guard for signup
         if (!isLogin && usernameStatus === 'taken') {
             toast.error('That username is already taken. Choose another.')
             return
         }
 
+        setSubmitting(true)
+
         try {
             if (isLogin) {
                 // ── LOGIN: email or username ──
                 let loginEmail = emailOrUsername.trim()
                 if (!loginEmail.includes('@')) {
-                    // Input is a username — resolve to email
+                    // Input is a username — resolve via secure RPC (no client email exposure)
                     const lookupUsername = loginEmail.toLowerCase().replace(/\s+/g, '_')
-                    const { data: profile } = await supabase
-                        .from('profiles')
-                        .select('email')
-                        .eq('username', lookupUsername)
-                        .maybeSingle()
-                    if (!profile?.email) {
+                    const { data: resolvedEmail, error: rpcError } = await supabase
+                        .rpc('get_email_by_username', { lookup_username: lookupUsername })
+                    if (rpcError || !resolvedEmail) {
                         toast.error('No account found with that username.')
+                        setLoginAttempts(prev => prev + 1)
+                        if (loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS) {
+                            setLockoutUntil(Date.now() + LOCKOUT_DURATION_MS)
+                            setLoginAttempts(0)
+                            toast.error('Account locked for 30 seconds due to too many failed attempts.')
+                        }
                         return
                     }
-                    loginEmail = profile.email
+                    loginEmail = resolvedEmail
                 } else {
                     if (!isValidEmailFormat(loginEmail)) {
                         toast.error('Please enter a valid email address.')
@@ -207,6 +227,7 @@ export default function SignupModal() {
                     }
                 }
                 await login(loginEmail, password)
+                setLoginAttempts(0) // Reset on success
                 toast.success('Welcome back to the House.')
                 closeSignupModal()
                 resetForm()
@@ -260,7 +281,17 @@ export default function SignupModal() {
             if (msg.includes('Database error saving new user')) {
                 msg = 'Username is already taken by another patron. Choose another.';
             }
+            if (msg.includes('Invalid login credentials')) {
+                setLoginAttempts(prev => prev + 1)
+                if (loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS) {
+                    setLockoutUntil(Date.now() + LOCKOUT_DURATION_MS)
+                    setLoginAttempts(0)
+                    msg = 'Account locked for 30 seconds due to too many failed attempts.'
+                }
+            }
             toast.error(msg)
+        } finally {
+            setSubmitting(false)
         }
     }
 
@@ -545,8 +576,8 @@ export default function SignupModal() {
                                 </div>
                             )}
 
-                            <button className="btn btn-primary" type="submit" style={{ width: '100%', justifyContent: 'center', padding: '0.7em' }}>
-                                {isLogin ? 'Enter the House' : 'Claim Your Seat'}
+                            <button className="btn btn-primary" type="submit" disabled={submitting} style={{ width: '100%', justifyContent: 'center', padding: '0.7em', opacity: submitting ? 0.6 : 1 }}>
+                                {submitting ? 'THREADING...' : isLogin ? 'Enter the House' : 'Claim Your Seat'}
                             </button>
                         </form>
 

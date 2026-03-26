@@ -14,8 +14,9 @@ export default function DirectorPanel({ director, onClose }: any) {
     const { data: filmography, isLoading } = useQuery({
         queryKey: ['person-films', director.id],
         queryFn: async () => {
-            const data = await tmdb.personCredits(director.id)
-            return (data.crew || []).filter((f: any) => f.job === 'Director' && f.poster_path).sort((a: any, b: any) => (b.release_date || '').localeCompare(a.release_date || ''))
+            if (!director.id) return []
+            const data: any = await tmdb.personCredits(director.id)
+            return (data?.crew || []).filter((f: any) => f.job === 'Director' && f.poster_path).sort((a: any, b: any) => (b.release_date || '').localeCompare(a.release_date || ''))
         },
         staleTime: 1000 * 60 * 30,
     })

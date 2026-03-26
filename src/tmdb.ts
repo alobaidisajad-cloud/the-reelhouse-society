@@ -6,7 +6,7 @@ const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
 // Resilient fetch wrapper — 10s timeout, logs errors, always returns a safe fallback
 // `path` is the TMDB API path (e.g. /search/multi?query=...)
-async function fetchTMDB(path: any, fallback: any = null) {
+async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
     try {
         const separator = path.includes('?') ? '&' : '?'
         const url = `${TMDB_BASE}${path}${separator}api_key=${TMDB_API_KEY}`
@@ -16,14 +16,14 @@ async function fetchTMDB(path: any, fallback: any = null) {
         clearTimeout(timer)
         if (!res.ok) return fallback
         return await res.json()
-    } catch (e: any) {
-        if (e.name !== 'AbortError') { /* silently swallow — fallback returned */ }
+    } catch (e: unknown) {
+        if (e instanceof Error && e.name !== 'AbortError') { /* silently swallow — fallback returned */ }
         return fallback
     }
 }
 
 // Decode HTML entities from RSS text (fixes â€", â€™, &amp; etc.)
-function decodeEntities(str: any) {
+function decodeEntities(str: string): string {
     if (!str || typeof str !== 'string') return str
     try {
         return new DOMParser().parseFromString(str, 'text/html').documentElement.textContent
@@ -33,7 +33,7 @@ function decodeEntities(str: any) {
 }
 
 export const tmdb = {
-    search: async (query: any, page: any = 1) => {
+    search: async (query: string, page: number = 1) => {
         // TIER 1: Omni-Search (Movies + Actors + Directors simultaneously)
         const res = await fetch(
             `${TMDB_BASE}/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false&api_key=${TMDB_API_KEY}`
@@ -49,7 +49,7 @@ export const tmdb = {
             // 1. Exact name/title matches for the query string come first
             // 2. People matching the name come before movies where they just appear
             // 3. Fall back to raw popularity
-            const sortedResults = [...data.results].sort((a: any, b: any) => {
+            const sortedResults = [...data.results].sort((a: { name?: string; title?: string; media_type?: string; popularity?: number }, b: { name?: string; title?: string; media_type?: string; popularity?: number }) => {
                 const aName = (a.name || a.title || '').toLowerCase()
                 const bName = (b.name || b.title || '').toLowerCase()
                 const queryLower = query.toLowerCase()
@@ -220,14 +220,13 @@ export const tmdb = {
         return data
     },
 
-    trending: async (timeWindow: any = 'week') => fetchTMDB(
+    trending: async (timeWindow: string = 'week') => fetchTMDB<any>(
         `/trending/movie/${timeWindow}`,
         { results: [] }
     ),
 
-    // Lightweight multi-search for autocomplete — returns raw results without heavy filtering
-    searchMulti: async (query: any) => {
-        const data = await fetchTMDB(
+    searchMulti: async (query: string) => {
+        const data = await fetchTMDB<any>(
             `/search/multi?query=${encodeURIComponent(query)}&page=1&include_adult=false`,
             { results: [] }
         )
@@ -237,55 +236,55 @@ export const tmdb = {
             .slice(0, 6)
     },
 
-    topRated: async (page: any = 1) => fetchTMDB(
+    topRated: async (page: number = 1) => fetchTMDB<any>(
         `/movie/top_rated?page=${page}`,
         { results: [] }
     ),
 
-    nowPlaying: async () => fetchTMDB(
+    nowPlaying: async () => fetchTMDB<any>(
         `/movie/now_playing`,
         { results: [] }
     ),
 
-    upcoming: async () => fetchTMDB(
+    upcoming: async () => fetchTMDB<any>(
         `/movie/upcoming`,
         { results: [] }
     ),
 
-    detail: async (id: any) => fetchTMDB(
+    detail: async (id: number) => fetchTMDB<any>(
         `/movie/${id}?append_to_response=credits,videos,similar,watch/providers,release_dates`,
         null
     ),
 
     // Watch providers (streaming, rent, buy) for a specific movie
-    watchProviders: async (id: any) => {
-        const data = await fetchTMDB(`/movie/${id}/watch/providers`, {})
+    watchProviders: async (id: number) => {
+        const data = await fetchTMDB<{ results: Record<string, unknown> }>(`/movie/${id}/watch/providers`, { results: {} })
         return data?.results || {}
     },
 
     // Release dates by country for a movie
-    releaseDates: async (id: any) => {
-        const data = await fetchTMDB(`/movie/${id}/release_dates`, {})
+    releaseDates: async (id: number) => {
+        const data = await fetchTMDB<{ results: unknown[] }>(`/movie/${id}/release_dates`, { results: [] })
         return data?.results || []
     },
 
     // Search production companies by name (for Discover filter)
-    companySearch: async (query: any) => {
-        const data = await fetchTMDB(`/search/company?query=${encodeURIComponent(query)}`, {})
+    companySearch: async (query: string) => {
+        const data = await fetchTMDB<{ results: unknown[] }>(`/search/company?query=${encodeURIComponent(query)}`, { results: [] })
         return data?.results || []
     },
 
-    discover: async (params: any = {}) => {
+    discover: async (params: Record<string, string> = {}) => {
         const qs = new URLSearchParams(params).toString()
         return fetchTMDB(`/discover/movie?${qs}`, { results: [] })
     },
 
-    poster: (path: any, size: any = 'w342') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
-    backdrop: (path: any, size: any = 'w1280') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
-    profile: (path: any, size: any = 'w185') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
+    poster: (path: string | null | undefined, size: string = 'w342') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
+    backdrop: (path: string | null | undefined, size: string = 'w1280') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
+    profile: (path: string | null | undefined, size: string = 'w185') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
 
     // Responsive poster — picks smallest size that still looks good at current viewport
-    responsivePoster: (path: any) => {
+    responsivePoster: (path: string | null | undefined) => {
         if (!path) return undefined
         const w = typeof window !== 'undefined' ? window.innerWidth : 1280
         const size = w < 480 ? 'w185' : w < 900 ? 'w342' : 'w500'
@@ -293,7 +292,7 @@ export const tmdb = {
     },
 
     // B1: Responsive poster srcSet — browser picks the optimal size automatically
-    posterSrcSet: (path: any) => {
+    posterSrcSet: (path: string | null | undefined) => {
         if (!path) return { src: undefined, srcSet: undefined, sizes: undefined }
         const widths = [92, 185, 342, 500, 780] as const
         const srcSet = widths.map(w => `${TMDB_IMG}/w${w}${path} ${w}w`).join(', ')
@@ -305,7 +304,7 @@ export const tmdb = {
     },
 
     // B1: Responsive backdrop srcSet
-    backdropSrcSet: (path: any) => {
+    backdropSrcSet: (path: string | null | undefined) => {
         if (!path) return { src: undefined, srcSet: undefined, sizes: undefined }
         const widths = [300, 780, 1280] as const
         const srcSet = widths.map(w => `${TMDB_IMG}/w${w}${path} ${w}w`).join(', ')
@@ -317,36 +316,36 @@ export const tmdb = {
     },
 
     // B2: Tiny placeholder URL for blur-up effect
-    posterThumb: (path: any) => path ? `${TMDB_IMG}/w92${path}` : undefined,
+    posterThumb: (path: string | null | undefined) => path ? `${TMDB_IMG}/w92${path}` : undefined,
 
 
     // Separate similar endpoint (avoids double-fetching detail)
-    similar: async (id: any) => {
-        const data = await fetchTMDB(`/movie/${id}/similar?page=1`, {})
+    similar: async (id: number) => {
+        const data = await fetchTMDB<{ results: unknown[] }>(`/movie/${id}/similar?page=1`, { results: [] })
         return data?.results || []
     },
 
     // Aliases used by hover-prefetch in FilmCard
-    movieDetails: async (id: any) => fetchTMDB(
+    movieDetails: async (id: number) => fetchTMDB<any>(
         `/movie/${id}?append_to_response=credits,videos,similar`,
         null
     ),
 
-    movieCredits: async (id: any) => fetchTMDB(`/movie/${id}/credits`, null),
+    movieCredits: async (id: number) => fetchTMDB<any>(`/movie/${id}/credits`, null),
 
     // Fetch all images for a movie (posters, backdrops, logos)
-    movieImages: async (id: any) => fetchTMDB(`/movie/${id}/images`, { posters: [], backdrops: [], logos: [] }),
+    movieImages: async (id: number) => fetchTMDB(`/movie/${id}/images`, { posters: [], backdrops: [], logos: [] }),
 
     // Fetch person details (Actor/Director profile)
-    person: async (id: any) => fetchTMDB(`/person/${id}`, null),
+    person: async (id: number) => fetchTMDB<any>(`/person/${id}`, null),
 
     // Fetch person's movie credits
-    personCredits: async (id: any) => fetchTMDB(`/person/${id}/movie_credits`, null),
+    personCredits: async (id: number) => fetchTMDB<any>(`/person/${id}/movie_credits`, null),
 
     // NEW: Real-time News Proxy (Aggregates Film News)
     getNews: async () => {
         // Compute relative dates at runtime so fallback news never looks stale
-        const relDate = (daysAgo: any) => {
+        const relDate = (daysAgo: number) => {
             const d = new Date()
             d.setDate(d.getDate() - daysAgo)
             return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase()

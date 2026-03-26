@@ -78,7 +78,7 @@ export default function LogModal() {
 
     useEffect(() => {
         if (film && isPremium) {
-            tmdb.movieImages(film.id).then(imgs => {
+            tmdb.movieImages(film.id).then((imgs: any) => {
                 // Poster curation — Auteur-only (matches MembershipPage)
                 if (isAuteur && imgs.posters) {
                     const validPosters = imgs.posters.filter((p: any) => p.iso_639_1 === 'en' || !p.iso_639_1).slice(0, 15)
@@ -159,6 +159,39 @@ export default function LogModal() {
         }
     }, [logModalOpen])
 
+    // Draft Logic: Restore
+    useEffect(() => {
+        if (step === 1 && film && !logModalEditLogId && logModalOpen) {
+            const draft = localStorage.getItem(`reelhouse_draft_${film.id}`)
+            if (draft) {
+                try {
+                    const parsed = JSON.parse(draft)
+                    setRating(parsed.rating || 0)
+                    setReview(parsed.review || '')
+                    setStatus(parsed.status || 'watched')
+                    setIsSpoiler(parsed.isSpoiler || false)
+                    setAbandoned(parsed.abandoned || '')
+                    setWatchedWith(parsed.watchedWith || '')
+                    setPrivateNotes(parsed.privateNotes || '')
+                    if (parsed.autopsy) setAutopsy(parsed.autopsy)
+                    if (parsed.autopsyOpen) { setAutopsyOpen(true); setIsAutopsied(true) }
+                    toast('DRAFT RESTORED', { icon: '✦', style: { background: 'var(--ink)', color: 'var(--parchment)', border: '1px solid var(--sepia)' } })
+                } catch(e) {}
+            }
+        }
+    }, [step, film, logModalEditLogId, logModalOpen])
+
+    // Draft Logic: Save
+    useEffect(() => {
+        if (step === 1 && film && !logModalEditLogId && logModalOpen) {
+            const debounce = setTimeout(() => {
+                const draft = { rating, review, status, isSpoiler, abandoned, watchedWith, privateNotes, autopsy, autopsyOpen }
+                localStorage.setItem(`reelhouse_draft_${film.id}`, JSON.stringify(draft))
+            }, 1000)
+            return () => clearTimeout(debounce)
+        }
+    }, [step, film, logModalEditLogId, logModalOpen, rating, review, status, isSpoiler, abandoned, watchedWith, privateNotes, autopsy, autopsyOpen])
+
     const handleSearch = (q: string) => {
         setQuery(q)
         if (searchTimeout.current) clearTimeout(searchTimeout.current)
@@ -238,6 +271,11 @@ export default function LogModal() {
                 username: user?.username || 'cinephile',
                 status,
             })
+        }
+
+        // Clear draft
+        if (!logModalEditLogId && film) {
+            localStorage.removeItem(`reelhouse_draft_${film.id}`)
         }
 
         closeLogModal()
@@ -472,6 +510,10 @@ export default function LogModal() {
                                         <Clock size={10} style={{ display: 'inline', marginRight: '0.25rem' }} />
                                         DATE WATCHED
                                     </label>
+                                    <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                                        <button type="button" onClick={() => setDate(new Date().toISOString().slice(0, 10))} className={`btn ${date === new Date().toISOString().slice(0, 10) ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '0.3em 0.8em', fontSize: '0.55rem' }}>TODAY</button>
+                                        <button type="button" onClick={() => { const d = new Date(); d.setDate(d.getDate() - 1); setDate(d.toISOString().slice(0, 10)) }} className={`btn ${date === new Date(Date.now() - 86400000).toISOString().slice(0, 10) ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '0.3em 0.8em', fontSize: '0.55rem' }}>YESTERDAY</button>
+                                    </div>
                                     <input
                                         type="date"
                                         className="input"
@@ -488,13 +530,14 @@ export default function LogModal() {
                                     </label>
                                     <input
                                         className="input"
-                                        placeholder="A name, a memory..."
+                                        placeholder="A name, a memory, or @username..."
                                         value={watchedWith}
                                         onChange={(e) => setWatchedWith(e.target.value)}
                                         maxLength={60}
                                     />
                                 </div>
 
+                                {status !== 'abandoned' && (
                                 <div>
                                     <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'block', marginBottom: '0.5rem' }}>
                                         REVIEW (OPTIONAL)
@@ -522,6 +565,7 @@ export default function LogModal() {
                                         </span>
                                     </div>
                                 </div>
+                                )}
 
                                 {/* Editorial Desk (Archivist+) */}
                                 {(isPremium) && status !== 'abandoned' && review.length > 0 && (

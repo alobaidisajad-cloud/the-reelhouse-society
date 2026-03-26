@@ -14,14 +14,14 @@ export default function PersonPage() {
 
     const { data: person, isLoading: loadingPerson } = useQuery({
         queryKey: ['person', id],
-        queryFn: () => tmdb.person(id),
+        queryFn: () => tmdb.person(Number(id!)),
         staleTime: 1000 * 60 * 30, // 30 mins
         enabled: !!id && !isNaN(Number(id)) && id !== 'discover' // Safety guard
     })
 
     const { data: credits, isLoading: loadingCredits } = useQuery({
         queryKey: ['personCredits', id],
-        queryFn: () => tmdb.personCredits(id),
+        queryFn: () => tmdb.personCredits(Number(id!)),
         staleTime: 1000 * 60 * 30
     })
 

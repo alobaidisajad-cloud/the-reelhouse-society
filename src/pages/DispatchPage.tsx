@@ -40,7 +40,7 @@ function NightlyTransmission() {
     // Deterministic daily pick — same film all day, rotates daily
     const daysSinceEpoch = Math.floor(Date.now() / (24 * 60 * 60 * 1000))
     const films = trending?.results || []
-    const tonightFilm = films.length > 0 ? films[daysSinceEpoch % films.length] : null
+    const tonightFilm: any = films.length > 0 ? films[daysSinceEpoch % films.length] : null
     const transmissionNum = String(Math.floor((Date.now() - new Date('2026-03-12T00:00:00Z').getTime()) / (24 * 60 * 60 * 1000)) + 1).padStart(3, '0')
 
     return (
