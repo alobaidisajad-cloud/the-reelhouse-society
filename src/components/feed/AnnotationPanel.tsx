@@ -108,7 +108,7 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
                 </button>
             )}
 
-            <div style={{ maxHeight: showAllComments ? '250px' : 'auto', overflowY: 'auto', paddingRight: showAllComments ? '0.5rem' : 0 }}>
+            <div style={{ maxHeight: showAllComments ? '40vh' : 'auto', overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingRight: showAllComments ? '0.5rem' : 0 }}>
                 {visibleComments.map(c => (
                     <div key={c.id} style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.75rem', alignItems: 'flex-start' }}>
                         <Link to={`/user/${c.username}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, marginTop: '2px' }}>@{c.username}</Link>

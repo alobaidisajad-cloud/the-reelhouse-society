@@ -204,7 +204,7 @@ export default function FeedPage() {
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
 
     return (
-        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
+        <div style={{ paddingTop: 70, height: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--ink)' }}>
             <PageSEO title="The Feed" description="Community dispatches and global curation from The ReelHouse Society." />
             {/* ── REFINED HEADER ── */}
             <div style={{
@@ -212,7 +212,8 @@ export default function FeedPage() {
                 borderBottom: 'none',
                 padding: IS_TOUCH ? '1.5rem 0 0' : '3rem 0 0',
                 position: 'relative',
-                overflow: 'hidden'
+                overflow: 'hidden',
+                flexShrink: 0
             }}>
                 <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.06) 0%, transparent 60%)', pointerEvents: 'none' }} />
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
@@ -289,9 +290,9 @@ export default function FeedPage() {
             </div>
 
             {/* ── GOLD GRADIENT DIVIDER ── */}
-            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent)' }} />
+            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent)', flexShrink: 0 }} />
 
-            <main className="page-top" style={{ paddingBottom: '7rem', paddingTop: IS_TOUCH ? '1.5rem' : '2rem' }}>
+            <main id="feed-scroller" className="page-top" style={{ paddingBottom: '7rem', paddingTop: IS_TOUCH ? '1.5rem' : '2rem', flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
                 <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '3rem', alignItems: 'start' }}>
 
                     {/* Main Feed */}
