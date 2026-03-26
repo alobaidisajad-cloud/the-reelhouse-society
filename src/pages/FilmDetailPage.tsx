@@ -407,11 +407,24 @@ export default function FilmDetailPage() {
     )
 
     return (
-        <div className="page-top">
-            <FilmHero film={film} onPlayTrailer={handlePlayVideo} />
-            {/* Single TrailerModal rendered at root — above all stacking contexts */}
-            {activeVideo && <TrailerModal trailerKey={activeVideo} onClose={() => setActiveVideo(null)} />}
-            <main style={{ background: 'var(--ink)', paddingBottom: '5rem' }}>
+        <div className="page-top" style={{ position: 'relative' }}>
+            {/* ── THE AMBIENT ZERO-JS COLOR GLOW ── */}
+            {film?.poster_path && (
+                <div style={{
+                    position: 'fixed', inset: '-20%', zIndex: 0, pointerEvents: 'none',
+                    backgroundImage: `url(${tmdb.poster(film.poster_path, 'w500')})`,
+                    backgroundSize: 'cover', backgroundPosition: 'center',
+                    filter: 'blur(100px) saturate(1.8) brightness(0.7) opacity(0.35)',
+                    maskImage: 'radial-gradient(circle at 50% 10%, black 0%, transparent 60%)',
+                    WebkitMaskImage: 'radial-gradient(circle at 50% 10%, black 0%, transparent 60%)'
+                }} />
+            )}
+            
+            <div style={{ position: 'relative', zIndex: 1 }}>
+                <FilmHero film={film} onPlayTrailer={handlePlayVideo} />
+                {/* Single TrailerModal rendered at root — above all stacking contexts */}
+                {activeVideo && <TrailerModal trailerKey={activeVideo} onClose={() => setActiveVideo(null)} />}
+            <main style={{ background: 'transparent', paddingBottom: '5rem' }}>
                 <div className="container" style={{ paddingTop: '3rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     <button onClick={() => {
                         navigate(-1)
@@ -442,6 +455,7 @@ export default function FilmDetailPage() {
                     </SectionErrorBoundary>
                 </div>
             </main>
+            </div>
         </div>
     )
 }

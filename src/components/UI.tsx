@@ -180,6 +180,7 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
             onClick={onClick}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
+            onTouchStart={handleMouseEnter}
             aria-label={film.title || 'Film'}
             role="button"
             tabIndex={onClick ? 0 : undefined}
