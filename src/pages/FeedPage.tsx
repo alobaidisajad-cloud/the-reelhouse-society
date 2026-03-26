@@ -37,6 +37,8 @@ function mapLogsToFeed(data: any[], usernameMap: Record<string, any>) {
         autopsy: l.autopsy,
         isAutopsied: l.is_autopsied || false,
         endorsementCount: 0,
+        createdAt: l.created_at,
+        watchedDate: l.watched_date,
         timestamp: l.created_at
             ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()
             : 'RECENT'
@@ -469,7 +471,7 @@ export default function FeedPage() {
                                         ))}
                                     </>
                                 ) : recentLists.map((list: any) => (
-                                    <Link key={list.id} to={`/lists`} style={{ textDecoration: 'none' }}>
+                                    <Link key={list.id} to={`/lists/${list.id}`} style={{ textDecoration: 'none' }}>
                                         <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}>
                                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
                                                 {list.title}
