@@ -83,15 +83,6 @@ export default function QualityOfLife() {
                         exit={{ opacity: 0, scale: 0.8, y: 20 }}
                         onClick={scrollToTop}
                         className="back-to-top-btn"
-                        style={{
-                            position: 'fixed', bottom: '2rem', right: '2rem', zIndex: 9000,
-                            width: 50, height: 50, borderRadius: '50%',
-                            background: 'var(--soot)', border: '1px solid var(--sepia)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: 'var(--sepia)', cursor: 'pointer',
-                            boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
-                            backdropFilter: 'blur(4px)'
-                        }}
                         whileHover={{ scale: 1.1, background: 'var(--ink)' }}
                         whileTap={{ scale: 0.95 }}
                         title="Return to surface"

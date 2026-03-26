@@ -992,3 +992,34 @@
   color: var(--fog);
   margin-top: 0.1rem;
 }
+
+/* ── FLOATING ACTION BUTTON ── */
+.back-to-top-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 9000;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: var(--soot);
+  border: 1px solid var(--sepia);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sepia);
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+@media (max-width: 768px) {
+  .back-to-top-btn {
+    /* Sit securely above the iOS/Android secure bottom bar and the nav menu */
+    bottom: calc(5.5rem + env(safe-area-inset-bottom));
+    right: 1.5rem;
+    width: 44px;
+    height: 44px;
+  }
+}
