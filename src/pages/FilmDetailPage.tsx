@@ -50,7 +50,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.5) brightness(0.25) contrast(1.15)', zIndex: 0 }} />
             )}
             {/* Gradient overlay */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--ink) 30%, rgba(10,7,3,0.5) 70%, transparent)', zIndex: 1 }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--ink) 15%, rgba(10,7,3,0.85) 45%, rgba(10,7,3,0.2) 80%, transparent)', zIndex: 1 }} />
 
             {/* Trailer play button overlay on backdrop */}
             {trailer && !IS_TOUCH && (

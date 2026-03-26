@@ -55,11 +55,11 @@ function AddShowtimeModal({ onClose, onAdd, defaultDate = '', screens = [] }: Ad
     const [film, setFilm] = useState('')
     const [date, setDate] = useState(defaultDate)
     const [screenName, setScreenName] = useState(screens[0]?.name || 'Screen 1')
-    const [durationMins, setDurationMins] = useState(120)
+    const [durationMins, setDurationMins] = useState<number | ''>(120)
     return (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(5,3,1,0.95)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', width: '100%', maxWidth: 480, padding: '2rem', borderRadius: 2, position: 'relative' }}>
+                style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', width: '100%', maxWidth: 480, maxHeight: '100dvh', overflowY: 'auto', padding: '2rem', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))', borderRadius: 2, position: 'relative' }}>
                 <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}><X size={20} /></button>
                 <div className="section-title-sm" style={{ color: 'var(--sepia)', marginBottom: '0.4rem' }}>NEW FILM</div>
                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '1.25rem' }}>Add to Schedule</h3>
@@ -72,7 +72,7 @@ function AddShowtimeModal({ onClose, onAdd, defaultDate = '', screens = [] }: Ad
                         </div>
                         <div>
                             <div className="ui-micro" style={{ color: 'var(--sepia)', marginBottom: '0.35rem' }}>DURATION (MINS)</div>
-                            <input className="input" type="number" min={30} max={480} value={durationMins} onChange={e => setDurationMins(parseInt(e.target.value) || 120)} />
+                            <input className="input" type="number" min={30} max={480} value={durationMins} onChange={e => setDurationMins(e.target.value === '' ? '' : (parseInt(e.target.value) || ''))} />
                         </div>
                     </div>
                     <div>
@@ -91,7 +91,7 @@ function AddShowtimeModal({ onClose, onAdd, defaultDate = '', screens = [] }: Ad
                     <button className="btn btn-primary" style={{ justifyContent: 'center', marginTop: '0.25rem' }}
                         onClick={() => {
                             if (!film || !date) { toast.error('Film title and date are required'); return }
-                            onAdd({ film, date, screenName, durationMins })
+                            onAdd({ film, date, screenName, durationMins: durationMins === '' ? 120 : durationMins })
                             toast.success(`${film} added to schedule`)
                             onClose()
                         }}>
@@ -344,16 +344,23 @@ export default function VenueDashboard() {
     const [showAddEvent, setShowAddEvent] = useState(false)
     const [eventForm, setEventForm] = useState<any>({ title: '', desc: '', date: '', time: '20:00', type: 'Special', price: '', totalTickets: 60 })
 
-    // Computed stats
-    const totalBooked = showtimes.reduce((a: any, st: any) => a + st.slots.reduce((b: any, sl: any) => b + (sl.bookedSeats?.length || 0), 0), 0)
-    const totalCap = showtimes.reduce((a: any, st: any) => a + st.slots.length * 150, 0)
-    const occPct = totalCap > 0 ? Math.round((totalBooked / totalCap) * 100) : 0
-    const showtimeRevenue = showtimes.reduce((a: any, st: any) =>
-        a + st.slots.reduce((b: any, sl: any) => {
-            const lowestPrice = Math.min(...(sl.ticketTypes?.map((t: any) => t.price) || [0]))
-            return b + (sl.bookedSeats?.length || 0) * lowestPrice
-        }, 0), 0)
-    const eventRevenue = events.reduce((a: any, e: any) => a + (e.totalTickets - e.ticketsLeft) * e.price, 0)
+    // Computed stats (Wrapped in useMemo to eliminate O(N^2) render thrashing during text input)
+    const { totalBooked, totalCap, occPct, showtimeRevenue } = useMemo(() => {
+        const booked = showtimes.reduce((a: any, st: any) => a + st.slots.reduce((b: any, sl: any) => b + (sl.bookedSeats?.length || 0), 0), 0)
+        const cap = showtimes.reduce((a: any, st: any) => a + st.slots.length * 150, 0)
+        const occ = cap > 0 ? Math.round((booked / cap) * 100) : 0
+        const rev = showtimes.reduce((a: any, st: any) =>
+            a + st.slots.reduce((b: any, sl: any) => {
+                const prices = sl.ticketTypes?.map((t: any) => t.price) || []
+                const lowestPrice = prices.length > 0 ? Math.min(...prices) : 0
+                return b + (sl.bookedSeats?.length || 0) * lowestPrice
+            }, 0), 0)
+        return { totalBooked: booked, totalCap: cap, occPct: occ, showtimeRevenue: rev }
+    }, [showtimes])
+
+    const eventRevenue = useMemo(() => {
+        return events.reduce((a: any, e: any) => a + (e.totalTickets - e.ticketsLeft) * e.price, 0)
+    }, [events])
 
     const submitEvent = (e: any) => {
         e.preventDefault()
