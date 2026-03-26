@@ -174,7 +174,29 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '75%', height: 'auto', opacity: 0.9 }} />
                     </div>
                 )}
-                <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none', zIndex: 10 }} />
+                
+                {/* ── SOCIETY STAMP OVERLAY ── */}
+                {endorsed && (
+                    <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-15%', right: '-45%', zIndex: 20 } as React.CSSProperties}>
+                        <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '110px' }}>
+                            <g transform="rotate(-2 150 60)">
+                                <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
+                                <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
+                                <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>
+                                    REVIEWED
+                                </text>
+                                <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">
+                                    THE SOCIETY
+                                </text>
+                                {/* Grime/Distress marks */}
+                                <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
+                                <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
+                                <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
+                            </g>
+                        </svg>
+                    </div>
+                )}
             </div>
 
             {/* Content Body */}
@@ -279,29 +301,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         )}
                         {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
                     </button>
-
-                        {/* ── SOCIETY STAMP OVERLAY ── */}
-                        {endorsed && (
-                            <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '2.5rem', right: '1.5rem', zIndex: 100 } as React.CSSProperties}>
-                                <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg">
-                                    <g transform="rotate(-2 150 60)">
-                                        <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
-                                        <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
-                                        <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>
-                                            REVIEWED
-                                        </text>
-                                        <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">
-                                            THE SOCIETY
-                                        </text>
-                                        {/* Grime/Distress marks */}
-                                        <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
-                                        <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
-                                        <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
-                                    </g>
-                                </svg>
-                            </div>
-                        )}
-                    </div>
+                </div>
                 {canAnnotate ? (
                     <button
                         onClick={handleAnnotateToggle}
