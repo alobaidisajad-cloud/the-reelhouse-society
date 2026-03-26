@@ -4,6 +4,13 @@ import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction, PhysicalArchiveItem } from '../types'
 
+declare global {
+  interface Window {
+    __rh_undo_log?: () => void;
+    __rh_undo_watchlist?: () => void;
+  }
+}
+
 /** Lightweight shape for TMDB film data passed into store methods */
 interface TMDBFilmInput {
     id: number
@@ -315,7 +322,7 @@ export const useFilmStore = create<FilmState>()(
                     duration: 5000, id: `undo-${id}`,
                     style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
                 })
-                (window as any).__rh_undo_log = () => {
+                window.__rh_undo_log = () => {
                     undone = true
                     set((state) => ({ logs: [logToRemove, ...state.logs] }))
                     import('react-hot-toast').then((m) => {
@@ -357,7 +364,7 @@ export const useFilmStore = create<FilmState>()(
                     duration: 5000, id: `undo-wl-${filmId}`,
                     style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
                 })
-                (window as any).__rh_undo_watchlist = () => {
+                window.__rh_undo_watchlist = () => {
                     undone = true
                     if (itemToRemove) set((state) => ({ watchlist: [...state.watchlist, itemToRemove] }))
                     import('react-hot-toast').then((m) => {
