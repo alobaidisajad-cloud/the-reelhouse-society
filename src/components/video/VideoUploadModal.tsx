@@ -87,6 +87,7 @@ export default function VideoUploadModal({ onClose, onSuccess }: VideoUploadModa
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(5,3,1,0.97)', padding: '1rem', overflowY: 'auto' }} onClick={onClose}>
             <motion.div
+                className="modal-panel"
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
