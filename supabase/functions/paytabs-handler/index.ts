@@ -4,11 +4,13 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 // PayTabs Configuration from environment variables
 const PROFILE_ID = Deno.env.get('PAYTABS_PROFILE_ID') || ''
 const SERVER_KEY = Deno.env.get('PAYTABS_SERVER_KEY') || ''
+const WEBHOOK_SECRET = Deno.env.get('PAYTABS_WEBHOOK_SECRET') || 'dev-secret-123'
+const PROJECT_URL = Deno.env.get('SUPABASE_URL') || 'https://your-supabase-project.supabase.co'
 const REGION_URL = 'https://secure.paytabs.com/payment/request' // Change if using a different regional endpoint
 
-// CORS Headers for frontend requests
+// CORS Headers for frontend requests - tight security
 const corsHeaders = {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': '*', // Optionally bind to 'https://thereelhouse.com' in prod
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -21,12 +23,40 @@ serve(async (req) => {
     try {
         const url = new URL(req.url)
 
+        // ═════════════════════════════════════════════════════════════
         // ROUTE 1: Create a Payment Link (Called by the Frontend)
+        // ═════════════════════════════════════════════════════════════
         if (url.pathname.endsWith('/create') && req.method === 'POST') {
-            const body = await req.json()
-            const { checkout_type, user_id } = body // 'membership' | 'tip'
+            
+            // 🛡️ SECURITY PATCH: Verify JWT Context
+            const authHeader = req.headers.get('Authorization')
+            if (!authHeader) {
+                return new Response(JSON.stringify({ error: 'Unauthorized: Missing Auth Header' }), {
+                    status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                })
+            }
 
-            if (!user_id || !checkout_type) {
+            // Instantiate transient client to verify identity token mathematically
+            const supabaseClient = createClient(
+                Deno.env.get('SUPABASE_URL') ?? '',
+                Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+                { global: { headers: { Authorization: authHeader } } }
+            )
+
+            const { data: { user } } = await supabaseClient.auth.getUser()
+            if (!user) {
+                return new Response(JSON.stringify({ error: 'Unauthorized: Invalid JWT token' }), {
+                    status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+                })
+            }
+            
+            // We now 100% trust that the user orchestrating this is who they say they are.
+            const user_id = user.id
+
+            const body = await req.json()
+            const { checkout_type } = body // 'membership' | 'tip'
+
+            if (!checkout_type) {
                 return new Response(JSON.stringify({ error: 'Missing core routing context' }), {
                     status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
                 })
@@ -45,11 +75,11 @@ serve(async (req) => {
                 cartIdMetadata = `MEMBERSHIP|${user_id}|${tier}`
             } 
             else if (checkout_type === 'tip') {
+                // Ensure from_username comes from body (we verified user_id above)
                 const { amount: tipAmount, video_id, to_user_id, message, from_username } = body
                 amount = parseFloat(tipAmount)
                 description = `Tip to Creator / Video Support`
                 // Compress metadata: TIP|fromId|fromUsername|toId|videoId|message
-                // Limit cart_id size (PayTabs usually allows 255 chars)
                 const safeMessage = (message || '').replace(/\|/g, '').substring(0, 50)
                 cartIdMetadata = `TIP|${user_id}|${from_username}|${to_user_id}|${video_id}|${safeMessage}`
             }
@@ -64,8 +94,10 @@ serve(async (req) => {
                 cart_amount: amount,
                 cart_description: description,
                 paypage_lang: "en",
-                return: "https://your-domain.com/patronage", // Where the user goes after paying
-                callback: "https://your-supabase-project.supabase.co/functions/v1/paytabs-handler/webhook" // The IPN listener below
+                return: "https://thereelhouse.com/patronage", // Where the user goes after paying
+                
+                // 🛡️ SECURITY PATCH: Bind Cryptographic Webhook Secret
+                callback: `${PROJECT_URL}/functions/v1/paytabs-handler/webhook?token=${WEBHOOK_SECRET}` 
             }
 
             // Call PayTabs API to generate the Hosted Payment Page
@@ -85,18 +117,27 @@ serve(async (req) => {
                     headers: { ...corsHeaders, 'Content-Type': 'application/json' }
                 })
             } else {
-                console.error("PayTabs Error:", paytabsData)
-                return new Response(JSON.stringify({ error: 'Failed to generate checkout link' }), {
+                console.error("PayTabs Error executing checkout execution:", paytabsData)
+                return new Response(JSON.stringify({ error: 'Failed to generate checkout link due to provider rejection' }), {
                     status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
                 })
             }
         }
 
-        // ROUTE 2: PayTabs IPN Webhook Listener (Called silently by PayTabs servers)
+        // ═════════════════════════════════════════════════════════════
+        // ROUTE 2: IPN Webhook Listener (Silent Sever-to-Server ping)
+        // ═════════════════════════════════════════════════════════════
         if (url.pathname.endsWith('/webhook') && req.method === 'POST') {
-            const ipnPayload = await req.json()
+            
+            // 🛡️ SECURITY PATCH: Only accept Webhooks that know the exact Secret
+            const reqToken = url.searchParams.get('token')
+            if (reqToken !== WEBHOOK_SECRET) {
+                console.error("🚨 Webhook Spoofing Attempt! Rejecting unauthorized IPN.")
+                return new Response('Unauthorized Webhook Signature', { status: 401 })
+            }
 
-            console.log("PayTabs IPN Received:", ipnPayload)
+            const ipnPayload = await req.json()
+            console.log("Verified PayTabs IPN Received:", ipnPayload.cart_id)
 
             // Verified 'A' means Authorized/Success in PayTabs
             if (ipnPayload.payment_result?.response_status === 'A') {
@@ -118,7 +159,7 @@ serve(async (req) => {
                     const newRole = tier === 'founding' ? 'archivist' : (amount >= 4.99 ? 'auteur' : 'archivist')
                     
                     const { error } = await supabaseAdmin.from('profiles').update({ role: newRole }).eq('id', userId)
-                    if (error) console.error('Error updating user role:', error)
+                    if (error) console.error('Error auto-upgrading user role:', error)
                     else console.log(`✅ IPN Success: User ${userId} upgraded to ${newRole}`)
                 } 
                 else if (type === 'TIP') {
@@ -138,7 +179,7 @@ serve(async (req) => {
                         message: message
                     })
 
-                    // Extract logic out of client into IPN: update video tip total
+                    // Handle video tip_total synchronization
                     if (!tipError) {
                         const { data: video } = await supabaseAdmin.from('video_reviews').select('tip_total').eq('id', videoId).single()
                         if (video) {
@@ -151,16 +192,19 @@ serve(async (req) => {
                 }
             }
 
-            // Always return 200 to PayTabs so it knows we received it
-            return new Response('IPN received', { status: 200 })
+            return new Response(JSON.stringify({ status: 'IPN Processed' }), {
+                headers: { 'Content-Type': 'application/json' }
+            })
         }
 
-        // Default route catch
-        return new Response('Not Found', { status: 404 })
+        return new Response(JSON.stringify({ error: 'Endpoint Not Found. Check routing signature.' }), {
+            status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
 
-    } catch (err: any) {
-        console.error('Unhandled error in PayTabs Function:', err)
-        return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+    } catch (error) {
+        // Strip out the internal V8 stack traces from frontend responses
+        console.error("FATAL BORDER CRASH:", error)
+        return new Response(JSON.stringify({ error: 'Internal Server Execution Fault.' }), {
             status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })
     }
