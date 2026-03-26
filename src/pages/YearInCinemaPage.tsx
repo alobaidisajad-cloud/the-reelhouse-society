@@ -157,7 +157,9 @@ export default function YearInCinemaPage() {
     const shareYIC = async () => {
         setSharing(true)
         try {
-            const el = document.querySelector('.yic-hero') as HTMLElement
+            // Wait for display:flex to mount the hidden node
+            await new Promise(r => setTimeout(r, 100))
+            const el = document.getElementById('yic-export-node') as HTMLElement
             if (!el) return
             const html2canvas = (await import('html2canvas')).default
             const canvas = await html2canvas(el, { backgroundColor: '#0A0703', scale: 2, useCORS: true })
@@ -427,6 +429,75 @@ export default function YearInCinemaPage() {
                     <Share2 size={14} /> {sharing ? 'GENERATING...' : 'SHARE YOUR RETROSPECTIVE'}
                 </button>
             </Section>
+
+            {/* ────── HIDDEN 1080x1920 STORY EXPORT NODE ────── */}
+            <div style={{ position: 'absolute', left: '-9999px', top: 0, pointerEvents: 'none', userSelect: 'none' }}>
+                <div id="yic-export-node" style={{
+                    width: '1080px', height: '1920px', background: 'var(--ink)',
+                    display: sharing ? 'flex' : 'none', flexDirection: 'column', padding: '120px 80px',
+                    position: 'relative', overflow: 'hidden', boxSizing: 'border-box'
+                }}>
+                    <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139,105,20,0.03) 3px)', zIndex: 0 }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%)', zIndex: 0 }} />
+
+                    <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '4px solid var(--sepia)', paddingBottom: '30px', marginBottom: '80px' }}>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '4rem', color: 'var(--parchment)' }}>YEAR IN CINEMA</div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', letterSpacing: '0.2em', color: 'var(--fog)', marginBottom: '10px' }}>CLASSIFIED RETROSPECTIVE</div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '2rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>{selectedYear}</div>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flex: 1, gap: '60px' }}>
+                            {/* Left Col - Favorite Film Poster */}
+                            <div style={{ width: '450px', flexShrink: 0, display: 'flex', flexDirection: 'column' }}>
+                                {favorite?.poster && (
+                                    <div style={{ padding: '20px', border: '2px dashed var(--ash)', background: 'var(--soot)', flex: 1, maxHeight: '650px', overflow: 'hidden' }}>
+                                        <img src={tmdb.poster(favorite.poster, 'w500') || ''} alt="" loading="eager" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'contrast(1.1) sepia(0.2)' }} />
+                                    </div>
+                                )}
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)', letterSpacing: '0.2em', marginTop: '30px' }}>THE CROWN JEWEL</div>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--parchment)', marginTop: '10px', lineHeight: 1.1 }}>{favorite?.title?.toUpperCase()}</div>
+                            </div>
+
+                            {/* Right Col - Hard Stats */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '60px' }}>
+                                <div>
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)', letterSpacing: '0.2em' }}>TOTAL REELS</div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '6rem', color: 'var(--sepia)', lineHeight: 1 }}>{totalFilms}</div>
+                                </div>
+                                <div>
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)', letterSpacing: '0.2em' }}>HOURS BURNED</div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '6rem', color: 'var(--sepia)', lineHeight: 1 }}>{totalHours}</div>
+                                </div>
+                                {topDirectors.length > 0 && (
+                                    <div>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)', letterSpacing: '0.2em', marginBottom: '20px' }}>CHIEF ARCHITECTS</div>
+                                        {topDirectors.slice(0, 3).map(([name, count]: any) => (
+                                            <div key={name as string} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '15px' }}>
+                                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: 'var(--bone)' }}>{String(name).toUpperCase()}</div>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '2rem', color: 'var(--sepia)' }}>{String(count)}</div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Footer Signature */}
+                        <div style={{ borderTop: '2px dashed var(--ash)', paddingTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto' }}>
+                            <div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.2rem', letterSpacing: '0.3em', color: 'var(--fog)', marginBottom: '10px' }}>CURATED BY</div>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: 'var(--blood-reel)', fontStyle: 'italic' }}>@{user?.username?.toUpperCase() || 'AGENT'}</div>
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', letterSpacing: '0.5em', color: 'var(--fog)', opacity: 0.5 }}>
+                                THE REELHOUSE SOCIETY
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }

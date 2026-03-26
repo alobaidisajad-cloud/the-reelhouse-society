@@ -138,8 +138,13 @@ export const useAuthStore = create<AuthState>()(
                         localStorage.removeItem(key)
                     }
                 })
-                // Also clear our own persist key
+                // Clear all our own persist keys to strictly prevent ghost data bleeding
                 localStorage.removeItem('reelhouse-auth')
+                localStorage.removeItem('reelhouse-films')
+                localStorage.removeItem('reelhouse-ui')
+                localStorage.removeItem('reelhouse-social')
+                localStorage.removeItem('reelhouse-venue')
+                localStorage.removeItem('reelhouse-content')
 
                 // 4. Force full page reload to clear any in-memory state
                 window.location.href = '/'

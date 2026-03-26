@@ -99,11 +99,12 @@ export const initAuthSync = () => {
 export const initRealtime = () => {
     if (!isSupabaseConfigured) return
 
-    // 1. Live global feed — new log inserts from other users go into a
-    //    SEPARATE feed array so the current user's personal `logs` store
-    //    is never polluted. The user's own inserts are handled by addLog().
-    supabase
-        .channel('global_logs_feed')
+    // 1. Live global feed — singleton guard
+    if (supabase.getChannels().some(c => c.topic === 'realtime:global_logs_feed')) {
+        // Already listening, skip to prevent multi-instance socket floods
+    } else {
+        supabase
+            .channel('global_logs_feed')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'logs' }, (payload) => {
             const currentUserId = useAuthStore.getState().user?.id
 
@@ -131,12 +132,15 @@ export const initRealtime = () => {
             })
         })
         .subscribe()
+    }
 
     // 2. Personal notifications — real-time delivery to logged-in user
     const userId = useAuthStore.getState().user?.id
     if (userId) {
-        supabase
-            .channel(`user_notifications_${userId}`)
+        const userTopic = `realtime:user_notifications_${userId}`
+        if (!supabase.getChannels().some(c => c.topic === userTopic)) {
+            supabase
+                .channel(`user_notifications_${userId}`)
             .on('postgres_changes', {
                 event: 'INSERT', schema: 'public',
                 table: 'notifications', filter: `user_id=eq.${userId}`,
@@ -150,5 +154,6 @@ export const initRealtime = () => {
                 })
             })
             .subscribe()
+        }
     }
 }
