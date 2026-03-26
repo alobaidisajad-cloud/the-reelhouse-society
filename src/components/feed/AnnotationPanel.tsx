@@ -12,6 +12,9 @@ export default function AnnotationPanel({ logId, open }: { logId: string, open: 
     const [commentsLoading, setCommentsLoading] = useState(false)
     const [submittingComment, setSubmittingComment] = useState(false)
     const [showAllComments, setShowAllComments] = useState(false)
+    const [editingCommentId, setEditingCommentId] = useState<string | null>(null)
+    const [editBody, setEditBody] = useState('')
+    const [isUpdating, setIsUpdating] = useState(false)
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
     useEffect(() => {
@@ -33,6 +36,31 @@ export default function AnnotationPanel({ logId, open }: { logId: string, open: 
         setCommentsLoading(false)
     }
 
+    const handleDelete = async (id: string) => {
+        if (!window.confirm("Are you sure you want to delete this annotation?")) return
+        const { error } = await supabase.from('log_comments').delete().eq('id', id)
+        if (!error) {
+            setComments(prev => prev.filter(c => c.id !== id))
+            toast.success('Annotation deleted.')
+        } else {
+            toast.error('Could not delete annotation.')
+        }
+    }
+
+    const handleUpdate = async (id: string) => {
+        if (!editBody.trim()) return
+        setIsUpdating(true)
+        const { error } = await supabase.from('log_comments').update({ body: editBody.trim() }).eq('id', id)
+        if (!error) {
+            setComments(prev => prev.map(c => c.id === id ? { ...c, body: editBody.trim() } : c))
+            setEditingCommentId(null)
+            toast.success('Annotation updated.')
+        } else {
+            toast.error('Could not update annotation.')
+        }
+        setIsUpdating(false)
+    }
+
     const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setAnnotateText(e.target.value)
         if (textareaRef.current) {
@@ -44,14 +72,16 @@ export default function AnnotationPanel({ logId, open }: { logId: string, open: 
     const handleAnnotateSubmit = async () => {
         if (!annotateText.trim() || !currentUser) return
         setSubmittingComment(true)
-        const { error } = await supabase.from('log_comments').insert({
+        const { error, data } = await supabase.from('log_comments').insert({
             log_id: logId,
             user_id: currentUser.id,
             username: currentUser.username,
             body: annotateText.trim(),
-        })
+        }).select().single()
+        
         if (!error) {
-            setComments(prev => [...prev, { id: Date.now(), username: currentUser.username, body: annotateText.trim(), created_at: new Date().toISOString() }])
+            // Using the actual returned ID prevents UI bugs if the user tries to edit a newly created comment
+            setComments(prev => [...prev, { id: data.id, username: currentUser.username, body: annotateText.trim(), created_at: new Date().toISOString() }])
             setAnnotateText('')
             if (textareaRef.current) textareaRef.current.style.height = 'auto'
             toast.success('Annotation filed.')
@@ -80,9 +110,33 @@ export default function AnnotationPanel({ logId, open }: { logId: string, open: 
 
             <div style={{ maxHeight: showAllComments ? '250px' : 'auto', overflowY: 'auto', paddingRight: showAllComments ? '0.5rem' : 0 }}>
                 {visibleComments.map(c => (
-                    <div key={c.id} style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.5rem' }}>
-                        <Link to={`/user/${c.username}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>@{c.username}</Link>
-                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--bone)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{c.body}</span>
+                    <div key={c.id} style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.75rem', alignItems: 'flex-start' }}>
+                        <Link to={`/user/${c.username}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0, marginTop: '2px' }}>@{c.username}</Link>
+                        
+                        {editingCommentId === c.id ? (
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                <textarea
+                                    value={editBody}
+                                    onChange={e => setEditBody(e.target.value)}
+                                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid var(--sepia)', borderRadius: '2px', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', padding: '0.4rem', outline: 'none', resize: 'vertical', minHeight: '60px' }}
+                                    autoFocus
+                                />
+                                <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                                    <button onClick={() => setEditingCommentId(null)} className="btn btn-ghost" style={{ fontSize: '0.5rem', padding: '0.3rem 0.6rem' }}>CANCEL</button>
+                                    <button onClick={() => handleUpdate(c.id)} disabled={isUpdating || !editBody.trim()} className="btn btn-primary" style={{ fontSize: '0.5rem', padding: '0.3rem 0.6rem', opacity: (isUpdating || !editBody.trim()) ? 0.5 : 1 }}>UPDATE</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--bone)', lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{c.body}</span>
+                                {currentUser?.username === c.username && (
+                                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.3rem' }}>
+                                        <button onClick={() => { setEditingCommentId(c.id); setEditBody(c.body) }} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>EDIT</button>
+                                        <button onClick={() => handleDelete(c.id)} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', cursor: 'pointer', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--blood-reel)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>DELETE</button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
                 ))}
             </div>
