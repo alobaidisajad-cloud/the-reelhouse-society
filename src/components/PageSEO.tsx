@@ -8,7 +8,7 @@ import { Helmet } from 'react-helmet-async'
 const SITE_NAME = 'The ReelHouse Society'
 const DEFAULT_DESCRIPTION = 'A members-only cinema society for logging, rating, and debating film. Track your obsessions. Curate your archive.'
 const DEFAULT_OG_IMAGE = '/og-card.png'
-const SITE_URL = 'https://the-reelhouse-society.vercel.app'
+const SITE_URL = 'https://thereelhousesociety.com'
 
 interface PageSEOProps {
   title?: string

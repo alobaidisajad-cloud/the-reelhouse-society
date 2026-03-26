@@ -6,7 +6,7 @@
 
 import { tmdb } from '../tmdb'
 
-const SITE_URL = 'https://the-reelhouse-society.vercel.app'
+const SITE_URL = 'https://thereelhousesociety.com'
 
 // Film detail share card
 export function filmOG(film: any) {
