@@ -345,7 +345,7 @@ export default function LogModal() {
                         borderRadius: 'var(--radius-card)',
                         width: 'calc(100% - 2rem)',
                         maxWidth: 520,
-                        maxHeight: 'calc(100vh - 2rem)',
+                        maxHeight: 'calc(100dvh - 2rem)',
                         overflow: 'auto',
                         position: 'relative',
                         margin: 'auto auto'

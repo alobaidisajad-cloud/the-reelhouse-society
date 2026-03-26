@@ -42,6 +42,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Custom cursor hiding is now managed by CustomCursor.tsx to prevent invisible cursor if JS fails */
@@ -79,6 +80,7 @@
 /* ── BASE ── */
 html {
   background: var(--ink);
+  overscroll-behavior: none;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -94,6 +96,7 @@ body {
   min-height: 100dvh;
   position: relative;
   overflow-x: hidden;
+  overscroll-behavior-y: none;
   line-height: 1.65;
   font-size: 1.05rem;
 }

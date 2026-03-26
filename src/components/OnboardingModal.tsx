@@ -130,8 +130,8 @@ export default function OnboardingModal() {
                         border: '1px solid var(--ash)',
                         borderTop: '2px solid var(--sepia)',
                         borderRadius: 'var(--radius-card)',
-                        width: '100%', maxWidth: 520,
-                        maxHeight: 'calc(100vh - 2rem)',
+                        width: '100%', maxWidth: 480,
+                        maxHeight: 'calc(100dvh - 2rem)',
                         overflow: 'auto',
                         position: 'relative',
                     }}

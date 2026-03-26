@@ -384,8 +384,8 @@ export default function SignupModal() {
                         border: '1px solid var(--ash)',
                         borderRadius: 'var(--radius-card)',
                         width: 'calc(100% - 2rem)',
-                        maxWidth: 480,
-                        maxHeight: 'calc(100vh - 2rem)',
+                        maxWidth: 420,
+                        maxHeight: 'calc(100dvh - 2rem)',
                         overflow: 'auto',
                         margin: 'auto auto'
                     }}

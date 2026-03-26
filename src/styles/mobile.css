@@ -223,8 +223,10 @@
   .dial-value { font-size: 1.2rem !important; }
   .taste-dna-poster { padding: 1.25rem !important; }
 
-  /* === INPUTS === */
-  .input { font-size: 16px !important; padding: 0.75em 1em !important; }
+  /* === INPUTS & FORMS === */
+  /* CRITICAL: Enforce 16px minimum on mobile to prevent iOS Safari auto-zoom hijack */
+  input, textarea, select { font-size: 16px !important; }
+  .input { padding: 0.75em 1em !important; }
 
   /* === TICKER === */
   .ticker-content { font-size: 0.65rem !important; letter-spacing: 0.08em !important; }
