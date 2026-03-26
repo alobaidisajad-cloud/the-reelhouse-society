@@ -748,8 +748,10 @@ export default function UserProfilePage() {
                                                 </div>
                                             )}
                                             <div>
-                                                <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--parchment)', lineHeight: 1.2 }}>{log.title}</div>
-                                                <ReelRating value={log.rating} size="sm" />
+                                                <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--parchment)', lineHeight: 1.2, marginBottom: '0.2rem' }}>{log.title}</div>
+                                                <div style={{ display: 'block', width: '100%', flexShrink: 0 }}>
+                                                    <ReelRating value={log.rating} size="sm" />
+                                                </div>
                                             </div>
                                         </Link>
                                     ))}

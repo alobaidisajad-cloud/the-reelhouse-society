@@ -106,7 +106,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                     {viewLog.rating > 0 && (
                         <div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>RATING</div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                                 <ReelRating value={viewLog.rating} size="sm" />
                                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)' }}>
                                     {['', 'Unwatchable', 'Poor', 'Fine', 'Really Good', 'Masterpiece'][Math.ceil(viewLog.rating)]}

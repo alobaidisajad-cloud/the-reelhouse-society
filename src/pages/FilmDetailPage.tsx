@@ -116,7 +116,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                         <ReelRating value={Math.round((film.vote_average || 0) / 2)} size="lg" />
                         <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--bone)' }}>{film.vote_average?.toFixed(1)} · {film.vote_count?.toLocaleString()} votes</span>
                     </div>
