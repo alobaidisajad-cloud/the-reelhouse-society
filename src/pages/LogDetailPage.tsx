@@ -22,14 +22,13 @@ export default function LogDetailPage() {
         setLoading(true)
         setError(false)
         try {
-            // Reusing the same query shape as the generic feed, but locked to one ID
+            // Fixed query to perfectly match ReelHouse's schema (no pseudo-columns or missing foreign keys)
             const { data, error } = await supabase
                 .from('logs')
                 .select(`
-                    id, rating, review, tags, pull_quote, drop_cap, contains_spoilers, is_autopsied, autopsy, created_at,
-                    user_id,
-                    profiles!logs_user_id_fkey ( username, role ),
-                    films ( id, title, poster_path, release_date )
+                    id, rating, review, pull_quote, drop_cap, is_spoiler, is_autopsied, autopsy, created_at,
+                    user_id, film_id, film_title, poster_path, year, status,
+                    profiles!logs_user_id_fkey ( username, role, preferences )
                 `)
                 .eq('id', logId)
                 .single()
@@ -41,25 +40,26 @@ export default function LogDetailPage() {
                 .eq('target_log_id', logId).eq('type', 'endorse_log')
 
             const profileData: any = data.profiles
-            const filmData: any = data.films
 
             // Map data to match ActivityCard's expected log object shape
             const formattedLog = {
                 id: data.id,
                 user: profileData?.username || 'anonymous',
                 userRole: profileData?.role || 'cinephile',
-                film: filmData ? {
-                    id: filmData.id,
-                    title: filmData.title,
-                    poster: filmData.poster_path,
-                    year: filmData.release_date ? filmData.release_date.split('-')[0] : '',
-                } : null,
+                privacyEndorsements: profileData?.preferences?.privacy_endorsements || 'everyone',
+                privacyAnnotations: profileData?.preferences?.privacy_annotations || 'everyone',
+                film: {
+                    id: data.film_id,
+                    title: data.film_title,
+                    poster: data.poster_path, // TMDB path handled by Card
+                    year: data.year || '',
+                },
                 rating: data.rating,
                 review: data.review,
-                tags: data.tags,
-                pullQuote: data.pull_quote,
-                dropCap: data.drop_cap,
-                isSpoiler: data.contains_spoilers,
+                tags: [], // Deprecated concept
+                pullQuote: data.pull_quote || '',
+                dropCap: data.drop_cap || false,
+                isSpoiler: data.is_spoiler || false,
                 timestamp: new Date(data.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase(),
                 endorsementCount: count || 0,
                 isAutopsied: data.is_autopsied,
