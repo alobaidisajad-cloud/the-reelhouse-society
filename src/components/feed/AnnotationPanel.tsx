@@ -62,15 +62,15 @@ export default function AnnotationPanel({ logId, open }: { logId: string, open: 
                 </div>
             ))}
             {currentUser ? (
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', width: '100%', alignItems: 'center' }}>
                     <input
                         value={annotateText}
                         onChange={e => setAnnotateText(e.target.value)}
                         onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleAnnotateSubmit()}
                         placeholder="File an annotation..."
-                        style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', borderRadius: '2px', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', padding: '0.4rem 0.6rem', outline: 'none' }}
+                        style={{ flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', borderRadius: '2px', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', padding: '0.4rem 0.6rem', outline: 'none' }}
                     />
-                    <button onClick={handleAnnotateSubmit} disabled={submittingComment || !annotateText.trim()} className="btn btn-primary" style={{ padding: '0.4rem 0.7rem', fontSize: '0.5rem', opacity: submittingComment ? 0.5 : 1 }}>
+                    <button onClick={handleAnnotateSubmit} disabled={submittingComment || !annotateText.trim()} className="btn btn-primary" style={{ padding: '0.4rem 0.7rem', fontSize: '0.5rem', opacity: submittingComment ? 0.5 : 1, flexShrink: 0 }}>
                         <Send size={10} />
                     </button>
                 </div>
