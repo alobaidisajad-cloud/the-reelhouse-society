@@ -21,6 +21,23 @@ if (import.meta.env.PROD) {
   })
 }
 
+// ── Global Broken Image Fallback Interceptor ──
+// Prevents the UI from shattering when TMDB lacks a poster or the connection drops.
+window.addEventListener('error', (e: any) => {
+  if (e.target && e.target.tagName === 'IMG') {
+    if (!e.target.dataset.fallbackApplied) {
+      e.target.dataset.fallbackApplied = 'true'
+      e.target.src = '/reelhouse-logo.svg' // The ReelHouse master geometric mark
+      e.target.style.filter = 'grayscale(100%) opacity(0.2)'
+      e.target.style.objectFit = 'contain'
+      e.target.style.padding = '2rem'
+      e.target.style.backgroundColor = '#0A0703'
+      e.target.style.border = '1px solid #1C1710'
+    }
+  }
+}, true) // Capture phase is required because 'error' events do not bubble
+
+
 
 export const queryClient = new QueryClient({
   defaultOptions: {
