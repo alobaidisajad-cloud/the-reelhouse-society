@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
@@ -11,7 +11,8 @@ import { throttleAction } from '../../errorLogger'
 import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
 
-export default function ActivityCard({ log }: { log: any }) {
+export default function ActivityCard({ log, isExpandedView = false }: { log: any, isExpandedView?: boolean }) {
+    const navigate = useNavigate()
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
     // Memoize stamp rotation so Math.random() doesn't fire on every re-render
     const stampRotation = React.useMemo(() => `${(Math.random() * 8 - 4).toFixed(2)}deg`, [])
@@ -41,12 +42,13 @@ export default function ActivityCard({ log }: { log: any }) {
     const dossierRef = useRef<HTMLDivElement>(null)
 
     // ── ANNOTATE ──
-    const [annotateOpen, setAnnotateOpen] = useState(false)
+    const [annotateOpen, setAnnotateOpen] = useState(isExpandedView)
     const { user: currentUser } = useAuthStore()
 
     // ── SPOILER GUARD & EXPANSION ──
     const [spoilersRevealed, setSpoilersRevealed] = useState(false)
     const [isExpanded, setIsExpanded] = useState(false)
+    const showFullText = isExpandedView || isExpanded
 
     // ── PRIVACY ENFORCEMENT ──
     const privacyEndorsements = log.privacyEndorsements || 'everyone'
@@ -59,7 +61,11 @@ export default function ActivityCard({ log }: { log: any }) {
 
     const handleAnnotateToggle = () => {
         if (!canAnnotate) return toast.error('This dossier is locked to followers only ✦')
-        setAnnotateOpen(!annotateOpen)
+        if (!isExpandedView) {
+            navigate(`/log/${log.id}`) // Take them to detail page instead of opening inline on feed
+        } else {
+            setAnnotateOpen(!annotateOpen)
+        }
     }
 
     // ── RE-TRANSMIT ──
@@ -92,9 +98,11 @@ export default function ActivityCard({ log }: { log: any }) {
 
     const endorsed = optimisticEndorsed
 
-    // ── Toggle full log text ──
-    const handleToggleExpand = () => {
-        setIsExpanded(!isExpanded)
+    // ── Navigation routing ──
+    const handleCardClick = () => {
+        if (!isExpandedView) {
+            navigate(`/log/${log.id}`)
+        }
     }
 
     const exportDossier = async () => {
@@ -131,17 +139,17 @@ export default function ActivityCard({ log }: { log: any }) {
     return (
         <div
             className="fade-in-up"
-            onClick={handleToggleExpand}
+            onClick={handleCardClick}
             style={{
-                background: 'var(--soot)',
-                border: '1px solid var(--ash)',
+                background: isExpandedView ? 'transparent' : 'var(--soot)',
+                border: isExpandedView ? 'none' : '1px solid var(--ash)',
                 borderRadius: '2px',
-                padding: '1.25rem',
+                padding: isExpandedView ? '0.5rem 0' : '1.25rem',
                 position: 'relative',
                 display: 'flex',
                 gap: '1.25rem',
-                borderLeft: '3px solid var(--sepia)',
-                cursor: 'pointer',
+                borderLeft: isExpandedView ? 'none' : '3px solid var(--sepia)',
+                cursor: isExpandedView ? 'default' : 'pointer',
             }}
         >
             {/* Timestamp */}

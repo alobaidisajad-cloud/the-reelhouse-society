@@ -57,6 +57,7 @@ const YearInCinemaPage = lazy(() => import('./pages/YearInCinemaPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const DebugPanel = lazy(() => import('./pages/DebugPanel'))
 const StudioPage = lazy(() => import('./pages/StudioPage'))
+const LogDetailPage = lazy(() => import('./pages/LogDetailPage'))
 
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
@@ -243,6 +244,7 @@ export default function App() {
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<ErrorBoundary key="home"><PageWrapper><HomePage /></PageWrapper></ErrorBoundary>} />
               <Route path="/film/:id" element={<ErrorBoundary key="film"><PageWrapper><FilmDetailPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/log/:logId" element={<ErrorBoundary key="log"><PageWrapper><LogDetailPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/user/:username" element={<ErrorBoundary key="profile"><PageWrapper><UserProfilePage /></PageWrapper></ErrorBoundary>} />
               <Route path="/discover" element={<ErrorBoundary key="discover"><PageWrapper><DiscoverPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/feed" element={<ErrorBoundary key="feed"><PageWrapper><FeedPage /></PageWrapper></ErrorBoundary>} />
