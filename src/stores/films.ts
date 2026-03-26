@@ -88,8 +88,12 @@ export const useFilmStore = create<FilmState>()(
                         if (error && !error.message?.includes('duplicate')) throw error
                     }
                 } catch {
-                    // Rollback to previous state
-                    set({ interactions: prevInteractions })
+                    // Functional Rollback to prevent race condition erasure
+                    if (exists) {
+                        set((state) => ({ interactions: [...state.interactions, exists] }))
+                    } else {
+                        set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
+                    }
                     const { default: toast } = await import('react-hot-toast')
                     toast.error('Endorsement failed — please try again.')
                 }

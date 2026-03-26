@@ -16,10 +16,11 @@ export const initAuthSync = () => {
         // Supabase creates a valid session from the recovery link, but we don't
         // want the user to appear logged in until they actually set their new password.
         if (event === 'PASSWORD_RECOVERY') {
-            // Set a flag so the reset page knows we're in recovery mode
             window.__reelhouseRecoveryMode = true
             // Keep the user signed out in our app state
             useAuthStore.setState({ user: null, isAuthenticated: false })
+            // Sever all Realtime sockets securely to prevent memory flood
+            supabase.removeAllChannels()
             // Navigate to the reset page if not already there
             if (!window.location.pathname.includes('reset-password')) {
                 window.location.href = '/reset-password'
@@ -91,6 +92,8 @@ export const initAuthSync = () => {
 
         if (event === 'SIGNED_OUT') {
             useAuthStore.setState({ user: null, isAuthenticated: false })
+            // Sever all Realtime sockets securely to prevent zombie memory
+            supabase.removeAllChannels()
         }
     })
 }
