@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Heart, X } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../../store'
-import { useVideoStore } from '../../stores/video'
 import toast from 'react-hot-toast'
+import { supabase } from '../../supabaseClient'
 
 interface TipButtonProps {
     videoId: string
@@ -20,7 +20,6 @@ const PRESETS = [
 export default function TipButton({ videoId, creatorUserId, creatorUsername }: TipButtonProps) {
     const { user, isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
-    const { sendTip } = useVideoStore()
     const [open, setOpen] = useState(false)
     const [selectedAmount, setSelectedAmount] = useState(3)
     const [customAmount, setCustomAmount] = useState('')
@@ -40,23 +39,25 @@ export default function TipButton({ videoId, creatorUserId, creatorUsername }: T
         }
 
         setSending(true)
-        const ok = await sendTip({
-            fromUserId: user!.id,
-            fromUsername: user!.username,
-            toUserId: creatorUserId,
-            videoId,
-            amount,
-            message: message.trim() || undefined,
-        })
-        setSending(false)
-
-        if (ok) {
-            toast.success(`$${amount.toFixed(2)} sent to @${creatorUsername} ✦`, { icon: '💰' })
-            setOpen(false)
-            setMessage('')
-            setCustomAmount('')
-        } else {
-            toast.error('Tip failed. Please try again.')
+        try {
+            const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {
+                body: {
+                    checkout_type: 'tip',
+                    user_id: user!.id,
+                    from_username: user!.username,
+                    to_user_id: creatorUserId,
+                    video_id: videoId,
+                    amount: amount,
+                    message: message.trim() || undefined
+                }
+            })
+            if (error || !data?.redirect_url) throw new Error('Payment Generation Failed')
+            
+            // Redirect user to the secure Hosted Payment Page
+            window.location.href = data.redirect_url
+        } catch (err: any) {
+            toast.error('Payment gateway unavailable. Try again.')
+            setSending(false)
         }
     }
 

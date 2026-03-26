@@ -361,12 +361,24 @@ export default function MembershipPage() {
 
                     <button
                         className="btn btn-primary founding-btn"
-                        onClick={() => {
-                            const el = document.querySelector('.tier-card input[type=email]') as HTMLInputElement
-                            if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.focus() }
+                        style={{ opacity: isRedirecting ? 0.7 : 1 }}
+                        disabled={isRedirecting}
+                        onClick={async () => {
+                            if (!isAuthenticated || !user) { openSignupModal('founding'); return }
+                            setIsRedirecting(true)
+                            try {
+                                const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {
+                                    body: { checkout_type: 'membership', user_id: user.id, tier: 'founding' }
+                                })
+                                if (error || !data?.redirect_url) throw error
+                                window.location.href = data.redirect_url
+                            } catch (err) {
+                                toast.error('Checkout unavailable right now.')
+                                setIsRedirecting(false)
+                            }
                         }}
                     >
-                        CLAIM A FOUNDING SEAT
+                        {isRedirecting ? 'SECURING LEDGER...' : 'CLAIM A FOUNDING SEAT'}
                     </button>
 
                     <div className="founding-footer">
