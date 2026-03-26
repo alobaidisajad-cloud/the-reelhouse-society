@@ -8,6 +8,8 @@ import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import toast from 'react-hot-toast'
 import { throttleAction } from '../../errorLogger'
+import AnnotationPanel from './AnnotationPanel'
+import { DossierExportHTML } from './DossierExportHTML'
 
 export default function ActivityCard({ log }: { log: any }) {
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
@@ -40,48 +42,10 @@ export default function ActivityCard({ log }: { log: any }) {
 
     // ── ANNOTATE ──
     const [annotateOpen, setAnnotateOpen] = useState(false)
-    const [annotateText, setAnnotateText] = useState('')
-    const [comments, setComments] = useState<any[]>([])
-    const [commentsLoading, setCommentsLoading] = useState(false)
-    const [submittingComment, setSubmittingComment] = useState(false)
     const { user: currentUser } = useAuthStore()
 
-    const loadComments = async () => {
-        if (!isSupabaseConfigured || !log.id) return
-        setCommentsLoading(true)
-        const { data } = await supabase
-            .from('log_comments')
-            .select('id, username, body, created_at')
-            .eq('log_id', log.id)
-            .order('created_at', { ascending: true })
-            .limit(20)
-        setComments(data || [])
-        setCommentsLoading(false)
-    }
-
     const handleAnnotateToggle = () => {
-        const next = !annotateOpen
-        setAnnotateOpen(next)
-        if (next && comments.length === 0) loadComments()
-    }
-
-    const handleAnnotateSubmit = async () => {
-        if (!annotateText.trim() || !currentUser) return
-        setSubmittingComment(true)
-        const { error } = await supabase.from('log_comments').insert({
-            log_id: log.id,
-            user_id: currentUser.id,
-            username: currentUser.username,
-            body: annotateText.trim(),
-        })
-        if (!error) {
-            setComments(prev => [...prev, { id: Date.now(), username: currentUser.username, body: annotateText.trim(), created_at: new Date().toISOString() }])
-            setAnnotateText('')
-            toast.success('Annotation filed.')
-        } else {
-            toast.error('Could not save annotation.')
-        }
-        setSubmittingComment(false)
+        setAnnotateOpen(!annotateOpen)
     }
 
     // ── RE-TRANSMIT ──
@@ -308,7 +272,7 @@ export default function ActivityCard({ log }: { log: any }) {
                         onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
                         onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
                     >
-                        <MessageSquare size={12} /> ANNOTATE {comments.length > 0 && `(${comments.length})`}
+                        <MessageSquare size={12} /> ANNOTATE
                     </button>
                     <button
                         onClick={handleRetransmit}
@@ -327,111 +291,10 @@ export default function ActivityCard({ log }: { log: any }) {
                 </div>
 
                 {/* ── ANNOTATION PANEL ── */}
-                {annotateOpen && (
-                    <div style={{ marginTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)', paddingTop: '1rem' }}>
-                        {/* Existing comments */}
-                        {commentsLoading && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>RETRIEVING ANNOTATIONS...</div>}
-                        {comments.map(c => (
-                            <div key={c.id} style={{ display: 'flex', gap: '0.6rem', marginBottom: '0.5rem' }}>
-                                <Link to={`/user/${c.username}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>@{c.username}</Link>
-                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--bone)', lineHeight: 1.5 }}>{c.body}</span>
-                            </div>
-                        ))}
-                        {/* Input */}
-                        {currentUser ? (
-                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                <input
-                                    value={annotateText}
-                                    onChange={e => setAnnotateText(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleAnnotateSubmit()}
-                                    placeholder="File an annotation..."
-                                    style={{ flex: 1, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', borderRadius: '2px', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', padding: '0.4rem 0.6rem', outline: 'none' }}
-                                />
-                                <button onClick={handleAnnotateSubmit} disabled={submittingComment || !annotateText.trim()} className="btn btn-primary" style={{ padding: '0.4rem 0.7rem', fontSize: '0.5rem', opacity: submittingComment ? 0.5 : 1 }}>
-                                    <Send size={10} />
-                                </button>
-                            </div>
-                        ) : (
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>SIGN IN TO ANNOTATE</div>
-                        )}
-                    </div>
-                )}
+                <AnnotationPanel logId={log.id} open={annotateOpen} />
 
                 {log.isAutopsied && log.autopsy && (
-                    <div style={{ position: 'absolute', left: '-9999px', top: 0, pointerEvents: 'none', userSelect: 'none' }}>
-                        <div id={`dossier-${log.id}`} ref={dossierRef} style={{
-                            width: '1080px', height: '1920px', background: 'var(--ink)',
-                            display: isExporting ? 'flex' : 'none', flexDirection: 'column', padding: '120px 80px',
-                            position: 'relative', overflow: 'hidden', boxSizing: 'border-box'
-                        }}>
-                            {/* Texture Overlay */}
-                            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(139,105,20,0.03) 3px)', zIndex: 0 }} />
-                            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.8) 100%)', zIndex: 0 }} />
-
-                            <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
-                                {/* Header */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '4px solid var(--sepia)', paddingBottom: '30px', marginBottom: '80px' }}>
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '4rem', color: 'var(--parchment)' }}>The Society Record</div>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', letterSpacing: '0.2em', color: 'var(--fog)', marginBottom: '10px' }}>ARCHIVE DEPT // NO. {log.id.substring(0, 6)}</div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>DATE: {log.timestamp || 'CURRENT'}</div>
-                                    </div>
-                                </div>
-
-                                {/* Body */}
-                                <div style={{ display: 'flex', flex: 1, gap: '60px' }}>
-                                    {/* Left Col - Poster */}
-                                    <div style={{ width: '400px', flexShrink: 0 }}>
-                                        {log.film?.poster && (
-                                            <div style={{ padding: '20px', border: '2px dashed var(--ash)', background: 'var(--soot)' }}>
-                                                <img src={tmdb.poster(log.film.poster, 'w500')} alt={log.film?.title} loading="lazy" decoding="async" style={{ width: '100%', border: '1px solid var(--soot)' }} />
-                                            </div>
-                                        )}
-                                        <div style={{ marginTop: '40px', fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--bone)', lineHeight: 1.1 }}>
-                                            {log.film?.title.toUpperCase()}
-                                        </div>
-                                        {log.film?.year && (
-                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '2rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginTop: '10px' }}>
-                                                {log.film.year}
-                                            </div>
-                                        )}
-                                        {log.rating > 0 && (
-                                            <div style={{ marginTop: '30px', transform: 'scale(2)', transformOrigin: 'top left' }}>
-                                                <ReelRating value={log.rating} size="lg" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Right Col - Autopsy */}
-                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                                        <div style={{ transform: 'scale(1.4)', transformOrigin: 'top left', width: '70%' }}>
-                                            <RadarChart autopsy={log.autopsy} />
-                                        </div>
-                                        {log.pullQuote && (
-                                            <div style={{
-                                                marginTop: 'auto', marginBottom: '60px', paddingLeft: '40px', borderLeft: '8px solid var(--sepia)',
-                                                fontFamily: 'var(--font-display)', fontSize: '3.5rem', color: 'var(--sepia)', fontStyle: 'italic',
-                                                lineHeight: 1.2
-                                            }}>
-                                                "{log.pullQuote}"
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                {/* Footer Signature */}
-                                <div style={{ borderTop: '2px dashed var(--ash)', paddingTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 'auto' }}>
-                                    <div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.2rem', letterSpacing: '0.3em', color: 'var(--fog)', marginBottom: '10px' }}>SUBMITTING AGENT</div>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '2.5rem', color: 'var(--blood-reel)', fontStyle: 'italic' }}>@{log.user.toUpperCase()}</div>
-                                    </div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', letterSpacing: '0.5em', color: 'var(--fog)', opacity: 0.5 }}>
-                                        THE REELHOUSE SOCIETY
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <DossierExportHTML ref={dossierRef} log={log} isExporting={isExporting} />
                 )}
 
                 {/* Emoji Reactions */}

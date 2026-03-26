@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
+import { useInfiniteQuery } from '@tanstack/react-query'
 import { useAuthStore, useUIStore } from '../store'
 import { SectionHeader } from '../components/UI'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
@@ -62,89 +63,81 @@ export default function FeedPage() {
     const [feedTab, setFeedTab] = useState<FeedTab>('for-you')
 
     // ── Feed Data ──
-    const [communityFeed, setCommunityFeed] = useState<any[]>([])
-    const [followingFeed, setFollowingFeed] = useState<any[]>([])
-    const [feedLoading, setFeedLoading] = useState(true)
-    const [followingLoading, setFollowingLoading] = useState(false)
     const [showLegend, setShowLegend] = useState(false)
-
-    // ── Sidebar Data ──
     const [recentLists, setRecentLists] = useState<any[]>([])
-
-    // Tab indicator ref for animated underline
     const tabBarRef = useRef<HTMLDivElement>(null)
 
-    // ── Fetch ALL logs (For You) ──
-    const fetchCommunityFeed = useCallback(async () => {
-        if (!isSupabaseConfigured) { setFeedLoading(false); return }
-        setFeedLoading(true)
-        try {
-            const { data, error } = await supabase
-                .from('logs')
-                .select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, created_at')
-                .order('created_at', { ascending: false })
-                .limit(50)
+    // ── Fetch Helper ──
+    const fetchFeed = async ({ pageParam = 0 }, mode: 'for-you' | 'following') => {
+        if (!isSupabaseConfigured) return []
+        if (mode === 'following' && (!user || !user.following?.length)) return []
 
-            if (!error && data) {
-                const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
-                let usernameMap: Record<string, any> = {}
-                if (userIds.length > 0) {
-                    const { data: profilesData } = await supabase
-                        .from('profiles')
-                        .select('id, username, role')
-                        .in('id', userIds)
-                    if (profilesData) {
-                        usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p]))
-                    }
-                }
-                setCommunityFeed(mapLogsToFeed(data, usernameMap))
-            }
-        } catch (e) {
-            console.error('Feed fetch error:', e)
+        let query = supabase
+            .from('logs')
+            .select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, created_at')
+            .order('created_at', { ascending: false })
+            .range(pageParam * 20, (pageParam + 1) * 20 - 1)
+
+        if (mode === 'following') {
+            const followingArr = user?.following || []
+            const { data: followedProfiles } = await supabase.from('profiles').select('id').in('username', followingArr)
+            if (!followedProfiles?.length) return []
+            query = query.in('user_id', followedProfiles.map((p: any) => p.id))
         }
-        setFeedLoading(false)
-    }, [])
 
-    // ── Fetch FOLLOWING logs ──
-    const fetchFollowingFeed = useCallback(async () => {
-        if (!isSupabaseConfigured || !user?.following?.length) {
-            setFollowingFeed([])
-            setFollowingLoading(false)
-            return
+        const { data, error } = await query
+        if (error || !data?.length) return []
+
+        const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
+        let usernameMap: Record<string, any> = {}
+        if (userIds.length > 0) {
+            const { data: profilesData } = await supabase.from('profiles').select('id, username, role').in('id', userIds)
+            if (profilesData) usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p]))
         }
-        setFollowingLoading(true)
-        try {
-            // Step 1: Resolve followed usernames → user IDs
-            const { data: followedProfiles } = await supabase
-                .from('profiles')
-                .select('id, username, role')
-                .in('username', user.following)
+        
+        return mapLogsToFeed(data, usernameMap)
+    }
 
-            if (!followedProfiles?.length) {
-                setFollowingFeed([])
-                setFollowingLoading(false)
-                return
+    // ── Infinite Queries ──
+    const {
+        data: communityData,
+        fetchNextPage: fetchNextCommunity,
+        hasNextPage: hasNextCommunity,
+        isFetchingNextPage: isFetchingNextCommunity,
+        isLoading: feedLoading
+    } = useInfiniteQuery({
+        queryKey: ['feed', 'for-you'],
+        queryFn: (params) => fetchFeed(params, 'for-you'),
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, pages) => lastPage.length === 20 ? pages.length : undefined
+    })
+
+    const {
+        data: followingData,
+        fetchNextPage: fetchNextFollowing,
+        hasNextPage: hasNextFollowing,
+        isFetchingNextPage: isFetchingNextFollowing,
+        isLoading: followingLoading
+    } = useInfiniteQuery({
+        queryKey: ['feed', 'following', user?.following?.length],
+        queryFn: (params) => fetchFeed(params, 'following'),
+        enabled: isAuthenticated && !!user?.following?.length,
+        initialPageParam: 0,
+        getNextPageParam: (lastPage, pages) => lastPage.length === 20 ? pages.length : undefined
+    })
+
+    const observer = useRef<IntersectionObserver | null>(null)
+    const lastFeedElementRef = useCallback((node: any) => {
+        if (feedTab === 'for-you' ? isFetchingNextCommunity : isFetchingNextFollowing) return
+        if (observer.current) observer.current.disconnect()
+        observer.current = new IntersectionObserver(entries => {
+            if (entries[0].isIntersecting) {
+                if (feedTab === 'for-you' && hasNextCommunity) fetchNextCommunity()
+                else if (feedTab === 'following' && hasNextFollowing) fetchNextFollowing()
             }
-
-            const followedIds = followedProfiles.map((p: any) => p.id)
-            const usernameMap = Object.fromEntries(followedProfiles.map((p: any) => [p.id, p]))
-
-            // Step 2: Fetch logs from followed users
-            const { data, error } = await supabase
-                .from('logs')
-                .select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, created_at')
-                .in('user_id', followedIds)
-                .order('created_at', { ascending: false })
-                .limit(50)
-
-            if (!error && data) {
-                setFollowingFeed(mapLogsToFeed(data, usernameMap))
-            }
-        } catch (e) {
-            console.error('Following feed fetch error:', e)
-        }
-        setFollowingLoading(false)
-    }, [user?.following])
+        })
+        if (node) observer.current.observe(node)
+    }, [feedTab, isFetchingNextCommunity, isFetchingNextFollowing, hasNextCommunity, hasNextFollowing, fetchNextCommunity, fetchNextFollowing])
 
     // ── Sidebar Data ──
     const fetchSidebarData = useCallback(async () => {
@@ -176,18 +169,12 @@ export default function FeedPage() {
     }, [user?.username])
 
     useEffect(() => {
-        fetchCommunityFeed()
         fetchSidebarData()
-    }, [fetchCommunityFeed, fetchSidebarData])
-
-    // Fetch following feed when tab switches or user.following changes
-    useEffect(() => {
-        if (feedTab === 'following' && isAuthenticated) {
-            fetchFollowingFeed()
-        }
-    }, [feedTab, fetchFollowingFeed, isAuthenticated])
+    }, [fetchSidebarData])
 
     // Active feed based on tab
+    const communityFeed = communityData?.pages.flat() || []
+    const followingFeed = followingData?.pages.flat() || []
     const activeFeed = feedTab === 'following' ? followingFeed : communityFeed
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
 
@@ -428,15 +415,22 @@ export default function FeedPage() {
 
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {activeFeed.map((log: any, i: number) => (
-                                    <div
-                                        key={log.id}
-                                        className="fade-in-up"
-                                        style={{ animationDelay: `${Math.min(i * 0.04, 0.4)}s` }}
-                                    >
-                                        <ActivityCard log={log} />
-                                    </div>
-                                ))}
+                                {activeFeed.map((log: any, i: number) => {
+                                    const isLast = i === activeFeed.length - 1
+                                    return (
+                                        <div
+                                            key={log.id + i}
+                                            ref={isLast ? lastFeedElementRef : null}
+                                            className="fade-in-up"
+                                            style={{ animationDelay: `${Math.min(i * 0.04, 0.4)}s` }}
+                                        >
+                                            <ActivityCard log={log} />
+                                        </div>
+                                    )
+                                })}
+                                {(feedTab === 'for-you' ? isFetchingNextCommunity : isFetchingNextFollowing) && (
+                                    <div className="skeleton" style={{ height: 140, borderRadius: '2px', opacity: 0.5, marginTop: '0.5rem' }} />
+                                )}
                             </div>
                         )}
                     </div>
