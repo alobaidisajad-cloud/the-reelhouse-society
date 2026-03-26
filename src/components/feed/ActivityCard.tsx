@@ -268,17 +268,17 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     <RadarChart autopsy={log.autopsy} size={140} />
                 )}
 
-                {/* Social Interaction Bar */}
-                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap', flexShrink: 0, position: 'relative' }}>
-                    <div style={{ position: 'relative' }}>
-                        <button onClick={handleEndorse} aria-label={endorsed ? 'Remove endorsement' : 'Endorse this log'} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed', transition: 'color 0.2s' }} onMouseEnter={e => { if (canEndorse) e.currentTarget.style.color = 'var(--parchment)' }} onMouseLeave={e => { if (canEndorse) e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)' }}>
-                            {canEndorse ? (
-                                <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />
-                            ) : (
-                                <span style={{ fontSize: '10px' }}>🔒</span>
-                            )}
-                            {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
-                        </button>
+            {/* Social Interaction Bar */}
+            <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: isExpandedView ? '1.5rem' : '1rem', width: '100%', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap', flexShrink: 0, position: 'relative' }}>
+                <div style={{ position: 'relative' }}>
+                    <button onClick={handleEndorse} aria-label={endorsed ? 'Remove endorsement' : 'Endorse this log'} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed', transition: 'color 0.2s' }} onMouseEnter={e => { if (canEndorse) e.currentTarget.style.color = 'var(--parchment)' }} onMouseLeave={e => { if (canEndorse) e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)' }}>
+                        {canEndorse ? (
+                            <Heart size={isExpandedView ? 16 : 12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />
+                        ) : (
+                            <span style={{ fontSize: isExpandedView ? '12px' : '10px' }}>🔒</span>
+                        )}
+                        {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
+                    </button>
 
                         {/* ── SOCIETY STAMP OVERLAY ── */}
                         {endorsed && (
@@ -302,39 +302,39 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             </div>
                         )}
                     </div>
-                    {canAnnotate ? (
-                        <button
-                            onClick={handleAnnotateToggle}
-                            aria-label="Annotate this log"
-                            style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }}
-                            onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
-                            onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
-                        >
-                            <MessageSquare size={12} /> ANNOTATE
-                        </button>
-                    ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
-                            <span style={{ fontSize: '10px' }}>🔒</span> RESTRICTED
-                        </div>
-                    )}
+                {canAnnotate ? (
                     <button
-                        onClick={handleRetransmit}
-                        aria-label="Retransmit this log"
-                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', transition: 'color 0.2s', marginLeft: 'auto' }}
-                        onMouseEnter={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--sepia)' }}
-                        onMouseLeave={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--fog)' }}
+                        onClick={handleAnnotateToggle}
+                        aria-label="Annotate this log"
+                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }}
+                        onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
+                        onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
                     >
-                        <RefreshCw size={12} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
+                        <MessageSquare size={isExpandedView ? 16 : 12} /> ANNOTATE
                     </button>
-                    {log.isAutopsied && log.autopsy && (
-                        <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', transition: 'color 0.2s', opacity: isExporting ? 0.5 : 1 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--flicker)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--sepia)'}>
-                            <Download size={12} /> {isExporting ? 'ENCODING...' : 'TRANSMIT DOSSIER'}
-                        </button>
-                    )}
+                ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
+                        <span style={{ fontSize: isExpandedView ? '12px' : '10px' }}>🔒</span> RESTRICTED
+                    </div>
+                )}
+                <button
+                    onClick={handleRetransmit}
+                    aria-label="Retransmit this log"
+                    style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', transition: 'color 0.2s', marginLeft: 'auto' }}
+                    onMouseEnter={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--sepia)' }}
+                    onMouseLeave={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--fog)' }}
+                >
+                    <RefreshCw size={isExpandedView ? 16 : 12} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
+                </button>
+                {log.isAutopsied && log.autopsy && (
+                    <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', transition: 'color 0.2s', opacity: isExporting ? 0.5 : 1 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--flicker)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--sepia)'}>
+                        <Download size={isExpandedView ? 16 : 12} /> {isExporting ? 'ENCODING...' : 'TRANSMIT DOSSIER'}
+                    </button>
+                )}
                 </div>
 
-                {/* ── ANNOTATION PANEL ── */}
-                <AnnotationPanel logId={log.id} open={annotateOpen} />
+            {/* ── ANNOTATION PANEL ── */}
+            <AnnotationPanel logId={log.id} open={annotateOpen} isExpandedView={!!isExpandedView} />
 
                 {log.isAutopsied && log.autopsy && (
                     <DossierExportHTML ref={dossierRef} log={log} isExporting={isExporting} />

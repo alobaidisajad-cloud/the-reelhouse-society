@@ -5,7 +5,7 @@ import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import { useAuthStore } from '../../store'
 import toast from 'react-hot-toast'
 
-export default function AnnotationPanel({ logId, open }: { logId: string, open: boolean }) {
+export default function AnnotationPanel({ logId, open, isExpandedView = false }: { logId: string, open: boolean, isExpandedView?: boolean }) {
     const { user: currentUser } = useAuthStore()
     const [annotateText, setAnnotateText] = useState('')
     const [comments, setComments] = useState<any[]>([])
@@ -142,22 +142,75 @@ export default function AnnotationPanel({ logId, open }: { logId: string, open: 
             </div>
 
             {currentUser ? (
-                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', width: '100%', alignItems: 'flex-start' }}>
+                <div style={{ 
+                    display: 'flex', 
+                    flexDirection: isExpandedView ? 'column' : 'row', 
+                    gap: isExpandedView ? '1rem' : '0.5rem', 
+                    marginTop: '1rem', 
+                    width: '100%', 
+                    alignItems: isExpandedView ? 'stretch' : 'flex-start' 
+                }}>
                     <textarea
                         ref={textareaRef}
                         value={annotateText}
                         onChange={handleInput}
-                        placeholder="File an annotation..."
-                        rows={1}
+                        placeholder={isExpandedView ? "Transmit an enduring observation..." : "File an annotation..."}
+                        rows={isExpandedView ? 2 : 1}
                         style={{ 
-                            flex: 1, minWidth: 0, background: 'rgba(255,255,255,0.03)', border: '1px solid var(--ash)', borderRadius: '2px', 
-                            color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.75rem', padding: '0.4rem 0.6rem', outline: 'none',
-                            resize: 'none', overflowY: 'auto', lineHeight: 1.5
+                            flex: 1, minWidth: 0, 
+                            background: isExpandedView ? 'rgba(10, 7, 3, 0.5)' : 'rgba(255,255,255,0.03)', 
+                            border: '1px solid var(--ash)', 
+                            borderRadius: '4px', 
+                            color: 'var(--bone)', 
+                            fontFamily: isExpandedView ? 'var(--font-sub)' : 'var(--font-body)', 
+                            fontSize: isExpandedView ? '1.05rem' : '0.75rem', 
+                            padding: isExpandedView ? '1rem' : '0.4rem 0.6rem', 
+                            outline: 'none',
+                            resize: 'none', 
+                            overflowY: 'auto', 
+                            lineHeight: 1.5,
+                            minHeight: isExpandedView ? '88px' : '44px',
+                            transition: 'border 0.2s, background 0.2s',
                         }}
+                        onFocus={e => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.background = 'rgba(255,255,255,0.05)' }}
+                        onBlur={e => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.background = isExpandedView ? 'rgba(10, 7, 3, 0.5)' : 'rgba(255,255,255,0.03)' }}
                     />
-                    <button onClick={handleAnnotateSubmit} disabled={submittingComment || !annotateText.trim()} className="btn btn-primary" style={{ padding: '0.4rem 0.7rem', height: '32px', fontSize: '0.5rem', opacity: submittingComment ? 0.5 : 1, flexShrink: 0 }}>
-                        <Send size={10} />
-                    </button>
+                    
+                    {isExpandedView ? (
+                        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                            <button 
+                                onClick={handleAnnotateSubmit} 
+                                disabled={submittingComment || !annotateText.trim()} 
+                                className="btn btn-primary" 
+                                style={{ 
+                                    padding: '0.75rem 1.5rem', 
+                                    fontSize: '0.75rem', 
+                                    opacity: submittingComment ? 0.5 : 1, 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: '0.5rem',
+                                    borderRadius: '4px'
+                                }}
+                            >
+                                TRANSMIT DOSSIER <Send size={14} />
+                            </button>
+                        </div>
+                    ) : (
+                        <button 
+                            onClick={handleAnnotateSubmit} 
+                            disabled={submittingComment || !annotateText.trim()} 
+                            className="btn btn-primary" 
+                            style={{ 
+                                padding: '0.4rem 0.7rem', 
+                                height: '32px', 
+                                fontSize: '0.5rem', 
+                                opacity: submittingComment ? 0.5 : 1, 
+                                flexShrink: 0 
+                            }}
+                        >
+                            <Send size={10} />
+                        </button>
+                    )}
                 </div>
             ) : (
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>SIGN IN TO ANNOTATE</div>
