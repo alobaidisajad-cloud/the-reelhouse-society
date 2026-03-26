@@ -17,7 +17,7 @@ export default function PaywallModal({ featureName, onClose }: any) {
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 onClick={onClose}
-                style={{ position: 'fixed', inset: 0, background: 'rgba(5, 4, 2, 0.95)', zIndex: 60000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', backdropFilter: 'blur(10px)' }}
+                className="modal-overlay"
                 role="dialog"
                 aria-modal="true"
                 aria-label={featureName || 'Upgrade membership'}

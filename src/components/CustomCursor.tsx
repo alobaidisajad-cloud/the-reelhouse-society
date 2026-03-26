@@ -131,7 +131,7 @@ export default function CustomCursor() {
     <style>{`
       .cursor-outer {
         position: fixed; top: 0; left: 0;
-        pointer-events: none; z-index: 999998;
+        pointer-events: none; z-index: var(--z-cursor);
         width: 40px; height: 40px;
         will-change: transform;
         transition: width 0.15s ease, height 0.15s ease, opacity 0.15s ease;
@@ -159,7 +159,7 @@ export default function CustomCursor() {
       /* DOT */
       .cursor-dot {
         position: fixed; top: 0; left: 0;
-        pointer-events: none; z-index: 999999;
+        pointer-events: none; z-index: calc(var(--z-cursor) + 1);
         width: 4px; height: 4px; border-radius: 50%;
         background: #F2E8A0;
         box-shadow: 0 0 5px 1px rgba(242,232,160,0.7);

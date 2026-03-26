@@ -7,7 +7,7 @@
   top: 0;
   left: 0;
   right: 0;
-  z-index: 1000;
+  z-index: var(--z-nav);
   background: rgba(8, 6, 4, 0.96);
   border-bottom: 1px solid rgba(139, 105, 20, 0.2);
   border-top: 1px solid rgba(139, 105, 20, 0.4);
@@ -165,7 +165,7 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  z-index: 999;
+  z-index: var(--z-dropdown);
 }
 
 /* ── MOBILE MENU ── */
@@ -173,7 +173,7 @@
   position: fixed;
   inset: 0;
   background: rgba(5, 3, 1, 0.98);
-  z-index: 9999;
+  z-index: var(--z-modal);
   display: flex;
   flex-direction: column;
   align-items: center;

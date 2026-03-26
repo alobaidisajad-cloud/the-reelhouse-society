@@ -31,7 +31,7 @@
 .film-burn-overlay {
   position: fixed;
   inset: 0;
-  z-index: 99999;
+  z-index: var(--z-preloader);
   animation: film-burn 1.2s ease-out forwards;
   pointer-events: none;
 }
@@ -169,7 +169,7 @@
   height: 45px;
   background: radial-gradient(circle, #000 20%, #1a1a1a 50%, transparent 70%);
   border-radius: 50%;
-  z-index: 100004;
+  z-index: calc(var(--z-preloader) + 1);
   pointer-events: none;
   opacity: 0;
   mix-blend-mode: multiply;
@@ -233,7 +233,7 @@
   bottom: 4rem;
   animation: stamp-slam 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
   pointer-events: none;
-  z-index: 10;
+  z-index: calc(var(--z-base) + 5);
   transform-origin: center center;
   mix-blend-mode: color-burn;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
@@ -291,7 +291,7 @@
 .spark-container {
   position: fixed;
   pointer-events: none;
-  z-index: 99999;
+  z-index: calc(var(--z-toast) + 1);
 }
 
 .spark-particle {

@@ -28,6 +28,18 @@
   --vignette-strength: rgba(0, 0, 0, 0.5);
   --section-gap: 4rem;
 
+  /* ── Z-INDEX ARCHITECTURE (The Physics) ── */
+  --z-base: 1;          /* Default stacking */
+  --z-sticky: 100;      /* Sticky headers, tabs */
+  --z-nav: 500;         /* Primary Navigation Bar */
+  --z-card-hover: 700;  /* Hovered cards lifting off grid */
+  --z-dropdown: 800;    /* Context menus, dropdowns */
+  --z-overlay: 1000;    /* Dimming backdrop for modals */
+  --z-modal: 2000;      /* Popups, dialogues */
+  --z-toast: 9000;      /* Notifications, alerts */
+  --z-preloader: 10000; /* Loading screen, page transitions */
+  --z-cursor: 99999;    /* Custom cursor (topmost layer) */
+
   --radius-wobbly: 2px 8px 3px 6px / 4px 3px 7px 2px;
   --radius-card: 3px 5px 4px 6px / 5px 3px 6px 4px;
 

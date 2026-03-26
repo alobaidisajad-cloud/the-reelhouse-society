@@ -12,7 +12,7 @@ export default function SocialModal({ socialModal, socialLoading, onClose }: { s
 
     return (
         <div
-            style={{ position: 'fixed', inset: 0, zIndex: 1000000, background: 'rgba(10,7,3,0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1.5rem', backdropFilter: 'blur(10px)' }}
+            className="modal-overlay"
             onClick={onClose}
             role="dialog"
             aria-modal="true"

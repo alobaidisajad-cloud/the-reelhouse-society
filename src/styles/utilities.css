@@ -110,8 +110,7 @@
 .tracking-widest { letter-spacing: 0.3em; }
 .clickable { cursor: pointer; }
 .no-select { user-select: none; -webkit-user-select: none; }
-.hide-mobile { }
-
+/* .hide-mobile handled in mobile.css */
 /* Content-visibility — renders off-screen sections lazily for performance */
 .content-auto {
   content-visibility: auto;
@@ -245,6 +244,7 @@
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -252,6 +252,7 @@
 .line-clamp-3 {
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -259,11 +260,23 @@
 /* Inset positioning */
 .inset-0 { position: absolute; inset: 0; }
 
-/* Backdrop blur panel */
+/* Backdrop blur panel (Legacy to be phased out) */
 .panel-blur {
   background: rgba(18,14,9,0.85);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+}
+
+/* ── SUPER PREMIUM GLASS PANEL (Hardware Accelerated) ── */
+.glass-panel {
+  background: rgba(18, 14, 9, 0.85); /* Deep ink base */
+  border: 1px solid rgba(139, 105, 20, 0.15); /* Microscopic gold border */
+  border-radius: var(--radius-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transform: translateZ(0); /* Force GPU composite layer */
+  will-change: transform, opacity;
+  box-shadow: 0 4px 24px -6px rgba(0, 0, 0, 0.7); /* Deep anchor shadow */
 }
 
 /* Film detail hero backdrop gradient */

@@ -14,13 +14,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
         <div
             onMouseDown={(e) => { if (e.target === e.currentTarget) e.currentTarget.dataset.backdropMouseDown = 'true' }}
             onMouseUp={(e) => { if (e.target === e.currentTarget && e.currentTarget.dataset.backdropMouseDown === 'true') onClose(); e.currentTarget.dataset.backdropMouseDown = 'false' }}
-            style={{
-                position: 'fixed', inset: 0, zIndex: 10000,
-                background: 'rgba(10,7,3,0.92)',
-                backdropFilter: 'blur(14px)', WebkitBackdropFilter: 'blur(14px)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '1rem',
-            }}
+            className="modal-overlay"
             role="dialog"
             aria-modal="true"
             aria-label={`Log details for ${viewLog.title}`}

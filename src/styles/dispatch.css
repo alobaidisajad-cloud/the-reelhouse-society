@@ -15,7 +15,7 @@
 }
 
 .dispatch-bg-noise {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  position: fixed; inset: 0; pointer-events: none; z-index: var(--z-base);
   background: radial-gradient(circle at 50% 0%, rgba(139, 105, 20, 0.05) 0%, transparent 70%);
 }
 
@@ -24,7 +24,7 @@
   position: fixed; top: 70px; left: 0; right: 0;
   background: var(--ink);
   border-bottom: 1px solid rgba(139,105,20,0.15);
-  z-index: 50;
+  z-index: var(--z-sticky);
 }
 .wb-content {
   max-width: 720px; margin: 0 auto; padding: 1rem 2rem;
@@ -54,7 +54,7 @@
   border: 1px solid rgba(139,105,20,0.15);
   border-radius: 4px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-  position: relative; z-index: 10;
+  position: relative; z-index: calc(var(--z-base) + 1);
 }
 @media (max-width: 768px) {
   .dispatch-document { margin: 2rem 1rem 0; padding: 2rem 1.25rem; }
@@ -145,7 +145,7 @@
 
 /* ── OVERLAY READER ── */
 .article-reader-overlay {
-  position: fixed; inset: 0; z-index: 8000;
+  position: fixed; inset: 0; z-index: var(--z-overlay);
   background: rgba(5,3,1,0.95); backdrop-filter: blur(8px);
   display: flex; justify-content: center; padding: 2rem 1rem;
   overflow-y: auto;
@@ -170,7 +170,7 @@
 
 /* ── WRITE PANEL ── */
 .writer-panel-overlay {
-  position: fixed; inset: 0; z-index: 9000;
+  position: fixed; inset: 0; z-index: var(--z-modal);
   background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
   display: flex; justify-content: flex-end;
 }
@@ -204,7 +204,7 @@
 .btn-publish-dossier:hover { filter: brightness(1.15); }
 
 /* ── AUTEUR FAB ── */
-.auteur-fab-container { position: fixed; bottom: 2rem; right: 2rem; z-index: 100; }
+.auteur-fab-container { position: fixed; bottom: 2rem; right: 2rem; z-index: var(--z-sticky); }
 .auteur-fab-button {
   background: var(--sepia); color: var(--ink); border: none;
   display: flex; align-items: center; gap: 0.8rem;

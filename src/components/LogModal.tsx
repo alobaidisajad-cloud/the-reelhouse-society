@@ -326,14 +326,7 @@ export default function LogModal() {
                 exit={{ opacity: 0 }}
                 onMouseDown={(e) => { if (e.target === e.currentTarget) e.currentTarget.dataset.backdropMouseDown = 'true' }}
                 onMouseUp={(e) => { if (e.target === e.currentTarget && e.currentTarget.dataset.backdropMouseDown === 'true') closeLogModal(); e.currentTarget.dataset.backdropMouseDown = 'false' }}
-                style={{
-                    position: 'fixed', inset: 0, zIndex: 10000,
-                    background: 'rgba(10,7,3,0.85)',
-                    backdropFilter: 'blur(12px)',
-                    WebkitBackdropFilter: 'blur(12px)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '1rem',
-                }}
+                className="modal-overlay"
             >
                 <motion.div
                     key="modal-box"
