@@ -330,7 +330,7 @@ export default function FeedPage() {
                                     The Archives Are Closed
                                 </div>
                                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.5 }}>
-                                    Ascend to The Society to trace the footsteps of the finest critics and transmit your own cinematic intelligence.
+                                    Ascend to The Society to trace the footsteps of the finest critics and publish your own cinematic intelligence.
                                 </div>
                                 <button className="btn btn-primary" style={{ padding: '1rem 3rem', letterSpacing: '0.2em' }} onClick={() => openSignupModal()}>
                                     CLAIM YOUR SEAT
@@ -398,7 +398,7 @@ export default function FeedPage() {
                                         The ink is fresh.
                                     </div>
                                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', opacity: 0.6, lineHeight: 1.7, maxWidth: 400, margin: '0 auto 2rem' }}>
-                                        Be the first to transmit a cinematic dispatch and leave your mark in the Society's permanent record.
+                                        Be the first to publish a cinematic dispatch and leave your mark in the Society's permanent record.
                                     </p>
                                     <button
                                         className="btn btn-primary"

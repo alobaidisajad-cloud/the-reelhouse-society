@@ -242,11 +242,11 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     <div style={{ display: 'flex', gap: '1.5rem' }}>
                         <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
                             {canEndorse ? <Heart size={16} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span>🔒</span>}
-                            {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
+                            {endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'RESTRICTED'} ({endorsementCount})
                         </button>
                         {canAnnotate ? (
                             <button onClick={handleAnnotateToggle} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer' }}>
-                                <MessageSquare size={16} /> ANNOTATE
+                                <MessageSquare size={16} /> CRITIQUE
                             </button>
                         ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
@@ -255,7 +255,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         )}
                     </div>
                     <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
-                        <RefreshCw size={16} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
+                        <RefreshCw size={16} /> {retransmitted ? 'PUBLISHED ✦' : 'PUBLISH'}
                     </button>
                 </div>
 
@@ -371,12 +371,12 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     <div style={{ position: 'relative' }}>
                         <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
                             {canEndorse ? <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span style={{ fontSize: '10px' }}>🔒</span>}
-                            {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
+                            {endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'RESTRICTED'} ({endorsementCount})
                         </button>
                     </div>
                     {canAnnotate ? (
                         <button onClick={handleAnnotateToggle} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer' }}>
-                            <MessageSquare size={12} /> ANNOTATE
+                            <MessageSquare size={12} /> CRITIQUE
                         </button>
                     ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
@@ -384,7 +384,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         </div>
                     )}
                     <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', marginLeft: 'auto' }}>
-                        <RefreshCw size={12} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
+                        <RefreshCw size={12} /> {retransmitted ? 'PUBLISHED ✦' : 'PUBLISH'}
                     </button>
                     {log.isAutopsied && log.autopsy && (
                         <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', opacity: isExporting ? 0.5 : 1 }}>

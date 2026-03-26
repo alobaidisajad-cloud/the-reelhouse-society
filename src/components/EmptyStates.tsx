@@ -101,7 +101,7 @@ export function EmptyFeed() {
             <Buster size={80} mood="peeking" />
             <p style={emptyStateStyles.title}>THE FLOOR IS QUIET</p>
             <p style={emptyStateStyles.subtitle}>
-                No activity yet. Follow other members of the society to see their logs, reviews, and endorsements here.
+                No activity yet. Follow other members of the society to see their dossiers, critiques, and certifications here.
             </p>
             <p style={{
                 fontFamily: 'var(--font-ui)',
@@ -134,7 +134,7 @@ export function EmptyNotifications() {
             <Buster size={60} mood="neutral" />
             <p style={emptyStateStyles.title}>NO SIGNALS FROM THE BOOTH</p>
             <p style={emptyStateStyles.subtitle}>
-                All caught up. When someone endorses your work or follows you, the dispatch arrives here.
+                All caught up. When someone certifies your work or follows you, the dispatch arrives here.
             </p>
         </div>
     )

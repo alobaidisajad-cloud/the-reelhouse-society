@@ -410,7 +410,7 @@ export default function ListsPage() {
                                             </p>
                                         )}
                                         <div style={{ borderTop: '1px solid var(--ash)', paddingTop: '1rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>
-                                            {list.films.length} FILMS TRANSMITTED
+                                            {list.films.length} FILMS PUBLISHED
                                         </div>
                                     </Link>
                                 ))}

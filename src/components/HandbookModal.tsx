@@ -52,7 +52,7 @@ export default function HandbookModal() {
 
                             <div className="hb-item">
                                 <h3>The Reel</h3>
-                                <p>The live cardiovascular system of the community. See what other devotees are logging in real-time, and endorse transmissions from fellow cinephiles.</p>
+                                <p>The live cardiovascular system of the community. See what other devotees are logging in real-time, and certify transmissions from fellow cinephiles.</p>
                             </div>
 
                             <div className="hb-item">

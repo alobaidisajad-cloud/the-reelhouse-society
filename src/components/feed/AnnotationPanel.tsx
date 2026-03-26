@@ -154,7 +154,7 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
                         ref={textareaRef}
                         value={annotateText}
                         onChange={handleInput}
-                        placeholder={isExpandedView ? "Transmit an enduring observation..." : "File an annotation..."}
+                        placeholder={isExpandedView ? "File an enduring critique..." : "File a critique..."}
                         rows={isExpandedView ? 2 : 1}
                         style={{ 
                             flex: 1, minWidth: 0, 
@@ -192,7 +192,7 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
                                     borderRadius: '4px'
                                 }}
                             >
-                                TRANSMIT DOSSIER <Send size={14} />
+                                SUBMIT CRITIQUE <Send size={14} />
                             </button>
                         </div>
                     ) : (

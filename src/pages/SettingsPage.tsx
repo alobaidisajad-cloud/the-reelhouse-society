@@ -428,7 +428,7 @@ export default function SettingsPage() {
                     </label>
                 ))}
 
-                <label style={{ ...labelStyle, marginTop: '1.5rem', marginBottom: '0.75rem' }}>WHO CAN ENDORSE</label>
+                <label style={{ ...labelStyle, marginTop: '1.5rem', marginBottom: '0.75rem' }}>WHO CAN CERTIFY</label>
                 {[
                     { value: 'everyone', label: 'Everyone' },
                     { value: 'followers', label: 'Followers Only' },
@@ -485,7 +485,7 @@ export default function SettingsPage() {
 
                 {[
                     { label: 'New Followers', desc: 'When someone follows you', value: notifFollows, setter: setNotifFollows },
-                    { label: 'Endorsements', desc: 'When someone endorses your log', value: notifEndorsements, setter: setNotifEndorsements },
+                    { label: 'Certifications', desc: 'When someone certifies your log', value: notifEndorsements, setter: setNotifEndorsements },
                     { label: 'Annotations', desc: 'When someone comments on your log', value: notifComments, setter: setNotifComments },
                     { label: 'System Alerts', desc: 'Society announcements and updates', value: notifSystem, setter: setNotifSystem },
                 ].map(item => (
