@@ -207,7 +207,7 @@ export default function ActivityCard({ log }: { log: any }) {
                 {log.pullQuote && (
                     <div style={{
                         marginTop: '1rem', marginBottom: '1rem', paddingLeft: '1rem', borderLeft: '4px solid var(--sepia)',
-                        fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--sepia)', fontStyle: 'italic',
+                        fontFamily: 'var(--font-display)', fontSize: 'clamp(0.95rem, 4vw, 1.2rem)', color: 'var(--sepia)', fontStyle: 'italic',
                         lineHeight: 1.2
                     }}>
                         "{log.pullQuote}"
@@ -242,7 +242,7 @@ export default function ActivityCard({ log }: { log: any }) {
                         ) : log.dropCap ? (
                             <>
                                 <span style={{
-                                    float: 'left', fontSize: '3rem', lineHeight: '2.5rem',
+                                    float: 'left', fontSize: 'clamp(2.2rem, 8vw, 3rem)', lineHeight: 'clamp(1.8rem, 6vw, 2.5rem)',
                                     padding: '0.2rem 0.5rem 0 0', fontFamily: 'var(--font-display)',
                                     color: 'var(--sepia)'
                                 }}>
