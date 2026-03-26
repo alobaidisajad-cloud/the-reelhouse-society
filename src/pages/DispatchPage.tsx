@@ -166,6 +166,7 @@ export default function DispatchPage() {
     const [loading, setLoading] = useState(true)
     const [selectedArticle, setSelectedArticle] = useState<any>(null)
     const [isWriting, setIsWriting] = useState(false)
+    const [isPublishing, setIsPublishing] = useState(false)
     const [formValues, setFormValues] = useState({ title: '', content: '' })
 
     const scrollPos = useRef(0)
@@ -214,12 +215,15 @@ export default function DispatchPage() {
         }
         
         try {
+            setIsPublishing(true)
             await addDossier(newEssay)
             toast.success('Dossier published to the Global Wire')
             setIsWriting(false)
             setFormValues({ title: '', content: '' })
         } catch (error: any) {
             toast.error(error.message || 'Failed to publish dossier. Archive connection severed.')
+        } finally {
+            setIsPublishing(false)
         }
     }
 
@@ -422,8 +426,8 @@ export default function DispatchPage() {
                             </div>
 
                             <div className="wp-footer">
-                                <button onClick={submitEssay} className="btn-publish-dossier">
-                                    TRANSMIT TO NEWSLETTER <IconArrowRight />
+                                <button onClick={submitEssay} disabled={isPublishing} className="btn-publish-dossier" style={{ opacity: isPublishing ? 0.6 : 1 }}>
+                                    {isPublishing ? 'TRANSMITTING...' : 'TRANSMIT TO NEWSLETTER'} <IconArrowRight />
                                 </button>
                             </div>
                         </motion.div>

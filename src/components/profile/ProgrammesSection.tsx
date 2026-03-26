@@ -8,6 +8,7 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
     const { logs, vault, watchlist } = useFilmStore()
     const { addProgramme, removeProgramme } = useProgrammeStore()
     const [isCreating, setIsCreating] = useState(false)
+    const [isPublishing, setIsPublishing] = useState(false)
     const [title, setTitle] = useState('')
     const [playbill, setPlaybill] = useState('')
     const [film1Id, setFilm1Id] = useState('')
@@ -27,6 +28,7 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
         const f2 = uniqueFilms.find(f => (f.filmId || f.id)?.toString() === film2Id.toString())
         
         try {
+            setIsPublishing(true)
             await addProgramme({
                 title, description: playbill,
                 films: [
@@ -39,6 +41,8 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
             setTitle(''); setPlaybill(''); setFilm1Id(''); setFilm2Id('')
         } catch (error: any) {
             toast.error(error.message || "Failed to curate feature. The archives are stuttering.")
+        } finally {
+            setIsPublishing(false)
         }
     }
 
@@ -87,8 +91,10 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
                         ))}
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-                        <button className="btn btn-ghost" onClick={() => setIsCreating(false)}>CANCEL</button>
-                        <button className="btn btn-primary" onClick={handleCreate} disabled={!title || !playbill || !film1Id || !film2Id}>PUBLISH PROGRAMME</button>
+                        <button className="btn btn-ghost" onClick={() => setIsCreating(false)} disabled={isPublishing}>CANCEL</button>
+                        <button className="btn btn-primary" onClick={handleCreate} disabled={!title || !playbill || !film1Id || !film2Id || isPublishing}>
+                            {isPublishing ? 'CURATING...' : 'PUBLISH PROGRAMME'}
+                        </button>
                     </div>
                 </div>
             )}
