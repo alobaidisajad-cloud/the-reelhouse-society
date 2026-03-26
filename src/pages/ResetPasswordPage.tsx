@@ -37,7 +37,7 @@ export default function ResetPasswordPage() {
             if (error) throw error
             setSuccess(true)
             // Clear recovery mode so the auth listener can properly sign the user in
-            window.__reelhouseRecoveryMode = false
+            sessionStorage.removeItem('reelhouse_recovery')
             toast.success('Password updated successfully!')
             // Re-trigger auth so the user gets properly logged in with their new password
             const { data: { session } } = await supabase.auth.getSession()

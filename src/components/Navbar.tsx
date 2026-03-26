@@ -170,7 +170,7 @@ export default function Navbar() {
                                 >
                                     + <span className="hide-mobile">LOG FILM</span>
                                 </button>
-                                <span className="hide-mobile">
+                                <span>
                                     <NotificationBell
                                         isOpen={notificationsOpen}
                                         onOpenChange={setNotificationsOpen}
