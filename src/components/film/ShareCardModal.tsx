@@ -18,26 +18,7 @@ interface ShareCardModalProps {
     onClose: () => void
 }
 
-// ── Reel SVG for rating display ──
-function ReelDot({ filled }: { filled: boolean }) {
-    return (
-        <div style={{
-            width: 28, height: 28, borderRadius: '50%',
-            border: `2px solid ${filled ? '#B8860B' : 'rgba(139,105,20,0.3)'}`,
-            background: filled
-                ? 'radial-gradient(circle, #DAA520 0%, #8B6914 100%)'
-                : 'rgba(14,11,8,0.6)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: filled ? '0 0 12px rgba(218,165,32,0.5)' : 'none',
-        }}>
-            {/* Inner sprocket hole */}
-            <div style={{
-                width: 8, height: 8, borderRadius: '50%',
-                background: filled ? '#0E0B08' : 'rgba(139,105,20,0.15)',
-            }} />
-        </div>
-    )
-}
+import { ReelRating } from '../UI'
 
 export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
     const cardRef = useRef<HTMLDivElement>(null)
@@ -152,45 +133,42 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
             ctx.fillText(data.filmYear, W / 2, yearY)
         }
 
-        // Rating reels
+        // Rating reels (using authentic High-Res PNGs)
         const reelY = yearY + 40
-        const reelSize = 36
-        const reelGap = 14
+        const reelSize = 42
+        const reelGap = 16
         const totalReelWidth = 5 * reelSize + 4 * reelGap
         const reelStartX = (W - totalReelWidth) / 2
 
-        for (let i = 0; i < 5; i++) {
-            const x = reelStartX + i * (reelSize + reelGap)
-            const filled = i < data.rating
+        try {
+            const [imgFull, imgHalf, imgEmpty] = await Promise.all([
+                loadImage('/rating-full.png'),
+                loadImage('/rating-half.png'),
+                loadImage('/rating-empty.png')
+            ])
 
-            // Outer circle
-            ctx.beginPath()
-            ctx.arc(x + reelSize / 2, reelY, reelSize / 2, 0, Math.PI * 2)
-            ctx.strokeStyle = filled ? '#B8860B' : 'rgba(139,105,20,0.3)'
-            ctx.lineWidth = 2
-            ctx.stroke()
-
-            if (filled) {
-                // Gold fill
-                const grad = ctx.createRadialGradient(x + reelSize / 2, reelY, 0, x + reelSize / 2, reelY, reelSize / 2)
-                grad.addColorStop(0, '#DAA520')
-                grad.addColorStop(1, '#8B6914')
-                ctx.fillStyle = grad
-                ctx.fill()
-
-                // Glow
-                ctx.shadowColor = 'rgba(218,165,32,0.5)'
-                ctx.shadowBlur = 12
-                ctx.fill()
+            for (let i = 0; i < 5; i++) {
+                const x = reelStartX + i * (reelSize + reelGap)
+                const isFull = data.rating >= i + 1
+                const isHalf = !isFull && data.rating >= i + 0.5
+                
+                const img = isFull ? imgFull : isHalf ? imgHalf : imgEmpty
+                
+                if (isFull || isHalf) {
+                    ctx.shadowColor = 'rgba(218,165,32,0.6)'
+                    ctx.shadowBlur = 15
+                }
+                
+                ctx.drawImage(img, x, reelY - reelSize / 2, reelSize, reelSize)
+                
                 ctx.shadowColor = 'transparent'
                 ctx.shadowBlur = 0
             }
-
-            // Inner sprocket
-            ctx.beginPath()
-            ctx.arc(x + reelSize / 2, reelY, 5, 0, Math.PI * 2)
-            ctx.fillStyle = filled ? '#0E0B08' : 'rgba(139,105,20,0.15)'
-            ctx.fill()
+        } catch {
+            // Fallback to text if images completely fail to load on canvas
+            ctx.fillStyle = '#DAA520'
+            ctx.font = '24px "Courier Prime", monospace'
+            ctx.fillText(`RATING: ${data.rating}/5`, W / 2, reelY)
         }
 
         // Review snippet
@@ -366,7 +344,6 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                             <img
                                 src={posterUrl}
                                 alt={data.filmTitle}
-                                crossOrigin="anonymous"
                                 style={{
                                     width: '160px',
                                     height: '240px',
@@ -403,18 +380,14 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                             </div>
                         )}
 
-                        {/* Rating */}
-                        {data.rating > 0 && (
                             <div style={{
                                 display: 'flex', gap: '8px',
                                 justifyContent: 'center',
                                 margin: '1rem 0',
+                                transform: 'scale(1.4)'
                             }}>
-                                {[1, 2, 3, 4, 5].map(i => (
-                                    <ReelDot key={i} filled={i <= data.rating} />
-                                ))}
+                                <ReelRating value={data.rating} size="lg" />
                             </div>
-                        )}
 
                         {/* Review */}
                         {truncatedReview && (
