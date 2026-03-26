@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
@@ -434,7 +434,7 @@ export default function UserProfilePage() {
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
         { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length > 0 ? profileStubs.length : null },
         { id: 'archive', label: 'The Archive', count: physicalArchive.length > 0 ? physicalArchive.length : null },
-        ...(isOwnProfile ? [{ id: 'calendar', label: isPremium ? '✦ The Calendar' : '🔒 The Calendar', count: null }] : []),
+        ...(isOwnProfile ? [{ id: 'calendar', label: isPremium ? '✦ The Calendar' : <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> The Calendar</>, count: null }] : []),
     ]
 
     return (
@@ -593,7 +593,7 @@ export default function UserProfilePage() {
                                 <SectionHeader label="CHRONOLOGICAL" title="The Ledger" />
                                 {profileLogs.length > 0 && (
                                     <div className="profile-sieve-strip" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ash)' }}>
-                                        {[{ id: 'all', label: 'All Logs' }, { id: 'masterpieces', label: '✦✦✦✦✦ Masterpieces' }, { id: 'rewatched', label: '↩ Rewatched' }, { id: 'abandoned', label: '✕ Abandoned' }, { id: 'companion', label: '♡ Companions' }].map(s => (
+                                        {[{ id: 'all', label: 'All Logs' }, { id: 'masterpieces', label: '✦✦✦✦✦ Masterpieces' }, { id: 'rewatched', label: <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> Rewatched</> }, { id: 'abandoned', label: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> Abandoned</> }, { id: 'companion', label: '♡ Companions' }].map(s => (
                                             <button key={s.id} onClick={() => setSieve(s.id)} className={`btn ${sieve === s.id ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', whiteSpace: 'nowrap' }}>{s.label}</button>
                                         ))}
                                     </div>

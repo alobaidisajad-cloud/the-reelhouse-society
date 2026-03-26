@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Film, Building, Lock, Terminal, Mail, RefreshCw, Check, AlertCircle } from 'lucide-react'
+import { X, Film, Building, Lock, Terminal, Mail, RefreshCw, Check, AlertCircle, Circle } from 'lucide-react'
 import { useUIStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
@@ -526,7 +526,7 @@ export default function SignupModal() {
                                             [passwordChecks.special,   'Special character'],
                                         ].map(([ok, label]) => (
                                             <div key={String(label)} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: ok ? '#4caf50' : 'var(--fog)', transition: 'color 0.2s' }}>
-                                                <span style={{ fontSize: '0.55rem' }}>{ok ? '✓' : '○'}</span>
+                                                <span style={{ fontSize: '0.55rem' }}>{ok ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></> : <><Circle size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>}</span>
                                                 {label}
                                             </div>
                                         ))}

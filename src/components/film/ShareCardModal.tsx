@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Download, Copy, Share2 } from 'lucide-react'
+import { X, Download, Copy, Share2, Check } from 'lucide-react'
 import { tmdb } from '../../tmdb'
 
 interface ShareCardData {
@@ -451,7 +451,7 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                             fontWeight: 700,
                         }}>
                             <Download size={14} />
-                            {downloaded ? 'SAVED ✓' : 'DOWNLOAD'}
+                            {downloaded ? <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>SAVED <Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span> : 'DOWNLOAD'}
                         </button>
 
                         <button onClick={handleCopy} style={{
@@ -466,7 +466,7 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                             color: '#E8DFC8',
                         }}>
                             <Copy size={14} />
-                            {copying ? 'COPIED ✓' : 'COPY'}
+                            {copying ? <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>COPIED <Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span> : 'COPY'}
                         </button>
 
                         {typeof navigator.share === 'function' && (

@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { useState } from 'react'
 import { useAuthStore } from '../../store'
 
@@ -52,7 +53,7 @@ export default function RatingLegend() {
                 onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}
                 title="Got it"
                 aria-label="Dismiss rating guide"
-            >✕</button>
+            ><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></button>
         </div>
     )
 }

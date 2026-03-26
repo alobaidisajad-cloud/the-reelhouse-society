@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import Buster from '../components/Buster'
@@ -38,7 +39,7 @@ export default function NotFoundPage() {
                                 alignItems: 'center',
                                 justifyContent: 'center',
                             }}>
-                                <span style={{ fontSize: '0.4rem', color: 'var(--parchment)' }}>✕</span>
+                                <span style={{ fontSize: '0.4rem', color: 'var(--parchment)' }}><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>
                             </div>
                         )}
                     </div>

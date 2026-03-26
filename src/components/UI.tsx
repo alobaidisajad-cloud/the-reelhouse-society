@@ -1,3 +1,4 @@
+import { X, Check } from 'lucide-react'
 import { useState, memo, useCallback, useRef, ReactNode, CSSProperties } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from '../tmdb'
@@ -259,12 +260,12 @@ export function GenreTags({ genreIds = [], genres = [] }: GenreTagsProps) {
 }
 
 // Persona stamp
-const PERSONAS: Record<string, { color: string; symbol: string }> = {
+const PERSONAS: Record<string, { color: string; symbol: React.ReactNode }> = {
     'The Midnight Devotee': { color: '#5C1A0B', symbol: '🕛' },
     'The Archivist': { color: '#8B6914', symbol: '📜' },
     'The Weeper': { color: '#4A6B8A', symbol: '💧' },
     'The Contrarian': { color: '#6B4A8A', symbol: '⚡' },
-    'The Completionist': { color: '#1C5C1A', symbol: '✓' },
+    'The Completionist': { color: '#1C5C1A', symbol: <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></> },
 }
 
 export function PersonaStamp({ persona }: PersonaStampProps) {
@@ -444,7 +445,7 @@ export function RadarChart({ autopsy }: RadarChartProps) {
 export function QueryErrorBanner({ message, onRetry }: { message?: string; onRetry?: () => void }) {
     return (
         <div className="section-error" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--blood-reel)', lineHeight: 1 }}>✕</div>
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--blood-reel)', lineHeight: 1 }}><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></div>
             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)' }}>The Projector Has Jammed</div>
             <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', lineHeight: 1.5, maxWidth: 340 }}>
                 {message || 'Something went wrong while loading this section. The reel can be reloaded.'}

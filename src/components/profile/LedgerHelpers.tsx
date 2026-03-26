@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import { motion } from 'framer-motion'
 import { Link, useNavigate } from 'react-router-dom'
-import { Film, BookOpen, Lock } from 'lucide-react'
+import { Film, BookOpen, Lock, Check, RotateCcw, X } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
@@ -53,7 +53,7 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onShare }: any) {
                 <div style={{ marginTop: '0.4rem', display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
                         <span className={`tag ${log.status === 'rewatched' ? 'tag-vibe' : ''}`} style={{ fontSize: '0.5rem' }}>
-                            {log.status === 'watched' ? '✓ WATCHED' : log.status === 'rewatched' ? '↩ REWATCHED' : `✕ ABANDONED${log.abandonedReason ? ` — ${log.abandonedReason}` : ''}`}
+                            {log.status === 'watched' ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> WATCHED</> : log.status === 'rewatched' ? <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> REWATCHED</> : `{<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} ABANDONED${log.abandonedReason ? ` — ${log.abandonedReason}` : ''}`}
                         </span>
                         {log.watchedWith && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: 'var(--fog)' }}>♡ with {log.watchedWith}</span>}
                         {log.physicalMedia && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', border: '1px solid var(--sepia)', background: 'rgba(139,105,20,0.1)', padding: '0.1rem 0.3rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><BookOpen size={8} /> {log.physicalMedia}</span>}
@@ -145,7 +145,7 @@ export function ListsSection({ lists, user }: any) {
     if (posterMode) {
         return (
             <div className="poster-export-view" style={{ position: 'fixed', inset: 0, zIndex: 100005, background: 'var(--ink)', padding: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
-                <button onClick={() => setPosterMode(null)} className="btn btn-ghost" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 100006 }}>✕ CLOSE POSTER</button>
+                <button onClick={() => setPosterMode(null)} className="btn btn-ghost" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 100006 }}>{<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} CLOSE POSTER</button>
                 <div className="card" style={{ width: '100%', maxWidth: '800px', padding: '4rem', border: '4px double var(--sepia)', background: 'var(--soot)', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     <div style={{ textAlign: 'center' }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.5em', color: 'var(--sepia)', marginBottom: '1rem' }}>REELHOUSE ARCHIVE NO. {posterMode.id.toString().slice(0, 6)}</div>

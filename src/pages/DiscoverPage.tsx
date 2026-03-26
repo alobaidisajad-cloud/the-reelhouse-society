@@ -58,7 +58,7 @@ const MOODS = [
     { label: 'Terrifying', sub: 'Dark, chilling nightmares.', glyph: '◉', genre: 27, sort: 'vote_average.desc', color: '#1A1A0A', accent: '#8B3A1A' },
     { label: 'Awe-Inspiring', sub: 'Epic, magical worlds.', glyph: '✦', genre: 14, sort: 'vote_average.desc', color: '#0A1A2A', accent: '#3A7A8B' },
     { label: 'Heartwarming', sub: 'Stories of love and connection.', glyph: '▣', genre: 10749, sort: 'release_date.asc', voteGte: 500, color: '#1C1208', accent: '#8B6914' },
-    { label: 'Thrilling', sub: 'High-octane cinema.', glyph: '✕', genre: 28, sort: 'popularity.desc', color: '#2A0A0A', accent: '#8B1A1A' },
+    { label: 'Thrilling', sub: 'High-octane cinema.', glyph: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, genre: 28, sort: 'popularity.desc', color: '#2A0A0A', accent: '#8B1A1A' },
     { label: 'Hilarious', sub: 'Pure joy and laughter.', glyph: '◎', genre: 35, sort: 'vote_average.desc', voteGte: 200, color: '#0A1A0A', accent: '#4A8B3A' },
 ]
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Plus, X, Disc, Disc2, Disc3, Film, Archive, Trash2, CircleDot, Clapperboard, Box, Award } from 'lucide-react'
+import { Search, Plus, X, Disc, Disc2, Disc3, Film, Archive, Trash2, CircleDot, Clapperboard, Box, Award, Check } from 'lucide-react'
 import { useFilmStore } from '../../stores/films'
 import { tmdb } from '../../tmdb'
 import Poster from '../film/Poster'
@@ -486,7 +486,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                                 onClick={() => handleUpdate(item.filmId)}
                                                 style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', background: 'none', border: 'none', cursor: 'pointer' }}
                                             >
-                                                ✓ SAVE
+                                                {<Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} SAVE
                                             </button>
                                             <button
                                                 onClick={() => { setEditingId(null); setSelectedFormats([]); setNotes(''); setCondition('good') }}

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Star, BookOpen, EyeOff, Clock, Lock, Archive, History, Eye } from 'lucide-react'
+import { Search, X, Star, BookOpen, EyeOff, Clock, Lock, Archive, History, Eye, Check } from 'lucide-react'
 import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { tmdb } from '../tmdb'
 import { ReelRating } from './UI'
@@ -725,7 +725,7 @@ export default function LogModal() {
                                                             boxShadow: isActive ? '0 4px 10px rgba(139,105,20,0.2)' : 'none',
                                                         }}
                                                     >
-                                                        {isActive ? '✓ ' : '+ '}{list.title.toUpperCase()}
+                                                        {isActive ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> </> : '+ '}{list.title.toUpperCase()}
                                                     </button>
                                                 )
                                             })}

@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camera } from 'lucide-react'
+import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camera, ArrowUpRight, Check, RotateCcw } from 'lucide-react'
 import { tmdb, obscurityScore, formatRuntime, getYear } from '../tmdb'
 import { ReelRating, ObscurityBadge, GenreTags, FilmCard, LoadingReel, SectionHeader } from '../components/UI'
 import { useSEOSync } from '../components/useSEOSync'
@@ -36,7 +36,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
     const trailer = film.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
         || film.videos?.results?.find((v: any) => v.site === 'YouTube')
     const existingLog = logs.find((l: any) => l.filmId === film.id || String(l.filmId) === String(film.id))
-    const statusLabel: any = { watched: '✓ WATCHED', rewatched: '↩ REWATCHED', abandoned: '✕ ABANDONED' }
+    const statusLabel: any = { watched: <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> WATCHED</>, rewatched: <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> REWATCHED</>, abandoned: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> ABANDONED</> }
 
     // --- Smart Review Count Fallback ---
     const { data: localCount = 0 } = useQuery({
@@ -99,7 +99,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         </div>
                         {existingLog && (
                             <div style={{ marginTop: '0.6rem', padding: '0.6rem 0.75rem', background: 'linear-gradient(135deg, rgba(139,105,20,0.12), rgba(10,7,3,0.8))', border: '1px solid rgba(139,105,20,0.3)', borderRadius: 'var(--radius-card)', borderLeft: '2px solid var(--sepia)' }}>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>{statusLabel[existingLog.status] || '✓ LOGGED'}</div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>{statusLabel[existingLog.status] || <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> LOGGED</>}</div>
                                 {existingLog.rating > 0 && <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--flicker)', marginBottom: '0.15rem' }}>{'★'.repeat(Math.round(existingLog.rating))}{'☆'.repeat(5 - Math.round(existingLog.rating))}</div>}
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', letterSpacing: '0.08em', color: 'var(--fog)' }}>
                                     {existingLog.watchedDate && new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -148,7 +148,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         >
                             <span style={{ color: 'var(--fog)' }}>DIR.</span>
                             <span style={{ textDecoration: 'underline', textDecorationColor: 'var(--ash)' }}>{director.name}</span>
-                            <span style={{ color: 'var(--fog)', fontSize: '0.5rem' }}>↗</span>
+                            <span style={{ color: 'var(--fog)', fontSize: '0.5rem' }}><ArrowUpRight size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>
                         </Link>
                     )}
 

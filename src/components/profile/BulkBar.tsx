@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 /**
  * BulkBar — Sticky bottom action bar for bulk log operations.
  * Appears when user enters selection mode on diary grid.
@@ -80,7 +81,7 @@ export default function BulkBar({ selectedCount, onDelete, onAddToList, onExport
             cursor: 'pointer',
           }}
         >
-          ✕ DELETE
+          {<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} DELETE
         </button>
         <button
           onClick={onCancel}

@@ -3,6 +3,7 @@
  * Shows live system state: badges, streaks, analytics, tier, profile data.
  * Only accessible at /admin — hidden from main navigation.
  */
+import { Check, Circle, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { useAuthStore, useFilmStore } from '../store'
 import { useAchievements, BADGE_DEFS } from '../hooks/useAchievements'
@@ -141,7 +142,7 @@ export default function DebugPanel() {
                                     </div>
                                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)' }}>{badge.description}</div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: earned ? 'var(--sepia)' : 'var(--ash)', marginTop: '0.3rem' }}>
-                                        {earned ? '✓ UNLOCKED' : '○ LOCKED'}
+                                        {earned ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> UNLOCKED</> : <><Circle size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> LOCKED</>}
                                     </div>
                                 </div>
                             )
@@ -167,8 +168,8 @@ export default function DebugPanel() {
                     {[
                         { label: 'BUNDLE SIZE', value: buildInfo.size },
                         { label: 'BUILD DATE', value: buildInfo.date },
-                        { label: 'SUPABASE', value: isSupabaseConfigured ? '✓ CONNECTED' : '✕ NOT CONFIGURED' },
-                        { label: 'SERVICE WORKER', value: 'serviceWorker' in navigator ? '✓ REGISTERED' : '✕ UNAVAILABLE' },
+                        { label: 'SUPABASE', value: isSupabaseConfigured ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> CONNECTED</> : <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> NOT CONFIGURED</> },
+                        { label: 'SERVICE WORKER', value: 'serviceWorker' in navigator ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> REGISTERED</> : <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> UNAVAILABLE</> },
                         { label: 'SCREEN', value: `${window.innerWidth}×${window.innerHeight}` },
                         { label: 'TOUCH DEVICE', value: window.matchMedia('(any-pointer: coarse)').matches ? 'YES' : 'NO' },
                         { label: 'DO NOT TRACK', value: navigator.doNotTrack === '1' ? 'ENABLED' : 'DISABLED' },

@@ -4,7 +4,7 @@
 
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Plus, Trash2, Check, LayoutGrid, Armchair, Monitor, Edit2 } from 'lucide-react'
+import { Plus, Trash2, Check, LayoutGrid, Armchair, Monitor, Edit2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const ROW_LABELS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T']
@@ -109,7 +109,7 @@ function SeatMapPreview({ config, screenColor }: { config: SeatLayoutConfig; scr
                                                     opacity: isBlocked ? 0.25 : 1,
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                 }}>
-                                                    {isBlocked && <span style={{ fontSize: '0.4rem', color: 'var(--fog)', opacity: 0.5 }}>✕</span>}
+                                                    {isBlocked && <span style={{ fontSize: '0.4rem', color: 'var(--fog)', opacity: 0.5 }}><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
                                                 </div>
                                             </div>
                                         )
@@ -194,7 +194,7 @@ function BlockedSeatEditor({ config, onToggleBlock }: { config: SeatLayoutConfig
                                                     onMouseEnter={e => { e.currentTarget.style.opacity = '0.75'; e.currentTarget.style.transform = 'scale(1.1)' }}
                                                     onMouseLeave={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.transform = 'scale(1)' }}
                                                 >
-                                                    {isBlocked && <span style={{ fontSize: '0.5rem', color: 'var(--blood-reel)' }}>✕</span>}
+                                                    {isBlocked && <span style={{ fontSize: '0.5rem', color: 'var(--blood-reel)' }}><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
                                                 </div>
                                             </div>
                                         )
@@ -453,7 +453,7 @@ export default function SeatMapEditor({ venue, onSave }: { venue: any; onSave: (
                                                 style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', border: '1px solid var(--blood-reel)', color: 'var(--blood-reel)', padding: '2px 6px', cursor: 'pointer' }}
                                                 title="Click to unblock"
                                             >
-                                                {s} ✕
+                                                {s} {<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />}
                                             </span>
                                         ))}
                                     </div>

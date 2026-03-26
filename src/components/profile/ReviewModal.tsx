@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { ReelRating } from '../UI'
 import { tmdb } from '../../tmdb'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
@@ -77,7 +78,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                         aria-label="Close"
                         style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '50%', width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)', cursor: 'pointer', flexShrink: 0 }}
                     >
-                        ✕
+                        <X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />
                     </button>
                 </div>
 

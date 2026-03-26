@@ -1,6 +1,7 @@
 // Interactive cinema seating map component — premium cinema room feel
 // Screen at top, VIP rows A-B in gold, Standard rows below, aisle in middle
 
+import { X, Check } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
 const ROW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
@@ -199,10 +200,10 @@ export default function SeatSelector({ slot, seatLayout = {}, selectedSeat, onSe
                                                     }}
                                                 >
                                                     {isBooked && (
-                                                        <span style={{ fontSize: '0.45rem', color: 'rgba(200,80,60,0.6)', lineHeight: 1, pointerEvents: 'none' }}>✕</span>
+                                                        <span style={{ fontSize: '0.45rem', color: 'rgba(200,80,60,0.6)', lineHeight: 1, pointerEvents: 'none' }}><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>
                                                     )}
                                                     {isSelected && (
-                                                        <span style={{ fontSize: '0.55rem', color: '#3dba5a', lineHeight: 1, pointerEvents: 'none' }}>✓</span>
+                                                        <span style={{ fontSize: '0.55rem', color: '#3dba5a', lineHeight: 1, pointerEvents: 'none' }}><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>
                                                     )}
                                                 </div>
                                             </div>

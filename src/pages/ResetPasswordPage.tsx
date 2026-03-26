@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
-import { Lock, Eye, EyeOff, Check } from 'lucide-react'
+import { Lock, Eye, EyeOff, Check, Circle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageSEO from '../components/PageSEO'
 
@@ -139,7 +139,7 @@ export default function ResetPasswordPage() {
                                     [checks.special, 'Special character'],
                                 ] as Array<[boolean, string]>).map(([ok, label]) => (
                                     <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: ok ? '#4caf50' : 'var(--fog)', transition: 'color 0.2s' }}>
-                                        <span style={{ fontSize: '0.55rem' }}>{ok ? '✓' : '○'}</span>
+                                        <span style={{ fontSize: '0.55rem' }}>{ok ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></> : <><Circle size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>}</span>
                                         {label}
                                     </div>
                                 ))}

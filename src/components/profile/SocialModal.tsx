@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import Buster from '../Buster'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
@@ -21,7 +22,7 @@ export default function SocialModal({ socialModal, socialLoading, onClose }: { s
             <div className="card" style={{ maxWidth: 440, width: '100%', maxHeight: '80vh', display: 'flex', flexDirection: 'column', border: '1px solid var(--sepia)', padding: 0, overflow: 'hidden' }} onClick={e => e.stopPropagation()}>
                 <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--ash)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--parchment)' }}>{socialModal.title.toUpperCase()}</h3>
-                    <button className="btn btn-ghost" onClick={onClose} aria-label="Close">✕</button>
+                    <button className="btn btn-ghost" onClick={onClose} aria-label="Close"><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></button>
                 </div>
                 <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
                     {socialLoading ? (

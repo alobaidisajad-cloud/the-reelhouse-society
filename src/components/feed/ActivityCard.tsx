@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
-import { Heart, MessageSquare, Download, Send, RefreshCw } from 'lucide-react'
+import { Heart, MessageSquare, Download, Send, RefreshCw, Lock } from 'lucide-react'
 import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import toast from 'react-hot-toast'
@@ -241,7 +241,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(139,105,20,0.15)', borderBottom: '1px solid rgba(139,105,20,0.15)', padding: '1.25rem 0.5rem', marginTop: '1rem' }}>
                     <div style={{ display: 'flex', gap: '1.5rem' }}>
                         <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
-                            {canEndorse ? <Heart size={16} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span>🔒</span>}
+                            {canEndorse ? <Heart size={16} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
                             {endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'RESTRICTED'} ({endorsementCount})
                         </button>
                         {canAnnotate ? (
@@ -250,7 +250,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             </button>
                         ) : (
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
-                                <span>🔒</span> RESTRICTED
+                                <span><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></span> RESTRICTED
                             </div>
                         )}
                     </div>
@@ -367,7 +367,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1.25rem', width: '100%', marginTop: '1.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(139,105,20,0.1)', flexWrap: 'wrap', flexShrink: 0 }}>
                     <div style={{ position: 'relative' }}>
                         <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
-                            {canEndorse ? <Heart size={14} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span style={{ fontSize: '10px' }}>🔒</span>}
+                            {canEndorse ? <Heart size={14} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span style={{ fontSize: '10px' }}><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
                             {endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'RESTRICTED'} ({endorsementCount})
                         </button>
                     </div>
@@ -377,7 +377,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         </button>
                     ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
-                            <span style={{ fontSize: '10px' }}>🔒</span> RESTRICTED
+                            <span style={{ fontSize: '10px' }}><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></span> RESTRICTED
                         </div>
                     )}
                     <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', marginLeft: 'auto' }}>

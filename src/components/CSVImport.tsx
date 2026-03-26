@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, X, Check, Film, AlertTriangle } from 'lucide-react'
+import { Upload, X, Check, Film, AlertTriangle, RotateCcw } from 'lucide-react'
 import { useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
@@ -260,7 +260,7 @@ export default function CSVImport({ onClose }: any) {
                                     onClick={() => setParsed(null)}
                                     disabled={importing}
                                 >
-                                    ↩
+                                    <RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />
                                 </button>
                             </div>
                         </div>

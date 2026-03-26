@@ -1,3 +1,4 @@
+import { RotateCcw } from 'lucide-react'
 import { memo } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
@@ -92,7 +93,7 @@ const SocialPulse = memo(function SocialPulse() {
                                         <Link to={`/film/${act.film?.id}`} style={{ fontFamily: 'var(--font-sub)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1.2, textDecoration: 'none', marginBottom: '0.3rem' }}>{act.film?.title}</Link>
                                         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', marginBottom: '0.5rem' }}>
                                             {act.rating && <ReelRating value={act.rating} size="sm" />}
-                                            {act.status === 'rewatched' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', border: '1px solid var(--sepia)', padding: '0.1rem 0.3rem', borderRadius: '2px' }}>↩ REWATCHED</span>}
+                                            {act.status === 'rewatched' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', border: '1px solid var(--sepia)', padding: '0.1rem 0.3rem', borderRadius: '2px' }}>{<RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />} REWATCHED</span>}
                                         </div>
                                         {act.text && <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', fontStyle: 'italic', lineHeight: 1.5, opacity: 0.9, marginTop: '0.2rem' }}>"{act.text}"</p>}
                                         {act.watchedWith && (

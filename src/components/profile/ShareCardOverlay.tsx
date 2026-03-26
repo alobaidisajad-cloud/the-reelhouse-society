@@ -1,3 +1,4 @@
+import { X } from 'lucide-react'
 import Buster from '../Buster'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
@@ -11,7 +12,7 @@ export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: ()
             padding: '2rem'
         }}>
             <button onClick={onClose} className="btn btn-ghost" style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 100006 }}>
-                ✕ CLOSE
+                {<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} CLOSE
             </button>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '1.5rem', textAlign: 'center' }}>
                 SCREENSHOT TO SHARE TO INSTAGRAM STORY

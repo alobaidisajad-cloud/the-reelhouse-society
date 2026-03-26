@@ -3,7 +3,7 @@
  * with completion tracking ("The Auteur Hunt").
  */
 import { AnimatePresence, motion } from 'framer-motion'
-import { X } from 'lucide-react'
+import { X, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { tmdb } from '../../tmdb'
@@ -61,7 +61,7 @@ export default function DirectorPanel({ director, onClose }: any) {
                                 <img src={tmdb.poster(film.poster_path, 'w92') || undefined} alt={film.title} decoding="async" loading="lazy" style={{ width: 36, height: 54, objectFit: 'cover', borderRadius: '2px', filter: 'sepia(0.3)', flexShrink: 0 }} />
                                 <div style={{ flex: 1, minWidth: 0 }}>
                                     <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: logs.some((l: any) => l.filmId === film.id) ? 'var(--parchment)' : 'var(--bone)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                        {film.title}{logs.some((l: any) => l.filmId === film.id) && <span style={{ color: 'var(--sepia)', fontSize: '0.6rem' }}>✓</span>}
+                                        {film.title}{logs.some((l: any) => l.filmId === film.id) && <span style={{ color: 'var(--sepia)', fontSize: '0.6rem' }}><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
                                     </div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.15rem' }}>{film.release_date?.slice(0, 4) || '—'}</div>
                                 </div>

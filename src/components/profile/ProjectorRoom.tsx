@@ -12,7 +12,7 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     const downloadCsv = () => {
         if (!isPremium) {
             useUIStore.getState().openSignupModal('archivist')
-            return toast("CSV Export is restricted to Archivists.", { icon: '🔒', style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+            return toast("CSV Export is restricted to Archivists.", { icon: <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
         }
         if (logs.length === 0) return toast('No logs to export.')
 

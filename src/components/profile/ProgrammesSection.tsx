@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Lock } from 'lucide-react'
+import { Lock, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useFilmStore, useProgrammeStore } from '../../store'
 import { tmdb } from '../../tmdb'
@@ -111,7 +111,7 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
                                     } catch (e: any) {
                                         toast.error(e.message || "Failed to remove programme.")
                                     }
-                                }} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>✕ REMOVE</button>
+                                }} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>{<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} REMOVE</button>
                             )}
                             <div style={{ display: 'flex', width: '220px', flexShrink: 0 }}>
                                 <img src={tmdb.poster(prog.films?.[0]?.poster_path, 'w342')} alt={prog.films?.[0]?.title || 'Film 1'} loading="lazy" decoding="async" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }} />
