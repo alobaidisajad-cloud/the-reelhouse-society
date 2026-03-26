@@ -38,7 +38,7 @@ export default function LogDetailPage() {
 
             // Need to get endorsement count efficiently
             const { count } = await supabase.from('interactions').select('id', { count: 'exact', head: true })
-                .eq('target_log_id', logId).eq('type', 'endorse')
+                .eq('target_log_id', logId).eq('type', 'endorse_log')
 
             const profileData: any = data.profiles
             const filmData: any = data.films

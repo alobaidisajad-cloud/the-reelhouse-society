@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, memo } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Film, BookOpen, Lock } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
@@ -26,8 +26,13 @@ export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }: any) {
 // ── FILM LOG ROW ──
 export const FilmLogRow = memo(function FilmLogRow({ log, onShare }: any) {
     const isAbandoned = log.status === 'abandoned'
+    const navigate = useNavigate()
     return (
-        <div className={`card ${isAbandoned ? 'log-abandoned' : ''}`} style={{ padding: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+        <div 
+            onClick={() => navigate(`/log/${log.id}`)}
+            className={`card ${isAbandoned ? 'log-abandoned' : ''}`} 
+            style={{ padding: '1rem', display: 'flex', gap: '0.75rem', alignItems: 'flex-start', cursor: 'pointer' }}
+        >
             <div style={{ width: 44, height: 66, flexShrink: 0, borderRadius: 'var(--radius-card)', overflow: 'hidden', background: 'var(--ash)' }}>
                 {(log.altPoster || log.poster) ? (
                     <img src={tmdb.poster(log.altPoster || log.poster, 'w92') || undefined} alt={log.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.3)' }} />
@@ -53,7 +58,7 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onShare }: any) {
                         {log.watchedWith && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', color: 'var(--fog)' }}>♡ with {log.watchedWith}</span>}
                         {log.physicalMedia && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', border: '1px solid var(--sepia)', background: 'rgba(139,105,20,0.1)', padding: '0.1rem 0.3rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><BookOpen size={8} /> {log.physicalMedia}</span>}
                     </div>
-                    {onShare && <button onClick={() => onShare(log)} className="btn btn-ghost" style={{ fontSize: '0.5rem', padding: '0.1rem 0.4rem' }}>SHARE</button>}
+                    {onShare && <button onClick={(e) => { e.stopPropagation(); onShare(log); }} className="btn btn-ghost" style={{ fontSize: '0.5rem', padding: '0.1rem 0.4rem' }}>SHARE</button>}
                 </div>
                 {log.pullQuote && <div style={{ marginTop: '0.75rem', marginBottom: '0.75rem', paddingLeft: '0.75rem', borderLeft: '3px solid var(--sepia)', fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--sepia)', fontStyle: 'italic', lineHeight: 1.2 }}>"{log.pullQuote}"</div>}
                 {log.review && <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.4rem', lineHeight: 1.5, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{log.review}</p>}
