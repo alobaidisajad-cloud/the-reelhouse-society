@@ -77,8 +77,16 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js').catch((error) => {
-          console.error('ServiceWorker registration failed: ', error);
+        // FORCE CACHE INVALIDATION BY UNREGISTERING OLD WORKERS
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (let registration of registrations) {
+            registration.unregister();
+            console.log("Service Worker unregistered to wipe cache.");
+          }
+          // After wiping, fetch the fresh one
+          navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch((error) => {
+            console.error('ServiceWorker registration failed: ', error);
+          });
         });
       });
     }
