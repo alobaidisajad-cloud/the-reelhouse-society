@@ -43,6 +43,7 @@ export interface FilmState {
     removeFromVault: (filmId: number) => Promise<void>
     createList: (list: Partial<FilmList>) => Promise<void>
     addFilmToList: (listId: string, film: TMDBFilmInput) => Promise<void>
+    removeFilmFromList: (listId: string, filmId: number) => Promise<void>
     fetchPhysicalArchive: (userId?: string) => Promise<PhysicalArchiveItem[]>
     addToPhysicalArchive: (film: TMDBFilmInput, formats: string[], notes?: string, condition?: string) => Promise<void>
     removeFromPhysicalArchive: (filmId: number) => Promise<void>
@@ -408,6 +409,18 @@ export const useFilmStore = create<FilmState>()(
                     set((state) => ({
                         lists: state.lists.map((l) => l.id === listId
                             ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path }] }
+                            : l
+                        ),
+                    }))
+                }
+            },
+
+            removeFilmFromList: async (listId, filmId) => {
+                const { error } = await supabase.from('list_items').delete().eq('list_id', listId).eq('film_id', filmId)
+                if (!error) {
+                    set((state) => ({
+                        lists: state.lists.map((l) => l.id === listId
+                            ? { ...l, films: l.films.filter((f) => f.id !== filmId) }
                             : l
                         ),
                     }))

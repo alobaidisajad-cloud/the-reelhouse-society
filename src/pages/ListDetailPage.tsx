@@ -136,7 +136,11 @@ export default function ListDetailPage() {
                     {films.length === 0 ? (
                         <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'var(--soot)', border: '1px dashed var(--ash)', borderRadius: '2px' }}>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>Empty Archive</div>
-                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--fog)' }}>No films have been added to this collection yet.</div>
+                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--fog)', lineHeight: 1.5, maxWidth: 400, margin: '0 auto' }}>
+                                {localList 
+                                    ? "To populate this anthology, search for a film, click 'LOG', and toggle it in the 'Add to Anthology' drawer."
+                                    : "No films have been added to this collection yet."}
+                            </div>
                         </div>
                     ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.5rem' }}>

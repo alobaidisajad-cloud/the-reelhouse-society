@@ -38,6 +38,9 @@ export default function LogModal() {
     const addLog = useFilmStore(state => state.addLog)
     const updateLog = useFilmStore(state => state.updateLog)
     const logs = useFilmStore(state => state.logs)
+    const lists = useFilmStore(state => state.lists)
+    const addFilmToList = useFilmStore(state => state.addFilmToList)
+    const removeFilmFromList = useFilmStore(state => state.removeFilmFromList)
 
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
     const openSignupModal = (useAuthStore as any)((state: any) => state.openSignupModal)
@@ -689,6 +692,44 @@ export default function LogModal() {
                                     </motion.div>
                                 )}
                                 </AnimatePresence>
+
+                                {/* Add to Anthology */}
+                                {lists.length > 0 && status !== 'abandoned' && (
+                                    <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                                        <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'block', marginBottom: '0.75rem' }}>
+                                            ✛ ADD TO ANTHOLOGY
+                                        </label>
+                                        <div className="horizontal-scroll" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', WebkitOverflowScrolling: 'touch' }}>
+                                            {lists.map(list => {
+                                                const isActive = list.films.some((f: any) => f.id === film.id);
+                                                return (
+                                                    <button
+                                                        key={list.id}
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            if (isActive) removeFilmFromList(list.id, film.id);
+                                                            else addFilmToList(list.id, film);
+                                                        }}
+                                                        style={{
+                                                            flexShrink: 0,
+                                                            padding: '0.5rem 1rem',
+                                                            fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em',
+                                                            borderRadius: '2px', cursor: 'pointer', transition: 'all 0.2s',
+                                                            background: isActive ? 'var(--sepia)' : 'var(--ink)',
+                                                            color: isActive ? 'var(--ink)' : 'var(--bone)',
+                                                            border: `1px solid ${isActive ? 'var(--sepia)' : 'var(--ash)'}`,
+                                                            fontWeight: isActive ? 'bold' : 'normal',
+                                                            boxShadow: isActive ? '0 4px 10px rgba(139,105,20,0.2)' : 'none',
+                                                        }}
+                                                    >
+                                                        {isActive ? '✓ ' : '+ '}{list.title.toUpperCase()}
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
+                                    </div>
+                                )}
 
                                 {/* Submit */}
                                 <div style={{ display: 'flex', gap: '0.75rem' }}>
