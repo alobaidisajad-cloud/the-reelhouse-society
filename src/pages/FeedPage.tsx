@@ -16,35 +16,37 @@ import PageSEO from '../components/PageSEO'
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
 
 // ── Helper: map raw log rows to feed entries ──
-function mapLogsToFeed(data: any[], usernameMap: Record<string, any>) {
-    const mapped = (data || []).map(l => ({
-        ...l,
-        profiles: usernameMap[l.user_id] || { username: 'anonymous', role: 'cinephile' },
-    })).map(l => ({
-        id: l.id,
-        user: l.profiles?.username || 'anonymous',
-        userRole: l.profiles?.role || 'cinephile',
-        privacyEndorsements: l.profiles?.preferences?.privacy_endorsements || 'everyone',
-        privacyAnnotations: l.profiles?.preferences?.privacy_annotations || 'everyone',
-        film: {
-            id: l.film_id,
-            title: l.film_title,
-            year: l.year,
-            poster: l.poster_path,
-        },
-        rating: l.rating,
-        review: l.review,
-        pullQuote: l.pull_quote || '',
-        dropCap: l.drop_cap || false,
-        autopsy: l.autopsy,
-        isAutopsied: l.is_autopsied || false,
-        endorsementCount: 0,
-        createdAt: l.created_at,
-        watchedDate: l.watched_date,
-        timestamp: l.created_at
-            ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()
-            : 'RECENT'
-    }))
+function mapLogsToFeed(data: any[]) {
+    const mapped = (data || []).map(l => {
+        // Handle single profile or array of profiles depending on Supabase's join behavior
+        const prof = Array.isArray(l.profiles) ? l.profiles[0] : l.profiles;
+        return {
+            id: l.id,
+            user: prof?.username || 'anonymous',
+            userRole: prof?.role || 'cinephile',
+            privacyEndorsements: prof?.preferences?.privacy_endorsements || 'everyone',
+            privacyAnnotations: prof?.preferences?.privacy_annotations || 'everyone',
+            film: {
+                id: l.film_id,
+                title: l.film_title,
+                year: l.year,
+                poster: l.poster_path,
+            },
+            rating: l.rating,
+            review: l.review,
+            pullQuote: l.pull_quote || '',
+            dropCap: l.drop_cap || false,
+            autopsy: l.autopsy,
+            isAutopsied: l.is_autopsied || false,
+            endorsementCount: 0,
+            createdAt: l.created_at,
+            watchedDate: l.watched_date,
+            timestamp: l.created_at
+                ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }).toUpperCase()
+                : 'RECENT'
+        };
+    })
+
     // Deduplicate: one card per user+film
     const seen = new Set()
     return mapped.filter((entry: any) => {
@@ -78,12 +80,19 @@ export default function FeedPage() {
 
         let query = supabase
             .from('logs')
-            .select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, created_at')
+            .select(`
+                id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, created_at,
+                profiles ( id, username, role, preferences )
+            `)
             .order('created_at', { ascending: false })
             .range(pageParam * 20, (pageParam + 1) * 20 - 1)
 
         if (mode === 'following') {
             const followingArr = user?.following || []
+            // Instead of sub-querying profiles first, we can just filter natively by the following array
+            // if we filter on username via the embedded profile. 
+            // BUT Supabase JS restricts filtering embedded arrays easily.
+            // A quick subquery for just the IDs is fine for the "Following" tab:
             const { data: followedProfiles } = await supabase.from('profiles').select('id').in('username', followingArr)
             if (!followedProfiles?.length) return []
             query = query.in('user_id', followedProfiles.map((p: any) => p.id))
@@ -91,15 +100,8 @@ export default function FeedPage() {
 
         const { data, error } = await query
         if (error || !data?.length) return []
-
-        const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
-        let usernameMap: Record<string, any> = {}
-        if (userIds.length > 0) {
-            const { data: profilesData } = await supabase.from('profiles').select('id, username, role, preferences').in('id', userIds)
-            if (profilesData) usernameMap = Object.fromEntries(profilesData.map((p: any) => [p.id, p]))
-        }
         
-        return mapLogsToFeed(data, usernameMap)
+        return mapLogsToFeed(data)
     }
 
     // ── Infinite Queries ──

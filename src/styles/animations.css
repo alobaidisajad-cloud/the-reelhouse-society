@@ -197,6 +197,19 @@
   100% { background-position: -200% 0; }
 }
 
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    rgba(139, 105, 20, 0.03) 0%,
+    rgba(139, 105, 20, 0.08) 50%,
+    rgba(139, 105, 20, 0.03) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 2.5s ease-in-out infinite;
+  border-radius: 2px;
+  border: 1px solid rgba(139, 105, 20, 0.05);
+}
+
 @keyframes shimmer {
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
