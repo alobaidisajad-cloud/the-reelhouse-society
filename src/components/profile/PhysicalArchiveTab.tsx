@@ -92,21 +92,33 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
             toast.error('Select at least one format.')
             return
         }
-        await addToPhysicalArchive(selectedFilm, selectedFormats, notes, condition)
-        toast.success(`"${selectedFilm.title || selectedFilm.name}" added to your archive ✦`)
-        resetForm()
+        try {
+            await addToPhysicalArchive(selectedFilm, selectedFormats, notes, condition)
+            toast.success(`"${selectedFilm.title || selectedFilm.name}" added to your archive ✦`)
+            resetForm()
+        } catch {
+            toast.error('Failed to add to archive')
+        }
     }
 
     const handleUpdate = async (filmId: number) => {
-        await updatePhysicalArchiveItem(filmId, { formats: selectedFormats, notes, condition })
-        toast.success('Archive entry updated ✦')
-        setEditingId(null)
-        resetForm()
+        try {
+            await updatePhysicalArchiveItem(filmId, { formats: selectedFormats, notes, condition })
+            toast.success('Archive entry updated ✦')
+            setEditingId(null)
+            resetForm()
+        } catch {
+            toast.error('Failed to update archive entry')
+        }
     }
 
     const handleRemove = async (filmId: number, title: string) => {
-        await removeFromPhysicalArchive(filmId)
-        toast.success(`"${title}" removed from archive`)
+        try {
+            await removeFromPhysicalArchive(filmId)
+            toast.success(`"${title}" removed from archive`)
+        } catch {
+            toast.error('Failed to remove from archive')
+        }
     }
 
     const resetForm = () => {

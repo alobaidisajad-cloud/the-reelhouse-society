@@ -38,9 +38,12 @@ function FilmHero({ film, onPlayTrailer }: any) {
     const existingLog = logs.find((l: any) => l.filmId === film.id || String(l.filmId) === String(film.id))
     const statusLabel: any = { watched: '✓ WATCHED', rewatched: '↩ REWATCHED', abandoned: '✕ ABANDONED' }
 
-    const toggleWatchlist = () => {
+    const toggleWatchlist = async () => {
         if (isWatchlisted) { removeFromWatchlist(film.id); toast(`Removed from watchlist`) }
-        else { addToWatchlist(film); toast.success(`Added to watchlist!`) }
+        else {
+            try { await addToWatchlist(film); toast.success(`Added to watchlist!`) }
+            catch { toast.error('Failed to add to watchlist') }
+        }
     }
 
     return (

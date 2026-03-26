@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Lock } from 'lucide-react'
+import toast from 'react-hot-toast'
 import { useFilmStore, useProgrammeStore } from '../../store'
 import { tmdb } from '../../tmdb'
 
@@ -20,19 +21,25 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
     })
     const uniqueFilms = Array.from(uniqueFilmsMap.values())
 
-    const handleCreate = () => {
+    const handleCreate = async () => {
         if (!title || !playbill || !film1Id || !film2Id) return
         const f1 = uniqueFilms.find(f => (f.filmId || f.id)?.toString() === film1Id.toString())
         const f2 = uniqueFilms.find(f => (f.filmId || f.id)?.toString() === film2Id.toString())
-        addProgramme({
-            title, description: playbill,
-            films: [
-                { id: f1.filmId || f1.id, title: f1.title || f1.name, poster_path: f1.poster || f1.poster_path },
-                { id: f2.filmId || f2.id, title: f2.title || f2.name, poster_path: f2.poster || f2.poster_path }
-            ],
-        })
-        setIsCreating(false)
-        setTitle(''); setPlaybill(''); setFilm1Id(''); setFilm2Id('')
+        
+        try {
+            await addProgramme({
+                title, description: playbill,
+                films: [
+                    { id: f1.filmId || f1.id, title: f1.title || f1.name, poster_path: f1.poster || f1.poster_path },
+                    { id: f2.filmId || f2.id, title: f2.title || f2.name, poster_path: f2.poster || f2.poster_path }
+                ],
+            })
+            toast.success("Double feature published perfectly.")
+            setIsCreating(false)
+            setTitle(''); setPlaybill(''); setFilm1Id(''); setFilm2Id('')
+        } catch (error: any) {
+            toast.error(error.message || "Failed to curate feature. The archives are stuttering.")
+        }
     }
 
     const isAuteur = logs.length >= 20 || user?.role === 'auteur' || user?.role === 'archivist'
@@ -91,7 +98,14 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
                     {programmes.map((prog: any) => (
                         <div key={prog.id} className="card" style={{ display: 'flex', gap: '2.5rem', padding: '2.5rem', background: 'linear-gradient(135deg, var(--soot) 0%, var(--ink) 100%)', position: 'relative' }}>
                             {isOwnProfile && (
-                                <button className="btn btn-ghost" onClick={() => removeProgramme(prog.id)} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>✕ REMOVE</button>
+                                <button className="btn btn-ghost" onClick={async () => {
+                                    try {
+                                        await removeProgramme(prog.id)
+                                        toast.success("Programme removed.")
+                                    } catch (e: any) {
+                                        toast.error(e.message || "Failed to remove programme.")
+                                    }
+                                }} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>✕ REMOVE</button>
                             )}
                             <div style={{ display: 'flex', width: '220px', flexShrink: 0 }}>
                                 <img src={tmdb.poster(prog.films?.[0]?.poster_path, 'w342')} alt={prog.films?.[0]?.title || 'Film 1'} loading="lazy" decoding="async" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }} />

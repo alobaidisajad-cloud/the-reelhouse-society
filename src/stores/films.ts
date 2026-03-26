@@ -334,12 +334,11 @@ export const useFilmStore = create<FilmState>()(
                     poster_path: film.poster_path || null,
                     year: film.release_date ? new Date(film.release_date).getFullYear() : null,
                 }])
-                if (!error) {
-                    set((state) => ({
-                        watchlist: state.watchlist.find((f) => f.id === film.id) ? state.watchlist
-                            : [...state.watchlist, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }],
-                    }))
-                }
+                if (error) throw error
+                set((state) => ({
+                    watchlist: state.watchlist.find((f) => f.id === film.id) ? state.watchlist
+                        : [...state.watchlist, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }],
+                }))
             },
 
             removeFromWatchlist: async (filmId) => {
@@ -377,12 +376,11 @@ export const useFilmStore = create<FilmState>()(
                     year: film.release_date ? new Date(film.release_date).getFullYear() : null,
                     format,
                 }])
-                if (!error) {
-                    set((state) => ({
-                        vault: state.vault.find((f) => f.id === film.id) ? state.vault
-                            : [...state.vault, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, format }],
-                    }))
-                }
+                if (error) throw error
+                set((state) => ({
+                    vault: state.vault.find((f) => f.id === film.id) ? state.vault
+                        : [...state.vault, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, format }],
+                }))
             },
 
             removeFromVault: async (filmId) => {
@@ -398,7 +396,8 @@ export const useFilmStore = create<FilmState>()(
                 const { data, error } = await supabase.from('lists').insert([{
                     user_id: user.id, title: list.title, description: list.description || '',
                 }]).select().single()
-                if (!error && data) {
+                if (error) throw error
+                if (data) {
                     set((state) => ({ lists: [{ id: data.id, title: list.title || 'Untitled', description: list.description || '', isRanked: false, isPrivate: false, films: [], createdAt: data.created_at }, ...state.lists] }))
                 }
             },
@@ -408,26 +407,24 @@ export const useFilmStore = create<FilmState>()(
                     list_id: listId, film_id: film.id, film_title: film.title || film.name || 'Unknown',
                     poster_path: film.poster_path || null,
                 }])
-                if (!error) {
-                    set((state) => ({
-                        lists: state.lists.map((l) => l.id === listId
-                            ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path }] }
-                            : l
-                        ),
-                    }))
-                }
+                if (error) throw error
+                set((state) => ({
+                    lists: state.lists.map((l) => l.id === listId
+                        ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path }] }
+                        : l
+                    ),
+                }))
             },
 
             removeFilmFromList: async (listId, filmId) => {
                 const { error } = await supabase.from('list_items').delete().eq('list_id', listId).eq('film_id', filmId)
-                if (!error) {
-                    set((state) => ({
-                        lists: state.lists.map((l) => l.id === listId
-                            ? { ...l, films: l.films.filter((f) => f.id !== filmId) }
-                            : l
-                        ),
-                    }))
-                }
+                if (error) throw error
+                set((state) => ({
+                    lists: state.lists.map((l) => l.id === listId
+                        ? { ...l, films: l.films.filter((f) => f.id !== filmId) }
+                        : l
+                    ),
+                }))
             },
 
             // ── PHYSICAL ARCHIVE ──
@@ -471,7 +468,8 @@ export const useFilmStore = create<FilmState>()(
                     notes,
                     condition,
                 }], { onConflict: 'user_id,film_id' }).select().single()
-                if (!error && data) {
+                if (error) throw error
+                if (data) {
                     set((state) => {
                         const exists = state.physicalArchive.find(a => a.filmId === film.id)
                         if (exists) {
@@ -486,6 +484,7 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { error } = await supabase.from('physical_archive').delete().eq('user_id', user.id).eq('film_id', filmId)
+                if (error) throw error
                 if (!error) set((state) => ({ physicalArchive: state.physicalArchive.filter(a => a.filmId !== filmId) }))
             },
 
@@ -497,7 +496,8 @@ export const useFilmStore = create<FilmState>()(
                 if (updates.notes !== undefined) dbUpdates.notes = updates.notes
                 if (updates.condition !== undefined) dbUpdates.condition = updates.condition
                 const { error } = await supabase.from('physical_archive').update(dbUpdates).eq('user_id', user.id).eq('film_id', filmId)
-                if (!error) set((state) => ({ physicalArchive: state.physicalArchive.map(a => a.filmId === filmId ? { ...a, ...updates } : a) }))
+                if (error) throw error
+                set((state) => ({ physicalArchive: state.physicalArchive.map(a => a.filmId === filmId ? { ...a, ...updates } : a) }))
             },
         }),
         {

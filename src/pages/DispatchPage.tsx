@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { tmdb } from '../tmdb'
 import { useAuthStore, useDispatchStore } from '../store'
 import Buster from '../components/Buster'
@@ -201,7 +202,7 @@ export default function DispatchPage() {
         window.scrollTo(0, scrollPos.current)
     }
 
-    const submitEssay = () => {
+    const submitEssay = async () => {
         if (!formValues.title.trim() || !formValues.content.trim()) return
 
         const newEssay = {
@@ -211,9 +212,15 @@ export default function DispatchPage() {
             author: user?.username || "AUTEUR",
             date: "JUST FILED",
         }
-        addDossier(newEssay)
-        setIsWriting(false)
-        setFormValues({ title: '', content: '' })
+        
+        try {
+            await addDossier(newEssay)
+            toast.success('Dossier published to the Global Wire')
+            setIsWriting(false)
+            setFormValues({ title: '', content: '' })
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to publish dossier. Archive connection severed.')
+        }
     }
 
     return (

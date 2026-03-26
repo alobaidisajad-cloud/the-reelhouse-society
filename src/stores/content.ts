@@ -65,7 +65,7 @@ export const useDispatchStore = create<DispatchState>((set) => ({
 
     addDossier: async (dossier) => {
         const user = useAuthStore.getState().user
-        if (!user) return
+        if (!user) throw new Error("Must be logged in to file a dossier")
         const { data, error } = await supabase
             .from('dispatch_dossiers')
             .insert([{
@@ -74,18 +74,19 @@ export const useDispatchStore = create<DispatchState>((set) => ({
                 full_content: dossier.fullContent || '', is_published: true,
             }])
             .select().single()
-        if (!error && data) {
-            set((state) => ({
-                dossiers: [{
-                    id: data.id, title: data.title, excerpt: data.excerpt,
-                    fullContent: data.full_content,
-                    author: data.author_username?.toUpperCase(),
-                    date: new Date(data.created_at).toLocaleDateString('en-US', {
-                        month: 'short', day: '2-digit', year: 'numeric',
-                    }).toUpperCase(),
-                }, ...state.dossiers],
-            }))
-        }
+            
+        if (error || !data) throw error || new Error("Failed to file dossier")
+            
+        set((state) => ({
+            dossiers: [{
+                id: data.id, title: data.title, excerpt: data.excerpt,
+                fullContent: data.full_content,
+                author: data.author_username?.toUpperCase(),
+                date: new Date(data.created_at).toLocaleDateString('en-US', {
+                    month: 'short', day: '2-digit', year: 'numeric',
+                }).toUpperCase(),
+            }, ...state.dossiers],
+        }))
     },
 }))
 
@@ -125,7 +126,7 @@ export const useProgrammeStore = create<ProgrammeState>((set) => ({
 
     addProgramme: async (programme) => {
         const user = useAuthStore.getState().user
-        if (!user) return
+        if (!user) throw new Error("Must be logged in to curate programmes")
         const { data, error } = await supabase
             .from('programmes')
             .insert([{
@@ -135,20 +136,20 @@ export const useProgrammeStore = create<ProgrammeState>((set) => ({
                 is_public: programme.isPublic !== false,
             }])
             .select().single()
-        if (!error && data) {
-            set((state) => ({
-                programmes: [{
-                    id: data.id, title: data.title, description: data.description,
-                    films: data.films, isPublic: data.is_public, createdAt: data.created_at,
-                }, ...state.programmes],
-            }))
-        }
+            
+        if (error || !data) throw error || new Error("Failed to save programme")
+            
+        set((state) => ({
+            programmes: [{
+                id: data.id, title: data.title, description: data.description,
+                films: data.films, isPublic: data.is_public, createdAt: data.created_at,
+            }, ...state.programmes],
+        }))
     },
 
     removeProgramme: async (id) => {
         const { error } = await supabase.from('programmes').delete().eq('id', id)
-        if (!error) {
-            set((state) => ({ programmes: state.programmes.filter((p) => p.id !== id) }))
-        }
+        if (error) throw error
+        set((state) => ({ programmes: state.programmes.filter((p) => p.id !== id) }))
     },
 }))

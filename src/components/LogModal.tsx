@@ -704,10 +704,14 @@ export default function LogModal() {
                                                     <button
                                                         key={list.id}
                                                         type="button"
-                                                        onClick={(e) => {
+                                                        onClick={async (e) => {
                                                             e.preventDefault();
-                                                            if (isActive) removeFilmFromList(list.id, film.id);
-                                                            else addFilmToList(list.id, film);
+                                                            try {
+                                                                if (isActive) await removeFilmFromList(list.id, film.id);
+                                                                else await addFilmToList(list.id, film);
+                                                            } catch {
+                                                                toast.error('Failed to update list');
+                                                            }
                                                         }}
                                                         style={{
                                                             flexShrink: 0,
