@@ -169,6 +169,9 @@ export default function DispatchPage() {
     const [isPublishing, setIsPublishing] = useState(false)
     const [formValues, setFormValues] = useState({ title: '', content: '' })
 
+    const [currentPage, setCurrentPage] = useState(1)
+    const DOSSIERS_PER_PAGE = 6
+
     const scrollPos = useRef(0)
     const canWrite = user?.role === 'auteur'
 
@@ -281,7 +284,7 @@ export default function DispatchPage() {
                     </div>
 
                     <div className="auteur-dossier-list">
-                        {dossiers.map((report: any) => (
+                        {dossiers.slice((currentPage - 1) * DOSSIERS_PER_PAGE, currentPage * DOSSIERS_PER_PAGE).map((report: any) => (
                             <article key={report.id} onClick={() => openArticle(report)} className="dossier-card">
                                 <div className="dossier-meta">
                                     <span className="dm-author">BY {report.author.toUpperCase()}</span>
@@ -293,6 +296,31 @@ export default function DispatchPage() {
                             </article>
                         ))}
                     </div>
+
+                    {/* NEWSPAPER PAGINATION FOOTER */}
+                    {dossiers.length > DOSSIERS_PER_PAGE && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2.5rem', borderTop: '1px solid rgba(139,105,20,0.3)', borderBottom: '1px solid rgba(139,105,20,0.3)', padding: '1rem 0' }}>
+                            <button 
+                               className="btn btn-ghost" 
+                               disabled={currentPage === 1} 
+                               onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 300, behavior: 'smooth' }) }}
+                               style={{ opacity: currentPage === 1 ? 0.3 : 1, fontSize: '0.65rem', color: 'var(--sepia)' }}
+                            >
+                                ← NEWER EDITIONS
+                            </button>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--bone)' }}>
+                                PAGE {currentPage} OF {Math.ceil(dossiers.length / DOSSIERS_PER_PAGE)}
+                            </span>
+                            <button 
+                               className="btn btn-ghost" 
+                               disabled={currentPage === Math.ceil(dossiers.length / DOSSIERS_PER_PAGE)} 
+                               onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 300, behavior: 'smooth' }) }}
+                               style={{ opacity: currentPage === Math.ceil(dossiers.length / DOSSIERS_PER_PAGE) ? 0.3 : 1, fontSize: '0.65rem', color: 'var(--sepia)' }}
+                            >
+                                ARCHIVES →
+                            </button>
+                        </div>
+                    )}
                 </section>
 
                 <div className="ornamental-divider">
