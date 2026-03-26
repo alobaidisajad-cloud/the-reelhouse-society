@@ -38,6 +38,21 @@ function FilmHero({ film, onPlayTrailer }: any) {
     const existingLog = logs.find((l: any) => l.filmId === film.id || String(l.filmId) === String(film.id))
     const statusLabel: any = { watched: '✓ WATCHED', rewatched: '↩ REWATCHED', abandoned: '✕ ABANDONED' }
 
+    // --- Smart Review Count Fallback ---
+    const { data: localCount = 0 } = useQuery({
+        queryKey: ['local-reviews', film?.id],
+        queryFn: async () => {
+            if (!film?.id) return 0
+            const { count } = await supabase.from('logs').select('*', { count: 'exact', head: true }).eq('film_id', film.id)
+            return count || 0
+        },
+        enabled: !!film?.id
+    })
+    
+    const reviewText = localCount > 0 
+        ? `${localCount} SOCIETY REVIEW${localCount === 1 ? '' : 'S'}`
+        : `${Math.round((film?.vote_count || 0) / 100) * 100}+ GLOBAL RATINGS`
+
     const toggleWatchlist = async () => {
         if (isWatchlisted) { removeFromWatchlist(film.id); toast(`Removed from watchlist`) }
         else {
@@ -121,7 +136,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                         <ReelRating value={Math.round((film.vote_average || 0) / 2)} size="lg" />
-                        <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--bone)' }}>{film.vote_average?.toFixed(1)} · {film.vote_count?.toLocaleString()} votes</span>
+                        <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--bone)' }}>{film.vote_average?.toFixed(1)} · {reviewText}</span>
                     </div>
 
                     <ObscurityBadge score={score} />

@@ -1,4 +1,6 @@
 import { memo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '../../supabaseClient'
 import { ReelRating } from '../UI'
 
 // Detect touch/mobile once at module level — never re-evaluated
@@ -8,6 +10,21 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 const MARQUEE_BULBS = Array.from({ length: IS_TOUCH ? 8 : 14 }) // fewer bulb animations on mobile
 
 const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
+    // Smart Fallback Review Count
+    const { data: localCount = 0 } = useQuery({
+        queryKey: ['local-reviews-marquee', film?.id],
+        queryFn: async () => {
+            if (!film?.id) return 0
+            const { count } = await supabase.from('logs').select('*', { count: 'exact', head: true }).eq('film_id', film.id)
+            return count || 0
+        },
+        enabled: !!film?.id
+    })
+
+    const reviewText = localCount > 0 
+        ? `${localCount} SOCIETY REVIEW${localCount === 1 ? '' : 'S'}`
+        : `${Math.round((film?.vote_count || 0) / 100) * 100}+ GLOBAL RATINGS`
+
     if (!film) return (
         <div style={{
             position: 'relative',
@@ -121,7 +138,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                         <ReelRating value={Math.round((film.vote_average || 0) / 2)} size="md" />
                         {!IS_TOUCH && (
                             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', color: 'var(--sepia)', letterSpacing: '0.15em', borderBottom: '1px dotted var(--sepia)', paddingBottom: '0.2em' }}>
-                                {Math.round(film.vote_count / 100) * 100}+ REVIEWS
+                                {reviewText}
                             </span>
                         )}
                     </div>
