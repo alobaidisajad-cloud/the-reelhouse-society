@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Star, BookOpen, EyeOff, Clock, Lock } from 'lucide-react'
+import { Search, X, Star, BookOpen, EyeOff, Clock, Lock, Archive, History, Eye } from 'lucide-react'
 import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { tmdb } from '../tmdb'
 import { ReelRating } from './UI'
@@ -425,8 +425,8 @@ export default function LogModal() {
                                     </label>
                                     <div style={{ display: 'flex', gap: '0.5rem' }}>
                                         {[
-                                            { val: 'watched', label: 'Watched', icon: <Star size={12} /> },
-                                            { val: 'rewatched', label: 'Rewatched', icon: <BookOpen size={12} /> },
+                                            { val: 'watched', label: 'Watched', icon: <Eye size={12} /> },
+                                            { val: 'rewatched', label: 'Rewatched', icon: <History size={12} /> },
                                             { val: 'abandoned', label: 'Abandoned', icon: <X size={12} /> },
                                         ].map(({ val, label, icon }) => (
                                             <button
@@ -604,7 +604,7 @@ export default function LogModal() {
                                 <div>
                                     <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                            <BookOpen size={10} style={{ display: 'inline' }} />
+                                            <Archive size={10} style={{ display: 'inline' }} />
                                             THE PHYSICAL ARCHIVE
                                         </div>
                                         {!isPremium && (

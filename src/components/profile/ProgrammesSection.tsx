@@ -25,10 +25,12 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
         const f1 = uniqueFilms.find(f => (f.filmId || f.id)?.toString() === film1Id.toString())
         const f2 = uniqueFilms.find(f => (f.filmId || f.id)?.toString() === film2Id.toString())
         addProgramme({
-            username: user.username, title, playbill,
-            film1: { id: f1.filmId || f1.id, title: f1.title || f1.name, poster_path: f1.poster || f1.poster_path },
-            film2: { id: f2.filmId || f2.id, title: f2.title || f2.name, poster_path: f2.poster || f2.poster_path },
-        } as any)
+            title, description: playbill,
+            films: [
+                { id: f1.filmId || f1.id, title: f1.title || f1.name, poster_path: f1.poster || f1.poster_path },
+                { id: f2.filmId || f2.id, title: f2.title || f2.name, poster_path: f2.poster || f2.poster_path }
+            ],
+        })
         setIsCreating(false)
         setTitle(''); setPlaybill(''); setFilm1Id(''); setFilm2Id('')
     }
@@ -92,18 +94,18 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
                                 <button className="btn btn-ghost" onClick={() => removeProgramme(prog.id)} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>✕ REMOVE</button>
                             )}
                             <div style={{ display: 'flex', width: '220px', flexShrink: 0 }}>
-                                <img src={tmdb.poster(prog.film1.poster_path, 'w342')} alt={prog.film1.title} loading="lazy" decoding="async" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }} />
-                                <img src={tmdb.poster(prog.film2.poster_path, 'w342')} alt={prog.film2.title} loading="lazy" decoding="async" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', marginLeft: '-20px', marginTop: '30px', zIndex: 1, filter: 'brightness(0.6)', border: '1px solid rgba(255,255,255,0.1)' }} />
+                                <img src={tmdb.poster(prog.films?.[0]?.poster_path, 'w342')} alt={prog.films?.[0]?.title || 'Film 1'} loading="lazy" decoding="async" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', zIndex: 2, border: '1px solid rgba(255,255,255,0.1)' }} />
+                                <img src={tmdb.poster(prog.films?.[1]?.poster_path, 'w342')} alt={prog.films?.[1]?.title || 'Film 2'} loading="lazy" decoding="async" style={{ width: '120px', height: '180px', objectFit: 'cover', borderRadius: '4px', boxShadow: '0 8px 16px rgba(0,0,0,0.6)', marginLeft: '-20px', marginTop: '30px', zIndex: 1, filter: 'brightness(0.6)', border: '1px solid rgba(255,255,255,0.1)' }} />
                             </div>
                             <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>THE NIGHTLY PROGRAMME</div>
                                 <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '2.2rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1rem' }}>{prog.title}</h3>
                                 <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--fog)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ color: 'var(--bone)' }}>{prog.film1.title}</span>
+                                    <span style={{ color: 'var(--bone)' }}>{prog.films?.[0]?.title || 'Unknown Film'}</span>
                                     <span>+</span>
-                                    <span style={{ color: 'var(--bone)' }}>{prog.film2.title}</span>
+                                    <span style={{ color: 'var(--bone)' }}>{prog.films?.[1]?.title || 'Unknown Film'}</span>
                                 </div>
-                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--fog)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{prog.playbill}</p>
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--fog)', lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{prog.description}</p>
                             </div>
                         </div>
                     ))}

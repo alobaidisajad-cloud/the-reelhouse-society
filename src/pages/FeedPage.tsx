@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useAuthStore, useUIStore } from '../store'
 import { SectionHeader } from '../components/UI'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
