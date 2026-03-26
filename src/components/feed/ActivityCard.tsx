@@ -136,20 +136,163 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         }
     }
 
+    // ── EXPANDED FOCUS VIEW (CINEMATIC LAYOUT) ──
+    if (isExpandedView) {
+        return (
+            <div className="fade-in-up" onClick={e => e.stopPropagation()} style={{ padding: '0.5rem 0 3rem 0', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                
+                {/* Focus Header: User Identity & Time */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '1rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', textTransform: 'uppercase' }}>
+                            @{log.user || 'anonymous'}
+                        </Link>
+                        {log.userRole === 'auteur' && <span style={{ color: 'var(--sepia)', fontSize: '0.8rem' }}>✦</span>}
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
+                        {log.timestamp || 'RECENT'}
+                    </div>
+                </div>
+
+                {/* Focus Poster & Watermark Stamp */}
+                <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                    <div style={{ width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+                        {log.film?.poster ? (
+                            <img src={tmdb.poster(log.film.poster, 'w342')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ) : (
+                            <div style={{ width: '100%', height: '100%', background: '#0d0b09', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.8 }} />
+                            </div>
+                        )}
+                        <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none' }} />
+                    </div>
+
+                    {/* Watermark Stamp directly overlapping bottom-right safely (No text overlap) */}
+                    {endorsed && (
+                        <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-20px', right: '50%', transform: 'translateX(90px)', zIndex: 10, pointerEvents: 'none' } as React.CSSProperties}>
+                            <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '140px', opacity: 0.15, mixBlendMode: 'screen', filter: 'none' }}>
+                                <g transform="rotate(-2 150 60)">
+                                    <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
+                                    <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
+                                    <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
+                                    <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
+                                    <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
+                                    <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
+                                    <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
+                                </g>
+                            </svg>
+                        </div>
+                    )}
+                </div>
+
+                {/* Focus Title & Rating */}
+                <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
+                    <div>
+                        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 8vw, 2.75rem)', color: 'var(--parchment)', lineHeight: 1.1, margin: 0, textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                            {log.film?.title}
+                        </h1>
+                        {log.film?.year && (
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.3em', color: 'var(--fog)', marginTop: '0.5rem' }}>
+                                {log.film.year}
+                            </div>
+                        )}
+                    </div>
+                    {log.rating > 0 && <ReelRating value={log.rating} size="lg" />}
+                </div>
+
+                {/* Focus Pull Quote */}
+                {log.pullQuote && (
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.2rem, 5vw, 1.6rem)', color: 'var(--sepia)', fontStyle: 'italic', textAlign: 'center', padding: '0 1.5rem', lineHeight: 1.3 }}>
+                        "{log.pullQuote}"
+                    </div>
+                )}
+
+                {/* Focus Review Body */}
+                {log.review && (
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '1.05rem', color: 'var(--bone)', lineHeight: 1.7, padding: '0 0.5rem' }}>
+                        {log.isSpoiler && !spoilersRevealed ? (
+                            <div 
+                                onClick={(e) => { e.stopPropagation(); setSpoilersRevealed(true); }}
+                                style={{ background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(139,105,20,0.3)', padding: '3rem 1rem', textAlign: 'center', cursor: 'pointer', borderRadius: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', transition: 'background 0.2s' }}
+                            >
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>[ CLASSIFIED DOSSIER ]</span>
+                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', fontStyle: 'italic' }}>This transmission contains spoilers. Tap to decode.</span>
+                            </div>
+                        ) : log.dropCap ? (
+                            <>
+                                <span style={{ float: 'left', fontSize: '4rem', lineHeight: '3.5rem', padding: '0.4rem 0.6rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)' }}>
+                                    {log.review.charAt(0)}
+                                </span>
+                                <span>{log.review.slice(1)}</span>
+                            </>
+                        ) : (
+                            <span>{log.review}</span>
+                        )}
+                    </div>
+                )}
+
+                {log.isAutopsied && log.autopsy && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
+                        <RadarChart autopsy={log.autopsy} size={180} />
+                    </div>
+                )}
+
+                {/* Focus Action Bar */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(139,105,20,0.15)', borderBottom: '1px solid rgba(139,105,20,0.15)', padding: '1.25rem 0.5rem', marginTop: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1.5rem' }}>
+                        <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
+                            {canEndorse ? <Heart size={16} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span>🔒</span>}
+                            {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
+                        </button>
+                        {canAnnotate ? (
+                            <button onClick={handleAnnotateToggle} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer' }}>
+                                <MessageSquare size={16} /> ANNOTATE
+                            </button>
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
+                                <span>🔒</span> RESTRICTED
+                            </div>
+                        )}
+                    </div>
+                    <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
+                        <RefreshCw size={16} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
+                    </button>
+                </div>
+
+                <AnnotationPanel logId={log.id} open={annotateOpen} isExpandedView={true} />
+
+                {log.isAutopsied && log.autopsy && (
+                    <div style={{ padding: '0 0.5rem' }}>
+                        <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', opacity: isExporting ? 0.5 : 1 }}>
+                            <Download size={16} /> {isExporting ? 'ENCODING...' : 'TRANSMIT HYPER-DOSSIER'}
+                        </button>
+                    </div>
+                )}
+                
+                {log.isAutopsied && log.autopsy && <DossierExportHTML ref={dossierRef} log={log} isExporting={isExporting} />}
+                
+                <div style={{ marginTop: '0.5rem' }}>
+                    <ReactionBar logId={log.id} logAuthor={log.user} filmTitle={log.film?.title} />
+                </div>
+            </div>
+        )
+    }
+
+    // ── STANDARD FEED VIEW (INLINE LAYOUT) ──
     return (
         <div
-            className="fade-in-up"
+            className="fade-in-up card"
             onClick={handleCardClick}
             style={{
-                background: isExpandedView ? 'transparent' : 'var(--soot)',
-                border: isExpandedView ? 'none' : '1px solid var(--ash)',
+                background: 'var(--soot)',
+                border: '1px solid var(--ash)',
                 borderRadius: '2px',
-                padding: isExpandedView ? '0.5rem 0' : '1.25rem',
+                padding: '1.25rem',
                 position: 'relative',
                 display: 'flex',
                 gap: '1.25rem',
-                borderLeft: isExpandedView ? 'none' : '3px solid var(--sepia)',
-                cursor: isExpandedView ? 'default' : 'pointer',
+                borderLeft: '3px solid var(--sepia)',
+                cursor: 'pointer',
             }}
         >
             {/* Timestamp */}
@@ -158,38 +301,23 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             </div>
 
             {/* Poster */}
-            <div
-                style={{ width: 80, height: 120, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', background: 'var(--ink)', border: '1px solid var(--ash)', position: 'relative', cursor: 'pointer' }}
-            >
+            <div style={{ width: 80, height: 120, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', background: 'var(--ink)', border: '1px solid var(--ash)', position: 'relative' }}>
                 {log.film?.poster ? (
-                    <img
-                        src={tmdb.poster(log.film.poster, 'w185')}
-                        alt={log.film.title}
-                        loading="lazy"
-                        decoding="async"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9, mixBlendMode: 'luminosity' }}
-                    />
+                    <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9, mixBlendMode: 'luminosity' }} />
                 ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0b09', borderRadius: '2px' }}>
-                        <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '75%', height: 'auto', opacity: 0.9 }} />
-                    </div>
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0b09' }}><img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '75%', opacity: 0.9 }} /></div>
                 )}
                 <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none', zIndex: 10 }} />
                 
-                {/* ── SOCIETY STAMP OVERLAY ── */}
+                {/* ── SOCIETY STAMP OVERLAY (FEED) ── */}
                 {endorsed && (
                     <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-15%', right: '-45%', zIndex: 20 } as React.CSSProperties}>
                         <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '110px' }}>
                             <g transform="rotate(-2 150 60)">
                                 <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
                                 <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
-                                <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>
-                                    REVIEWED
-                                </text>
-                                <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">
-                                    THE SOCIETY
-                                </text>
-                                {/* Grime/Distress marks */}
+                                <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
+                                <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
                                 <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
                                 <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
                                 <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
@@ -205,148 +333,72 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     <Link to={`/user/${log.user}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', flexShrink: 0 }}>
                         @{(log.user || 'anonymous').toUpperCase()}
                     </Link>
-                    <span style={{
-                        fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em',
-                        color: log.userRole === 'auteur' ? 'var(--sepia)' : 'var(--fog)',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: log.userRole === 'auteur' ? 'var(--sepia)' : 'var(--fog)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         — {(log.userRole || 'cinephile').toUpperCase()} {log.userRole === 'auteur' && '✦'}
                     </span>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '0.75rem' }}>
-                    <span
-                        style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', textDecoration: 'none', textShadow: '0 2px 4px rgba(0,0,0,0.5)', cursor: 'pointer' }}
-                    >
+                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)' }}>
                         {log.film?.title}
                     </span>
-                    {log.film?.year && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
-                            {log.film.year}
-                        </span>
-                    )}
+                    {log.film?.year && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{log.film.year}</span>}
                 </div>
 
-                {log.rating > 0 && (
-                    <div style={{ display: 'block', marginBottom: '0.2rem', width: '100%', flexShrink: 0 }}>
-                        <ReelRating value={log.rating} size="sm" />
-                    </div>
-                )}
+                {log.rating > 0 && <div style={{ display: 'block', marginBottom: '0.2rem', width: '100%', flexShrink: 0 }}><ReelRating value={log.rating} size="sm" /></div>}
 
-                {/* Pull Quote */}
-                {log.pullQuote && (
-                    <div style={{
-                        marginTop: '1rem', marginBottom: '1rem', paddingLeft: '1rem', borderLeft: '4px solid var(--sepia)',
-                        fontFamily: 'var(--font-display)', fontSize: 'clamp(0.95rem, 4vw, 1.2rem)', color: 'var(--sepia)', fontStyle: 'italic',
-                        lineHeight: 1.2
-                    }}>
-                        "{log.pullQuote}"
-                    </div>
-                )}
+                {log.pullQuote && <div style={{ marginTop: '1rem', marginBottom: '1rem', paddingLeft: '1rem', borderLeft: '4px solid var(--sepia)', fontFamily: 'var(--font-display)', fontSize: 'clamp(0.95rem, 4vw, 1.2rem)', color: 'var(--sepia)', fontStyle: 'italic', lineHeight: 1.2 }}>"{log.pullQuote}"</div>}
 
-                {/* Review text */}
                 {log.review && (
-                    <div style={{
-                        fontFamily: 'var(--font-body)', fontSize: '0.82rem',
-                        color: 'var(--bone)', marginTop: '0.75rem', lineHeight: 1.6,
-                    }}>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--bone)', marginTop: '0.75rem', lineHeight: 1.6 }}>
                         {log.isSpoiler && !spoilersRevealed ? (
-                            <div 
-                                onClick={(e) => { e.stopPropagation(); setSpoilersRevealed(true); }}
-                                style={{ 
-                                    background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(139,105,20,0.2)',
-                                    padding: '1.5rem 1rem', textAlign: 'center', cursor: 'pointer',
-                                    borderRadius: '2px', display: 'flex', flexDirection: 'column', 
-                                    alignItems: 'center', gap: '0.4rem', transition: 'background 0.2s'
-                                }}
-                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(0,0,0,0.7)'}
-                                onMouseLeave={e => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
-                            >
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>
-                                    [ CLASSIFIED DOSSIER ]
-                                </span>
-                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic' }}>
-                                    This transmission contains spoilers. Tap to decode.
-                                </span>
+                            <div onClick={(e) => { e.stopPropagation(); setSpoilersRevealed(true); }} style={{ background: 'rgba(0,0,0,0.5)', border: '1px dashed rgba(139,105,20,0.2)', padding: '1.5rem 1rem', textAlign: 'center', cursor: 'pointer', borderRadius: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>[ CLASSIFIED DOSSIER ]</span>
+                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic' }}>This transmission contains spoilers. Tap to decode.</span>
                             </div>
                         ) : log.dropCap ? (
-                            <>
-                                <span style={{
-                                    float: 'left', fontSize: 'clamp(2.2rem, 8vw, 3rem)', lineHeight: 'clamp(1.8rem, 6vw, 2.5rem)',
-                                    padding: '0.2rem 0.5rem 0 0', fontFamily: 'var(--font-display)',
-                                    color: 'var(--sepia)'
-                                }}>
-                                    {log.review.charAt(0)}
-                                </span>
-                                <span>{isExpanded ? log.review.slice(1) : (log.review.length > 300 ? log.review.slice(1, 300) + '… Read more' : log.review.slice(1))}</span>
-                            </>
+                            <><span style={{ float: 'left', fontSize: 'clamp(2.2rem, 8vw, 3rem)', lineHeight: 'clamp(1.8rem, 6vw, 2.5rem)', padding: '0.2rem 0.5rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)' }}>{log.review.charAt(0)}</span><span>{isExpanded ? log.review.slice(1) : (log.review.length > 300 ? log.review.slice(1, 300) + '… Read more' : log.review.slice(1))}</span></>
                         ) : (
                             <span>{isExpanded ? log.review : (log.review.length > 300 ? log.review.slice(0, 300) + '… Read more' : log.review)}</span>
                         )}
                     </div>
                 )}
 
-                {log.isAutopsied && log.autopsy && (
-                    <RadarChart autopsy={log.autopsy} size={140} />
-                )}
+                {log.isAutopsied && log.autopsy && <RadarChart autopsy={log.autopsy} size={140} />}
 
-            {/* Social Interaction Bar */}
-            <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: isExpandedView ? '1.5rem' : '1rem', width: '100%', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap', flexShrink: 0, position: 'relative' }}>
-                <div style={{ position: 'relative' }}>
-                    <button onClick={handleEndorse} aria-label={endorsed ? 'Remove endorsement' : 'Endorse this log'} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed', transition: 'color 0.2s' }} onMouseEnter={e => { if (canEndorse) e.currentTarget.style.color = 'var(--parchment)' }} onMouseLeave={e => { if (canEndorse) e.currentTarget.style.color = endorsed ? 'var(--sepia)' : 'var(--fog)' }}>
-                        {canEndorse ? (
-                            <Heart size={isExpandedView ? 16 : 12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} />
-                        ) : (
-                            <span style={{ fontSize: isExpandedView ? '12px' : '10px' }}>🔒</span>
-                        )}
-                        {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
-                    </button>
-                </div>
-                {canAnnotate ? (
-                    <button
-                        onClick={handleAnnotateToggle}
-                        aria-label="Annotate this log"
-                        style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer', transition: 'color 0.2s' }}
-                        onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
-                        onMouseLeave={e => e.currentTarget.style.color = annotateOpen ? 'var(--parchment)' : 'var(--fog)'}
-                    >
-                        <MessageSquare size={isExpandedView ? 16 : 12} /> ANNOTATE
-                    </button>
-                ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
-                        <span style={{ fontSize: isExpandedView ? '12px' : '10px' }}>🔒</span> RESTRICTED
+                {/* Feed Action Bar */}
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '1.25rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.2)', flexWrap: 'wrap', flexShrink: 0 }}>
+                    <div style={{ position: 'relative' }}>
+                        <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
+                            {canEndorse ? <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span style={{ fontSize: '10px' }}>🔒</span>}
+                            {endorsed ? 'ENDORSED' : canEndorse ? 'ENDORSE' : 'RESTRICTED'} ({endorsementCount})
+                        </button>
                     </div>
-                )}
-                <button
-                    onClick={handleRetransmit}
-                    aria-label="Retransmit this log"
-                    style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', transition: 'color 0.2s', marginLeft: 'auto' }}
-                    onMouseEnter={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--sepia)' }}
-                    onMouseLeave={e => { if (!retransmitted) e.currentTarget.style.color = 'var(--fog)' }}
-                >
-                    <RefreshCw size={isExpandedView ? 16 : 12} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
-                </button>
-                {log.isAutopsied && log.autopsy && (
-                    <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: isExpandedView ? '0.75rem' : '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', transition: 'color 0.2s', opacity: isExporting ? 0.5 : 1 }} onMouseEnter={e => e.currentTarget.style.color = 'var(--flicker)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--sepia)'}>
-                        <Download size={isExpandedView ? 16 : 12} /> {isExporting ? 'ENCODING...' : 'TRANSMIT DOSSIER'}
+                    {canAnnotate ? (
+                        <button onClick={handleAnnotateToggle} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer' }}>
+                            <MessageSquare size={12} /> ANNOTATE
+                        </button>
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
+                            <span style={{ fontSize: '10px' }}>🔒</span> RESTRICTED
+                        </div>
+                    )}
+                    <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', marginLeft: 'auto' }}>
+                        <RefreshCw size={12} /> {retransmitted ? 'RETRANSMITTED ✦' : 'RE-TRANSMIT'}
                     </button>
-                )}
+                    {log.isAutopsied && log.autopsy && (
+                        <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', opacity: isExporting ? 0.5 : 1 }}>
+                            <Download size={12} /> {isExporting ? 'ENCODING...' : 'TRANSMIT DOSSIER'}
+                        </button>
+                    )}
                 </div>
 
-            {/* ── ANNOTATION PANEL ── */}
-            <AnnotationPanel logId={log.id} open={annotateOpen} isExpandedView={!!isExpandedView} />
-
-                {log.isAutopsied && log.autopsy && (
-                    <DossierExportHTML ref={dossierRef} log={log} isExporting={isExporting} />
-                )}
-
-                {/* Emoji Reactions */}
+                <AnnotationPanel logId={log.id} open={annotateOpen} />
+                
+                {log.isAutopsied && log.autopsy && <DossierExportHTML ref={dossierRef} log={log} isExporting={isExporting} />}
+                
                 <div style={{ marginTop: '0.75rem' }}>
-                    <ReactionBar
-                        logId={log.id}
-                        logAuthor={log.user}
-                        filmTitle={log.film?.title}
-                    />
+                    <ReactionBar logId={log.id} logAuthor={log.user} filmTitle={log.film?.title} />
                 </div>
             </div>
         </div>
