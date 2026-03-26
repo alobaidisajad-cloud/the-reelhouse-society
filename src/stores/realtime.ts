@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
+import { queryClient } from '../main'
 import { useAuthStore, hydrateFollowing } from './auth'
 import { useFilmStore } from './films'
 import { useNotificationStore } from './social'
@@ -114,25 +115,9 @@ export const initRealtime = () => {
             // Own logs are already handled via addLog() — skip entirely
             if (payload.new.user_id === currentUserId) return
 
-            const feedLogs = useFilmStore.getState().globalFeedLogs || []
-            // Deduplicate by ID
-            if (feedLogs.some(l => l.id === payload.new.id)) return
-
-            useFilmStore.setState({
-                globalFeedLogs: [{
-                    id: payload.new.id,
-                    userId: payload.new.user_id,
-                    filmId: payload.new.film_id,
-                    title: payload.new.film_title,
-                    poster: payload.new.poster_path,
-                    year: payload.new.year,
-                    rating: payload.new.rating,
-                    review: payload.new.review,
-                    status: payload.new.status || 'watched',
-                    watchedDate: payload.new.watched_date,
-                    createdAt: payload.new.created_at,
-                }, ...feedLogs].slice(0, 100), // Cap at 100 to prevent memory bloat
-            })
+            // 🛡️ MAPPED REALTIME: Invalidate the TanStack feed cache organically
+            // The UI will silently background-fetch the delta without layout shift
+            queryClient.invalidateQueries({ queryKey: ['feed'] })
         })
         .subscribe()
     }

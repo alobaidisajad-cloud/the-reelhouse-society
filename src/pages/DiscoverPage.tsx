@@ -238,13 +238,13 @@ export default function DiscoverPage() {
         return () => clearTimeout(id)
     }, [inputVal])
 
-    const { data: searchResults, isLoading: searchLoading, isFetching: searchFetching } = useQuery<any>({
+    const { data: searchResults, isLoading: searchLoading, isFetching: searchFetching } = useQuery({
         queryKey: ['search', query, page],
         queryFn: () => tmdb.search(query, page),
         enabled: !!query,
     })
 
-    const { data: discoverResults, isLoading: discoverLoading, isFetching: discoverFetching } = useQuery<any>({
+    const { data: discoverResults, isLoading: discoverLoading, isFetching: discoverFetching } = useQuery({
         queryKey: ['discover', filters, mood?.label, page],
         queryFn: () => {
             const params: any = {

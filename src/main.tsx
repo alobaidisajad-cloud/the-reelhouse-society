@@ -22,12 +22,13 @@ if (import.meta.env.PROD) {
 }
 
 
-const queryClient = new QueryClient({
+export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 30 * 60 * 1000, // 30 min — film data doesn't change frequently
       gcTime: 60 * 60 * 1000,    // 1 hour cache lifetime
       retry: 2,                   // retry failed requests twice before showing error
+      refetchOnWindowFocus: false, // 🛡️ Protect explicit quotas from tab cycling
     },
     mutations: {
       onError: () => {

@@ -27,7 +27,6 @@ export interface FilmState {
     lists: FilmList[]
     stubs: TicketStub[]
     interactions: Interaction[]
-    globalFeedLogs: FilmLog[]
     physicalArchive: PhysicalArchiveItem[]
 
     toggleEndorse: (targetId: string) => Promise<void>
@@ -66,7 +65,6 @@ export const useFilmStore = create<FilmState>()(
             lists: [],
             stubs: [],           // Supabase-backed digital tickets — fetched on login
             interactions: [],    // { type: 'endorse', targetId, timestamp }
-            globalFeedLogs: [],  // Realtime feed from other users — NEVER mixed with personal logs
             physicalArchive: [], // Physical media collection — 4K, Blu-ray, DVD, VHS, etc.
 
             toggleEndorse: async (targetId) => {
