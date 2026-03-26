@@ -34,7 +34,7 @@
 @media (max-width: 600px) {
   .wb-content { flex-direction: column; align-items: flex-start; padding: 0.75rem 1.25rem; gap: 0.6rem; }
 }
-.wb-logo { font-family: var(--font-display); font-size: 1.2rem; color: var(--parchment); letter-spacing: 0.1em; }
+.wb-logo { font-family: var(--font-display); font-size: var(--text-lg); color: var(--parchment); letter-spacing: 0.1em; }
 .btn-write-transmission {
   background: var(--parchment); color: var(--ink); border: none;
   display: flex; align-items: center; gap: 0.6rem;
@@ -59,19 +59,19 @@
 @media (max-width: 768px) {
   .dispatch-document { margin: 2rem 1rem 0; padding: 2rem 1.25rem; }
   .dispatch-masthead { margin-bottom: 2.5rem; }
-  .masthead-title { font-size: clamp(2rem, 8vw, 3rem) !important; margin-bottom: 1rem; }
-  .masthead-subtitle { font-size: 0.7rem; }
-  .masthead-meta { font-size: 0.6rem; letter-spacing: 0.2em; gap: 0.75rem; margin-bottom: 1.5rem; }
+  .masthead-title { font-size: var(--text-h1) !important; margin-bottom: 1rem; }
+  .masthead-subtitle { font-size: var(--text-sm); }
+  .masthead-meta { font-size: var(--text-micro); letter-spacing: 0.2em; gap: 0.75rem; margin-bottom: 1.5rem; }
   .section-header-block { margin-bottom: 2rem; }
-  .sh-title { font-size: 1.8rem; }
-  .sh-sub { font-size: 0.7rem; }
+  .sh-title { font-size: var(--text-h2); }
+  .sh-sub { font-size: var(--text-sm); }
   .dossier-card { padding: 1.5rem; }
-  .dossier-title { font-size: 1.5rem; }
-  .dossier-excerpt { font-size: 1rem; margin-bottom: 1.25rem; }
-  .dossier-meta { font-size: 0.55rem; letter-spacing: 0.15em; margin-bottom: 1rem; }
+  .dossier-title { font-size: var(--text-h3); }
+  .dossier-excerpt { font-size: var(--text-base); margin-bottom: 1.25rem; }
+  .dossier-meta { font-size: var(--text-micro); letter-spacing: 0.15em; margin-bottom: 1rem; }
   .ornamental-divider { margin: 2.5rem 0; }
-  .wire-title { font-size: 1.2rem; }
-  .wire-excerpt { font-size: 0.95rem; }
+  .wire-title { font-size: var(--text-lg); }
+  .wire-excerpt { font-size: var(--text-base); }
   .dispatch-buster-note { margin-top: 3rem; padding: 2rem 0; }
 }
 
@@ -83,10 +83,10 @@
 }
 .pulse-dot { width: 4px; height: 4px; background: var(--blood-reel); border-radius: 50%; opacity: 0.8; }
 .masthead-title {
-  font-family: var(--font-display); font-size: clamp(3.5rem, 8vw, 6rem);
+  font-family: var(--font-display); font-size: var(--text-jumbo);
   color: var(--parchment); line-height: 0.85; margin-bottom: 1.5rem;
 }
-.masthead-subtitle { font-family: var(--font-ui); font-size: 0.85rem; color: var(--sepia); opacity: 0.7; letter-spacing: 0.2em; text-transform: uppercase; }
+.masthead-subtitle { font-family: var(--font-ui); font-size: var(--text-base); color: var(--sepia); opacity: 0.7; letter-spacing: 0.2em; text-transform: uppercase; }
 
 /* ORNAMENTAL DIVIDER */
 .ornamental-divider { display: flex; align-items: center; gap: 1rem; margin: 4rem 0; opacity: 0.3; }
@@ -95,8 +95,8 @@
 
 /* SECTION HEADERS */
 .section-header-block { text-align: center; margin-bottom: 3.5rem; }
-.sh-title { font-family: var(--font-display); font-size: 2.8rem; color: var(--parchment); margin-bottom: 0.5rem; }
-.sh-sub { font-family: var(--font-ui); font-size: 0.8rem; letter-spacing: 0.1em; color: var(--sepia); opacity: 0.7; }
+.sh-title { font-family: var(--font-display); font-size: var(--text-h1); color: var(--parchment); margin-bottom: 0.5rem; }
+.sh-sub { font-family: var(--font-ui); font-size: var(--text-base); letter-spacing: 0.1em; color: var(--sepia); opacity: 0.7; }
 
 /* AUTEUR DOSSIERS */
 .auteur-dossier-list { display: flex; flex-direction: column; gap: 3rem; }
@@ -108,9 +108,9 @@
 .dossier-card:hover { background: rgba(255,255,255,0.03); transform: translateX(5px); }
 .dossier-card:hover::before { transform: scaleY(1); }
 
-.dossier-meta { display: flex; justify-content: space-between; font-family: var(--font-ui); font-size: 0.65rem; color: var(--sepia); letter-spacing: 0.2rem; margin-bottom: 1.5rem; }
-.dossier-title { font-family: var(--font-display); font-size: 2.2rem; color: var(--parchment); line-height: 1.1; margin-bottom: 1rem; }
-.dossier-excerpt { font-size: 1.15rem; line-height: 1.6; color: var(--bone); opacity: 0.7; margin-bottom: 2rem; }
+.dossier-meta { display: flex; justify-content: space-between; font-family: var(--font-ui); font-size: var(--text-sm); color: var(--sepia); letter-spacing: 0.2rem; margin-bottom: 1.5rem; }
+.dossier-title { font-family: var(--font-display); font-size: var(--text-h2); color: var(--parchment); line-height: 1.1; margin-bottom: 1rem; }
+.dossier-excerpt { font-size: var(--text-lg); line-height: 1.6; color: var(--bone); opacity: 0.7; margin-bottom: 2rem; }
 .dossier-readmore { display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-ui); font-size: 0.75rem; font-weight: bold; color: var(--parchment); letter-spacing: 0.1em; transition: color 0.2s; }
 .dossier-card:hover .dossier-readmore { color: var(--sepia); }
 
@@ -120,8 +120,8 @@
 .wire-item:last-child { border-bottom: none; }
 .wire-item:hover { opacity: 0.6; }
 .wire-bullet { width: 5px; height: 5px; background: var(--sepia); border-radius: 50%; margin-top: 0.6rem; opacity: 0.5; flex-shrink: 0; }
-.wire-title { font-family: var(--font-display); font-size: 1.6rem; color: var(--parchment); margin-bottom: 0.5rem; }
-.wire-excerpt { font-size: 1.05rem; line-height: 1.5; color: var(--bone); opacity: 0.6; }
+.wire-title { font-family: var(--font-display); font-size: var(--text-h3); color: var(--parchment); margin-bottom: 0.5rem; }
+.wire-excerpt { font-size: var(--text-base); line-height: 1.5; color: var(--bone); opacity: 0.6; }
 .wire-loader { text-align: center; color: var(--sepia); font-family: var(--font-ui); font-size: 0.8rem; letter-spacing: 0.2em; opacity: 0.5; padding: 3rem 0; }
 
 /* BUSTER FOOTNOTE */
@@ -161,8 +161,8 @@
 
 .reader-watermark { font-family: var(--font-ui); font-size: 0.6rem; color: var(--sepia); letter-spacing: 0.4em; opacity: 0.4; margin-bottom: 4rem; text-align: center; }
 .reader-head { text-align: center; margin-bottom: 4rem; }
-.reader-title { font-family: var(--font-display); font-size: clamp(2.5rem, 6vw, 4.5rem); color: var(--parchment); line-height: 0.9; margin-bottom: 2rem; }
-.reader-byline { font-family: var(--font-ui); font-size: 0.75rem; color: var(--bone); letter-spacing: 0.2em; opacity: 0.6; }
+.reader-title { font-family: var(--font-display); font-size: var(--text-h1); color: var(--parchment); line-height: 0.9; margin-bottom: 2rem; }
+.reader-byline { font-family: var(--font-ui); font-size: var(--text-sm); color: var(--bone); letter-spacing: 0.2em; opacity: 0.6; }
 .highlight-author { color: var(--sepia); font-weight: bold; }
 
 .reader-body { font-size: 1.3rem; line-height: 1.8; color: var(--bone); white-space: pre-wrap; margin-bottom: 5rem; }
@@ -188,7 +188,7 @@
 .btn-close-wp:hover { opacity: 1; }
 
 .wp-canvas { padding: 3rem 2rem; flex: 1; display: flex; flex-direction: column; overflow-y: auto; }
-.wp-input-title { background: none; border: none; font-family: var(--font-display); font-size: 2.5rem; color: var(--parchment); outline: none; line-height: 1.2; }
+.wp-input-title { background: none; border: none; font-family: var(--font-display); font-size: var(--text-h2); color: var(--parchment); outline: none; line-height: 1.2; }
 .wp-input-title::placeholder { color: rgba(255,255,255,0.15); }
 .wp-divider { height: 1px; background: rgba(139,105,20,0.3); margin: 2rem 0; width: 60px; }
 .wp-input-body { flex: 1; background: none; border: none; font-family: var(--font-body); font-size: 1.2rem; line-height: 1.7; color: var(--bone); outline: none; resize: none; min-height: 300px; }

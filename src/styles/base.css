@@ -24,6 +24,20 @@
   --font-ui: 'Bungee', sans-serif;
   --font-display-alt: 'Bungee Shade', sans-serif;
 
+  /* ── FLUID TYPOGRAPHY ENGINE (The Print Grid) ── */
+  --text-micro: clamp(0.45rem, 0.8vw + 0.2rem, 0.55rem);
+  --text-sm: clamp(0.6rem, 1vw + 0.25rem, 0.75rem);
+  --text-base: clamp(0.95rem, 1.5vw + 0.5rem, 1.1rem);
+  --text-lg: clamp(1.15rem, 2vw + 0.5rem, 1.4rem);
+  --text-h3: clamp(1.5rem, 3vw + 0.5rem, 2rem);
+  --text-h2: clamp(2rem, 4vw + 1rem, 3rem);
+  --text-h1: clamp(2.8rem, 6vw + 1rem, 4.5rem);
+  --text-jumbo: clamp(4rem, 8vw + 1rem, 7rem);
+
+  /* ── GOLDEN READING METRICS ── */
+  --read-width: 65ch;
+  --read-height: 1.65;
+
   --grain-opacity: 0.04;
   --vignette-strength: rgba(0, 0, 0, 0.5);
   --section-gap: 4rem;
@@ -109,14 +123,16 @@ body {
   position: relative;
   overflow-x: hidden;
   overscroll-behavior-y: none;
-  line-height: 1.65;
-  font-size: 1.05rem;
+  line-height: var(--read-height);
+  font-size: var(--text-base);
 }
 
 /* ── IMPROVED LEGIBILITY RULES ── */
 p,
 .review-manuscript {
-  max-width: 70ch;
+  max-width: var(--read-width);
+  margin-left: auto;
+  margin-right: auto;
 }
 
 /* ── TRUE 35MM FILM GRAIN ── */

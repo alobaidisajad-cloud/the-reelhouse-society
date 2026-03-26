@@ -712,16 +712,16 @@
    ============================================================ */
 
 /* ── Typography Scale ── */
-.ui-micro   { font-family: var(--font-ui); font-size: 0.5rem;  letter-spacing: 0.15em; }
-.ui-label   { font-family: var(--font-ui); font-size: 0.55rem; letter-spacing: 0.12em; }
-.ui-meta    { font-family: var(--font-ui); font-size: 0.6rem;  letter-spacing: 0.15em; }
-.ui-callout { font-family: var(--font-ui); font-size: 0.65rem; letter-spacing: 0.2em; }
-.ui-heading { font-family: var(--font-ui); font-size: 0.7rem;  letter-spacing: 0.15em; }
+.ui-micro   { font-family: var(--font-ui); font-size: calc(var(--text-micro) * 0.9);  letter-spacing: 0.15em; }
+.ui-label   { font-family: var(--font-ui); font-size: var(--text-micro); letter-spacing: 0.12em; }
+.ui-meta    { font-family: var(--font-ui); font-size: calc(var(--text-micro) * 1.1);  letter-spacing: 0.15em; }
+.ui-callout { font-family: var(--font-ui); font-size: var(--text-sm); letter-spacing: 0.2em; }
+.ui-heading { font-family: var(--font-ui); font-size: calc(var(--text-sm) * 1.1);  letter-spacing: 0.15em; }
 
 /* ── Section Titles (sepia label above content blocks) ── */
-.section-title       { font-family: var(--font-ui); font-size: 0.6rem; letter-spacing: 0.2em; color: var(--sepia); margin-bottom: 1rem; }
-.section-title-sm    { font-family: var(--font-ui); font-size: 0.52rem; letter-spacing: 0.18em; color: var(--sepia); margin-bottom: 0.4rem; }
-.section-title-lg    { font-family: var(--font-ui); font-size: 0.65rem; letter-spacing: 0.4em; color: var(--sepia); margin-bottom: 1rem; }
+.section-title       { font-family: var(--font-ui); font-size: var(--text-sm); letter-spacing: 0.2em; color: var(--sepia); margin-bottom: 1rem; }
+.section-title-sm    { font-family: var(--font-ui); font-size: var(--text-micro); letter-spacing: 0.18em; color: var(--sepia); margin-bottom: 0.4rem; }
+.section-title-lg    { font-family: var(--font-ui); font-size: calc(var(--text-sm) * 1.1); letter-spacing: 0.4em; color: var(--sepia); margin-bottom: 1rem; }
 
 /* ── Empty State Panels ── */
 .empty-state {

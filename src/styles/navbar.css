@@ -45,7 +45,7 @@
 
 .nav-logo-text {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: var(--text-base);
   color: var(--parchment);
   letter-spacing: 0.04em;
   white-space: nowrap;
@@ -186,7 +186,7 @@
 
 .mobile-nav-link {
   font-family: var(--font-display);
-  font-size: 1.6rem;
+  font-size: var(--text-h3);
   color: var(--parchment);
   text-decoration: none;
   line-height: 1.2;

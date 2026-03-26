@@ -8,7 +8,7 @@
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 clamp(1.5rem, 5vw, 4rem);
 }
 
 .page-top { padding-top: 80px; }
@@ -94,10 +94,10 @@
 .font-sub { font-family: var(--font-sub); }
 .font-body { font-family: var(--font-body); }
 .font-ui { font-family: var(--font-ui); }
-.text-label { font-family: var(--font-ui); font-size: 0.5rem; letter-spacing: 0.15em; color: var(--sepia); }
-.text-label-sm { font-family: var(--font-ui); font-size: 0.45rem; letter-spacing: 0.1em; }
-.text-sub { font-family: var(--font-sub); color: var(--parchment); }
-.text-body { font-family: var(--font-body); color: var(--bone); line-height: 1.75; }
+.text-label { font-family: var(--font-ui); font-size: var(--text-micro); letter-spacing: 0.15em; color: var(--sepia); }
+.text-label-sm { font-family: var(--font-ui); font-size: calc(var(--text-micro) * 0.9); letter-spacing: 0.1em; }
+.text-sub { font-family: var(--font-sub); color: var(--parchment); font-size: var(--text-sm); }
+.text-body { font-family: var(--font-body); color: var(--bone); line-height: var(--read-height); font-size: var(--text-base); }
 
 /* ── MISC ── */
 .w-full { width: 100%; }
