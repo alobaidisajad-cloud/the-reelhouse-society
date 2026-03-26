@@ -284,7 +284,7 @@ export default function MembershipPage() {
 
                             {[
                                 'Video Upload Studio\n(Up to 10 Min / 1080p)', 
-                                'Audience Tips &\nDirect Earnings', 
+                                'Audience Support &\nDirect Earnings', 
                                 'Creator Analytics\nDashboard', 
                                 'Priority Homepage\nPlacement', 
                                 'Exclusive "Projectionist"\nProfile Badge',

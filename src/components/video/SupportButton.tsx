@@ -5,7 +5,7 @@ import { useAuthStore, useUIStore } from '../../store'
 import toast from 'react-hot-toast'
 import { supabase } from '../../supabaseClient'
 
-interface TipButtonProps {
+interface SupportButtonProps {
     videoId: string
     creatorUserId: string
     creatorUsername: string
@@ -17,7 +17,7 @@ const PRESETS = [
     { amount: 5, label: '$5' },
 ]
 
-export default function TipButton({ videoId, creatorUserId, creatorUsername }: TipButtonProps) {
+export default function SupportButton({ videoId, creatorUserId, creatorUsername }: SupportButtonProps) {
     const { user, isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
     const [open, setOpen] = useState(false)
@@ -28,9 +28,9 @@ export default function TipButton({ videoId, creatorUserId, creatorUsername }: T
 
     const isOwnVideo = user?.id === creatorUserId
 
-    const handleTip = async () => {
+    const handleSupport = async () => {
         if (!isAuthenticated) { openSignupModal(); return }
-        if (isOwnVideo) { toast.error("You can't tip your own video."); return }
+        if (isOwnVideo) { toast.error("You can't support your own video."); return }
         
         const amount = customAmount ? parseFloat(customAmount) : selectedAmount
         if (!amount || amount <= 0 || amount > 100) {
@@ -103,7 +103,7 @@ export default function TipButton({ videoId, creatorUserId, creatorUsername }: T
                                 SUPPORT THE ARCHIVIST
                             </div>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '1.5rem' }}>
-                                Tip @{creatorUsername}
+                                Support @{creatorUsername}
                             </div>
 
                             {/* Preset amounts */}
@@ -151,7 +151,7 @@ export default function TipButton({ videoId, creatorUserId, creatorUsername }: T
 
                             <button
                                 className="btn btn-primary"
-                                onClick={handleTip}
+                                onClick={handleSupport}
                                 disabled={sending}
                                 style={{ width: '100%', justifyContent: 'center', padding: '0.9rem', fontSize: '0.75rem', letterSpacing: '0.2em', opacity: sending ? 0.6 : 1 }}
                             >
@@ -159,7 +159,7 @@ export default function TipButton({ videoId, creatorUserId, creatorUsername }: T
                             </button>
 
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)', textAlign: 'center', marginTop: '0.75rem', opacity: 0.6 }}>
-                                TIPS ARE NON-REFUNDABLE · 85% GOES TO THE CREATOR
+                                SUPPORT PLEDGES ARE NON-REFUNDABLE · 85% GOES TO THE CREATOR
                             </div>
                         </motion.div>
                     </div>

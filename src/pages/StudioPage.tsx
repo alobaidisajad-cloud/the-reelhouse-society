@@ -160,16 +160,16 @@ export default function StudioPage() {
                         <div style={{ background: 'var(--ink)', border: '1px solid var(--ash)', borderRadius: '2px', padding: '2rem', marginBottom: '2rem', textAlign: 'center' }}>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>TOTAL EARNINGS</div>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--flicker)' }}>${myEarnings.total.toFixed(2)}</div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--sepia)', letterSpacing: '0.1em', marginTop: '0.5rem' }}>CREATORS KEEP 100% OF TIPS · ZERO PLATFORM FEES</div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--sepia)', letterSpacing: '0.1em', marginTop: '0.5rem' }}>CREATORS KEEP 100% OF SUPPORT REVENUES · ZERO PLATFORM FEES</div>
                         </div>
 
                         {/* Tip History */}
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem' }}>
-                            TIP HISTORY ({myEarnings.tips.length})
+                            SUPPORT HISTORY ({myEarnings.tips.length})
                         </div>
                         {myEarnings.tips.length === 0 ? (
                             <div style={{ textAlign: 'center', padding: '3rem', border: '1px dashed var(--ash)', borderRadius: '2px', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em' }}>
-                                NO TIPS RECEIVED YET. KEEP CREATING.
+                                NO SUPPORT PLEDGES RECEIVED YET. KEEP CREATING.
                             </div>
                         ) : (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -177,7 +177,7 @@ export default function StudioPage() {
                                     <div key={tip.id} style={{ background: 'var(--ink)', border: '1px solid var(--ash)', borderLeft: '2px solid var(--flicker)', padding: '1rem', borderRadius: '2px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div>
                                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--parchment)' }}>
-                                                @{tip.from_username || 'anonymous'} tipped <span style={{ color: 'var(--flicker)' }}>${tip.amount.toFixed(2)}</span>
+                                                @{tip.from_username || 'anonymous'} supported you with <span style={{ color: 'var(--flicker)' }}>${tip.amount.toFixed(2)}</span>
                                             </div>
                                             {tip.message && (
                                                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.25rem' }}>

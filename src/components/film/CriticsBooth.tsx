@@ -4,7 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, DollarSign, Play, X } from 'lucide-react'
 import { useVideoStore } from '../../stores/video'
 import VideoPlayer from '../video/VideoPlayer'
-import TipButton from '../video/TipButton'
+import VideoUploadModal from '../video/VideoUploadModal'
+import SupportButton from '../video/SupportButton'
+import { supabase } from '../../supabaseClient'
 
 interface CriticsBoothProps {
     filmId: number
@@ -121,11 +123,11 @@ export default function CriticsBooth({ filmId }: CriticsBoothProps) {
 
                             <VideoPlayer src={activeVideo.video_url} title={activeVideo.title} />
 
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
-                                <TipButton videoId={activeVideo.id} creatorUserId={activeVideo.user_id} creatorUsername={activeVideo.username} />
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
-                                    Reviewing: <span style={{ color: 'var(--sepia)' }}>{activeVideo.film_title}</span>
-                                </div>
+                            <div style={{ marginTop: 'auto', paddingTop: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'flex-start' }}>
+                                <SupportButton videoId={activeVideo.id} creatorUserId={activeVideo.user_id} creatorUsername={activeVideo.username} />
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
+                                Reviewing: <span style={{ color: 'var(--sepia)' }}>{activeVideo.film_title}</span>
                             </div>
                         </motion.div>
                     </div>
