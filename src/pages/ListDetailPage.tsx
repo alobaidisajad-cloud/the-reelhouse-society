@@ -145,7 +145,7 @@ export default function ListDetailPage() {
                     ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.5rem' }}>
                             {films.map((f: any, i: number) => (
-                                <Link key={i} to={`/film/${f.id}`} style={{ textDecoration: 'none', display: 'block' }} className="fade-in-up">
+                                <Link key={f.id ?? i} to={`/film/${f.id}`} style={{ textDecoration: 'none', display: 'block' }} className="fade-in-up">
                                     <div style={{ position: 'relative' }}>
                                         <div style={{ position: 'absolute', top: -10, left: -10, width: 30, height: 30, background: 'var(--sepia)', color: 'var(--ink)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', fontWeight: 'bold', zIndex: 10, boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
                                             {i + 1}

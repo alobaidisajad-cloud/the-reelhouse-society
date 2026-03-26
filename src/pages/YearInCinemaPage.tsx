@@ -251,7 +251,7 @@ export default function YearInCinemaPage() {
 
                 <div className="yic-months">
                     {monthlyData.map((count, i) => (
-                        <div key={i} className="yic-month-bar">
+                        <div key={MONTHS[i]} className="yic-month-bar">
                             <div className="yic-month-count">{count || ''}</div>
                             <div className="yic-month-fill" style={{ height: `${(count / maxMonth) * 100}%` }} />
                             <div className="yic-month-label">{MONTHS[i]}</div>

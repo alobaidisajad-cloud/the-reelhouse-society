@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
@@ -37,6 +37,7 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 
 // ── MAIN PAGE ──
 export default function UserProfilePage() {
+    const navigate = useNavigate()
     const { username: routeUsername } = useParams()
     const queryClient = useQueryClient()
     const { user: currentUser, isAuthenticated, updateUser } = useAuthStore()
@@ -554,7 +555,7 @@ export default function UserProfilePage() {
                             <button className="btn btn-primary" style={{ padding: IS_TOUCH ? '0.75rem 1.5rem' : '1rem 2rem', fontSize: IS_TOUCH ? '0.65rem' : '0.75rem', boxShadow: `0 0 20px ${stats.color}30`, width: IS_TOUCH ? '100%' : undefined, justifyContent: IS_TOUCH ? 'center' : undefined }} onClick={() => openLogModal()}>+ RECORD NEW LOG</button>
                             {isOwnProfile && (
                                 <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button className="btn btn-ghost" style={{ flex: 1, padding: '0.6rem', fontSize: '0.6rem' }} onClick={() => { window.location.href = '/settings' }}><Settings size={12} style={{ marginRight: '0.4rem' }} /> SETTINGS</button>
+                                    <button className="btn btn-ghost" style={{ flex: 1, padding: '0.6rem', fontSize: '0.6rem' }} onClick={() => navigate('/settings')}><Settings size={12} style={{ marginRight: '0.4rem' }} /> SETTINGS</button>
                                     <button
                                         className="btn btn-ghost"
                                         onClick={() => { useAuthStore.getState().logout(); }}
