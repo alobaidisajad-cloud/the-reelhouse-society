@@ -55,12 +55,15 @@
 .nav-logo-buster {
   display: flex;
   align-items: center;
+  visibility: hidden;
   opacity: 0;
-  transition: opacity 0.3s, transform 0.3s;
+  transform: translateY(2px);
+  transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
   pointer-events: none;
 }
 
 .nav-logo:hover .nav-logo-buster {
+  visibility: visible;
   opacity: 1;
   transform: translateY(-4px);
 }

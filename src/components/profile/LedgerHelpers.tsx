@@ -69,18 +69,54 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onShare }: any) {
     )
 })
 
-// ── LAZY LOG ROW (Intersection Observer virtualization) ──
+// ── LAZY LOG ROW (Intersection Observer virtualization with Perfect Height Cache) ──
 export function LazyLogRow({ log, onShare }: any) {
-    const ref = useRef(null)
+    const ref = useRef<HTMLDivElement>(null)
     const [visible, setVisible] = useState(false)
+    const [cachedHeight, setCachedHeight] = useState<number>(88)
+
     useEffect(() => {
         const el = ref.current
         if (!el) return
-        const observer = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } }, { rootMargin: '200px' })
+        const observer = new IntersectionObserver(([entry]) => { 
+            if (entry.isIntersecting) { 
+                setVisible(true)
+            } else {
+                // If it leaves viewport, capture exact height before unmounting
+                if (el.offsetHeight > 50) setCachedHeight(el.offsetHeight)
+                // Comment out setVisible(false) if we don't want aggressive unmounting,
+                // but for total DOM vaporization, we unmount and use the exact cached height placeholder.
+                // We keep a massive root margin so it doesn't flicker while scrolling.
+                setVisible(false)
+            }
+        }, { rootMargin: '600px 0px' })
         observer.observe(el)
+
         return () => observer.disconnect()
     }, [])
-    return <div ref={ref} style={{ minHeight: visible ? 'auto' : 88 }}>{visible && <FilmLogRow log={log} onShare={onShare} />}</div>
+
+    useEffect(() => {
+        const el = ref.current
+        if (!el || !visible) return
+        
+        // When visible, let the ResizeObserver track the true height dynamically
+        // in case images load or the autopsy chart adjusts
+        const ro = new ResizeObserver((entries) => {
+            for (let entry of entries) {
+                if (entry.target === el && el.offsetHeight > 50) {
+                    setCachedHeight(el.offsetHeight)
+                }
+            }
+        })
+        ro.observe(el)
+        return () => ro.disconnect()
+    }, [visible])
+
+    return (
+        <div ref={ref} style={{ height: visible ? 'auto' : cachedHeight, overflow: 'hidden' }}>
+            {visible ? <FilmLogRow log={log} onShare={onShare} /> : <div style={{ height: cachedHeight }} />}
+        </div>
+    )
 }
 
 // ── VAULT SECTION ──

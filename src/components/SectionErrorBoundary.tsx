@@ -9,7 +9,7 @@ import Buster from './Buster'
 class SectionErrorBoundary extends React.Component<any, any> {
     constructor(props: any) {
         super(props)
-        this.state = { hasError: false }
+        this.state = { hasError: false, retryCount: 0 }
     }
 
     static getDerivedStateFromError() {
@@ -18,12 +18,23 @@ class SectionErrorBoundary extends React.Component<any, any> {
 
     componentDidCatch(error: any, errorInfo: any) {
         console.error('Section Error:', error)
+        this.setState((prev: any) => ({ retryCount: prev.retryCount + 1 }))
         import('../errorLogger').then(m => m.logError({
             type: 'section_boundary',
             message: error?.message,
             stack: error?.stack?.slice(0, 1000),
             component: errorInfo?.componentStack?.slice(0, 500),
         })).catch(() => {})
+    }
+
+    handleRetry = () => {
+        if (this.state.retryCount >= 2) {
+            // Hard panic: unrecoverable render loop detected, flush app memory
+            window.location.reload()
+        } else {
+            // Soft try
+            this.setState({ hasError: false })
+        }
     }
 
     render() {
@@ -38,11 +49,11 @@ class SectionErrorBoundary extends React.Component<any, any> {
                         A frame has slipped — this section couldn't render.
                     </div>
                     <button
-                        className="btn btn-ghost"
-                        style={{ fontSize: '0.6rem' }}
-                        onClick={() => this.setState({ hasError: false })}
+                        className={this.state.retryCount >= 2 ? "btn btn-primary" : "btn btn-ghost"}
+                        style={{ fontSize: '0.6rem', marginTop: '0.5rem' }}
+                        onClick={this.handleRetry}
                     >
-                        Try Again
+                        {this.state.retryCount >= 2 ? 'HARD RESET' : 'TRY AGAIN'}
                     </button>
                 </div>
             )

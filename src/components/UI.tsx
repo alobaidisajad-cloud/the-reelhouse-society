@@ -416,27 +416,20 @@ export function RadarChart({ autopsy }: RadarChartProps) {
                             </span>
                         </div>
 
-                        {/* Physical Brass/Metal Notch Track */}
-                        <div style={{ display: 'flex', gap: '4px', width: '100%', height: '8px' }}>
-                            {Array.from({ length: 10 }).map((_, idx) => {
-                                const active = item.value >= idx + 1;
-                                const partial = !active && item.value > idx;
-
-                                return (
-                                    <div key={idx} style={{
-                                        flex: 1,
-                                        borderRadius: '1px',
-                                        background: active ? 'linear-gradient(to bottom, var(--sepia), #5a430d)' : partial ? 'var(--ash)' : 'var(--soot)',
-                                        boxShadow: active
-                                            ? '0 1px 3px rgba(0,0,0,0.8), inset 0 1px 0 rgba(255,255,255,0.1)'
-                                            : 'inset 0 2px 4px rgba(0,0,0,0.9)',
-                                        border: active || partial ? '1px solid rgba(232, 223, 200, 0.1)' : '1px solid rgba(10, 7, 3, 0.8)',
-                                        opacity: active ? 1 : partial ? 0.8 : 0.4,
-                                        // No willChange here — promoting 60 elements to compositor layers kills GPU memory
-                                        // No transform scale — box-shadow + transform together = full repaint on each frame
-                                    }} />
-                                )
-                            })}
+                        {/* Vaporized DOM Track — Ultra-Lightweight CSS Gradient Projection */}
+                        <div style={{ width: '100%', height: '8px', position: 'relative', background: 'var(--soot)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.9)', border: '1px solid rgba(10, 7, 3, 0.8)', borderRadius: '1px', overflow: 'hidden' }}>
+                            <div style={{
+                                position: 'absolute', left: 0, top: 0, bottom: 0,
+                                width: `${(item.value / 10) * 100}%`,
+                                background: 'linear-gradient(to bottom, var(--sepia), #5a430d)',
+                                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.1)',
+                            }} />
+                            {/* Mathematical vertical dividers simulate physical segmentation */}
+                            <div style={{
+                                position: 'absolute', inset: 0,
+                                background: 'repeating-linear-gradient(to right, transparent 0%, transparent calc(10% - 4px), #0A0703 calc(10% - 4px), #0A0703 10%)',
+                                pointerEvents: 'none'
+                            }} />
                         </div>
                     </div>
                 ))}
