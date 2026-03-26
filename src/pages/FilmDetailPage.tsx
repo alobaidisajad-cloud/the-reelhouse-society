@@ -62,7 +62,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
     }
 
     return (
-        <div style={{ position: 'relative', minHeight: IS_TOUCH ? 'auto' : '70vh', display: 'flex', alignItems: 'flex-end', paddingBottom: IS_TOUCH ? '1.5rem' : '3rem' }}>
+        <div style={{ position: 'relative', minHeight: IS_TOUCH ? 'auto' : '70vh', display: 'flex', alignItems: 'flex-end', paddingBottom: IS_TOUCH ? '1.5rem' : '3rem', flexShrink: 0 }}>
             {/* Backdrop */}
             {film.backdrop_path && (
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.5) brightness(0.25) contrast(1.15)', zIndex: 0 }} />
@@ -425,7 +425,7 @@ export default function FilmDetailPage() {
     )
 
     return (
-        <div className="page-top" style={{ position: 'relative' }}>
+        <div className="page-top" style={{ height: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative', background: 'var(--ink)' }}>
             {/* ── THE AMBIENT ZERO-JS COLOR GLOW ── */}
             {film?.poster_path && (
                 <div style={{
@@ -438,12 +438,12 @@ export default function FilmDetailPage() {
                 }} />
             )}
             
-            <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
                 <FilmHero film={film} onPlayTrailer={handlePlayVideo} />
                 {/* Single TrailerModal rendered at root — above all stacking contexts */}
                 {activeVideo && <TrailerModal trailerKey={activeVideo} onClose={() => setActiveVideo(null)} />}
-            <main style={{ background: 'transparent', paddingBottom: '5rem' }}>
-                <div className="container" style={{ paddingTop: '3rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+            <main id="film-details-scroller" style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: '3rem', background: 'transparent' }}>
+                <div className="container" style={{ paddingTop: '2rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     <button onClick={() => {
                         navigate(-1)
                     }} className="back-btn">
