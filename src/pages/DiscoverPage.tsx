@@ -117,7 +117,7 @@ function FilterPanel({ filters, onChange, onClear, isSearching, style }: any) {
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '0.5rem' }}>
                 <div>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>SORT BY</div>
-                    <select value={sortBy} onChange={e => onChange({ sortBy: e.target.value })} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.08em', background: 'var(--soot)', border: '1px solid var(--ash)', color: 'var(--parchment)', padding: '0.5rem 0.75rem', borderRadius: '2px', cursor: 'pointer', appearance: 'none', minWidth: 140 }}>
+                    <select value={sortBy} onChange={e => onChange({ sortBy: e.target.value })} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.08em', background: 'var(--soot)', border: '1px solid var(--ash)', color: 'var(--parchment)', padding: '0.5rem 0.75rem', borderRadius: '2px', cursor: 'pointer', appearance: 'none', WebkitAppearance: 'none', MozAppearance: 'none', minWidth: 140 }}>
                         {SORT_OPTIONS.map((o: any) => <option key={o.value} value={o.value}>{o.label}</option>)}
                     </select>
                 </div>

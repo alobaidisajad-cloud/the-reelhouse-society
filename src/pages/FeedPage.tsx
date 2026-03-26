@@ -128,6 +128,25 @@ export default function FeedPage() {
         getNextPageParam: (lastPage, pages) => lastPage.length === 20 ? pages.length : undefined
     })
 
+    const { data: societyPicks = [] } = useQuery({
+        queryKey: ['society_picks_live'],
+        queryFn: async () => {
+            if (!isSupabaseConfigured) return []
+            const { data, error } = await supabase
+                .from('logs')
+                .select('film_id, film_title, year, rating, review')
+                .gte('rating', 4)
+                .not('review', 'is', null)
+                .order('created_at', { ascending: false })
+                .limit(3)
+            if (error) return []
+            // Deduplicate by film_id
+            const unique = new Map()
+            data.forEach((l: any) => { if (!unique.has(l.film_id)) unique.set(l.film_id, l) })
+            return Array.from(unique.values()).slice(0, 3)
+        }
+    })
+
     const observer = useRef<IntersectionObserver | null>(null)
     const lastFeedElementRef = useCallback((node: any) => {
         if (feedTab === 'for-you' ? isFetchingNextCommunity : isFetchingNextFollowing) return
@@ -388,31 +407,35 @@ export default function FeedPage() {
                                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                                 </div>
 
-                                {/* Society Picks — hand-curated placeholder cards */}
+                                {/* Society Picks — Dynamic Live Top Logs */}
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.3em', color: 'var(--ash)', textAlign: 'center', opacity: 0.5 }}>
                                     ✦ SOCIETY PICKS — TONIGHT'S RECOMMENDED VIEWING ✦
                                 </div>
-                                {[
-                                    { title: 'Nosferatu', year: '1922', note: 'The shadow that never left.', poster: null },
-                                    { title: 'In the Mood for Love', year: '2000', note: 'Wong Kar-wai at his most devastating.', poster: null },
-                                    { title: 'Stalker', year: '1979', note: 'A film that watches back.', poster: null },
-                                ].map((pick) => (
-                                    <div key={pick.title} style={{
-                                        background: 'var(--soot)', border: '1px solid var(--ash)',
-                                        borderLeft: '3px solid var(--ash)', borderRadius: '2px',
-                                        padding: '1.25rem', display: 'flex', gap: '1.25rem',
-                                        opacity: 0.45,
-                                    }}>
-                                        <div style={{ width: 56, height: 84, background: 'var(--ink)', border: '1px solid var(--ash)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px' }}>
-                                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--sepia)' }}>✦</span>
+                                {societyPicks.length > 0 ? societyPicks.map((pick: any) => (
+                                    <Link key={pick.film_id} to={`/film/${pick.film_id}`} style={{ textDecoration: 'none' }}>
+                                        <div style={{
+                                            background: 'var(--soot)', border: '1px solid var(--ash)',
+                                            borderLeft: '3px solid var(--ash)', borderRadius: '2px',
+                                            padding: '1.25rem', display: 'flex', gap: '1.25rem',
+                                            opacity: 0.8, transition: 'border-color 0.2s, opacity 0.2s',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.opacity = '1' }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.opacity = '0.8' }}>
+                                            <div style={{ width: 56, height: 84, background: 'var(--ink)', border: '1px solid var(--ash)', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '2px' }}>
+                                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--sepia)' }}>✦</span>
+                                            </div>
+                                            <div style={{ flex: 1 }}>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginBottom: '0.25rem' }}>COMMUNITY HIGHLIGHT · {pick.year || 'N/A'}</div>
+                                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>{pick.film_title}</div>
+                                                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', fontStyle: 'italic', opacity: 0.7, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>"{pick.review}"</div>
+                                            </div>
                                         </div>
-                                        <div style={{ flex: 1 }}>
-                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginBottom: '0.25rem' }}>SOCIETY PICK · {pick.year}</div>
-                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>{pick.title}</div>
-                                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', fontStyle: 'italic', opacity: 0.7 }}>"{pick.note}"</div>
-                                        </div>
+                                    </Link>
+                                )) : (
+                                    <div style={{ padding: '1rem', textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--ash)' }}>
+                                        AWAITING TRANSMISSIONS...
                                     </div>
-                                ))}
+                                )}
                             </div>
 
                         ) : (
