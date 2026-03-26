@@ -135,8 +135,15 @@ export const useVenueStore = create<VenueStoreState>()(
 
             bookSeat: async (stId, slotId, seatId) => {
                 set((s) => ({ showtimes: s.showtimes.map((st) => st.id === stId ? { ...st, slots: st.slots.map((sl) => sl.id === slotId ? { ...sl, bookedSeats: [...(sl.bookedSeats || []), seatId] } : sl) } : st) }))
-                const showtime = get().showtimes.find((s) => s.id === stId)
-                if (showtime) await supabase.from('showtimes').update({ slots: showtime.slots }).eq('id', stId)
+                const { error } = await supabase.rpc('book_showtime_seat', { 
+                    p_showtime_id: stId, 
+                    p_slot_id: slotId, 
+                    p_seat_id: seatId 
+                })
+                if (error) {
+                    console.error('Seat booking failed:', error)
+                    throw error
+                }
             },
 
             addEvent: (ev) => set((s) => ({ events: [{ ...ev, id: 'ev-' + Date.now(), ticketsLeft: ev.totalTickets }, ...s.events] })),

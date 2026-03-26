@@ -126,35 +126,33 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
         set(s => ({ myVideos: s.myVideos.filter(v => v.id !== videoId) }))
     },
 
-    sendTip: async ({ fromUserId, fromUsername, toUserId, videoId, amount, message }) => {
+    sendTip: async ({ toUserId, videoId, amount, message }) => {
         try {
-            // Insert tip
-            const { error } = await supabase.from('tips').insert({
-                from_user_id: fromUserId,
-                from_username: fromUsername,
-                to_user_id: toUserId,
-                video_id: videoId,
-                amount,
-                message: message || null,
+            const { error } = await supabase.rpc('process_secure_tip', {
+                p_to_user_id: toUserId,
+                p_video_id: videoId,
+                p_amount: amount,
+                p_message: message || null
             })
             if (error) throw error
 
-            // Update tip_total on the video
-            const { data: video } = await supabase
-                .from('video_reviews')
-                .select('tip_total')
-                .eq('id', videoId)
-                .single()
-            if (video) {
-                await supabase
-                    .from('video_reviews')
-                    .update({ tip_total: (video.tip_total || 0) + amount })
-                    .eq('id', videoId)
-            }
-
+            // Update local state (the trigger handles DB side)
+            set(state => {
+                const nextVideosByFilm = { ...state.videosByFilm }
+                for (const fId in nextVideosByFilm) {
+                    nextVideosByFilm[fId] = nextVideosByFilm[fId].map(v => 
+                        v.id === videoId ? { ...v, tip_total: (v.tip_total || 0) + amount } : v
+                    )
+                }
+                return {
+                    videosByFilm: nextVideosByFilm,
+                    myVideos: state.myVideos.map(v => v.id === videoId ? { ...v, tip_total: (v.tip_total || 0) + amount } : v)
+                }
+            })
             return true
-        } catch {
-            return false
+        } catch (error) {
+            console.error('Failed to send tip:', error)
+            throw error // Re-throw to allow calling component to handle
         }
     },
 
