@@ -147,10 +147,10 @@ export default function Navbar() {
                             <Search size={18} />
                         </button>
 
-                        {/* People Search Button — hidden on mobile to save navbar space */}
+                        {/* People Search Button */}
                         {isAuthenticated && (
                             <button
-                                className="nav-icon-btn nav-people-search-btn hide-mobile"
+                                className="nav-icon-btn nav-people-search-btn"
                                 onClick={() => { setPeopleSearchOpen((v) => !v); setSearchOpen(false) }}
                                 title="Search members"
                                 aria-label="Search members"
@@ -165,7 +165,7 @@ export default function Navbar() {
                         {isAuthenticated ? (
                             <>
                                 <button
-                                    className="btn btn-primary nav-log-btn"
+                                    className="btn btn-primary nav-log-btn hide-mobile"
                                     onClick={() => openLogModal()}
                                 >
                                     + <span className="hide-mobile">LOG FILM</span>

@@ -43,3 +43,4 @@ dist-ssr
 .env.staging
 
 .vercel
+.env*.local

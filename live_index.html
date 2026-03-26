@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64-micro.png" />
+  <link rel="apple-touch-icon" href="/icon-192.png" />
+  <link rel="manifest" href="/manifest.json" />
+  <!-- Critical: prevents mobile zoom, enables proper scaling -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description"
+    content="The ReelHouse Society — Track, discover, and live cinema. Log movies, write reviews, discover screenings, and connect with a community of film lovers." />
+  <meta name="theme-color" content="#0E0B08" />
+  <!-- Mobile web app -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="The ReelHouse Society" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <!-- Tells iOS/Android not to detect phone numbers as links -->
+  <meta name="format-detection" content="telephone=no" />
+
+  <!-- Open Graph (Facebook, Discord, iMessage, etc.) -->
+  <meta property="og:title" content="The ReelHouse Society — Track, Discover, and Live Cinema" />
+  <meta property="og:description" content="Log films. Write critiques. Discover screenings. Join the society." />
+  <meta property="og:image" content="https://thereelhousesociety.com/icon-512.png" />
+  <meta property="og:url" content="https://thereelhousesociety.com" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="The ReelHouse Society" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="The ReelHouse Society" />
+  <meta name="twitter:description" content="Log films. Write critiques. Discover screenings. Join the society." />
+  <meta name="twitter:image" content="https://thereelhousesociety.com/icon-512.png" />
+
+  <title>The ReelHouse Society — Track, Discover, and Live Cinema</title>
+
+  <!-- Font preconnect for faster DNS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- TMDB Image CDN preconnect — establishes DNS+TLS before any React code loads -->
+  <!-- Cuts ~150-300ms from the first film poster appearing on every single page -->
+  <link rel="preconnect" href="https://image.tmdb.org" crossorigin />
+  <!-- font-display=swap: text shows in fallback font immediately, swaps when loaded.
+       Prevents invisible text (FOIT) — critical for mobile perceived performance -->
+  <!-- Preload critical font CSS as async (non-render-blocking) for faster LCP -->
+  <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"
+    href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bungee&family=Bungee+Shade&display=swap" />
+  <noscript>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bungee&family=Bungee+Shade&display=swap"
+      rel="stylesheet" />
+  </noscript>
+  <!-- DNS prefetch for Supabase -->
+  <link rel="dns-prefetch" href="https://wihyqkpoymwcvbprslyz.supabase.co" />
+
+  <!-- Critical inline CSS: prevents flash of unstyled background on mobile -->
+  <style>
+    html,
+    body {
+      background: #0E0B08;
+      margin: 0;
+      padding: 0;
+    }
+
+    #root {
+      min-height: 100dvh;
+    }
+  </style>
+  <script type="module" crossorigin src="/assets/index-COI8aKyY.js"></script>
+  <link rel="modulepreload" crossorigin href="/assets/vendor-react-Cs0fg74W.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-data-BY6RKN1V.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-supabase-CpRTRdvQ.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-motion-Blc3XTCk.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-icons-DhLHabH6.js">
+  <link rel="modulepreload" crossorigin href="/assets/vendor-sentry-lUC25bJE.js">
+  <link rel="stylesheet" crossorigin href="/assets/index-BrmvPQK3.css">
+<link rel="manifest" href="/manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="/registerSW.js"></script></head>
+
+<body>
+  <div id="root"></div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch((error) => {
+          console.error('ServiceWorker registration failed: ', error);
+        });
+      });
+    }
+  </script>
+</body>
+
+</html>
