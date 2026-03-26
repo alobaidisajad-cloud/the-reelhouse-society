@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Welcome to The ReelHouse Society</title>
+  <style>
+    body {
+      background-color: #0A0703;
+      color: #E8DFC8;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrapper {
+      width: 100%;
+      background-color: #0A0703;
+      padding: 40px 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #1C1710;
+      border: 1px solid #3A3228;
+      border-top: 3px solid #8B6914;
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+    }
+    .header {
+      padding: 40px 40px 20px;
+      text-align: center;
+    }
+    .header-logo {
+      font-size: 24px;
+      letter-spacing: 4px;
+      color: #F2E8A0;
+      font-weight: 800;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    .content {
+      padding: 0 40px 40px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #E8DFC8;
+      margin-bottom: 24px;
+      line-height: 1.6;
+    }
+    .body-text {
+      font-size: 15px;
+      color: #bfa88b;
+      line-height: 1.8;
+      margin-bottom: 30px;
+    }
+    .cta-container {
+      text-align: center;
+      margin: 40px 0;
+    }
+    .btn {
+      display: inline-block;
+      background-color: #8B6914;
+      color: #0A0703 !important;
+      text-decoration: none;
+      font-weight: bold;
+      letter-spacing: 2px;
+      padding: 16px 32px;
+      border-radius: 2px;
+      font-size: 14px;
+      text-transform: uppercase;
+      border: 1px solid #F2E8A0;
+    }
+    .footer {
+      background-color: #0A0703;
+      padding: 30px 40px;
+      text-align: center;
+      border-top: 1px solid #3A3228;
+    }
+    .footer-text {
+      color: #6a5a4b;
+      font-size: 12px;
+      letter-spacing: 1px;
+      margin: 0 0 10px 0;
+    }
+    /* Fallback for email clients that don't support custom fonts well */
+    .golden-text { color: #8B6914; }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <h1 class="header-logo">The ReelHouse</h1>
+      </div>
+      
+      <div class="content">
+        <h2 class="greeting">Your credentials have been accepted.</h2>
+        
+        <p class="body-text">
+          Welcome to The Society. You are now authorized to permanently log, rate, and critique the films you consume. 
+          Your ledger is empty, and the archives await your first transmission.
+        </p>
+        
+        <p class="body-text">
+          Click the link below to verify your terminal connection and step into the projection booth.
+        </p>
+        
+        <div class="cta-container">
+          <a href="{{ .ConfirmationURL }}" class="btn">Verify Access</a>
+        </div>
+        
+        <p class="body-text" style="font-size: 12px; font-style: italic; opacity: 0.8;">
+          If you did not request admission, please ignore this transmission.
+        </p>
+      </div>
+      
+      <div class="footer">
+        <p class="footer-text">TRANSMITTED BY THE REELHOUSE SOCIETY</p>
+        <p class="footer-text" style="opacity: 0.5;">DO NOT LEAK ARCHIVAL DATA</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

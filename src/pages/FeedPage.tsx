@@ -201,6 +201,7 @@ export default function FeedPage() {
 
     return (
         <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
+            <PageSEO title="The Feed" description="Community dispatches and global curation from The ReelHouse Society." />
             {/* ── REFINED HEADER ── */}
             <div style={{
                 background: 'var(--ink)',
