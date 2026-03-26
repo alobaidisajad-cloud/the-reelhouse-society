@@ -140,12 +140,7 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
                                                                 target_user_id: member.id,
                                                                 type: 'follow'
                                                             })
-                                                            void supabase.from('notifications').insert({
-                                                                user_id: member.id,
-                                                                type: 'follow',
-                                                                from_username: user.username,
-                                                                message: `@${user.username} is now following you.`,
-                                                            })
+                                                            // DB Trigger dynamically creates notification
                                                         }
                                                     } catch { toast.error('Something went wrong.') }
                                                     finally { setFollowingLoading(prev => ({ ...prev, [member.username]: false })) }

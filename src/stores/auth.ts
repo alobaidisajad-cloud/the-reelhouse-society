@@ -206,10 +206,6 @@ export const useAuthStore = create<AuthState>()(
                         const [{ error: followErr }] = await Promise.all([
                             supabase.from('interactions').insert([{
                                 user_id: userId, target_user_id: targetProfile.id, type: 'follow'
-                            }]),
-                            supabase.from('notifications').insert([{
-                                user_id: targetProfile.id, type: 'follow',
-                                from_username: fromUsername, message: `${fromUsername} followed you`,
                             }])
                         ])
                         if (followErr && !followErr.message?.includes('duplicate')) throw followErr

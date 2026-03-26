@@ -106,12 +106,7 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: st
                         .single()
 
                     if (authorProfile) {
-                        await (supabase.from('notifications').insert([{
-                            user_id: authorProfile.id,
-                            type: 'reaction',
-                            from_username: username,
-                            message: `${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
-                        }]) as any).catch(() => { })  // Graceful if table doesn't exist yet
+                        // DB Trigger generates the remote notification automatically now.
                     }
 
                     // Also push locally for immediate feedback

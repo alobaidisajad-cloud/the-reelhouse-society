@@ -298,13 +298,7 @@ export default function UserProfilePage() {
                     target_user_id: pUser.id,
                     type: 'follow'
                 })
-                // Send notification
-                void supabase.from('notifications').insert({
-                    user_id: pUser.id,
-                    type: 'follow',
-                    from_username: currentUser.username,
-                    message: `@${currentUser.username} is now following you.`,
-                })
+                // DB Trigger automatically dispatches the follow notification globally.
             }
         } catch (err) {
             console.error('Follow error:', err)
