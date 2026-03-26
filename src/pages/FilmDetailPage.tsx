@@ -367,7 +367,7 @@ export default function FilmDetailPage() {
     )
 
     if (isLoading) return (
-        <div style={{ minHeight: '100vh', background: 'var(--ink)' }}>
+        <div style={{ minHeight: '100dvh', background: 'var(--ink)' }}>
             {/* Hero skeleton */}
             <div style={{ height: '70vh', position: 'relative', overflow: 'hidden' }}>
                 <div className="shimmer" style={{ position: 'absolute', inset: 0, opacity: 0.3 }} />

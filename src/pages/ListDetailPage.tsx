@@ -52,7 +52,7 @@ export default function ListDetailPage() {
     })
 
     if (!localList && isLoading) return (
-        <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
+        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             <div style={{ maxWidth: 1000, margin: '0 auto', padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
                 <div className="shimmer" style={{ height: '0.6rem', width: 100, borderRadius: '2px' }} />
                 <div>
@@ -80,7 +80,7 @@ export default function ListDetailPage() {
 
     if (!list) {
         return (
-            <div style={{ paddingTop: 100, textAlign: 'center', minHeight: '100vh', background: 'var(--ink)' }}>
+            <div style={{ paddingTop: 100, textAlign: 'center', minHeight: '100dvh', background: 'var(--ink)' }}>
                 <h1 style={{ fontFamily: 'var(--font-display)', color: 'var(--sepia)' }}>Archive Missing</h1>
                 <p style={{ color: 'var(--fog)', marginTop: '1rem', fontFamily: 'var(--font-ui)' }}>This collection cannot be located in the vault.</p>
                 <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ marginTop: '2rem' }}>GO BACK</button>
@@ -96,7 +96,7 @@ export default function ListDetailPage() {
     const displayDate = createdAt ? new Date(createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }) : 'ARCHIVE REEL'
 
     return (
-        <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
+        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             <div style={{ maxWidth: 1000, margin: '0 auto', padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
 
                 <button onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', marginLeft: '-0.5rem', alignSelf: 'flex-start', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>

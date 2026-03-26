@@ -372,7 +372,7 @@ export default function VenueDashboard() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--ink)', paddingTop: 70 }}>
+        <div style={{ minHeight: '100dvh', background: 'var(--ink)', paddingTop: 70 }}>
             {/* Header */}
             <div style={{ background: 'var(--soot)', borderBottom: '1px solid var(--ash)', padding: '2rem 0 0' }}>
                 <div className="container">

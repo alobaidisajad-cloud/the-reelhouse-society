@@ -41,7 +41,7 @@ export default function StudioPage() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', paddingTop: 80 }}>
+        <div style={{ minHeight: '100dvh', paddingTop: 80 }}>
             <PageSEO title="The Studio — The ReelHouse Society" description="Your creator dashboard for managing video reviews and earnings." />
 
             {/* Header */}

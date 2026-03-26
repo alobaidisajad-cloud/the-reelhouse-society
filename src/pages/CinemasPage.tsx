@@ -6,7 +6,7 @@ import PageSEO from '../components/PageSEO'
 
 export default function CinemasPage() {
     return (
-        <div style={{ minHeight: '100vh', paddingTop: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
+        <div style={{ minHeight: '100dvh', paddingTop: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
             <PageSEO title="The Cinemas — Coming Soon" description="The Atlas of Temples is under construction." />
             
             <motion.div 

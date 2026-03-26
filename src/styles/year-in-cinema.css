@@ -5,7 +5,7 @@
 
 /* ── Page Container ── */
 .yic-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--ink);
   color: var(--parchment);
   overflow-x: hidden;

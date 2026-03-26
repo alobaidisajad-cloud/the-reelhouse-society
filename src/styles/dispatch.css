@@ -6,7 +6,7 @@
 /* ── COOL, REFINED NEWSLETTER AESTHETIC ── */
 .dispatch-newsletter-root {
   background: var(--ink);
-  min-height: 100vh;
+  min-height: 100dvh;
   padding-top: 80px;
   padding-bottom: 120px;
   font-family: var(--font-body);

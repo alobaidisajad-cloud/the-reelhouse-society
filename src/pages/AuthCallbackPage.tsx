@@ -69,7 +69,7 @@ export default function AuthCallbackPage() {
 
     return (
         <div style={{
-            minHeight: '100vh', background: 'var(--ink)',
+            minHeight: '100dvh', background: 'var(--ink)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '2rem',
         }}>

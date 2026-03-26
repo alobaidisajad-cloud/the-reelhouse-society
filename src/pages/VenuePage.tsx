@@ -457,7 +457,7 @@ export default function VenuePage() {
     }
 
     return (
-        <div className="page-top" style={{ minHeight: '100vh' }}>
+        <div className="page-top" style={{ minHeight: '100dvh' }}>
             <AnimatePresence>
                 {ticketTarget && (
                     <TicketFlow

@@ -297,7 +297,7 @@ export default function DiscoverPage() {
         : mood ? mood.sub : 'Discover Titles'
 
     return (
-        <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
+        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             {/* ── SEARCH HEADER ── */}
             <div style={{ background: 'var(--ink)', borderBottom: '1px solid var(--ash)', padding: IS_TOUCH ? '2rem 0 1.5rem' : '4rem 0 3rem', position: 'relative' }}>
                 <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />

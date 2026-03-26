@@ -59,7 +59,7 @@ export default function PersonPage() {
         .sort((a: any, b: any) => b.popularity - a.popularity)
 
     return (
-        <div className="page-top" style={{ minHeight: '100vh', paddingBottom: '4rem' }}>
+        <div className="page-top" style={{ minHeight: '100dvh', paddingBottom: '4rem' }}>
             <div className="container" style={{ padding: '0 1.5rem' }}>
                 <button onClick={() => navigate(-1)} className="btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', marginTop: '1rem', textDecoration: 'none', color: 'var(--fog)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}>
                     <ArrowLeft size={16} /> BACK

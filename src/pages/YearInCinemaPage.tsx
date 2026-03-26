@@ -184,7 +184,7 @@ export default function YearInCinemaPage() {
     if (totalFilms < 10) {
         const progress = Math.round((totalFilms / 10) * 100)
         return (
-            <div className="yic-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', textAlign: 'center', padding: '2rem' }}>
+            <div className="yic-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', textAlign: 'center', padding: '2rem' }}>
                 <Film size={48} style={{ color: 'var(--sepia)', marginBottom: '1.5rem', opacity: 0.5 }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '1rem' }}>Your Retrospective Awaits</h2>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.6, fontStyle: 'italic', marginBottom: '2rem' }}>

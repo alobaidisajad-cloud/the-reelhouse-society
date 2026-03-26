@@ -200,7 +200,7 @@ export default function FeedPage() {
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
 
     return (
-        <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
+        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             {/* ── REFINED HEADER ── */}
             <div style={{
                 background: 'var(--ink)',

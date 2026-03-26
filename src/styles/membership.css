@@ -5,7 +5,7 @@
 
 /* ── Page Layout ── */
 .membership-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   padding-top: 80px;
   padding-bottom: 4rem;
   display: flex;

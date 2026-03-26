@@ -302,7 +302,7 @@ export default function ListsPage() {
     const filteredCommunity = filterLists(communityLists)
 
     return (
-        <div style={{ paddingTop: 70, minHeight: '100vh', background: 'var(--ink)' }}>
+        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             {/* Massive Centered Header Area */}
             <div style={{
                 background: 'var(--ink)',

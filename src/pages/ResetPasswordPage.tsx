@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
 
     if (success) {
         return (
-            <div style={{ minHeight: '100vh', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+            <div style={{ minHeight: '100dvh', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
                 <div style={{ width: '100%', maxWidth: 440, textAlign: 'center' }}>
                     <div style={{ display: 'inline-flex', padding: '1.25rem', borderRadius: '50%', background: 'rgba(76,175,80,0.1)', border: '1px solid #4caf50', marginBottom: '1.5rem' }}>
                         <Check size={32} color="#4caf50" />
@@ -75,7 +75,7 @@ export default function ResetPasswordPage() {
     }
 
     return (
-        <div style={{ minHeight: '100vh', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
+        <div style={{ minHeight: '100dvh', background: 'var(--ink)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem' }}>
             <div style={{
                 width: '100%', maxWidth: 440,
                 background: 'var(--soot)', border: '1px solid var(--ash)',
