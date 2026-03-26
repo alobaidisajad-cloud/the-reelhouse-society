@@ -1,11 +1,11 @@
 // ============================================================
-// REELHOUSE — SERVICE WORKER v7 (NUCLEAR RESET)
+// REELHOUSE — SERVICE WORKER v8 (NUCLEAR RESET)
 // Forces a complete cache clear and re-activation.
 // ============================================================
 
-const IMAGE_CACHE = 'reelhouse-tmdb-images-v7';
-const API_CACHE = 'reelhouse-tmdb-api-v7';
-const OFFLINE_CACHE = 'reelhouse-offline-v7';
+const IMAGE_CACHE = 'reelhouse-tmdb-images-v8';
+const API_CACHE = 'reelhouse-tmdb-api-v8';
+const OFFLINE_CACHE = 'reelhouse-offline-v8';
 
 // Install — skip waiting to activate immediately
 self.addEventListener('install', (event) => {
