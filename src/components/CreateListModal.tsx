@@ -69,7 +69,7 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
             onClick={onClose}
             style={{
                 position: 'fixed', inset: 0, zIndex: 10000,
-                background: 'rgba(10,7,3,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+                background: 'rgba(10,7,3,0.95)', display: 'flex', alignItems: IS_TOUCH ? 'flex-end' : 'center', justifyContent: 'center', padding: IS_TOUCH ? 0 : '1rem',
                 backdropFilter: 'blur(8px)'
             }}
         >
@@ -77,13 +77,23 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                 className="fade-in-up"
                 onClick={(e) => e.stopPropagation()}
                 style={{
-                    background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.3)',
-                    borderRadius: '6px', width: '100%', maxWidth: 420, padding: IS_TOUCH ? '1.75rem' : '2.5rem',
-                    boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
+                    background: 'var(--ink)', border: IS_TOUCH ? 'none' : '1px solid rgba(139,105,20,0.3)',
+                    borderTop: IS_TOUCH ? '1px solid rgba(139,105,20,0.3)' : '1px solid rgba(139,105,20,0.3)',
+                    borderRadius: IS_TOUCH ? '12px 12px 0 0' : '6px', width: '100%', maxWidth: 460, 
+                    padding: IS_TOUCH ? '1.5rem 1.25rem 2rem' : '2.5rem',
+                    boxShadow: '0 -10px 40px rgba(0,0,0,0.8)',
                     position: 'relative', overflow: 'hidden',
+                    display: 'flex', flexDirection: 'column',
+                    maxHeight: IS_TOUCH ? '90vh' : 'auto'
                 }}
             >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                {IS_TOUCH && (
+                    <div style={{ width: 40, height: 4, background: 'rgba(139,105,20,0.3)', borderRadius: 2, margin: '0 auto 1.5rem', opacity: 0.5 }} />
+                )}
+                {!IS_TOUCH && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                )}
+                
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
                     NEW COLLECTION
                 </div>
@@ -91,27 +101,23 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                     {initialList ? 'Edit List' : 'Create a List'}
                 </h3>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', maxHeight: '70vh', overflowY: 'auto', paddingRight: '0.2rem' }}>
-                    <input className="input" placeholder="List title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
-                    <textarea className="input" placeholder="What's this list about?" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ minHeight: 80 }} />
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--bone)' }}>
-                        <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} style={{ accentColor: 'var(--sepia)' }} />
-                        {isPrivate ? <><Lock size={12} /> PRIVATE</> : <><Globe size={12} /> PUBLIC</>}
-                    </label>
-
-                    {/* ── FILM SEARCH ── */}
-                    <div style={{ marginTop: '0.5rem', paddingTop: '1rem', borderTop: '1px solid rgba(139,105,20,0.1)' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
-                            ADD FILMS
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', overflowY: 'auto', paddingRight: '0.2rem', paddingBottom: '1rem' }}>
+                    <input className="input" placeholder="List title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus={!IS_TOUCH} />
+                    
+                    {/* ── FILM SEARCH HIGHER UP ── */}
+                    <div style={{ background: 'rgba(28,23,16,0.5)', padding: '1rem', borderRadius: '4px', border: '1px solid rgba(139,105,20,0.15)' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem', display: 'flex', justifyContent: 'space-between' }}>
+                            <span>ADD FILMS</span>
+                            <span style={{ color: 'var(--fog)', opacity: 0.7 }}>{films.length} SELECTED</span>
                         </div>
-                        <div style={{ position: 'relative', marginBottom: '0.75rem' }}>
+                        <div style={{ position: 'relative', marginBottom: films.length > 0 ? '0.75rem' : 0 }}>
                             <SearchIcon size={14} style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--fog)', opacity: 0.7 }} />
                             <input 
                                 className="input" 
                                 placeholder="Search to add a film..." 
                                 value={query} 
                                 onChange={(e) => searchTMDB(e.target.value)}
-                                style={{ paddingLeft: '2.25rem', paddingRight: '2rem' }}
+                                style={{ paddingLeft: '2.25rem', paddingRight: '2rem', background: 'rgba(10,7,3,0.8)' }}
                             />
                             {query && (
                                 <button type="button" onClick={() => { setQuery(''); setResults([]) }} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}>
@@ -124,7 +130,7 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                         {results.length > 0 && (
                             <div style={{ 
                                 background: 'rgba(10,7,3,0.95)', border: '1px solid rgba(139,105,20,0.2)', 
-                                borderRadius: '4px', marginBottom: '1rem', maxHeight: 200, overflowY: 'auto' 
+                                borderRadius: '4px', marginTop: '0.5rem', marginBottom: '0.5rem', maxHeight: 180, overflowY: 'auto' 
                             }}>
                                 {results.map(r => (
                                     <button
@@ -154,9 +160,9 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
 
                         {/* Selected Films List */}
                         {films.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginTop: '0.5rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                 {films.map(f => (
-                                    <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.6rem', background: 'rgba(28,23,16,0.4)', border: '1px solid rgba(139,105,20,0.1)', borderRadius: '4px' }}>
+                                    <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.6rem', background: 'rgba(10,7,3,0.6)', border: '1px solid rgba(139,105,20,0.2)', borderRadius: '4px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                             <Film size={12} color="var(--fog)" />
                                             <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)' }}>{f.title}</span>
@@ -170,11 +176,17 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                         )}
                     </div>
 
-                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1rem', flexShrink: 0 }}>
-                        <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleSave} disabled={submitting}>
+                    <textarea className="input" placeholder="What's this list about? (Optional)" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ minHeight: 60 }} />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--bone)' }}>
+                        <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} style={{ accentColor: 'var(--sepia)' }} />
+                        {isPrivate ? <><Lock size={12} /> PRIVATE LIST (HIDDEN FROM COMMUNITY)</> : <><Globe size={12} /> PUBLIC LIST (VISIBLE TO COMMUNITY)</>}
+                    </label>
+
+                    <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem', flexShrink: 0, paddingBottom: IS_TOUCH ? '2rem' : '0' }}>
+                        <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', height: IS_TOUCH ? 48 : 'auto' }} onClick={handleSave} disabled={submitting}>
                             {submitting ? 'SAVING...' : (initialList ? 'SAVE CHANGES' : 'CREATE LIST')}
                         </button>
-                        <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
+                        <button className="btn btn-ghost" style={{ height: IS_TOUCH ? 48 : 'auto' }} onClick={onClose}>Cancel</button>
                     </div>
                 </div>
             </div>
