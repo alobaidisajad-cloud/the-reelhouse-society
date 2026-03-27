@@ -244,7 +244,6 @@
   .feed-grid { grid-template-columns: 1fr !important; }
   .feed-sidebar { display: none !important; }
   .feed-main .fade-in-up { gap: 1rem; }
-  .feed-main .fade-in-up img { width: 56px !important; height: 84px !important; }
   .feed-sort-toggle { flex-wrap: wrap !important; gap: 0.4rem !important; }
   /* Feed action buttons — better spacing & touch targets */
   .feed-main [style*="gap: '0.25rem'"],
