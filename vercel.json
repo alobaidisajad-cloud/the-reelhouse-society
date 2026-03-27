@@ -1,170 +1,25 @@
 {
-    "headers": [
-        {
-            "source": "/sw.js",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "no-cache, no-store, must-revalidate"
-                },
-                {
-                    "key": "Pragma",
-                    "value": "no-cache"
-                },
-                {
-                    "key": "Expires",
-                    "value": "0"
-                }
-            ]
-        },
-        {
-            "source": "/index.html",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "no-cache, no-store, must-revalidate"
-                },
-                {
-                    "key": "Pragma",
-                    "value": "no-cache"
-                },
-                {
-                    "key": "Expires",
-                    "value": "0"
-                }
-            ]
-        },
-        {
-            "source": "/manifest.json",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=3600"
-                }
-            ]
-        },
-        {
-            "source": "/robots.txt",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=3600, s-maxage=86400"
-                }
-            ]
-        },
-        {
-            "source": "/sitemap.xml",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=3600, s-maxage=86400"
-                },
-                {
-                    "key": "Content-Type",
-                    "value": "application/xml; charset=utf-8"
-                }
-            ]
-        },
-        {
-            "source": "/offline.html",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "no-cache, no-store, must-revalidate"
-                }
-            ]
-        },
-        {
-            "source": "/",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, s-maxage=60, stale-while-revalidate=3600"
-                },
-                {
-                    "key": "X-Content-Type-Options",
-                    "value": "nosniff"
-                },
-                {
-                    "key": "X-Frame-Options",
-                    "value": "DENY"
-                },
-                {
-                    "key": "Strict-Transport-Security",
-                    "value": "max-age=63072000; includeSubDomains; preload"
-                },
-                {
-                    "key": "Referrer-Policy",
-                    "value": "strict-origin-when-cross-origin"
-                },
-                {
-                    "key": "Permissions-Policy",
-                    "value": "camera=(), microphone=(), geolocation=(self), payment=()"
-                }
-            ]
-        },
-        {
-            "source": "/assets/(.*\\.css)",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=31536000, immutable"
-                },
-                {
-                    "key": "Content-Type",
-                    "value": "text/css; charset=utf-8"
-                }
-            ]
-        },
-        {
-            "source": "/assets/(.*\\.js)",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=31536000, immutable"
-                },
-                {
-                    "key": "Content-Type",
-                    "value": "application/javascript; charset=utf-8"
-                }
-            ]
-        },
-        {
-            "source": "/assets/(.*)",
-            "headers": [
-                {
-                    "key": "Cache-Control",
-                    "value": "public, max-age=31536000, immutable"
-                }
-            ]
-        }
-    ],
-    "rewrites": [
-        {
-            "source": "/film/:id",
-            "has": [
-                {
-                    "type": "header",
-                    "key": "user-agent",
-                    "value": "(?i).*(bot|facebook|twitter|slack|discord|whatsapp|telegram|skype).*"
-                }
-            ],
-            "destination": "/api/og?type=film&id=:id"
-        },
-        {
-            "source": "/person/:id",
-            "has": [
-                {
-                    "type": "header",
-                    "key": "user-agent",
-                    "value": "(?i).*(bot|facebook|twitter|slack|discord|whatsapp|telegram|skype).*"
-                }
-            ],
-            "destination": "/api/og?type=person&id=:id"
-        },
-        {
-            "source": "/((?!api|assets|sw.js|manifest.json|.*\\..*).*)",
-            "destination": "/index.html"
-        }
-    ]
+  "headers": [
+    {
+      "source": "/sw.js",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/index.html",
+      "headers": [
+        { "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
 }

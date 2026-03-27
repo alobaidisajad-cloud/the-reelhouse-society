@@ -8,6 +8,14 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
+      workbox: {
+        skipWaiting: true,
+        clientsClaim: true,
+        // Don't precache index.html — always fetch fresh from network
+        navigateFallback: null,
+        // Purge old caches on activate
+        cleanupOutdatedCaches: true,
+      },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'gold-reel.svg'],
       manifest: {
         name: 'The ReelHouse Society',
