@@ -21,9 +21,9 @@ export const initAuthSync = () => {
             sessionStorage.setItem('reelhouse_recovery', 'true')
             useAuthStore.setState({ user: null, isAuthenticated: false })
             supabase.removeAllChannels()
-            if (!window.location.pathname.includes('reset-password')) {
+            if (!window.location.pathname.includes('auth/reset-password')) {
                 // Must use href to force re-render, but sessionStorage persists
-                window.location.href = '/reset-password'
+                window.location.href = '/auth/reset-password'
             }
             return
         }
