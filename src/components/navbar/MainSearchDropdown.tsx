@@ -130,8 +130,11 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
                                                 <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.95rem', color: 'var(--parchment)', lineHeight: 1.3, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                     {title}
                                                 </div>
-                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginTop: '0.25rem' }}>
-                                                    {isPerson ? `🎭 ${dept}` : `🎬 ${year || 'FILM'}`}
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                                    {isPerson
+                                                        ? <><User size={9} style={{ opacity: 0.7 }} />{dept}</>
+                                                        : <><Film size={9} style={{ opacity: 0.7 }} />{year || 'FILM'}</>
+                                                    }
                                                 </div>
                                             </div>
                                         </Link>
