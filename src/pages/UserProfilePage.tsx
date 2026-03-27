@@ -117,7 +117,7 @@ export default function UserProfilePage() {
                 .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, watched_with, created_at, pull_quote, is_autopsied, autopsy, alt_poster, physical_media')
                 .eq('user_id', prof.id)
                 .order('created_at', { ascending: false })
-                .limit(100)
+                .limit(5000)
             return (data || []).map((l: any) => ({
                 id: l.id,
                 filmId: l.film_id,

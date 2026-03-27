@@ -17,7 +17,7 @@ export function ProfileProjectorTab({ profileLogs, profileWatchlist, profileList
     profileLogs.forEach((l: any) => { if (!l.year) return; const decade = Math.floor(l.year / 10) * 10; decadeBuckets[decade] = (decadeBuckets[decade] || 0) + 1 })
     const decades = Object.entries(decadeBuckets).sort(([a], [b]) => +a - +b)
     const maxDecadeCount = Math.max(...(Object.values(decadeBuckets) as number[]), 1)
-    const totalHours = Math.floor(profileLogs.length * 115 / 60)
+
     // Logging streak: count consecutive days logged (up to today)
     const streakCount = (() => {
         const logDates = (Array.from(new Set(profileLogs
@@ -76,7 +76,7 @@ export function ProfileProjectorTab({ profileLogs, profileWatchlist, profileList
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
                     {[
                         ...(streakCount > 0 ? [{ label: '🔥 LOGGING STREAK', value: `${streakCount} day${streakCount !== 1 ? 's' : ''}` }] : []),
-                        { label: 'ESTIMATED RUNTIME', value: `${totalHours.toLocaleString()} hrs` }, { label: 'TOTAL FILMS LOGGED', value: profileLogs.length }, { label: 'WATCHLIST QUEUED', value: profileWatchlist.length }, { label: 'LISTS CURATED', value: profileLists.length }, { label: 'RATED 5 REELS', value: profileLogs.filter(l => l.rating === 5).length }, { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length }].map(({ label, value }) => (
+                        { label: 'TOTAL FILMS LOGGED', value: profileLogs.length }, { label: 'WATCHLIST QUEUED', value: profileWatchlist.length }, { label: 'LISTS CURATED', value: profileLists.length }, { label: 'RATED 5 REELS', value: profileLogs.filter(l => l.rating === 5).length }, { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length }].map(({ label, value }) => (
                         <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.5rem' }}>
                             <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>{label}</span>
                             <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)' }}>{value}</span>

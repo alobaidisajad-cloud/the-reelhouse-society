@@ -42,7 +42,6 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
         }
     }
 
-    const totalHours = Math.floor(logs.length * 115 / 60)
 
     return (
         <motion.div
@@ -142,7 +141,6 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
                         {[
                             { label: 'FILMS', value: logs.length },
                             { label: 'AVG RATING', value: avgRating },
-                            { label: 'HOURS', value: totalHours },
                         ].map(({ label, value }) => (
                             <div key={label} style={{ textAlign: 'center', padding: '0.5rem', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)', borderRadius: '2px' }}>
                                 <div style={{ fontFamily: 'var(--font-display-alt)', fontSize: '1.3rem', color: 'var(--parchment)', lineHeight: 1 }}>{value}</div>
