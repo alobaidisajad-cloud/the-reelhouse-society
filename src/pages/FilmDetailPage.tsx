@@ -62,7 +62,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
     }
 
     return (
-        <div style={{ position: 'relative', minHeight: IS_TOUCH ? 'auto' : '70vh', display: 'flex', alignItems: IS_TOUCH ? 'center' : 'flex-end', paddingBottom: IS_TOUCH ? '1.5rem' : '3rem', paddingTop: IS_TOUCH ? '1rem' : 0, flexShrink: 0 }}>
+        <div style={{ position: 'relative', minHeight: IS_TOUCH ? 'auto' : '70vh', display: 'flex', alignItems: IS_TOUCH ? 'center' : 'flex-end', paddingBottom: IS_TOUCH ? '5rem' : '3rem', paddingTop: IS_TOUCH ? '1rem' : 0, flexShrink: 0 }}>
             {/* Backdrop */}
             {film.backdrop_path && (
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.5) brightness(0.25) contrast(1.15)', zIndex: 0 }} />
