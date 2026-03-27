@@ -34,67 +34,10 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
         window.URL.revokeObjectURL(url)
     }
 
-    const generateHeatmap = () => {
-        const today = new Date()
-        const oneYearAgo = new Date(today)
-        oneYearAgo.setDate(today.getDate() - 364)
-        const logDates = logs.reduce((acc, log) => {
-            if (log.watchedDate) acc[log.watchedDate] = (acc[log.watchedDate] || 0) + 1
-            else if (log.createdAt) { const d = log.createdAt.split('T')[0]; acc[d] = (acc[d] || 0) + 1 }
-            return acc
-        }, {} as Record<string, number>)
-        const days: { date: string; count: number }[] = []
-        for (let d = new Date(oneYearAgo); d <= today; d.setDate(d.getDate() + 1)) {
-            const dateStr = d.toISOString().split('T')[0]
-            days.push({ date: dateStr, count: logDates[dateStr] || 0 })
-        }
-        return days
-    }
 
-    const heatmapDays = useMemo(generateHeatmap, [logs])
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {/* Heatmap */}
-            <div className="card" style={{ padding: '2rem', overflowX: 'auto', position: 'relative' }}>
-                {!isPremium && (
-                    <div style={{ position: 'absolute', inset: 0, zIndex: 20, backdropFilter: 'blur(8px)', background: 'rgba(10,7,3,0.7)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', borderRadius: 'var(--radius-card)', border: '1px solid var(--ash)' }}>
-                        <Lock size={32} color="var(--sepia)" style={{ marginBottom: '1rem' }} />
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>RESTRICTED ACCESS</div>
-                        <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', textAlign: 'center', maxWidth: 300, marginBottom: '1.5rem', lineHeight: 1.5 }}>
-                            The Projectionist's Calendar requires Archivist or Auteur clearance.
-                        </p>
-                        <button className="btn btn-primary" onClick={() => useUIStore.getState().openSignupModal('archivist')} style={{ padding: '0.6rem 1.5rem', fontSize: '0.65rem' }}>ASCEND TO ARCHIVIST</button>
-                    </div>
-                )}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', opacity: isPremium ? 1 : 0.3 }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>THE PROJECTIONIST'S CALENDAR</div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>LAST 365 DAYS</div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(53, 1fr)', gridTemplateRows: 'repeat(7, 1fr)', gap: '4px', width: 'min-content' }}>
-                    {heatmapDays.map((day) => {
-                        let bg = 'rgba(255, 255, 255, 0.03)', border = '1px solid rgba(255,255,255,0.02)'
-                        if (day.count === 1) { bg = 'rgba(139, 105, 20, 0.3)'; border = '1px solid rgba(139, 105, 20, 0.5)' }
-                        else if (day.count === 2) { bg = 'rgba(139, 105, 20, 0.6)'; border = '1px solid rgba(139, 105, 20, 0.8)' }
-                        else if (day.count >= 3) { bg = 'var(--flicker)'; border = '1px solid var(--flicker)' }
-                        return (
-                            <div key={day.date} title={`${day.count} film${day.count !== 1 ? 's' : ''} on ${day.date}`}
-                                style={{ width: 12, height: 12, background: bg, border, borderRadius: '2px', transition: 'all 0.2s ease', cursor: 'pointer' }}
-                                onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.2)'; e.currentTarget.style.zIndex = '10'; e.currentTarget.style.boxShadow = '0 0 10px var(--flicker)' }}
-                                onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.zIndex = '1'; e.currentTarget.style.boxShadow = 'none' }}
-                            />
-                        )
-                    })}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '0.4rem', marginTop: '1rem', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>
-                    <span>LESS</span>
-                    <div style={{ width: 8, height: 8, background: 'rgba(255, 255, 255, 0.03)', borderRadius: 1 }} />
-                    <div style={{ width: 8, height: 8, background: 'rgba(139, 105, 20, 0.3)', borderRadius: 1 }} />
-                    <div style={{ width: 8, height: 8, background: 'rgba(139, 105, 20, 0.6)', borderRadius: 1 }} />
-                    <div style={{ width: 8, height: 8, background: 'var(--flicker)', borderRadius: 1 }} />
-                    <span>MORE</span>
-                </div>
-            </div>
 
             {/* Stats grid */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>

@@ -463,10 +463,10 @@ export default function UserProfilePage() {
                 <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 850, margin: '0 auto', paddingBottom: '3rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem', padding: '1.5rem 0.5rem' }}>
                         {[
+                            { id: 'archive', label: 'Archive', count: physicalArchive.length, icon: Archive, active: activeTab === 'archive', desc: 'Physical' },
                             { id: 'diary', label: 'The Ledger', count: profileLogs.length, icon: BookOpen, active: activeTab === 'diary', desc: 'Diary' },
                             { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, icon: Bookmark, active: activeTab === 'watchlist', desc: 'To See' },
                             { id: 'lists', label: 'Stacks', count: profileLists.length, icon: LayoutList, active: activeTab === 'lists', desc: 'Lists' },
-                            { id: 'archive', label: 'Archive', count: physicalArchive.length, icon: Archive, active: activeTab === 'archive', desc: 'Physical' },
                             { id: 'tickets', label: 'Stubs', count: 'SOON', icon: Ticket, active: activeTab === 'tickets', disabled: true, desc: 'Box Office' },
                             { id: 'stats', label: 'Analytics', count: 'LIFETIME', icon: LineChart, active: activeTab === 'stats', highlight: true, desc: 'Projector' },
                         ].map(item => (

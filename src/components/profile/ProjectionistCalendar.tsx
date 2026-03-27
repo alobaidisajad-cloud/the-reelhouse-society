@@ -195,8 +195,8 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }: { logs?:
                                             if (day.isFuture || day.count < 0) return
                                             const rect = (e.target as HTMLElement).getBoundingClientRect()
                                             setTooltip({
-                                                x: rect.left + window.scrollX,
-                                                y: rect.top + window.scrollY,
+                                                x: rect.left,
+                                                y: rect.top,
                                                 date: day.display.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }),
                                                 films: day.films,
                                                 count: day.count,

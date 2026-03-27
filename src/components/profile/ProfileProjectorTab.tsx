@@ -20,11 +20,15 @@ export function ProfileProjectorTab({ profileLogs, profileWatchlist, profileList
     const totalHours = Math.floor(profileLogs.length * 115 / 60)
     // Logging streak: count consecutive days logged (up to today)
     const streakCount = (() => {
-        const logDates = [...new Set(profileLogs
-            .map((l: any) => l.date || l.loggedAt)
+        const logDates = (Array.from(new Set(profileLogs
+            .map((l: any) => l.watchedDate || l.createdAt)
             .filter(Boolean)
-            .map(d => new Date(d).toISOString().slice(0, 10))
-        )].sort().reverse()
+            .map((d: string) => {
+                const dateObj = new Date(d)
+                return isNaN(dateObj.getTime()) ? null : dateObj.toISOString().slice(0, 10)
+            })
+            .filter(Boolean)
+        )) as string[]).sort().reverse()
         if (!logDates.length) return 0
         const today = new Date().toISOString().slice(0, 10)
         const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
