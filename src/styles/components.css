@@ -647,9 +647,7 @@
   left: 0;
   right: 0;
   z-index: var(--z-nav);
-  background: rgba(10, 7, 3, 0.92);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: #0A0703;
   border-top: 1px solid rgba(139, 105, 20, 0.2);
   padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom));
   justify-content: space-around;
