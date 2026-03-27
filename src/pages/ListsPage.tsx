@@ -3,8 +3,8 @@ import { Link } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
-import { Plus, Lock, Globe, Search as SearchIcon, X, ChevronDown } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { Plus, Lock, Globe, Search as SearchIcon, X, ChevronDown, Award, MessageCircle, Send } from 'lucide-react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 import PageSEO from '../components/PageSEO'
@@ -57,6 +57,177 @@ function UnbreakablePoster({ posterPath, title, isTop }: any) {
     )
 }
 
+// ── CERTIFY + COMMENT BAR (bottom of each community card) ──
+function ListActions({ listId, certifyCount: initialCertifyCount, isCertified: initialIsCertified, commentCount: initialCommentCount }: {
+    listId: string; certifyCount: number; isCertified: boolean; commentCount: number
+}) {
+    const { isAuthenticated, user } = useAuthStore()
+    const { openSignupModal } = useUIStore()
+    const queryClient = useQueryClient()
+    const [certifyCount, setCertifyCount] = useState(initialCertifyCount)
+    const [isCertified, setIsCertified] = useState(initialIsCertified)
+    const [showComments, setShowComments] = useState(false)
+    const [commentText, setCommentText] = useState('')
+    const [submittingComment, setSubmittingComment] = useState(false)
+    const [localCommentCount, setLocalCommentCount] = useState(initialCommentCount)
+
+    // Fetch comments for this list
+    const { data: comments = [] } = useQuery({
+        queryKey: ['list-comments', listId],
+        queryFn: async () => {
+            const { data } = await supabase
+                .from('interactions')
+                .select('id, user_id, type, created_at')
+                .eq('target_list_id', listId)
+                .eq('type', 'comment_list')
+                .order('created_at', { ascending: true })
+                .limit(30)
+            if (!data || data.length === 0) return []
+            // Resolve usernames
+            const uids = [...new Set(data.map((c: any) => c.user_id))]
+            const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', uids)
+            const umap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.username]))
+            return data.map((c: any) => ({ ...c, username: umap[c.user_id] || 'anon' }))
+        },
+        enabled: showComments,
+        staleTime: 1000 * 60 * 1,
+    })
+
+    const handleCertify = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!isAuthenticated) { openSignupModal(); return }
+        try {
+            if (isCertified) {
+                await supabase.from('interactions').delete()
+                    .eq('user_id', user!.id).eq('target_list_id', listId).eq('type', 'endorse_list')
+                setCertifyCount(c => Math.max(0, c - 1))
+                setIsCertified(false)
+            } else {
+                await supabase.from('interactions').insert([{ user_id: user!.id, target_list_id: listId, type: 'endorse_list' }])
+                setCertifyCount(c => c + 1)
+                setIsCertified(true)
+                toast.success('Certified!')
+            }
+            queryClient.invalidateQueries({ queryKey: ['list-endorsements'] })
+        } catch { toast.error('Failed') }
+    }
+
+    const handleSubmitComment = async (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!commentText.trim() || submittingComment) return
+        setSubmittingComment(true)
+        try {
+            await supabase.from('interactions').insert([{
+                user_id: user!.id, target_list_id: listId, type: 'comment_list'
+            }])
+            toast.success('Comment added!')
+            setCommentText('')
+            setLocalCommentCount(c => c + 1)
+            queryClient.invalidateQueries({ queryKey: ['list-comments', listId] })
+        } catch { toast.error('Failed to comment') }
+        setSubmittingComment(false)
+    }
+
+    const toggleComments = (e: React.MouseEvent) => {
+        e.preventDefault()
+        e.stopPropagation()
+        if (!isAuthenticated) { openSignupModal(); return }
+        setShowComments(!showComments)
+    }
+
+    return (
+        <div onClick={e => e.stopPropagation()} style={{ position: 'relative', zIndex: 20 }}>
+            {/* Action buttons row */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '0.6rem', marginTop: '0.5rem' }}>
+                {/* Certify button */}
+                <button
+                    onClick={handleCertify}
+                    style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '0.35rem',
+                        color: isCertified ? 'var(--sepia)' : 'var(--fog)',
+                        fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em',
+                        transition: 'color 0.2s', padding: 0,
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'}
+                    onMouseLeave={e => { if (!isCertified) e.currentTarget.style.color = 'var(--fog)' }}
+                >
+                    <Award size={13} style={{ fill: isCertified ? 'var(--sepia)' : 'none', transition: 'fill 0.2s' }} />
+                    {certifyCount > 0 ? certifyCount : ''} {isCertified ? 'CERTIFIED' : 'CERTIFY'}
+                </button>
+
+                {/* Comment button */}
+                <button
+                    onClick={toggleComments}
+                    style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: '0.35rem',
+                        color: showComments ? 'var(--sepia)' : 'var(--fog)',
+                        fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em',
+                        transition: 'color 0.2s', padding: 0,
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--bone)'}
+                    onMouseLeave={e => { if (!showComments) e.currentTarget.style.color = 'var(--fog)' }}
+                >
+                    <MessageCircle size={12} />
+                    {localCommentCount > 0 ? `${localCommentCount} ` : ''}DISCUSS
+                </button>
+            </div>
+
+            {/* Comments panel */}
+            {showComments && (
+                <div style={{
+                    marginTop: '0.5rem',
+                    background: 'rgba(10,7,3,0.8)',
+                    border: '1px solid rgba(139,105,20,0.1)',
+                    borderRadius: '4px',
+                    padding: '0.75rem',
+                    maxHeight: 180, overflowY: 'auto',
+                }}>
+                    {comments.length === 0 && (
+                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', textAlign: 'center', padding: '0.5rem 0', opacity: 0.7 }}>
+                            No remarks yet. Be the first to speak.
+                        </div>
+                    )}
+                    {comments.map((c: any) => (
+                        <div key={c.id} style={{ marginBottom: '0.4rem', display: 'flex', gap: '0.4rem', alignItems: 'baseline' }}>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--sepia)', letterSpacing: '0.05em', flexShrink: 0 }}>@{c.username}</span>
+                            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--bone)', lineHeight: 1.4, opacity: 0.8 }}>endorsed this collection</span>
+                        </div>
+                    ))}
+                    {/* Comment input */}
+                    {isAuthenticated && (
+                        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem', borderTop: '1px solid rgba(139,105,20,0.08)', paddingTop: '0.5rem' }}>
+                            <input
+                                className="input"
+                                style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.75rem', background: 'rgba(10,7,3,0.6)', borderColor: 'rgba(139,105,20,0.1)', borderRadius: '3px' }}
+                                placeholder="Leave a remark..."
+                                value={commentText}
+                                onChange={e => setCommentText(e.target.value)}
+                                onClick={e => e.stopPropagation()}
+                                onKeyDown={e => { if (e.key === 'Enter') handleSubmitComment(e as any) }}
+                            />
+                            <button
+                                onClick={handleSubmitComment}
+                                disabled={submittingComment || !commentText.trim()}
+                                style={{
+                                    background: 'none', border: '1px solid rgba(139,105,20,0.2)', borderRadius: '3px',
+                                    padding: '0.3rem 0.5rem', cursor: 'pointer', color: 'var(--sepia)',
+                                    display: 'flex', alignItems: 'center', opacity: commentText.trim() ? 1 : 0.4,
+                                }}
+                            >
+                                <Send size={12} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    )
+}
+
 function CommunityListCard({ list }: any) {
     const gradients = [
         'linear-gradient(135deg, #1a0e05 0%, #3a2010 40%, #0a0703 100%)',
@@ -78,7 +249,7 @@ function CommunityListCard({ list }: any) {
                 textDecoration: 'none',
                 color: 'inherit',
                 background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.08)',
-                borderRadius: '6px', height: IS_TOUCH ? 380 : 440, display: 'flex', flexDirection: 'column',
+                borderRadius: '6px', minHeight: IS_TOUCH ? 380 : 440, display: 'flex', flexDirection: 'column',
                 boxShadow: '0 15px 40px rgba(0,0,0,0.6)', cursor: 'pointer', transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 position: 'relative', overflow: 'hidden'
             }}
@@ -125,7 +296,7 @@ function CommunityListCard({ list }: any) {
 
             {/* Overlays */}
             <div className="card-glow" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at top left, var(--sepia) 0%, transparent 60%)', opacity: 0.25, zIndex: 1, transition: 'opacity 0.5s' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 25%, var(--ink) 95%)', zIndex: 2 }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 20%, var(--ink) 90%)', zIndex: 2 }} />
 
             {/* Content Pane */}
             <div style={{
@@ -135,6 +306,11 @@ function CommunityListCard({ list }: any) {
                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', border: '1px solid rgba(139,105,20,0.3)', padding: '2px 8px', borderRadius: '2px' }}>
                         {list.count} FILMS
                     </span>
+                    {list.certifyCount > 0 && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--flicker)', display: 'flex', alignItems: 'center', gap: '0.2rem', opacity: 0.8 }}>
+                            <Award size={10} /> {list.certifyCount}
+                        </span>
+                    )}
                     <div style={{ height: '1px', flex: 1, background: 'linear-gradient(to right, rgba(139,105,20,0.3), transparent)' }} />
                 </div>
 
@@ -143,17 +319,25 @@ function CommunityListCard({ list }: any) {
                 </h3>
 
                 {list.desc && (
-                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.5, marginBottom: '1rem', opacity: 0.7, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.5, marginBottom: '0.5rem', opacity: 0.7, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
                         {list.desc}
                     </p>
                 )}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderTop: '1px solid rgba(139,105,20,0.15)', paddingTop: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <div style={{ width: 12, height: 12, background: 'var(--sepia)', borderRadius: '50%', opacity: 0.6 }} />
                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
                         @{list.user.toUpperCase()}
                     </span>
                 </div>
+
+                {/* Certify + Comment Actions */}
+                <ListActions
+                    listId={list.id}
+                    certifyCount={list.certifyCount || 0}
+                    isCertified={list.isCertified || false}
+                    commentCount={list.commentCount || 0}
+                />
             </div>
         </Link>
     )
@@ -252,7 +436,7 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
 }
 
 type TimeFilter = 'all' | 'week' | 'month'
-type SortOption = 'newest' | 'most-films' | 'a-z'
+type SortOption = 'newest' | 'oldest' | 'most-certified'
 
 export default function ListsPage() {
     const { isAuthenticated, user } = useAuthStore()
@@ -281,8 +465,8 @@ export default function ListsPage() {
                 setShowSortMenu(false)
             }
         }
-        if (showSortMenu) document.addEventListener('click', handleClick)
-        return () => document.removeEventListener('click', handleClick)
+        if (showSortMenu) document.addEventListener('mousedown', handleClick)
+        return () => document.removeEventListener('mousedown', handleClick)
     }, [showSortMenu])
 
     // Fetch public community lists from Supabase
@@ -320,6 +504,28 @@ export default function ListsPage() {
                 }
             }
 
+            // Batch-resolve endorsement counts + user's own endorsement state
+            let endorseMap: Record<string, number> = {}
+            let userEndorsed: Record<string, boolean> = {}
+            let commentCountMap: Record<string, number> = {}
+            if (listIds.length > 0) {
+                const { data: endorsements } = await supabase
+                    .from('interactions')
+                    .select('target_list_id, user_id, type')
+                    .in('target_list_id', listIds)
+                    .in('type', ['endorse_list', 'comment_list'])
+                if (endorsements) {
+                    endorsements.forEach((e: any) => {
+                        if (e.type === 'endorse_list') {
+                            endorseMap[e.target_list_id] = (endorseMap[e.target_list_id] || 0) + 1
+                            if (user?.id && e.user_id === user.id) userEndorsed[e.target_list_id] = true
+                        } else if (e.type === 'comment_list') {
+                            commentCountMap[e.target_list_id] = (commentCountMap[e.target_list_id] || 0) + 1
+                        }
+                    })
+                }
+            }
+
             return data.map((l: any) => ({
                 id: l.id,
                 title: l.title,
@@ -329,6 +535,9 @@ export default function ListsPage() {
                 createdAt: l.created_at,
                 films: (itemsMap[l.id] || []).map((item: any) => ({ id: item.film_id, title: item.film_title, poster_path: item.poster_path || null })),
                 count: (itemsMap[l.id] || []).length,
+                certifyCount: endorseMap[l.id] || 0,
+                isCertified: userEndorsed[l.id] || false,
+                commentCount: commentCountMap[l.id] || 0,
             }))
         },
         staleTime: 1000 * 60 * 2,
@@ -366,10 +575,10 @@ export default function ListsPage() {
         // Sort
         if (sortBy === 'newest') {
             result.sort((a: any, b: any) => new Date(b.createdAt || b.created_at || 0).getTime() - new Date(a.createdAt || a.created_at || 0).getTime())
-        } else if (sortBy === 'most-films') {
-            result.sort((a: any, b: any) => (b.count || b.films?.length || 0) - (a.count || a.films?.length || 0))
-        } else if (sortBy === 'a-z') {
-            result.sort((a: any, b: any) => a.title.localeCompare(b.title))
+        } else if (sortBy === 'oldest') {
+            result.sort((a: any, b: any) => new Date(a.createdAt || a.created_at || 0).getTime() - new Date(b.createdAt || b.created_at || 0).getTime())
+        } else if (sortBy === 'most-certified') {
+            result.sort((a: any, b: any) => (b.certifyCount || 0) - (a.certifyCount || 0))
         }
 
         return result
@@ -379,7 +588,7 @@ export default function ListsPage() {
     const filteredCommunity = useMemo(() => filterAndSort(communityLists, true), [communityLists, filterAndSort])
     const totalResults = filteredMyLists.length + filteredCommunity.length
 
-    const sortLabels: Record<SortOption, string> = { 'newest': 'NEWEST', 'most-films': 'MOST FILMS', 'a-z': 'A → Z' }
+    const sortLabels: Record<SortOption, string> = { 'newest': 'NEWEST', 'oldest': 'OLDEST', 'most-certified': 'MOST CERTIFIED' }
     const hasActiveFilters = timeFilter !== 'all' || followingOnly || debouncedQuery.trim().length > 0
 
     return (
@@ -456,8 +665,8 @@ export default function ListsPage() {
                         )}
                     </div>
 
-                    {/* Filter Pills */}
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', overflowX: 'auto', paddingBottom: '2px', WebkitOverflowScrolling: 'touch' }}>
+                    {/* Filter Pills + Sort — NO overflowX to prevent dropdown clipping */}
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', paddingBottom: '2px' }}>
                         {/* Time Filters */}
                         <FilterPill label="ALL TIME" active={timeFilter === 'all'} onClick={() => setTimeFilter('all')} />
                         <FilterPill label="THIS WEEK" active={timeFilter === 'week'} onClick={() => setTimeFilter('week')} />
@@ -475,45 +684,51 @@ export default function ListsPage() {
                             />
                         )}
 
-                        {/* Sort dropdown */}
+                        {/* Sort dropdown — positioned with portal-like z-index */}
                         <div ref={sortMenuRef} style={{ position: 'relative', marginLeft: 'auto', flexShrink: 0 }}>
                             <button
-                                onClick={() => setShowSortMenu(!showSortMenu)}
+                                onClick={(e) => { e.stopPropagation(); setShowSortMenu(!showSortMenu) }}
                                 style={{
-                                    background: 'transparent', border: '1px solid rgba(139,105,20,0.12)',
+                                    background: showSortMenu ? 'rgba(139,105,20,0.1)' : 'transparent',
+                                    border: `1px solid ${showSortMenu ? 'rgba(139,105,20,0.3)' : 'rgba(139,105,20,0.12)'}`,
                                     borderRadius: '20px', padding: '0.35rem 0.75rem',
                                     fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em',
-                                    color: 'var(--fog)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                    color: showSortMenu ? 'var(--sepia)' : 'var(--fog)',
+                                    cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem',
                                     transition: 'all 0.2s',
                                 }}
                             >
-                                {sortLabels[sortBy]} <ChevronDown size={10} />
+                                {sortLabels[sortBy]} <ChevronDown size={10} style={{ transform: showSortMenu ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
                             </button>
                             {showSortMenu && (
                                 <div style={{
-                                    position: 'absolute', top: 'calc(100% + 4px)', right: 0,
-                                    background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.2)',
-                                    borderRadius: '4px', boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-                                    overflow: 'hidden', zIndex: 100, minWidth: 130,
+                                    position: 'absolute', top: 'calc(100% + 6px)', right: 0,
+                                    background: 'rgba(15,12,8,0.98)', border: '1px solid rgba(139,105,20,0.25)',
+                                    borderRadius: '6px', boxShadow: '0 12px 32px rgba(0,0,0,0.8)',
+                                    zIndex: 200, minWidth: 160,
+                                    backdropFilter: 'blur(12px)',
                                 }}>
-                                    {(['newest', 'most-films', 'a-z'] as SortOption[]).map(opt => (
-                                        <button
-                                            key={opt}
-                                            onClick={() => { setSortBy(opt); setShowSortMenu(false) }}
-                                            style={{
-                                                display: 'block', width: '100%', textAlign: 'left',
-                                                padding: '0.6rem 1rem', border: 'none',
-                                                background: sortBy === opt ? 'rgba(139,105,20,0.1)' : 'transparent',
-                                                fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em',
-                                                color: sortBy === opt ? 'var(--sepia)' : 'var(--fog)',
-                                                cursor: 'pointer', transition: 'background 0.15s',
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.08)'}
-                                            onMouseLeave={e => e.currentTarget.style.background = sortBy === opt ? 'rgba(139,105,20,0.1)' : 'transparent'}
-                                        >
-                                            {sortLabels[opt]}
-                                        </button>
-                                    ))}
+                                    <div style={{ padding: '0.4rem 0' }}>
+                                        {(['newest', 'oldest', 'most-certified'] as SortOption[]).map(opt => (
+                                            <button
+                                                key={opt}
+                                                onClick={(e) => { e.stopPropagation(); setSortBy(opt); setShowSortMenu(false) }}
+                                                style={{
+                                                    display: 'flex', width: '100%', textAlign: 'left', alignItems: 'center', gap: '0.5rem',
+                                                    padding: '0.65rem 1rem', border: 'none',
+                                                    background: sortBy === opt ? 'rgba(139,105,20,0.12)' : 'transparent',
+                                                    fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em',
+                                                    color: sortBy === opt ? 'var(--sepia)' : 'var(--bone)',
+                                                    cursor: 'pointer', transition: 'background 0.15s, color 0.15s',
+                                                }}
+                                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.1)'; e.currentTarget.style.color = 'var(--sepia)' }}
+                                                onMouseLeave={e => { e.currentTarget.style.background = sortBy === opt ? 'rgba(139,105,20,0.12)' : 'transparent'; e.currentTarget.style.color = sortBy === opt ? 'var(--sepia)' : 'var(--bone)' }}
+                                            >
+                                                {opt === 'most-certified' && <Award size={11} />}
+                                                {sortLabels[opt]}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -576,7 +791,7 @@ export default function ListsPage() {
                                             </div>
                                         </div>
                                         {list.description && (
-                                            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: '0.75rem', lineHeight: 1.5, opacity: 0.6, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                                            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: '0.75rem', lineHeight: 1.5, opacity: 0.6, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
                                                 {list.description}
                                             </p>
                                         )}
@@ -630,7 +845,7 @@ export default function ListsPage() {
                                     {debouncedQuery ? 'NO MATCHES' : 'ARCHIVE EMPTY'}
                                 </div>
                                 <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.6rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>
-                                    {debouncedQuery ? 'No collections found.' : 'The Archive Awaits Its First Curator.'}
+                                    {debouncedQuery ? 'No collections match your search.' : 'The Archive Awaits Its First Curator.'}
                                 </div>
                                 {!debouncedQuery && (
                                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', opacity: 0.6, maxWidth: 400, margin: '0 auto' }}>
