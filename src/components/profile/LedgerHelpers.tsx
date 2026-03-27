@@ -12,31 +12,21 @@ export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }: any) {
     if (posters.length < 3) return null
     return (
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none', background: 'var(--ink)' }}>
-            {/* The Ambient Wash — giant blurred posters */}
+            {/* The Ambient Wash */}
             <div style={{ 
-                position: 'absolute', inset: -150, display: 'flex', flexWrap: 'wrap', 
-                gap: 0, overflow: 'hidden', opacity: 1, /* Full opacity for the color blast */
-                filter: 'blur(80px) saturate(2.5) contrast(1.3)', 
-                transform: 'scale(1.3)' /* Push edges out so we don't see unblurred edges */
+                position: 'absolute', inset: -50, display: 'flex', flexWrap: 'wrap', 
+                gap: 0, overflow: 'hidden', opacity: 0.8,
+                filter: 'blur(30px) saturate(2)', 
+                transform: 'scale(1.1)' 
             }}>
                 {posters.map((src: any, i: number) => (
-                    <img key={i} src={src || undefined} alt="" decoding="async" loading="lazy"
-                        style={{ 
-                            width: '33.33%', height: '50%', objectFit: 'cover', 
-                            animation: `drift ${20 + (i % 5) * 5}s infinite alternate ease-in-out`,
-                            animationDelay: `-${i * 2}s`
-                        }} 
-                    />
+                    <img key={i} src={src || undefined} alt="" decoding="async" loading="lazy" style={{ width: '33.33%', height: '50%', objectFit: 'cover' }} />
                 ))}
             </div>
             {/* Film Grain & Scanlines */}
-            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px)' }} />
-            
-            {/* Soft, minimal radial vignette so colors survive in the center */}
-            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 20%, transparent 30%, rgba(10,7,5,0.4) 80%, var(--ink) 100%)' }} />
-            
+            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)' }} />
             {/* Gentle bottom fade into the dark page body */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(10,7,5,0.1) 40%, rgba(10,7,5,0.7) 80%, var(--ink) 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(10,7,5,0.4) 60%, var(--ink) 100%)' }} />
         </div>
     )
 })
