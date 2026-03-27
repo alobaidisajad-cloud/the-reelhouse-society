@@ -7,9 +7,10 @@ import { useFilmStore, useAuthStore } from '../../store'
 import { SectionHeader, ReelRating } from '../UI'
 import Buster from '../Buster'
 
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../../hooks/useViewport'
 
 const SocialPulse = memo(function SocialPulse() {
+    const { isTouch: IS_TOUCH } = useViewport()
     const { logs } = useFilmStore()
     const { user } = useAuthStore()
 

@@ -6,12 +6,21 @@ import SlotEditor from './SlotEditor'
 
 const FORMAT_OPTIONS = ['35mm', 'DCP 4K', 'DCP 2K', '70mm', 'Blu-ray', '16mm', 'VHS (Special)']
 
-interface FilmEditPanelProps { showtime: any; onClose: any; onRemove: any; onAddSlot: any; onRemoveSlot: any; onUpdate: any; }
+import { Showtime, ShowtimeSlot } from '../../types'
+
+interface FilmEditPanelProps {
+    showtime: Showtime;
+    onClose: () => void;
+    onRemove: (id: string) => void;
+    onAddSlot: (stId: string, slot: Partial<ShowtimeSlot>) => void;
+    onRemoveSlot: (stId: string, slotId: string) => void;
+    onUpdate: (stId: string, slotId: string, updates: Partial<ShowtimeSlot>) => void;
+}
 
 export default function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, onRemoveSlot, onUpdate }: FilmEditPanelProps) {
     const [addingSlot, setAddingSlot] = useState(false)
     const [slotForm, setSlotForm] = useState({ time: '20:00', format: '35mm', notes: '' })
-    const totalBooked = showtime.slots.reduce((a: any, s: any) => a + (s.bookedSeats?.length || 0), 0)
+    const totalBooked = showtime.slots.reduce((a: number, s: ShowtimeSlot) => a + (s.bookedSeats?.length || 0), 0)
 
     return (
         <div style={{ position: 'fixed', inset: 0, zIndex: 30000, pointerEvents: 'none' }}>
@@ -31,7 +40,7 @@ export default function FilmEditPanel({ showtime, onClose, onRemove, onAddSlot, 
                 </div>
                 <div className="ui-micro" style={{ color: 'var(--sepia)', padding: '0.75rem 1.25rem 0.4rem' }}>TIME SLOTS</div>
                 <div>
-                    {showtime.slots.map((sl: any) => (
+                    {showtime.slots.map((sl: ShowtimeSlot) => (
                         <SlotEditor key={sl.id} slot={sl} stId={showtime.id} onRemove={onRemoveSlot} onUpdate={onUpdate} />
                     ))}
                     {showtime.slots.length === 0 && (

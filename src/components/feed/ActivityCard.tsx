@@ -11,7 +11,10 @@ import { throttleAction } from '../../errorLogger'
 import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
 
+import { useViewport } from '../../hooks/useViewport'
+
 export default function ActivityCard({ log, isExpandedView = false }: { log: any, isExpandedView?: boolean }) {
+    const { isTouch: IS_TOUCH } = useViewport()
     const navigate = useNavigate()
     const { openLogModal } = useUIStore()
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
@@ -287,7 +290,6 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     }
 
     // ── STANDARD FEED VIEW (INLINE LAYOUT) ──
-    const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
     return (
         <div
             className="fade-in-up"

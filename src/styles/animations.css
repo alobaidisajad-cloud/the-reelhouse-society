@@ -458,18 +458,7 @@
   animation: gold-shimmer 1.5s ease-in-out infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .fsl-strip,
-  .fsl-frame,
-  .fsl-label,
-  .scroll-reveal,
-  .projector-glow,
-  .rating-shimmer:hover {
-    animation: none !important;
-    transition: none !important;
-  }
-  .scroll-reveal { opacity: 1; transform: none; }
-}
+/* ── Reduced motion overrides removed for pure GPU acceleration ── */
 
 /* ── ACHIEVEMENT BADGE SHIMMER ── */
 @keyframes achievementShimmer {

@@ -235,7 +235,7 @@ function FilmProgramme({ showtime, seatLayout, onChooseSeat, index }: any) {
                                         {avail < 15 ? `⚠ ${avail} LEFT` : `${avail} seats`}
                                     </div>
                                     <div style={{ width: 70, height: 3, background: 'var(--ash)', borderRadius: 2 }}>
-                                        <div style={{ height: '100%', width: `${pct}%`, background: pct > 80 ? 'var(--blood-reel)' : 'var(--sepia)', borderRadius: 2, transition: 'width 0.4s' }} />
+                                        <div style={{ height: '100%', width: '100%', transform: `scaleX(${pct / 100})`, transformOrigin: 'left', background: pct > 80 ? 'var(--blood-reel)' : 'var(--sepia)', borderRadius: 2, transition: 'transform 0.4s' }} />
                                     </div>
                                 </div>
 
@@ -288,7 +288,7 @@ function EventCard({ event }: any) {
             {/* Ticket availability */}
             <div style={{ marginTop: '0.75rem' }}>
                 <div style={{ height: 3, background: 'var(--ash)', borderRadius: 2, marginBottom: 4 }}>
-                    <div style={{ height: '100%', width: `${soldPct}%`, background: soldPct > 80 ? 'var(--blood-reel)' : typeColors[event.type] || 'var(--sepia)', borderRadius: 2 }} />
+                    <div style={{ height: '100%', width: '100%', transform: `scaleX(${soldPct / 100})`, transformOrigin: 'left', background: soldPct > 80 ? 'var(--blood-reel)' : typeColors[event.type] || 'var(--sepia)', borderRadius: 2 }} />
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.46rem', color: 'var(--fog)', letterSpacing: '0.08em' }}>
                     {event.ticketsLeft} TICKETS REMAINING · {soldPct}% SOLD

@@ -1,12 +1,13 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import { Toaster, toast } from 'react-hot-toast'
 import * as Sentry from '@sentry/react'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import App from './App.jsx'
+import { queryClient } from './queryClient'
 import './index.css'
 
 // ── Sentry Error Monitoring (production only, zero dev overhead) ──
@@ -38,22 +39,6 @@ window.addEventListener('error', (e: any) => {
 }, true) // Capture phase is required because 'error' events do not bubble
 
 
-
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30 * 60 * 1000, // 30 min — film data doesn't change frequently
-      gcTime: 60 * 60 * 1000,    // 1 hour cache lifetime
-      retry: 2,                   // retry failed requests twice before showing error
-      refetchOnWindowFocus: false, // 🛡️ Protect explicit quotas from tab cycling
-    },
-    mutations: {
-      onError: () => {
-        toast.error('Something went wrong — please try again.')
-      },
-    },
-  },
-})
 
 // ── Custom Nitrate Noir Toast Renderer ──
 function NoirToast({ t, message, icon }: any) {
@@ -94,69 +79,73 @@ function NoirToast({ t, message, icon }: any) {
 }
 
 let root = (window as any)._reactRoot
-if (!root) {
-  root = ReactDOM.createRoot(document.getElementById('root')!)
-  ;(window as any)._reactRoot = root
-}
+const rootElement = document.getElementById('root')
 
-root.render(
-  <React.StrictMode>
-    <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <ErrorBoundary>
-          <App />
-        </ErrorBoundary>
-        <Toaster
-          position="top-center"
-          gutter={8}
-          containerStyle={{ zIndex: 99999, top: 80 }}
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: 'transparent',
-              boxShadow: 'none',
-              padding: 0,
-              margin: 0,
-            },
-            success: {
-              duration: 2500,
-              icon: null,
+if (rootElement) {
+  if (!root) {
+    root = ReactDOM.createRoot(rootElement)
+    ;(window as any)._reactRoot = root
+  }
+
+  root.render(
+    <React.StrictMode>
+      <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <BrowserRouter>
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
+          <Toaster
+            position="top-center"
+            gutter={8}
+            containerStyle={{ zIndex: 99999, top: 80 }}
+            toastOptions={{
+              duration: 3000,
               style: {
-                background: 'linear-gradient(135deg, #1C1710 0%, #0A0703 100%)',
-                border: '1px solid #3A3228',
-                borderLeft: '3px solid #F2E8A0',
-                borderRadius: '2px 6px 3px 5px / 3px 4px 5px 3px',
-                padding: '0.75rem 1.25rem',
-                fontFamily: "'Bungee', sans-serif",
-                fontSize: '0.65rem',
-                letterSpacing: '0.12em',
-                color: '#E8DFC8',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(242,232,160,0.15)',
-                maxWidth: '360px',
+                background: 'transparent',
+                boxShadow: 'none',
+                padding: 0,
+                margin: 0,
               },
-            },
-            error: {
-              duration: 3500,
-              icon: null,
-              style: {
-                background: 'linear-gradient(135deg, #1C1710 0%, #0A0703 100%)',
-                border: '1px solid #5C1A0B',
-                borderLeft: '3px solid #a82424',
-                borderRadius: '2px 6px 3px 5px / 3px 4px 5px 3px',
-                padding: '0.75rem 1.25rem',
-                fontFamily: "'Bungee', sans-serif",
-                fontSize: '0.65rem',
-                letterSpacing: '0.12em',
-                color: '#E8DFC8',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(162,36,36,0.2)',
-                maxWidth: '360px',
+              success: {
+                duration: 2500,
+                icon: null,
+                style: {
+                  background: 'linear-gradient(135deg, #1C1710 0%, #0A0703 100%)',
+                  border: '1px solid #3A3228',
+                  borderLeft: '3px solid #F2E8A0',
+                  borderRadius: '2px 6px 3px 5px / 3px 4px 5px 3px',
+                  padding: '0.75rem 1.25rem',
+                  fontFamily: "'Bungee', sans-serif",
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.12em',
+                  color: '#E8DFC8',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(242,232,160,0.15)',
+                  maxWidth: '360px',
+                },
               },
-            },
-          }}
-        />
-      </BrowserRouter>
-    </QueryClientProvider>
-    </HelmetProvider>
-  </React.StrictMode>,
-)
+              error: {
+                duration: 3500,
+                icon: null,
+                style: {
+                  background: 'linear-gradient(135deg, #1C1710 0%, #0A0703 100%)',
+                  border: '1px solid #5C1A0B',
+                  borderLeft: '3px solid #a82424',
+                  borderRadius: '2px 6px 3px 5px / 3px 4px 5px 3px',
+                  padding: '0.75rem 1.25rem',
+                  fontFamily: "'Bungee', sans-serif",
+                  fontSize: '0.65rem',
+                  letterSpacing: '0.12em',
+                  color: '#E8DFC8',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.8), 0 0 0 1px rgba(162,36,36,0.2)',
+                  maxWidth: '360px',
+                },
+              },
+            }}
+          />
+        </BrowserRouter>
+      </QueryClientProvider>
+      </HelmetProvider>
+    </React.StrictMode>,
+  )
+}

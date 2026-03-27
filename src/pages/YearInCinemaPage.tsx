@@ -191,7 +191,7 @@ export default function YearInCinemaPage() {
                     Log {10 - totalFilms} more film{10 - totalFilms !== 1 ? 's' : ''} to unlock your annual cinematic retrospective. Every great year deserves at least 10 entries.
                 </p>
                 <div style={{ width: '100%', maxWidth: 320, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden', marginBottom: '0.75rem' }}>
-                    <div style={{ width: `${progress}%`, height: '100%', background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', borderRadius: 3, transition: 'width 0.5s ease' }} />
+                    <div style={{ transform: `scaleX(${progress / 100})`, transformOrigin: 'left', width: '100%', height: '100%', background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', borderRadius: 3, transition: 'transform 0.5s ease' }} />
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--fog)', marginBottom: '2rem' }}>
                     {totalFilms}/10 FILMS LOGGED

@@ -6,11 +6,12 @@ import { tmdb, obscurityScore } from '../tmdb'
 import { FilmCard, LoadingReel, SectionHeader, ObscurityBadge, PersonPlaceholder } from '../components/UI'
 import PageSEO from '../components/PageSEO'
 
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../hooks/useViewport'
 
 export default function PersonPage() {
     const { id } = useParams()
     const navigate = useNavigate()
+    const { isTouch: IS_TOUCH } = useViewport()
 
     const { data: person, isLoading: loadingPerson } = useQuery({
         queryKey: ['person', id],

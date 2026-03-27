@@ -4,19 +4,21 @@
  * Zero API calls — challenges defined locally with genre/decade filters.
  */
 
+import { FilmLog } from '../../types'
+
 const CHALLENGES = [
-  { title: 'THE TIME MACHINE', desc: 'Watch a film from the 1970s', check: (log: any) => log.year >= 1970 && log.year < 1980 },
-  { title: 'THE MARATHON', desc: 'Watch a film over 150 minutes', check: (_log: any) => true },
-  { title: 'FOREIGN DISPATCH', desc: 'Watch a non-English language film', check: (_log: any) => true },
-  { title: 'THE CAPSULE', desc: 'Watch a film under 90 minutes', check: (_log: any) => true },
-  { title: 'DEEP VAULT', desc: 'Watch a film from before 1960', check: (log: any) => log.year && log.year < 1960 },
-  { title: 'THE REWATCH', desc: 'Rewatch a film you\'ve seen before', check: (log: any) => log.status === 'rewatched' },
-  { title: 'FIVE REELS', desc: 'Give a film a perfect 5-reel rating', check: (log: any) => log.rating === 5 },
-  { title: 'THE CRITIC\'S PEN', desc: 'Write a review longer than 100 words', check: (log: any) => (log.review?.split(/\s+/).length || 0) > 100 },
-  { title: 'COMPANION REEL', desc: 'Watch a film with someone', check: (log: any) => !!log.watchedWith },
-  { title: 'MIDNIGHT SCREENING', desc: 'Log a film after midnight', check: (_log: any) => true },
-  { title: 'NEW CENTURY', desc: 'Watch a film released this year', check: (log: any) => log.year === new Date().getFullYear() },
-  { title: 'THE CLASSIC', desc: 'Watch a film rated 8+ on IMDB', check: (_log: any) => true },
+  { title: 'THE TIME MACHINE', desc: 'Watch a film from the 1970s', check: (log: FilmLog) => !!log.year && log.year >= 1970 && log.year < 1980 },
+  { title: 'THE MARATHON', desc: 'Watch a film over 150 minutes', check: (_log: FilmLog) => true },
+  { title: 'FOREIGN DISPATCH', desc: 'Watch a non-English language film', check: (_log: FilmLog) => true },
+  { title: 'THE CAPSULE', desc: 'Watch a film under 90 minutes', check: (_log: FilmLog) => true },
+  { title: 'DEEP VAULT', desc: 'Watch a film from before 1960', check: (log: FilmLog) => !!log.year && log.year < 1960 },
+  { title: 'THE REWATCH', desc: 'Rewatch a film you\'ve seen before', check: (log: FilmLog) => log.status === 'rewatched' },
+  { title: 'FIVE REELS', desc: 'Give a film a perfect 5-reel rating', check: (log: FilmLog) => log.rating === 5 },
+  { title: 'THE CRITIC\'S PEN', desc: 'Write a review longer than 100 words', check: (log: FilmLog) => (log.review?.split(/\s+/).length || 0) > 100 },
+  { title: 'COMPANION REEL', desc: 'Watch a film with someone', check: (log: FilmLog) => !!log.watchedWith },
+  { title: 'MIDNIGHT SCREENING', desc: 'Log a film after midnight', check: (_log: FilmLog) => true },
+  { title: 'NEW CENTURY', desc: 'Watch a film released this year', check: (log: FilmLog) => log.year === new Date().getFullYear() },
+  { title: 'THE CLASSIC', desc: 'Watch a film rated 8+ on IMDB', check: (_log: FilmLog) => true },
 ]
 
 function getWeekNumber() {
@@ -25,7 +27,7 @@ function getWeekNumber() {
   return Math.floor(((now.getTime() - start.getTime()) / 86400000 + start.getDay() + 1) / 7)
 }
 
-export default function WeeklyChallenge({ logs }: { logs: any[] }) {
+export default function WeeklyChallenge({ logs }: { logs: FilmLog[] }) {
   const weekIdx = getWeekNumber() % CHALLENGES.length
   const challenge = CHALLENGES[weekIdx]
 
@@ -35,8 +37,8 @@ export default function WeeklyChallenge({ logs }: { logs: any[] }) {
   weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1) // Monday
   weekStart.setHours(0, 0, 0, 0)
 
-  const thisWeekLogs = logs.filter((l: any) => {
-    const d = new Date(l.watchedDate || l.createdAt)
+  const thisWeekLogs = logs.filter((l) => {
+    const d = new Date(l.watchedDate || l.createdAt || new Date().toISOString())
     return d >= weekStart
   })
   const completed = thisWeekLogs.some(l => challenge.check(l))

@@ -30,8 +30,8 @@ const CommandPalette = lazy(() => import('./components/CommandPalette'))
 const OnboardingModal = lazy(() => import('./components/OnboardingModal'))
 const CSVImport = lazy(() => import('./components/CSVImport'))
 
-// Detect touch once — controls which desktop-only effects to mount
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from './hooks/useViewport'
+
 
 // Detect prefers-reduced-motion — used to disable Framer Motion animations
 const PREFERS_REDUCED_MOTION = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -81,6 +81,7 @@ function PageFallback() {
 }
 
 function PageWrapper({ children }: { children: React.ReactNode }) {
+  const { isTouch: IS_TOUCH } = useViewport()
   // Respect prefers-reduced-motion: skip all page animations
   if (PREFERS_REDUCED_MOTION) {
     return <div style={{ position: 'relative', background: 'var(--ink)' }}>{children}</div>

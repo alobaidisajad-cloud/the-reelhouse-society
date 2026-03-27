@@ -5,24 +5,34 @@ import { useFilmStore, useUIStore } from '../../store'
 import toast from 'react-hot-toast'
 
 export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
-    const isMaster = stats.count > 50
-    const { logs } = useFilmStore()
+    const isMaster = stats.total_logs > 50
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
 
-    const downloadCsv = () => {
+    const downloadCsv = async () => {
         if (!isPremium) {
             useUIStore.getState().openSignupModal('archivist')
             return toast("CSV Export is restricted to Archivists.", { icon: <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
         }
-        if (logs.length === 0) return toast('No logs to export.')
+        
+        // Fetch logs JUST-IN-TIME rather than keeping 100,000 in memory
+        const { default: toastLayer } = await import('react-hot-toast')
+        const loadingToast = toastLayer.loading('Compiling Archive...', { style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+        
+        const { supabase } = await import('../../supabaseClient')
+        const { data: fetchLogs } = await supabase
+            .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100000)
+            
+        toastLayer.dismiss(loadingToast)
+        
+        if (!fetchLogs || fetchLogs.length === 0) return toastLayer('No logs to export.')
 
         const headers = ['Title', 'Year', 'Rating', 'Status', 'Watched Date', 'Review', 'Private Notes', 'Watched With']
         const csvRows = [headers.join(',')]
-        for (const log of logs) {
+        for (const log of fetchLogs) {
             csvRows.push([
-                `"${log.title || ''}"`, log.year || '', log.rating || '', log.status || '',
-                log.watchedDate || '', `"${(log.review || '').replace(/"/g, '""')}"`,
-                `"${(log.privateNotes || '').replace(/"/g, '""')}"`, `"${log.watchedWith || ''}"`
+                `"${log.film_title || ''}"`, log.year || '', log.rating || '', log.status || '',
+                log.watched_date || '', `"${(log.review || '').replace(/"/g, '""')}"`,
+                `"${(log.private_notes || '').replace(/"/g, '""')}"`, `"${log.watched_with || ''}"`
             ].join(','))
         }
         const blob = new Blob([csvRows.join('\n')], { type: 'text/csv' })
@@ -50,7 +60,7 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.25em', color: 'var(--fog)', marginBottom: '0.6rem' }}>RANKING</div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: stats.color, filter: `drop-shadow(0 0 20px ${stats.color}40)`, marginBottom: '1.5rem' }}>{stats.level}</h2>
                         <div style={{ height: 4, background: 'var(--ash)', borderRadius: 2, overflow: 'hidden' }}>
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${stats.progress}%` }} style={{ height: '100%', background: stats.color }} />
+                            <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: stats.progress / 100 }} style={{ height: '100%', width: '100%', transformOrigin: 'left', background: stats.color }} />
                         </div>
                     </div>
                 </div>

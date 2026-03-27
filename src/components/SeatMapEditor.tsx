@@ -6,6 +6,7 @@ import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Plus, Trash2, Check, LayoutGrid, Armchair, Monitor, Edit2, X } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { Venue } from '../types'
 
 const ROW_LABELS = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T']
 const SCREEN_COLORS = ['#8B6914','#1d6e34','#5c1a0b','#1a3a6d','#5c3a0b','#2a0b5c']
@@ -227,10 +228,15 @@ function SliderField({ label, value, min, max, onChange, hint }: { label: string
     )
 }
 
-export default function SeatMapEditor({ venue, onSave }: { venue: any; onSave: (data: { screens: ScreenConfig[]; seatLayout: SeatLayoutConfig }) => Promise<void> | void }) {
-    const initScreens = venue.screens && venue.screens.length > 0
-        ? venue.screens
-        : [{ id: 'sc-1', name: 'Screen 1', seatLayout: { ...venue.seatLayout }, color: SCREEN_COLORS[0], blockedSeats: [] }]
+export default function SeatMapEditor({ venue, onSave }: { venue: Venue; onSave: (data: { screens: ScreenConfig[]; seatLayout: SeatLayoutConfig }) => Promise<void> | void }) {
+    const initScreens: ScreenConfig[] = venue.screens && venue.screens.length > 0
+        ? venue.screens.map((sc, i) => ({
+            id: sc.id || `sc-${Date.now()}-${i}`,
+            name: sc.name,
+            color: sc.color || SCREEN_COLORS[i % SCREEN_COLORS.length],
+            seatLayout: sc.seatLayout
+        }))
+        : [{ id: 'sc-1', name: 'Screen 1', seatLayout: { ...venue.seatLayout }, color: SCREEN_COLORS[0] }]
 
     const [screens, setScreens] = useState<ScreenConfig[]>(initScreens)
     const [activeScreenIdx, setActiveScreenIdx] = useState(0)

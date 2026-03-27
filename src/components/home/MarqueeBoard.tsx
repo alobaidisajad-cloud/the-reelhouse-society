@@ -3,13 +3,14 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../supabaseClient'
 import { ReelRating } from '../UI'
 
-// Detect touch/mobile once at module level — never re-evaluated
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../../hooks/useViewport'
 
 // Static — defined outside component so it's never re-created on re-render
-const MARQUEE_BULBS = Array.from({ length: IS_TOUCH ? 8 : 14 }) // fewer bulb animations on mobile
 
 const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
+    const { isTouch: IS_TOUCH } = useViewport()
+    const MARQUEE_BULBS = Array.from({ length: IS_TOUCH ? 8 : 14 }) // fewer bulb animations on mobile
+
     // Smart Fallback Review Count
     const { data: localCount = 0 } = useQuery({
         queryKey: ['local-reviews-marquee', film?.id],

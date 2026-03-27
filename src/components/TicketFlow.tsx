@@ -7,14 +7,23 @@ import SeatSelector from './SeatSelector'
 import TicketStubGallery from './TicketStubGallery'
 import toast from 'react-hot-toast'
 
-export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }: any) {
+import { Showtime, ShowtimeSlot, SeatLayout } from '../types'
+
+interface TicketFlowProps {
+    showtime: Showtime;
+    slot: ShowtimeSlot;
+    onClose: () => void;
+    venueSeatLayout?: Partial<SeatLayout>;
+}
+
+export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }: TicketFlowProps) {
     const { isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
     const { venue, bookSeat } = useVenueStore()
 
     const [step, setStep] = useState(1) // 1=type, 2=seat, 3=confirm, 4=success
-    const [ticketType, setTicketType] = useState<any>(null)
-    const [selectedSeat, setSelectedSeat] = useState<any>(null)
+    const [ticketType, setTicketType] = useState<{ id: string; type: string; price: number; perks?: string } | null>(null)
+    const [selectedSeat, setSelectedSeat] = useState<string | null>(null)
     const [createdStub, setCreatedStub] = useState<any>(null)
     const [purchasing, setPurchasing] = useState(false)
 
@@ -38,7 +47,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
             const vipRowCount = seatLayout.vipRows || 2
             const rowLabels = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
             const vipRows = new Set(rowLabels.slice(0, vipRowCount))
-            if (vipRows.has(seatId[0]) && ticketType?.type !== 'VIP') {
+            if (vipRows.has(seatId[0])) {
                 toast(`Seat ${seatId} is VIP-reserved. Pick another row or upgrade.`, { icon: '⭐' })
                 return
             }
@@ -53,15 +62,15 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
         if (purchasing) return  // Block double-tap
         bookSeat(showtime.id, slot.id, selectedSeat)
         const stub = {
-            showtimeId: showtime.dbId || showtime.id || null,   // real Supabase UUID if available
+            showtimeId: (showtime as any).dbId || showtime.id || null,   // real Supabase UUID if available
             slotId: slot.id || 'default',
             filmId: showtime.id,
             title: showtime.film,
             date: showtime.date,
             time: slot.time,
             venue: venue.name,
-            screen: showtime.screenName || slot.screenName || 'Main Screen',
-            screenName: showtime.screenName || slot.screenName || null,
+            screen: (showtime as any).screenName || (slot as any).screenName || 'Main Screen',
+            screenName: (showtime as any).screenName || (slot as any).screenName || null,
             seat: selectedSeat,
             ticketType: ticketType.type,
             price: ticketType.price,
@@ -133,7 +142,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.25rem' }}>
                                 {availableSeats} SEATS AVAILABLE
                             </div>
-                            {slot.ticketTypes?.map((tt: any) => (
+                            {slot.ticketTypes?.map((tt) => (
                                 <div
                                     key={tt.id}
                                     onClick={() => setTicketType(tt)}
@@ -200,9 +209,9 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
                                     ['Ticket Type', ticketType?.type],
                                     ['Venue', venue.name],
                                 ].map(([label, val]) => (
-                                    <div key={label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.45rem', borderBottom: '1px solid var(--ash)' }}>
-                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{label.toUpperCase()}</span>
-                                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)' }}>{val}</span>
+                                    <div key={String(label)} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.45rem', borderBottom: '1px solid var(--ash)' }}>
+                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{String(label).toUpperCase()}</span>
+                                        <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)' }}>{val as any}</span>
                                     </div>
                                 ))}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.25rem' }}>

@@ -2,8 +2,8 @@ import { motion } from 'framer-motion'
 import { RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
 
-export function TasteDNA({ logs }: { logs: any[] }) {
-    if (logs.length === 0) {
+export function TasteDNA({ stats }: { stats: any }) {
+    if (!stats || stats.total_logs === 0) {
         return (
             <div className="taste-dna-poster">
                 <h3>TASTE DNA</h3>
@@ -16,32 +16,25 @@ export function TasteDNA({ logs }: { logs: any[] }) {
         )
     }
 
-    const decades: Record<string, number> = {}
-    logs.forEach((log: any) => {
-        const year = parseInt(log.year || '2000')
-        const decade = `${Math.floor(year / 10) * 10}s`
-        decades[decade] = (decades[decade] || 0) + 1
-    })
-    const topDecade = Object.entries(decades).sort((a, b) => (b[1] as number) - (a[1] as number))[0]?.[0] || '2000s'
-    const rated = logs.filter((l: any) => l.rating > 0)
-    const avgRating = rated.length ? rated.reduce((s: number, l: any) => s + l.rating, 0) / rated.length : 0
-    const obscurityScore = Math.round(40 + (5 - avgRating) * 12 + Math.min(logs.length, 30))
+    const avgRating = Number(stats.avg_rating || 0)
+    const obscurityScore = Math.round(40 + (5 - avgRating) * 12 + Math.min(stats.total_logs, 30))
     const archetypes = [
         { min: 0, label: 'Initiate' }, { min: 5, label: 'Devotee' }, { min: 15, label: 'Archivist' },
         { min: 30, label: 'Cinephile' }, { min: 60, label: 'Obsessive' }, { min: 100, label: 'The Oracle' },
     ]
-    const archetype = archetypes.filter(a => logs.length >= a.min).pop()?.label || 'Initiate'
+    const archetype = archetypes.filter(a => stats.total_logs >= a.min).pop()?.label || 'Initiate'
     const tones = avgRating >= 4 ? 'Romanticism' : avgRating >= 3 ? 'Realism' : avgRating >= 2 ? 'Dark Romanticism' : 'Nihilism'
-    const topDecades = Object.entries(decades).sort((a, b) => b[1] - a[1]).slice(0, 4)
-    const autopsies = logs.filter((l: any) => l.isAutopsied && l.autopsy).map((l: any) => l.autopsy)
-    let avgAutopsy: { story: number; cinematography: number; sound: number } | null = null
-    if (autopsies.length > 0) {
-        avgAutopsy = {
-            story: Math.round(autopsies.reduce((s: number, a: any) => s + (a.story || a.screenplay || a.script || 0), 0) / autopsies.length),
-            cinematography: Math.round(autopsies.reduce((s: number, a: any) => s + (a.cinematography || a.visuals || a.acting || 0), 0) / autopsies.length),
-            sound: Math.round(autopsies.reduce((s: number, a: any) => s + (a.sound || a.score || a.editing || 0), 0) / autopsies.length),
-        }
-    }
+    
+    // Convert decades JSON to sorted array
+    const topDecades = Object.entries(stats.decades || {}).sort((a: any, b: any) => b[1] - a[1]).slice(0, 4)
+    const topDecade = topDecades[0]?.[0] || '2000s'
+
+    // Process Autopsies
+    const avgAutopsy = (stats.avg_autopsy && Number(stats.avg_autopsy.story) > 0) ? {
+        story: Math.round(Number(stats.avg_autopsy.story)),
+        cinematography: Math.round(Number(stats.avg_autopsy.cinematography)),
+        sound: Math.round(Number(stats.avg_autopsy.sound)),
+    } : null
 
     return (
         <div className="taste-dna-poster">
@@ -60,8 +53,8 @@ export function TasteDNA({ logs }: { logs: any[] }) {
                 <span style={{ fontFamily: 'var(--font-display-alt)', fontSize: '1rem', color: 'var(--sepia)' }}>{obscurityScore}</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                {topDecades.map(([decade, count]: [string, number]) => {
-                    const pct = Math.round((count / logs.length) * 100)
+                {topDecades.map(([decade, count]: [string, any]) => {
+                    const pct = Math.round((Number(count) / stats.total_logs) * 100)
                     return (
                         <div key={decade}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.15rem' }}>
@@ -69,7 +62,7 @@ export function TasteDNA({ logs }: { logs: any[] }) {
                                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>{pct}%</span>
                             </div>
                             <div style={{ height: 3, background: 'var(--ash)', borderRadius: 2, overflow: 'hidden' }}>
-                                <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} transition={{ duration: 0.8, delay: 0.2 }} style={{ height: '100%', background: 'linear-gradient(90deg, var(--sepia), var(--flicker))' }} />
+                                <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: pct / 100 }} transition={{ duration: 0.8, delay: 0.2 }} style={{ height: '100%', width: '100%', transformOrigin: 'left', background: 'linear-gradient(90deg, var(--sepia), var(--flicker))' }} />
                             </div>
                         </div>
                     )

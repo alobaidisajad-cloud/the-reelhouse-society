@@ -3,10 +3,10 @@ import { Plus, Lock, Globe, Search as SearchIcon, X, Film } from 'lucide-react'
 import { tmdb } from '../tmdb'
 import toast from 'react-hot-toast'
 
-// Same implementation, extracted for reuse across ListDetailPage and ListsPage
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../hooks/useViewport'
 
 export default function CreateListModal({ onClose, onCreate, initialList = null }: any) {
+    const { isTouch: IS_TOUCH } = useViewport()
     const [title, setTitle] = useState(initialList?.title || '')
     const [desc, setDesc] = useState(initialList?.description || '')
     const [isPrivate, setIsPrivate] = useState(initialList?.isPrivate ?? false)

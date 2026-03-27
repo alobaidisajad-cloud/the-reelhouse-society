@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Poster from '../film/Poster'
 
-export function WatchlistRoulette({ watchlist }: { watchlist: any[] }) {
+import { WatchlistItem } from '../../types'
+
+export function WatchlistRoulette({ watchlist }: { watchlist: WatchlistItem[] }) {
     const [picking, setPicking] = useState(false)
-    const [result, setResult] = useState<any>(null)
+    const [result, setResult] = useState<WatchlistItem | null>(null)
     const [reason, setReason] = useState('')
-    const [flickerTarget, setFlickerTarget] = useState<any>(null)
+    const [flickerTarget, setFlickerTarget] = useState<WatchlistItem | null>(null)
 
     const spin = () => {
         if (watchlist.length < 2) return
@@ -80,15 +82,15 @@ export function WatchlistRoulette({ watchlist }: { watchlist: any[] }) {
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem' }}>
                         THE ORACLE HAS SPOKEN
                     </div>
-                    <Link to={`/film/${result.id}`} style={{ textDecoration: 'none' }}>
+                    <Link to={`/film/${result!.id}`} style={{ textDecoration: 'none' }}>
                         <motion.div whileHover={{ scale: 1.05 }} style={{ display: 'inline-block' }}>
                             <div style={{ width: 140, overflow: 'hidden', borderRadius: 4, filter: 'sepia(0.3) contrast(1.1)', boxShadow: '0 10px 30px rgba(0,0,0,0.6)' }}>
-                                <Poster path={result.poster_path} title={result.title} sizeHint="md" />
+                                <Poster path={result!.poster_path} title={result!.title} sizeHint="md" />
                             </div>
                         </motion.div>
                     </Link>
-                    <Link to={`/film/${result.id}`} style={{ textDecoration: 'none' }}>
-                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--parchment)', marginTop: '1rem' }}>{result.title}</h3>
+                    <Link to={`/film/${result!.id}`} style={{ textDecoration: 'none' }}>
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--parchment)', marginTop: '1rem' }}>{result!.title}</h3>
                     </Link>
                     <p style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.5rem' }}>
                         "{reason}"

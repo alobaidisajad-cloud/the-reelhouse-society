@@ -10,8 +10,8 @@ import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 import PageSEO from '../components/PageSEO'
 
-// Detect touch/mobile once at module level
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../hooks/useViewport'
+
 
 
 function UnbreakablePoster({ posterPath, title, isTop }: any) {
@@ -61,6 +61,7 @@ function UnbreakablePoster({ posterPath, title, isTop }: any) {
 import ListActions from '../components/ListActions'
 
 function CommunityListCard({ list }: any) {
+    const { isTouch: IS_TOUCH } = useViewport()
     const gradients = [
         'linear-gradient(135deg, #1a0e05 0%, #3a2010 40%, #0a0703 100%)',
         'linear-gradient(135deg, #0a0a0a 0%, #1c1710 50%, #2a1a05 100%)',
@@ -223,6 +224,7 @@ type TimeFilter = 'all' | 'week' | 'month'
 type SortOption = 'newest' | 'oldest' | 'most-certified'
 
 export default function ListsPage() {
+    const { isTouch: IS_TOUCH } = useViewport()
     const { isAuthenticated, user } = useAuthStore()
     const { lists, createList, addFilmToList } = useFilmStore()
 

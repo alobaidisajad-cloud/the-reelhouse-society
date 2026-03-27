@@ -12,7 +12,7 @@ import SectionErrorBoundary from '../components/SectionErrorBoundary'
 import WeeklyChallenge from '../components/profile/WeeklyChallenge'
 import PageSEO from '../components/PageSEO'
 
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../hooks/useViewport'
 
 // ── Helper: map raw log rows to feed entries ──
 function mapLogsToFeed(data: any[]) {
@@ -58,8 +58,8 @@ function mapLogsToFeed(data: any[]) {
 
 // ── FEED PAGE ──
 export default function FeedPage() {
-    const isAuthenticated = useAuthStore(state => state.isAuthenticated)
-    const user = useAuthStore(state => state.user)
+    const { isTouch: IS_TOUCH } = useViewport()
+    const { isAuthenticated, user } = useAuthStore()
     const openSignupModal = useUIStore(state => state.openSignupModal)
     const openLogModal = useUIStore(state => state.openLogModal)
 
@@ -474,7 +474,7 @@ export default function FeedPage() {
                     <div className="feed-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
                         {/* E2: Weekly Film Challenge */}
-                        <WeeklyChallenge logs={communityFeed} />
+                        <WeeklyChallenge logs={communityFeed as any} />
 
 
                         {/* Curated Lists — Real Supabase data */}

@@ -9,8 +9,8 @@ import { useUIStore, useDiscoverStore } from '../store'
 import PageSEO from '../components/PageSEO'
 import Poster from '../components/film/Poster'
 
-// Detect touch/mobile once at module level
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../hooks/useViewport'
+
 
 // ── FILTER DATA ──
 const GENRES = [
@@ -153,9 +153,11 @@ const desktopGridStyle = {
     gap: '1.25rem',
 }
 
-const FilmGrid = ({ films }: { films: any[] }) => (
+const FilmGrid = ({ films }: { films: any[] }) => {
+    const { isTouch: IS_TOUCH } = useViewport()
+    return (
     <div style={IS_TOUCH ? mobileGridStyle : desktopGridStyle}>
-        {films.map((item: any, idx) => {
+        {films.map((item: any, idx: number) => {
             const isPerson = item.media_type === 'person'
             return (
                 <Link
@@ -183,10 +185,12 @@ const FilmGrid = ({ films }: { films: any[] }) => (
             )
         })}
     </div>
-)
+    )
+}
 
 // ── MAIN PAGE ──
 export default function DiscoverPage() {
+    const { isTouch: IS_TOUCH } = useViewport()
     const [searchParams] = useSearchParams()
 
     const page = useDiscoverStore(s => s.page)

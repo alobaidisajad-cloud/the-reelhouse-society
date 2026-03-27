@@ -4,19 +4,9 @@
    Breakpoints: 1024 (tablet) · 768 (mobile) · 480 (small phone) · 360 (tiny)
    ============================================================ */
 
-/* ── CRITICAL MOBILE PERF: disable staggered animations & blur ── */
+/* ── MOBILE PERF: Touch-optimized interactions ── */
 @media (any-pointer: coarse) {
-
-  .fade-in-up {
-    animation: none !important;
-    opacity: 1 !important;
-    transform: none !important;
-    will-change: auto !important;
-  }
-
   * {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
     cursor: auto !important;
   }
 
@@ -24,27 +14,18 @@
     cursor: pointer !important;
   }
 
-  .btn, .card, .tag, .film-card {
-    transition-duration: 0.1s !important;
-  }
-
-  .nav-log-btn { animation: none !important; }
-
   body::before {
-    animation: none !important;
     opacity: 0.06;
   }
 
+  /* Keep heavy visual overlays off on mobile to save battery */
   .film-scratches, .film-dust { display: none !important; }
+  
+  /* Disable hover states that stick on mobile tap */
   .card:hover { transform: none !important; }
-  .card-film img { transition: none !important; transform: none !important; }
+  .card-film img { transition: opacity 0.3s ease !important; }
   .card-film:hover img { transform: none !important; }
-  .btn:hover { animation: none !important; }
-
-  .card {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
+  .btn:hover { transform: none !important; }
 
   .navbar.scrolled {
     backdrop-filter: blur(8px) !important;
@@ -74,18 +55,7 @@
   .nav-logo-buster { display: none; }
 }
 
-/* ── Reduce motion ── */
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.1ms !important;
-  }
-
-  .developing-poster { animation: none !important; }
-  .film-scratches, .film-dust, .cigarette-burn-overlay { display: none !important; }
-  body::before { animation: none !important; }
-}
+/* ── Motion handling fully offloaded to GPU ── */
 
 /* ═══════════════════════════════════════════
    TABLET (≤1024px)

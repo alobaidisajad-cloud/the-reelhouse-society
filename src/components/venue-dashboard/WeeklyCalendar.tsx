@@ -16,22 +16,32 @@ function getWeekDates(offset = 0): string[] {
     })
 }
 
-interface WeeklyCalendarProps { showtimes: any[]; screens?: any[]; onRemove: any; onAddSlot: any; onRemoveSlot: any; onUpdateSlot: any; onAddFilmToDate: any; }
+import { Showtime, Screen, ShowtimeSlot } from '../../types'
+
+interface WeeklyCalendarProps {
+    showtimes: Showtime[];
+    screens?: Screen[];
+    onRemove: (id: string) => void;
+    onAddSlot: (stId: string, slot: Partial<ShowtimeSlot>) => void;
+    onRemoveSlot: (stId: string, slotId: string) => void;
+    onUpdateSlot: (stId: string, slotId: string, updates: Partial<ShowtimeSlot>) => void;
+    onAddFilmToDate: (date: string) => void;
+}
 
 export default function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemoveSlot, onUpdateSlot, onAddFilmToDate }: WeeklyCalendarProps) {
     const [weekOffset, setWeekOffset] = useState(0)
-    const [selectedFilm, setSelectedFilm] = useState<any>(null)
+    const [selectedFilm, setSelectedFilm] = useState<Showtime | null>(null)
     const weekDates = getWeekDates(weekOffset)
     const DAY_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
-    const byDate: Record<string, any[]> = {}
+    const byDate: Record<string, Showtime[]> = {}
     showtimes.forEach(st => {
         if (!byDate[st.date]) byDate[st.date] = []
         byDate[st.date].push(st)
     })
 
-    const totalSlots = showtimes.reduce((a: any, s: any) => a + s.slots.length, 0)
-    const totalBooked = showtimes.reduce((a: any, s: any) => a + s.slots.reduce((b: any, sl: any) => b + (sl.bookedSeats?.length || 0), 0), 0)
+    const totalSlots = showtimes.reduce((a: number, s: Showtime) => a + s.slots.length, 0)
+    const totalBooked = showtimes.reduce((a: number, s: Showtime) => a + s.slots.reduce((b: number, sl: ShowtimeSlot) => b + (sl.bookedSeats?.length || 0), 0), 0)
 
     return (
         <div>
@@ -70,7 +80,7 @@ export default function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemov
                                         {new Date(date + 'T12:00').getDate()}
                                     </div>
                                 </div>
-                                {films.map((st: any) => (
+                                {films.map((st: Showtime) => (
                                     <button key={st.id} onClick={() => setSelectedFilm(selectedFilm?.id === st.id ? null : st)}
                                         style={{
                                             background: selectedFilm?.id === st.id ? 'rgba(139,105,20,0.2)' : 'var(--ink)',
@@ -84,8 +94,8 @@ export default function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemov
                                 ))}
                                 <button onClick={() => onAddFilmToDate(date)}
                                     style={{ background: 'none', border: '1px dashed var(--ash)', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.48rem', padding: '0.35rem', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.2rem', transition: 'all 0.15s', letterSpacing: '0.05em' }}
-                                    onMouseEnter={(e: any) => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.color = 'var(--sepia)' }}
-                                    onMouseLeave={(e: any) => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.color = 'var(--fog)' }}
+                                    onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.color = 'var(--sepia)' }}
+                                    onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.color = 'var(--fog)' }}
                                 >
                                     <Plus size={10} /> Add
                                 </button>
@@ -99,7 +109,7 @@ export default function WeeklyCalendar({ showtimes, onRemove, onAddSlot, onRemov
                         <FilmEditPanel
                             showtime={selectedFilm}
                             onClose={() => setSelectedFilm(null)}
-                            onRemove={(id: any) => { onRemove(id); setSelectedFilm(null) }}
+                            onRemove={(id: string) => { onRemove(id); setSelectedFilm(null) }}
                             onAddSlot={onAddSlot}
                             onRemoveSlot={onRemoveSlot}
                             onUpdate={onUpdateSlot}

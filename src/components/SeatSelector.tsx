@@ -2,7 +2,8 @@
 // Screen at top, VIP rows A-B in gold, Standard rows below, aisle in middle
 
 import { X, Check } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, CSSProperties } from 'react'
+import { ShowtimeSlot, SeatLayout } from '../types'
 
 const ROW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
 
@@ -30,8 +31,8 @@ const SCREEN_GLOW_STYLE = `
 }
 `
 
-export default function SeatSelector({ slot, seatLayout = {}, selectedSeat, onSeatSelect }: { slot?: any; seatLayout?: any; selectedSeat?: string | null; onSeatSelect?: (seatId: string, kind: string) => void }) {
-    const { rows = 10, cols = 15, vipRows = 2, aisleAfterCol = 7 } = seatLayout
+export default function SeatSelector({ slot, seatLayout, selectedSeat, onSeatSelect }: { slot?: ShowtimeSlot; seatLayout?: Partial<SeatLayout>; selectedSeat?: string | null; onSeatSelect?: (seatId: string, kind: string) => void }) {
+    const { rows = 10, cols = 15, vipRows = 2, aisleAfterCol = 7 } = seatLayout || {}
     const rowLabels = ROW_LABELS.slice(0, rows)
     const colNums = Array.from({ length: cols }, (_, i) => i + 1)
     const vipRowSet = new Set(ROW_LABELS.slice(0, vipRows))
@@ -56,7 +57,7 @@ export default function SeatSelector({ slot, seatLayout = {}, selectedSeat, onSe
         setTimeout(() => setJustSelected(null), 500)
     }
 
-    const getSeatStyle = (seatId: string, isVip: boolean, isBooked: boolean, isSelected: boolean): any => {
+    const getSeatStyle = (seatId: string, isVip: boolean, isBooked: boolean, isSelected: boolean): CSSProperties => {
         const isPopping = justSelected === seatId
         let bg, border, boxShadow = 'none'
         if (isBooked) {
@@ -192,18 +193,18 @@ export default function SeatSelector({ slot, seatLayout = {}, selectedSeat, onSe
                                                         setTooltip(null)
                                                         if (!isBooked && !isSelected) {
                                                             const origStyle = getSeatStyle(seatId, isVipRow, false, false)
-                                                            e.currentTarget.style.background = origStyle.background
-                                                            e.currentTarget.style.borderColor = origStyle.border?.replace('1.5px solid ', '') || origStyle.border
+                                                            e.currentTarget.style.background = origStyle.background as string
+                                                            e.currentTarget.style.borderColor = (origStyle.border as string)?.replace('1.5px solid ', '') || (origStyle.border as string)
                                                             e.currentTarget.style.transform = 'scale(1) translateY(0)'
                                                             e.currentTarget.style.boxShadow = 'none'
                                                         }
                                                     }}
                                                 >
                                                     {isBooked && (
-                                                        <span style={{ fontSize: '0.45rem', color: 'rgba(200,80,60,0.6)', lineHeight: 1, pointerEvents: 'none' }}><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>
+                                                        <span style={{ fontSize: '0.45rem', color: 'rgba(200,80,60,0.6)', lineHeight: 1, pointerEvents: 'none', display: 'flex', alignItems: 'center' }}><X size={12} /></span>
                                                     )}
                                                     {isSelected && (
-                                                        <span style={{ fontSize: '0.55rem', color: '#3dba5a', lineHeight: 1, pointerEvents: 'none' }}><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>
+                                                        <span style={{ fontSize: '0.55rem', color: '#3dba5a', lineHeight: 1, pointerEvents: 'none', display: 'flex', alignItems: 'center' }}><Check size={12} /></span>
                                                     )}
                                                 </div>
                                             </div>

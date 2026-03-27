@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Film } from 'lucide-react'
 import { tmdb } from '../../tmdb'
 
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../../hooks/useViewport'
 
 interface PosterProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     path: string | null | undefined
@@ -12,6 +12,7 @@ interface PosterProps extends React.ImgHTMLAttributes<HTMLImageElement> {
 }
 
 export default function Poster({ path, title, aspectRatio = 'poster', sizeHint = 'md', className, style, ...props }: PosterProps) {
+    const { isTouch: IS_TOUCH } = useViewport()
     const [error, setError] = useState(false)
     const [loaded, setLoaded] = useState(false)
 
@@ -24,7 +25,7 @@ export default function Poster({ path, title, aspectRatio = 'poster', sizeHint =
         background: 'var(--ash)',
         overflow: 'hidden',
         width: '100%',
-        height: '100%',
+        height: 'auto',
         aspectRatio: aspectRatio === 'poster' ? '2/3' : aspectRatio === 'backdrop' ? '16/9' : '1/1',
         ...style
     }

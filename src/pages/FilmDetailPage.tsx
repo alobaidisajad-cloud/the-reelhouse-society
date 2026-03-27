@@ -11,7 +11,7 @@ import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
 
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../hooks/useViewport'
 
 import CommunityReviews from '../components/film/CommunityReviews'
 import PageSEO from '../components/PageSEO'
@@ -27,6 +27,7 @@ import CriticsBooth from '../components/film/CriticsBooth'
 
 // ── FILM HERO ──
 function FilmHero({ film, onPlayTrailer }: any) {
+    const { isTouch: IS_TOUCH } = useViewport()
     const { openLogModal } = useUIStore()
     const { watchlist, addToWatchlist, removeFromWatchlist, logs, markAsWatched, unmarkWatched } = useFilmStore()
     const [showExport, setShowExport] = useState(false)
@@ -195,6 +196,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
 }
 
 function FilmDetails({ film, onPlayVideo }: any) {
+    const { isTouch: IS_TOUCH } = useViewport()
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
     const cast = film.credits?.cast?.slice(0, 8) || []
 
@@ -369,6 +371,7 @@ function FilmDetails({ film, onPlayVideo }: any) {
 
 // ── Main Page Export ──
 export default function FilmDetailPage() {
+    const { isTouch: IS_TOUCH } = useViewport()
     const { id } = useParams()
     const navigate = useNavigate()
     const location = useLocation()

@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
-import { queryClient } from '../main'
+import { queryClient } from '../queryClient'
 import { useAuthStore, hydrateFollowing } from './auth'
 import { useFilmStore } from './films'
 import { useNotificationStore } from './social'

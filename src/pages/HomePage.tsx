@@ -15,8 +15,7 @@ import SocialPulse from '../components/home/SocialPulse'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
 import PageSEO from '../components/PageSEO'
 
-// Detect touch/mobile once at module level — never re-evaluated
-const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+import { useViewport } from '../hooks/useViewport'
 
 // ── Rotating cinematic taglines for the mobile lobby ──
 const LOBBY_TAGLINES = [
@@ -79,6 +78,7 @@ function MobileLobbyTagline() {
 // ── MAIN HOME PAGE ──
 export default function HomePage() {
     const navigate = useNavigate()
+    const { isTouch: IS_TOUCH } = useViewport()
 
     // Enterprise Fix: Granular Selectors
     const openSignupModal = useUIStore(state => state.openSignupModal)

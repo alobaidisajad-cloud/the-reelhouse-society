@@ -189,6 +189,8 @@ export interface Venue {
     phone: string
     website: string
     instagram: string
+    twitter?: string
+    mapLink?: string
     logo: string | null
     vibes: string[]
     seatLayout: SeatLayout
@@ -198,6 +200,9 @@ export interface Venue {
     followers: number
     verified: boolean
     paymentConnected: boolean
+    paymentAccountName?: string
+    paymentLast4?: string
+    paymentBrand?: string
     platformFeePercent: number
 }
 
@@ -210,11 +215,22 @@ export interface SeatLayout {
 }
 
 export interface Screen {
+    id?: string
     name: string
+    color?: string
     seatLayout: SeatLayout
 }
 
 // ── Showtime ──
+export interface ShowtimeSlot {
+    id: string
+    time: string
+    format: string
+    notes?: string
+    ticketTypes?: Array<{ id: string; type: string; price: number; perks?: string }>
+    bookedSeats?: string[]
+}
+
 export interface Showtime {
     id: string
     film: string
@@ -223,7 +239,9 @@ export interface Showtime {
     time?: string
     venue_id?: string
     screen_name?: string
-    slots: Array<any>
+    screenName?: string
+    filmId?: number
+    slots: ShowtimeSlot[]
     durationMins: number
     price?: number
 }
