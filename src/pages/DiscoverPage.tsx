@@ -275,12 +275,14 @@ export default function DiscoverPage() {
 
     useEffect(() => {
         if (currentResults?.results) {
+            // Filter out films without posters — they render as ugly placeholders
+            const withPosters = currentResults.results.filter((f: any) => f.poster_path || f.profile_path)
             if (page === 1) {
-                setAccumulatedFilms(currentResults.results)
+                setAccumulatedFilms(withPosters)
             } else {
                 setAccumulatedFilms((prev: any[]) => {
                     const keys = new Set(prev.map((f: any) => `${f.media_type || 'movie'}-${f.id}`))
-                    return [...prev, ...currentResults.results.filter((f: any) => !keys.has(`${f.media_type || 'movie'}-${f.id}`))]
+                    return [...prev, ...withPosters.filter((f: any) => !keys.has(`${f.media_type || 'movie'}-${f.id}`))]
                 })
             }
         }
