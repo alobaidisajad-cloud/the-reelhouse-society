@@ -568,8 +568,8 @@ export default function ListsPage() {
         }
 
         // Following filter
-        if (isCommunity && followingOnly && user?.following?.length > 0) {
-            result = result.filter((l: any) => user.following.includes(l.userId))
+        if (isCommunity && followingOnly && user?.following && Array.isArray(user.following) && user.following.length > 0) {
+            result = result.filter((l: any) => (user.following as string[]).includes(l.userId))
         }
 
         // Sort
@@ -630,14 +630,12 @@ export default function ListsPage() {
 
             {/* ── SEARCH + FILTER BAR ── */}
             <div style={{
-                background: 'linear-gradient(180deg, rgba(28,23,16,0.4) 0%, transparent 100%)',
-                padding: IS_TOUCH ? '1rem 0 0.75rem' : '1.5rem 0 1rem',
+                background: 'var(--ink)',
+                padding: IS_TOUCH ? '0.75rem 0' : '1.25rem 0 1rem',
                 position: 'sticky', top: IS_TOUCH ? 56 : 60, zIndex: 50,
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                borderBottom: '1px solid rgba(139,105,20,0.08)',
+                borderBottom: '1px solid rgba(139,105,20,0.1)',
             }}>
-                <div className="container" style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="container" style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '0.5rem' : '0.65rem' }}>
                     {/* Search Input */}
                     <div style={{ position: 'relative' }}>
                         <SearchIcon size={IS_TOUCH ? 14 : 16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--sepia)', opacity: 0.6, zIndex: 1 }} />
@@ -665,15 +663,15 @@ export default function ListsPage() {
                         )}
                     </div>
 
-                    {/* Filter Pills + Sort — NO overflowX to prevent dropdown clipping */}
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', paddingBottom: '2px' }}>
+                    {/* Filter Pills + Sort */}
+                    <div style={{ display: 'flex', gap: IS_TOUCH ? '0.35rem' : '0.5rem', alignItems: 'center', overflowX: IS_TOUCH ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' as any, paddingBottom: '2px', msOverflowStyle: 'none' as any }}>
                         {/* Time Filters */}
                         <FilterPill label="ALL TIME" active={timeFilter === 'all'} onClick={() => setTimeFilter('all')} />
                         <FilterPill label="THIS WEEK" active={timeFilter === 'week'} onClick={() => setTimeFilter('week')} />
                         <FilterPill label="THIS MONTH" active={timeFilter === 'month'} onClick={() => setTimeFilter('month')} />
 
                         {/* Separator */}
-                        <div style={{ width: '1px', height: '16px', background: 'rgba(139,105,20,0.15)', flexShrink: 0 }} />
+                        <div style={{ width: '1px', height: '14px', background: 'rgba(139,105,20,0.15)', flexShrink: 0 }} />
 
                         {/* Following filter — only show if logged in */}
                         {isAuthenticated && (
@@ -734,10 +732,12 @@ export default function ListsPage() {
                         </div>
                     </div>
 
-                    {/* Results count */}
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)', opacity: 0.6 }}>
-                        {hasActiveFilters ? `${totalResults} RESULTS` : `${totalResults} ARCHIVES`}
-                    </div>
+                    {/* Results count — hide on mobile to save space */}
+                    {!IS_TOUCH && (
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)', opacity: 0.6 }}>
+                            {hasActiveFilters ? `${totalResults} RESULTS` : `${totalResults} ARCHIVES`}
+                        </div>
+                    )}
                 </div>
             </div>
 
