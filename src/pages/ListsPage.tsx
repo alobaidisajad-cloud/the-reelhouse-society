@@ -4,6 +4,7 @@ import { useFilmStore, useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
 import { Plus, Lock, Globe, Search as SearchIcon, X, ChevronDown, Award, MessageCircle, Send } from 'lucide-react'
+import CreateListModal from '../components/CreateListModal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
@@ -57,176 +58,7 @@ function UnbreakablePoster({ posterPath, title, isTop }: any) {
     )
 }
 
-// ── CERTIFY + COMMENT BAR (bottom of each community card) ──
-function ListActions({ listId, certifyCount: initialCertifyCount, isCertified: initialIsCertified, commentCount: initialCommentCount }: {
-    listId: string; certifyCount: number; isCertified: boolean; commentCount: number
-}) {
-    const { isAuthenticated, user } = useAuthStore()
-    const { openSignupModal } = useUIStore()
-    const queryClient = useQueryClient()
-    const [certifyCount, setCertifyCount] = useState(initialCertifyCount)
-    const [isCertified, setIsCertified] = useState(initialIsCertified)
-    const [showComments, setShowComments] = useState(false)
-    const [commentText, setCommentText] = useState('')
-    const [submittingComment, setSubmittingComment] = useState(false)
-    const [localCommentCount, setLocalCommentCount] = useState(initialCommentCount)
-
-    // Fetch comments for this list
-    const { data: comments = [] } = useQuery({
-        queryKey: ['list-comments', listId],
-        queryFn: async () => {
-            const { data } = await supabase
-                .from('interactions')
-                .select('id, user_id, type, created_at')
-                .eq('target_list_id', listId)
-                .eq('type', 'comment_list')
-                .order('created_at', { ascending: true })
-                .limit(30)
-            if (!data || data.length === 0) return []
-            // Resolve usernames
-            const uids = [...new Set(data.map((c: any) => c.user_id))]
-            const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', uids)
-            const umap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.username]))
-            return data.map((c: any) => ({ ...c, username: umap[c.user_id] || 'anon' }))
-        },
-        enabled: showComments,
-        staleTime: 1000 * 60 * 1,
-    })
-
-    const handleCertify = async (e: React.MouseEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        if (!isAuthenticated) { openSignupModal(); return }
-        try {
-            if (isCertified) {
-                await supabase.from('interactions').delete()
-                    .eq('user_id', user!.id).eq('target_list_id', listId).eq('type', 'endorse_list')
-                setCertifyCount(c => Math.max(0, c - 1))
-                setIsCertified(false)
-            } else {
-                await supabase.from('interactions').insert([{ user_id: user!.id, target_list_id: listId, type: 'endorse_list' }])
-                setCertifyCount(c => c + 1)
-                setIsCertified(true)
-                toast.success('Certified!')
-            }
-            queryClient.invalidateQueries({ queryKey: ['list-endorsements'] })
-        } catch { toast.error('Failed') }
-    }
-
-    const handleSubmitComment = async (e: React.MouseEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        if (!commentText.trim() || submittingComment) return
-        setSubmittingComment(true)
-        try {
-            await supabase.from('interactions').insert([{
-                user_id: user!.id, target_list_id: listId, type: 'comment_list'
-            }])
-            toast.success('Comment added!')
-            setCommentText('')
-            setLocalCommentCount(c => c + 1)
-            queryClient.invalidateQueries({ queryKey: ['list-comments', listId] })
-        } catch { toast.error('Failed to comment') }
-        setSubmittingComment(false)
-    }
-
-    const toggleComments = (e: React.MouseEvent) => {
-        e.preventDefault()
-        e.stopPropagation()
-        if (!isAuthenticated) { openSignupModal(); return }
-        setShowComments(!showComments)
-    }
-
-    return (
-        <div onClick={e => e.stopPropagation()} style={{ position: 'relative', zIndex: 20 }}>
-            {/* Action buttons row */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '0.6rem', marginTop: '0.5rem' }}>
-                {/* Certify button */}
-                <button
-                    onClick={handleCertify}
-                    style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.35rem',
-                        color: isCertified ? 'var(--sepia)' : 'var(--fog)',
-                        fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em',
-                        transition: 'color 0.2s', padding: 0,
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'}
-                    onMouseLeave={e => { if (!isCertified) e.currentTarget.style.color = 'var(--fog)' }}
-                >
-                    <Award size={13} style={{ fill: isCertified ? 'var(--sepia)' : 'none', transition: 'fill 0.2s' }} />
-                    {certifyCount > 0 ? certifyCount : ''} {isCertified ? 'CERTIFIED' : 'CERTIFY'}
-                </button>
-
-                {/* Comment button */}
-                <button
-                    onClick={toggleComments}
-                    style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: '0.35rem',
-                        color: showComments ? 'var(--sepia)' : 'var(--fog)',
-                        fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em',
-                        transition: 'color 0.2s', padding: 0,
-                    }}
-                    onMouseEnter={e => e.currentTarget.style.color = 'var(--bone)'}
-                    onMouseLeave={e => { if (!showComments) e.currentTarget.style.color = 'var(--fog)' }}
-                >
-                    <MessageCircle size={12} />
-                    {localCommentCount > 0 ? `${localCommentCount} ` : ''}DISCUSS
-                </button>
-            </div>
-
-            {/* Comments panel */}
-            {showComments && (
-                <div style={{
-                    marginTop: '0.5rem',
-                    background: 'rgba(10,7,3,0.8)',
-                    border: '1px solid rgba(139,105,20,0.1)',
-                    borderRadius: '4px',
-                    padding: '0.75rem',
-                    maxHeight: 180, overflowY: 'auto',
-                }}>
-                    {comments.length === 0 && (
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', textAlign: 'center', padding: '0.5rem 0', opacity: 0.7 }}>
-                            No remarks yet. Be the first to speak.
-                        </div>
-                    )}
-                    {comments.map((c: any) => (
-                        <div key={c.id} style={{ marginBottom: '0.4rem', display: 'flex', gap: '0.4rem', alignItems: 'baseline' }}>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--sepia)', letterSpacing: '0.05em', flexShrink: 0 }}>@{c.username}</span>
-                            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--bone)', lineHeight: 1.4, opacity: 0.8 }}>endorsed this collection</span>
-                        </div>
-                    ))}
-                    {/* Comment input */}
-                    {isAuthenticated && (
-                        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.5rem', borderTop: '1px solid rgba(139,105,20,0.08)', paddingTop: '0.5rem' }}>
-                            <input
-                                className="input"
-                                style={{ flex: 1, padding: '0.4rem 0.6rem', fontSize: '0.75rem', background: 'rgba(10,7,3,0.6)', borderColor: 'rgba(139,105,20,0.1)', borderRadius: '3px' }}
-                                placeholder="Leave a remark..."
-                                value={commentText}
-                                onChange={e => setCommentText(e.target.value)}
-                                onClick={e => e.stopPropagation()}
-                                onKeyDown={e => { if (e.key === 'Enter') handleSubmitComment(e as any) }}
-                            />
-                            <button
-                                onClick={handleSubmitComment}
-                                disabled={submittingComment || !commentText.trim()}
-                                style={{
-                                    background: 'none', border: '1px solid rgba(139,105,20,0.2)', borderRadius: '3px',
-                                    padding: '0.3rem 0.5rem', cursor: 'pointer', color: 'var(--sepia)',
-                                    display: 'flex', alignItems: 'center', opacity: commentText.trim() ? 1 : 0.4,
-                                }}
-                            >
-                                <Send size={12} />
-                            </button>
-                        </div>
-                    )}
-                </div>
-            )}
-        </div>
-    )
-}
+import ListActions from '../components/ListActions'
 
 function CommunityListCard({ list }: any) {
     const gradients = [
@@ -343,70 +175,7 @@ function CommunityListCard({ list }: any) {
     )
 }
 
-function CreateListModal({ onClose, onCreate }: any) {
-    const [title, setTitle] = useState('')
-    const [desc, setDesc] = useState('')
-    const [isPrivate, setIsPrivate] = useState(false)
-    const [submitting, setSubmitting] = useState(false)
-
-    const handleCreate = async () => {
-        if (!title.trim()) { toast.error('Give your list a name'); return }
-        if (submitting) return
-        setSubmitting(true)
-        try {
-            await onCreate({ title: title.trim(), description: desc.trim(), isPrivate })
-            toast.success(`List "${title}" created!`)
-            onClose()
-        } catch (error) {
-            toast.error('Failed to create list.')
-            setSubmitting(false)
-        }
-    }
-
-    return (
-        <div
-            className="fade-in"
-            onClick={onClose}
-            style={{
-                position: 'fixed', inset: 0, zIndex: 10000,
-                background: 'rgba(10,7,3,0.95)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
-                backdropFilter: 'blur(8px)'
-            }}
-        >
-            <div
-                className="fade-in-up"
-                onClick={(e) => e.stopPropagation()}
-                style={{
-                    background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.3)',
-                    borderRadius: '6px', width: '100%', maxWidth: 420, padding: IS_TOUCH ? '1.75rem' : '2.5rem',
-                    boxShadow: '0 20px 50px rgba(0,0,0,0.8)',
-                    position: 'relative', overflow: 'hidden',
-                }}
-            >
-                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
-                    NEW COLLECTION
-                </div>
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', marginBottom: '1.25rem', color: 'var(--parchment)' }}>Create a List</h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                    <input className="input" placeholder="List title" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
-                    <textarea className="input" placeholder="What's this list about?" value={desc} onChange={(e) => setDesc(e.target.value)} style={{ minHeight: 80 }} />
-                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--bone)' }}>
-                        <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} style={{ accentColor: 'var(--sepia)' }} />
-                        {isPrivate ? <><Lock size={12} /> PRIVATE</> : <><Globe size={12} /> PUBLIC</>}
-                    </label>
-                    <div style={{ display: 'flex', gap: '0.75rem' }}>
-                        <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleCreate} disabled={submitting}>
-                            {submitting ? 'CREATING...' : 'CREATE LIST'}
-                        </button>
-                        <button className="btn btn-ghost" onClick={onClose}>Cancel</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    )
-}
+// CreateListModal extracted to src/components/CreateListModal.tsx
 
 // ── FILTER PILL COMPONENT ──
 function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -440,7 +209,28 @@ type SortOption = 'newest' | 'oldest' | 'most-certified'
 
 export default function ListsPage() {
     const { isAuthenticated, user } = useAuthStore()
-    const { lists, createList } = useFilmStore()
+    const { lists, createList, addFilmToList } = useFilmStore()
+
+    const handleCreateListWithFilms = async (listData: any) => {
+        // 1. Create the list
+        const { films, ...listInfo } = listData
+        await createList(listInfo)
+        
+        // 2. Add films sequentially after creation (the newly created list will be first in store array)
+        // Give the state a tiny moment to flush, then grab the ID from the store
+        setTimeout(async () => {
+            const newListId = useFilmStore.getState().lists[0]?.id
+            if (newListId && films && films.length > 0) {
+                // Background add tasks
+                for (const film of films) {
+                    try {
+                        await addFilmToList(newListId, film)
+                    } catch (e) { console.error('Failed to add film silently', e) }
+                }
+            }
+        }, 100)
+    }
+
     const { openSignupModal } = useUIStore()
     const [showCreate, setShowCreate] = useState(false)
     const [query, setQuery] = useState('')
@@ -509,19 +299,21 @@ export default function ListsPage() {
             let userEndorsed: Record<string, boolean> = {}
             let commentCountMap: Record<string, number> = {}
             if (listIds.length > 0) {
-                const { data: endorsements } = await supabase
-                    .from('interactions')
-                    .select('target_list_id, user_id, type')
-                    .in('target_list_id', listIds)
-                    .in('type', ['endorse_list', 'comment_list'])
-                if (endorsements) {
-                    endorsements.forEach((e: any) => {
-                        if (e.type === 'endorse_list') {
-                            endorseMap[e.target_list_id] = (endorseMap[e.target_list_id] || 0) + 1
-                            if (user?.id && e.user_id === user.id) userEndorsed[e.target_list_id] = true
-                        } else if (e.type === 'comment_list') {
-                            commentCountMap[e.target_list_id] = (commentCountMap[e.target_list_id] || 0) + 1
-                        }
+                const [endorsementsResp, commentsResp] = await Promise.all([
+                    supabase.from('interactions').select('target_list_id, user_id, type').in('target_list_id', listIds).eq('type', 'endorse_list'),
+                    supabase.from('list_comments').select('list_id').in('list_id', listIds)
+                ])
+
+                if (endorsementsResp.data) {
+                    endorsementsResp.data.forEach((e: any) => {
+                        endorseMap[e.target_list_id] = (endorseMap[e.target_list_id] || 0) + 1
+                        if (user?.id && e.user_id === user.id) userEndorsed[e.target_list_id] = true
+                    })
+                }
+
+                if (commentsResp.data) {
+                    commentsResp.data.forEach((c: any) => {
+                        commentCountMap[c.list_id] = (commentCountMap[c.list_id] || 0) + 1
                     })
                 }
             }
@@ -903,7 +695,7 @@ export default function ListsPage() {
             {showCreate && (
                 <CreateListModal
                     onClose={() => setShowCreate(false)}
-                    onCreate={createList}
+                    onCreate={handleCreateListWithFilms}
                 />
             )}
         </div>

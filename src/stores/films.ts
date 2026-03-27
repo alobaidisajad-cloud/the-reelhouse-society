@@ -32,6 +32,10 @@ export interface FilmState {
     toggleEndorse: (targetId: string) => Promise<void>
     hasEndorsed: (targetId: string) => boolean
     fetchEndorsements: () => Promise<void>
+
+    toggleListEndorse: (listId: string) => Promise<void>
+    hasListEndorsed: (listId: string) => boolean
+    fetchListEndorsements: () => Promise<void>
     fetchLogs: () => Promise<void>
     fetchWatchlist: () => Promise<void>
     fetchVault: () => Promise<void>
@@ -47,6 +51,8 @@ export interface FilmState {
     addToVault: (film: TMDBFilmInput, format?: string) => Promise<void>
     removeFromVault: (filmId: number) => Promise<void>
     createList: (list: Partial<FilmList>) => Promise<void>
+    updateList: (listId: string, updates: Partial<FilmList>) => Promise<void>
+    deleteList: (listId: string) => Promise<void>
     addFilmToList: (listId: string, film: TMDBFilmInput) => Promise<void>
     removeFilmFromList: (listId: string, filmId: number) => Promise<void>
     fetchPhysicalArchive: (userId?: string) => Promise<PhysicalArchiveItem[]>
@@ -122,6 +128,65 @@ export const useFilmStore = create<FilmState>()(
                             timestamp: r.created_at,
                         }))
                     })
+                }
+            },
+
+            toggleListEndorse: async (listId) => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const prev = get().interactions
+                const exists = prev.find((i) => i.targetId === listId && i.type === 'endorse_list')
+
+                if (exists) {
+                    set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list')) }))
+                } else {
+                    set((state) => ({ interactions: [...state.interactions, { type: 'endorse_list', targetId: listId, timestamp: new Date().toISOString() }] }))
+                }
+
+                try {
+                    if (exists) {
+                        const { error } = await supabase.from('interactions').delete()
+                            .eq('user_id', user.id).eq('target_list_id', listId).eq('type', 'endorse_list')
+                        if (error) throw error
+                    } else {
+                        const { error } = await supabase.from('interactions').insert([
+                            { user_id: user.id, target_list_id: listId, type: 'endorse_list' }
+                        ])
+                        if (error && !error.message?.includes('duplicate')) throw error
+                    }
+                } catch {
+                    if (exists) {
+                        set((state) => ({ interactions: [...state.interactions, exists] }))
+                    } else {
+                        set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list')) }))
+                    }
+                    const { default: toast } = await import('react-hot-toast')
+                    toast.error('Failed to certify list.')
+                }
+            },
+
+            hasListEndorsed: (listId) => get().interactions.some((i) => i.targetId === listId && i.type === 'endorse_list'),
+
+            fetchListEndorsements: async () => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const { data, error } = await supabase
+                    .from('interactions')
+                    .select('target_list_id, created_at')
+                    .eq('user_id', user.id)
+                    .eq('type', 'endorse_list')
+                    .limit(2000)
+                if (!error && data) {
+                    set((state) => ({
+                        interactions: [
+                            ...state.interactions.filter(i => i.type !== 'endorse_list'), 
+                            ...(data || []).map(r => ({
+                                type: 'endorse_list' as const,
+                                targetId: r.target_list_id,
+                                timestamp: r.created_at,
+                            }))
+                        ]
+                    }))
                 }
             },
 
@@ -394,12 +459,39 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data, error } = await supabase.from('lists').insert([{
-                    user_id: user.id, title: list.title, description: list.description || '',
+                    user_id: user.id, title: list.title, description: list.description || '', is_private: list.isPrivate || false
                 }]).select().single()
                 if (error) throw error
                 if (data) {
-                    set((state) => ({ lists: [{ id: data.id, title: list.title || 'Untitled', description: list.description || '', isRanked: false, isPrivate: false, films: [], createdAt: data.created_at }, ...state.lists] }))
+                    set((state) => ({ lists: [{ id: data.id, title: list.title || 'Untitled', description: list.description || '', isRanked: false, isPrivate: list.isPrivate || false, films: [], createdAt: data.created_at }, ...state.lists] }))
                 }
+            },
+
+            updateList: async (listId, updates) => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const dbUpdates: any = {}
+                if (updates.title !== undefined) dbUpdates.title = updates.title
+                if (updates.description !== undefined) dbUpdates.description = updates.description
+                if (updates.isPrivate !== undefined) dbUpdates.is_private = updates.isPrivate
+                if (updates.isRanked !== undefined) dbUpdates.is_ranked = updates.isRanked
+                
+                const { error } = await supabase.from('lists').update(dbUpdates).eq('id', listId).eq('user_id', user.id)
+                if (error) throw error
+                
+                set((state) => ({
+                    lists: state.lists.map(l => l.id === listId ? { ...l, ...updates } : l)
+                }))
+            },
+
+            deleteList: async (listId) => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const { error } = await supabase.from('lists').delete().eq('id', listId).eq('user_id', user.id)
+                if (error) throw error
+                set((state) => ({
+                    lists: state.lists.filter(l => l.id !== listId)
+                }))
             },
 
             addFilmToList: async (listId, film) => {

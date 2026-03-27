@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Star, BookOpen, EyeOff, Clock, Lock, Archive, History, Eye, Check } from 'lucide-react'
+import { Search, X, Star, BookOpen, EyeOff, Clock, Lock, Archive, History, Eye, Check, Trash2 } from 'lucide-react'
 import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { tmdb } from '../tmdb'
 import { ReelRating } from './UI'
@@ -38,6 +38,7 @@ export default function LogModal() {
 
     const addLog = useFilmStore(state => state.addLog)
     const updateLog = useFilmStore(state => state.updateLog)
+    const removeLog = useFilmStore(state => state.removeLog)
     const logs = useFilmStore(state => state.logs)
     const lists = useFilmStore(state => state.lists)
     const addFilmToList = useFilmStore(state => state.addFilmToList)
@@ -76,6 +77,7 @@ export default function LogModal() {
     const [isAutopsied, setIsAutopsied] = useState(false) // Master flag for 0/10 intentionality
     const [moreOpen, setMoreOpen] = useState(() => typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches) // Auto-expand on mobile — scrolling is free
     const [calendarOpen, setCalendarOpen] = useState(false)
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
 
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
@@ -141,6 +143,7 @@ export default function LogModal() {
             setIsAutopsied(false)
             setAutopsyOpen(false)
             setMoreOpen(false)
+            setShowDeleteConfirm(false)
         }
     }, [logModalFilm, logModalOpen, logModalEditLogId, logs])
 
@@ -160,7 +163,8 @@ export default function LogModal() {
             setAvailableBackdrops([])
             setAutopsyOpen(false)
             setIsAutopsied(false)
-            setMoreOpen(false)
+            setMoreOpen(typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches) // Reset to standard layout
+            setShowDeleteConfirm(false)
         }
     }, [logModalOpen])
 
@@ -791,14 +795,40 @@ export default function LogModal() {
                                 )}
 
                                 {/* Submit */}
-                                <div style={{ display: 'flex', gap: '0.75rem' }}>
-                                    <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleLog} disabled={submitting}>
-                                        {submitting ? 'SAVING...' : (logModalEditLogId ? 'Save Changes' : 'Log This Film')}
-                                    </button>
-                                    <button className="btn btn-ghost" onClick={closeLogModal}>
-                                        Cancel
-                                    </button>
-                                </div>
+                                {showDeleteConfirm ? (
+                                    <div style={{ background: 'rgba(255,50,50,0.1)', border: '1px solid var(--danger)', borderRadius: '4px', padding: '1rem', textAlign: 'center' }}>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', color: 'var(--danger)', letterSpacing: '0.1em', marginBottom: '1rem' }}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</div>
+                                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                            <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)' }} onClick={() => {
+                                                if (logModalEditLogId) {
+                                                    removeLog(logModalEditLogId)
+                                                    toast.success('Log deleted.')
+                                                    closeLogModal()
+                                                }
+                                            }}>CONFIRM DELETE</button>
+                                            <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setShowDeleteConfirm(false)}>CANCEL</button>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', gap: '0.75rem' }}>
+                                        {logModalEditLogId && (
+                                            <button 
+                                                className="btn btn-ghost" 
+                                                title="Delete Log" 
+                                                style={{ color: 'var(--danger)', padding: '0 0.75rem', borderColor: 'var(--ash)' }} 
+                                                onClick={() => setShowDeleteConfirm(true)}
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
+                                        <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center' }} onClick={handleLog} disabled={submitting}>
+                                            {submitting ? 'SAVING...' : (logModalEditLogId ? 'Save Changes' : 'Log This Film')}
+                                        </button>
+                                        <button className="btn btn-ghost" onClick={closeLogModal}>
+                                            Cancel
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>

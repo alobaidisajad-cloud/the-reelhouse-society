@@ -253,7 +253,27 @@ create index if not exists programmes_user_id_idx on public.programmes(user_id);
 
 
 -- ============================================================
--- 9. CINEMA REVIEWS
+-- 9. LIST COMMENTS
+-- ============================================================
+create table if not exists public.list_comments (
+  id uuid default uuid_generate_v4() primary key,
+  list_id uuid references public.lists(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) on delete cascade not null,
+  content text not null,
+  created_at timestamptz default now() not null,
+  updated_at timestamptz default now()
+);
+alter table public.list_comments enable row level security;
+
+create policy "List comments viewable by everyone." on list_comments for select using (true);
+create policy "Users can manage their list comments." on list_comments for all using (auth.uid() = user_id);
+
+create index if not exists list_comments_list_id_idx on public.list_comments(list_id);
+create index if not exists list_comments_user_id_idx on public.list_comments(user_id);
+
+
+-- ============================================================
+-- 10. CINEMA REVIEWS
 -- ============================================================
 create table if not exists public.cinema_reviews (
   id uuid default uuid_generate_v4() primary key,

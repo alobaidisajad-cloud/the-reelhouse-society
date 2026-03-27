@@ -104,12 +104,13 @@ export interface FilmList {
     films: Array<{ id: number; title: string; poster_path?: string | null }>
     user_id?: string
     created_at?: string
-    isPublic?: boolean
+    isPrivate?: boolean
+    isRanked?: boolean
 }
 
 // ── Interaction ──
 export interface Interaction {
-    type: 'endorse'
+    type: 'endorse' | 'endorse_list'
     targetId: string
     timestamp: string
 }

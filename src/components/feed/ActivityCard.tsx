@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
-import { Heart, MessageSquare, Download, Send, RefreshCw, Lock } from 'lucide-react'
+import { Heart, MessageSquare, Download, Send, RefreshCw, Lock, Edit3 } from 'lucide-react'
 import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import toast from 'react-hot-toast'
@@ -13,6 +13,7 @@ import { DossierExportHTML } from './DossierExportHTML'
 
 export default function ActivityCard({ log, isExpandedView = false }: { log: any, isExpandedView?: boolean }) {
     const navigate = useNavigate()
+    const { openLogModal } = useUIStore()
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
     // Memoize stamp rotation so Math.random() doesn't fire on every re-render
     const stampRotation = React.useMemo(() => `${(Math.random() * 8 - 4).toFixed(2)}deg`, [])
@@ -254,9 +255,16 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             </div>
                         )}
                     </div>
-                    <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
-                        <RefreshCw size={16} /> {retransmitted ? 'PUBLISHED ✦' : 'PUBLISH'}
-                    </button>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        {isOwner && (
+                            <button onClick={(e) => { e.stopPropagation(); openLogModal({ id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }, log.id) }} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'pointer' }}>
+                                <Edit3 size={14} /> EDIT
+                            </button>
+                        )}
+                        <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
+                            <RefreshCw size={16} /> {retransmitted ? 'PUBLISHED ✦' : 'PUBLISH'}
+                        </button>
+                    </div>
                 </div>
 
                 <AnnotationPanel logId={log.id} open={annotateOpen} isExpandedView={true} />
@@ -390,9 +398,16 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             <span style={{ fontSize: '9px' }}><Lock size={9} style={{ display: "inline-block", verticalAlign: "middle" }} /></span> LOCKED
                         </div>
                     )}
-                    <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer', marginLeft: 'auto' }}>
-                        <RefreshCw size={12} /> {retransmitted ? 'SENT ✦' : 'PUBLISH'}
-                    </button>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        {isOwner && (
+                            <button onClick={(e) => { e.stopPropagation(); openLogModal({ id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }, log.id) }} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--fog)', cursor: 'pointer' }}>
+                                <Edit3 size={12} /> EDIT
+                            </button>
+                        )}
+                        <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
+                            <RefreshCw size={12} /> {retransmitted ? 'SENT ✦' : 'PUBLISH'}
+                        </button>
+                    </div>
                 </div>
 
                 {annotateOpen && <AnnotationPanel logId={log.id} open={annotateOpen} />}

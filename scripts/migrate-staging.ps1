@@ -262,6 +262,20 @@ Q "ALTER TABLE public.cinema_reviews ENABLE ROW LEVEL SECURITY" "cinema_reviews_
 Q "CREATE POLICY ""Cinema reviews viewable by everyone"" ON public.cinema_reviews FOR SELECT USING (TRUE)" "cinema_reviews_select"
 Q "CREATE POLICY ""Users can manage their own cinema reviews"" ON public.cinema_reviews FOR ALL USING (auth.uid() = user_id)" "cinema_reviews_all"
 
+Q @'
+CREATE TABLE IF NOT EXISTS public.list_comments (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  list_id UUID REFERENCES public.lists(id) ON DELETE CASCADE NOT NULL,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+)
+'@ "list_comments"
+Q "ALTER TABLE public.list_comments ENABLE ROW LEVEL SECURITY" "list_comments_rls"
+Q "CREATE POLICY ""List comments viewable by everyone"" ON public.list_comments FOR SELECT USING (TRUE)" "list_comments_select"
+Q "CREATE POLICY ""Users can manage their list comments"" ON public.list_comments FOR ALL USING (auth.uid() = user_id)" "list_comments_all"
+
 Q "INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', TRUE) ON CONFLICT (id) DO NOTHING" "avatars_bucket"
 Q "CREATE POLICY ""Avatar images are publicly accessible"" ON storage.objects FOR SELECT USING (bucket_id = 'avatars')" "avatars_select"
 Q "CREATE POLICY ""Users can upload their own avatar"" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars' AND auth.uid()::TEXT = (storage.foldername(name))[1])" "avatars_insert"
