@@ -11,8 +11,8 @@ export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: ()
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             padding: '2rem'
         }}>
-            <button onClick={onClose} className="btn btn-ghost" style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 100006 }}>
-                {<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} CLOSE
+            <button onClick={onClose} className="btn btn-ghost" style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 100006, width: 44, height: 44, padding: 0, borderRadius: '50%', background: 'rgba(0,0,0,0.5)', border: '1px solid rgba(255,255,255,0.1)' }}>
+                <X size={18} style={{ margin: 'auto' }} />
             </button>
             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '1.5rem', textAlign: 'center' }}>
                 SCREENSHOT TO SHARE TO INSTAGRAM STORY

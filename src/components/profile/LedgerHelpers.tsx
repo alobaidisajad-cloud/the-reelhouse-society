@@ -6,27 +6,19 @@ import { useAuthStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
 
-// ── PROFILE BACKDROP (CINEMATIC AMBIENT LENS) ──
+// ── PROFILE BACKDROP ──
 export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }: any) {
-    const posters = logs.filter((l: any) => l.poster).slice(0, 12).map((l: any) => tmdb.poster(l.poster, 'w342'))
-    if (posters.length < 3) return null
+    const posters = logs.filter((l: any) => l.poster).slice(0, 12).map((l: any) => tmdb.poster(l.poster, 'w185'))
+    if (posters.length < 4) return null
     return (
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none', background: 'var(--ink)' }}>
-            {/* The Ambient Wash */}
-            <div style={{ 
-                position: 'absolute', inset: -50, display: 'flex', flexWrap: 'wrap', 
-                gap: 0, overflow: 'hidden', opacity: 0.8,
-                filter: 'blur(30px) saturate(2)', 
-                transform: 'scale(1.1)' 
-            }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 2, overflow: 'hidden' }}>
                 {posters.map((src: any, i: number) => (
-                    <img key={i} src={src || undefined} alt="" decoding="async" loading="lazy" style={{ width: '33.33%', height: '50%', objectFit: 'cover' }} />
+                    <img key={i} src={src || undefined} alt="" decoding="async" loading="lazy"
+                        style={{ flex: '1 0 auto', height: '100%', objectFit: 'cover', filter: 'sepia(0.8) brightness(0.15) contrast(1.2)', transform: `rotate(${(i % 3 - 1) * 0.5}deg) scale(1.04)` }} />
                 ))}
             </div>
-            {/* Film Grain & Scanlines */}
-            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)' }} />
-            {/* Gentle bottom fade into the dark page body */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(10,7,5,0.4) 60%, var(--ink) 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,7,3,0.5) 0%, rgba(10,7,3,0.85) 60%, var(--ink) 100%)' }} />
         </div>
     )
 })

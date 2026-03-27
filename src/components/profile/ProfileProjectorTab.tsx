@@ -1,3 +1,5 @@
+import { ReelRating } from '../UI'
+
 interface ProfileProjectorTabProps {
     profileLogs: any[]
     profileWatchlist: any[]
@@ -21,7 +23,9 @@ export function ProfileProjectorTab({ profileLogs, profileWatchlist, profileList
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                     {ratingBuckets.reverse().map(({ star, count }) => (
                         <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: 'var(--flicker)', width: 55, flexShrink: 0, textAlign: 'right', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>{'✦'.repeat(star)}</div>
+                            <div style={{ width: 58, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                                <ReelRating value={star} size="sm" />
+                            </div>
                             <div style={{ flex: 1, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden' }}><div style={{ height: '100%', borderRadius: 3, width: `${(count / maxRatingCount) * 100}%`, background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', transition: 'width 0.6s ease' }} /></div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', width: 20, textAlign: 'right', flexShrink: 0 }}>{count}</div>
                         </div>

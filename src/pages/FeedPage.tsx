@@ -74,8 +74,8 @@ export default function FeedPage() {
 
     // ── Fetch Helper ──
     const fetchFeed = async ({ pageParam = 0 }, mode: 'for-you' | 'following') => {
-        if (!isSupabaseConfigured) return []
-        if (mode === 'following' && (!user || !user.following?.length)) return []
+        if (!isSupabaseConfigured) return { items: [], hasNextPage: false }
+        if (mode === 'following' && (!user || !user.following?.length)) return { items: [], hasNextPage: false }
 
         let query = supabase
             .from('logs')
@@ -93,14 +93,16 @@ export default function FeedPage() {
             // BUT Supabase JS restricts filtering embedded arrays easily.
             // A quick subquery for just the IDs is fine for the "Following" tab:
             const { data: followedProfiles } = await supabase.from('profiles').select('id').in('username', followingArr)
-            if (!followedProfiles?.length) return []
+            if (!followedProfiles?.length) return { items: [], hasNextPage: false }
             query = query.in('user_id', followedProfiles.map((p: any) => p.id))
         }
 
         const { data, error } = await query
-        if (error || !data?.length) return []
+        if (error || !data?.length) return { items: [], hasNextPage: false }
         
-        return mapLogsToFeed(data)
+        // Filter out simple "watched" logs—only broadcast reviews/ratings to the feed
+        const publicData = data.filter((l: any) => l.rating > 0 || (l.review && l.review.trim() !== ''))
+        return { items: mapLogsToFeed(publicData), hasNextPage: data.length === 20 }
     }
 
     // ── Infinite Queries ──
@@ -114,7 +116,7 @@ export default function FeedPage() {
         queryKey: ['feed', 'for-you'],
         queryFn: (params) => fetchFeed(params, 'for-you'),
         initialPageParam: 0,
-        getNextPageParam: (lastPage, pages) => lastPage.length === 20 ? pages.length : undefined
+        getNextPageParam: (lastPage, pages) => lastPage.hasNextPage ? pages.length : undefined
     })
 
     const {
@@ -128,7 +130,7 @@ export default function FeedPage() {
         queryFn: (params) => fetchFeed(params, 'following'),
         enabled: isAuthenticated && !!user?.following?.length,
         initialPageParam: 0,
-        getNextPageParam: (lastPage, pages) => lastPage.length === 20 ? pages.length : undefined
+        getNextPageParam: (lastPage, pages) => lastPage.hasNextPage ? pages.length : undefined
     })
 
     const { data: societyPicks = [] } = useQuery({
@@ -197,8 +199,8 @@ export default function FeedPage() {
     }, [fetchSidebarData])
 
     // Active feed based on tab
-    const communityFeed = communityData?.pages.flat() || []
-    const followingFeed = followingData?.pages.flat() || []
+    const communityFeed = communityData?.pages.flatMap(p => p.items) || []
+    const followingFeed = followingData?.pages.flatMap(p => p.items) || []
     const activeFeed = feedTab === 'following' ? followingFeed : communityFeed
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
 

@@ -4,6 +4,7 @@
  */
 import { AnimatePresence, motion } from 'framer-motion'
 import { tmdb } from '../../tmdb'
+import { ReelRating } from '../UI'
 
 export default function DossierExportModal({ film, log, onClose }: { film: Record<string, any>; log: Record<string, any> | null; onClose: () => void }) {
     if (!log) return null;
@@ -29,13 +30,13 @@ export default function DossierExportModal({ film, log, onClose }: { film: Recor
                         <div className="section-title" style={{ marginBottom: '0.5rem', borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.3rem' }}>REELHOUSE · DECLASSIFIED</div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 5vw, 2.8rem)', color: 'var(--parchment)', lineHeight: 1, margin: '0 0 0.5rem 0' }}>{film.title}</h2>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', marginBottom: '1rem' }}>{film.release_date?.slice(0, 4)} · DIR. {film.credits?.crew?.find((c: any) => c.job === 'Director')?.name?.toUpperCase()}</div>
-                        {log.rating > 0 && <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1.1rem', color: 'var(--flicker)', marginBottom: '1rem', letterSpacing: '0.1em' }}>{'✦'.repeat(Math.round(log.rating))}{'·'.repeat(5 - Math.round(log.rating))}</div>}
+                        {log.rating > 0 && <div style={{ marginBottom: '1rem' }}><ReelRating value={log.rating} size="lg" /></div>}
                         <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6, display: '-webkit-box', WebkitLineClamp: 8, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>"{log.review || "Classified Analysis"}"</p>
                     </div>
                 </div>
 
-                <div style={{ position: 'absolute', bottom: '4vh', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--ash)' }}>
-                    TAP ANYWHERE TO CLOSE
+                <div style={{ position: 'absolute', bottom: '2vh', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'rgba(255,255,255,0.2)', textTransform: 'uppercase' }}>
+                    ReelHouse Archival Network
                 </div>
             </motion.div>
         </AnimatePresence>
