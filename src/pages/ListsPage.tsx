@@ -564,7 +564,7 @@ export default function ListsPage() {
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.4rem' : '1.25rem' }}>
                                 {filteredMyLists.map((list: any) => {
-                                    const posters = list.films.filter((f: any) => f.poster_path).slice(0, 3).map((f: any) => f.poster_path)
+                                    const posters = list.films.filter((f: any) => f.poster_path || f.poster).slice(0, 3).map((f: any) => f.poster_path || f.poster)
                                     return (
                                     <Link
                                         key={list.id}
