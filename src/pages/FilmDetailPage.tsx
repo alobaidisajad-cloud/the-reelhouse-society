@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camera, ArrowUpRight, Check, RotateCcw } from 'lucide-react'
+import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camera, ArrowUpRight, Check, RotateCcw, Eye, EyeOff } from 'lucide-react'
 import { tmdb, obscurityScore, formatRuntime, getYear } from '../tmdb'
 import { ReelRating, ObscurityBadge, GenreTags, FilmCard, LoadingReel, SectionHeader } from '../components/UI'
 import { useSEOSync } from '../components/useSEOSync'
@@ -28,7 +28,7 @@ import CriticsBooth from '../components/film/CriticsBooth'
 // ── FILM HERO ──
 function FilmHero({ film, onPlayTrailer }: any) {
     const { openLogModal } = useUIStore()
-    const { watchlist, addToWatchlist, removeFromWatchlist, logs } = useFilmStore()
+    const { watchlist, addToWatchlist, removeFromWatchlist, logs, markAsWatched, unmarkWatched } = useFilmStore()
     const [showExport, setShowExport] = useState(false)
     const isWatchlisted = watchlist.some((f: any) => f.id === film.id)
     const score = obscurityScore(film)
@@ -165,6 +165,20 @@ function FilmHero({ film, onPlayTrailer }: any) {
                             <Bookmark size={14} fill={isWatchlisted ? 'currentColor' : 'none'} />
                             {isWatchlisted ? 'In Watchlist' : 'Add to Watchlist'}
                         </button>
+                        {/* Quick Watch toggle */}
+                        {!existingLog && (
+                            <button className="btn btn-ghost" style={{ fontSize: '0.75rem', borderColor: 'rgba(139,105,20,0.4)', color: 'var(--bone)' }}
+                                onClick={async () => {
+                                    try {
+                                        await markAsWatched(film)
+                                        const t = (await import('react-hot-toast')).default
+                                        t.success('Marked as watched!')
+                                    } catch { }
+                                }}
+                            >
+                                <Eye size={14} /> Mark Watched
+                            </button>
+                        )}
                         {/* Mobile trailer button */}
                         {trailer && IS_TOUCH && (
                             <button className="btn btn-ghost" style={{ fontSize: '0.75rem' }} onClick={() => onPlayTrailer(trailer.key)}>

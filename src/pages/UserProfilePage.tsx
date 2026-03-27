@@ -147,7 +147,9 @@ export default function UserProfilePage() {
     const [shareLog, setShareLog] = useState(null)
     const [showDNA, setShowDNA] = useState(false)
     const [sieve, setSieve] = useState('all')
+    const [archiveSieve, setArchiveSieve] = useState('all')
     const [visibleLogCount, setVisibleLogCount] = useState(40)
+    const [archiveVisibleCount, setArchiveVisibleCount] = useState(40)
     const loadMoreRef = useRef(null)
     const [viewLog, setViewLog] = useState<any>(null)
 
@@ -158,6 +160,7 @@ export default function UserProfilePage() {
 
     // Progressive log rendering: reset on filter change, load more on scroll
     useEffect(() => { setVisibleLogCount(40) }, [sieve])
+    useEffect(() => { setArchiveVisibleCount(40) }, [archiveSieve])
     useEffect(() => {
         const el = loadMoreRef.current
         if (!el) return
@@ -356,15 +359,29 @@ export default function UserProfilePage() {
     )
 
 
+    // Ledger: only logs with a rating or review (detailed entries), filtered by stars
     const filteredLogs = profileLogs.filter(log => {
         const hasPoster = (typeof log.poster === 'string' && log.poster.length > 5) || (typeof log.altPoster === 'string' && log.altPoster.length > 5)
         if (!hasPoster) return false
-
+        // Ledger only shows rated/reviewed logs
+        if (log.rating === 0 && (!log.review || log.review.length === 0)) return false
         if (sieve === 'all') return true
-        if (sieve === 'masterpieces') return log.rating === 5
-        if (sieve === 'rewatched') return log.status === 'rewatched'
-        if (sieve === 'abandoned') return log.status === 'abandoned'
-        if (sieve === 'companion') return !!log.watchedWith
+        if (sieve === '1') return Math.round(log.rating) === 1
+        if (sieve === '2') return Math.round(log.rating) === 2
+        if (sieve === '3') return Math.round(log.rating) === 3
+        if (sieve === '4') return Math.round(log.rating) === 4
+        if (sieve === '5') return Math.round(log.rating) === 5
+        return true
+    })
+
+    // Archive: ALL logs regardless of rating, filtered by status
+    const archiveFilteredLogs = profileLogs.filter(log => {
+        const hasPoster = (typeof log.poster === 'string' && log.poster.length > 5) || (typeof log.altPoster === 'string' && log.altPoster.length > 5)
+        if (!hasPoster) return false
+        if (archiveSieve === 'all') return true
+        if (archiveSieve === 'watched') return log.status === 'watched'
+        if (archiveSieve === 'rewatched') return log.status === 'rewatched'
+        if (archiveSieve === 'abandoned') return log.status === 'abandoned'
         return true
     })
 
@@ -466,7 +483,7 @@ export default function UserProfilePage() {
                 <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 850, margin: '0 auto', paddingBottom: '3rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem', padding: '1.5rem 0.5rem' }}>
                         {[
-                            { id: 'archive', label: 'Archive', count: physicalArchive.length, icon: Archive, active: activeTab === 'archive', desc: 'Physical' },
+                            { id: 'archive', label: 'Archive', count: profileLogs.length, icon: Archive, active: activeTab === 'archive', desc: 'Watched' },
                             { id: 'diary', label: 'The Ledger', count: profileLogs.length, icon: BookOpen, active: activeTab === 'diary', desc: 'Diary' },
                             { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, icon: Bookmark, active: activeTab === 'watchlist', desc: 'To See' },
                             { id: 'lists', label: 'Stacks', count: profileLists.length, icon: LayoutList, active: activeTab === 'lists', desc: 'Lists' },
@@ -554,7 +571,7 @@ export default function UserProfilePage() {
                                 <SectionHeader label="CHRONOLOGICAL" title="The Ledger" />
                                 {profileLogs.length > 0 && (
                                     <div className="profile-sieve-strip" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ash)' }}>
-                                        {[{ id: 'all', label: 'All Logs' }, { id: 'masterpieces', label: '✦✦✦✦✦ Masterpieces' }, { id: 'rewatched', label: <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> Rewatched</> }, { id: 'abandoned', label: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> Abandoned</> }, { id: 'companion', label: '♡ Companions' }].map(s => (
+                                        {[{ id: 'all', label: 'All' }, { id: '5', label: '✦✦✦✦✦' }, { id: '4', label: '✦✦✦✦' }, { id: '3', label: '✦✦✦' }, { id: '2', label: '✦✦' }, { id: '1', label: '✦' }].map(s => (
                                             <button key={s.id} onClick={() => setSieve(s.id)} className={`btn ${sieve === s.id ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', whiteSpace: 'nowrap' }}>{s.label}</button>
                                         ))}
                                     </div>
@@ -690,8 +707,65 @@ export default function UserProfilePage() {
 
                         {activeTab === 'archive' && (
                             <div>
-                                <SectionHeader label="PHYSICAL MEDIA COLLECTION" title="The Archive" />
-                                <PhysicalArchiveTab isOwnProfile={isOwnProfile} archive={physicalArchive} userId={profileUser?.id} />
+                                <SectionHeader label="ALL WATCHED FILMS" title="The Archive" />
+                                {profileLogs.length > 0 && (
+                                    <div className="profile-sieve-strip" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ash)' }}>
+                                        {[{ id: 'all', label: 'All' }, { id: 'watched', label: 'Watched' }, { id: 'rewatched', label: 'Rewatched' }, { id: 'abandoned', label: 'Abandoned' }].map(s => (
+                                            <button key={s.id} onClick={() => setArchiveSieve(s.id)} className={`btn ${archiveSieve === s.id ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', whiteSpace: 'nowrap' }}>{s.label}</button>
+                                        ))}
+                                    </div>
+                                )}
+                                {archiveFilteredLogs.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '4rem 2rem', border: '1px solid var(--ash)', borderRadius: 'var(--radius-card)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)' }}>
+                                        <Buster size={80} mood="peeking" />
+                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginTop: '1.5rem', marginBottom: '0.5rem' }}>The Archive is Empty</div>
+                                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', maxWidth: 400, margin: '0 auto', lineHeight: 1.4 }}>
+                                            {profileLogs.length === 0 ? (isOwnProfile ? "No films watched yet. Mark a film as watched or log your first film." : "This member hasn't watched any films yet.") : "No films match this filter."}
+                                        </div>
+                                    </div>
+                                ) : (() => {
+                                    const shown = archiveFilteredLogs.slice(0, archiveVisibleCount)
+                                    const grouped = shown.reduce((acc: any, log: any) => {
+                                        const d = new Date(log.watchedDate || log.createdAt)
+                                        const title = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+                                        if (!acc[title]) acc[title] = []
+                                        acc[title].push(log)
+                                        return acc
+                                    }, {})
+                                    return (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                                            {Object.keys(grouped).map(month => (
+                                                <div key={month}>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '0.5rem' }}>
+                                                        {month}
+                                                    </div>
+                                                    <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: IS_TOUCH ? '0.2rem' : '0.75rem' }}>
+                                                        {grouped[month].map((log: any) => (
+                                                            <div key={log.id} onClick={() => setViewLog(log)} style={{ position: 'relative', cursor: 'pointer' }}>
+                                                                <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status } as any} />
+                                                                {log.status === 'rewatched' && (
+                                                                    <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(10,7,3,0.85)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.15rem 0.35rem', pointerEvents: 'none' }}>
+                                                                        <RotateCcw size={9} color="var(--sepia)" />
+                                                                    </div>
+                                                                )}
+                                                                {log.status === 'abandoned' && (
+                                                                    <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(10,7,3,0.85)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,30,30,0.3)', borderRadius: '2px', padding: '0.15rem 0.35rem', pointerEvents: 'none' }}>
+                                                                        <X size={9} color="var(--blood-reel)" />
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {archiveVisibleCount < archiveFilteredLogs.length && (
+                                                <div style={{ textAlign: 'center', padding: '2rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'pointer' }} onClick={() => setArchiveVisibleCount(c => c + 40)}>
+                                                    LOAD MORE REELS...
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })()}
                             </div>
                         )}
 

@@ -43,6 +43,8 @@ export interface FilmState {
     fetchStubs: () => Promise<void>
     saveStub: (stub: Partial<TicketStub> & { showtimeId?: string, slotId?: string }) => Promise<string | null>
     addLog: (log: Partial<FilmLog>) => Promise<void>
+    markAsWatched: (film: TMDBFilmInput, status?: 'watched' | 'rewatched' | 'abandoned') => Promise<void>
+    unmarkWatched: (filmId: number) => Promise<void>
     getCinephileStats: () => { count: number, level: string, color: string, progress: number }
     updateLog: (id: string, updates: Partial<FilmLog>) => Promise<void>
     removeLog: (id: string) => Promise<void>
@@ -336,6 +338,54 @@ export const useFilmStore = create<FilmState>()(
                 set((state) => ({
                     logs: [{ ...log, id: data.id, createdAt: data.created_at } as FilmLog, ...state.logs],
                 }))
+            },
+
+            markAsWatched: async (film, status = 'watched') => {
+                const user = useAuthStore.getState().user
+                if (!user) return
+                const existingLog = get().logs.find(l => l.filmId === film.id)
+                if (existingLog) {
+                    // Update existing log's status
+                    await get().updateLog(existingLog.id, { status } as Partial<FilmLog>)
+                    return
+                }
+                // Create lightweight log — no rating, no review
+                const { data, error } = await supabase.from('logs').insert([{
+                    user_id: user.id,
+                    film_id: film.id,
+                    film_title: film.title || film.name || 'Untitled',
+                    poster_path: film.poster_path || null,
+                    year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : null,
+                    rating: 0,
+                    review: '',
+                    status,
+                    watched_date: new Date().toISOString(),
+                    is_spoiler: false,
+                }]).select().single()
+                if (error) return
+                const newLog: FilmLog = {
+                    id: data.id,
+                    filmId: film.id,
+                    title: film.title || film.name || 'Untitled',
+                    poster: film.poster_path,
+                    year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
+                    rating: 0,
+                    status,
+                    createdAt: data.created_at,
+                    watchedDate: new Date().toISOString(),
+                }
+                set(state => ({ logs: [newLog, ...state.logs] }))
+                // Auto-remove from watchlist if present
+                const inWatchlist = get().watchlist.some(w => w.id === film.id)
+                if (inWatchlist) get().removeFromWatchlist(film.id)
+            },
+
+            unmarkWatched: async (filmId) => {
+                const existingLog = get().logs.find(l => l.filmId === filmId)
+                if (!existingLog) return
+                // Only remove if it's a quick-watch (no rating, no review)
+                if (existingLog.rating > 0 || (existingLog.review && existingLog.review.length > 0)) return
+                await get().removeLog(existingLog.id)
             },
 
             getCinephileStats: () => {
