@@ -6,6 +6,7 @@ import { Film, ArrowLeft, Share2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import '../styles/year-in-cinema.css'
 import PageSEO from '../components/PageSEO'
+import { ReelRating } from '../components/UI'
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
 const MONTH_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -404,7 +405,9 @@ export default function YearInCinemaPage() {
                     {favorite.poster && <img src={tmdb.poster(favorite.poster) || undefined} alt={favorite.title} className="yic-favorite-poster" loading="lazy" />}
                     <div className="yic-favorite-title">{favorite.title}</div>
                     <div className="yic-favorite-year">{favorite.year}</div>
-                    <div className="yic-favorite-rating">{'✦'.repeat(Math.round(favorite.rating))}</div>
+                    <div className="yic-favorite-rating" style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
+                        <ReelRating value={Math.round(favorite.rating)} size="md" />
+                    </div>
                 </Section>
             )}
 

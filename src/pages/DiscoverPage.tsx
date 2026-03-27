@@ -126,7 +126,7 @@ function FilterPanel({ filters, onChange, onClear, isSearching, style }: any) {
                     <div style={{ display: 'flex', gap: '0.35rem' }}>
                         {[0, 6, 7, 7.5, 8, 8.5].map((r: any) => (
                             <Chip key={r} active={minRating === r} onClick={() => onChange({ minRating: minRating === r ? 0 : r })}>
-                                {r === 0 ? 'Any' : `${r}✦`}
+                                {r === 0 ? 'Any' : `${r}+`}
                             </Chip>
                         ))}
                     </div>
@@ -427,7 +427,7 @@ export default function DiscoverPage() {
                         {filters.genreId && <span style={{ padding: '0.3rem 0.6rem', background: 'rgba(139,105,20,0.1)', border: '1px solid rgba(139,105,20,0.3)', color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', borderRadius: '2px' }}>{GENRES.find(g => g.id === filters.genreId)?.name || ''}</span>}
                         {filters.decade && <span style={{ padding: '0.3rem 0.6rem', background: 'rgba(139,105,20,0.1)', border: '1px solid rgba(139,105,20,0.3)', color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', borderRadius: '2px' }}>{filters.decade.label}</span>}
                         {filters.language && <span style={{ padding: '0.3rem 0.6rem', background: 'rgba(139,105,20,0.1)', border: '1px solid rgba(139,105,20,0.3)', color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', borderRadius: '2px' }}>{LANGUAGES.find(l => l.iso === filters.language)?.name}</span>}
-                        {filters.minRating > 0 && <span style={{ padding: '0.3rem 0.6rem', background: 'rgba(139,105,20,0.1)', border: '1px solid rgba(139,105,20,0.3)', color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', borderRadius: '2px' }}>{filters.minRating}✦+</span>}
+                        {filters.minRating > 0 && <span style={{ padding: '0.3rem 0.6rem', background: 'rgba(139,105,20,0.1)', border: '1px solid rgba(139,105,20,0.3)', color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', borderRadius: '2px' }}>{filters.minRating}+</span>}
 
                         {hasActiveFilter && (
                             <button onClick={clearFilters} style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.3rem 0.6rem', background: 'transparent', border: '1px dashed rgba(180,60,60,0.4)', color: 'rgba(200,80,80,0.7)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.08em', borderRadius: '2px', cursor: 'pointer' }}>
