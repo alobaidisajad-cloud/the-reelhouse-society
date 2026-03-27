@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { SectionHeader, FilmCard } from '../UI'
+import { SectionHeader, FilmCard, ReelRating } from '../UI'
 import Buster from '../Buster'
 import { useMemo } from 'react'
 
@@ -56,8 +56,11 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog }: { prof
             <SectionHeader label="CHRONOLOGICAL" title="The Ledger" />
             {profileLogs.length > 0 && (
                 <div className="profile-sieve-strip" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ash)' }}>
-                    {[{ id: 'all', label: 'All' }, { id: '5', label: '✦✦✦✦✦' }, { id: '4', label: '✦✦✦✦' }, { id: '3', label: '✦✦✦' }, { id: '2', label: '✦✦' }, { id: '1', label: '✦' }].map(s => (
-                        <button key={s.id} onClick={() => setSieve(s.id)} className={`btn ${sieve === s.id ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', whiteSpace: 'nowrap' }}>{s.label}</button>
+                    <button onClick={() => setSieve('all')} className={`btn ${sieve === 'all' ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}>ALL</button>
+                    {[5, 4, 3, 2, 1].map(star => (
+                        <button key={star} onClick={() => setSieve(String(star))} className={`btn ${sieve === String(star) ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '0.4rem 0.5rem', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
+                            <ReelRating value={star} size="sm" />
+                        </button>
                     ))}
                 </div>
             )}
