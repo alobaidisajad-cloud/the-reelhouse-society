@@ -427,12 +427,12 @@ export default function FilmDetailPage() {
     return (
         <div className="page-top" style={{
             ...(IS_TOUCH
-                ? { minHeight: '100dvh', overflowX: 'hidden' as const, position: 'relative' as const, background: 'var(--ink)' }
+                ? { minHeight: '100dvh', position: 'relative' as const, background: 'var(--ink)' }
                 : { height: '100dvh', overflow: 'hidden' as const, display: 'flex', flexDirection: 'column' as const, position: 'relative' as const, background: 'var(--ink)' }
             ),
         }}>
-            {/* ── THE AMBIENT ZERO-JS COLOR GLOW ── */}
-            {film?.poster_path && (
+            {/* ── THE AMBIENT ZERO-JS COLOR GLOW — desktop only (too expensive on mobile) ── */}
+            {!IS_TOUCH && film?.poster_path && (
                 <div style={{
                     position: 'fixed', inset: '-20%', zIndex: 0, pointerEvents: 'none',
                     backgroundImage: `url(${tmdb.poster(film.poster_path, 'w500')})`,
