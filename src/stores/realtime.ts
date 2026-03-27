@@ -9,10 +9,13 @@ import { useProgrammeStore } from './content'
 // These are module-level side effects, not stores.
 // Both guard against being called without Supabase configured.
 
+let _authSub: any = null
 export const initAuthSync = () => {
     if (!isSupabaseConfigured) return
 
-    supabase.auth.onAuthStateChange(async (event, session) => {
+    if (_authSub) _authSub.unsubscribe()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
         // ── PASSWORD RECOVERY: don't auto-login, just redirect to reset page ──
         if (event === 'PASSWORD_RECOVERY') {
             sessionStorage.setItem('reelhouse_recovery', 'true')
@@ -92,6 +95,7 @@ export const initAuthSync = () => {
             supabase.removeAllChannels()
         }
     })
+    _authSub = subscription
 }
 
 

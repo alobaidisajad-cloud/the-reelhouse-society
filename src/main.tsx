@@ -93,7 +93,13 @@ function NoirToast({ t, message, icon }: any) {
   info: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="◈" />),
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+let root = (window as any)._reactRoot
+if (!root) {
+  root = ReactDOM.createRoot(document.getElementById('root')!)
+  ;(window as any)._reactRoot = root
+}
+
+root.render(
   <React.StrictMode>
     <HelmetProvider>
     <QueryClientProvider client={queryClient}>

@@ -95,9 +95,9 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
             <div className="marquee-board" style={{
                 border: '2px solid var(--sepia)',
                 borderRadius: 'var(--radius-card)',
-                padding: IS_TOUCH ? '1.25rem 1rem' : '3rem 2rem',
+                padding: IS_TOUCH ? '1.75rem 1.25rem 1.5rem' : '3rem 2rem',
                 boxShadow: IS_TOUCH
-                    ? '0 8px 20px rgba(0,0,0,0.8)'
+                    ? '0 8px 24px rgba(0,0,0,0.85), inset 0 0 30px rgba(139,105,20,0.08), 0 0 0 1px rgba(242,232,160,0.06)'
                     : '0 20px 50px rgba(0,0,0,0.9), inset 0 0 40px rgba(139,105,20,0.15), 0 0 0 1px rgba(242,232,160,0.1)',
                 position: 'relative',
                 overflow: 'hidden',
@@ -111,7 +111,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                     zIndex: 0,
                     pointerEvents: 'none',
                 }} />
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.6rem' : '0.75rem', letterSpacing: '0.3em', color: 'var(--flicker)', textAlign: 'center', marginBottom: IS_TOUCH ? '0.75rem' : '1.5rem', textShadow: '0 0 10px rgba(242,232,160,0.3)', position: 'relative', zIndex: 1 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.55rem' : '0.75rem', letterSpacing: '0.3em', color: 'var(--flicker)', textAlign: 'center', marginBottom: IS_TOUCH ? '1rem' : '1.5rem', textShadow: '0 0 10px rgba(242,232,160,0.3)', position: 'relative', zIndex: 1 }}>
                     ✦ MAIN FEATURE ✦
                 </div>
                 <div style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
@@ -131,16 +131,14 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                     >
                         {film.title || 'REELHOUSE'}
                     </h1>
-                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: IS_TOUCH ? '0.75rem' : '1.5rem', marginTop: IS_TOUCH ? '1rem' : '2rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: IS_TOUCH ? '0.75rem' : '1.5rem', marginTop: IS_TOUCH ? '1.25rem' : '2rem', flexWrap: 'wrap' }}>
                         <span style={{ fontFamily: 'var(--font-sub)', fontSize: IS_TOUCH ? '0.8rem' : '0.95rem', color: 'var(--bone)', background: 'rgba(58,50,40,0.5)', padding: '0.2em 0.8em', borderRadius: '4px', border: '1px solid rgba(139,105,20,0.3)' }}>
                             {film.release_date?.slice(0, 4)}
                         </span>
                         <ReelRating value={Math.round((film.vote_average || 0) / 2)} size="md" />
-                        {!IS_TOUCH && (
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', color: 'var(--sepia)', letterSpacing: '0.15em', borderBottom: '1px dotted var(--sepia)', paddingBottom: '0.2em' }}>
-                                {reviewText}
-                            </span>
-                        )}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.55rem' : '0.75rem', color: 'var(--sepia)', letterSpacing: '0.15em', borderBottom: '1px dotted var(--sepia)', paddingBottom: '0.2em', opacity: IS_TOUCH ? 0.7 : 1 }}>
+                            {reviewText}
+                        </span>
                     </div>
                 </div>
                 {/* Film strip decoration — desktop only */}

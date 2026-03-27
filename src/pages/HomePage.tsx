@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { useState, useEffect } from 'react'
 import { tmdb } from '../tmdb'
 import { useUIStore, useAuthStore } from '../store'
 import { FilmCard, SectionHeader, Ticker, FilmStripSkeleton } from '../components/UI'
@@ -16,6 +17,64 @@ import PageSEO from '../components/PageSEO'
 
 // Detect touch/mobile once at module level — never re-evaluated
 const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+
+// ── Rotating cinematic taglines for the mobile lobby ──
+const LOBBY_TAGLINES = [
+    'Every frame tells a story.',
+    'Log. Critique. Discover.',
+    'Cinema never sleeps.',
+    'Your screening room awaits.',
+    'The reel begins here.',
+]
+
+function MobileLobbyTagline() {
+    const [idx, setIdx] = useState(0)
+    const [visible, setVisible] = useState(true)
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setVisible(false)
+            setTimeout(() => {
+                setIdx(prev => (prev + 1) % LOBBY_TAGLINES.length)
+                setVisible(true)
+            }, 600)
+        }, 4500)
+        return () => clearInterval(interval)
+    }, [])
+
+    return (
+        <div style={{
+            marginTop: '1.75rem',
+            textAlign: 'center',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '1.25rem',
+        }}>
+            {/* Decorative rule */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '80%', maxWidth: 280 }}>
+                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.35))' }} />
+                <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--sepia)', opacity: 0.5 }} />
+                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.35))' }} />
+            </div>
+            {/* Rotating tagline */}
+            <p style={{
+                fontFamily: 'var(--font-sub)',
+                fontSize: '0.95rem',
+                color: 'var(--bone)',
+                letterSpacing: '0.04em',
+                lineHeight: 1.5,
+                opacity: visible ? 0.7 : 0,
+                transform: visible ? 'translateY(0)' : 'translateY(4px)',
+                transition: 'opacity 0.5s ease, transform 0.5s ease',
+                margin: 0,
+                fontStyle: 'italic',
+            }}>
+                {LOBBY_TAGLINES[idx]}
+            </p>
+        </div>
+    )
+}
 
 // ── MAIN HOME PAGE ──
 export default function HomePage() {
@@ -60,7 +119,7 @@ export default function HomePage() {
 
             {/* Hero section — mobile: compact, no minHeight, no heavy backdrop */}
             <section style={{
-                padding: IS_TOUCH ? '1.5rem 0 1rem' : '6rem 0 4rem',
+                padding: IS_TOUCH ? '2rem 0 1.5rem' : '6rem 0 4rem',
                 minHeight: IS_TOUCH ? 'unset' : '80vh',
                 display: 'flex',
                 alignItems: 'center',
@@ -129,52 +188,57 @@ export default function HomePage() {
                         </div>
                     )}
 
-                    {/* CTA row */}
-                    <div className="hero-cta-row" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: IS_TOUCH ? '1.5rem' : '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                        {isAuthenticated ? (
-                            <button
-                                className="btn btn-primary"
-                                style={{
-                                    fontSize: IS_TOUCH ? '0.85rem' : '1rem',
-                                    padding: IS_TOUCH ? '0.9em 2em' : '1em 2.8em',
-                                    boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
-                                    letterSpacing: '0.18em',
-                                }}
-                                onClick={() => openLogModal()}
-                            >
-                                + LOG A FILM
-                            </button>
-                        ) : (
-                            <>
+                    {/* CTA row — hidden on mobile since BottomNav has LOG + DARKROOM */}
+                    {!IS_TOUCH && (
+                        <div className="hero-cta-row" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                            {isAuthenticated ? (
                                 <button
                                     className="btn btn-primary"
                                     style={{
-                                        fontSize: IS_TOUCH ? '0.85rem' : '1rem',
-                                        padding: IS_TOUCH ? '0.9em 2em' : '1em 2.8em',
+                                        fontSize: '1rem',
+                                        padding: '1em 2.8em',
                                         boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
                                         letterSpacing: '0.18em',
                                     }}
-                                    onClick={() => openSignupModal('cinephile')}
+                                    onClick={() => openLogModal()}
                                 >
-                                    ✦ JOIN THE SOCIETY
+                                    + LOG A FILM
                                 </button>
-                                <button
-                                    className="btn btn-ghost"
-                                    style={{ fontSize: IS_TOUCH ? '0.75rem' : '0.85rem', padding: IS_TOUCH ? '0.75em 1.5em' : '0.9em 2em', borderColor: 'rgba(139,105,20,0.4)', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
-                                    onClick={() => openSignupModal('venue_owner')}
-                                >
-                                    I MANAGE A VENUE
-                                </button>
-                            </>
-                        )}
-                        <button
-                            className="btn btn-ghost"
-                            style={{ fontSize: IS_TOUCH ? '0.75rem' : '0.85rem', padding: IS_TOUCH ? '0.75em 1.5em' : '0.9em 2em', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
-                            onClick={() => navigate('/discover')}
-                        >
-                            BROWSE ARCHIVES
-                        </button>
-                    </div>
+                            ) : (
+                                <>
+                                    <button
+                                        className="btn btn-primary"
+                                        style={{
+                                            fontSize: '1rem',
+                                            padding: '1em 2.8em',
+                                            boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
+                                            letterSpacing: '0.18em',
+                                        }}
+                                        onClick={() => openSignupModal('cinephile')}
+                                    >
+                                        ✦ JOIN THE SOCIETY
+                                    </button>
+                                    <button
+                                        className="btn btn-ghost"
+                                        style={{ fontSize: '0.85rem', padding: '0.9em 2em', borderColor: 'rgba(139,105,20,0.4)', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
+                                        onClick={() => openSignupModal('venue_owner')}
+                                    >
+                                        I MANAGE A VENUE
+                                    </button>
+                                </>
+                            )}
+                            <button
+                                className="btn btn-ghost"
+                                style={{ fontSize: '0.85rem', padding: '0.9em 2em', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
+                                onClick={() => navigate('/discover')}
+                            >
+                                BROWSE ARCHIVES
+                            </button>
+                        </div>
+                    )}
+
+                    {/* ── MOBILE LOBBY ELEGANCE — replaces CTA buttons with cinematic ambiance ── */}
+                    {IS_TOUCH && <MobileLobbyTagline />}
                 </div>
             </section>
 

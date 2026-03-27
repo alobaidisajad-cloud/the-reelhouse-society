@@ -270,7 +270,7 @@ export default function DiscoverPage() {
     })
 
     const currentResults = isSearching ? searchResults : discoverResults
-    const isLoading = isSearching ? searchLoading : discoverLoading
+    const isLoading = (isSearching ? searchLoading : discoverLoading) && accumulatedFilms.length === 0
     const isFetching = isSearching ? searchFetching : discoverFetching
 
     useEffect(() => {
@@ -459,16 +459,16 @@ export default function DiscoverPage() {
                     <SectionHeader label={String(sectionLabel)} title={sectionTitle} />
 
                     {/* ── FILM GRID ── */}
-                    {isLoading ? <LoadingReel /> : (
+                    {isLoading && accumulatedFilms.length === 0 ? (
+                        <LoadingReel />
+                    ) : (
                         <>
-                            <FilmGrid films={accumulatedFilms} />
-
-                            {!isLoading && accumulatedFilms.length === 0 && (
-                                <div style={{ textAlign: 'center', padding: '5rem 0', color: 'var(--fog)', fontFamily: 'var(--font-sub)', fontSize: '0.9rem' }}>
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--ash)', marginBottom: '1rem' }}>∅</div>
-                                    The vault is empty. Try adjusting your filters.
+                            {accumulatedFilms.length === 0 && !isFetching && (
+                                <div style={{ textAlign: 'center', padding: '4rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--sepia)', letterSpacing: '0.1em' }}>∅ The vault is empty. Try adjusting your filters.</div>
                                 </div>
                             )}
+                            <FilmGrid films={accumulatedFilms} />
 
                             {accumulatedFilms.length > 0 && currentResults?.page < currentResults?.total_pages && (
                                 <div style={{ marginTop: IS_TOUCH ? '2rem' : '4rem', textAlign: 'center' }}>
