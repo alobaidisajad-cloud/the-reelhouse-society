@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Loader, Clapperboard, Megaphone, Mic2, Feather, Layers, Aperture, CircleDashed } from 'lucide-react'
+import { Search, X, Loader, Clapperboard, Megaphone, PersonStanding, Feather, Layers, Aperture, CircleDashed } from 'lucide-react'
 import { tmdb } from '../../tmdb'
 import Poster from '../film/Poster'
 
@@ -134,7 +134,7 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
                                                     {isPerson ? (() => {
                                                         const d = (dept || '').toLowerCase()
                                                         if (d.includes('direct')) return <><Megaphone size={9} style={{ opacity: 0.75 }} />{dept}</>
-                                                        if (d.includes('act') || d.includes('perform')) return <><Mic2 size={9} style={{ opacity: 0.75 }} />{dept}</>
+                                                        if (d.includes('act') || d.includes('perform')) return <><PersonStanding size={9} style={{ opacity: 0.75 }} />{dept}</>
                                                         if (d.includes('writ')) return <><Feather size={9} style={{ opacity: 0.75 }} />{dept}</>
                                                         if (d.includes('produc')) return <><Layers size={9} style={{ opacity: 0.75 }} />{dept}</>
                                                         if (d.includes('camera') || d.includes('cinemat')) return <><Aperture size={9} style={{ opacity: 0.75 }} />{dept}</>
