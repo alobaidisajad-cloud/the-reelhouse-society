@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight, ChevronLeft } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight, ChevronLeft, Archive, Bookmark, LayoutList, Ticket, LineChart, BookOpen } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
@@ -460,15 +460,15 @@ export default function UserProfilePage() {
             )}
 
             {!activeTab && (
-                <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 800, margin: '0 auto', paddingBottom: '3rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: IS_TOUCH ? '1px' : '0.5rem', background: IS_TOUCH ? 'rgba(139,105,20,0.1)' : 'transparent', borderTop: IS_TOUCH ? '1px solid rgba(139,105,20,0.1)' : 'none' }}>
+                <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 850, margin: '0 auto', paddingBottom: '3rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem', padding: '1.5rem 0.5rem' }}>
                         {[
-                            { id: 'archive', label: 'Archive', count: physicalArchive.length, active: activeTab === 'archive' },
-                            { id: 'diary', label: 'Logs', count: profileLogs.length, active: activeTab === 'diary' },
-                            { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, active: activeTab === 'watchlist' },
-                            { id: 'lists', label: 'Stacks', count: profileLists.length, active: activeTab === 'lists' },
-                            { id: 'tickets', label: 'Stubs', count: 'COMING SOON', active: activeTab === 'tickets', disabled: true },
-                            { id: 'stats', label: 'Analytics', count: '', active: activeTab === 'stats', highlight: true },
+                            { id: 'diary', label: 'The Ledger', count: profileLogs.length, icon: BookOpen, active: activeTab === 'diary', desc: 'Diary' },
+                            { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, icon: Bookmark, active: activeTab === 'watchlist', desc: 'To See' },
+                            { id: 'lists', label: 'Stacks', count: profileLists.length, icon: LayoutList, active: activeTab === 'lists', desc: 'Lists' },
+                            { id: 'archive', label: 'Archive', count: physicalArchive.length, icon: Archive, active: activeTab === 'archive', desc: 'Physical' },
+                            { id: 'tickets', label: 'Stubs', count: 'SOON', icon: Ticket, active: activeTab === 'tickets', disabled: true, desc: 'Box Office' },
+                            { id: 'stats', label: 'Analytics', count: 'LIFETIME', icon: LineChart, active: activeTab === 'stats', highlight: true, desc: 'Projector' },
                         ].map(item => (
                             <button
                                 key={item.id}
@@ -482,26 +482,59 @@ export default function UserProfilePage() {
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    gap: '0.4rem',
-                                    padding: '2rem 1rem',
-                                    background: 'var(--ink)',
-                                    border: IS_TOUCH ? 'none' : '1px solid rgba(139,105,20,0.1)',
-                                    borderRadius: IS_TOUCH ? '0' : 'var(--radius-card)',
+                                    textAlign: 'center',
+                                    gap: '0.75rem',
+                                    padding: '1.25rem 0.5rem',
+                                    background: 'linear-gradient(135deg, rgba(20,15,10,0.8) 0%, rgba(10,5,0,0.9) 100%)',
+                                    border: '1px solid rgba(139,105,20,0.15)',
+                                    borderRadius: '12px',
                                     cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s',
-                                    ...(item.disabled ? { opacity: 0.4 } : {})
+                                    transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                                    position: 'relative',
+                                    overflow: 'hidden',
+                                    boxShadow: '0 4px 20px rgba(0,0,0,0.2)',
+                                    ...(item.disabled ? { opacity: 0.3 } : {})
                                 }}
-                                onMouseEnter={e => !item.disabled && (e.currentTarget.style.background = 'rgba(139,105,20,0.02)')}
-                                onMouseLeave={e => !item.disabled && (e.currentTarget.style.background = 'var(--ink)')}
+                                onMouseEnter={e => {
+                                    if (!item.disabled) {
+                                        e.currentTarget.style.border = '1px solid rgba(139,105,20,0.5)'
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(30,22,15,0.9) 0%, rgba(15,10,5,0.95) 100%)'
+                                        e.currentTarget.style.transform = 'translateY(-2px)'
+                                        e.currentTarget.style.boxShadow = '0 8px 30px rgba(139,105,20,0.1)'
+                                    }
+                                }}
+                                onMouseLeave={e => {
+                                    if (!item.disabled) {
+                                        e.currentTarget.style.border = '1px solid rgba(139,105,20,0.15)'
+                                        e.currentTarget.style.background = 'linear-gradient(135deg, rgba(20,15,10,0.8) 0%, rgba(10,5,0,0.9) 100%)'
+                                        e.currentTarget.style.transform = 'translateY(0)'
+                                        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)'
+                                    }
+                                }}
                             >
-                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: item.highlight ? 'var(--sepia)' : 'var(--bone)', letterSpacing: '0.02em' }}>
-                                    {item.label}
-                                </span>
-                                {item.count !== '' && (
-                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: item.highlight ? 'var(--sepia)' : 'var(--fog)', textTransform: 'uppercase' }}>
-                                        {item.count}
+                                <div style={{
+                                    width: 36, height: 36, borderRadius: '50%',
+                                    background: item.highlight ? 'rgba(139,105,20,0.1)' : 'rgba(255,255,255,0.03)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                    color: item.highlight ? 'var(--sepia)' : 'var(--bone)',
+                                }}>
+                                    <item.icon size={16} strokeWidth={1.5} />
+                                </div>
+                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: item.highlight ? 'var(--sepia)' : 'var(--parchment)', letterSpacing: '0.04em', lineHeight: 1.1, marginBottom: '0.3rem' }}>
+                                        {item.label}
                                     </span>
-                                )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--fog)', textTransform: 'uppercase' }}>
+                                            {item.desc}
+                                        </span>
+                                        {item.count !== '' && (
+                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: item.highlight ? 'var(--sepia)' : 'var(--parchment)', textTransform: 'uppercase' }}>
+                                                {item.count}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </button>
                         ))}
                     </div>
@@ -533,37 +566,50 @@ export default function UserProfilePage() {
                                     </div>
                                 ) : (() => {
                                     const shown = filteredLogs.slice(0, visibleLogCount)
+                                    // Group shown logs by month
+                                    const grouped = shown.reduce((acc: any, log: any) => {
+                                        const d = new Date(log.watchedDate || log.createdAt)
+                                        const title = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+                                        if (!acc[title]) acc[title] = []
+                                        acc[title].push(log)
+                                        return acc
+                                    }, {})
+
                                     return (
-                                        <>
-                                        <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: 'minmax(140px, auto)', gap: IS_TOUCH ? '0.2rem' : '1rem' }}>
-                                            {shown.map((log: any, index: number) => {
-                                                let gridColumnSpan = 'span 1', gridRowSpan = 'span 1'
-                                                if (sieve === 'all' && index === 0) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 2' }
-                                                else if (sieve === 'all' && (index === 1 || index === 2)) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 1' }
-                                                const hl: any = halfLifeMap[log.filmId]
-                                                return (
-                                                    <div
-                                                        key={log.id}
-                                                        onClick={() => setViewLog(log)}
-                                                        style={{ gridColumn: gridColumnSpan, gridRow: gridRowSpan, position: 'relative', cursor: 'pointer' }}
-                                                    >
-                                                        <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status } as any} />
-                                                        {hl && (
-                                                            <div style={{ position: 'absolute', bottom: 6, left: 4, right: 4, background: 'rgba(10,7,3,0.88)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.25rem 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem', pointerEvents: 'none' }}>
-                                                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', whiteSpace: 'nowrap', color: hl.trajectory === 'ASCENDING' ? '#7cb87a' : hl.trajectory === 'DECAYING' ? 'var(--blood-reel)' : 'var(--sepia)' }}>{hl.trajectory === 'ASCENDING' ? '↑' : hl.trajectory === 'DECAYING' ? '↓' : '—'} {hl.trajectory}</span>
-                                                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--fog)', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>×{hl.count}</span>
-                                                            </div>
-                                                        )}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                                            {Object.keys(grouped).map(month => (
+                                                <div key={month}>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '0.5rem' }}>
+                                                        {month}
                                                     </div>
-                                                )
-                                            })}
+                                                    <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: IS_TOUCH ? '0.2rem' : '0.75rem' }}>
+                                                        {grouped[month].map((log: any) => {
+                                                            const hl: any = halfLifeMap[log.filmId]
+                                                            return (
+                                                                <div
+                                                                    key={log.id}
+                                                                    onClick={() => setViewLog(log)}
+                                                                    style={{ position: 'relative', cursor: 'pointer' }}
+                                                                >
+                                                                    <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status } as any} />
+                                                                    {hl && (
+                                                                        <div style={{ position: 'absolute', bottom: 6, left: 4, right: 4, background: 'rgba(10,7,3,0.88)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.25rem 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem', pointerEvents: 'none' }}>
+                                                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', whiteSpace: 'nowrap', color: hl.trajectory === 'ASCENDING' ? '#7cb87a' : hl.trajectory === 'DECAYING' ? 'var(--blood-reel)' : 'var(--sepia)' }}>{hl.trajectory === 'ASCENDING' ? '↑' : hl.trajectory === 'DECAYING' ? '↓' : '—'} {hl.trajectory}</span>
+                                                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--fog)', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>×{hl.count}</span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                            {visibleLogCount < filteredLogs.length && (
+                                                <div ref={loadMoreRef} style={{ textAlign: 'center', padding: '2rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
+                                                    LOADING MORE REELS...
+                                                </div>
+                                            )}
                                         </div>
-                                        {visibleLogCount < filteredLogs.length && (
-                                            <div ref={loadMoreRef} style={{ textAlign: 'center', padding: '2rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
-                                                LOADING MORE REELS...
-                                            </div>
-                                        )}
-                                        </>
                                     )
                                 })()}
                             </div>

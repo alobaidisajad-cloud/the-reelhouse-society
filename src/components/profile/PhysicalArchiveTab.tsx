@@ -393,128 +393,148 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                     </div>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-                    {filteredArchive.map(item => (
-                        <motion.div
-                            key={item.filmId}
-                            layout
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            style={{
-                                background: 'var(--soot)', border: '1px solid var(--ash)',
-                                borderRadius: '6px', overflow: 'hidden',
-                                transition: 'border-color 0.2s',
-                            }}
-                        >
-                            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem' }}>
-                                {/* Poster */}
-                                {item.poster_path ? (
-                                    <div style={{ width: 55, height: 82, flexShrink: 0, borderRadius: '3px', overflow: 'hidden', border: '1px solid var(--ash)' }}>
-                                        <Poster path={item.poster_path} title={item.title} sizeHint="sm" />
-                                    </div>
-                                ) : (
-                                    <div style={{ width: 55, height: 82, background: 'var(--ink)', border: '1px solid var(--ash)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        <Disc size={20} color="var(--fog)" />
-                                    </div>
-                                )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                    {(() => {
+                        const grouped = filteredArchive.reduce((acc: any, item: any) => {
+                            const d = item.created_at || item.createdAt ? new Date(item.created_at || item.createdAt) : null
+                            const title = d ? d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'UNDATED ARCHIVE'
+                            if (!acc[title]) acc[title] = []
+                            acc[title].push(item)
+                            return acc
+                        }, {})
 
-                                {/* Info */}
-                                <div style={{ flex: 1, minWidth: 0 }}>
-                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--parchment)', lineHeight: 1.2, marginBottom: '0.2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                        {item.title}
-                                    </div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
-                                        {item.year || '—'} · {CONDITIONS.find(c => c.id === item.condition)?.label || 'Good'}
-                                    </div>
+                        return Object.keys(grouped).map(month => (
+                            <div key={month}>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '0.5rem' }}>
+                                    {month}
+                                </div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                                    {grouped[month].map((item: any) => (
+                                        <motion.div
+                                            key={item.filmId}
+                                            layout
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            style={{
+                                                background: 'var(--soot)', border: '1px solid var(--ash)',
+                                                borderRadius: '6px', overflow: 'hidden',
+                                                transition: 'border-color 0.2s',
+                                                display: 'flex', flexDirection: 'column',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem' }}>
+                                                {/* Poster */}
+                                                {item.poster_path ? (
+                                                    <div style={{ width: 55, height: 82, flexShrink: 0, borderRadius: '3px', overflow: 'hidden', border: '1px solid var(--ash)' }}>
+                                                        <Poster path={item.poster_path} title={item.title} sizeHint="sm" />
+                                                    </div>
+                                                ) : (
+                                                    <div style={{ width: 55, height: 82, background: 'var(--ink)', border: '1px solid var(--ash)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                        <Disc size={20} color="var(--fog)" />
+                                                    </div>
+                                                )}
 
-                                    {/* Format badges */}
-                                    {editingId === item.filmId ? (
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.5rem' }}>
-                                            {FORMATS.map(f => (
-                                                <button
-                                                    key={f.id}
-                                                    onClick={() => toggleFormat(f.id)}
-                                                    style={{
-                                                        fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em',
-                                                        padding: '0.2rem 0.4rem', borderRadius: '2px', cursor: 'pointer',
-                                                        border: `1px solid ${selectedFormats.includes(f.id) ? f.color : 'var(--ash)'}`,
-                                                        background: selectedFormats.includes(f.id) ? `${f.color}22` : 'transparent',
-                                                        color: selectedFormats.includes(f.id) ? f.color : 'var(--fog)',
-                                                        transition: 'all 0.15s',
-                                                    }}
-                                                >
-                                                    <FormatIcon id={f.id} /> {f.label}
-                                                </button>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                                            {item.formats.map(fId => {
-                                                const fmt = FORMATS.find(f => f.id === fId)
-                                                return fmt ? (
-                                                    <span
-                                                        key={fId}
-                                                        style={{
-                                                            fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em',
-                                                            padding: '0.15rem 0.4rem', borderRadius: '2px',
-                                                            border: `1px solid ${fmt.color}55`,
-                                                            background: `${fmt.color}15`,
-                                                            color: fmt.color,
-                                                        }}
-                                                    >
-                                                        <FormatIcon id={fId} /> {fmt.label}
-                                                    </span>
-                                                ) : null
-                                            })}
-                                        </div>
-                                    )}
+                                                {/* Info */}
+                                                <div style={{ flex: 1, minWidth: 0 }}>
+                                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--parchment)', lineHeight: 1.2, marginBottom: '0.2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {item.title}
+                                                    </div>
+                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
+                                                        {item.year || '—'} · {CONDITIONS.find(c => c.id === item.condition)?.label || 'Good'}
+                                                    </div>
 
-                                    {item.notes && !editingId && (
-                                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.35rem', lineHeight: 1.4 }}>
-                                            "{item.notes}"
-                                        </div>
-                                    )}
+                                                    {/* Format badges */}
+                                                    {editingId === item.filmId ? (
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.5rem' }}>
+                                                            {FORMATS.map(f => (
+                                                                <button
+                                                                    key={f.id}
+                                                                    onClick={() => toggleFormat(f.id)}
+                                                                    style={{
+                                                                        fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em',
+                                                                        padding: '0.2rem 0.4rem', borderRadius: '2px', cursor: 'pointer',
+                                                                        border: `1px solid ${selectedFormats.includes(f.id) ? f.color : 'var(--ash)'}`,
+                                                                        background: selectedFormats.includes(f.id) ? `${f.color}22` : 'transparent',
+                                                                        color: selectedFormats.includes(f.id) ? f.color : 'var(--fog)',
+                                                                        transition: 'all 0.15s',
+                                                                    }}
+                                                                >
+                                                                    <FormatIcon id={f.id} />
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
+                                                            {item.formats.map((fId: string) => {
+                                                                const fmt = FORMATS.find(f => f.id === fId)
+                                                                return fmt ? (
+                                                                    <span
+                                                                        key={fId}
+                                                                        style={{
+                                                                            fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em',
+                                                                            padding: '0.15rem 0.4rem', borderRadius: '2px',
+                                                                            border: `1px solid ${fmt.color}55`,
+                                                                            background: `${fmt.color}15`,
+                                                                            color: fmt.color,
+                                                                        }}
+                                                                    >
+                                                                        <FormatIcon id={fId} /> {fmt.label}
+                                                                    </span>
+                                                                ) : null
+                                                            })}
+                                                        </div>
+                                                    )}
+
+                                                    {item.notes && !editingId && (
+                                                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.35rem', lineHeight: 1.4 }}>
+                                                            "{item.notes}"
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Actions */}
+                                            {isOwnProfile && (
+                                                <div style={{ display: 'flex', marginTop: 'auto', borderTop: '1px solid rgba(139,105,20,0.1)', background: 'rgba(0,0,0,0.15)' }}>
+                                                    {editingId === item.filmId ? (
+                                                        <>
+                                                            <button
+                                                                onClick={() => handleUpdate(item.filmId)}
+                                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', background: 'none', border: 'none', cursor: 'pointer' }}
+                                                            >
+                                                                {<Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} SAVE
+                                                            </button>
+                                                            <button
+                                                                onClick={() => { setEditingId(null); setSelectedFormats([]); setNotes(''); setCondition('good') }}
+                                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', borderLeft: '1px solid rgba(139,105,20,0.1)', cursor: 'pointer' }}
+                                                            >
+                                                                CANCEL
+                                                            </button>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <button
+                                                                onClick={() => startEdit(item)}
+                                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
+                                                            >
+                                                                EDIT
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleRemove(item.filmId, item.title)}
+                                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', borderLeft: '1px solid rgba(139,105,20,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', transition: 'color 0.15s' }}
+                                                            >
+                                                                <Trash2 size={10} /> REMOVE
+                                                            </button>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </motion.div>
+                                    ))}
                                 </div>
                             </div>
-
-                            {/* Actions */}
-                            {isOwnProfile && (
-                                <div style={{ display: 'flex', borderTop: '1px solid rgba(139,105,20,0.1)', background: 'rgba(0,0,0,0.15)' }}>
-                                    {editingId === item.filmId ? (
-                                        <>
-                                            <button
-                                                onClick={() => handleUpdate(item.filmId)}
-                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', background: 'none', border: 'none', cursor: 'pointer' }}
-                                            >
-                                                {<Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} SAVE
-                                            </button>
-                                            <button
-                                                onClick={() => { setEditingId(null); setSelectedFormats([]); setNotes(''); setCondition('good') }}
-                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', borderLeft: '1px solid rgba(139,105,20,0.1)', cursor: 'pointer' }}
-                                            >
-                                                CANCEL
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <button
-                                                onClick={() => startEdit(item)}
-                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
-                                            >
-                                                EDIT
-                                            </button>
-                                            <button
-                                                onClick={() => handleRemove(item.filmId, item.title)}
-                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', borderLeft: '1px solid rgba(139,105,20,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', transition: 'color 0.15s' }}
-                                            >
-                                                <Trash2 size={10} /> REMOVE
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            )}
-                        </motion.div>
-                    ))}
+                        ))
+                    })()}
                 </div>
             )}
         </div>
