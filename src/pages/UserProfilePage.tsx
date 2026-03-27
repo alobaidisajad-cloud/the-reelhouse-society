@@ -413,8 +413,13 @@ export default function UserProfilePage() {
         <div className={`page-top ${stats.count > 50 ? 'level-obsessed' : stats.count > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100dvh' }}>
             {/* Header */}
             {!activeTab ? (
-                <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
-                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
+                <div style={{ borderBottom: '1px solid var(--ash)', background: 'var(--ink)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '4rem 0 3rem', position: 'relative', overflow: 'hidden' }}>
+                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : (
+                    <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'var(--ink)' }}>
+                        <div style={{ position: 'absolute', inset: -100, background: 'radial-gradient(circle at 50% 0%, rgba(139,105,20,0.15) 0%, rgba(139,105,20,0) 60%)', filter: 'blur(40px)' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(8,6,4,0.4) 50%, var(--ink) 100%)' }} />
+                    </div>
+                )}
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.25rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
                         {/* Avatar */}
@@ -428,9 +433,16 @@ export default function UserProfilePage() {
                         {/* Identity */}
                         <div className="profile-identity" style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 300, display: 'flex', flexDirection: 'column', alignItems: IS_TOUCH ? 'center' : 'flex-start', textAlign: IS_TOUCH ? 'center' : 'left' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap', justifyContent: IS_TOUCH ? 'center' : 'flex-start' }}>
-                                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.6rem, 6vw, 2.2rem)' : '2.5rem', color: 'var(--parchment)', lineHeight: 1.1, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <h1 style={{ 
+                                    fontFamily: 'var(--font-display)', 
+                                    fontSize: IS_TOUCH ? 'clamp(1.8rem, 6vw, 2.5rem)' : '3.2rem', 
+                                    color: 'var(--parchment)', 
+                                    lineHeight: 1.1, 
+                                    display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap',
+                                    textShadow: '0 4px 20px rgba(0,0,0,0.8)'
+                                }}>
                                     @{profileUser.username.toUpperCase()}
-                                    {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Star size={10} fill="currentColor" /> AUTEUR</span>}
+                                    {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.25rem 0.6rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.3rem', boxShadow: '0 4px 12px rgba(107,26,10,0.4)' }}><Star size={11} fill="currentColor" /> AUTEUR</span>}
                                 </h1>
                                 {isOwnProfile ? (
                                     <button onClick={() => navigate('/settings')} className="btn btn-ghost" style={{ padding: '0.4rem', border: '1px solid rgba(139,105,20,0.3)', color: 'var(--sepia)' }} aria-label="Settings">
@@ -452,16 +464,29 @@ export default function UserProfilePage() {
                                 {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
                             </p>
 
-                            {/* Core Stats Row */}
-                            <div className="profile-stats-row" style={{ display: 'flex', gap: IS_TOUCH ? '1.5rem' : '3rem', flexWrap: 'wrap', justifyContent: IS_TOUCH ? 'center' : 'flex-start' }}>
+                            {/* Core Stats Row — Glassmorphism Editorial Style */}
+                            <div className="profile-stats-row" style={{ 
+                                display: 'flex', gap: IS_TOUCH ? '1.5rem' : '2.5rem', flexWrap: 'wrap', 
+                                justifyContent: IS_TOUCH ? 'center' : 'flex-start',
+                                background: 'rgba(15,13,10,0.4)',
+                                backdropFilter: 'blur(12px)',
+                                padding: '1rem 1.5rem',
+                                borderRadius: '8px',
+                                border: '1px solid rgba(255,255,255,0.05)',
+                                boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                                marginTop: '0.5rem'
+                            }}>
                                 {[
                                     { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
                                     { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
                                     { value: isOwnProfile ? (ownCounts?.followingCount ?? (currentUser as any)?.following_count ?? 0) : ((profileUser as any)?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
-                                ].map(({ value, label, onClick }) => (
-                                    <div key={label} onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default', alignItems: IS_TOUCH ? 'center' : 'flex-start' }}>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.4rem' : '1.8rem', color: 'var(--parchment)', lineHeight: 1 }}>{value}</div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>{label}</div>
+                                ].map(({ value, label, onClick }, idx) => (
+                                    <div key={label} style={{ display: 'flex', alignItems: 'center', gap: IS_TOUCH ? '1.5rem' : '2.5rem' }}>
+                                        {idx > 0 && <div style={{ width: 1, height: 32, background: 'rgba(255,255,255,0.1)' }} />}
+                                        <div onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', cursor: onClick ? 'pointer' : 'default', alignItems: IS_TOUCH ? 'center' : 'flex-start', transition: 'transform 0.2s', ...(onClick ? { cursor: 'pointer' } : {}) }} onMouseEnter={e => onClick && ((e.currentTarget as HTMLElement).style.transform = 'translateY(-2px)')} onMouseLeave={e => onClick && ((e.currentTarget as HTMLElement).style.transform = 'translateY(0)')}>
+                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.6rem' : '2rem', color: 'var(--parchment)', lineHeight: 1, textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>{value}</div>
+                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>{label}</div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>

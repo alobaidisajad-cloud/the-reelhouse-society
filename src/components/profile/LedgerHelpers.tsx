@@ -6,19 +6,36 @@ import { useAuthStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
 
-// ── PROFILE BACKDROP ──
+// ── PROFILE BACKDROP (CINEMATIC AMBIENT LENS) ──
 export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }: any) {
-    const posters = logs.filter((l: any) => l.poster).slice(0, 12).map((l: any) => tmdb.poster(l.poster, 'w185'))
-    if (posters.length < 4) return null
+    const posters = logs.filter((l: any) => l.poster).slice(0, 12).map((l: any) => tmdb.poster(l.poster, 'w342'))
+    if (posters.length < 3) return null
     return (
-        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 2, overflow: 'hidden' }}>
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none', background: 'var(--ink)' }}>
+            {/* The Ambient Wash — giant blurred posters */}
+            <div style={{ 
+                position: 'absolute', inset: -100, display: 'flex', flexWrap: 'wrap', 
+                gap: 0, overflow: 'hidden', opacity: 0.6,
+                filter: 'blur(60px) saturate(1.8) contrast(1.2)', 
+                transform: 'scale(1.2)' 
+            }}>
                 {posters.map((src: any, i: number) => (
                     <img key={i} src={src || undefined} alt="" decoding="async" loading="lazy"
-                        style={{ flex: '1 0 auto', height: '100%', objectFit: 'cover', filter: 'sepia(0.8) brightness(0.15) contrast(1.2)', transform: `rotate(${(i % 3 - 1) * 0.5}deg) scale(1.04)` }} />
+                        style={{ 
+                            width: '33.33%', height: '50%', objectFit: 'cover', 
+                            mixBlendMode: 'screen',
+                            animation: `drift ${20 + (i % 5) * 5}s infinite alternate ease-in-out`,
+                            animationDelay: `-${i * 2}s`
+                        }} 
+                    />
                 ))}
             </div>
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,7,3,0.5) 0%, rgba(10,7,3,0.85) 60%, var(--ink) 100%)' }} />
+            {/* Film Grain & Scanlines */}
+            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)', mixBlendMode: 'multiply' }} />
+            {/* Nitrate Noir Vignette Fade */}
+            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 30%, transparent 20%, rgba(8,6,4,0.6) 70%, var(--ink) 100%)' }} />
+            {/* Bottom Gradient into the Page */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(8,6,4,0.3) 50%, var(--ink) 100%)' }} />
         </div>
     )
 })
