@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState, useMemo } from 'react'
-import { Routes, Route, useLocation, Link, Navigate } from 'react-router-dom'
+import { Routes, Route, useLocation, Link, Navigate, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from './tmdb'
@@ -113,6 +113,22 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const location = useLocation()
+  const navigate = useNavigate()
+
+  // ── PKCE / OAuth Callback Interceptor ──
+  // Email links from Resend/Supabase often land on the root URL instead of a callback route.
+  // This hook intercepts tokens on the homepage and redirects them to the verification logic.
+  useEffect(() => {
+    if (
+      location.pathname === '/' &&
+      (location.search.includes('token_hash=') || 
+       location.hash.includes('access_token=') || 
+       location.hash.includes('error_description='))
+    ) {
+      navigate(`/auth/callback${location.search}${location.hash}`, { replace: true })
+    }
+  }, [location, navigate])
+
   // Granular selector — only re-renders App when logs.length changes, not on every store write
   const logCount = useFilmStore(state => state.logs.length)
   const logs = useFilmStore(state => state.logs)
