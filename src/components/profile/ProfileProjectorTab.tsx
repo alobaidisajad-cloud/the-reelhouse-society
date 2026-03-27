@@ -71,19 +71,6 @@ export function ProfileProjectorTab({ profileLogs, profileWatchlist, profileList
                     ))}
                 </div>
             </div>
-            <div className="card" style={{ padding: '1.75rem' }}>
-                <div className="section-title" style={{ marginBottom: '1.25rem' }}>CATALOG METRICS</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-                    {[
-                        ...(streakCount > 0 ? [{ label: '🔥 LOGGING STREAK', value: `${streakCount} day${streakCount !== 1 ? 's' : ''}` }] : []),
-                        { label: 'TOTAL FILMS LOGGED', value: profileLogs.length }, { label: 'WATCHLIST QUEUED', value: profileWatchlist.length }, { label: 'LISTS CURATED', value: profileLists.length }, { label: 'RATED 5 REELS', value: profileLogs.filter(l => l.rating === 5).length }, { label: 'WRITTEN REVIEWS', value: profileLogs.filter(l => l.review?.length > 10).length }].map(({ label, value }) => (
-                        <div key={label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.04)', paddingBottom: '0.5rem' }}>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>{label}</span>
-                            <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)' }}>{value}</span>
-                        </div>
-                    ))}
-                </div>
-            </div>
         </div>
     )
 }

@@ -623,27 +623,30 @@ export default function UserProfilePage() {
                         )}
 
                         {activeTab === 'stats' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem', paddingBottom: '3rem', animation: 'fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}>
-                                <div style={{ textAlign: 'center', marginBottom: '-2rem' }}>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>GLOBAL ANALYTICS</div>
-                                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '2rem' : '2.5rem', color: 'var(--parchment)', lineHeight: 1.1 }}>The Projector Room</h2>
-                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.5rem' }}>Lifetime cinematic data & achievements.</p>
-                                </div>
-
-                                <ProjectorRoom stats={stats} user={profileUser} />
-
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem', paddingBottom: '3rem', animation: 'fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                                {/* Section 1: The Projector Room — Ranking + Viewing Habits */}
                                 <div>
-                                    <SectionHeader label="DEVOTEE ANALYTICS" title="Viewing Habits" />
-                                    <ProfileProjectorTab profileLogs={profileLogs} profileWatchlist={profileWatchlist} profileLists={profileLists} />
+                                    <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>GLOBAL ANALYTICS</div>
+                                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '2rem' : '2.5rem', color: 'var(--parchment)', lineHeight: 1.1 }}>The Projector Room</h2>
+                                        <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.5rem' }}>Lifetime cinematic data & achievements.</p>
+                                    </div>
+
+                                    <ProjectorRoom stats={stats} user={profileUser} />
+                                    <div style={{ marginTop: '2rem' }}>
+                                        <ProfileProjectorTab profileLogs={profileLogs} profileWatchlist={profileWatchlist} profileLists={profileLists} />
+                                    </div>
                                 </div>
 
+                                {/* Section 2: Cinematic Passport */}
                                 <div>
                                     <SectionHeader label="CINEMATIC ACHIEVEMENTS" title="The Passport" />
                                     <NoirPassport logs={profileLogs} />
                                 </div>
 
+                                {/* Section 3: Projectionist's Calendar */}
                                 <div>
-                                    <SectionHeader label="ARCHIVIST · VIEWING HISTORY" title="The Projectionist's Calendar" />
+                                    <SectionHeader label="VIEWING HISTORY" title="The Projectionist's Calendar" />
                                     <ProjectionistCalendar {...{ logs: profileLogs, isPremium } as any} />
                                 </div>
 
