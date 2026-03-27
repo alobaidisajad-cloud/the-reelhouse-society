@@ -79,7 +79,7 @@ function CommunityListCard({ list }: any) {
                 textDecoration: 'none',
                 color: 'inherit',
                 background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.08)',
-                borderRadius: '6px', minHeight: IS_TOUCH ? 380 : 440, display: 'flex', flexDirection: 'column',
+                borderRadius: '6px', minHeight: IS_TOUCH ? 220 : 440, display: 'flex', flexDirection: 'column',
                 boxShadow: '0 15px 40px rgba(0,0,0,0.6)', cursor: 'pointer', transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 position: 'relative', overflow: 'hidden'
             }}
@@ -138,13 +138,13 @@ function CommunityListCard({ list }: any) {
 
             {/* Content Pane */}
             <div style={{
-                position: 'relative', zIndex: 10, marginTop: 'auto', padding: IS_TOUCH ? '1.25rem' : '1.75rem',
+                position: 'relative', zIndex: 10, marginTop: 'auto', padding: IS_TOUCH ? '0.6rem' : '1.75rem',
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.75rem' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', border: '1px solid rgba(139,105,20,0.3)', padding: '2px 8px', borderRadius: '2px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: IS_TOUCH ? '0.25rem' : '0.75rem' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.4rem' : '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', border: '1px solid rgba(139,105,20,0.3)', padding: '2px 6px', borderRadius: '2px', whiteSpace: 'nowrap' }}>
                         {list.count} FILMS
                     </span>
-                    {list.certifyCount > 0 && (
+                    {!IS_TOUCH && list.certifyCount > 0 && (
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--flicker)', display: 'flex', alignItems: 'center', gap: '0.2rem', opacity: 0.8 }}>
                             <Award size={10} /> {list.certifyCount}
                         </span>
@@ -152,30 +152,39 @@ function CommunityListCard({ list }: any) {
                     <div style={{ height: '1px', flex: 1, background: 'linear-gradient(to right, rgba(139,105,20,0.3), transparent)' }} />
                 </div>
 
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.4rem' : '1.6rem', color: 'var(--parchment)', marginBottom: '0.5rem', textShadow: '0 4px 15px rgba(0,0,0,0.9)', lineHeight: 1.1 }}>
+                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.8rem' : '1.6rem', color: 'var(--parchment)', marginBottom: IS_TOUCH ? '0.25rem' : '0.5rem', textShadow: '0 2px 10px rgba(0,0,0,0.9)', lineHeight: 1.15, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
                     {list.title.toUpperCase()}
                 </h3>
 
-                {list.desc && (
+                {!IS_TOUCH && list.desc && (
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.5, marginBottom: '0.5rem', opacity: 0.7, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
                         {list.desc}
                     </p>
                 )}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <div style={{ width: 12, height: 12, background: 'var(--sepia)', borderRadius: '50%', opacity: 0.6 }} />
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
-                        @{list.user.toUpperCase()}
-                    </span>
-                </div>
+                {!IS_TOUCH && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div style={{ width: 12, height: 12, background: 'var(--sepia)', borderRadius: '50%', opacity: 0.6 }} />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
+                            @{list.user.toUpperCase()}
+                        </span>
+                    </div>
+                )}
 
                 {/* Certify + Comment Actions */}
-                <ListActions
-                    listId={list.id}
-                    certifyCount={list.certifyCount || 0}
-                    isCertified={list.isCertified || false}
-                    commentCount={list.commentCount || 0}
-                />
+                {!IS_TOUCH ? (
+                    <ListActions
+                        listId={list.id}
+                        certifyCount={list.certifyCount || 0}
+                        isCertified={list.isCertified || false}
+                        commentCount={list.commentCount || 0}
+                    />
+                ) : (
+                    <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: list.isCertified ? 'var(--sepia)' : 'var(--fog)', opacity: list.isCertified ? 1 : 0.6 }}><Award size={9} /> {list.certifyCount || 0}</span>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--fog)', opacity: 0.6 }}><MessageCircle size={9} /> {list.commentCount || 0}</span>
+                    </div>
+                )}
             </div>
         </Link>
     )
@@ -553,7 +562,7 @@ export default function ListsPage() {
                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.6rem', color: 'var(--parchment)', lineHeight: 1 }}>My Collections</div>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.75rem' : '1.25rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.4rem' : '1.25rem' }}>
                                 {filteredMyLists.map((list: any) => {
                                     const posters = list.films.filter((f: any) => f.poster_path).slice(0, 3).map((f: any) => f.poster_path)
                                     return (
@@ -566,11 +575,12 @@ export default function ListsPage() {
                                             background: 'var(--ink)',
                                             border: '1px solid rgba(139,105,20,0.08)',
                                             borderRadius: '6px',
-                                            padding: IS_TOUCH ? '1.25rem' : '1.5rem',
+                                            padding: IS_TOUCH ? '0.6rem' : '1.5rem',
                                             position: 'relative', overflow: 'hidden',
-                                            borderLeft: '3px solid rgba(139,105,20,0.4)',
+                                            borderLeft: IS_TOUCH ? 'none' : '3px solid rgba(139,105,20,0.4)',
+                                            borderBottom: IS_TOUCH ? '2px solid rgba(139,105,20,0.4)' : 'none',
                                             transition: 'border-color 0.3s, box-shadow 0.3s, transform 0.3s',
-                                            minHeight: IS_TOUCH ? 160 : 180,
+                                            minHeight: IS_TOUCH ? 130 : 180,
                                             boxShadow: '0 8px 25px rgba(0,0,0,0.6)'
                                         }}
                                         onMouseEnter={(e: any) => {
@@ -611,20 +621,23 @@ export default function ListsPage() {
                                         {/* Content */}
                                         <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', height: '100%' }}>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                                                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.2rem' : '1.3rem', color: 'var(--parchment)', lineHeight: 1.15, textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
+                                                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.75rem' : '1.3rem', color: 'var(--parchment)', lineHeight: 1.15, textShadow: '0 2px 10px rgba(0,0,0,0.8)', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
                                                     {list.title}
                                                 </h3>
-                                                <div style={{ color: 'var(--fog)', opacity: 0.5, flexShrink: 0, marginLeft: '0.5rem' }}>
-                                                    {list.isPrivate ? <Lock size={14} /> : <Globe size={14} />}
-                                                </div>
+                                                {!IS_TOUCH && (
+                                                    <div style={{ color: 'var(--fog)', opacity: 0.5, flexShrink: 0, marginLeft: '0.5rem' }}>
+                                                        {list.isPrivate ? <Lock size={14} /> : <Globe size={14} />}
+                                                    </div>
+                                                )}
                                             </div>
-                                            {list.description && (
+                                            {!IS_TOUCH && list.description && (
                                                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: 'auto', lineHeight: 1.5, opacity: 0.7, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
                                                     {list.description}
                                                 </p>
                                             )}
-                                            <div style={{ borderTop: '1px solid rgba(139,105,20,0.15)', paddingTop: '0.6rem', marginTop: list.description ? '1rem' : 'auto', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
-                                                {list.films.length} FILMS
+                                            <div style={{ borderTop: '1px solid rgba(139,105,20,0.15)', paddingTop: '0.6rem', marginTop: !IS_TOUCH && list.description ? '1rem' : 'auto', fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.45rem' : '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <span>{list.films.length} FILMS</span>
+                                                {IS_TOUCH && list.isPrivate && <Lock size={10} style={{ opacity: 0.6 }} />}
                                             </div>
                                         </div>
                                     </Link>
@@ -656,9 +669,9 @@ export default function ListsPage() {
                         </div>
 
                         {isLoading ? (
-                            <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.4rem' : '1.5rem' }}>
                                 {Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="skeleton" style={{ height: IS_TOUCH ? 380 : 440, borderRadius: '6px' }} />
+                                    <div key={i} className="skeleton" style={{ height: IS_TOUCH ? 220 : 440, borderRadius: '6px' }} />
                                 ))}
                             </div>
                         ) : filteredCommunity.length === 0 ? (
@@ -693,7 +706,7 @@ export default function ListsPage() {
                                 )}
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(3, 1fr)', gap: IS_TOUCH ? '1rem' : '1.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.4rem' : '1.5rem' }}>
                                 {filteredCommunity.map((list: any) => (
                                     <CommunityListCard key={list.id} list={list} />
                                 ))}
