@@ -10,6 +10,7 @@ import LogModalSearch from './log-modal/LogModalSearch'
 import EditorialDesk from './log-modal/EditorialDesk'
 import AuteurToolkit from './log-modal/AuteurToolkit'
 import ShareCardModal from './film/ShareCardModal'
+import NitrateCalendar from './NitrateCalendar'
 import toast from 'react-hot-toast'
 
 // ── Single source of truth for autopsy categories ──
@@ -515,13 +516,7 @@ export default function LogModal() {
                                         <button type="button" onClick={() => setDate(new Date().toISOString().slice(0, 10))} className={`btn ${date === new Date().toISOString().slice(0, 10) ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '0.3em 0.8em', fontSize: '0.55rem' }}>TODAY</button>
                                         <button type="button" onClick={() => { const d = new Date(); d.setDate(d.getDate() - 1); setDate(d.toISOString().slice(0, 10)) }} className={`btn ${date === new Date(Date.now() - 86400000).toISOString().slice(0, 10) ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '0.3em 0.8em', fontSize: '0.55rem' }}>YESTERDAY</button>
                                     </div>
-                                    <input
-                                        type="date"
-                                        className="input"
-                                        value={date}
-                                        onChange={(e) => setDate(e.target.value)}
-                                        style={{ colorScheme: 'dark' }}
-                                    />
+                                    <NitrateCalendar value={date} onChange={setDate} />
                                 </div>
 
                                 {/* Watched With */}
