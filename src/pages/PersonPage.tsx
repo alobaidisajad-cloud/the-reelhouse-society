@@ -92,12 +92,23 @@ export default function PersonPage() {
                         </div>
 
                         {person.biography && (
-                            <div style={{
-                                fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6, maxWidth: 800,
-                                display: '-webkit-box', WebkitLineClamp: IS_TOUCH ? 5 : 8, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                                textAlign: IS_TOUCH ? 'left' : undefined
-                            }}>
-                                {person.biography}
+                            <div style={{ position: 'relative', maxWidth: 800 }}>
+                                <div
+                                    className="bio-scroll"
+                                    style={{
+                                        fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', lineHeight: 1.6,
+                                        maxHeight: IS_TOUCH ? 200 : 320, overflowY: 'auto',
+                                        textAlign: IS_TOUCH ? 'left' : undefined,
+                                        paddingRight: '0.5rem',
+                                    }}
+                                >
+                                    {person.biography}
+                                </div>
+                                {/* Fade mask at bottom */}
+                                <div style={{
+                                    position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, pointerEvents: 'none',
+                                    background: 'linear-gradient(to top, var(--ink), transparent)',
+                                }} />
                             </div>
                         )}
                     </div>
@@ -107,7 +118,7 @@ export default function PersonPage() {
                 <SectionHeader label="FILMOGRAPHY" title="Known Works" />
 
                 {sortedCredits.length > 0 ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1.25rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? 'repeat(3, 1fr)' : 'repeat(auto-fill, minmax(140px, 1fr))', gap: IS_TOUCH ? '0.75rem' : '1.25rem' }}>
                         {sortedCredits.map((film: any, idx: number) => (
                             <motion.div
                                 key={film.id}

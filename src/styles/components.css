@@ -612,6 +612,10 @@
 .card-film img,
 .person-card img { will-change: opacity; }
 
+/* ── BIO SCROLL — hidden scrollbar ── */
+.bio-scroll { scrollbar-width: none; -ms-overflow-style: none; }
+.bio-scroll::-webkit-scrollbar { display: none; }
+
 /* ── REDACTED TEXT REVEAL ── */
 .redacted {
   color: #111 !important;
