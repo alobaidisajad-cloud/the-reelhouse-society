@@ -244,7 +244,7 @@ export default function HomePage() {
 
             {/* Main content */}
             <main style={{ background: 'var(--ink)', position: 'relative', zIndex: 1, paddingBottom: IS_TOUCH ? '6rem' : '5rem' }}>
-                <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '2.5rem' : '5rem' }}>
+                <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '2rem' : '4rem' }}>
 
                     {/* Trending */}
                     <SectionErrorBoundary label="NOW SHOWING">
@@ -259,13 +259,21 @@ export default function HomePage() {
                     </SectionErrorBoundary>
 
                     {/* Social Pulse */}
-                    <div className="divider" style={{ margin: '1rem 0' }}>✦ THE FOYER ✦</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '0' : '1rem 0' }}>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.3))' }} />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, whiteSpace: 'nowrap' }}>✦ THE FOYER ✦</span>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.3))' }} />
+                    </div>
                     <SectionErrorBoundary label="THE PULSE">
                     <SocialPulse />
                     </SectionErrorBoundary>
 
                     {/* Divider */}
-                    <div className="divider" style={{ margin: '1rem 0' }}>✦ TONIGHT'S PROGRAMME ✦</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '0' : '1rem 0' }}>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.3))' }} />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, whiteSpace: 'nowrap' }}>✦ TONIGHT'S PROGRAMME ✦</span>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.3))' }} />
+                    </div>
 
                     {/* Featured review + film */}
                     <SectionErrorBoundary label="FEATURED CRITIQUE">
@@ -352,7 +360,11 @@ export default function HomePage() {
                     </SectionErrorBoundary>
 
                     {/* Top rated */}
-                    <div className="divider">✦ THE ARCHIVES ✦</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '0' : '1rem 0' }}>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.3))' }} />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, whiteSpace: 'nowrap' }}>✦ THE ARCHIVES ✦</span>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.3))' }} />
+                    </div>
                     <SectionErrorBoundary label="ESSENTIAL VIEWING">
                     {loadingTop ? <FilmStripSkeleton count={8} /> : (
                         <FilmStripRow
@@ -365,7 +377,11 @@ export default function HomePage() {
                     </SectionErrorBoundary>
 
                     {/* Venue spotlight */}
-                    <div className="divider">✦ THE PALACES ✦</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '0' : '1rem 0' }}>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.3))' }} />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, whiteSpace: 'nowrap' }}>✦ THE PALACES ✦</span>
+                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.3))' }} />
+                    </div>
                     <SectionErrorBoundary label="VENUE SPOTLIGHT">
                     <VenueSpotlight />
                     </SectionErrorBoundary>
@@ -374,29 +390,33 @@ export default function HomePage() {
                     {!isAuthenticated && (
                         <section style={{
                             textAlign: 'center',
-                            padding: '4rem 2rem',
-                            background: 'linear-gradient(to bottom, transparent, rgba(139,105,20,0.05))',
-                            border: '1px solid rgba(139,105,20,0.2)',
-                            borderRadius: '8px',
-                            marginTop: '2rem'
+                            padding: IS_TOUCH ? '2.5rem 1.5rem' : '4rem 2rem',
+                            background: 'linear-gradient(180deg, rgba(28,23,16,0.5) 0%, rgba(10,7,3,0.9) 100%)',
+                            border: '1px solid rgba(139,105,20,0.15)',
+                            borderRadius: '6px',
+                            position: 'relative',
+                            overflow: 'hidden',
                         }}>
-                            <Buster size={120} mood="peeking" />
-                            <div style={{ marginTop: '2rem' }}>
-                                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2.2rem', color: 'var(--parchment)', marginBottom: '1rem', textShadow: '0 2px 10px rgba(0,0,0,0.5)' }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                            <Buster size={IS_TOUCH ? 80 : 120} mood="peeking" />
+                            <div style={{ marginTop: IS_TOUCH ? '1.25rem' : '2rem' }}>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', marginBottom: '0.75rem', opacity: 0.8 }}>THE FINAL ACT</div>
+                                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.6rem' : '2.2rem', color: 'var(--parchment)', marginBottom: '0.75rem', lineHeight: 1.1 }}>
                                     The House is Waiting
                                 </h2>
-                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '1.1rem', color: 'var(--bone)', maxWidth: 540, margin: '0 auto 2rem', lineHeight: 1.6 }}>
-                                    Log every frame you've witnessed. Review with the fury of a true critic.
-                                    Build enduring lists and track the ghosts of your cinematic past.
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.85rem' : '1rem', color: 'var(--bone)', maxWidth: 480, margin: '0 auto 1.5rem', lineHeight: 1.6, opacity: 0.7 }}>
+                                    Log every frame. Review with the fury of a true critic.
+                                    Build enduring lists and trace the ghosts of your cinematic past.
                                 </p>
                                 <button
                                     className="btn btn-primary"
-                                    style={{ fontSize: '1.1rem', padding: '1em 3em', boxShadow: '0 4px 20px rgba(139,105,20,0.4)' }}
+                                    style={{ fontSize: IS_TOUCH ? '0.75rem' : '1rem', padding: '0.85em 2.5em', letterSpacing: '0.2em' }}
                                     onClick={() => openSignupModal()}
                                 >
-                                    Admit One
+                                    ADMIT ONE
                                 </button>
                             </div>
+                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                         </section>
                     )}
                 </div>

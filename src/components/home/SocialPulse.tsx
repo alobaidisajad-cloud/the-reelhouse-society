@@ -23,8 +23,16 @@ const SocialPulse = memo(function SocialPulse() {
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--bone)', paddingLeft: '1.5rem', opacity: 0.75, maxWidth: '600px', marginBottom: '2.5rem', textShadow: '0 1px 2px var(--ink)' }}>
                     Witness the latest logs, lists, and critiques from the devotees.
                 </p>
-                <div style={{ padding: '2rem 1.5rem', border: '1px dashed var(--ash)', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.2em' }}>
-                    THE LOBBY IS QUIET. LOG A FILM TO START THE PULSE.
+                <div style={{
+                    padding: '2.5rem 1.5rem', textAlign: 'center',
+                    background: 'linear-gradient(180deg, rgba(28,23,16,0.4) 0%, transparent 100%)',
+                    border: '1px solid rgba(139,105,20,0.12)', borderRadius: '4px',
+                    position: 'relative', overflow: 'hidden',
+                }}>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>SIGNAL QUIET</div>
+                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>The Lobby is quiet.</div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', opacity: 0.6 }}>Log a film to start the pulse.</div>
                 </div>
             </section>
         )
