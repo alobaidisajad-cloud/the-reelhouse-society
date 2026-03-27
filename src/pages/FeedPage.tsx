@@ -204,7 +204,7 @@ export default function FeedPage() {
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
 
     return (
-        <div style={{ paddingTop: 70, height: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column', background: 'var(--ink)' }}>
+        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             <PageSEO title="The Feed" description="Community dispatches and global curation from The ReelHouse Society." />
             {/* ── REFINED HEADER ── */}
             <div style={{
@@ -292,8 +292,8 @@ export default function FeedPage() {
             {/* ── GOLD GRADIENT DIVIDER ── */}
             <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent)', flexShrink: 0 }} />
 
-            <main id="feed-scroller" className="page-top" style={{ paddingBottom: '7rem', paddingTop: IS_TOUCH ? '1.5rem' : '2rem', flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
-                <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 300px', gap: '3rem', alignItems: 'start' }}>
+            <main id="feed-scroller" className="page-top" style={{ paddingBottom: IS_TOUCH ? 'calc(5rem + env(safe-area-inset-bottom))' : '3rem', paddingTop: IS_TOUCH ? '1.5rem' : '2rem' }}>
+                <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'minmax(0, 1fr) 300px', gap: IS_TOUCH ? '2rem' : '3rem', alignItems: 'start' }}>
 
                     {/* Main Feed */}
                     <SectionErrorBoundary label="COMMUNITY FEED">
