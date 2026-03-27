@@ -1,4 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
+import { createPortal } from 'react-dom'
 import { Home, Compass, Plus, Newspaper, User } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 
@@ -39,7 +40,7 @@ export default function BottomNav() {
         return tab.path ? location.pathname.startsWith(tab.path) : false
     }
 
-    return (
+    return createPortal(
         <nav className="bottom-nav" aria-label="Main navigation">
             {TABS.map(tab => {
                 const active = isActive(tab)
@@ -58,6 +59,7 @@ export default function BottomNav() {
                     </button>
                 )
             })}
-        </nav>
+        </nav>,
+        document.body
     )
 }
