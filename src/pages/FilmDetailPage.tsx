@@ -425,7 +425,12 @@ export default function FilmDetailPage() {
     )
 
     return (
-        <div className="page-top" style={{ height: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column', position: 'relative', background: 'var(--ink)' }}>
+        <div className="page-top" style={{
+            ...(IS_TOUCH
+                ? { minHeight: '100dvh', overflowX: 'hidden' as const, position: 'relative' as const, background: 'var(--ink)' }
+                : { height: '100dvh', overflow: 'hidden' as const, display: 'flex', flexDirection: 'column' as const, position: 'relative' as const, background: 'var(--ink)' }
+            ),
+        }}>
             {/* ── THE AMBIENT ZERO-JS COLOR GLOW ── */}
             {film?.poster_path && (
                 <div style={{
@@ -438,11 +443,16 @@ export default function FilmDetailPage() {
                 }} />
             )}
             
-            <div style={{ position: 'relative', zIndex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ position: 'relative', zIndex: 1, ...(IS_TOUCH ? {} : { height: '100%', display: 'flex', flexDirection: 'column' as const }) }}>
                 <FilmHero film={film} onPlayTrailer={handlePlayVideo} />
                 {/* Single TrailerModal rendered at root — above all stacking contexts */}
                 {activeVideo && <TrailerModal trailerKey={activeVideo} onClose={() => setActiveVideo(null)} />}
-            <main id="film-details-scroller" style={{ flex: 1, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', paddingBottom: '3rem', background: 'transparent' }}>
+            <main id="film-details-scroller" style={{
+                ...(IS_TOUCH
+                    ? { paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))', background: 'transparent' }
+                    : { flex: 1, overflowY: 'auto' as const, overscrollBehavior: 'contain' as const, WebkitOverflowScrolling: 'touch' as any, paddingBottom: '3rem', background: 'transparent' }
+                ),
+            }}>
                 <div className="container" style={{ paddingTop: '2rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     <button onClick={() => {
                         navigate(-1)
