@@ -357,6 +357,9 @@ export default function UserProfilePage() {
 
 
     const filteredLogs = profileLogs.filter(log => {
+        const hasPoster = (typeof log.poster === 'string' && log.poster.length > 5) || (typeof log.altPoster === 'string' && log.altPoster.length > 5)
+        if (!hasPoster) return false
+
         if (sieve === 'all') return true
         if (sieve === 'masterpieces') return log.rating === 5
         if (sieve === 'rewatched') return log.status === 'rewatched'

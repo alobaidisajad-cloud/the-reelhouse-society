@@ -40,36 +40,18 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
             {/* Stats grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '2rem' }}>
-                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '2rem' }}>
-                    <div className="projector-stat-dial">
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+                <div className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: '3rem', width: '100%', maxWidth: 400 }}>
+                    <div className="projector-stat-dial" style={{ transform: 'scale(1.2)', margin: '1rem 0 2.5rem' }}>
                         <div className="dial-value">{stats.count}</div>
-                        <div className="dial-label">LOGS</div>
+                        <div className="dial-label" style={{ marginTop: '0.4rem' }}>LIFETIME LOGS</div>
                     </div>
-                    <div style={{ marginTop: '1.5rem' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.25em', color: 'var(--sepia)', marginBottom: '0.4rem' }}>CURRENT STATUS</div>
-                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: stats.color }}>{stats.level}</h2>
-                    </div>
-                    <div style={{ width: '100%', marginTop: '1.25rem' }}>
+                    <div style={{ width: '100%' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.25em', color: 'var(--fog)', marginBottom: '0.6rem' }}>RANKING</div>
+                        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: stats.color, filter: `drop-shadow(0 0 20px ${stats.color}40)`, marginBottom: '1.5rem' }}>{stats.level}</h2>
                         <div style={{ height: 4, background: 'var(--ash)', borderRadius: 2, overflow: 'hidden' }}>
                             <motion.div initial={{ width: 0 }} animate={{ width: `${stats.progress}%` }} style={{ height: '100%', background: stats.color }} />
                         </div>
-                    </div>
-                </div>
-                <div className="card" style={{ padding: '2rem' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem' }}>DOSSIER SUMMARY</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                        {[
-                            { label: 'TIME IN THE DARK', value: (stats.count * 122) + 'm' },
-                            { label: 'HOURS IN DARK', value: Math.floor(stats.count * 1.8) + 'h' },
-                            { label: 'SILENT ERA PRESERVATIONS', value: isMaster ? '🏆 MASTER' : '4' },
-                            { label: 'THEATRICAL VISITS', value: stats.count },
-                        ].map(s => (
-                            <div key={s.label} style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid var(--ash)', paddingBottom: '0.4rem' }}>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)' }}>{s.label}</span>
-                                <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--parchment)' }}>{s.value}</span>
-                            </div>
-                        ))}
                     </div>
                 </div>
             </div>
