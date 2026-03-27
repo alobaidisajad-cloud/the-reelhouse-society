@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, Loader, User, Film } from 'lucide-react'
+import { Search, X, Loader, Clapperboard, Megaphone, Mic2, Feather, Layers, Aperture, CircleDashed } from 'lucide-react'
 import { tmdb } from '../../tmdb'
 import Poster from '../film/Poster'
 
@@ -123,7 +123,7 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
                                                 {imgPath ? (
                                                     <Poster path={imgPath} title={title} aspectRatio={isPerson ? 'square' : 'poster'} sizeHint="sm" />
                                                 ) : (
-                                                    isPerson ? <User size={20} color="var(--fog)" /> : <Film size={20} color="var(--fog)" />
+                                                    isPerson ? <CircleDashed size={20} color="var(--fog)" /> : <Clapperboard size={20} color="var(--fog)" />
                                                 )}
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
@@ -131,10 +131,15 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
                                                     {title}
                                                 </div>
                                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
-                                                    {isPerson
-                                                        ? <><User size={9} style={{ opacity: 0.7 }} />{dept}</>
-                                                        : <><Film size={9} style={{ opacity: 0.7 }} />{year || 'FILM'}</>
-                                                    }
+                                                    {isPerson ? (() => {
+                                                        const d = (dept || '').toLowerCase()
+                                                        if (d.includes('direct')) return <><Megaphone size={9} style={{ opacity: 0.75 }} />{dept}</>
+                                                        if (d.includes('act') || d.includes('perform')) return <><Mic2 size={9} style={{ opacity: 0.75 }} />{dept}</>
+                                                        if (d.includes('writ')) return <><Feather size={9} style={{ opacity: 0.75 }} />{dept}</>
+                                                        if (d.includes('produc')) return <><Layers size={9} style={{ opacity: 0.75 }} />{dept}</>
+                                                        if (d.includes('camera') || d.includes('cinemat')) return <><Aperture size={9} style={{ opacity: 0.75 }} />{dept}</>
+                                                        return <><CircleDashed size={9} style={{ opacity: 0.75 }} />{dept}</>
+                                                    })() : <><Clapperboard size={9} style={{ opacity: 0.75 }} />{year || 'FILM'}</>}
                                                 </div>
                                             </div>
                                         </Link>
