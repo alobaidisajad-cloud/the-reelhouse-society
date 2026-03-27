@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Download, Copy, Share2, Check } from 'lucide-react'
 import { tmdb } from '../../tmdb'
+import { Portal } from '../UI'
 
 interface ShareCardData {
     filmTitle: string
@@ -270,15 +271,12 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
     }
 
     return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
+        <Portal>
+            <div
                 onClick={onClose}
                 style={{
                     position: 'fixed', inset: 0, zIndex: 10001,
-                    background: 'rgba(0,0,0,0.85)',
+                    background: 'rgba(5, 3, 1, 0.98)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '1rem',
                 }}
@@ -487,8 +485,8 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                         )}
                     </div>
                 </motion.div>
-            </motion.div>
-        </AnimatePresence>
+            </div>
+        </Portal>
     )
 }
 

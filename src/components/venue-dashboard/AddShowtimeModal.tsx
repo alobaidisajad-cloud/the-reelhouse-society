@@ -4,6 +4,7 @@ import { X, Plus } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 import { Screen, Showtime } from '../../types'
+import { Portal } from '../UI'
 
 interface AddShowtimeModalProps {
     onClose: () => void;
@@ -19,7 +20,8 @@ export default function AddShowtimeModal({ onClose, onAdd, defaultDate = '', scr
     const [durationMins, setDurationMins] = useState<number | ''>(120)
     
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(5,3,1,0.95)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+        <Portal>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(5,3,1,0.95)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
                 style={{ background: 'var(--soot)', border: '1px solid var(--sepia)', width: '100%', maxWidth: 480, maxHeight: '100dvh', overflowY: 'auto', padding: '2rem', paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))', borderRadius: 2, position: 'relative' }}>
                 <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}><X size={20} /></button>
@@ -61,6 +63,7 @@ export default function AddShowtimeModal({ onClose, onAdd, defaultDate = '', scr
                     </button>
                 </div>
             </motion.div>
-        </div>
+            </div>
+        </Portal>
     )
 }

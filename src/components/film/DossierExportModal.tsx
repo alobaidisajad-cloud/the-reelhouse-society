@@ -4,13 +4,14 @@
  */
 import { AnimatePresence, motion } from 'framer-motion'
 import { tmdb } from '../../tmdb'
-import { ReelRating } from '../UI'
+import { ReelRating, Portal } from '../UI'
 
 export default function DossierExportModal({ film, log, onClose }: { film: Record<string, any>; log: Record<string, any> | null; onClose: () => void }) {
     if (!log) return null;
     return (
-        <AnimatePresence>
-            <motion.div
+        <Portal>
+            <AnimatePresence>
+                <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                 style={{ position: 'fixed', inset: 0, background: 'var(--ink)', zIndex: 50000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 onClick={onClose}
@@ -20,7 +21,7 @@ export default function DossierExportModal({ film, log, onClose }: { film: Recor
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)' }}>Take a Screenshot to Declassify</div>
                 </div>
 
-                <div style={{ width: '100%', maxWidth: '45vh', height: '80vh', maxHeight: 'max-content', minHeight: '600px', background: 'var(--soot)', position: 'relative', overflow: 'hidden', border: '1px solid var(--ash)', boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(139,105,20,0.15)', borderRadius: '4px' }}
+                <div style={{ width: '100%', maxWidth: '380px', height: '100%', maxHeight: '75vh', minHeight: '550px', background: 'var(--soot)', position: 'relative', overflow: 'hidden', border: '1px solid var(--ash)', boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(139,105,20,0.15)', borderRadius: '4px' }}
                     onClick={e => e.stopPropagation()}
                 >
                     <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.poster(film.poster_path, 'w780')})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'sepia(0.6) brightness(0.2) contrast(1.3)' }} />
@@ -40,5 +41,6 @@ export default function DossierExportModal({ film, log, onClose }: { film: Recor
                 </div>
             </motion.div>
         </AnimatePresence>
+        </Portal>
     )
 }

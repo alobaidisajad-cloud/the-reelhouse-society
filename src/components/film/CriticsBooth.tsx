@@ -7,6 +7,7 @@ import VideoPlayer from '../video/VideoPlayer'
 import VideoUploadModal from '../video/VideoUploadModal'
 import SupportButton from '../video/SupportButton'
 import { supabase } from '../../supabaseClient'
+import { Portal } from '../UI'
 
 interface CriticsBoothProps {
     filmId: number
@@ -103,6 +104,7 @@ export default function CriticsBooth({ filmId }: CriticsBoothProps) {
             {/* Video Modal */}
             <AnimatePresence>
                 {activeVideo && (
+                <Portal>
                     <div style={{ position: 'fixed', inset: 0, zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(5,3,1,0.97)', padding: '1rem' }} onClick={() => setActiveVideo(null)}>
                         <motion.div
                             initial={{ scale: 0.95, opacity: 0 }}
@@ -131,6 +133,7 @@ export default function CriticsBooth({ filmId }: CriticsBoothProps) {
                             </div>
                         </motion.div>
                     </div>
+                </Portal>
                 )}
             </AnimatePresence>
         </div>

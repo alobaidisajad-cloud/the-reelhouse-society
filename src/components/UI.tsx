@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from '../tmdb'
 import type { TMDBMovie } from '../types'
 import Poster from './film/Poster'
+import { createPortal } from 'react-dom'
 
 // ── Prop Interfaces ──
 
@@ -453,4 +454,9 @@ export function QueryErrorBanner({ message, onRetry }: { message?: string; onRet
             {onRetry && <button onClick={onRetry} className="btn btn-ghost" style={{ fontSize: '0.6rem' }}>↻ TRY AGAIN</button>}
         </div>
     )
+}
+
+export function Portal({ children }: { children: React.ReactNode }) {
+    if (typeof document === 'undefined') return <>{children}</>
+    return createPortal(children, document.body)
 }

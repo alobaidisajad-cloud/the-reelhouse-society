@@ -6,6 +6,7 @@ import { useAuthStore } from '../../store'
 import { tmdb } from '../../tmdb'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { Portal } from '../UI'
 
 interface TriptychFilm {
     id: number
@@ -168,16 +169,17 @@ export function ProfileTriptych({ user, isOwnProfile }: { user: any, isOwnProfil
             `}</style>
 
             {/* Selection Modal */}
-            <AnimatePresence>
-                {isEditing && (
-                    <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
-                        <motion.div 
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            style={{ position: 'absolute', inset: 0, background: 'rgba(8, 6, 4, 0.95)', backdropFilter: 'blur(20px)' }}
-                            onClick={() => setIsEditing(false)}
-                        />
-                        <motion.div 
-                            initial={{ opacity: 0, y: 40, scale: 0.95 }}
+            <Portal>
+                <AnimatePresence>
+                    {isEditing && (
+                        <div style={{ position: 'fixed', inset: 0, zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+                            <motion.div 
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                style={{ position: 'absolute', inset: 0, background: 'rgba(8, 6, 4, 0.95)', backdropFilter: 'blur(20px)' }}
+                                onClick={() => setIsEditing(false)}
+                            />
+                            <motion.div 
+                                initial={{ opacity: 0, y: 40, scale: 0.95 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 30, scale: 0.95 }}
                             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
@@ -246,6 +248,7 @@ export function ProfileTriptych({ user, isOwnProfile }: { user: any, isOwnProfil
                     </div>
                 )}
             </AnimatePresence>
+            </Portal>
         </div>
     )
 }

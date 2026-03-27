@@ -6,6 +6,7 @@ import { useFilmStore } from '../store'
 import SeatSelector from './SeatSelector'
 import TicketStubGallery from './TicketStubGallery'
 import toast from 'react-hot-toast'
+import { Portal } from './UI'
 
 import { Showtime, ShowtimeSlot, SeatLayout } from '../types'
 
@@ -103,7 +104,8 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
     const stepLabels = ['', 'Choose Ticket Type', 'Pick Your Seat', 'Confirm & Pay', '']
 
     return (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(5,3,1,0.97)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
+        <Portal>
+            <div style={{ position: 'fixed', inset: 0, background: 'rgba(5,3,1,0.97)', zIndex: 20000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', overflowY: 'auto' }}>
             <motion.div
                 initial={{ scale: 0.96, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
@@ -249,6 +251,7 @@ export default function TicketFlow({ showtime, slot, onClose, venueSeatLayout }:
                     )}
                 </div>
             </motion.div>
-        </div>
+            </div>
+        </Portal>
     )
 }

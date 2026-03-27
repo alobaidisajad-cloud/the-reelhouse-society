@@ -1,13 +1,14 @@
 import { X } from 'lucide-react'
 import Buster from '../Buster'
-import { ReelRating, RadarChart } from '../UI'
+import { ReelRating, RadarChart, Portal } from '../UI'
 import { tmdb } from '../../tmdb'
 
 export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: () => void; user: any }) {
     if (!log) return null
     return (
-        <div style={{
-            position: 'fixed', inset: 0, zIndex: 100005, background: 'rgba(10, 7, 3, 0.95)',
+        <Portal>
+            <div style={{
+                position: 'fixed', inset: 0, zIndex: 100005, background: 'rgba(10, 7, 3, 0.95)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
             padding: '2rem'
         }}>
@@ -82,5 +83,6 @@ export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: ()
                 </div>
             </div>
         </div>
+        </Portal>
     )
 }
