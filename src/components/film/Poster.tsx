@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { Film } from 'lucide-react'
 import { tmdb } from '../../tmdb'
 
+const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches
+
 interface PosterProps extends React.ImgHTMLAttributes<HTMLImageElement> {
     path: string | null | undefined
     title: string
@@ -52,8 +54,8 @@ export default function Poster({ path, title, aspectRatio = 'poster', sizeHint =
 
     return (
         <div className={`poster-container ${className || ''}`} style={containerStyle}>
-            {/* Ultra-low quality placeholder for blur-up */}
-            {sizeHint !== 'sm' && !loaded && (
+            {/* Ultra-low quality placeholder for blur-up — desktop only */}
+            {!IS_TOUCH && sizeHint !== 'sm' && !loaded && (
                 <div 
                     style={{
                         position: 'absolute', inset: 0,
