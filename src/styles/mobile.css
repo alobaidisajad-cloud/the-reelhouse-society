@@ -208,8 +208,8 @@
   .review-manuscript { padding: 1.25rem !important; }
   .buster-container { display: none !important; }
 
-  /* === FOOTER — clear the bottom nav bar === */
-  footer { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+  /* === FOOTER — hidden on mobile, BottomNav provides all navigation === */
+  footer { display: none !important; }
 
   /* === DIVIDERS === */
   .divider { margin: 1.25rem 0 !important; }
