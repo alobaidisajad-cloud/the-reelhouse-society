@@ -37,8 +37,9 @@ export function ProfileTriptych({ user, isOwnProfile }: { user: any, isOwnProfil
         if (searchRef.current) clearTimeout(searchRef.current)
         searchRef.current = setTimeout(async () => {
             try {
-                const results = await tmdb.search(searchQuery)
-                setSearchResults(results.slice(0, 10))
+                const data = await tmdb.search(searchQuery)
+                const movies = (data?.results || []).filter((r: any) => r.media_type === 'movie' && r.poster_path)
+                setSearchResults(movies.slice(0, 10))
             } catch (err) {
                 console.error(err)
             } finally {
