@@ -191,10 +191,11 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                         )}
                         <button
                             className="btn btn-ghost"
-                            style={{ flex: isOwnProfile ? 0 : 1, justifyContent: 'center' }}
+                            style={{ flex: isOwnProfile ? 0 : 1, justifyContent: 'center', padding: '0.5rem 0.75rem' }}
                             onClick={onClose}
+                            aria-label="Close"
                         >
-                            Close
+                            <X size={16} style={{ display: 'inline-block', verticalAlign: 'middle' }} />
                         </button>
                     </div>
                 </div>
