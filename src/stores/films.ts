@@ -119,7 +119,7 @@ export const useFilmStore = create<FilmState>()(
                     .select('target_log_id, created_at')
                     .eq('user_id', user.id)
                     .eq('type', 'endorse_log')
-                    .limit(2000)
+                    .limit(100000)
                 if (!error && data) {
                     set({
                         interactions: (data || []).map(r => ({
@@ -175,7 +175,7 @@ export const useFilmStore = create<FilmState>()(
                     .select('target_list_id, created_at')
                     .eq('user_id', user.id)
                     .eq('type', 'endorse_list')
-                    .limit(2000)
+                    .limit(100000)
                 if (!error && data) {
                     set((state) => ({
                         interactions: [
@@ -194,7 +194,7 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data, error } = await supabase
-                    .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5000)
+                    .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100000)
                 if (!error && data) {
                     set({
                         logs: (data || []).map((dbLog) => ({
@@ -248,10 +248,10 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data: lists, error } = await supabase
-                    .from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(200)
+                    .from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100000)
                 if (!error && lists) {
                     const fullLists = await Promise.all(lists.map(async (list) => {
-                        const { data: items } = await supabase.from('list_items').select('*').eq('list_id', list.id).limit(500)
+                        const { data: items } = await supabase.from('list_items').select('*').eq('list_id', list.id).limit(100000)
                         return {
                             id: list.id, title: list.title, description: list.description,
                             isRanked: list.is_ranked, isPrivate: list.is_private || false, createdAt: list.created_at,
@@ -270,7 +270,7 @@ export const useFilmStore = create<FilmState>()(
                     .select('*, showtimes(film_title, date)')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
-                    .limit(500)
+                    .limit(100000)
                 if (!error && data) {
                     set({
                         stubs: data.map((t) => ({
