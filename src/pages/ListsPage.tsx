@@ -69,9 +69,7 @@ function CommunityListCard({ list }: any) {
     ]
     const cardGradient = gradients[Math.abs(list.id.charCodeAt(0)) % gradients.length]
 
-    const primaryPoster = list.films.find((f: any) => f.poster_path)?.poster_path
-    const [imgSrc, setImgSrc] = useState(primaryPoster ? tmdb.poster(primaryPoster, 'w500') : null)
-    const [failed, setFailed] = useState(!primaryPoster)
+    const posters = list.films.filter((f: any) => f.poster_path).slice(0, 3).map((f: any) => f.poster_path)
 
     return (
         <Link
@@ -89,8 +87,8 @@ function CommunityListCard({ list }: any) {
                 e.currentTarget.style.borderColor = 'rgba(139,105,20,0.3)'
                 e.currentTarget.style.transform = 'translateY(-8px)'
                 e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.7), 0 0 30px rgba(139,105,20,0.1)'
-                const poster = e.currentTarget.querySelector('.main-poster') as HTMLElement
-                if (poster) poster.style.transform = 'scale(1.06)'
+                const posterContainer = e.currentTarget.querySelector('.main-poster') as HTMLElement
+                if (posterContainer) posterContainer.style.transform = 'scale(1.06)'
                 const glow = e.currentTarget.querySelector('.card-glow') as HTMLElement
                 if (glow) glow.style.opacity = '0.5'
             }}
@@ -98,31 +96,39 @@ function CommunityListCard({ list }: any) {
                 e.currentTarget.style.borderColor = 'rgba(139,105,20,0.08)'
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.boxShadow = '0 15px 40px rgba(0,0,0,0.6)'
-                const poster = e.currentTarget.querySelector('.main-poster') as HTMLElement
-                if (poster) poster.style.transform = 'scale(1)'
+                const posterContainer = e.currentTarget.querySelector('.main-poster') as HTMLElement
+                if (posterContainer) posterContainer.style.transform = 'scale(1)'
                 const glow = e.currentTarget.querySelector('.card-glow') as HTMLElement
                 if (glow) glow.style.opacity = '0.25'
             }}
         >
-            {/* Main Visual Poster */}
+            {/* Main Visual Poster (Triptych) */}
             <div
                 className="main-poster"
                 style={{
                     position: 'absolute', inset: 0, zIndex: 0,
                     transition: 'transform 1s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                    display: 'flex', width: '100%', height: '100%'
                 }}
             >
-                {failed || !imgSrc ? (
+                {posters.length === 0 ? (
                     <div style={{ width: '100%', height: '100%', background: cardGradient }} />
                 ) : (
-                    <img
-                        src={imgSrc}
-                        alt={list.title}
-                        loading="lazy"
-                        decoding="async"
-                        onError={() => setFailed(true)}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.65) sepia(0.15) contrast(1.05)' }}
-                    />
+                    posters.map((p: string, i: number) => (
+                        <div key={i} style={{ flex: 1, height: '100%', position: 'relative', overflow: 'hidden' }}>
+                            <img
+                                src={tmdb.poster(p, 'w342')}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.65) sepia(0.15) contrast(1.05)', transform: 'scale(1.02)' }}
+                            />
+                            {/* Inner fade mask between posters */}
+                            {i < posters.length - 1 && (
+                                <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '30%', background: 'linear-gradient(to left, rgba(10,7,3,0.9), transparent)', zIndex: 1 }} />
+                            )}
+                        </div>
+                    ))
                 )}
             </div>
 
@@ -547,51 +553,83 @@ export default function ListsPage() {
                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.6rem', color: 'var(--parchment)', lineHeight: 1 }}>My Collections</div>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: IS_TOUCH ? '0.75rem' : '1rem' }}>
-                                {filteredMyLists.map((list: any) => (
+                            <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.75rem' : '1.25rem' }}>
+                                {filteredMyLists.map((list: any) => {
+                                    const posters = list.films.filter((f: any) => f.poster_path).slice(0, 3).map((f: any) => f.poster_path)
+                                    return (
                                     <Link
                                         key={list.id}
                                         to={`/lists/${list.id}`}
                                         className="fade-in-up"
                                         style={{
-                                            textDecoration: 'none', color: 'inherit', display: 'block',
-                                            background: 'linear-gradient(135deg, rgba(28,23,16,0.4) 0%, rgba(10,7,3,0.7) 100%)',
+                                            textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column',
+                                            background: 'var(--ink)',
                                             border: '1px solid rgba(139,105,20,0.08)',
                                             borderRadius: '6px',
-                                            padding: IS_TOUCH ? '1rem' : '1.25rem',
+                                            padding: IS_TOUCH ? '1.25rem' : '1.5rem',
                                             position: 'relative', overflow: 'hidden',
-                                            borderLeft: '3px solid rgba(139,105,20,0.3)',
-                                            transition: 'border-color 0.3s, box-shadow 0.3s, transform 0.3s'
+                                            borderLeft: '3px solid rgba(139,105,20,0.4)',
+                                            transition: 'border-color 0.3s, box-shadow 0.3s, transform 0.3s',
+                                            minHeight: IS_TOUCH ? 160 : 180,
+                                            boxShadow: '0 8px 25px rgba(0,0,0,0.6)'
                                         }}
                                         onMouseEnter={(e: any) => {
-                                            e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)'
-                                            e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)'
-                                            e.currentTarget.style.transform = 'translateY(-2px)'
+                                            e.currentTarget.style.borderColor = 'rgba(139,105,20,0.3)'
+                                            e.currentTarget.style.boxShadow = '0 12px 35px rgba(0,0,0,0.7), 0 0 20px rgba(139,105,20,0.08)'
+                                            e.currentTarget.style.transform = 'translateY(-3px)'
+                                            const bg = e.currentTarget.querySelector('.my-bg') as HTMLElement
+                                            if (bg) bg.style.transform = 'scale(1.04)'
                                         }}
                                         onMouseLeave={(e: any) => {
                                             e.currentTarget.style.borderColor = 'rgba(139,105,20,0.08)'
-                                            e.currentTarget.style.boxShadow = 'none'
+                                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.6)'
                                             e.currentTarget.style.transform = 'translateY(0)'
+                                            const bg = e.currentTarget.querySelector('.my-bg') as HTMLElement
+                                            if (bg) bg.style.transform = 'scale(1)'
                                         }}
                                     >
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.1rem' : '1.2rem', color: 'var(--parchment)', lineHeight: 1.15 }}>
-                                                {list.title}
-                                            </h3>
-                                            <div style={{ color: 'var(--fog)', opacity: 0.5, flexShrink: 0, marginLeft: '0.5rem' }}>
-                                                {list.isPrivate ? <Lock size={14} /> : <Globe size={14} />}
+                                        {/* Background Posters */}
+                                        <div className="my-bg" style={{ position: 'absolute', inset: 0, zIndex: 0, display: 'flex', width: '100%', height: '100%', transition: 'transform 0.5s' }}>
+                                            {posters.length === 0 ? (
+                                                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(28,23,16,0.4) 0%, rgba(10,7,3,0.7) 100%)' }} />
+                                            ) : (
+                                                posters.map((p: string, i: number) => (
+                                                    <div key={i} style={{ flex: 1, height: '100%', position: 'relative', overflow: 'hidden' }}>
+                                                        <img
+                                                            src={tmdb.poster(p, 'w185')}
+                                                            alt=""
+                                                            loading="lazy"
+                                                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.35) sepia(0.3) contrast(1.1)' }}
+                                                        />
+                                                    </div>
+                                                ))
+                                            )}
+                                            {/* Unified Overlay */}
+                                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,7,3,0.6), rgba(5,4,2,0.95))', zIndex: 1 }} />
+                                        </div>
+
+                                        {/* Content */}
+                                        <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                                                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.2rem' : '1.3rem', color: 'var(--parchment)', lineHeight: 1.15, textShadow: '0 2px 10px rgba(0,0,0,0.8)' }}>
+                                                    {list.title}
+                                                </h3>
+                                                <div style={{ color: 'var(--fog)', opacity: 0.5, flexShrink: 0, marginLeft: '0.5rem' }}>
+                                                    {list.isPrivate ? <Lock size={14} /> : <Globe size={14} />}
+                                                </div>
+                                            </div>
+                                            {list.description && (
+                                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: 'auto', lineHeight: 1.5, opacity: 0.7, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
+                                                    {list.description}
+                                                </p>
+                                            )}
+                                            <div style={{ borderTop: '1px solid rgba(139,105,20,0.15)', paddingTop: '0.6rem', marginTop: list.description ? '1rem' : 'auto', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
+                                                {list.films.length} FILMS
                                             </div>
                                         </div>
-                                        {list.description && (
-                                            <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: '0.75rem', lineHeight: 1.5, opacity: 0.6, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                                                {list.description}
-                                            </p>
-                                        )}
-                                        <div style={{ borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '0.6rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
-                                            {list.films.length} FILMS
-                                        </div>
                                     </Link>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </section>
                     )}
@@ -655,7 +693,7 @@ export default function ListsPage() {
                                 )}
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(auto-fill, minmax(300px, 1fr))', gap: IS_TOUCH ? '1rem' : '1.5rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(3, 1fr)', gap: IS_TOUCH ? '1rem' : '1.5rem' }}>
                                 {filteredCommunity.map((list: any) => (
                                     <CommunityListCard key={list.id} list={list} />
                                 ))}
