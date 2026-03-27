@@ -1,7 +1,3 @@
-import { Link } from 'react-router-dom'
-import { ReelRating } from '../UI'
-import { tmdb } from '../../tmdb'
-
 interface ProfileProjectorTabProps {
     profileLogs: any[]
     profileWatchlist: any[]
@@ -18,33 +14,6 @@ export function ProfileProjectorTab({ profileLogs, profileWatchlist, profileList
     const decades = Object.entries(decadeBuckets).sort(([a], [b]) => +a - +b)
     const maxDecadeCount = Math.max(...(Object.values(decadeBuckets) as number[]), 1)
 
-    // Logging streak: count consecutive days logged (up to today)
-    const streakCount = (() => {
-        const logDates = (Array.from(new Set(profileLogs
-            .map((l: any) => l.watchedDate || l.createdAt)
-            .filter(Boolean)
-            .map((d: string) => {
-                const dateObj = new Date(d)
-                return isNaN(dateObj.getTime()) ? null : dateObj.toISOString().slice(0, 10)
-            })
-            .filter(Boolean)
-        )) as string[]).sort().reverse()
-        if (!logDates.length) return 0
-        const today = new Date().toISOString().slice(0, 10)
-        const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
-        // Streak must include today or yesterday
-        if (logDates[0] !== today && logDates[0] !== yesterday) return 0
-        let streak = 1
-        for (let i = 1; i < logDates.length; i++) {
-            const prev: any = new Date(logDates[i - 1])
-            const curr: any = new Date(logDates[i])
-            const diff = (prev - curr) / 86400000
-            if (diff === 1) streak++
-            else break
-        }
-        return streak
-    })()
-
     return (
         <div className="profile-analytics-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem' }}>
             <div className="card" style={{ padding: '1.75rem' }}>
@@ -52,7 +21,7 @@ export function ProfileProjectorTab({ profileLogs, profileWatchlist, profileList
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                     {ratingBuckets.reverse().map(({ star, count }) => (
                         <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--flicker)', width: 28, flexShrink: 0, textAlign: 'right' }}>{'✦'.repeat(star)}</div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: 'var(--flicker)', width: 55, flexShrink: 0, textAlign: 'right', letterSpacing: '0.1em', whiteSpace: 'nowrap' }}>{'✦'.repeat(star)}</div>
                             <div style={{ flex: 1, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden' }}><div style={{ height: '100%', borderRadius: 3, width: `${(count / maxRatingCount) * 100}%`, background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', transition: 'width 0.6s ease' }} /></div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', width: 20, textAlign: 'right', flexShrink: 0 }}>{count}</div>
                         </div>
