@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight, ChevronLeft } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
@@ -39,7 +39,7 @@ const IS_TOUCH = typeof window !== 'undefined' && window.matchMedia('(any-pointe
 // ── MAIN PAGE ──
 export default function UserProfilePage() {
     const navigate = useNavigate()
-    const { username: routeUsername } = useParams()
+    const { username: routeUsername, tab } = useParams()
     const queryClient = useQueryClient()
     const { user: currentUser, isAuthenticated, updateUser } = useAuthStore()
     const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, physicalArchive, getCinephileStats } = useFilmStore()
@@ -143,7 +143,7 @@ export default function UserProfilePage() {
         enabled: !isOwnProfile && !!routeUsername,
         staleTime: 1000 * 60 * 5,
     })
-    const [activeTab, setActiveTab] = useState('diary')
+    const activeTab = tab || null
     const [shareLog, setShareLog] = useState(null)
     const [showDNA, setShowDNA] = useState(false)
     const [sieve, setSieve] = useState('all')
@@ -382,7 +382,8 @@ export default function UserProfilePage() {
     return (
         <div className={`page-top ${stats.count > 50 ? 'level-obsessed' : stats.count > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100dvh' }}>
             {/* Header */}
-            <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
+            {!activeTab ? (
+                <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
                 {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.25rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
@@ -439,61 +440,77 @@ export default function UserProfilePage() {
                     {/* The Triptych Display */}
                     <ProfileTriptych user={profileUser} isOwnProfile={isOwnProfile} />
                 </div>
-            </div>
+                </div>
+            ) : (
+                <div style={{ background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', borderBottom: '1px solid rgba(139,105,20,0.1)' }}>
+                    <div className="container" style={{ padding: '1.5rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                        <button onClick={() => navigate(`/user/${profileUser.username}`)} className="btn btn-ghost" style={{ padding: '0.4rem', background: 'rgba(139,105,20,0.05)', borderRadius: '50%' }}>
+                            <ChevronLeft size={20} color="var(--sepia)" />
+                        </button>
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--fog)', textTransform: 'uppercase', marginBottom: '0.2rem' }}>
+                                @{profileUser.username}
+                            </div>
+                            <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', textTransform: 'uppercase', lineHeight: 1 }}>
+                                {activeTab === 'diary' ? 'The Ledger' : activeTab === 'lists' ? 'The Stacks' : activeTab === 'archive' ? 'Archive' : activeTab === 'watchlist' ? 'Watchlist' : activeTab === 'stats' ? 'Global Analytics' : activeTab}
+                            </h1>
+                        </div>
+                    </div>
+                </div>
+            )}
 
-            {/* The Vault Navigation List */}
-            <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 800, margin: '0 auto' }}>
-                <div style={{ borderTop: '1px solid rgba(139,105,20,0.1)' }}>
-                    {[
-                        { id: 'archive', label: 'Archive', count: physicalArchive.length, active: activeTab === 'archive' },
-                        { id: 'diary', label: 'Logs', count: profileLogs.length, active: activeTab === 'diary' },
-                        { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, active: activeTab === 'watchlist' },
-                        { id: 'lists', label: 'Stacks', count: profileLists.length, active: activeTab === 'lists' },
-                        { id: 'tickets', label: 'Stubs', count: 'COMING SOON', active: activeTab === 'tickets', disabled: true },
-                        { id: 'stats', label: 'Global Analytics', count: '', active: activeTab === 'stats', highlight: true },
-                    ].map(item => (
-                        <button
-                            key={item.id}
-                            disabled={item.disabled}
-                            onClick={() => {
-                                if (!item.disabled) setActiveTab(item.id)
-                                // Only scroll if not switching to Stats, as Stats is big (or maybe scroll anyway)
-                                setTimeout(() => window.scrollTo({ top: IS_TOUCH ? 600 : 700, behavior: 'smooth' }), 50)
-                            }}
-                            style={{
-                                width: '100%',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                padding: IS_TOUCH ? '1.25rem 1rem' : '1.5rem',
-                                background: item.active ? 'rgba(139,105,20,0.05)' : 'transparent',
-                                border: 'none',
-                                borderBottom: '1px solid rgba(139,105,20,0.1)',
-                                cursor: item.disabled ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s',
-                                ...(item.disabled ? { opacity: 0.4 } : {})
-                            }}
-                            onMouseEnter={e => !item.disabled && (e.currentTarget.style.background = 'rgba(139,105,20,0.02)')}
-                            onMouseLeave={e => !item.disabled && (e.currentTarget.style.background = item.active ? 'rgba(139,105,20,0.05)' : 'transparent')}
-                        >
-                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: item.highlight ? 'var(--sepia)' : 'var(--bone)', letterSpacing: '0.02em' }}>
-                                {item.label}
-                            </span>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {!activeTab && (
+                <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 800, margin: '0 auto', paddingBottom: '3rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: IS_TOUCH ? '1px' : '0.5rem', background: IS_TOUCH ? 'rgba(139,105,20,0.1)' : 'transparent', borderTop: IS_TOUCH ? '1px solid rgba(139,105,20,0.1)' : 'none' }}>
+                        {[
+                            { id: 'archive', label: 'Archive', count: physicalArchive.length, active: activeTab === 'archive' },
+                            { id: 'diary', label: 'Logs', count: profileLogs.length, active: activeTab === 'diary' },
+                            { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, active: activeTab === 'watchlist' },
+                            { id: 'lists', label: 'Stacks', count: profileLists.length, active: activeTab === 'lists' },
+                            { id: 'tickets', label: 'Stubs', count: 'COMING SOON', active: activeTab === 'tickets', disabled: true },
+                            { id: 'stats', label: 'Analytics', count: '', active: activeTab === 'stats', highlight: true },
+                        ].map(item => (
+                            <button
+                                key={item.id}
+                                disabled={item.disabled}
+                                onClick={() => {
+                                    if (!item.disabled) navigate(`/user/${profileUser.username}/${item.id}`)
+                                }}
+                                style={{
+                                    width: '100%',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: '0.4rem',
+                                    padding: '2rem 1rem',
+                                    background: 'var(--ink)',
+                                    border: IS_TOUCH ? 'none' : '1px solid rgba(139,105,20,0.1)',
+                                    borderRadius: IS_TOUCH ? '0' : 'var(--radius-card)',
+                                    cursor: item.disabled ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    ...(item.disabled ? { opacity: 0.4 } : {})
+                                }}
+                                onMouseEnter={e => !item.disabled && (e.currentTarget.style.background = 'rgba(139,105,20,0.02)')}
+                                onMouseLeave={e => !item.disabled && (e.currentTarget.style.background = 'var(--ink)')}
+                            >
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: item.highlight ? 'var(--sepia)' : 'var(--bone)', letterSpacing: '0.02em' }}>
+                                    {item.label}
+                                </span>
                                 {item.count !== '' && (
-                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: item.highlight ? 'var(--sepia)' : 'var(--fog)', textTransform: 'uppercase' }}>
+                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: item.highlight ? 'var(--sepia)' : 'var(--fog)', textTransform: 'uppercase' }}>
                                         {item.count}
                                     </span>
                                 )}
-                                {!item.disabled && <ChevronRight size={16} color={item.highlight ? 'var(--sepia)' : 'var(--fog)'} style={{ opacity: item.active ? 1 : 0.3 }} />}
-                            </div>
-                        </button>
-                    ))}
+                            </button>
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
 
             {/* Tab Content */}
-            <main style={{ padding: '2.5rem 0 5rem' }}>
+            {activeTab && (
+                <main style={{ padding: '2.5rem 0 5rem' }}>
                 <div className="container layout-sidebar reversed">
                     <div>
                         {activeTab === 'diary' && (
@@ -679,6 +696,7 @@ export default function UserProfilePage() {
                     </div>
                 </div>
             </main>
+            )}
 
             <SocialModal socialModal={socialModal} socialLoading={socialLoading} onClose={() => setSocialModal(null)} />
 

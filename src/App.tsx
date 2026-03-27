@@ -261,7 +261,7 @@ export default function App() {
               <Route path="/" element={<ErrorBoundary key="home"><PageWrapper><HomePage /></PageWrapper></ErrorBoundary>} />
               <Route path="/film/:id" element={<ErrorBoundary key="film"><PageWrapper><FilmDetailPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/log/:logId" element={<ErrorBoundary key="log"><PageWrapper><LogDetailPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/user/:username" element={<ErrorBoundary key="profile"><PageWrapper><UserProfilePage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/user/:username/:tab?" element={<ErrorBoundary key="profile"><PageWrapper><UserProfilePage /></PageWrapper></ErrorBoundary>} />
               <Route path="/discover" element={<ErrorBoundary key="discover"><PageWrapper><DiscoverPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/feed" element={<ErrorBoundary key="feed"><PageWrapper><FeedPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/lists" element={<ErrorBoundary key="lists"><PageWrapper><ListsPage /></PageWrapper></ErrorBoundary>} />
