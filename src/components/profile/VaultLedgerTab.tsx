@@ -9,7 +9,7 @@ import { FilmLog } from '../../types'
 
 export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog }: { profileLogs: FilmLog[], isOwnProfile: boolean, setViewLog: (log: FilmLog) => void }) {
     const { isTouch: IS_TOUCH } = useViewport()
-    const [sieve, setSieve] = useState('all')
+    const [sieve, setSieve] = useState<number | 'all'>('all')
     const [visibleLogCount, setVisibleLogCount] = useState(40)
     const loadMoreRef = useRef(null)
 
@@ -48,20 +48,32 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog }: { prof
         if (!hasPoster) return false
         if (!log.rating && !log.review) return false // Ledger only shows rated/reviewed logs
         if (sieve === 'all') return true
-        return log.rating === parseInt(sieve)
+        return log.rating === sieve // exact float match — supports halves like 4.5
     })
 
     return (
         <div>
             <SectionHeader label="CHRONOLOGICAL" title="The Ledger" />
             {profileLogs.length > 0 && (
-                <div className="profile-sieve-strip" style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', overflowX: 'auto', paddingBottom: '0.5rem', borderBottom: '1px solid var(--ash)' }}>
-                    <button onClick={() => setSieve('all')} className={`btn ${sieve === 'all' ? 'btn-primary' : 'btn-ghost'}`} style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', whiteSpace: 'nowrap', flexShrink: 0 }}>ALL</button>
-                    {[5, 4, 3, 2, 1].map(star => (
-                        <button key={star} onClick={() => setSieve(String(star))} className={`btn ${sieve === String(star) ? 'btn-primary' : 'btn-ghost'}`} style={{ padding: '0.4rem 0.5rem', flexShrink: 0, display: 'flex', alignItems: 'center' }}>
-                            <ReelRating value={star} size="sm" />
-                        </button>
-                    ))}
+                <div className="profile-sieve-strip" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--ash)', flexWrap: 'wrap' }}>
+                    <button
+                        onClick={() => setSieve('all')}
+                        className={`btn ${sieve === 'all' ? 'btn-primary' : 'btn-ghost'}`}
+                        style={{ fontSize: '0.65rem', padding: '0.4rem 0.75rem', flexShrink: 0 }}
+                    >ALL</button>
+                    {/* Single interactive reel picker — click any value (incl. halves) to filter */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <ReelRating
+                            value={sieve === 'all' ? 0 : sieve}
+                            size="md"
+                            onChange={(v) => setSieve(v === sieve ? 'all' : v)}
+                        />
+                        {sieve !== 'all' && (
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)' }}>
+                                {sieve} REELS
+                            </span>
+                        )}
+                    </div>
                 </div>
             )}
             {filteredLogs.length === 0 ? (
