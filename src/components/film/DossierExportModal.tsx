@@ -21,7 +21,7 @@ export default function DossierExportModal({ film, log, onClose }: { film: Recor
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)' }}>Take a Screenshot to Declassify</div>
                 </div>
 
-                <div style={{ width: '100%', maxWidth: '380px', height: '100%', maxHeight: '75vh', minHeight: '550px', background: 'var(--soot)', position: 'relative', overflow: 'hidden', border: '1px solid var(--ash)', boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(139,105,20,0.15)', borderRadius: '4px' }}
+                <div style={{ width: '100%', maxWidth: '380px', aspectRatio: '9/16', maxHeight: '80vh', background: 'var(--soot)', position: 'relative', overflow: 'hidden', border: '1px solid var(--ash)', boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(139,105,20,0.15)', borderRadius: '4px', margin: '0 1rem' }}
                     onClick={e => e.stopPropagation()}
                 >
                     <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.poster(film.poster_path, 'w780')})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'sepia(0.6) brightness(0.2) contrast(1.3)' }} />
