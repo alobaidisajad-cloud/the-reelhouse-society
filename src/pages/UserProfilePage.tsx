@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
@@ -28,6 +28,7 @@ import TasteMatch from '../components/profile/TasteMatch'
 import FilmRecommendations from '../components/profile/FilmRecommendations'
 import PhysicalArchiveTab from '../components/profile/PhysicalArchiveTab'
 import { ProfileProjectorTab } from '../components/profile/ProfileProjectorTab'
+import { ProfileTriptych } from '../components/profile/ProfileTriptych'
 import PageSEO from '../components/PageSEO'
 import Poster from '../components/film/Poster'
 
@@ -69,6 +70,7 @@ export default function UserProfilePage() {
                 socialVisibility: (data as any).preferences?.social_visibility || (data.is_social_private ? 'private' : 'public'),
                 privacyEndorsements: (data as any).preferences?.privacy_endorsements || 'everyone',
                 privacyAnnotations: (data as any).preferences?.privacy_annotations || 'everyone',
+                preferences: data.preferences || {},
                 createdAt: data.created_at,
             }
         },
@@ -147,68 +149,8 @@ export default function UserProfilePage() {
     const [sieve, setSieve] = useState('all')
     const [visibleLogCount, setVisibleLogCount] = useState(40)
     const loadMoreRef = useRef(null)
-    const [isEditing, setIsEditing] = useState(false)
-    const [editBio, setEditBio] = useState(profileUser?.bio || '')
-    const [editUsername, setEditUsername] = useState(profileUser?.username || '')
-    const [editAvatar, setEditAvatar] = useState(profileUser?.avatar || 'smiling')
-    const [editIsSocialPrivate, setEditIsSocialPrivate] = useState(profileUser?.isSocialPrivate || false)
     const [viewLog, setViewLog] = useState<any>(null)
 
-    useEffect(() => {
-        if (profileUser) { setEditAvatar(profileUser.avatar || 'smiling'); setEditIsSocialPrivate(profileUser.isSocialPrivate || false) }
-    }, [profileUser])
-
-    const handleSaveProfile = () => {
-        updateUser({ bio: editBio, username: editUsername, avatar: editAvatar, isSocialPrivate: editIsSocialPrivate })
-        setIsEditing(false)
-        toast.success("Identity updated.")
-    }
-
-    const handleFileChange = async (e: any) => {
-        const file = e.target.files[0]
-        if (!file) return
-        if (!file.type.startsWith('image/')) return toast.error("Only archival image formats supported.")
-        if (file.size > 5 * 1024 * 1024) return toast.error("Frame too large. Max 5MB.")
-        try {
-            const userId = currentUser?.id
-            if (!userId) return toast.error("Must be signed in.")
-
-            // Client-side compression: resize to 400x400 max, convert to WebP
-            const compressed = await new Promise<Blob>((resolve, reject) => {
-                const img = new Image()
-                img.onload = () => {
-                    const MAX = 400
-                    let { width, height } = img
-                    if (width > MAX || height > MAX) {
-                        const scale = Math.min(MAX / width, MAX / height)
-                        width = Math.round(width * scale)
-                        height = Math.round(height * scale)
-                    }
-                    const canvas = document.createElement('canvas')
-                    canvas.width = width
-                    canvas.height = height
-                    const ctx = canvas.getContext('2d')
-                    ctx?.drawImage(img, 0, 0, width, height)
-                    canvas.toBlob(
-                        (blob) => blob ? resolve(blob) : reject(new Error('Compression failed')),
-                        'image/webp', 0.8
-                    )
-                }
-                img.onerror = reject
-                img.src = URL.createObjectURL(file)
-            })
-
-            const filePath = `${userId}/avatar.webp`
-            const { supabase } = await import('../supabaseClient')
-            const { error: uploadError } = await supabase.storage.from('avatars').upload(filePath, compressed, { upsert: true, contentType: 'image/webp' })
-            if (uploadError) return toast.error("Upload failed. Try again.")
-            const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(filePath)
-            setEditAvatar(publicUrl)
-            toast.success("Frame captured & optimized.")
-        } catch { toast.error("Upload failed.") }
-    }
-
-    const MOODS = ['smiling', 'neutral', 'dead', 'peeking', 'surprised', 'crying']
     const isFollowing = currentUser?.following?.includes(profileUser?.username)
     const [followLoading, setFollowLoading] = useState(false)
     const [socialModal, setSocialModal] = useState<any>(null)
@@ -445,142 +387,108 @@ export default function UserProfilePage() {
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.25rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
                         {/* Avatar */}
-                        <div style={{ position: 'relative', flexShrink: 0 }}>
-                            <div className="profile-avatar-ring" style={{ width: IS_TOUCH ? 110 : 140, height: IS_TOUCH ? 110 : 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}20`, overflow: 'hidden' }}>
-                                {renderAvatar(isEditing ? editAvatar : (profileUser?.avatar || 'smiling'), 90)}
-                                {isEditing && (
-                                    <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '0.6rem', padding: '0.5rem' }}>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', justifyContent: 'center' }}>
-                                            {MOODS.map(m => (
-                                                <div key={m} onClick={() => setEditAvatar(m)} style={{ cursor: 'pointer', padding: '2px', border: `2px solid ${editAvatar === m ? 'var(--sepia)' : 'transparent'}`, borderRadius: '50%', background: editAvatar === m ? 'rgba(139,105,20,0.2)' : 'none', transition: 'all 0.2s' }}>
-                                                    <Buster size={20} mood={m} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <input type="file" ref={fileRef as any} onChange={handleFileChange} accept="image/*" capture="user" style={{ display: 'none' }} />
-                                        <button className="btn btn-ghost" style={{ fontSize: '0.45rem', padding: '0.3rem 0.6rem', border: '1px solid var(--sepia)', width: 'auto' }} onClick={() => (fileRef.current as any)?.click()}><Camera size={10} style={{ marginRight: '0.2rem' }} /> UPLOAD PHOTO</button>
-                                        <span style={{ fontSize: '0.35rem', color: 'var(--fog)', fontFamily: 'var(--font-ui)', textAlign: 'center' }}>CHOOSE A PERSONA OR UPLOAD A NEW FRAME</span>
-                                    </div>
-                                )}
+                        <div style={{ position: 'relative', flexShrink: 0, marginBottom: IS_TOUCH ? '1rem' : 0 }}>
+                            <div className="profile-avatar-ring" style={{ width: 140, height: 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}20`, overflow: 'hidden', margin: '0 auto' }}>
+                                {renderAvatar((profileUser?.avatar || 'smiling'), 90)}
                             </div>
-                            <div style={{ position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)', background: 'var(--ink)', border: `1px solid ${stats.color}`, padding: '0.2rem 0.6rem', borderRadius: '2px', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: stats.color, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(0,0,0,0.5)', zIndex: 2 }}>✦ {stats.level}</div>
+                            <div style={{ position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)', background: 'var(--ink)', border: `1px solid ${stats.color}`, padding: '0.2rem 0.6rem', borderRadius: '4px', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: stats.color, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(0,0,0,0.5)', zIndex: 2 }}>✦ {stats.level}</div>
                         </div>
 
                         {/* Identity */}
-                        <div className="profile-identity" style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 300 }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: IS_TOUCH ? '0.5rem' : '1rem', marginBottom: '0.5rem', flexWrap: 'wrap', justifyContent: IS_TOUCH ? 'center' : undefined }}>
-                                {isEditing ? (
-                                    <input value={editUsername} onChange={(e) => setEditUsername(e.target.value)} style={{ background: 'var(--ink)', border: '1px solid var(--sepia)', color: 'var(--parchment)', fontFamily: 'var(--font-display)', fontSize: '1.8rem', padding: '0.2rem 0.5rem', width: 'auto' }} />
-                                ) : (
-                                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.6rem, 6vw, 2.2rem)' : '2.5rem', color: 'var(--parchment)', lineHeight: 1.1, display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: IS_TOUCH ? 'center' : undefined, flexWrap: 'wrap', textAlign: IS_TOUCH ? 'center' as const : undefined }}>
-                                        @{profileUser.username.toUpperCase()}
-                                        {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem', verticalAlign: 'middle', height: 'fit-content' }}><Star size={10} fill="currentColor" /> AUTEUR</span>}
-                                    </h1>
-                                )}
+                        <div className="profile-identity" style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 300, display: 'flex', flexDirection: 'column', alignItems: IS_TOUCH ? 'center' : 'flex-start', textAlign: IS_TOUCH ? 'center' : 'left' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap', justifyContent: IS_TOUCH ? 'center' : 'flex-start' }}>
+                                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.6rem, 6vw, 2.2rem)' : '2.5rem', color: 'var(--parchment)', lineHeight: 1.1, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                    @{profileUser.username.toUpperCase()}
+                                    {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Star size={10} fill="currentColor" /> AUTEUR</span>}
+                                </h1>
                                 {isOwnProfile ? (
-                                    <>
-                                        <button onClick={() => isEditing ? handleSaveProfile() : setIsEditing(true)} className="btn btn-ghost" style={{ fontSize: '0.65rem', padding: '0.3rem 0.6rem', height: 'fit-content' }}>{isEditing ? 'SAVE DOSSIER' : 'EDIT PROFILE'}</button>
-                                        {!isEditing && (
-                                            <button
-                                                onClick={() => exportLogsCSV(profileLogs, profileUser.username)}
-                                                className="btn btn-ghost"
-                                                style={{ fontSize: '0.55rem', padding: '0.3rem 0.6rem', height: 'fit-content', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--sepia)', borderColor: 'var(--sepia)' }}
-                                                title="Export your complete film archive as CSV"
-                                            >
-                                                <Download size={10} /> EXPORT ARCHIVE
-                                            </button>
-                                        )}
-                                        {!isEditing && profileLogs.length >= 10 && (
-                                            <Link
-                                                to="/year-in-cinema"
-                                                className="btn btn-ghost"
-                                                style={{ fontSize: '0.55rem', padding: '0.3rem 0.6rem', height: 'fit-content', display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--flicker)', borderColor: 'var(--sepia)', textDecoration: 'none' }}
-                                            >
-                                                <Film size={10} /> YEAR IN CINEMA
-                                            </Link>
-                                        )}
-                                    </>
+                                    <button onClick={() => navigate('/settings')} className="btn btn-ghost" style={{ padding: '0.4rem', border: '1px solid rgba(139,105,20,0.3)', color: 'var(--sepia)' }} aria-label="Settings">
+                                        <Settings size={14} />
+                                    </button>
                                 ) : (
                                     <button
                                         onClick={handleFollow}
                                         disabled={followLoading}
                                         className={`btn ${isFollowing ? 'btn-ghost' : 'btn-primary'}`}
-                                        style={{ fontSize: '0.65rem', padding: '0.3rem 1.2rem', height: 'fit-content', opacity: followLoading ? 0.6 : 1 }}
+                                        style={{ fontSize: '0.65rem', padding: '0.4rem 1.2rem', opacity: followLoading ? 0.6 : 1 }}
                                     >
                                         {followLoading ? '...' : isFollowing ? 'UNFOLLOW' : '+ FOLLOW'}
                                     </button>
                                 )}
                             </div>
 
-                            <div style={{ marginBottom: IS_TOUCH ? '1rem' : '1.5rem' }}>
-                                {isEditing ? (
-                                    <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Add your cinematic manifesto..." style={{ background: 'var(--ink)', border: '1px solid var(--ash)', color: 'var(--bone)', fontFamily: 'var(--font-body)', fontSize: '0.9rem', width: '100%', height: '80px', padding: '0.75rem', borderRadius: '4px', resize: 'none' }} />
-                                ) : (
-                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.9rem' : '1rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 600, lineHeight: 1.5, opacity: profileUser.bio ? 1 : 0.5, textAlign: IS_TOUCH ? 'center' as const : undefined, margin: IS_TOUCH ? '0 auto' : undefined }}>
-                                        {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
-                                    </p>
-                                )}
-                            </div>
+                            <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.9rem' : '1rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 600, lineHeight: 1.5, opacity: profileUser.bio ? 1 : 0.5, marginBottom: '1.5rem' }}>
+                                {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
+                            </p>
 
-                            {isEditing && (
-                                <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: editIsSocialPrivate ? 'var(--sepia)' : 'var(--fog)', padding: '0.4rem 0.8rem', border: `1px solid ${editIsSocialPrivate ? 'var(--sepia)' : 'var(--ash)'}`, borderRadius: '2px', transition: 'all 0.2s' }}>
-                                        <input type="checkbox" checked={editIsSocialPrivate} onChange={(e) => setEditIsSocialPrivate(e.target.checked)} style={{ accentColor: 'var(--sepia)' }} />
-                                        {editIsSocialPrivate ? 'PRIVATE SOCIAL ARCHIVE' : 'PUBLIC SOCIAL ARCHIVE'}
-                                        {editIsSocialPrivate ? <Lock size={10} /> : <Globe size={10} />}
-                                    </label>
-                                    <span style={{ fontSize: '0.5rem', color: 'var(--ash)', fontStyle: 'italic' }}>When private, only you can see your followers/following lists.</span>
-                                </div>
-                            )}
-
-                            {/* Stats bar */}
-                            <div className="profile-stats-row" style={{ display: IS_TOUCH ? 'grid' : 'flex', gridTemplateColumns: IS_TOUCH ? 'repeat(3, 1fr)' : undefined, gap: IS_TOUCH ? '1rem' : '2.5rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: IS_TOUCH ? '1rem' : '1.5rem', justifyContent: IS_TOUCH ? 'center' : undefined, justifyItems: IS_TOUCH ? 'center' as const : undefined, textAlign: IS_TOUCH ? 'center' as const : undefined }}>
+                            {/* Core Stats Row */}
+                            <div className="profile-stats-row" style={{ display: 'flex', gap: IS_TOUCH ? '1.5rem' : '3rem', flexWrap: 'wrap', justifyContent: IS_TOUCH ? 'center' : 'flex-start' }}>
                                 {[
-                                    { value: profileLogs.length, label: 'ACTIVITY', onClick: null, icon: null },
-                                    { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers'), icon: null },
-                                    { value: isOwnProfile ? (ownCounts?.followingCount ?? (currentUser as any)?.following_count ?? 0) : ((profileUser as any)?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following'), icon: null },
-                                    { value: profileStubs.length, label: 'STUBS', onClick: null, icon: null },
-                                    ...(streak > 0 ? [{ value: streak, label: streak >= 30 ? '🔥 OBSESSED' : streak >= 7 ? '🔥 POSSESSED' : streak >= 3 ? '🔥 DEDICATED' : '🔥 STREAK', onClick: null, icon: null }] : []),
+                                    { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
+                                    { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
+                                    { value: isOwnProfile ? (ownCounts?.followingCount ?? (currentUser as any)?.following_count ?? 0) : ((profileUser as any)?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
                                 ].map(({ value, label, onClick }) => (
-                                    <div key={label} onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem', cursor: onClick ? 'pointer' : 'default', alignItems: IS_TOUCH ? 'center' : undefined }}>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.4rem' : '1.6rem', color: 'var(--sepia)' }}>{value}</div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.5rem' : '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>{label}</div>
+                                    <div key={label} onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default', alignItems: IS_TOUCH ? 'center' : 'flex-start' }}>
+                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.4rem' : '1.8rem', color: 'var(--parchment)', lineHeight: 1 }}>{value}</div>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>{label}</div>
                                     </div>
                                 ))}
                             </div>
                         </div>
-
-                        {/* Log button */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '0.5rem' : '1rem', alignSelf: 'center', width: IS_TOUCH ? '100%' : undefined }}>
-                            <button className="btn btn-primary" style={{ padding: IS_TOUCH ? '0.75rem 1.5rem' : '1rem 2rem', fontSize: IS_TOUCH ? '0.65rem' : '0.75rem', boxShadow: `0 0 20px ${stats.color}30`, width: IS_TOUCH ? '100%' : undefined, justifyContent: IS_TOUCH ? 'center' : undefined }} onClick={() => openLogModal()}>+ RECORD NEW LOG</button>
-                            {isOwnProfile && (
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                    <button className="btn btn-ghost" style={{ flex: 1, padding: '0.6rem', fontSize: '0.6rem' }} onClick={() => navigate('/settings')}><Settings size={12} style={{ marginRight: '0.4rem' }} /> SETTINGS</button>
-                                    <button
-                                        className="btn btn-ghost"
-                                        onClick={() => { useAuthStore.getState().logout(); }}
-                                        style={{ padding: '0.6rem', fontSize: '0.6rem', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
-                                    >
-                                        <LogOut size={12} /> SIGN OUT
-                                    </button>
-                                </div>
-                            )}
-                        </div>
                     </div>
+                    {/* The Triptych Display */}
+                    <ProfileTriptych user={profileUser} isOwnProfile={isOwnProfile} />
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div style={{ borderBottom: '1px solid var(--ash)', background: 'var(--ink)', position: 'sticky', top: 64, zIndex: 100 }}>
-                <div className="container">
-                    <div className="profile-tabs" style={{ display: 'flex', gap: 0, overflowX: 'auto', scrollbarWidth: 'none' }}>
-                        {TABS.map((tab) => (
-                            <button key={tab.id} onClick={() => setActiveTab(tab.id)} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', textTransform: 'uppercase', padding: '0.9rem 1rem', background: 'none', border: 'none', whiteSpace: 'nowrap', color: activeTab === tab.id ? 'var(--flicker)' : 'var(--fog)', borderBottom: `2px solid ${activeTab === tab.id ? 'var(--sepia)' : 'transparent'}`, transition: 'color 0.2s', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                {tab.label}
-                                {tab.count !== null && <span style={{ background: activeTab === tab.id ? 'var(--sepia)' : 'var(--ash)', color: activeTab === tab.id ? 'var(--ink)' : 'var(--fog)', padding: '0.1em 0.4em', borderRadius: '2px', fontSize: '0.45rem' }}>{tab.count}</span>}
-                            </button>
-                        ))}
-                    </div>
+            {/* The Vault Navigation List */}
+            <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 800, margin: '0 auto' }}>
+                <div style={{ borderTop: '1px solid rgba(139,105,20,0.1)' }}>
+                    {[
+                        { id: 'archive', label: 'Archive', count: physicalArchive.length, active: activeTab === 'archive' },
+                        { id: 'diary', label: 'Logs', count: profileLogs.length, active: activeTab === 'diary' },
+                        { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, active: activeTab === 'watchlist' },
+                        { id: 'lists', label: 'Stacks', count: profileLists.length, active: activeTab === 'lists' },
+                        { id: 'tickets', label: 'Stubs', count: 'COMING SOON', active: activeTab === 'tickets', disabled: true },
+                        { id: 'stats', label: 'Global Analytics', count: '', active: activeTab === 'stats', highlight: true },
+                    ].map(item => (
+                        <button
+                            key={item.id}
+                            disabled={item.disabled}
+                            onClick={() => {
+                                if (!item.disabled) setActiveTab(item.id)
+                                // Only scroll if not switching to Stats, as Stats is big (or maybe scroll anyway)
+                                setTimeout(() => window.scrollTo({ top: IS_TOUCH ? 600 : 700, behavior: 'smooth' }), 50)
+                            }}
+                            style={{
+                                width: '100%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                padding: IS_TOUCH ? '1.25rem 1rem' : '1.5rem',
+                                background: item.active ? 'rgba(139,105,20,0.05)' : 'transparent',
+                                border: 'none',
+                                borderBottom: '1px solid rgba(139,105,20,0.1)',
+                                cursor: item.disabled ? 'not-allowed' : 'pointer',
+                                transition: 'all 0.2s',
+                                ...(item.disabled ? { opacity: 0.4 } : {})
+                            }}
+                            onMouseEnter={e => !item.disabled && (e.currentTarget.style.background = 'rgba(139,105,20,0.02)')}
+                            onMouseLeave={e => !item.disabled && (e.currentTarget.style.background = item.active ? 'rgba(139,105,20,0.05)' : 'transparent')}
+                        >
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: item.highlight ? 'var(--sepia)' : 'var(--bone)', letterSpacing: '0.02em' }}>
+                                {item.label}
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                {item.count !== '' && (
+                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: item.highlight ? 'var(--sepia)' : 'var(--fog)', textTransform: 'uppercase' }}>
+                                        {item.count}
+                                    </span>
+                                )}
+                                {!item.disabled && <ChevronRight size={16} color={item.highlight ? 'var(--sepia)' : 'var(--fog)'} style={{ opacity: item.active ? 1 : 0.3 }} />}
+                            </div>
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -610,7 +518,7 @@ export default function UserProfilePage() {
                                     const shown = filteredLogs.slice(0, visibleLogCount)
                                     return (
                                         <>
-                                        <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gridAutoRows: 'minmax(210px, auto)', gap: '1rem' }}>
+                                        <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gridAutoRows: 'minmax(140px, auto)', gap: IS_TOUCH ? '0.2rem' : '1rem' }}>
                                             {shown.map((log: any, index: number) => {
                                                 let gridColumnSpan = 'span 1', gridRowSpan = 'span 1'
                                                 if (sieve === 'all' && index === 0) { gridColumnSpan = 'span 2'; gridRowSpan = 'span 2' }
@@ -648,24 +556,41 @@ export default function UserProfilePage() {
                             <div><SectionHeader label="ADMISSION HISTORY" title="Ticket Stubs" /><TicketBooth stubs={profileStubs} /></div>
                         )}
 
-                        {activeTab === 'projector' && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                                <SectionHeader label="DEVOTEE ANALYTICS" title="Projector Room" />
-                                <ProfileProjectorTab profileLogs={profileLogs} profileWatchlist={profileWatchlist} profileLists={profileLists} />
+                        {activeTab === 'stats' && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4rem', paddingBottom: '3rem', animation: 'fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                                <div style={{ textAlign: 'center', marginBottom: '-2rem' }}>
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>GLOBAL ANALYTICS</div>
+                                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '2rem' : '2.5rem', color: 'var(--parchment)', lineHeight: 1.1 }}>The Projector Room</h2>
+                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.5rem' }}>Lifetime cinematic data & achievements.</p>
+                                </div>
+
                                 <ProjectorRoom stats={stats} user={profileUser} />
-                                {/* Nightly Programmes — merged into Projector Room */}
-                                {isOwnProfile && (
+
+                                <div>
+                                    <SectionHeader label="DEVOTEE ANALYTICS" title="Viewing Habits" />
+                                    <ProfileProjectorTab profileLogs={profileLogs} profileWatchlist={profileWatchlist} profileLists={profileLists} />
+                                </div>
+
+                                <div>
+                                    <SectionHeader label="CINEMATIC ACHIEVEMENTS" title="The Passport" />
+                                    <NoirPassport logs={profileLogs} />
+                                </div>
+
+                                <div>
+                                    <SectionHeader label="ARCHIVIST · VIEWING HISTORY" title="The Projectionist's Calendar" />
+                                    <ProjectionistCalendar {...{ logs: profileLogs, isPremium } as any} />
+                                </div>
+
+                                {isOwnProfile && currentProgrammes?.length > 0 && (
                                     <>
-                                        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, var(--ash), transparent)', margin: '2rem 0' }} />
-                                        <SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" />
-                                        <ProgrammesSection {...{ programmes: currentProgrammes, user: profileUser } as any} />
+                                        <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, var(--ash), transparent)' }} />
+                                        <div>
+                                            <SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" />
+                                            <ProgrammesSection {...{ programmes: currentProgrammes, user: profileUser } as any} />
+                                        </div>
                                     </>
                                 )}
                             </div>
-                        )}
-
-                        {activeTab === 'passport' && (
-                            <div><SectionHeader label="CINEMATIC ACHIEVEMENTS" title="The Passport" /><NoirPassport logs={profileLogs} /></div>
                         )}
 
                         {activeTab === 'lists' && (
@@ -680,7 +605,7 @@ export default function UserProfilePage() {
                                 ) : (
                                     <>
                                         <WatchlistRoulette watchlist={profileWatchlist as any[]} />
-                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))', gap: '1rem' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.2rem' : '1rem' }}>
                                             {profileWatchlist.map((film: any) => (
                                                 <Link key={film.id} to={`/film/${film.id}`}>
                                                     <motion.div whileHover={{ y: -3, transition: { type: 'spring', damping: 12 } }}><FilmCard film={film} /></motion.div>
@@ -701,12 +626,7 @@ export default function UserProfilePage() {
                             </div>
                         )}
 
-                        {activeTab === 'calendar' && (
-                            <div>
-                                <SectionHeader label="ARCHIVIST · VIEWING HISTORY" title="The Projectionist's Calendar" />
-                                <ProjectionistCalendar {...{ logs: profileLogs, isPremium } as any} />
-                            </div>
-                        )}
+
                     </div>
 
                     {/* Sidebar */}
