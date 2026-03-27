@@ -414,12 +414,7 @@ export default function UserProfilePage() {
             {/* Header */}
             {!activeTab ? (
                 <div style={{ borderBottom: '1px solid var(--ash)', background: 'var(--ink)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '4rem 0 3rem', position: 'relative', overflow: 'hidden' }}>
-                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : (
-                    <div style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', background: 'var(--ink)' }}>
-                        <div style={{ position: 'absolute', inset: -100, background: 'radial-gradient(circle at 50% 0%, rgba(139,105,20,0.15) 0%, rgba(139,105,20,0) 60%)', filter: 'blur(40px)' }} />
-                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(8,6,4,0.4) 50%, var(--ink) 100%)' }} />
-                    </div>
-                )}
+                <ProfileBackdrop logs={profileLogs as any[]} />
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.25rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
                         {/* Avatar */}
