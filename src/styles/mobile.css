@@ -37,6 +37,7 @@
 
   .film-scratches, .film-dust { display: none !important; }
   .card:hover { transform: none !important; }
+  .card-film img { transition: none !important; transform: none !important; }
   .card-film:hover img { transform: none !important; }
   .btn:hover { animation: none !important; }
 

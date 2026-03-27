@@ -62,7 +62,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
     }
 
     return (
-        <div style={{ position: 'relative', minHeight: IS_TOUCH ? 'auto' : '70vh', display: 'flex', alignItems: 'flex-end', paddingBottom: IS_TOUCH ? '1.5rem' : '3rem', flexShrink: 0 }}>
+        <div style={{ position: 'relative', minHeight: IS_TOUCH ? 'auto' : '70vh', display: 'flex', alignItems: IS_TOUCH ? 'center' : 'flex-end', paddingBottom: IS_TOUCH ? '1.5rem' : '3rem', paddingTop: IS_TOUCH ? '1rem' : 0, flexShrink: 0 }}>
             {/* Backdrop */}
             {film.backdrop_path && (
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.5) brightness(0.25) contrast(1.15)', zIndex: 0 }} />
@@ -85,10 +85,10 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 <div>
                     {/* Poster */}
                     <div style={{ flexShrink: 0, position: 'relative' }}>
-                        {film.poster_path && (
+                        {!IS_TOUCH && film.poster_path && (
                             <div style={{ position: 'absolute', inset: -20, zIndex: 0, backgroundImage: `url(${tmdb.poster(film.poster_path, 'w342')})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(60px) sepia(0.5) saturate(2)', opacity: 0.25, transform: 'scale(1.05)' }} />
                         )}
-                        <div className="card-film scanlines" style={{ position: 'relative', zIndex: 1, boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.2)' }}>
+                        <div className="card-film scanlines" style={{ position: 'relative', zIndex: 1, boxShadow: IS_TOUCH ? '0 12px 40px rgba(0,0,0,0.7), 0 0 16px rgba(139,105,20,0.15)' : '0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.2)' }}>
                             {film.poster_path ? (
                                 <Poster path={film.poster_path} title={film.title} sizeHint={IS_TOUCH ? 'md' : 'hero'} style={{ filter: 'sepia(0.2) contrast(1.1)' }} />
                             ) : (
