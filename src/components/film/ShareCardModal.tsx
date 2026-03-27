@@ -275,8 +275,11 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
             <div
                 onClick={onClose}
                 style={{
-                    position: 'fixed', inset: 0, zIndex: 10001,
-                    background: 'rgba(5, 3, 1, 0.98)',
+                    position: 'fixed', 
+                    top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                    width: '100vw', height: '100dvh',
+                    zIndex: 10001,
+                    background: 'rgba(5, 3, 1, 0.95)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '1rem',
                 }}

@@ -13,7 +13,7 @@ export default function DossierExportModal({ film, log, onClose }: { film: Recor
             <AnimatePresence>
                 <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{ position: 'fixed', inset: 0, background: 'var(--ink)', zIndex: 50000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '100vw', height: '100dvh', background: '#0E0B08', zIndex: 50000, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
                 onClick={onClose}
             >
                 <div style={{ position: 'absolute', top: '3vh', textAlign: 'center', zIndex: 10 }}>
