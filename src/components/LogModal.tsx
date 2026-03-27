@@ -354,31 +354,33 @@ export default function LogModal() {
                         margin: 'auto auto'
                     }}
                 >
-                    {/* Header */}
+                    {/* ── Minimal Header — just close button ── */}
                     <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '1.25rem 1.5rem',
-                        borderBottom: '1px solid var(--ash)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                        padding: '0.75rem 1rem',
                     }}>
-                        <div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.2rem' }}>
-                                {logModalEditLogId ? 'THE SPLICER (EDITING)' : 'TICKET BOOTH'}
-                            </div>
-                            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)' }}>
-                                {step === 0 ? 'Log a Film' : film?.title || 'Log a Film'}
-                            </h3>
-                        </div>
+                        {logModalEditLogId && (
+                            <span style={{ marginRight: 'auto', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', background: 'rgba(139,105,20,0.1)', padding: '0.25rem 0.65rem', borderRadius: '2px', border: '1px solid rgba(139,105,20,0.2)' }}>
+                                EDITING
+                            </span>
+                        )}
                         <button
                             onClick={closeLogModal}
-                            style={{ background: 'none', border: 'none', color: 'var(--fog)', padding: '0.25rem' }}
+                            style={{ background: 'none', border: 'none', color: 'var(--fog)', padding: '0.35rem', cursor: 'pointer', borderRadius: '4px', transition: 'color 0.2s' }}
+                            onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
+                            onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}
                         >
-                            <X size={20} />
+                            <X size={18} />
                         </button>
                     </div>
 
-                    <div style={{ padding: '1.5rem' }}>
+                    <div style={{ padding: '0 1.5rem 1.5rem' }}>
                         {/* Step 0: Search */}
                         {step === 0 && (
+                            <>
+                            <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', marginBottom: '1rem', textAlign: 'center' }}>
+                                Log a Film
+                            </h3>
                             <LogModalSearch
                                 query={query}
                                 searching={searching}
@@ -388,32 +390,46 @@ export default function LogModal() {
                                 onSearch={handleSearch}
                                 onSelect={selectFilm}
                             />
+                            </>
                         )}
 
                         {/* Step 1: Log form */}
                         {step === 1 && film && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                                {/* Film preview */}
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                {/* ── Film Hero Card — centered poster + title ── */}
+                                <div style={{ textAlign: 'center', paddingBottom: '1rem', borderBottom: '1px solid rgba(139,105,20,0.15)' }}>
                                     {film.poster_path && (
-                                        <img
-                                            src={tmdb.poster(film.poster_path, 'w92')}
-                                            alt={film.title}
-                                            style={{ width: 56, height: 84, objectFit: 'cover', borderRadius: 'var(--radius-card)', filter: 'sepia(0.3)', flexShrink: 0 }}
-                                        />
+                                        <div style={{ display: 'inline-block', position: 'relative' }}>
+                                            <img
+                                                src={tmdb.poster(film.poster_path, 'w342')}
+                                                alt={film.title}
+                                                style={{
+                                                    width: 140, height: 210, objectFit: 'cover',
+                                                    borderRadius: '6px', filter: 'sepia(0.15) contrast(1.05)',
+                                                    boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(139,105,20,0.12)',
+                                                }}
+                                            />
+                                        </div>
                                     )}
-                                    <div>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1.2 }}>
+                                    <div style={{ marginTop: '0.75rem' }}>
+                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', color: 'var(--parchment)', lineHeight: 1.3 }}>
                                             {film.title}
                                         </div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em', marginTop: '0.3rem' }}>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.15em', marginTop: '0.3rem' }}>
                                             {film.release_date?.slice(0, 4)}
                                         </div>
                                         <button
                                             onClick={() => { setStep(0); setFilm(null) }}
-                                            style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', background: 'none', border: 'none', marginTop: '0.4rem', textDecoration: 'underline' }}
+                                            style={{
+                                                fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em',
+                                                color: 'var(--sepia)', background: 'none', border: 'none',
+                                                marginTop: '0.5rem', cursor: 'pointer', opacity: 0.7,
+                                                transition: 'opacity 0.2s',
+                                            }}
+                                            onMouseEnter={e => e.currentTarget.style.opacity = '1'}
+                                            onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}
                                         >
-                                            Change Film
+                                            ↻ CHANGE FILM
                                         </button>
                                     </div>
                                 </div>
