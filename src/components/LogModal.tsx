@@ -418,19 +418,6 @@ export default function LogModal() {
                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.15em', marginTop: '0.3rem' }}>
                                             {film.release_date?.slice(0, 4)}
                                         </div>
-                                        <button
-                                            onClick={() => { setStep(0); setFilm(null) }}
-                                            style={{
-                                                fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em',
-                                                color: 'var(--sepia)', background: 'none', border: 'none',
-                                                marginTop: '0.5rem', cursor: 'pointer', opacity: 0.7,
-                                                transition: 'opacity 0.2s',
-                                            }}
-                                            onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                                            onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}
-                                        >
-                                            ↻ CHANGE FILM
-                                        </button>
                                     </div>
                                 </div>
 

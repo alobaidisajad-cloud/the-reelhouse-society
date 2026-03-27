@@ -1,10 +1,12 @@
 /**
  * CountryReleases — International release dates with certification badges.
+ * Collapsed by default — click header to expand.
  */
 import { useState } from 'react'
 import { Globe } from 'lucide-react'
 
 export default function CountryReleases({ releaseDates }: any) {
+    const [open, setOpen] = useState(false)
     const [expanded, setExpanded] = useState(false)
     if (!releaseDates?.results?.length) return null
 
@@ -16,38 +18,63 @@ export default function CountryReleases({ releaseDates }: any) {
             return a.iso_3166_1.localeCompare(b.iso_3166_1)
         })
 
+    if (!releases.length) return null
+
     const visible = expanded ? releases : releases.slice(0, 6)
     const types: any = { 1: 'PREMIERE', 2: 'LIMITED', 3: 'THEATRICAL', 4: 'DIGITAL', 5: 'PHYSICAL', 6: 'TV' }
 
     return (
         <div className="card">
-            <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Globe size={12} /> INTERNATIONAL RELEASES
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-                {visible.map(({ iso_3166_1, release_dates }: any) => {
-                    const mainRelease = release_dates.find((d: any) => d.type === 3) || release_dates[0]
-                    if (!mainRelease?.release_date) return null
-                    const date = new Date(mainRelease.release_date)
-                    const cert = mainRelease.certification
-                    return (
-                        <div key={iso_3166_1} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', minWidth: 28, fontWeight: 'bold' }}>{iso_3166_1}</span>
-                                {cert && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em', color: 'var(--ink)', background: 'var(--fog)', padding: '0.1rem 0.3rem', borderRadius: '2px' }}>{cert}</span>}
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.06em', color: 'var(--ash)' }}>{types[mainRelease.type] || ''}</span>
-                            </div>
-                            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--bone)' }}>
-                                {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                            </span>
-                        </div>
-                    )
-                })}
-            </div>
-            {releases.length > 6 && (
-                <button onClick={() => setExpanded(!expanded)} style={{ marginTop: '0.75rem', width: '100%', background: 'transparent', border: '1px dashed var(--ash)', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.5rem', borderRadius: '2px', cursor: 'pointer' }}>
-                    {expanded ? `↑ SHOW LESS` : `↓ ${releases.length - 6} MORE COUNTRIES`}
-                </button>
+            {/* ── Clickable header — collapsed by default ── */}
+            <button
+                onClick={() => setOpen(!open)}
+                style={{
+                    background: 'none', border: 'none', width: '100%',
+                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                    cursor: 'pointer', padding: 0,
+                }}
+            >
+                <div className="section-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, margin: 0 }}>
+                    <Globe size={12} /> INTERNATIONAL RELEASES
+                </div>
+                <span style={{
+                    fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.12em',
+                    color: open ? 'var(--sepia)' : 'var(--fog)',
+                    transition: 'color 0.2s',
+                }}>
+                    {open ? '▲ CLOSE' : `▼ ${releases.length} COUNTRIES`}
+                </span>
+            </button>
+
+            {/* ── Release list — only visible when open ── */}
+            {open && (
+                <>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0', marginTop: '0.75rem' }}>
+                        {visible.map(({ iso_3166_1, release_dates }: any) => {
+                            const mainRelease = release_dates.find((d: any) => d.type === 3) || release_dates[0]
+                            if (!mainRelease?.release_date) return null
+                            const date = new Date(mainRelease.release_date)
+                            const cert = mainRelease.certification
+                            return (
+                                <div key={iso_3166_1} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.45rem 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', minWidth: 28, fontWeight: 'bold' }}>{iso_3166_1}</span>
+                                        {cert && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em', color: 'var(--ink)', background: 'var(--fog)', padding: '0.1rem 0.3rem', borderRadius: '2px' }}>{cert}</span>}
+                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.06em', color: 'var(--ash)' }}>{types[mainRelease.type] || ''}</span>
+                                    </div>
+                                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--bone)' }}>
+                                        {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </span>
+                                </div>
+                            )
+                        })}
+                    </div>
+                    {releases.length > 6 && (
+                        <button onClick={() => setExpanded(!expanded)} style={{ marginTop: '0.75rem', width: '100%', background: 'transparent', border: '1px dashed var(--ash)', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', padding: '0.5rem', borderRadius: '2px', cursor: 'pointer' }}>
+                            {expanded ? `↑ SHOW LESS` : `↓ ${releases.length - 6} MORE COUNTRIES`}
+                        </button>
+                    )}
+                </>
             )}
         </div>
     )
