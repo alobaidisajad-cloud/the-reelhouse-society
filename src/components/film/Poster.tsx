@@ -82,8 +82,8 @@ export default function Poster({ path, title, aspectRatio = 'poster', sizeHint =
                     width: '100%',
                     height: '100%',
                     objectFit: 'cover',
-                    opacity: loaded ? 1 : 0,
-                    transition: 'opacity 0.3s ease-in-out',
+                    opacity: IS_TOUCH ? 1 : (loaded ? 1 : 0),
+                    transition: IS_TOUCH ? 'none' : 'opacity 0.3s ease-in-out',
                     zIndex: 2,
                     position: 'relative'
                 }}
