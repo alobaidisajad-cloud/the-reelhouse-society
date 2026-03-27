@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { Plus, Lock, Globe, Search as SearchIcon, X, Film } from 'lucide-react'
 import { tmdb } from '../tmdb'
 import toast from 'react-hot-toast'
+import { Portal } from './UI'
 
 import { useViewport } from '../hooks/useViewport'
 
@@ -64,6 +65,7 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
     }
 
     return (
+        <Portal>
         <div
             className="fade-in"
             onClick={onClose}
@@ -191,5 +193,6 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                 </div>
             </div>
         </div>
+        </Portal>
     )
 }

@@ -2,6 +2,7 @@ import { X } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import Buster from '../Buster'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
+import { Portal } from '../UI'
 
 /**
  * Social modal — shows a list of followers or following.
@@ -12,6 +13,7 @@ export default function SocialModal({ socialModal, socialLoading, onClose }: { s
     if (!socialModal) return null
 
     return (
+        <Portal>
         <div
             className="modal-overlay"
             onClick={onClose}
@@ -48,5 +50,6 @@ export default function SocialModal({ socialModal, socialLoading, onClose }: { s
                 </div>
             </div>
         </div>
+        </Portal>
     )
 }

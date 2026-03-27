@@ -7,6 +7,7 @@ import { supabase } from '../supabaseClient'
 import Buster from './Buster'
 import toast from 'react-hot-toast'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { Portal } from './UI'
 
 interface OnboardFilm {
     id: number
@@ -103,6 +104,7 @@ export default function OnboardingModal() {
     if (!open) return null
 
     return (
+        <Portal>
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -337,5 +339,6 @@ export default function OnboardingModal() {
                 </motion.div>
             </motion.div>
         </AnimatePresence>
+        </Portal>
     )
 }

@@ -7,6 +7,7 @@ import { tmdb } from '../tmdb'
 import LogModalSearch from './log-modal/LogModalSearch'
 import LogForm from './log-modal/LogForm'
 import ShareCardModal from './film/ShareCardModal'
+import { Portal } from './UI'
 
 export default function LogModal() {
     const logModalOpen = useUIStore(state => state.logModalOpen)
@@ -76,6 +77,7 @@ export default function LogModal() {
     const focusTrapRef = useFocusTrap(logModalOpen, closeLogModal)
 
     return (
+        <Portal>
         <>
         {logModalOpen && (
         <AnimatePresence>
@@ -167,5 +169,6 @@ export default function LogModal() {
                 />
             )}
         </>
+        </Portal>
     )
 }

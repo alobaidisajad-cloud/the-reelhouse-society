@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Lock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { Portal } from './UI'
 
 export default function PaywallModal({ featureName, onClose }: any) {
     const focusTrapRef = useFocusTrap(true, onClose)
@@ -13,6 +14,7 @@ export default function PaywallModal({ featureName, onClose }: any) {
     }
 
     return (
+        <Portal>
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -64,5 +66,6 @@ export default function PaywallModal({ featureName, onClose }: any) {
                 </motion.div>
             </motion.div>
         </AnimatePresence>
+        </Portal>
     )
 }

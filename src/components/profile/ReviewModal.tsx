@@ -3,6 +3,7 @@ import { ReelRating } from '../UI'
 import { tmdb } from '../../tmdb'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { Link } from 'react-router-dom'
+import { Portal } from '../UI'
 
 /**
  * Cinematic log detail modal — premium Nitrate Noir.
@@ -26,6 +27,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
     const statusLabel = viewLog.status === 'watched' ? 'WATCHED' : viewLog.status === 'rewatched' ? '⟳ REWATCH' : '✕ ABANDONED'
 
     return (
+        <Portal>
         <div
             ref={focusTrapRef}
             onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.down = '1' }}
@@ -319,5 +321,6 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                 </div>
             </div>
         </div>
+        </Portal>
     )
 }

@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '../store'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { Portal } from './UI'
 
 const IconClose = () => (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -14,6 +15,7 @@ export default function HandbookModal() {
     const focusTrapRef = useFocusTrap(handbookOpen, closeHandbook)
 
     return (
+        <Portal>
         <AnimatePresence>
             {handbookOpen && (
                 <motion.div
@@ -86,5 +88,6 @@ export default function HandbookModal() {
             )}
 
         </AnimatePresence>
+        </Portal>
     )
 }

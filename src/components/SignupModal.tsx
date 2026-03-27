@@ -9,6 +9,7 @@ import { isDisposableEmail, isValidEmailFormat } from '../utils/disposableEmails
 import VelvetRopeGate from './signup/VelvetRopeGate'
 import ForgotPasswordScreen from './signup/ForgotPasswordScreen'
 import EmailConfirmationScreen from './signup/EmailConfirmationScreen'
+import { Portal } from './UI'
 
 const PERSONAS = [
     { id: 'The Midnight Devotee', desc: 'Haunts 3AM screenings. Darkness is your element.' },
@@ -323,16 +324,19 @@ export default function SignupModal() {
 
     if (forgotMode) {
         return (
+            <Portal>
             <ForgotPasswordScreen
                 onClose={closeSignupModal}
                 onBackToLogin={() => { setForgotMode(false); setIsLogin(true) }}
                 focusTrapRef={focusTrapRef as any}
             />
+            </Portal>
         )
     }
 
     if (awaitingConfirmation) {
         return (
+            <Portal>
             <EmailConfirmationScreen
                 confirmedEmail={confirmedEmail}
                 resending={resending}
@@ -340,11 +344,13 @@ export default function SignupModal() {
                 onClose={closeSignupModal}
                 focusTrapRef={focusTrapRef as any}
             />
+            </Portal>
         )
     }
 
     if (!isLogin && !hasClearance) {
         return (
+            <Portal>
             <VelvetRopeGate
                 clearanceCode={clearanceCode}
                 setClearanceCode={setClearanceCode}
@@ -353,11 +359,13 @@ export default function SignupModal() {
                 onSwitchToLogin={() => setIsLogin(true)}
                 onClose={closeSignupModal}
             />
+            </Portal>
         )
     }
 
     // NORMAL SIGNUP / LOGIN FORM
     return (
+        <Portal>
         <AnimatePresence>
             <motion.div
                 ref={focusTrapRef}
@@ -601,5 +609,6 @@ export default function SignupModal() {
                 </motion.div>
             </motion.div>
         </AnimatePresence>
+        </Portal>
     )
 }
