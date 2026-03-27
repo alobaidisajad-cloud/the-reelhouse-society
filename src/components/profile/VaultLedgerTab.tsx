@@ -43,6 +43,9 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog }: { prof
     }, [visibleLogCount])
 
     const filteredLogs = profileLogs.filter(log => {
+        // Must have a poster to avoid the eye-logo placeholder card
+        const hasPoster = (typeof log.poster === 'string' && log.poster.length > 5) || (typeof log.altPoster === 'string' && log.altPoster?.length > 5)
+        if (!hasPoster) return false
         if (!log.rating && !log.review) return false // Ledger only shows rated/reviewed logs
         if (sieve === 'all') return true
         return log.rating === parseInt(sieve)

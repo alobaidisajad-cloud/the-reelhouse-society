@@ -482,7 +482,7 @@ export default function UserProfilePage() {
                                 @{profileUser.username}
                             </div>
                             <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', textTransform: 'uppercase', lineHeight: 1 }}>
-                                {activeTab === 'diary' ? 'The Ledger' : activeTab === 'lists' ? 'The Stacks' : activeTab === 'archive' ? 'Archive' : activeTab === 'watchlist' ? 'Watchlist' : activeTab === 'stats' ? 'Global Analytics' : activeTab}
+                                {activeTab === 'diary' ? 'The Ledger' : activeTab === 'lists' ? 'The Stacks' : activeTab === 'archive' ? 'Archive' : activeTab === 'watchlist' ? 'Watchlist' : activeTab === 'projector' || activeTab === 'stats' ? 'Global Analytics' : activeTab}
                             </h1>
                         </div>
                     </div>
@@ -498,7 +498,7 @@ export default function UserProfilePage() {
                             { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, icon: Bookmark, active: activeTab === 'watchlist', desc: 'To See' },
                             { id: 'lists', label: 'Stacks', count: profileLists.length, icon: LayoutList, active: activeTab === 'lists', desc: 'Lists' },
                             { id: 'tickets', label: 'Stubs', count: 'SOON', icon: Ticket, active: activeTab === 'tickets', disabled: true, desc: 'Box Office' },
-                            { id: 'stats', label: 'Analytics', count: 'LIFETIME', icon: LineChart, active: activeTab === 'stats', highlight: true, desc: 'Projector' },
+                            { id: 'projector', label: 'Analytics', count: 'LIFETIME', icon: LineChart, active: activeTab === 'projector', highlight: true, desc: 'Projector' },
                         ].map(item => (
                             <button
                                 key={item.id}
