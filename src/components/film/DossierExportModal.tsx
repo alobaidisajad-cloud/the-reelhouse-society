@@ -16,14 +16,49 @@ export default function DossierExportModal({ film, log, onClose }: { film: Recor
         if (!cardRef.current) return
         try {
             const canvas = await html2canvas(cardRef.current, { useCORS: true, backgroundColor: '#0F0D0A', scale: 2 })
-            const link = document.createElement('a')
-            link.download = `reelhouse-dossier-${film.title.toLowerCase().replace(/\s+/g, '-')}.png`
-            link.href = canvas.toDataURL('image/png')
-            link.click()
-            setDownloaded(true)
-            setTimeout(() => setDownloaded(false), 2000)
+            const filename = `reelhouse-dossier-${film.title.toLowerCase().replace(/\s+/g, '-')}.png`
+
+            // On mobile: use Web Share API with a File — this triggers the native Save Image sheet
+            // on iOS and Android instead of downloading to the Files app.
+            const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+            if (isMobile && navigator.canShare) {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) return
+                    const file = new File([blob], filename, { type: 'image/png' })
+                    if (navigator.canShare({ files: [file] })) {
+                        try {
+                            await navigator.share({ files: [file], title: film.title })
+                            setDownloaded(true)
+                            setTimeout(() => setDownloaded(false), 2000)
+                            return
+                        } catch { /* user cancelled share — fall through to download */ }
+                    }
+                    // Fallback: blob URL download
+                    const url = URL.createObjectURL(blob)
+                    const link = document.createElement('a')
+                    link.download = filename
+                    link.href = url
+                    link.click()
+                    setTimeout(() => URL.revokeObjectURL(url), 1000)
+                    setDownloaded(true)
+                    setTimeout(() => setDownloaded(false), 2000)
+                }, 'image/png')
+            } else {
+                // Desktop: create a proper blob download (saves to Downloads folder)
+                canvas.toBlob((blob) => {
+                    if (!blob) return
+                    const url = URL.createObjectURL(blob)
+                    const link = document.createElement('a')
+                    link.download = filename
+                    link.href = url
+                    link.click()
+                    setTimeout(() => URL.revokeObjectURL(url), 1000)
+                }, 'image/png')
+                setDownloaded(true)
+                setTimeout(() => setDownloaded(false), 2000)
+            }
         } catch (e) {
-            console.error('Failed to generate sharing card', e)
+            console.error('Failed to generate dossier card', e)
         }
     }
 

@@ -63,7 +63,143 @@ function FilmHero({ film, onPlayTrailer }: any) {
     }
 
     return (
-        <div style={{ position: 'relative', minHeight: IS_TOUCH ? 'auto' : '70vh', display: 'flex', alignItems: IS_TOUCH ? 'center' : 'flex-end', paddingBottom: IS_TOUCH ? '5rem' : '3rem', paddingTop: IS_TOUCH ? '1rem' : 0, flexShrink: 0 }}>
+        <>
+        {/* ─── MOBILE HERO: Full-bleed cinematic layout ─── */}
+        {IS_TOUCH ? (
+            <div style={{ position: 'relative', width: '100%' }}>
+                {/* Full-bleed backdrop */}
+                <div style={{ position: 'relative', width: '100%', height: '55vw', minHeight: 220, maxHeight: 320, overflow: 'hidden' }}>
+                    {film.backdrop_path ? (
+                        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.4) brightness(0.35) contrast(1.1)' }} />
+                    ) : (
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
+                    )}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,7,3,0.15) 0%, rgba(10,7,3,0.6) 70%, var(--ink) 100%)' }} />
+                </div>
+
+                {/* Poster — floats out of the backdrop into the info section */}
+                <div style={{ position: 'relative', marginTop: -80, display: 'flex', justifyContent: 'center', zIndex: 2 }}>
+                    <div style={{ position: 'relative' }}>
+                        <div className="card-film scanlines" style={{ width: 140, boxShadow: '0 16px 48px rgba(0,0,0,0.8), 0 0 24px rgba(139,105,20,0.2)', borderRadius: 6, overflow: 'hidden' }}>
+                            {film.poster_path ? (
+                                <Poster path={film.poster_path} title={film.title} sizeHint="md" style={{ filter: 'sepia(0.15) contrast(1.1)' }} />
+                            ) : (
+                                <div style={{ width: '100%', aspectRatio: '2/3', background: 'var(--soot)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)' }}>NO POSTER</span>
+                                </div>
+                            )}
+                        </div>
+                        {/* Watched/logged badge — floats bottom of poster */}
+                        {existingLog && (
+                            <div style={{ position: 'absolute', bottom: -14, left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', background: 'linear-gradient(135deg, #8B6914, #DAA520)', padding: '0.25rem 0.75rem', borderRadius: 20, fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: '#0E0B08', fontWeight: 700, boxShadow: '0 4px 12px rgba(139,105,20,0.4)' }}>
+                                {statusLabel[existingLog.status] || <><Check size={9} style={{ display: 'inline-block', verticalAlign: 'middle' }} /> LOGGED</>}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Info block */}
+                <div style={{ padding: '1.75rem 1.25rem 0.5rem', textAlign: 'center' }}>
+                    {/* Genre tags */}
+                    <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', flexWrap: 'wrap', marginBottom: '0.9rem' }}>
+                        <GenreTags genres={film.genres} />
+                    </div>
+
+                    {/* Title */}
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.6rem, 7vw, 2.5rem)', color: 'var(--parchment)', lineHeight: 1.1, margin: '0 0 0.4rem' }}>{film.title}</h1>
+
+                    {/* Tagline */}
+                    {film.tagline && (
+                        <p style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--bone)', fontStyle: 'italic', opacity: 0.75, marginBottom: '0.9rem' }}>"{film.tagline}"</p>
+                    )}
+
+                    {/* Meta strip */}
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.9rem', flexWrap: 'wrap', marginBottom: '1rem' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.1em', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Clock size={10} />{formatRuntime(film.runtime)}
+                        </span>
+                        <span style={{ color: 'var(--ash)', fontSize: '0.5rem' }}>·</span>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{getYear(film.release_date)}</span>
+                        {film.production_countries?.[0] && (
+                            <>
+                                <span style={{ color: 'var(--ash)', fontSize: '0.5rem' }}>·</span>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.1em', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                    <Globe size={10} />{film.production_countries[0].name}
+                                </span>
+                            </>
+                        )}
+                    </div>
+
+                    {/* Rating reels + review count */}
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.75rem', marginBottom: '0.6rem' }}>
+                        <ReelRating value={Math.round((film.vote_average || 0) / 2)} size="lg" />
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.78rem', color: 'var(--bone)', opacity: 0.7, marginBottom: '1rem' }}>
+                        {film.vote_average?.toFixed(1)} · {reviewText}
+                    </div>
+
+                    {/* Director */}
+                    {director && (
+                        <Link to={`/person/${director.id}`} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.12em', color: 'var(--bone)', marginBottom: '1.25rem' }}>
+                            <span style={{ color: 'var(--fog)' }}>DIR.</span>
+                            <span style={{ textDecoration: 'underline', textDecorationColor: 'var(--ash)' }}>{director.name}</span>
+                            <ArrowUpRight size={10} color="var(--fog)" />
+                        </Link>
+                    )}
+
+                    {/* Existing log details */}
+                    {existingLog && (existingLog.rating ?? 0) > 0 && (
+                        <div style={{ background: 'linear-gradient(135deg, rgba(139,105,20,0.08), rgba(10,7,3,0.5))', border: '1px solid rgba(139,105,20,0.2)', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
+                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--flicker)', letterSpacing: '0.05em' }}>{'★'.repeat(Math.round(existingLog.rating ?? 0))}{'☆'.repeat(5 - Math.round(existingLog.rating ?? 0))}</div>
+                            {existingLog.watchedDate && (
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                                    {new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    {existingLog.watchedWith && <span> · ♡ {existingLog.watchedWith}</span>}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* CTA Buttons */}
+                    <div className="hero-cta-row" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingBottom: '1rem' }}>
+                        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.72rem', padding: '0.85rem' }} onClick={() => openLogModal(film)}>
+                            <Plus size={15} /> {existingLog ? 'Edit Log' : 'Log This Film'}
+                        </button>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                            {existingLog && (
+                                <button className="btn btn-ghost" style={{ justifyContent: 'center', fontSize: '0.65rem', borderColor: 'rgba(139,105,20,0.5)', color: 'var(--sepia)' }} onClick={() => setShowExport(true)}>
+                                    <Camera size={13} /> Dossier
+                                </button>
+                            )}
+                            <button className={`btn ${isWatchlisted ? 'btn-danger' : 'btn-ghost'}`} style={{ justifyContent: 'center', fontSize: '0.65rem', gridColumn: existingLog ? 'auto' : '1 / -1' }} onClick={toggleWatchlist}>
+                                <Bookmark size={13} fill={isWatchlisted ? 'currentColor' : 'none'} />
+                                {isWatchlisted ? 'Saved' : 'Watchlist'}
+                            </button>
+                            {!existingLog && (
+                                <button className="btn btn-ghost" style={{ justifyContent: 'center', fontSize: '0.65rem' }}
+                                    onClick={async () => {
+                                        try {
+                                            await markAsWatched(film)
+                                            const t = (await import('react-hot-toast')).default
+                                            t.success('Marked as watched!')
+                                        } catch { }
+                                    }}
+                                >
+                                    <Eye size={13} /> Watched
+                                </button>
+                            )}
+                            {trailer && (
+                                <button className="btn btn-ghost" style={{ justifyContent: 'center', fontSize: '0.65rem' }} onClick={() => onPlayTrailer(trailer.key)}>
+                                    <Play size={13} /> Trailer
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        ) : (
+        /* ─── DESKTOP HERO: original layout unchanged ─── */
+        <div style={{ position: 'relative', minHeight: '70vh', display: 'flex', alignItems: 'flex-end', paddingBottom: '3rem', paddingTop: 0, flexShrink: 0 }}>
             {/* Backdrop */}
             {film.backdrop_path && (
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.5) brightness(0.25) contrast(1.15)', zIndex: 0 }} />
@@ -72,7 +208,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--ink) 15%, rgba(10,7,3,0.85) 45%, rgba(10,7,3,0.2) 80%, transparent)', zIndex: 1 }} />
 
             {/* Trailer play button overlay on backdrop */}
-            {trailer && !IS_TOUCH && (
+            {trailer && (
                 <button className="hero-play-overlay" onClick={() => onPlayTrailer(trailer.key)}
                     style={{ position: 'absolute', top: '40%', left: '50%', transform: 'translate(-50%, -50%)', zIndex: 2, background: 'rgba(0,0,0,0.6)', border: '2px solid rgba(139,105,20,0.6)', borderRadius: '50%', width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', transition: 'all 0.3s', backdropFilter: 'blur(4px)' }}
                     onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.3)'; e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.transform = 'translate(-50%, -50%) scale(1.1)' }}
@@ -86,12 +222,12 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 <div>
                     {/* Poster */}
                     <div style={{ flexShrink: 0, position: 'relative' }}>
-                        {!IS_TOUCH && film.poster_path && (
+                        {film.poster_path && (
                             <div style={{ position: 'absolute', inset: -20, zIndex: 0, backgroundImage: `url(${tmdb.poster(film.poster_path, 'w342')})`, backgroundSize: 'cover', backgroundPosition: 'center', filter: 'blur(60px) sepia(0.5) saturate(2)', opacity: 0.25, transform: 'scale(1.05)' }} />
                         )}
-                        <div className="card-film scanlines" style={{ position: 'relative', zIndex: 1, boxShadow: IS_TOUCH ? '0 12px 40px rgba(0,0,0,0.7), 0 0 16px rgba(139,105,20,0.15)' : '0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.2)' }}>
+                        <div className="card-film scanlines" style={{ position: 'relative', zIndex: 1, boxShadow: '0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.2)' }}>
                             {film.poster_path ? (
-                                <Poster path={film.poster_path} title={film.title} sizeHint={IS_TOUCH ? 'md' : 'hero'} style={{ filter: 'sepia(0.2) contrast(1.1)' }} />
+                                <Poster path={film.poster_path} title={film.title} sizeHint="hero" style={{ filter: 'sepia(0.2) contrast(1.1)' }} />
                             ) : (
                                 <div style={{ width: '100%', height: '100%', background: 'var(--soot)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)' }}>NO POSTER</span>
@@ -100,7 +236,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         </div>
                         {existingLog && (
                             <div style={{ marginTop: '0.6rem', padding: '0.6rem 0.75rem', background: 'linear-gradient(135deg, rgba(139,105,20,0.12), rgba(10,7,3,0.8))', border: '1px solid rgba(139,105,20,0.3)', borderRadius: 'var(--radius-card)', borderLeft: '2px solid var(--sepia)' }}>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>{statusLabel[existingLog.status] || <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> LOGGED</>}</div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>{statusLabel[existingLog.status] || <><Check size={12} style={{ display: 'inline-block', verticalAlign: 'middle' }} /> LOGGED</>}</div>
                                 {existingLog.rating > 0 && <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--flicker)', marginBottom: '0.15rem' }}>{'★'.repeat(Math.round(existingLog.rating))}{'☆'.repeat(5 - Math.round(existingLog.rating))}</div>}
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', letterSpacing: '0.08em', color: 'var(--fog)' }}>
                                     {existingLog.watchedDate && new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -112,7 +248,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 </div>
 
                 {/* Info */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '0.5rem' : '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <GenreTags genres={film.genres} />
                     <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 3rem)', color: 'var(--parchment)', lineHeight: 1.1 }}>{film.title}</h1>
                     {film.tagline && <p style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)', fontStyle: 'italic' }}>"{film.tagline}"</p>}
@@ -149,7 +285,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         >
                             <span style={{ color: 'var(--fog)' }}>DIR.</span>
                             <span style={{ textDecoration: 'underline', textDecorationColor: 'var(--ash)' }}>{director.name}</span>
-                            <span style={{ color: 'var(--fog)', fontSize: '0.5rem' }}><ArrowUpRight size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>
+                            <span style={{ color: 'var(--fog)', fontSize: '0.5rem' }}><ArrowUpRight size={10} style={{ display: 'inline-block', verticalAlign: 'middle' }} /></span>
                         </Link>
                     )}
 
@@ -166,7 +302,6 @@ function FilmHero({ film, onPlayTrailer }: any) {
                             <Bookmark size={14} fill={isWatchlisted ? 'currentColor' : 'none'} />
                             {isWatchlisted ? 'In Watchlist' : 'Add to Watchlist'}
                         </button>
-                        {/* Quick Watch toggle */}
                         {!existingLog && (
                             <button className="btn btn-ghost" style={{ fontSize: '0.75rem', borderColor: 'rgba(139,105,20,0.4)', color: 'var(--bone)' }}
                                 onClick={async () => {
@@ -180,8 +315,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                                 <Eye size={14} /> Mark Watched
                             </button>
                         )}
-                        {/* Mobile trailer button */}
-                        {trailer && IS_TOUCH && (
+                        {trailer && (
                             <button className="btn btn-ghost" style={{ fontSize: '0.75rem' }} onClick={() => onPlayTrailer(trailer.key)}>
                                 <Play size={14} /> Watch Trailer
                             </button>
@@ -189,11 +323,14 @@ function FilmHero({ film, onPlayTrailer }: any) {
                     </div>
                 </div>
             </div>
-
-            {showExport && existingLog && <DossierExportModal film={film} log={existingLog} onClose={() => setShowExport(false)} />}
         </div>
+        )}
+
+        {showExport && existingLog && <DossierExportModal film={film} log={existingLog} onClose={() => setShowExport(false)} />}
+        </>
     )
 }
+
 
 function FilmDetails({ film, onPlayVideo }: any) {
     const { isTouch: IS_TOUCH } = useViewport()
