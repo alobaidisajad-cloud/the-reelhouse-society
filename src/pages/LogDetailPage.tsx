@@ -78,7 +78,7 @@ export default function LogDetailPage() {
     if (loading) {
         return (
             <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--ash)', display: 'flex', alignItems: 'center' }}>
+                <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.2)', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, background: 'rgba(10,7,3,0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
                     <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--fog)' }}><ArrowLeft size={18} /></button>
                 </div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -91,7 +91,7 @@ export default function LogDetailPage() {
     if (error || !log) {
         return (
             <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--ash)', display: 'flex', alignItems: 'center' }}>
+                <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.2)', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, background: 'rgba(10,7,3,0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
                     <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--fog)' }}><ArrowLeft size={18} /></button>
                 </div>
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '1rem', padding: '2rem', textAlign: 'center' }}>
@@ -106,8 +106,8 @@ export default function LogDetailPage() {
         <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <PageSEO title={`Log details by ${log.user} on ${log.film?.title || 'Unknown Film'}`} />
             
-            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid var(--ash)', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, background: 'rgba(10,7,3,0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
-                <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--fog)' }} aria-label="Go back">
+            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.2)', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, background: 'rgba(10,7,3,0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
+                <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--sepia)' }} aria-label="Go back">
                     <ArrowLeft size={18} />
                 </button>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--bone)', marginLeft: '1rem' }}>
