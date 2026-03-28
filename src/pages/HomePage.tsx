@@ -227,23 +227,23 @@ export default function HomePage() {
                                 </button>
                             </div>
                         </motion.div>
-                    ) : (
-                        <motion.div variants={heroChild} style={{ marginTop: IS_TOUCH ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'center' }}>
+                    ) : !IS_TOUCH ? (
+                        <motion.div variants={heroChild} style={{ marginTop: '2.5rem', display: 'flex', justifyContent: 'center' }}>
                             <button
                                 className="btn btn-primary"
                                 style={{
-                                    fontSize: IS_TOUCH ? '0.8rem' : '1rem',
-                                    padding: IS_TOUCH ? '0.8em 2em' : '1em 2.8em',
+                                    fontSize: '1rem',
+                                    padding: '1em 2.8em',
                                     boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
                                     letterSpacing: '0.18em',
-                                    width: IS_TOUCH ? '90%' : 'auto',
                                 }}
                                 onClick={() => openLogModal()}
                             >
                                 + LOG A FILM
                             </button>
                         </motion.div>
-                    )}
+                    ) : null}
+
 
 
                 </motion.div>
