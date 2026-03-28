@@ -2,6 +2,7 @@ import { memo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { FilmCard, SectionHeader } from '../UI'
+import { ArrowRight } from 'lucide-react'
 
 import { useViewport } from '../../hooks/useViewport'
 
@@ -57,7 +58,7 @@ const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, desc
                     }}
                     onClick={() => navigate('/discover')}
                 >
-                    VIEW ALL <span style={{ fontSize: '1.2em', color: 'var(--sepia)', transition: 'transform 0.3s ease' }} className="arrow-icon">⟶</span>
+                    VIEW ALL <ArrowRight size={11} style={{ color: 'var(--sepia)', opacity: 0.85, flexShrink: 0 }} />
                 </button>
             </div>
 

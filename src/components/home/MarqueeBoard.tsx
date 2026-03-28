@@ -104,6 +104,18 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                 overflow: 'hidden',
                 background: 'rgba(10,7,3,0.70)',
             }}>
+                {/* Mobile: poster as blurred cinematic background */}
+                {IS_TOUCH && film.poster_path && (
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        backgroundImage: `url(https://image.tmdb.org/t/p/w780${film.poster_path})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center 20%',
+                        filter: 'blur(18px) sepia(0.4) brightness(0.28) contrast(1.1)',
+                        transform: 'scale(1.08)',
+                        zIndex: 0,
+                    }} />
+                )}
                 {/* Vignette — keeps text readable */}
                 <div style={{
                     position: 'absolute',

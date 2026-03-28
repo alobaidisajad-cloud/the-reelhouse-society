@@ -26,54 +26,7 @@ const LOBBY_TAGLINES = [
     'The reel begins here.',
 ]
 
-function MobileLobbyTagline() {
-    const [idx, setIdx] = useState(0)
-    const [visible, setVisible] = useState(true)
-
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setVisible(false)
-            setTimeout(() => {
-                setIdx(prev => (prev + 1) % LOBBY_TAGLINES.length)
-                setVisible(true)
-            }, 600)
-        }, 4500)
-        return () => clearInterval(interval)
-    }, [])
-
-    return (
-        <div style={{
-            marginTop: '1.75rem',
-            textAlign: 'center',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            gap: '1.25rem',
-        }}>
-            {/* Decorative rule */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '80%', maxWidth: 280 }}>
-                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.35))' }} />
-                <div style={{ width: 4, height: 4, borderRadius: '50%', background: 'var(--sepia)', opacity: 0.5 }} />
-                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.35))' }} />
-            </div>
-            {/* Rotating tagline */}
-            <p style={{
-                fontFamily: 'var(--font-sub)',
-                fontSize: '0.95rem',
-                color: 'var(--bone)',
-                letterSpacing: '0.04em',
-                lineHeight: 1.5,
-                opacity: visible ? 0.7 : 0,
-                transform: visible ? 'translateY(0)' : 'translateY(4px)',
-                transition: 'opacity 0.5s ease, transform 0.5s ease',
-                margin: 0,
-                fontStyle: 'italic',
-            }}>
-                {LOBBY_TAGLINES[idx]}
-            </p>
-        </div>
-    )
-}
+// MobileLobbyTagline removed — replaced by direct film content below
 
 // ── MAIN HOME PAGE ──
 export default function HomePage() {
@@ -132,7 +85,7 @@ export default function HomePage() {
                         backgroundImage: `url(${tmdb.backdrop(heroFilm.backdrop_path, IS_TOUCH ? 'w780' : 'w1280')})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 15%',
-                        opacity: IS_TOUCH ? 0.35 : 0.55,
+                        opacity: IS_TOUCH ? 0.55 : 0.65,
                         filter: 'sepia(0.2) brightness(0.60)',
                         maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
@@ -177,7 +130,22 @@ export default function HomePage() {
                             }}>
                                 <span style={{ display: 'block' }}>Track every film you watch.</span>
                                 <span style={{ display: 'block', color: 'var(--bone)', opacity: 0.85 }}>Discover cinema you've never heard of.</span>
-                                <span style={{ display: 'block', color: 'var(--sepia)' }}>Join the society.</span>
+                            </div>
+                            {/* Divider before climax line */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', margin: IS_TOUCH ? '1rem auto 0' : '1.25rem auto 0', width: '60%', maxWidth: 220 }}>
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(196,150,26,0.5))' }} />
+                                <div style={{ width: 3, height: 3, borderRadius: '50%', background: 'var(--sepia)' }} />
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(196,150,26,0.5))' }} />
+                            </div>
+                            <div style={{
+                                fontFamily: 'var(--font-display)',
+                                fontSize: IS_TOUCH ? '1.6rem' : '2rem',
+                                color: 'var(--sepia)',
+                                letterSpacing: '0.04em',
+                                marginTop: IS_TOUCH ? '0.75rem' : '1rem',
+                                textShadow: '0 0 30px rgba(196,150,26,0.35), 0 2px 8px rgba(0,0,0,0.9)',
+                            }}>
+                                Join the Society.
                             </div>
                             {/* Decorative rule */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '1.25rem 0' : '1.75rem 0', opacity: 0.4 }}>
@@ -237,8 +205,7 @@ export default function HomePage() {
                         </div>
                     )}
 
-                    {/* ── MOBILE LOBBY ELEGANCE — replaces CTA buttons with cinematic ambiance ── */}
-                    {IS_TOUCH && <MobileLobbyTagline />}
+
                 </div>
             </section>
 
@@ -259,21 +226,11 @@ export default function HomePage() {
                     </SectionErrorBoundary>
 
                     {/* Social Pulse */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '0' : '1rem 0' }}>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.3))' }} />
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, whiteSpace: 'nowrap' }}>✦ THE FOYER ✦</span>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.3))' }} />
-                    </div>
                     <SectionErrorBoundary label="THE PULSE">
                     <SocialPulse />
                     </SectionErrorBoundary>
 
-                    {/* Divider */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '0' : '1rem 0' }}>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.3))' }} />
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, whiteSpace: 'nowrap' }}>✦ TONIGHT'S PROGRAMME ✦</span>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.3))' }} />
-                    </div>
+
 
                     {/* Featured review + film */}
                     <SectionErrorBoundary label="FEATURED CRITIQUE">
@@ -360,11 +317,6 @@ export default function HomePage() {
                     </SectionErrorBoundary>
 
                     {/* Top rated */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '0' : '1rem 0' }}>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.3))' }} />
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, whiteSpace: 'nowrap' }}>✦ THE ARCHIVES ✦</span>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.3))' }} />
-                    </div>
                     <SectionErrorBoundary label="ESSENTIAL VIEWING">
                     {loadingTop ? <FilmStripSkeleton count={8} /> : (
                         <FilmStripRow
@@ -377,11 +329,6 @@ export default function HomePage() {
                     </SectionErrorBoundary>
 
                     {/* Venue spotlight */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: IS_TOUCH ? '0' : '1rem 0' }}>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.3))' }} />
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, whiteSpace: 'nowrap' }}>✦ THE PALACES ✦</span>
-                        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.3))' }} />
-                    </div>
                     <SectionErrorBoundary label="VENUE SPOTLIGHT">
                     <VenueSpotlight />
                     </SectionErrorBoundary>
