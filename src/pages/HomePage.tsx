@@ -1,20 +1,22 @@
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { tmdb } from '../tmdb'
 import { useUIStore, useAuthStore } from '../store'
 import { FilmCard, SectionHeader, Ticker, FilmStripSkeleton } from '../components/UI'
-import Buster from '../components/Buster'
 
-// ── Extracted Components (were inline, now modular) ──
+// ── Above-fold: eagerly loaded (critical for LCP) ──
 import MarqueeBoard from '../components/home/MarqueeBoard'
-import FeaturedReview from '../components/home/FeaturedReview'
 import FilmStripRow from '../components/home/FilmStripRow'
-import VenueSpotlight from '../components/home/VenueSpotlight'
-import SocialPulse from '../components/home/SocialPulse'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
 import PageSEO from '../components/PageSEO'
+
+// ── Below-fold: lazy loaded (saves ~30KB from initial bundle) ──
+const Buster = lazy(() => import('../components/Buster'))
+const FeaturedReview = lazy(() => import('../components/home/FeaturedReview'))
+const VenueSpotlight = lazy(() => import('../components/home/VenueSpotlight'))
+const SocialPulse = lazy(() => import('../components/home/SocialPulse'))
 
 import { useViewport } from '../hooks/useViewport'
 import { useScrollRevealAll } from '../hooks/useScrollReveal'
@@ -97,20 +99,26 @@ export default function HomePage() {
                 position: 'relative'
             }}>
                 {heroFilm?.backdrop_path && (
-                    <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        backgroundImage: `url(${tmdb.backdrop(heroFilm.backdrop_path, IS_TOUCH ? 'w780' : 'w1280')})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center 15%',
-                        backgroundAttachment: IS_TOUCH ? 'scroll' : 'fixed',
-                        opacity: IS_TOUCH ? 0.60 : 0.65,
-                        filter: 'sepia(0.2) brightness(0.60)',
-                        maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
-                        WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
-                        zIndex: 0,
-                        pointerEvents: 'none',
-                    }} />
+                    <img
+                        src={tmdb.backdrop(heroFilm.backdrop_path, IS_TOUCH ? 'w780' : 'w1280')!}
+                        alt=""
+                        fetchPriority="high"
+                        decoding="async"
+                        style={{
+                            position: 'absolute',
+                            inset: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            objectPosition: 'center 15%',
+                            opacity: IS_TOUCH ? 0.60 : 0.65,
+                            filter: 'sepia(0.2) brightness(0.60)',
+                            maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+                            WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
+                            zIndex: 0,
+                            pointerEvents: 'none',
+                        }}
+                    />
                 )}
                 {/* Spotlight ambient glow */}
                 <div style={{
@@ -270,7 +278,7 @@ export default function HomePage() {
                     {/* Social Pulse */}
                     <div className="scroll-reveal">
                     <SectionErrorBoundary label="THE PULSE">
-                    <SocialPulse />
+                    <Suspense fallback={null}><SocialPulse /></Suspense>
                     </SectionErrorBoundary>
                     </div>
 
@@ -295,7 +303,7 @@ export default function HomePage() {
                                     </div>
                                 </div>
                                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                    <FeaturedReview film={heroFilm} />
+                                    <Suspense fallback={null}><FeaturedReview film={heroFilm} /></Suspense>
                                     <div style={{ marginTop: '1.5rem', display: 'flex', gap: '2rem', paddingLeft: '0.5rem', alignItems: 'center' }}>
                                         <button
                                             className="btn btn-ghost"
@@ -379,7 +387,7 @@ export default function HomePage() {
                     {/* Venue spotlight */}
                     <div className="scroll-reveal">
                     <SectionErrorBoundary label="VENUE SPOTLIGHT">
-                    <VenueSpotlight />
+                    <Suspense fallback={null}><VenueSpotlight /></Suspense>
                     </SectionErrorBoundary>
                     </div>
 
@@ -404,7 +412,7 @@ export default function HomePage() {
                             </div>
                             {/* Editorial label */}
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', marginBottom: IS_TOUCH ? '1.25rem' : '1.75rem', opacity: 0.6 }}>THE FINAL ACT</div>
-                            <Buster size={IS_TOUCH ? 90 : 130} mood="peeking" />
+                            <Suspense fallback={null}><Buster size={IS_TOUCH ? 90 : 130} mood="peeking" /></Suspense>
                             <div style={{ marginTop: IS_TOUCH ? '1.5rem' : '2.25rem' }}>
                                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.8rem' : '2.6rem', color: 'var(--parchment)', marginBottom: '0.75rem', lineHeight: 1.1 }}>
                                     The House is Waiting

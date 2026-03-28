@@ -170,19 +170,23 @@ export default function App() {
     }
   }, [location.pathname])
 
-  // Idle prefetch — load key data while browser is idle
+  // CRITICAL: Prefetch trending data IMMEDIATELY — it drives the hero LCP image
+  // Top-rated and now-playing are below-fold, so they can wait for idle
   const queryClient = useQueryClient()
   useEffect(() => {
-    const prefetch = () => {
-      queryClient.prefetchQuery({ queryKey: ['trending'], queryFn: () => tmdb.trending('week') })
+    // Trending: fire immediately — hero image depends on this
+    queryClient.prefetchQuery({ queryKey: ['trending'], queryFn: () => tmdb.trending('week'), staleTime: 1000 * 60 * 10 })
+
+    // Below-fold: prefetch during idle
+    const prefetchRest = () => {
       queryClient.prefetchQuery({ queryKey: ['top-rated'], queryFn: () => tmdb.topRated() })
       queryClient.prefetchQuery({ queryKey: ['now-playing'], queryFn: () => tmdb.nowPlaying() })
     }
     if ('requestIdleCallback' in window) {
-      const id = requestIdleCallback(prefetch, { timeout: 3000 })
+      const id = requestIdleCallback(prefetchRest, { timeout: 3000 })
       return () => cancelIdleCallback(id)
     } else {
-      const id = setTimeout(prefetch, 2000)
+      const id = setTimeout(prefetchRest, 2000)
       return () => clearTimeout(id)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
