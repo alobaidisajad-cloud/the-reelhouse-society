@@ -16,6 +16,13 @@ const emptyStateStyles: Record<string, React.CSSProperties> = {
         textAlign: 'center',
         gap: '1rem',
     },
+    ornament: {
+        fontFamily: 'var(--font-ui)',
+        fontSize: '0.5rem',
+        letterSpacing: '0.4em',
+        color: 'var(--sepia)',
+        opacity: 0.35,
+    },
     title: {
         fontFamily: 'var(--font-display)',
         fontSize: '1.1rem',
@@ -43,11 +50,14 @@ const emptyStateStyles: Record<string, React.CSSProperties> = {
     }
 }
 
+const Ornament = () => <div style={emptyStateStyles.ornament}>— ✦ —</div>
+
 export function EmptyLogs() {
     const openLogModal = useUIStore((s) => s.openLogModal)
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={80} mood="peeking" />
+            <Ornament />
             <p style={emptyStateStyles.title}>THE REEL IS BLANK</p>
             <p style={emptyStateStyles.subtitle}>
                 No films logged yet. Begin your archive by recording your first viewing.
@@ -63,6 +73,7 @@ export function EmptyWatchlist() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={70} mood="neutral" />
+            <Ornament />
             <p style={emptyStateStyles.title}>NOTHING QUEUED</p>
             <p style={emptyStateStyles.subtitle}>
                 Your watchlist awaits. Discover films and save them for later.
@@ -75,6 +86,7 @@ export function EmptyVault() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={70} mood="peeking" />
+            <Ornament />
             <p style={emptyStateStyles.title}>THE VAULT IS SEALED</p>
             <p style={emptyStateStyles.subtitle}>
                 Your physical media collection starts here. Add films from your shelf.
@@ -87,6 +99,7 @@ export function EmptyLists() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={70} mood="smiling" />
+            <Ornament />
             <p style={emptyStateStyles.title}>NO PROGRAMMES YET</p>
             <p style={emptyStateStyles.subtitle}>
                 Curate your first list — themed marathons, top picks, or hidden gems.
@@ -99,6 +112,7 @@ export function EmptyFeed() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={80} mood="peeking" />
+            <Ornament />
             <p style={emptyStateStyles.title}>THE FLOOR IS QUIET</p>
             <p style={emptyStateStyles.subtitle}>
                 No activity yet. Follow other members of the society to see their dossiers, critiques, and certifications here.
@@ -120,6 +134,7 @@ export function EmptyStacks() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={70} mood="crying" />
+            <Ornament />
             <p style={emptyStateStyles.title}>THE SHELVES ARE BARE</p>
             <p style={emptyStateStyles.subtitle}>
                 No collections found. Create your first stack — a curated anthology of cinema worth preserving.
@@ -132,6 +147,7 @@ export function EmptyNotifications() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={60} mood="neutral" />
+            <Ornament />
             <p style={emptyStateStyles.title}>NO SIGNALS FROM THE BOOTH</p>
             <p style={emptyStateStyles.subtitle}>
                 All caught up. When someone certifies your work or follows you, the dispatch arrives here.
@@ -144,6 +160,7 @@ export function EmptySearch() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={70} mood="crying" />
+            <Ornament />
             <p style={emptyStateStyles.title}>NO PRINTS FOUND</p>
             <p style={emptyStateStyles.subtitle}>
                 The archive has no matches. Try a different title, director, or year.
@@ -165,6 +182,7 @@ export function EmptyStudio() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={80} mood="peeking" />
+            <Ornament />
             <p style={emptyStateStyles.title}>THE BOOTH IS EMPTY</p>
             <p style={emptyStateStyles.subtitle}>
                 No video reviews yet. Step behind the camera — record your first critique and share it with the society.
@@ -177,6 +195,7 @@ export function EmptyReviews() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={60} mood="neutral" />
+            <Ornament />
             <p style={emptyStateStyles.title}>NO CRITICS HAVE SCREENED THIS</p>
             <p style={emptyStateStyles.subtitle}>
                 Be the first to share your take. The screening room is waiting for its first projectionist.
@@ -189,6 +208,7 @@ export function EmptyArchive() {
     return (
         <div style={emptyStateStyles.container}>
             <Buster size={70} mood="crying" />
+            <Ornament />
             <p style={emptyStateStyles.title}>NOTHING ON THE SHELF</p>
             <p style={emptyStateStyles.subtitle}>
                 This collection is empty — like an abandoned theatre waiting for its next screening.
