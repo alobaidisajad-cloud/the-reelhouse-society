@@ -40,9 +40,7 @@
 
   <title>The ReelHouse Society — Track, Discover, and Live Cinema</title>
 
-  <!-- Font preconnect for faster DNS -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Font preload (non-render-blocking) for faster LCP -->
   <!-- Preload critical font CSS as async (non-render-blocking) for faster LCP -->
   <link rel="preload" as="style" onload="this.onload=null;this.rel='stylesheet'"
     href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Bungee&family=Bungee+Shade&display=swap" />
@@ -56,25 +54,11 @@
   <style>
     html, body { background: #0E0B08; margin: 0; padding: 0; }
     #root { min-height: 100dvh; }
-    @keyframes _rh-spin { to { transform: rotate(360deg); } }
   </style>
 </head>
 
 <body>
-  <div id="root">
-    <!-- Static shell: paints INSTANTLY before React hydrates, giving sub-1s FCP -->
-    <div id="static-shell" style="min-height:100dvh;background:#0E0B08;color:#C4B898">
-      <nav style="height:56px;background:#0A0703;border-bottom:1px solid rgba(139,105,20,0.15);display:flex;align-items:center;padding:0 1.5rem">
-        <span style="font-family:Georgia,serif;font-size:1.1rem;color:#8B6914;letter-spacing:0.15em">REELHOUSE</span>
-      </nav>
-      <div style="display:flex;align-items:center;justify-content:center;min-height:80vh">
-        <div style="text-align:center;opacity:0.4">
-          <div style="width:50px;height:50px;border:2px solid #8B6914;border-top-color:transparent;border-radius:50%;animation:_rh-spin 1s linear infinite;margin:0 auto"></div>
-          <div style="margin-top:1.5rem;font-family:monospace;font-size:0.6rem;letter-spacing:0.3em;color:#8B6914">LOADING REEL</div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="root"></div>
   <script type="module" src="/src/main.tsx"></script>
   <script>
     if ('serviceWorker' in navigator) {

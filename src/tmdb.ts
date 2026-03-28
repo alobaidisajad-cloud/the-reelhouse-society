@@ -279,7 +279,7 @@ export const tmdb = {
         return fetchTMDB(`/discover/movie?${qs}`, { results: [] })
     },
 
-    poster: (path: string | null | undefined, size: string = 'w342') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
+    poster: (path: string | null | undefined, size: string = 'w185') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
     backdrop: (path: string | null | undefined, size: string = 'w1280') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
     profile: (path: string | null | undefined, size: string = 'w185') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
 
@@ -294,12 +294,12 @@ export const tmdb = {
     // B1: Responsive poster srcSet — browser picks the optimal size automatically
     posterSrcSet: (path: string | null | undefined) => {
         if (!path) return { src: undefined, srcSet: undefined, sizes: undefined }
-        const widths = [92, 185, 342, 500, 780] as const
+        const widths = [92, 154, 185, 342] as const
         const srcSet = widths.map(w => `${TMDB_IMG}/w${w}${path} ${w}w`).join(', ')
         return {
-            src: `${TMDB_IMG}/w342${path}`,
+            src: `${TMDB_IMG}/w185${path}`,
             srcSet,
-            sizes: '(max-width: 480px) 185px, (max-width: 900px) 342px, 500px',
+            sizes: '(max-width: 480px) 130px, (max-width: 900px) 170px, 185px',
         }
     },
 

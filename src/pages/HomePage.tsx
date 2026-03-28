@@ -104,6 +104,8 @@ export default function HomePage() {
                         alt=""
                         fetchPriority="high"
                         decoding="async"
+                        width={IS_TOUCH ? 780 : 1280}
+                        height={IS_TOUCH ? 439 : 720}
                         style={{
                             position: 'absolute',
                             inset: 0,

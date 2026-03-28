@@ -140,7 +140,7 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
                             .update({
                                 film_id: match.id,
                                 poster: ('poster_path' in match && match.poster_path)
-                                    ? `https://image.tmdb.org/t/p/w342${match.poster_path}`
+                                    ? `https://image.tmdb.org/t/p/w185${match.poster_path}`
                                     : null,
                             })
                             .eq('user_id', userId)

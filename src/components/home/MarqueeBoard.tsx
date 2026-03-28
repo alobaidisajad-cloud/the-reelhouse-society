@@ -108,7 +108,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                 {film.poster_path && (
                     <div style={{
                         position: 'absolute', inset: 0,
-                        backgroundImage: `url(https://image.tmdb.org/t/p/w780${film.poster_path})`,
+                        backgroundImage: `url(https://image.tmdb.org/t/p/w342${film.poster_path})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 15%',
                         filter: (IS_TOUCH || isMobile)

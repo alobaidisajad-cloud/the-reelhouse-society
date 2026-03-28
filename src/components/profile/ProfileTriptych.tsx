@@ -143,7 +143,7 @@ export function ProfileTriptych({ user, isOwnProfile }: { user: any, isOwnProfil
                         {film ? (
                             <>
                                 <img 
-                                    src={`https://image.tmdb.org/t/p/w342${film.poster_path}`} 
+                                    src={`https://image.tmdb.org/t/p/w185${film.poster_path}`} 
                                     alt={film.title}
                                     style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }}
                                     draggable={false}

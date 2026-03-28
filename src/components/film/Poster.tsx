@@ -74,6 +74,8 @@ export default function Poster({ path, title, aspectRatio = 'poster', sizeHint =
                 srcSet={srcData.srcSet}
                 sizes={srcData.sizes}
                 alt={title}
+                width={aspectRatio === 'poster' ? 185 : aspectRatio === 'backdrop' ? 780 : 185}
+                height={aspectRatio === 'poster' ? 278 : aspectRatio === 'backdrop' ? 439 : 185}
                 loading={sizeHint === 'hero' ? 'eager' : 'lazy'}
                 fetchPriority={sizeHint === 'hero' ? 'high' : undefined}
                 decoding="async"

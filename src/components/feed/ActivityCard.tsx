@@ -162,7 +162,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
                     <div style={{ width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
                         {log.film?.poster ? (
-                            <img src={tmdb.poster(log.film.poster, 'w342')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
                             <div style={{ width: '100%', height: '100%', background: '#0d0b09', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.8 }} />
@@ -312,7 +312,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             {/* Poster */}
             <div style={{ width: IS_TOUCH ? 90 : 100, height: IS_TOUCH ? 135 : 150, flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.15)', position: 'relative', boxShadow: '0 6px 16px rgba(0,0,0,0.5)' }}>
                 {log.film?.poster ? (
-                    <img src={tmdb.poster(log.film.poster, 'w342')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.15) contrast(1.05)' }} />
+                    <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.15) contrast(1.05)' }} />
                 ) : (
                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0b09' }}><img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.7 }} /></div>
                 )}

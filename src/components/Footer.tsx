@@ -15,6 +15,8 @@ export default function Footer() {
             marginTop: 'auto',
             position: 'relative',
             overflow: 'hidden',
+            contain: 'layout style',
+            minHeight: IS_TOUCH ? '280px' : '320px',
         }}>
             {/* Cinematic top rule — sepia gradient */}
             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent 5%, rgba(139,105,20,0.4) 30%, rgba(139,105,20,0.5) 50%, rgba(139,105,20,0.4) 70%, transparent 95%)' }} />
