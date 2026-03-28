@@ -74,7 +74,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                     ) : (
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
                     )}
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,7,3,0.15) 0%, rgba(10,7,3,0.6) 70%, var(--ink) 100%)' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,7,3,0.05) 0%, rgba(10,7,3,0.40) 65%, var(--ink) 100%)' }} />
                 </div>
 
                 {/* Poster — floats out of the backdrop into the info section */}

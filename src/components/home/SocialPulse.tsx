@@ -44,10 +44,10 @@ const SocialPulse = memo(function SocialPulse() {
                             position: 'relative',
                             overflow: 'hidden',
                         }}>
-                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)' }} />
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: 'var(--sepia)', opacity: 0.5, marginBottom: '0.75rem' }}>{card.label}</div>
-                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', color: 'var(--parchment)', opacity: 0.45, marginBottom: '0.5rem' }}>{card.title}</div>
-                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', opacity: 0.3, lineHeight: 1.5, fontStyle: 'italic' }}>{card.sub}</div>
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.25), transparent)' }} />
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: 'var(--sepia)', opacity: 0.6, marginBottom: '0.75rem' }}>{card.label}</div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', color: 'var(--parchment)', opacity: 0.70, marginBottom: '0.5rem' }}>{card.title}</div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', opacity: 0.55, lineHeight: 1.5, fontStyle: 'italic' }}>{card.sub}</div>
                         </div>
                     ))}
                 </div>

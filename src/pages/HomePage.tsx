@@ -107,11 +107,11 @@ export default function HomePage() {
                     <div style={{ marginBottom: IS_TOUCH ? '1rem' : '2rem', textAlign: 'center' }}>
                         {!IS_TOUCH && <Buster size={48} mood="neutral" />}
                         <h2 style={{
-                            fontFamily: 'var(--font-sub)',
-                            fontSize: IS_TOUCH ? '0.65rem' : '0.8rem',
-                            letterSpacing: '0.55em',
+                            fontFamily: 'var(--font-body)',
+                            fontSize: IS_TOUCH ? '0.6rem' : '0.72rem',
+                            letterSpacing: '0.6em',
                             color: 'var(--sepia)',
-                            opacity: 0.75,
+                            opacity: 0.65,
                             marginTop: IS_TOUCH ? '0' : '1rem',
                             fontWeight: 400,
                             textTransform: 'uppercase',
