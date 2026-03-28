@@ -208,7 +208,7 @@ export default function App() {
   }, [openLogModal])
 
   return (
-    <div className={degradationClass}>
+    <div className={degradationClass} style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       {/* Skip-to-content link — visible only on keyboard focus */}
       <a
         href="#main-content"
