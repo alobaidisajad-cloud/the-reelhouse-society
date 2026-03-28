@@ -60,10 +60,15 @@ export default function PersonPage() {
         .sort((a: any, b: any) => b.popularity - a.popularity)
 
     return (
-        <div className="page-top" style={{ minHeight: '100dvh', paddingBottom: '4rem' }}>
-            <div className="container" style={{ padding: '0 1.5rem' }}>
-                <button onClick={() => navigate(-1)} className="btn-ghost" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', marginTop: '1rem', textDecoration: 'none', color: 'var(--fog)', fontSize: '0.8rem', background: 'none', border: 'none', cursor: 'pointer' }}>
-                    <ArrowLeft size={16} /> BACK
+        <div className="page-top" style={{ minHeight: '100dvh', paddingBottom: '4rem', position: 'relative' }}>
+            {/* Atmospheric top glow */}
+            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, height: '50vh', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.1) 0%, rgba(139,105,20,0.03) 40%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+            <div className="container" style={{ padding: '0 1.5rem', position: 'relative', zIndex: 1 }}>
+                <button onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', marginBottom: '2rem', marginTop: '1rem', background: 'none', border: '1px solid rgba(139,105,20,0.25)', borderRadius: '2px', cursor: 'pointer', padding: '0.4rem 0.8rem', color: 'var(--sepia)', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', transition: 'all 0.2s' }}
+                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.background = 'rgba(139,105,20,0.08)' }}
+                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)'; e.currentTarget.style.background = 'none' }}
+                >
+                    <ArrowLeft size={13} /> BACK
                 </button>
 
                 {/* Profile Header */}
@@ -72,7 +77,7 @@ export default function PersonPage() {
                         <img
                             src={tmdb.profile(person.profile_path, 'w500')}
                             alt={person.name}
-                            style={{ width: IS_TOUCH ? 120 : 200, height: IS_TOUCH ? 180 : 300, objectFit: 'cover', borderRadius: 'var(--radius-card)', border: '1px solid var(--sepia)', filter: 'sepia(0.2) contrast(1.1)' }}
+                            style={{ width: IS_TOUCH ? 130 : 240, height: IS_TOUCH ? 195 : 360, objectFit: 'cover', borderRadius: 'var(--radius-card)', border: '1px solid rgba(139,105,20,0.5)', filter: 'sepia(0.15) contrast(1.08)', boxShadow: '0 8px 40px rgba(0,0,0,0.7), 0 0 30px rgba(139,105,20,0.12)', flexShrink: 0 }}
                         />
                     ) : (
                         <div style={{ width: IS_TOUCH ? 120 : 200, height: IS_TOUCH ? 180 : 300, borderRadius: 'var(--radius-card)', border: '1px solid var(--sepia)', overflow: 'hidden' }}>
@@ -81,7 +86,7 @@ export default function PersonPage() {
                     )}
 
                     <div style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 280, textAlign: IS_TOUCH ? 'center' : undefined }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.25em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.35em', color: 'var(--sepia)', marginBottom: '0.6rem', opacity: 0.85 }}>
                             {person.known_for_department?.toUpperCase()}
                         </div>
                         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '3rem', color: 'var(--parchment)', lineHeight: 1, marginBottom: '0.5rem' }}>
@@ -115,6 +120,8 @@ export default function PersonPage() {
                     </div>
                 </div>
 
+                {/* Filmography separator */}
+                <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent)', margin: IS_TOUCH ? '1.5rem 0' : '2.5rem 0' }} />
                 {/* Filmography Section */}
                 <SectionHeader label="FILMOGRAPHY" title="Known Works" />
 
