@@ -221,8 +221,8 @@ export default function SettingsPage() {
     const sectionStyle: React.CSSProperties = {
         padding: '1.75rem', marginBottom: '1.25rem',
         background: 'rgba(22,18,12,0.5)',
-        border: '1px solid rgba(139,105,20,0.08)',
-        borderRadius: '4px',
+        border: '1px solid rgba(139,105,20,0.15)',
+        borderRadius: '2px',
     }
     const sectionHeaderStyle: React.CSSProperties = {
         display: 'flex', alignItems: 'center', gap: '0.65rem',
@@ -492,7 +492,7 @@ export default function SettingsPage() {
                     <div key={item.label} style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: '0.75rem 0',
-                        borderBottom: '1px solid rgba(139,105,20,0.05)',
+                        borderBottom: '1px solid rgba(139,105,20,0.1)',
                     }}>
                         <div>
                             <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{item.label}</div>
