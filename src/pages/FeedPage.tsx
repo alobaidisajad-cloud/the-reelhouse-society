@@ -13,6 +13,7 @@ import WeeklyChallenge from '../components/profile/WeeklyChallenge'
 import PageSEO from '../components/PageSEO'
 
 import { useViewport } from '../hooks/useViewport'
+import { useScrollRevealAll } from '../hooks/useScrollReveal'
 
 // ── Helper: map raw log rows to feed entries ──
 function mapLogsToFeed(data: any[]) {
@@ -59,6 +60,8 @@ function mapLogsToFeed(data: any[]) {
 // ── FEED PAGE ──
 export default function FeedPage() {
     const { isTouch: IS_TOUCH } = useViewport()
+    const feedContainerRef = useRef<HTMLDivElement>(null)
+    useScrollRevealAll(feedContainerRef)
     const { isAuthenticated, user } = useAuthStore()
     const openSignupModal = useUIStore(state => state.openSignupModal)
     const openLogModal = useUIStore(state => state.openLogModal)
@@ -205,10 +208,10 @@ export default function FeedPage() {
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
 
     return (
-        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
+        <div ref={feedContainerRef} style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             <PageSEO title="The Feed" description="Community dispatches and global curation from The ReelHouse Society." />
             {/* ── REFINED HEADER ── */}
-            <div style={{
+            <div className="scroll-reveal" style={{
                 background: 'var(--ink)',
                 borderBottom: 'none',
                 padding: IS_TOUCH ? '1.5rem 0 0' : '3rem 0 0',

@@ -103,6 +103,7 @@ export default function HomePage() {
                         backgroundImage: `url(${tmdb.backdrop(heroFilm.backdrop_path, IS_TOUCH ? 'w780' : 'w1280')})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 15%',
+                        backgroundAttachment: IS_TOUCH ? 'scroll' : 'fixed',
                         opacity: IS_TOUCH ? 0.55 : 0.65,
                         filter: 'sepia(0.2) brightness(0.60)',
                         maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',

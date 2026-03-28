@@ -62,9 +62,9 @@ const LogDetailPage = lazy(() => import('./pages/LogDetailPage'))
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
 const pageVariantsDesktop = {
-  initial: { opacity: 0, filter: 'sepia(0.4) brightness(1.1)' },
-  in: { opacity: 1, filter: 'sepia(0) brightness(1)' },
-  out: { opacity: 0, filter: 'sepia(0.3)' },
+  initial: { opacity: 0, filter: 'sepia(0.4) brightness(1.1)', scale: 0.98 },
+  in: { opacity: 1, filter: 'sepia(0) brightness(1)', scale: 1 },
+  out: { opacity: 0, filter: 'sepia(0.3)', scale: 1.02 },
 }
 
 const pageVariantsMobile = {

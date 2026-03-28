@@ -97,6 +97,7 @@
   color: var(--parchment);
   border-bottom-color: var(--sepia);
   background: rgba(242, 232, 160, 0.04);
+  text-shadow: 0 0 12px rgba(139, 105, 20, 0.3);
 }
 
 .nav-link.active {
