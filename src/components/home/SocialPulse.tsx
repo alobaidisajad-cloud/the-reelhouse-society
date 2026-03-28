@@ -26,16 +26,30 @@ const SocialPulse = memo(function SocialPulse() {
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--bone)', paddingLeft: '1.5rem', opacity: 0.75, maxWidth: '600px', marginBottom: '2.5rem', textShadow: '0 1px 2px var(--ink)' }}>
                     Witness the latest logs, lists, and critiques from the devotees.
                 </p>
-                <div style={{
-                    padding: '2.5rem 1.5rem', textAlign: 'center',
-                    background: 'linear-gradient(180deg, rgba(28,23,16,0.4) 0%, transparent 100%)',
-                    border: '1px solid rgba(139,105,20,0.12)', borderRadius: '4px',
-                    position: 'relative', overflow: 'hidden',
-                }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>SIGNAL QUIET</div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>The Lobby is quiet.</div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', opacity: 0.6 }}>Write a review to start the pulse.</div>
+                {/* Cinematic empty-state — three ghost activity cards */}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1.5rem' }}>
+                    {[
+                        { label: 'SIGNAL QUIET', title: 'The Lobby is quiet.', sub: 'Be the first to log a film and claim this space.' },
+                        { label: 'AWAITING DISPATCH', title: 'No critiques yet.', sub: 'File a review and let the projection box light up.' },
+                        { label: 'DOORS OPEN', title: 'The house awaits.', sub: 'Every great society needs its first member to speak.' },
+                    ].map((card, i) => (
+                        <div key={i} style={{
+                            padding: '1.75rem 1.5rem',
+                            background: 'rgba(18,14,9,0.6)',
+                            borderLeft: '2px solid rgba(139,105,20,0.25)',
+                            borderTop: '1px solid rgba(139,105,20,0.08)',
+                            borderBottom: '1px solid rgba(139,105,20,0.04)',
+                            borderRight: '1px solid rgba(139,105,20,0.04)',
+                            borderRadius: '0 8px 8px 0',
+                            position: 'relative',
+                            overflow: 'hidden',
+                        }}>
+                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)' }} />
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: 'var(--sepia)', opacity: 0.5, marginBottom: '0.75rem' }}>{card.label}</div>
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.15rem', color: 'var(--parchment)', opacity: 0.45, marginBottom: '0.5rem' }}>{card.title}</div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', opacity: 0.3, lineHeight: 1.5, fontStyle: 'italic' }}>{card.sub}</div>
+                        </div>
+                    ))}
                 </div>
             </section>
         )

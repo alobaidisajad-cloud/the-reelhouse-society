@@ -106,8 +106,17 @@ export default function HomePage() {
 
                     <div style={{ marginBottom: IS_TOUCH ? '1rem' : '2rem', textAlign: 'center' }}>
                         {!IS_TOUCH && <Buster size={48} mood="neutral" />}
-                        <h2 style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.7rem' : '1rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginTop: IS_TOUCH ? '0' : '1rem' }}>
-                            WELCOME TO THE LOBBY
+                        <h2 style={{
+                            fontFamily: 'var(--font-sub)',
+                            fontSize: IS_TOUCH ? '0.65rem' : '0.8rem',
+                            letterSpacing: '0.55em',
+                            color: 'var(--sepia)',
+                            opacity: 0.75,
+                            marginTop: IS_TOUCH ? '0' : '1rem',
+                            fontWeight: 400,
+                            textTransform: 'uppercase',
+                        }}>
+                            Welcome to the Lobby
                         </h2>
                     </div>
 
@@ -211,7 +220,7 @@ export default function HomePage() {
 
             {/* Main content */}
             <main style={{ background: 'var(--ink)', position: 'relative', zIndex: 1, paddingBottom: IS_TOUCH ? '6rem' : '5rem' }}>
-                <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '2rem' : '4rem' }}>
+                <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '2rem' : '3rem' }}>
 
                     {/* Trending */}
                     <SectionErrorBoundary label="NOW SHOWING">
@@ -337,32 +346,48 @@ export default function HomePage() {
                     {!isAuthenticated && (
                         <section style={{
                             textAlign: 'center',
-                            padding: IS_TOUCH ? '2.5rem 1.5rem' : '4rem 2rem',
-                            background: 'linear-gradient(180deg, rgba(28,23,16,0.5) 0%, rgba(10,7,3,0.9) 100%)',
-                            border: '1px solid rgba(139,105,20,0.15)',
+                            padding: IS_TOUCH ? '3rem 1.5rem 2.5rem' : '5rem 2rem 4rem',
+                            background: 'linear-gradient(180deg, rgba(28,23,16,0.6) 0%, rgba(10,7,3,0.95) 100%)',
+                            border: '1px solid rgba(139,105,20,0.2)',
                             borderRadius: '6px',
                             position: 'relative',
                             overflow: 'hidden',
                         }}>
+                            {/* Top cinematic rule */}
                             <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
-                            <Buster size={IS_TOUCH ? 80 : 120} mood="peeking" />
-                            <div style={{ marginTop: IS_TOUCH ? '1.25rem' : '2rem' }}>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', marginBottom: '0.75rem', opacity: 0.8 }}>THE FINAL ACT</div>
-                                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.6rem' : '2.2rem', color: 'var(--parchment)', marginBottom: '0.75rem', lineHeight: 1.1 }}>
+                            {/* Film strip perforation border — top */}
+                            <div style={{ position: 'absolute', top: '8px', left: 0, right: 0, display: 'flex', justifyContent: 'center', gap: '8px', opacity: 0.15 }}>
+                                {Array.from({ length: 12 }).map((_, i) => (
+                                    <div key={i} style={{ width: 14, height: 9, border: '1px solid var(--sepia)', borderRadius: '1px', flexShrink: 0 }} />
+                                ))}
+                            </div>
+                            {/* Editorial label */}
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', marginBottom: IS_TOUCH ? '1.25rem' : '1.75rem', opacity: 0.6 }}>THE FINAL ACT</div>
+                            <Buster size={IS_TOUCH ? 90 : 130} mood="peeking" />
+                            <div style={{ marginTop: IS_TOUCH ? '1.5rem' : '2.25rem' }}>
+                                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.8rem' : '2.6rem', color: 'var(--parchment)', marginBottom: '0.75rem', lineHeight: 1.1 }}>
                                     The House is Waiting
                                 </h2>
-                                <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.85rem' : '1rem', color: 'var(--bone)', maxWidth: 480, margin: '0 auto 1.5rem', lineHeight: 1.6, opacity: 0.7 }}>
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.9rem' : '1rem', color: 'var(--bone)', maxWidth: 480, margin: '0 auto 2rem', lineHeight: 1.7, opacity: 0.7 }}>
                                     Log every frame. Review with the fury of a true critic.
                                     Build enduring lists and trace the ghosts of your cinematic past.
                                 </p>
                                 <button
                                     className="btn btn-primary"
-                                    style={{ fontSize: IS_TOUCH ? '0.75rem' : '1rem', padding: '0.85em 2.5em', letterSpacing: '0.2em' }}
+                                    style={{
+                                        fontSize: IS_TOUCH ? '0.8rem' : '1rem',
+                                        padding: IS_TOUCH ? '1em 3em' : '0.95em 3.5em',
+                                        letterSpacing: '0.25em',
+                                        boxShadow: '0 8px 32px rgba(139,105,20,0.5), 0 0 0 1px rgba(242,232,160,0.15)',
+                                        width: IS_TOUCH ? '100%' : 'auto',
+                                        maxWidth: IS_TOUCH ? '320px' : 'none',
+                                    }}
                                     onClick={() => openSignupModal()}
                                 >
                                     ADMIT ONE
                                 </button>
                             </div>
+                            {/* Bottom cinematic rule */}
                             <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                         </section>
                     )}
