@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 import { tmdb } from '../tmdb'
@@ -66,6 +67,19 @@ export default function HomePage() {
 
     const tickerItems = films.slice(0, 10).map((f: any) => f.title).filter(Boolean)
 
+    // ── Hero entrance animation variants ──
+    const heroContainer = {
+        hidden: { opacity: 0 },
+        show: {
+            opacity: 1,
+            transition: { staggerChildren: 0.15, delayChildren: 0.1 }
+        }
+    }
+    const heroChild = {
+        hidden: { opacity: 0, y: 20 },
+        show: { opacity: 1, y: 0, transition: { type: 'spring' as const, damping: 20, stiffness: 100 } }
+    }
+
     return (
         <>
 
@@ -106,9 +120,15 @@ export default function HomePage() {
                     pointerEvents: 'none',
                 }} />
 
-                <div className="container" style={{ width: '100%', position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' }}>
+                <motion.div
+                    variants={heroContainer}
+                    initial="hidden"
+                    animate="show"
+                    className="container"
+                    style={{ width: '100%', position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', boxSizing: 'border-box' }}
+                >
 
-                    <div style={{ marginBottom: IS_TOUCH ? '1rem' : '2rem', textAlign: 'center' }}>
+                    <motion.div variants={heroChild} style={{ marginBottom: IS_TOUCH ? '1rem' : '2rem', textAlign: 'center' }}>
                         {!IS_TOUCH && <Buster size={48} mood="neutral" />}
                         <h2 style={{
                             fontFamily: 'var(--font-body)',
@@ -122,12 +142,14 @@ export default function HomePage() {
                         }}>
                             Welcome to the Lobby
                         </h2>
-                    </div>
+                    </motion.div>
 
+                    <motion.div variants={heroChild}>
                     <MarqueeBoard film={heroFilm} />
+                    </motion.div>
 
                     {!isAuthenticated && (
-                        <div style={{
+                        <motion.div variants={heroChild} style={{
                             textAlign: 'center',
                             margin: IS_TOUCH ? '1.5rem auto 0' : '2.5rem auto 0',
                             maxWidth: '680px',
@@ -166,12 +188,12 @@ export default function HomePage() {
                                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)' }}>✦ THE SOCIETY ✦</span>
                                 <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, var(--sepia))' }} />
                             </div>
-                        </div>
+                        </motion.div>
                     )}
 
                     {/* CTA row — hidden on mobile since BottomNav has LOG + DARKROOM */}
                     {!IS_TOUCH && (
-                        <div className="hero-cta-row" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <motion.div variants={heroChild} className="hero-cta-row" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
                             {isAuthenticated ? (
                                 <button
                                     className="btn btn-primary"
@@ -215,11 +237,11 @@ export default function HomePage() {
                             >
                                 BROWSE ARCHIVES
                             </button>
-                        </div>
+                        </motion.div>
                     )}
 
 
-                </div>
+                </motion.div>
             </section>
 
             {/* Main content */}
