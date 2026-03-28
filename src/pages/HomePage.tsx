@@ -16,6 +16,8 @@ import SectionErrorBoundary from '../components/SectionErrorBoundary'
 import PageSEO from '../components/PageSEO'
 
 import { useViewport } from '../hooks/useViewport'
+import { useScrollRevealAll } from '../hooks/useScrollReveal'
+import { useRef } from 'react'
 
 // ── Rotating cinematic taglines for the mobile lobby ──
 const LOBBY_TAGLINES = [
@@ -32,6 +34,8 @@ const LOBBY_TAGLINES = [
 export default function HomePage() {
     const navigate = useNavigate()
     const { isTouch: IS_TOUCH } = useViewport()
+    const mainRef = useRef<HTMLDivElement>(null)
+    useScrollRevealAll(mainRef)
 
     // Enterprise Fix: Granular Selectors
     const openSignupModal = useUIStore(state => state.openSignupModal)
@@ -219,10 +223,11 @@ export default function HomePage() {
             </section>
 
             {/* Main content */}
-            <main style={{ background: 'var(--ink)', position: 'relative', zIndex: 1, paddingBottom: IS_TOUCH ? '6rem' : '5rem' }}>
+            <main ref={mainRef} style={{ background: 'var(--ink)', position: 'relative', zIndex: 1, paddingBottom: IS_TOUCH ? '6rem' : '5rem' }}>
                 <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '2rem' : '3rem' }}>
 
                     {/* Trending */}
+                    <div className="scroll-reveal">
                     <SectionErrorBoundary label="NOW SHOWING">
                     {loadingTrend ? <FilmStripSkeleton count={8} /> : (
                         <FilmStripRow
@@ -233,15 +238,19 @@ export default function HomePage() {
                         />
                     )}
                     </SectionErrorBoundary>
+                    </div>
 
                     {/* Social Pulse */}
+                    <div className="scroll-reveal">
                     <SectionErrorBoundary label="THE PULSE">
                     <SocialPulse />
                     </SectionErrorBoundary>
+                    </div>
 
 
 
                     {/* Featured review + film */}
+                    <div className="scroll-reveal">
                     <SectionErrorBoundary label="FEATURED CRITIQUE">
                     {heroFilm && (
                         <section style={{ position: 'relative', margin: '2rem 0' }}>
@@ -324,8 +333,10 @@ export default function HomePage() {
                         </section>
                     )}
                     </SectionErrorBoundary>
+                    </div>
 
                     {/* Top rated */}
+                    <div className="scroll-reveal">
                     <SectionErrorBoundary label="ESSENTIAL VIEWING">
                     {loadingTop ? <FilmStripSkeleton count={8} /> : (
                         <FilmStripRow
@@ -336,11 +347,14 @@ export default function HomePage() {
                         />
                     )}
                     </SectionErrorBoundary>
+                    </div>
 
                     {/* Venue spotlight */}
+                    <div className="scroll-reveal">
                     <SectionErrorBoundary label="VENUE SPOTLIGHT">
                     <VenueSpotlight />
                     </SectionErrorBoundary>
+                    </div>
 
                     {/* Buster CTA */}
                     {!isAuthenticated && (
