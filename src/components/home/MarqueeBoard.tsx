@@ -111,7 +111,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                         backgroundImage: `url(https://image.tmdb.org/t/p/w780${film.poster_path})`,
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 20%',
-                        filter: 'blur(18px) sepia(0.4) brightness(0.28) contrast(1.1)',
+                        filter: 'blur(18px) sepia(0.25) brightness(0.50) contrast(1.1)',
                         transform: 'scale(1.08)',
                         zIndex: 0,
                     }} />
