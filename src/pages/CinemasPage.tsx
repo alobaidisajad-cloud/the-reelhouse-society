@@ -6,8 +6,10 @@ import PageSEO from '../components/PageSEO'
 
 export default function CinemasPage() {
     return (
-        <div style={{ minHeight: '100dvh', paddingTop: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)' }}>
+        <div style={{ minHeight: '100dvh', paddingTop: '120px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: 'var(--ink)', position: 'relative', overflow: 'hidden' }}>
             <PageSEO title="The Cinemas — Coming Soon" description="The Atlas of Temples is under construction." />
+            {/* Atmospheric glow */}
+            <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '60%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.09) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
             
             <motion.div 
                 initial={{ opacity: 0, y: 20 }}

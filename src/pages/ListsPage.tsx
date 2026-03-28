@@ -80,7 +80,7 @@ function CommunityListCard({ list }: any) {
                 textDecoration: 'none',
                 color: 'inherit',
                 background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.08)',
-                borderRadius: '6px', minHeight: IS_TOUCH ? 220 : 440, display: 'flex', flexDirection: 'column',
+                borderRadius: '2px', minHeight: IS_TOUCH ? 220 : 440, display: 'flex', flexDirection: 'column',
                 boxShadow: '0 15px 40px rgba(0,0,0,0.6)', cursor: 'pointer', transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 position: 'relative', overflow: 'hidden'
             }}
@@ -576,7 +576,7 @@ export default function ListsPage() {
                                             textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column',
                                             background: 'var(--ink)',
                                             border: '1px solid rgba(139,105,20,0.08)',
-                                            borderRadius: '6px',
+                                            borderRadius: '2px',
                                             padding: IS_TOUCH ? '0.6rem' : '1.5rem',
                                             position: 'relative', overflow: 'hidden',
                                             borderLeft: IS_TOUCH ? 'none' : '3px solid rgba(139,105,20,0.4)',
@@ -673,7 +673,7 @@ export default function ListsPage() {
                         {isLoading ? (
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.4rem' : '1.5rem' }}>
                                 {Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="skeleton" style={{ height: IS_TOUCH ? 220 : 440, borderRadius: '6px' }} />
+                                    <div key={i} className="skeleton" style={{ height: IS_TOUCH ? 220 : 440, borderRadius: '2px' }} />
                                 ))}
                             </div>
                         ) : filteredCommunity.length === 0 ? (
@@ -682,7 +682,7 @@ export default function ListsPage() {
                                 padding: IS_TOUCH ? '2.5rem 1.5rem' : '3.5rem 2rem',
                                 textAlign: 'center',
                                 background: 'linear-gradient(180deg, rgba(28,23,16,0.4) 0%, transparent 100%)',
-                                position: 'relative', overflow: 'hidden', borderRadius: '6px',
+                                position: 'relative', overflow: 'hidden', borderRadius: '2px',
                             }}>
                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                                 <Buster size={IS_TOUCH ? 50 : 60} mood="peeking" />
@@ -722,7 +722,7 @@ export default function ListsPage() {
                             background: 'linear-gradient(180deg, rgba(28,23,16,0.5) 0%, rgba(10,7,3,0.9) 100%)',
                             border: '1px solid rgba(139,105,20,0.15)',
                             padding: IS_TOUCH ? '2.5rem 1.5rem' : '3rem 2rem', textAlign: 'center',
-                            borderRadius: '6px',
+                            borderRadius: '2px',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
                             position: 'relative', overflow: 'hidden',
                         }}>
