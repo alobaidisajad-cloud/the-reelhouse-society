@@ -57,10 +57,10 @@ export default function VenueDashboard() {
     }, [showtimes])
 
     const eventRevenue = useMemo(() => {
-        return events.reduce((a: any, e: any) => a + (e.totalTickets - e.ticketsLeft) * e.price, 0)
+        return events.reduce((a: number, e) => a + (e.totalTickets - e.ticketsLeft) * e.price, 0)
     }, [events])
 
-    const submitEvent = (e: any) => {
+    const submitEvent = (e: React.FormEvent) => {
         e.preventDefault()
         const parsedPrice = parseFloat(eventForm.price)
         const parsedTickets = parseInt(eventForm.totalTickets) || 60

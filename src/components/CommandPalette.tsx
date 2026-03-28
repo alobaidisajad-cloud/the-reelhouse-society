@@ -36,6 +36,7 @@ export default function CommandPalette() {
     const [searching, setSearching] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const abortRef = useRef<AbortController | null>(null)
     const navigate = useNavigate()
     const openLogModal = useUIStore(state => state.openLogModal)
     const logs = useFilmStore(state => state.logs)
@@ -66,10 +67,14 @@ export default function CommandPalette() {
         setQuery(q)
         setSelectedIndex(0)
         if (searchTimeout.current) clearTimeout(searchTimeout.current)
+        // Abort any in-flight search to prevent out-of-order results
+        abortRef.current?.abort()
         if (!q.trim()) { setResults([]); return }
         setSearching(true)
 
         searchTimeout.current = setTimeout(async () => {
+            const controller = new AbortController()
+            abortRef.current = controller
             try {
                 const lower = q.toLowerCase()
 
@@ -85,6 +90,9 @@ export default function CommandPalette() {
                     .slice(0, 2)
                     .map(l => ({ ...l, _source: 'list', title: l.name, media_type: 'list' }))
 
+                // Bail if aborted before remote calls
+                if (controller.signal.aborted) return
+
                 // Remote: search Supabase profiles
                 let userMatches = []
                 if (isSupabaseConfigured && q.length >= 2) {
@@ -94,6 +102,7 @@ export default function CommandPalette() {
                             .select('username, avatar_url, role')
                             .ilike('username', `%${q}%`)
                             .limit(3)
+                            .abortSignal(controller.signal)
                         userMatches = (data || []).map((u: any) => ({
                             ...u, _source: 'user', id: u.username,
                             title: `@${u.username}`, media_type: 'person',
@@ -102,14 +111,21 @@ export default function CommandPalette() {
                     } catch { /* silent */ }
                 }
 
+                // Bail if aborted before TMDB
+                if (controller.signal.aborted) return
+
                 // Remote: TMDB search
                 const data = await tmdb.search(q)
+                if (controller.signal.aborted) return
                 const tmdbResults = (data.results?.slice(0, 5) || []).map((r: any) => ({ ...r, _source: 'tmdb' }))
 
                 setResults([...localLogMatches, ...localListMatches, ...userMatches, ...tmdbResults])
                 setSearchType(data.searchType || 'exact')
                 setSearchContext(data.matchedContext || '')
-            } catch { setResults([]); setSearchType('exact') }
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') return
+                setResults([]); setSearchType('exact')
+            }
             finally { setSearching(false) }
         }, 300)
     }

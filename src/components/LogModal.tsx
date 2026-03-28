@@ -25,6 +25,7 @@ export default function LogModal() {
     const [film, setFilm] = useState<any>(logModalFilm)
     const [shareCardData, setShareCardData] = useState<any>(null)
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const abortRef = useRef<AbortController | null>(null)
 
     useEffect(() => {
         if (logModalFilm && logModalEditLogId) {
@@ -53,16 +54,23 @@ export default function LogModal() {
     const handleSearch = (q: string) => {
         setQuery(q)
         if (searchTimeout.current) clearTimeout(searchTimeout.current)
+        abortRef.current?.abort()
         if (!q.trim()) { setResults([]); return }
         setSearching(true)
         searchTimeout.current = setTimeout(async () => {
+            const controller = new AbortController()
+            abortRef.current = controller
             try {
                 const data = await tmdb.search(q)
+                if (controller.signal.aborted) return
                 const filmsOnly = data.results?.filter((i: any) => i.media_type !== 'person') || []
                 setResults(filmsOnly.slice(0, 6))
                 setSearchType(data.searchType || 'exact')
                 setSearchContext(data.matchedContext || '')
-            } catch { setResults([]); setSearchType('exact') }
+            } catch (e) {
+                if (e instanceof DOMException && e.name === 'AbortError') return
+                setResults([]); setSearchType('exact')
+            }
             finally { setSearching(false) }
         }, 400)
     }

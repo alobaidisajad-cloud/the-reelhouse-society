@@ -26,7 +26,7 @@ export default function StudioPage() {
         }
         fetchMyVideos(user.id)
         fetchMyEarnings(user.id)
-    }, [isAuthenticated, user])
+    }, [isAuthenticated, user, navigate, fetchMyVideos, fetchMyEarnings])
 
     const formatDuration = (s: number) => {
         const m = Math.floor(s / 60)

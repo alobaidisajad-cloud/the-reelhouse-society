@@ -695,6 +695,7 @@
   font-size: 0.5rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+  color: var(--bone); /* Explicit color for WCAG AA contrast (was inheriting --fog, too dim) */
 }
 
 /* The center Log button — elevated gold circle */

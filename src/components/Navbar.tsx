@@ -205,6 +205,7 @@ export default function Navbar() {
                                     className="btn btn-ghost"
                                     style={{ fontSize: '0.65rem', padding: '0.35em 0.9em' }}
                                     onClick={() => openSignupModal('cinephile')}
+                                    aria-label="Enter"
                                 >
                                     <LogIn size={12} /> <span className="hide-mobile">Enter</span>
                                 </button>

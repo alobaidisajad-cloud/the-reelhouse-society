@@ -7,22 +7,22 @@ import toast from 'react-hot-toast'
 
 // Parse a standard film diary CSV export into our log format
 // Supports CSV with columns: Name, Year, Rating, WatchedDate (diary.csv or ratings.csv)
-function parseCSVExport(text: any) {
+function parseCSVExport(text: string) {
     const lines = text.trim().split('\n')
     if (lines.length < 2) return []
-    const headers = lines[0].split(',').map((h: any) => h.replace(/"/g, '').trim())
+    const headers = lines[0].split(',').map((h: string) => h.replace(/"/g, '').trim())
 
     // Detect format: diary exports typically have "Watched Date", ratings exports have "Rating"
-    const nameIdx = headers.findIndex((h: any) => h.toLowerCase() === 'name')
-    const yearIdx = headers.findIndex((h: any) => h.toLowerCase() === 'year')
-    const ratingIdx = headers.findIndex((h: any) => h.toLowerCase() === 'rating')
-    const dateIdx = headers.findIndex((h: any) => h.toLowerCase().includes('date'))
+    const nameIdx = headers.findIndex((h: string) => h.toLowerCase() === 'name')
+    const yearIdx = headers.findIndex((h: string) => h.toLowerCase() === 'year')
+    const ratingIdx = headers.findIndex((h: string) => h.toLowerCase() === 'rating')
+    const dateIdx = headers.findIndex((h: string) => h.toLowerCase().includes('date'))
 
     if (nameIdx === -1) return []
 
-    return lines.slice(1).map((line: any) => {
+    return lines.slice(1).map((line: string) => {
         // Handle commas inside quoted fields
-        const cols: any[] = []
+        const cols: string[] = []
         let current = ''
         let inQuotes = false
         for (const ch of line) {
@@ -45,8 +45,8 @@ function parseCSVExport(text: any) {
     }).filter(Boolean)
 }
 
-export default function CSVImport({ onClose }: any) {
-    const user = useAuthStore((s: any) => s.user)
+export default function CSVImport({ onClose }: { onClose: () => void }) {
+    const user = useAuthStore(s => s.user)
     const [dragOver, setDragOver] = useState(false)
     const [parsed, setParsed] = useState<any>(null) // { entries: [], fileName }
     const [importing, setImporting] = useState(false)
@@ -88,9 +88,9 @@ export default function CSVImport({ onClose }: any) {
 
         for (let i = 0; i < entries.length; i += BATCH) {
             const batch = entries.slice(i, i + BATCH)
-            const dbRows = batch.map((e: any) => ({
+            const dbRows = batch.map((e: { title: string; year: string | null; rating: number; watchedDate: string }) => ({
                 user_id: user.id,
-                film_id: 0, // No TMDB id from CSV — set to 0, enrichable later
+                film_id: 0,
                 film_title: e.title,
                 year: e.year ? parseInt(e.year) : null,
                 rating: e.rating || 0,
@@ -116,6 +116,47 @@ export default function CSVImport({ onClose }: any) {
 
         setImporting(false)
         setDone(true)
+
+        // ── Background TMDB Enrichment ──
+        // Fire-and-forget: resolve film_id=0 entries by searching TMDB
+        // This runs after the success screen so users aren't blocked
+        enrichImportedFilms(user.id, entries).catch(() => { /* non-critical */ })
+    }
+
+    /** Background enrichment: queries TMDB for each imported film and patches the DB record */
+    const enrichImportedFilms = async (userId: string, entries: { title: string; year: string | null }[]) => {
+        const { tmdb } = await import('../tmdb')
+        const ENRICH_BATCH = 5 // throttle to avoid TMDB rate limits
+        for (let i = 0; i < entries.length; i += ENRICH_BATCH) {
+            const batch = entries.slice(i, i + ENRICH_BATCH)
+            await Promise.allSettled(batch.map(async (entry) => {
+                try {
+                    const yearSuffix = entry.year ? ` ${entry.year}` : ''
+                    const data = await tmdb.search(`${entry.title}${yearSuffix}`)
+                    const match = data.results?.find((r: { media_type?: string }) => r.media_type !== 'person')
+                    if (match && match.id) {
+                        await supabase
+                            .from('logs')
+                            .update({
+                                film_id: match.id,
+                                poster: ('poster_path' in match && match.poster_path)
+                                    ? `https://image.tmdb.org/t/p/w342${match.poster_path}`
+                                    : null,
+                            })
+                            .eq('user_id', userId)
+                            .eq('film_title', entry.title)
+                            .eq('film_id', 0)
+                    }
+                } catch { /* individual enrichment failures are non-critical */ }
+            }))
+            // Small delay between batches to respect TMDB rate limits (40 req/10s)
+            if (i + ENRICH_BATCH < entries.length) {
+                await new Promise(r => setTimeout(r, 500))
+            }
+        }
+        // Re-fetch logs one more time to pick up enriched data
+        const { fetchLogs } = await import('../store').then(m => m.useFilmStore.getState())
+        await fetchLogs()
     }
 
     return (

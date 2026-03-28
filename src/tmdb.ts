@@ -453,7 +453,7 @@ export const tmdb = {
 // Compute obscurity score (0–100, higher = more obscure)
 // Uses a continuous log10 scale so every film gets a unique score.
 // pop ~3000+ → near 2 (MAINSTREAM), pop ~1 → near 99 (GHOST REEL)
-export function obscurityScore(movie: any) {
+export function obscurityScore(movie: { popularity?: number }) {
     const pop = movie.popularity || 0
     if (pop <= 0) return 99
     const score = Math.round(100 - (Math.log10(Math.max(pop, 1)) / Math.log10(5000)) * 98)
@@ -461,7 +461,7 @@ export function obscurityScore(movie: any) {
 }
 
 // Format runtime
-export function formatRuntime(minutes: any) {
+export function formatRuntime(minutes: number | null | undefined) {
     if (!minutes) return '—'
     const h = Math.floor(minutes / 60)
     const m = minutes % 60
@@ -469,6 +469,6 @@ export function formatRuntime(minutes: any) {
 }
 
 // Get year from date string
-export function getYear(dateStr: any) {
+export function getYear(dateStr: string | null | undefined) {
     return dateStr ? dateStr.slice(0, 4) : '—'
 }

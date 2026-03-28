@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Crown, Star, Key, EyeOff, LayoutTemplate, Database, Upload, Video } from 'lucide-react'
+import { Crown, Star, Upload, Video } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import CSVImport from '../components/CSVImport'
@@ -9,15 +9,6 @@ import toast from 'react-hot-toast'
 import { supabase } from '../supabaseClient'
 import '../styles/membership.css'
 import PageSEO from '../components/PageSEO'
-
-const features = [
-    { icon: Key, title: 'The Vault', description: 'Unlock the "Cutting Room Floor" for private notes and thoughts.' },
-    { icon: LayoutTemplate, title: 'Poster Glow', description: 'Immersive glowing posters on your profile for ultimate aesthetics.' },
-    { icon: EyeOff, title: 'Ad-Free Theatre', description: 'The purist experience. No distractions, just cinema.' },
-    { icon: Crown, title: 'Auteur Status', description: 'Exclusive gold foil badge across the platform.' },
-    { icon: Database, title: 'Archival Export', description: 'Full CSV export of your entire cinematic history.' },
-    { icon: Star, title: 'Profile Heatmap', description: 'The Projectionist\'s Calendar for tracking your viewing habits over 365 days.' }
-]
 
 export default function MembershipPage() {
     const { isAuthenticated, user } = useAuthStore()
@@ -38,22 +29,23 @@ export default function MembershipPage() {
     }
 
     const [isRedirecting, setIsRedirecting] = useState(false)
-    const [waitlistEmail, setWaitlistEmail] = useState('')
-    const [waitlistTier, setWaitlistTier] = useState('')
+    // Per-tier email state — each input is independent so typing in one never clears another
+    const [archivistEmail, setArchivistEmail] = useState('')
+    const [auteurEmail, setAuteurEmail] = useState('')
+    const [projectionistEmail, setProjectionistEmail] = useState('')
     const [waitlistSent, setWaitlistSent] = useState(false)
 
-    const handleWaitlist = async (tier: string) => {
-        const email = waitlistEmail.trim()
-        if (!email || !email.includes('@')) {
+    const handleWaitlist = async (tier: string, email: string) => {
+        const trimmed = email.trim()
+        if (!trimmed || !trimmed.includes('@')) {
             toast.error('Enter a valid email address.')
             return
         }
         try {
             setIsRedirecting(true)
-            await supabase.from('waitlist').insert({ email, tier, created_at: new Date().toISOString() })
+            await supabase.from('waitlist').insert({ email: trimmed, tier, created_at: new Date().toISOString() })
             toast.success('You\'re on the list. We\'ll be in touch.', { icon: '✦' })
             setWaitlistSent(true)
-            setWaitlistEmail('')
         } catch {
             toast.error('Something went wrong. Try again.')
         } finally {
@@ -174,16 +166,15 @@ export default function MembershipPage() {
                                     type="email"
                                     className="input"
                                     placeholder="your@email.com"
-                                    value={waitlistTier === 'archivist' ? waitlistEmail : ''}
-                                    onFocus={() => setWaitlistTier('archivist')}
-                                    onChange={e => { setWaitlistTier('archivist'); setWaitlistEmail(e.target.value) }}
+                                    value={archivistEmail}
+                                    onChange={e => setArchivistEmail(e.target.value)}
                                     style={{ textAlign: 'center', fontSize: '0.75rem' }}
                                 />
                                 <button
                                     className="btn btn-primary tier-btn"
                                     style={{ opacity: isRedirecting ? 0.7 : 1 }}
                                     disabled={isRedirecting}
-                                    onClick={() => handleWaitlist('archivist')}
+                                    onClick={() => handleWaitlist('archivist', archivistEmail)}
                                 >
                                     {isRedirecting ? 'JOINING...' : 'JOIN THE ARCHIVIST WAITLIST'}
                                 </button>
@@ -240,16 +231,15 @@ export default function MembershipPage() {
                                     type="email"
                                     className="input"
                                     placeholder="your@email.com"
-                                    value={waitlistTier === 'auteur' ? waitlistEmail : ''}
-                                    onFocus={() => setWaitlistTier('auteur')}
-                                    onChange={e => { setWaitlistTier('auteur'); setWaitlistEmail(e.target.value) }}
+                                    value={auteurEmail}
+                                    onChange={e => setAuteurEmail(e.target.value)}
                                     style={{ textAlign: 'center', fontSize: '0.75rem' }}
                                 />
                                 <button
                                     className="btn btn-primary tier-btn tier-btn--auteur"
                                     style={{ opacity: isRedirecting ? 0.7 : 1 }}
                                     disabled={isRedirecting}
-                                    onClick={() => handleWaitlist('auteur')}
+                                    onClick={() => handleWaitlist('auteur', auteurEmail)}
                                 >
                                     {isRedirecting ? 'JOINING...' : 'JOIN THE AUTEUR WAITLIST'}
                                 </button>
@@ -308,16 +298,15 @@ export default function MembershipPage() {
                                     type="email"
                                     className="input"
                                     placeholder="your@email.com"
-                                    value={waitlistTier === 'projectionist' ? waitlistEmail : ''}
-                                    onFocus={() => setWaitlistTier('projectionist')}
-                                    onChange={e => { setWaitlistTier('projectionist'); setWaitlistEmail(e.target.value) }}
+                                    value={projectionistEmail}
+                                    onChange={e => setProjectionistEmail(e.target.value)}
                                     style={{ textAlign: 'center', fontSize: '0.75rem' }}
                                 />
                                 <button
                                     className="btn btn-primary tier-btn tier-btn--projectionist"
                                     style={{ opacity: isRedirecting ? 0.7 : 1 }}
                                     disabled={isRedirecting}
-                                    onClick={() => handleWaitlist('projectionist')}
+                                    onClick={() => handleWaitlist('projectionist', projectionistEmail)}
                                 >
                                     {isRedirecting ? 'JOINING...' : 'JOIN THE PROJECTIONISTS'}
                                 </button>

@@ -41,8 +41,9 @@ export async function hydrateFollowing() {
             .limit(5000)
         const usernames = (profiles || []).map(p => p.username).filter(Boolean)
         useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: usernames } : null }))
-    } catch (e: any) {
-        logError({ type: 'store', message: `Failed to hydrate following list: ${e.message}`, stack: e.stack, component: 'auth.hydrateFollowing' })
+    } catch (e: unknown) {
+        const err = e instanceof Error ? e : new Error(String(e))
+        logError({ type: 'store', message: `Failed to hydrate following list: ${err.message}`, stack: err.stack, component: 'auth.hydrateFollowing' })
     }
 }
 

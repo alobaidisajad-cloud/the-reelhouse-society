@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { TMDBMovie } from '../types'
 
 export interface UIStoreState {
     logModalOpen: boolean
@@ -59,7 +60,7 @@ export interface DiscoverStoreState {
     mood: string | null
     query: string
     inputVal: string
-    accumulatedFilms: any[]
+    accumulatedFilms: TMDBMovie[]
     filters: {
         genreId: number | null
         decade: number | null
@@ -71,8 +72,8 @@ export interface DiscoverStoreState {
     setMood: (mood: string | null) => void
     setQuery: (query: string) => void
     setInputVal: (inputVal: string) => void
-    setAccumulatedFilms: (updater: any[] | ((prev: any[]) => any[])) => void
-    setFilters: (updater: any | ((prev: any) => any)) => void
+    setAccumulatedFilms: (updater: TMDBMovie[] | ((prev: TMDBMovie[]) => TMDBMovie[])) => void
+    setFilters: (updater: DiscoverStoreState['filters'] | ((prev: DiscoverStoreState['filters']) => DiscoverStoreState['filters'])) => void
     clearFilters: () => void
     updateFilter: (patch: Partial<DiscoverStoreState['filters']>) => void
     clearSearch: () => void

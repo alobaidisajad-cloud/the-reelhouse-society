@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../supabaseClient'
+import { logError } from '../errorLogger'
 import type { VideoReview, Tip } from '../types'
 
 interface VideoStore {
@@ -54,7 +55,7 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
             .eq('to_user_id', userId)
             .order('created_at', { ascending: false })
         const tipList = tips || []
-        const total = tipList.reduce((sum: number, t: any) => sum + (t.amount || 0), 0)
+        const total = tipList.reduce((sum: number, t: Tip) => sum + (t.amount || 0), 0)
         set({ myEarnings: { total, tips: tipList } })
     },
 
@@ -114,7 +115,12 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
             // Refresh my videos
             await get().fetchMyVideos(userId)
             return true
-        } catch {
+        } catch (error) {
+            logError({
+                type: 'video_upload',
+                message: error instanceof Error ? error.message : 'Video upload failed',
+                stack: error instanceof Error ? error.stack : undefined,
+            })
             return false
         } finally {
             set({ uploading: false, uploadProgress: 0 })
@@ -157,16 +163,30 @@ export const useVideoStore = create<VideoStore>((set, get) => ({
     },
 
     incrementViews: async (videoId) => {
-        const { data: video } = await supabase
-            .from('video_reviews')
-            .select('views')
-            .eq('id', videoId)
-            .single()
-        if (video) {
-            await supabase
+        // Atomic increment via server-side RPC — no read-then-write race condition.
+        // If the RPC isn't deployed yet, falls back to a direct read-then-write.
+        try {
+            const { error } = await supabase.rpc('increment_video_views', {
+                p_video_id: videoId,
+            })
+            // RPC not found (42883) = function hasn't been deployed yet — use fallback
+            if (error && error.code !== '42883') return
+            if (!error) return
+        } catch { /* fall through to fallback */ }
+
+        // Fallback: read-then-write (not perfectly atomic, but functional pre-migration)
+        try {
+            const { data } = await supabase
                 .from('video_reviews')
-                .update({ views: (video.views || 0) + 1 })
+                .select('views')
                 .eq('id', videoId)
-        }
+                .single()
+            if (data) {
+                await supabase
+                    .from('video_reviews')
+                    .update({ views: (data.views || 0) + 1 })
+                    .eq('id', videoId)
+            }
+        } catch { /* view count is non-critical — never block UI */ }
     },
 }))

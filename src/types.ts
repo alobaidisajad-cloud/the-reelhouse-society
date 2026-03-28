@@ -246,6 +246,26 @@ export interface Showtime {
     price?: number
 }
 
+// ── Venue Event ──
+export interface VenueEvent {
+    id: string
+    title: string
+    desc?: string
+    date: string
+    time?: string
+    type?: string
+    price: number
+    totalTickets: number
+    ticketsLeft: number
+}
+
+// ── Payment Info ──
+export interface PaymentInfo {
+    paymentAccountName?: string
+    paymentLast4?: string
+    paymentBrand?: string
+}
+
 // ── Cinema Review ──
 export interface CinemaReview {
     id: string

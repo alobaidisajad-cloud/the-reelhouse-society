@@ -412,8 +412,23 @@ export default function SeatMapEditor({ venue, onSave }: { venue: Venue; onSave:
                 ))}
             </div>
 
-            {/* Main Grid: Controls + Preview */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(240px, 300px) 1fr', gap: '2rem', alignItems: 'start' }}>
+
+            {/* Main Grid: Controls + Preview — collapses to single column on mobile */}
+            <style>{`
+                .seat-editor-grid {
+                    display: grid;
+                    grid-template-columns: minmax(240px, 300px) 1fr;
+                    gap: 2rem;
+                    align-items: start;
+                }
+                @media (max-width: 768px) {
+                    .seat-editor-grid {
+                        grid-template-columns: 1fr;
+                        gap: 1.25rem;
+                    }
+                }
+            `}</style>
+            <div className="seat-editor-grid">
 
                 {/* Left: Controls */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>

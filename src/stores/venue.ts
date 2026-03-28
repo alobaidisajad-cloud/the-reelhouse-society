@@ -2,25 +2,25 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
-import { Venue, Showtime, CinemaReview } from '../types'
+import { Venue, Showtime, ShowtimeSlot, Screen, SeatLayout, VenueEvent, PaymentInfo, CinemaReview } from '../types'
 
 export interface VenueStoreState {
     venue: Venue
     showtimes: Showtime[]
-    events: any[]
+    events: VenueEvent[]
     fetchVenueData: () => Promise<void>
     updateVenue: (updates: Partial<Venue>) => Promise<void>
-    saveScreens: (data: { screens: any[], seatLayout: any }) => Promise<void>
+    saveScreens: (data: { screens: Screen[], seatLayout: SeatLayout }) => Promise<void>
     addShowtime: (st: Partial<Showtime> & { filmId?: number, screenName?: string, durationMins?: number }) => Promise<void>
     removeShowtime: (id: string) => Promise<void>
-    addSlot: (stId: string, slot: any) => Promise<void>
+    addSlot: (stId: string, slot: Partial<ShowtimeSlot>) => Promise<void>
     removeSlot: (stId: string, slotId: string) => Promise<void>
-    updateSlot: (stId: string, slotId: string, updates: any) => Promise<void>
+    updateSlot: (stId: string, slotId: string, updates: Partial<ShowtimeSlot>) => Promise<void>
     bookSeat: (stId: string, slotId: string, seatId: string) => Promise<void>
-    addEvent: (ev: any) => void
+    addEvent: (ev: Omit<VenueEvent, 'id' | 'ticketsLeft'>) => void
     removeEvent: (id: string) => void
-    updateEvent: (id: string, u: any) => void
-    connectPayment: (info: any) => void
+    updateEvent: (id: string, u: Partial<VenueEvent>) => void
+    connectPayment: (info: PaymentInfo) => void
 }
 
 // ── VENUE STORE — owner data + showtime management ──
@@ -115,7 +115,7 @@ export const useVenueStore = create<VenueStoreState>()(
             },
 
             addSlot: async (stId, slot) => {
-                const newSlot = { ...slot, id: 'slot-' + Date.now(), bookedSeats: [] }
+                const newSlot: ShowtimeSlot = { time: '', format: 'Standard', ...slot, id: 'slot-' + Date.now(), bookedSeats: [] }
                 set((s) => ({ showtimes: s.showtimes.map((st) => st.id === stId ? { ...st, slots: [...st.slots, newSlot] } : st) }))
                 const showtime = get().showtimes.find((s) => s.id === stId)
                 if (showtime) await supabase.from('showtimes').update({ slots: showtime.slots }).eq('id', stId)

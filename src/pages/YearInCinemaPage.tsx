@@ -163,21 +163,40 @@ export default function YearInCinemaPage() {
             const el = document.getElementById('yic-export-node') as HTMLElement
             if (!el) return
             const html2canvas = (await import('html2canvas')).default
-            const canvas = await html2canvas(el, { backgroundColor: '#0A0703', scale: 2, useCORS: true })
-            canvas.toBlob(async (blob: Blob | null) => {
-                if (!blob) return
-                const file = new File([blob], `reelhouse-${selectedYear}.png`, { type: 'image/png' })
-                if (navigator.share && navigator.canShare?.({ files: [file] })) {
-                    await navigator.share({ files: [file], title: `My ${selectedYear} Year In Cinema` })
-                } else {
-                    const a = document.createElement('a')
-                    a.href = URL.createObjectURL(blob)
-                    a.download = `reelhouse-${selectedYear}.png`
-                    a.click()
-                    URL.revokeObjectURL(a.href)
-                    toast.success('Year In Cinema card saved!')
-                }
-            }, 'image/png')
+
+            // Try useCORS first (works when TMDB CDN sends headers).
+            // Fall back to allowTaint if CORS fails (renders correctly but
+            // toBlob may produce a tainted canvas — we handle that below).
+            let canvas: HTMLCanvasElement
+            try {
+                canvas = await html2canvas(el, { backgroundColor: '#0A0703', scale: 2, useCORS: true })
+            } catch {
+                canvas = await html2canvas(el, { backgroundColor: '#0A0703', scale: 2, allowTaint: true })
+            }
+
+            try {
+                canvas.toBlob(async (blob: Blob | null) => {
+                    if (!blob) { toast.error('Could not generate image. Try again.'); return }
+                    const file = new File([blob], `reelhouse-${selectedYear}.png`, { type: 'image/png' })
+                    if (navigator.share && navigator.canShare?.({ files: [file] })) {
+                        await navigator.share({ files: [file], title: `My ${selectedYear} Year In Cinema` })
+                    } else {
+                        const a = document.createElement('a')
+                        a.href = URL.createObjectURL(blob)
+                        a.download = `reelhouse-${selectedYear}.png`
+                        a.click()
+                        URL.revokeObjectURL(a.href)
+                        toast.success('Year In Cinema card saved!')
+                    }
+                }, 'image/png')
+            } catch {
+                // Tainted canvas from cross-origin images — fallback to data URL download
+                const a = document.createElement('a')
+                a.href = canvas.toDataURL('image/png')
+                a.download = `reelhouse-${selectedYear}.png`
+                a.click()
+                toast.success('Year In Cinema card saved!')
+            }
         } catch { toast.error('Could not generate share card.') }
         finally { setSharing(false) }
     }

@@ -16,12 +16,12 @@ describe('tmdb.poster()', () => {
         expect(url).toContain('/abc123.jpg')
     })
 
-    it('returns null for null path', () => {
-        expect(tmdb.poster(null)).toBeNull()
+    it('returns falsy for null path', () => {
+        expect(tmdb.poster(null)).toBeFalsy()
     })
 
-    it('returns null for undefined path', () => {
-        expect(tmdb.poster(undefined)).toBeNull()
+    it('returns falsy for undefined path', () => {
+        expect(tmdb.poster(undefined)).toBeFalsy()
     })
 
     it('accepts optional size parameter', () => {
@@ -38,8 +38,8 @@ describe('tmdb.profile()', () => {
         expect(url).toContain('/profile123.jpg')
     })
 
-    it('returns null for null path', () => {
-        expect(tmdb.profile(null)).toBeNull()
+    it('returns falsy for null path', () => {
+        expect(tmdb.profile(null)).toBeFalsy()
     })
 })
 
@@ -50,8 +50,8 @@ describe('tmdb.backdrop()', () => {
         expect(url).toContain('w1280')
     })
 
-    it('returns null for null path', () => {
-        expect(tmdb.backdrop(null)).toBeNull()
+    it('returns falsy for null path', () => {
+        expect(tmdb.backdrop(null)).toBeFalsy()
     })
 })
 

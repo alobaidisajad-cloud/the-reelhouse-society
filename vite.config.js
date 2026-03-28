@@ -47,6 +47,8 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.js'],
     globals: true,
+    include: ['src/**/*.test.{ts,tsx,js,jsx}'],
+    exclude: ['node_modules', '.gemini', 'dist'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json-summary'],
