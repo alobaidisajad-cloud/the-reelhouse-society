@@ -16,7 +16,7 @@
 
 .dispatch-bg-noise {
   position: fixed; inset: 0; pointer-events: none; z-index: var(--z-base);
-  background: radial-gradient(circle at 50% 0%, rgba(139, 105, 20, 0.05) 0%, transparent 70%);
+  background: radial-gradient(circle at 50% 0%, rgba(139, 105, 20, 0.12) 0%, transparent 65%);
 }
 
 /* WRITER BAR */
@@ -85,11 +85,13 @@
 .masthead-title {
   font-family: var(--font-display); font-size: var(--text-jumbo);
   color: var(--parchment); line-height: 0.85; margin-bottom: 1.5rem;
+  text-shadow: 0 0 80px rgba(139,105,20,0.25), 0 2px 4px rgba(0,0,0,0.8);
+  letter-spacing: 0.04em;
 }
 .masthead-subtitle { font-family: var(--font-ui); font-size: var(--text-base); color: var(--sepia); opacity: 0.7; letter-spacing: 0.2em; text-transform: uppercase; }
 
 /* ORNAMENTAL DIVIDER */
-.ornamental-divider { display: flex; align-items: center; gap: 1rem; margin: 4rem 0; opacity: 0.3; }
+.ornamental-divider { display: flex; align-items: center; gap: 1rem; margin: 4rem 0; opacity: 0.5; }
 .ornamental-divider span { flex: 1; height: 1px; background: var(--sepia); }
 .ornamental-divider .diamond { width: 6px; height: 6px; background: var(--sepia); transform: rotate(45deg); }
 
@@ -101,7 +103,7 @@
 /* AUTEUR DOSSIERS */
 .auteur-dossier-list { display: flex; flex-direction: column; gap: 3rem; }
 .dossier-card {
-  padding: 2.5rem; background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.05);
+  padding: 2.5rem; background: rgba(255,255,255,0.015); border: 1px solid rgba(139,105,20,0.18);
   border-radius: 2px; cursor: pointer; transition: background 0.2s, transform 0.2s; position: relative;
 }
 .dossier-card::before { content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 3px; background: var(--sepia); transform: scaleY(0); transform-origin: top; transition: transform 0.2s; }
