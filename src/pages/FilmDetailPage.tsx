@@ -198,8 +198,8 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 </div>
             </div>
         ) : (
-        /* ─── DESKTOP HERO: original layout unchanged ─── */
-        <div style={{ position: 'relative', minHeight: '70vh', display: 'flex', alignItems: 'flex-end', paddingBottom: '3rem', paddingTop: 0, flexShrink: 0 }}>
+        /* ─── DESKTOP HERO: cinematic full-bleed dossier layout ─── */
+        <div style={{ position: 'relative', minHeight: '88vh', display: 'flex', alignItems: 'flex-end', paddingBottom: '3.5rem', paddingTop: 0, flexShrink: 0 }}>
             {/* Backdrop */}
             {film.backdrop_path && (
                 <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.3) brightness(0.40) contrast(1.1)', zIndex: 0 }} />
@@ -217,6 +217,14 @@ function FilmHero({ film, onPlayTrailer }: any) {
                     <Play size={24} fill="rgba(242,232,160,0.9)" color="transparent" />
                 </button>
             )}
+            {/* Film-strip perforation bar — ReelHouse signature, sits at edge of content */}
+            <div style={{ position: 'absolute', bottom: '3.5rem', left: 0, right: 0, zIndex: 2, pointerEvents: 'none' }}>
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '6px', opacity: 0.20, paddingBottom: '1.5rem' }}>
+                    {Array.from({ length: 22 }).map((_, i) => (
+                        <div key={i} style={{ width: 16, height: 10, border: '1px solid var(--sepia)', borderRadius: '1px', flexShrink: 0 }} />
+                    ))}
+                </div>
+            </div>
 
             <div className="container hero-grid" style={{ position: 'relative', zIndex: 2, width: '100%' }}>
                 <div>
@@ -250,7 +258,11 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 {/* Info */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                     <GenreTags genres={film.genres} />
-                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 3rem)', color: 'var(--parchment)', lineHeight: 1.1 }}>{film.title}</h1>
+                    {/* Massive editorial title — the defining visual of the page */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                        <div style={{ width: '3px', flexShrink: 0, alignSelf: 'stretch', background: 'linear-gradient(to bottom, var(--sepia), var(--flicker), transparent)', borderRadius: '2px', minHeight: '3rem', marginTop: '0.2rem', boxShadow: '0 0 12px rgba(196,150,26,0.5)' }} />
+                        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2rem, 5.5vw, 5rem)', color: 'var(--parchment)', lineHeight: 1.05, letterSpacing: '-0.01em', textShadow: '3px 3px 0 rgba(139,105,20,0.3), 0 0 60px rgba(242,232,160,0.08)' }}>{film.title}</h1>
+                    </div>
                     {film.tagline && <p style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--bone)', fontStyle: 'italic' }}>"{film.tagline}"</p>}
 
                     {/* Meta */}

@@ -104,23 +104,28 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                 overflow: 'hidden',
                 background: 'rgba(10,7,3,0.70)',
             }}>
-                {/* Mobile: poster as blurred cinematic background */}
-                {(IS_TOUCH || isMobile) && film.poster_path && (
+                {/* Cinematic poster — visible on ALL viewports. Desktop: less blur, darker. Mobile: softer, brighter. */}
+                {film.poster_path && (
                     <div style={{
                         position: 'absolute', inset: 0,
                         backgroundImage: `url(https://image.tmdb.org/t/p/w780${film.poster_path})`,
                         backgroundSize: 'cover',
-                        backgroundPosition: 'center 20%',
-                        filter: 'blur(18px) sepia(0.25) brightness(0.50) contrast(1.1)',
-                        transform: 'scale(1.08)',
+                        backgroundPosition: 'center 15%',
+                        filter: (IS_TOUCH || isMobile)
+                            ? 'blur(18px) sepia(0.25) brightness(0.50) contrast(1.1)'
+                            : 'blur(14px) sepia(0.30) brightness(0.38) contrast(1.15)',
+                        transform: 'scale(1.1)',
                         zIndex: 0,
+                        willChange: 'transform',
                     }} />
                 )}
-                {/* Vignette — keeps text readable */}
+                {/* Vignette — keeps text readable. Deeper on desktop to counter bright bulb context */}
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    background: 'linear-gradient(180deg, rgba(10,7,3,0.30) 0%, rgba(10,7,3,0.55) 60%, rgba(10,7,3,0.80) 100%)',
+                    background: (IS_TOUCH || isMobile)
+                        ? 'linear-gradient(180deg, rgba(10,7,3,0.30) 0%, rgba(10,7,3,0.55) 60%, rgba(10,7,3,0.80) 100%)'
+                        : 'linear-gradient(180deg, rgba(10,7,3,0.40) 0%, rgba(10,7,3,0.62) 55%, rgba(10,7,3,0.85) 100%)',
                     zIndex: 0,
                     pointerEvents: 'none',
                 }} />
