@@ -297,7 +297,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             style={{
                 background: 'linear-gradient(135deg, rgba(28,23,16,0.3) 0%, rgba(10,7,3,0.6) 100%)',
                 border: '1px solid rgba(139,105,20,0.08)',
-                borderRadius: '6px',
+                borderRadius: '2px',
                 padding: IS_TOUCH ? '1rem' : '1.25rem',
                 position: 'relative',
                 display: 'flex',
@@ -384,7 +384,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 {log.isAutopsied && log.autopsy && <RadarChart autopsy={log.autopsy} size={130} />}
 
                 {/* Feed Action Bar */}
-                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.75rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(139,105,20,0.08)', flexWrap: 'wrap', flexShrink: 0 }}>
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.75rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(139,105,20,0.15)', flexWrap: 'wrap', flexShrink: 0 }}>
                     <div style={{ position: 'relative' }}>
                         <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
                             {canEndorse ? <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span style={{ fontSize: '10px' }}><Lock size={9} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
