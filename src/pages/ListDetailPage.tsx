@@ -118,7 +118,7 @@ export default function ListDetailPage() {
         <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             <div style={{ maxWidth: 1000, margin: '0 auto', padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
 
-                <button onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', marginLeft: '-0.5rem', alignSelf: 'flex-start', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}>
+                <button onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', marginLeft: '-0.5rem', alignSelf: 'flex-start', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--sepia)'}>
                     <ArrowLeft size={12} /> GO BACK
                 </button>
 
@@ -175,7 +175,7 @@ export default function ListDetailPage() {
                     </div>
 
                     {films.length === 0 ? (
-                        <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'var(--soot)', border: '1px dashed var(--ash)', borderRadius: '2px' }}>
+                        <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'rgba(22,18,12,0.5)', border: '1px dashed rgba(139,105,20,0.25)', borderRadius: '2px' }}>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>Empty Archive</div>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--fog)', lineHeight: 1.5, maxWidth: 400, margin: '0 auto' }}>
                                 {localList 
