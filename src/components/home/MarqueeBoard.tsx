@@ -8,7 +8,7 @@ import { useViewport } from '../../hooks/useViewport'
 // Static — defined outside component so it's never re-created on re-render
 
 const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
-    const { isTouch: IS_TOUCH } = useViewport()
+    const { isTouch: IS_TOUCH, isMobile } = useViewport()
     const MARQUEE_BULBS = Array.from({ length: IS_TOUCH ? 8 : 14 }) // fewer bulb animations on mobile
 
     // Smart Fallback Review Count
@@ -105,7 +105,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                 background: 'rgba(10,7,3,0.70)',
             }}>
                 {/* Mobile: poster as blurred cinematic background */}
-                {IS_TOUCH && film.poster_path && (
+                {(IS_TOUCH || isMobile) && film.poster_path && (
                     <div style={{
                         position: 'absolute', inset: 0,
                         backgroundImage: `url(https://image.tmdb.org/t/p/w780${film.poster_path})`,
