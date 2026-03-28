@@ -23,7 +23,7 @@ export function ProfileProjectorTab({ profileLogs, profileWatchlist, profileList
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                     {ratingBuckets.reverse().map(({ star, count }) => (
                         <div key={star} style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <div style={{ width: 58, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
+                            <div style={{ width: 105, flexShrink: 0, display: 'flex', justifyContent: 'flex-end' }}>
                                 <ReelRating value={star} size="sm" />
                             </div>
                             <div style={{ flex: 1, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden' }}><div style={{ height: '100%', borderRadius: 3, width: `${(count / maxRatingCount) * 100}%`, background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', transition: 'width 0.6s ease' }} /></div>
