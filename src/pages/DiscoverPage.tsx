@@ -64,13 +64,14 @@ const MOODS = [
 
 const Chip = ({ active, onClick, children, color }: any) => (
     <button onClick={onClick} style={{
-        flexShrink: 0, padding: '0.35rem 0.7rem',
-        background: active ? (color || 'var(--sepia)') : 'var(--soot)',
-        border: `1px solid ${active ? (color || 'var(--sepia)') : 'var(--ash)'}`,
-        color: active ? 'var(--ink)' : 'var(--fog)',
-        fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.08em', textTransform: 'uppercase',
+        flexShrink: 0, padding: '0.35rem 0.75rem',
+        background: active ? (color || 'var(--sepia)') : 'rgba(18,14,9,0.8)',
+        border: `1px solid ${active ? (color || 'var(--sepia)') : 'rgba(139,105,20,0.22)'}`,
+        color: active ? 'var(--ink)' : 'var(--bone)',
+        fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', textTransform: 'uppercase',
         borderRadius: '2px', cursor: 'pointer', whiteSpace: 'nowrap',
-        transition: 'all 0.15s',
+        transition: 'all 0.18s',
+        boxShadow: active ? '0 2px 8px rgba(139,105,20,0.3)' : 'none',
     }}>
         {children}
     </button>
@@ -310,7 +311,8 @@ export default function DiscoverPage() {
         <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             {/* ── SEARCH HEADER ── */}
             <div style={{ background: 'var(--ink)', borderBottom: '1px solid var(--ash)', padding: IS_TOUCH ? '2rem 0 1.5rem' : '4rem 0 3rem', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.18) 0%, rgba(139,105,20,0.06) 40%, transparent 70%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.35), transparent)', pointerEvents: 'none' }} />
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>THE DARKROOM</div>
                     <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.8rem, 7vw, 2.5rem)' : 'clamp(2.5rem, 6vw, 4.5rem)', color: 'var(--parchment)', marginBottom: IS_TOUCH ? '1.25rem' : '2.5rem', lineHeight: 1 }}>
@@ -384,7 +386,7 @@ export default function DiscoverPage() {
                                     {MOODS.map((m: any) => {
                                         const active = mood?.label === m.label
                                         return (
-                                            <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.45rem 0.9rem', background: active ? 'var(--sepia)' : 'var(--soot)', border: `1px solid ${active ? 'var(--parchment)' : 'var(--ash)'}`, color: active ? 'var(--ink)' : 'var(--parchment)', borderRadius: '20px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.08em', transition: 'all 0.2s' }}>
+                                            <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: active ? m.color : 'var(--soot)', border: `1px solid ${active ? m.accent : 'rgba(139,105,20,0.2)'}`, color: active ? 'var(--flicker)' : 'var(--bone)', borderRadius: '2px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.1em', transition: 'all 0.2s', boxShadow: active ? `0 0 10px ${m.accent}55` : 'none' }}>
                                                 <span>{m.glyph}</span> {m.label}
                                             </button>
                                         )
@@ -395,12 +397,27 @@ export default function DiscoverPage() {
                                     {MOODS.map((m: any) => {
                                         const active = mood?.label === m.label
                                         return (
-                                            <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ background: active ? 'var(--sepia)' : 'var(--soot)', border: `1px solid ${active ? 'var(--parchment)' : 'var(--ash)'}`, color: active ? 'var(--ink)' : 'var(--parchment)', padding: '1.5rem 0.75rem', borderRadius: '2px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', transition: 'all 0.25s', cursor: 'pointer' }}
-                                                onMouseEnter={e => { if (!active) e.currentTarget.style.borderColor = 'var(--sepia)' }}
-                                                onMouseLeave={e => { if (!active) e.currentTarget.style.borderColor = 'var(--ash)' }}
+                                            <button key={m.label} onClick={() => selectMood(active ? null : m)}
+                                                style={{
+                                                    background: active ? m.color : `${m.color}cc`,
+                                                    border: `1px solid ${active ? m.accent : `${m.accent}55`}`,
+                                                    color: 'var(--parchment)',
+                                                    padding: '1.75rem 0.75rem',
+                                                    borderRadius: '2px',
+                                                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+                                                    transition: 'all 0.3s cubic-bezier(0.16,1,0.3,1)',
+                                                    cursor: 'pointer',
+                                                    boxShadow: active ? `0 0 24px ${m.accent}66, inset 0 0 20px rgba(0,0,0,0.3)` : 'inset 0 0 20px rgba(0,0,0,0.3)',
+                                                    transform: active ? 'scale(1.03)' : 'scale(1)',
+                                                    position: 'relative', overflow: 'hidden',
+                                                }}
+                                                onMouseEnter={e => { if (!active) { e.currentTarget.style.borderColor = m.accent; e.currentTarget.style.boxShadow = `0 0 12px ${m.accent}44, inset 0 0 20px rgba(0,0,0,0.3)` } }}
+                                                onMouseLeave={e => { if (!active) { e.currentTarget.style.borderColor = `${m.accent}55`; e.currentTarget.style.boxShadow = 'inset 0 0 20px rgba(0,0,0,0.3)' } }}
                                             >
-                                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', marginBottom: '0.5rem', opacity: active ? 1 : 0.6 }}>{m.glyph}</div>
-                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase' }}>{m.label}</div>
+                                                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(255,255,255,0.03) 0%, transparent 100%)', pointerEvents: 'none' }} />
+                                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', marginBottom: '0.6rem', filter: active ? `drop-shadow(0 0 8px ${m.accent})` : 'none', transition: 'filter 0.3s' }}>{m.glyph}</div>
+                                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', textTransform: 'uppercase', color: active ? 'var(--flicker)' : 'var(--bone)' }}>{m.label}</div>
+                                                {active && <div style={{ width: '20px', height: '1px', background: m.accent, marginTop: '0.5rem', boxShadow: `0 0 6px ${m.accent}` }} />}
                                             </button>
                                         )
                                     })}
@@ -470,8 +487,11 @@ export default function DiscoverPage() {
                     ) : (
                         <>
                             {accumulatedFilms.length === 0 && !isFetching && (
-                                <div style={{ textAlign: 'center', padding: '4rem 1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--sepia)', letterSpacing: '0.1em' }}>∅ The vault is empty. Try adjusting your filters.</div>
+                                <div style={{ padding: '3rem 1.5rem', textAlign: 'center', background: 'rgba(18,14,9,0.6)', border: '1px solid rgba(139,105,20,0.12)', borderLeft: '2px solid rgba(139,105,20,0.3)', borderRadius: '0 6px 6px 0', position: 'relative', overflow: 'hidden', maxWidth: 600, margin: '2rem auto' }}>
+                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.25), transparent)' }} />
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.6, marginBottom: '0.75rem' }}>THE VAULT IS SEALED</div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', opacity: 0.65, marginBottom: '0.4rem' }}>No titles match your criteria.</div>
+                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--bone)', opacity: 0.45, fontStyle: 'italic' }}>Adjust the filters or clear your search to reopen the archive.</div>
                                 </div>
                             )}
                             <FilmGrid films={accumulatedFilms} />
@@ -481,9 +501,9 @@ export default function DiscoverPage() {
                                     <button
                                         onClick={() => setPage(page + 1)}
                                         disabled={isFetching}
-                                        style={{ border: '1px solid var(--sepia)', background: isFetching ? 'rgba(139,105,20,0.1)' : 'transparent', color: 'var(--sepia)', padding: IS_TOUCH ? '0.75rem 2rem' : '1rem 3rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', cursor: isFetching ? 'default' : 'pointer', transition: 'all 0.3s', borderRadius: '2px' }}
-                                        onMouseEnter={e => { if (!isFetching) { e.currentTarget.style.background = 'var(--sepia)'; e.currentTarget.style.color = 'var(--ink)' } }}
-                                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--sepia)' }}
+                                        style={{ border: '1px solid rgba(139,105,20,0.7)', background: isFetching ? 'rgba(139,105,20,0.08)' : 'rgba(139,105,20,0.04)', color: isFetching ? 'var(--fog)' : 'var(--sepia)', padding: IS_TOUCH ? '0.9rem 2.5rem' : '1.1rem 3.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.3em', textTransform: 'uppercase', cursor: isFetching ? 'default' : 'pointer', transition: 'all 0.3s', borderRadius: '2px', boxShadow: isFetching ? 'none' : '0 4px 20px rgba(139,105,20,0.2), 0 0 0 1px rgba(242,232,160,0.06)' }}
+                                        onMouseEnter={e => { if (!isFetching) { e.currentTarget.style.background = 'var(--sepia)'; e.currentTarget.style.color = 'var(--ink)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(139,105,20,0.5)' } }}
+                                        onMouseLeave={e => { if (!isFetching) { e.currentTarget.style.background = 'rgba(139,105,20,0.04)'; e.currentTarget.style.color = 'var(--sepia)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,105,20,0.2), 0 0 0 1px rgba(242,232,160,0.06)' } }}
                                     >
                                         {isFetching ? 'PULLING FOCUS...' : 'DEVELOP MORE FILMS'}
                                     </button>
