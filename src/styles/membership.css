@@ -244,8 +244,9 @@
   font-size: 0.8rem;
   color: var(--fog);
   padding: 1rem;
-  border: 1px solid var(--ash);
+  border: 1px solid rgba(139,105,20,0.3);
   border-radius: var(--radius-card);
+  background: rgba(139,105,20,0.04);
 }
 
 /* ── Tier Buttons ── */
@@ -412,7 +413,7 @@
 /* ── Philosophy Section ── */
 .philosophy-section {
   text-align: center;
-  border-top: 1px dashed var(--ash);
+  border-top: 1px dashed rgba(139,105,20,0.3);
   padding-top: 4rem;
   max-width: 800px;
   margin-inline: auto;
