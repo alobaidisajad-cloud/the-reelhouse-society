@@ -90,8 +90,8 @@ export default function HomePage() {
 
             {/* Hero section — mobile: compact, no minHeight, no heavy backdrop */}
             <section style={{
-                padding: IS_TOUCH ? '2rem 0 1.5rem' : '6rem 0 4rem',
-                minHeight: IS_TOUCH ? 'unset' : '80vh',
+                padding: IS_TOUCH ? '3rem 0 2rem' : '6rem 0 4rem',
+                minHeight: IS_TOUCH ? '50vh' : '80vh',
                 display: 'flex',
                 alignItems: 'center',
                 position: 'relative'
@@ -104,7 +104,7 @@ export default function HomePage() {
                         backgroundSize: 'cover',
                         backgroundPosition: 'center 15%',
                         backgroundAttachment: IS_TOUCH ? 'scroll' : 'fixed',
-                        opacity: IS_TOUCH ? 0.55 : 0.65,
+                        opacity: IS_TOUCH ? 0.60 : 0.65,
                         filter: 'sepia(0.2) brightness(0.60)',
                         maskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
                         WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 10%, black 90%, transparent 100%)',
@@ -132,7 +132,7 @@ export default function HomePage() {
                 >
 
                     <motion.div variants={heroChild} style={{ marginBottom: IS_TOUCH ? '1rem' : '2rem', textAlign: 'center' }}>
-                        {!IS_TOUCH && <Buster size={48} mood="neutral" />}
+                        <Buster size={IS_TOUCH ? 28 : 48} mood="neutral" />
                         <h2 style={{
                             fontFamily: 'var(--font-body)',
                             fontSize: IS_TOUCH ? '0.6rem' : '0.72rem',

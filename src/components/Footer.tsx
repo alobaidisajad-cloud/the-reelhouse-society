@@ -143,7 +143,7 @@ export default function Footer() {
                     marginTop: '0.5rem',
                     opacity: 0.5,
                 }}>
-                    ✦ EST. MMXXIV ✦
+                    ✦ EST. 1924 ✦
                 </div>
             </div>
 
