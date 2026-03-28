@@ -216,7 +216,7 @@ export default function FeedPage() {
                 overflow: 'hidden',
                 flexShrink: 0
             }}>
-                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.06) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.11) 0%, transparent 60%)', pointerEvents: 'none' }} />
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '0.75rem', opacity: 0.8 }}>
                         ✦ THE REELHOUSE SOCIETY ✦
@@ -326,7 +326,7 @@ export default function FeedPage() {
                                 background: 'linear-gradient(180deg, rgba(28,23,16,0.5) 0%, rgba(10,7,3,0.9) 100%)',
                                 border: '1px solid rgba(139,105,20,0.2)',
                                 padding: IS_TOUCH ? '2.5rem 1.5rem' : '3rem 2rem', textAlign: 'center',
-                                marginBottom: '2rem', borderRadius: '4px',
+                                marginBottom: '2rem', borderRadius: '2px',
                                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem',
                                 position: 'relative', overflow: 'hidden',
                             }}>
@@ -481,7 +481,7 @@ export default function FeedPage() {
 
                         {/* Curated Lists — Real Supabase data */}
                         <div>
-                            <div className="section-title" style={{ borderBottom: '1px solid var(--ash)', paddingBottom: '0.5rem' }}>
+                            <div className="section-title" style={{ borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.5rem' }}>
                                 CURATED LISTS
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -505,7 +505,7 @@ export default function FeedPage() {
                                     </>
                                 ) : recentLists.map((list: any) => (
                                     <Link key={list.id} to={`/lists/${list.id}`} style={{ textDecoration: 'none' }}>
-                                        <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}>
+                                        <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.2)', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(139,105,20,0.2)'}>
                                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
                                                 {list.title}
                                             </div>
