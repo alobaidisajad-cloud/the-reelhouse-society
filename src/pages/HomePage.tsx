@@ -119,6 +119,8 @@ export default function HomePage() {
                     zIndex: 0,
                     pointerEvents: 'none',
                 }} />
+                {/* One-shot hero glow pulse */}
+                {!IS_TOUCH && <div className="hero-glow-pulse" />}
 
                 <motion.div
                     variants={heroContainer}
