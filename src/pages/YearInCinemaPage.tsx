@@ -185,14 +185,17 @@ export default function YearInCinemaPage() {
     if (totalFilms < 10) {
         const progress = Math.round((totalFilms / 10) * 100)
         return (
-            <div className="yic-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', textAlign: 'center', padding: '2rem' }}>
+        <div className="yic-page" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100dvh', textAlign: 'center', padding: '2rem', position: 'relative', overflow: 'hidden' }}>
+                {/* Atmospheric glow */}
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '60%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.1) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
+                <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                 <Film size={48} style={{ color: 'var(--sepia)', marginBottom: '1.5rem', opacity: 0.5 }} />
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--parchment)', marginBottom: '1rem' }}>Your Retrospective Awaits</h2>
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '1rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.6, fontStyle: 'italic', marginBottom: '2rem' }}>
                     Log {10 - totalFilms} more film{10 - totalFilms !== 1 ? 's' : ''} to unlock your annual cinematic retrospective. Every great year deserves at least 10 entries.
                 </p>
-                <div style={{ width: '100%', maxWidth: 320, height: 6, background: 'var(--ash)', borderRadius: 3, overflow: 'hidden', marginBottom: '0.75rem' }}>
-                    <div style={{ transform: `scaleX(${progress / 100})`, transformOrigin: 'left', width: '100%', height: '100%', background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', borderRadius: 3, transition: 'transform 0.5s ease' }} />
+                <div style={{ width: '100%', maxWidth: 320, height: 8, background: 'rgba(139,105,20,0.15)', borderRadius: 4, overflow: 'hidden', marginBottom: '0.75rem' }}>
+                    <div style={{ transform: `scaleX(${progress / 100})`, transformOrigin: 'left', width: '100%', height: '100%', background: 'linear-gradient(90deg, var(--sepia), var(--flicker))', borderRadius: 4, transition: 'transform 0.5s ease', boxShadow: '0 0 8px rgba(139,105,20,0.4)' }} />
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--fog)', marginBottom: '2rem' }}>
                     {totalFilms}/10 FILMS LOGGED
@@ -200,6 +203,7 @@ export default function YearInCinemaPage() {
                 <Link to={user ? `/user/${user.username}` : '/'} className="btn btn-ghost" style={{ fontSize: '0.65rem', letterSpacing: '0.15em' }}>
                     <ArrowLeft size={14} /> RETURN TO PROFILE
                 </Link>
+                </div>
             </div>
         )
     }
