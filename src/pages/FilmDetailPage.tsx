@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camera, ArrowUpRight, Check, RotateCcw, Eye, EyeOff } from 'lucide-react'
 import { tmdb, obscurityScore, formatRuntime, getYear } from '../tmdb'
-import { ReelRating, ObscurityBadge, GenreTags, FilmCard, LoadingReel, SectionHeader } from '../components/UI'
+import { ReelRating, ObscurityBadge, GenreTags, FilmCard, LoadingReel, SectionHeader, PersonPlaceholder } from '../components/UI'
 import { useSEOSync } from '../components/useSEOSync'
 import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
@@ -70,7 +70,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 {/* Full-bleed backdrop */}
                 <div style={{ position: 'relative', width: '100%', height: '55vw', minHeight: 220, maxHeight: 320, overflow: 'hidden' }}>
                     {film.backdrop_path ? (
-                        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.4) brightness(0.35) contrast(1.1)' }} />
+                        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
                     ) : (
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
                     )}
@@ -202,7 +202,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
         <div style={{ position: 'relative', minHeight: '70vh', display: 'flex', alignItems: 'flex-end', paddingBottom: '3rem', paddingTop: 0, flexShrink: 0 }}>
             {/* Backdrop */}
             {film.backdrop_path && (
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.5) brightness(0.25) contrast(1.15)', zIndex: 0 }} />
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.3) brightness(0.40) contrast(1.1)', zIndex: 0 }} />
             )}
             {/* Gradient overlay */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--ink) 15%, rgba(10,7,3,0.85) 45%, rgba(10,7,3,0.2) 80%, transparent)', zIndex: 1 }} />
@@ -369,11 +369,9 @@ function FilmDetails({ film, onPlayVideo }: any) {
                                 >
                                     <div className="cast-photo">
                                         {member.profile_path ? (
-                                            <img src={tmdb.profile(member.profile_path) || undefined} alt={member.name} decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4)' }} />
+                                            <img src={tmdb.profile(member.profile_path) || undefined} alt={member.name} decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.15) contrast(1.05)' }} />
                                         ) : (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)' }}>
-                                                <Film size={24} opacity={0.3} />
-                                            </div>
+                                            <PersonPlaceholder size="100%" />
                                         )}
                                     </div>
                                     <div className="cast-name">{member.name}</div>
@@ -391,9 +389,9 @@ function FilmDetails({ film, onPlayVideo }: any) {
                         <div style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '0.5rem', marginLeft: IS_TOUCH ? '-1.25rem' : 0, paddingLeft: IS_TOUCH ? '1.25rem' : 0 }}>
                             {allVideos.slice(0, 6).map((v: any) => (
                                 <button key={v.id} onClick={() => onPlayVideo(v.key)}
-                                    style={{ flexShrink: 0, width: IS_TOUCH ? 160 : 200, background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '2px', cursor: 'pointer', overflow: 'hidden', textAlign: 'left', padding: 0, position: 'relative' }}
-                                    onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'}
-                                    onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--ash)'}
+                                    style={{ flexShrink: 0, width: IS_TOUCH ? 160 : 200, background: 'var(--soot)', border: '1px solid rgba(139,105,20,0.2)', borderRadius: '4px', cursor: 'pointer', overflow: 'hidden', textAlign: 'left', padding: 0, position: 'relative', transition: 'border-color 0.25s, box-shadow 0.25s' }}
+                                    onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.6), 0 0 12px rgba(139,105,20,0.2)' }}
+                                    onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(139,105,20,0.2)'; e.currentTarget.style.boxShadow = 'none' }}
                                 >
                                     <div style={{ position: 'relative', aspectRatio: '16/9', overflow: 'hidden' }}>
                                         <img src={`https://img.youtube.com/vi/${v.key}/mqdefault.jpg`} alt={v.name} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.3)', display: 'block' }} />
