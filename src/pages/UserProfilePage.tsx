@@ -413,7 +413,7 @@ export default function UserProfilePage() {
         <div className={`page-top ${stats.count > 50 ? 'level-obsessed' : stats.count > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100dvh' }}>
             {/* Header */}
             {!activeTab ? (
-                <div style={{ borderBottom: '1px solid rgba(139,105,20,0.2)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ borderBottom: '1px solid rgba(139,105,20,0.2)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '4rem 0 3rem', position: 'relative', overflow: 'hidden' }}>
                 <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.14) 0%, rgba(139,105,20,0.04) 40%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent)', pointerEvents: 'none', zIndex: 0 }} />
                 {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
@@ -495,7 +495,7 @@ export default function UserProfilePage() {
             )}
 
             {!activeTab && (
-                <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 850, margin: '0 auto', paddingBottom: '3rem' }}>
+                <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 1100, margin: '0 auto', paddingBottom: '3rem' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem', padding: '1.5rem 0.5rem' }}>
                         {[
                             { id: 'archive', label: 'Archive', count: profileLogs.length, icon: Archive, active: activeTab === 'archive', desc: 'Watched' },

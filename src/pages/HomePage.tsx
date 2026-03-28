@@ -194,51 +194,53 @@ export default function HomePage() {
                         </motion.div>
                     )}
 
-                    {/* CTA row — hidden on mobile since BottomNav has LOG + DARKROOM */}
-                    {!IS_TOUCH && (
-                        <motion.div variants={heroChild} className="hero-cta-row" style={{ display: 'flex', justifyContent: 'center', gap: '1rem', marginTop: '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                            {isAuthenticated ? (
-                                <button
-                                    className="btn btn-primary"
-                                    style={{
-                                        fontSize: '1rem',
-                                        padding: '1em 2.8em',
-                                        boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
-                                        letterSpacing: '0.18em',
-                                    }}
-                                    onClick={() => openLogModal()}
-                                >
-                                    + LOG A FILM
-                                </button>
-                            ) : (
-                                <>
-                                    <button
-                                        className="btn btn-primary"
-                                        style={{
-                                            fontSize: '1rem',
-                                            padding: '1em 2.8em',
-                                            boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
-                                            letterSpacing: '0.18em',
-                                        }}
-                                        onClick={() => openSignupModal('cinephile')}
-                                    >
-                                        ✦ JOIN THE SOCIETY
-                                    </button>
-                                    <button
-                                        className="btn btn-ghost"
-                                        style={{ fontSize: '0.85rem', padding: '0.9em 2em', borderColor: 'rgba(139,105,20,0.4)', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
-                                        onClick={() => openSignupModal('venue_owner')}
-                                    >
-                                        I MANAGE A VENUE
-                                    </button>
-                                </>
-                            )}
+                    {/* CTA row */}
+                    {!isAuthenticated ? (
+                        <motion.div variants={heroChild} className="hero-cta-row" style={{ display: 'flex', justifyContent: 'center', gap: IS_TOUCH ? '0.6rem' : '1rem', marginTop: IS_TOUCH ? '1.5rem' : '2.5rem', flexWrap: 'wrap', alignItems: 'center', flexDirection: IS_TOUCH ? 'column' : 'row', width: IS_TOUCH ? '100%' : 'auto', padding: IS_TOUCH ? '0 1rem' : 0 }}>
                             <button
-                                className="btn btn-ghost"
-                                style={{ fontSize: '0.85rem', padding: '0.9em 2em', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em' }}
-                                onClick={() => navigate('/discover')}
+                                className="btn btn-primary"
+                                style={{
+                                    fontSize: IS_TOUCH ? '0.8rem' : '1rem',
+                                    padding: IS_TOUCH ? '0.8em 2em' : '1em 2.8em',
+                                    boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
+                                    letterSpacing: '0.18em',
+                                    width: IS_TOUCH ? '100%' : 'auto',
+                                }}
+                                onClick={() => openSignupModal('cinephile')}
                             >
-                                BROWSE ARCHIVES
+                                ✦ JOIN THE SOCIETY
+                            </button>
+                            <div style={{ display: 'flex', gap: IS_TOUCH ? '0.5rem' : '1rem', width: IS_TOUCH ? '100%' : 'auto' }}>
+                                <button
+                                    className="btn btn-ghost"
+                                    style={{ fontSize: IS_TOUCH ? '0.7rem' : '0.85rem', padding: IS_TOUCH ? '0.7em 1em' : '0.9em 2em', borderColor: 'rgba(139,105,20,0.4)', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em', flex: IS_TOUCH ? 1 : 'none' }}
+                                    onClick={() => openSignupModal('venue_owner')}
+                                >
+                                    I MANAGE A VENUE
+                                </button>
+                                <button
+                                    className="btn btn-ghost"
+                                    style={{ fontSize: IS_TOUCH ? '0.7rem' : '0.85rem', padding: IS_TOUCH ? '0.7em 1em' : '0.9em 2em', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em', flex: IS_TOUCH ? 1 : 'none' }}
+                                    onClick={() => navigate('/discover')}
+                                >
+                                    BROWSE ARCHIVES
+                                </button>
+                            </div>
+                        </motion.div>
+                    ) : (
+                        <motion.div variants={heroChild} style={{ marginTop: IS_TOUCH ? '1.5rem' : '2.5rem', display: 'flex', justifyContent: 'center' }}>
+                            <button
+                                className="btn btn-primary"
+                                style={{
+                                    fontSize: IS_TOUCH ? '0.8rem' : '1rem',
+                                    padding: IS_TOUCH ? '0.8em 2em' : '1em 2.8em',
+                                    boxShadow: '0 6px 28px rgba(139,105,20,0.45), 0 0 0 1px rgba(242,232,160,0.15)',
+                                    letterSpacing: '0.18em',
+                                    width: IS_TOUCH ? '90%' : 'auto',
+                                }}
+                                onClick={() => openLogModal()}
+                            >
+                                + LOG A FILM
                             </button>
                         </motion.div>
                     )}
