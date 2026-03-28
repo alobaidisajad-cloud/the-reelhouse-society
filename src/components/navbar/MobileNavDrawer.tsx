@@ -26,9 +26,10 @@ export default function MobileNavDrawer({ isOpen, onClose, onOpenNotifications }
             {isOpen && (
                 <motion.div
                     className="mobile-menu"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                 >
                     <button
                         className="nav-icon-btn"
@@ -37,18 +38,31 @@ export default function MobileNavDrawer({ isOpen, onClose, onOpenNotifications }
                     >
                         <X size={24} />
                     </button>
-                    <Buster size={80} mood="smiling" />
+                    <motion.div
+                        initial={{ scale: 0.8, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.1, type: 'spring' as const, damping: 15, stiffness: 200 }}
+                    >
+                        <Buster size={80} mood="smiling" />
+                    </motion.div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginTop: '1.5rem' }}>
-                        {NAV_LINKS.map(({ path, label }) => (
-                            <Link key={path} to={path} className="mobile-nav-link" onClick={onClose}>
-                                {label}
-                            </Link>
+                        {NAV_LINKS.map(({ path, label }, i) => (
+                            <motion.div
+                                key={path}
+                                initial={{ opacity: 0, y: 15 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.15 + i * 0.06, type: 'spring' as const, damping: 20, stiffness: 120 }}
+                            >
+                                <Link to={path} className="mobile-nav-link" onClick={onClose}>
+                                    {label}
+                                </Link>
+                            </motion.div>
                         ))}
 
                         {isAuthenticated ? (
                             <>
-                                <div style={{ width: '40px', height: '1px', background: 'var(--ash)', margin: '0.5rem 0' }} />
+                                <div style={{ width: '40px', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.4), transparent)', margin: '0.5rem 0' }} />
                                 <Link to={`/user/${user?.username}`} className="mobile-nav-link" onClick={onClose} style={{ fontSize: '1.2rem', color: 'var(--bone)' }}>
                                     My Profile
                                 </Link>
@@ -76,7 +90,7 @@ export default function MobileNavDrawer({ isOpen, onClose, onOpenNotifications }
                         )}
 
                         {/* Mobile Handbook Link */}
-                        <div style={{ width: '40px', height: '1px', background: 'var(--ash)', margin: '0.5rem 0' }} />
+                        <div style={{ width: '40px', height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.4), transparent)', margin: '0.5rem 0' }} />
                         <button
                             className="mobile-nav-link"
                             onClick={() => { openHandbook(); onClose() }}
