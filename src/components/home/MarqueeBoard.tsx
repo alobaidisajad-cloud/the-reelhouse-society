@@ -81,7 +81,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
             boxSizing: 'border-box',
         }}>
             {/* Bulb row top — hidden on mobile for performance */}
-            {!IS_TOUCH && (
+            {!(IS_TOUCH || isMobile) && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', padding: '0 10px' }}>
                     {MARQUEE_BULBS.map((_, i) => (
                         <div
@@ -155,7 +155,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
                     </div>
                 </div>
                 {/* Film strip decoration — desktop only */}
-                {!IS_TOUCH && (
+                {!(IS_TOUCH || isMobile) && (
                     <div style={{
                         display: 'flex',
                         gap: 4,
@@ -174,7 +174,7 @@ const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: any }) {
             </div>
 
             {/* Bulb row bottom — desktop only */}
-            {!IS_TOUCH && (
+            {!(IS_TOUCH || isMobile) && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '0.75rem', padding: '0 10px' }}>
                     {MARQUEE_BULBS.map((_, i) => (
                         <div
