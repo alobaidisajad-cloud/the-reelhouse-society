@@ -413,13 +413,15 @@ export default function UserProfilePage() {
         <div className={`page-top ${stats.count > 50 ? 'level-obsessed' : stats.count > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100dvh' }}>
             {/* Header */}
             {!activeTab ? (
-                <div style={{ borderBottom: '1px solid var(--ash)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ borderBottom: '1px solid rgba(139,105,20,0.2)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '3rem 0 2rem', position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.14) 0%, rgba(139,105,20,0.04) 40%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent)', pointerEvents: 'none', zIndex: 0 }} />
                 {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
                 <div className="container" style={{ position: 'relative', zIndex: 1 }}>
                     <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.25rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
                         {/* Avatar */}
                         <div style={{ position: 'relative', flexShrink: 0, marginBottom: IS_TOUCH ? '1rem' : 0 }}>
-                            <div className="profile-avatar-ring" style={{ width: 140, height: 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}20`, overflow: 'hidden', margin: '0 auto' }}>
+                            <div className="profile-avatar-ring" style={{ width: 140, height: 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}40, 0 0 80px ${stats.color}18, inset 0 0 20px rgba(0,0,0,0.5)`, overflow: 'hidden', margin: '0 auto' }}>
                                 {renderAvatar((profileUser?.avatar || 'smiling'), 90)}
                             </div>
                             <div style={{ position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)', background: 'var(--ink)', border: `1px solid ${stats.color}`, padding: '0.2rem 0.6rem', borderRadius: '4px', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: stats.color, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(0,0,0,0.5)', zIndex: 2 }}>✦ {stats.level}</div>
@@ -448,7 +450,7 @@ export default function UserProfilePage() {
                                 )}
                             </div>
 
-                            <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.9rem' : '1rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 600, lineHeight: 1.5, opacity: profileUser.bio ? 1 : 0.5, marginBottom: '1.5rem' }}>
+                            <p style={{ fontFamily: 'var(--font-sub)', fontSize: IS_TOUCH ? '0.9rem' : '1rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 600, lineHeight: 1.5, opacity: profileUser.bio ? 0.85 : 0.45, marginBottom: '1.5rem' }}>
                                 {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
                             </p>
 
@@ -520,7 +522,7 @@ export default function UserProfilePage() {
                                     padding: '1.25rem 0.5rem',
                                     background: 'linear-gradient(135deg, rgba(20,15,10,0.8) 0%, rgba(10,5,0,0.9) 100%)',
                                     border: '1px solid rgba(139,105,20,0.15)',
-                                    borderRadius: '12px',
+                                    borderRadius: '2px',
                                     cursor: item.disabled ? 'not-allowed' : 'pointer',
                                     transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                                     position: 'relative',
