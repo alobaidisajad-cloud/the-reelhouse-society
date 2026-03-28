@@ -39,7 +39,7 @@
   transform: translateY(0);
 }
 .yic-section + .yic-section {
-  border-top: 1px dashed var(--ash);
+  border-top: 1px dashed rgba(139,105,20,0.25);
 }
 
 /* ── Opening Title (Hero) ── */
@@ -327,10 +327,11 @@
   height: 210px;
   object-fit: cover;
   border-radius: var(--radius-card);
-  border: 1px solid var(--ash);
+  border: 1px solid rgba(139,105,20,0.4);
   margin: 0 auto 0.75rem;
   display: block;
   filter: sepia(0.15);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
 .yic-bookend-title {
   font-family: var(--font-sub);
