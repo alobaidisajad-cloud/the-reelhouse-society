@@ -12,8 +12,8 @@ import { motion, AnimatePresence } from 'framer-motion'
  * React only handles the final dismissal (one setTimeout).
  */
 
-const TICK = 450  // ms each digit stays visible
-const TOTAL = TICK * 4 + 350  // 3 digits + dot + exit buffer
+const TICK = 900  // ms each digit stays visible
+const TOTAL = TICK * 4 + 500  // 3 digits + dot + exit buffer
 
 const DIGITS = ['3', '2', '1', '●'] as const
 
@@ -71,7 +71,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
             {visible && (
                 <motion.div
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
+                    transition={{ duration: 0.5 }}
                     style={{
                         position: 'fixed',
                         inset: 0,
