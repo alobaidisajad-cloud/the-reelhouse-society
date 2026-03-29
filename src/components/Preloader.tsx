@@ -7,10 +7,10 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
     useEffect(() => {
         if (count > 0) {
-            const timer = setTimeout(() => setCount(count - 1), 200)
+            const timer = setTimeout(() => setCount(count - 1), 550)
             return () => clearTimeout(timer)
         } else {
-            const timer = setTimeout(() => setLoading(false), 200)
+            const timer = setTimeout(() => setLoading(false), 400)
             return () => clearTimeout(timer)
         }
     }, [count])
@@ -46,7 +46,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
                         {/* Spinning hair line */}
                         <motion.div
                             animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                            transition={{ duration: 1.8, repeat: Infinity, ease: 'linear' }}
                             style={{
                                 position: 'absolute',
                                 top: '50%',
@@ -64,8 +64,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
                         <motion.div
                             key={count}
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
+                            initial={{ scale: 0.6, opacity: 0, filter: 'blur(4px)' }}
+                            animate={{ scale: [0.6, 1.08, 1], opacity: 1, filter: 'blur(0px)' }}
+                            transition={{ duration: 0.35, ease: [0.175, 0.885, 0.32, 1.275] }}
                             style={{
                                 fontFamily: 'var(--font-display)',
                                 fontSize: '8rem',
