@@ -18,18 +18,28 @@ const T = 950
 // Digits:        '3'  '2'  '1'  '●'  null  [panel fade]
 
 export default function Preloader({ onComplete }: { onComplete: () => void }) {
-  const [digit, setDigit] = useState<string | null>('3')
+  const [digit, setDigit] = useState<string | null>(null)
   const [visible, setVisible] = useState(true)
+
+  // Lock body scroll for the entire duration of the preloader
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = prev }
+  }, [])
 
   useEffect(() => {
     // All timers fire from t=0 reference — nothing can interrupt the sequence
-    const t1 = setTimeout(() => setDigit('2'), T)
-    const t2 = setTimeout(() => setDigit('1'), T * 2)
-    const t3 = setTimeout(() => setDigit('●'), T * 3)
-    const t4 = setTimeout(() => setDigit(null), T * 4)          // clear digit, hold empty ring briefly
-    const t5 = setTimeout(() => setVisible(false), T * 4 + 420) // fade out panel
+    // Start null so '3' gets the same AnimatePresence entrance animation as other digits
+    const t0 = setTimeout(() => setDigit('3'), 80)   // tiny delay so first digit animates in
+    const t1 = setTimeout(() => setDigit('2'), T + 80)
+    const t2 = setTimeout(() => setDigit('1'), T * 2 + 80)
+    const t3 = setTimeout(() => setDigit('●'), T * 3 + 80)
+    const t4 = setTimeout(() => setDigit(null), T * 4 + 80)   // clear digit
+    const t5 = setTimeout(() => setVisible(false), T * 4 + 500) // fade out panel
 
     return () => {
+      clearTimeout(t0)
       clearTimeout(t1)
       clearTimeout(t2)
       clearTimeout(t3)
