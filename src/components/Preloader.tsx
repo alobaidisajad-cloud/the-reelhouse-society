@@ -2,22 +2,45 @@ import { useEffect, useRef } from 'react'
 
 /*  ═══════════════════════════════════════════════════════════════
     REELHOUSE — THE PROJECTOR SEQUENCE
-    Authentic cinematic film-leader countdown. Nitrate Noir.
+    "The Lamp Warms Up" — a 3-second love letter to cinema.
     ═══════════════════════════════════════════════════════════════
 
     ARCHITECTURE:
     ─────────────
     • ZERO Framer Motion. ZERO React state for animation.
     • Pure CSS @keyframes + staggered delays.
-    • Digits: 3 → 2 → 1 → blank flash frame (not a dot)
+    • Digits: 3 → 2 → 1, each progressively warmer.
+    • Iris bloom resolution: the gate opens, the film begins.
     • ONE ref-based flag tracks completion.
     • ONE setTimeout calls onComplete after total duration.
     ────────────────────────────────────────────────────────────*/
 
-const D     = 580          // ms per digit — crisp, cinematic, not sluggish
-const FLASH = 380          // ms for the final blank flash frame
-const FADE  = 600          // ms for the curtain fade to black
-const TOTAL = D * 3 + FLASH + FADE
+const D1    = 580       // ms — digit "3" (distant, the lamp is cold)
+const D2    = 580       // ms — digit "2" (closer, warmth building)
+const D3    = 620       // ms — digit "1" (present, intimate — the held breath)
+const BLOOM = 400       // ms — iris opens, warm light fills the gate
+const FADE  = 500       // ms — dissolve into the site
+const TOTAL = D1 + D2 + D3 + BLOOM + FADE   // 2,680ms
+
+// The countdown duration before the bloom
+const CD = D1 + D2 + D3   // 1,780ms
+
+// Each digit grows progressively warmer — the projector lamp warming up.
+// text-shadow provides the ambient glow; filter:brightness in keyframes adds the bloom.
+const DIGITS = [
+  {
+    char: '3', delay: 0, dur: D1,
+    shadow: '0 0 20px rgba(196,150,26,0.22), 0 0 50px rgba(196,150,26,0.08)',
+  },
+  {
+    char: '2', delay: D1, dur: D2,
+    shadow: '0 0 28px rgba(248,240,192,0.38), 0 0 65px rgba(196,150,26,0.16), 0 0 100px rgba(196,150,26,0.06)',
+  },
+  {
+    char: '1', delay: D1 + D2, dur: D3,
+    shadow: '0 0 35px rgba(248,240,192,0.55), 0 0 75px rgba(248,240,192,0.28), 0 0 130px rgba(196,150,26,0.15)',
+  },
+]
 
 export default function Preloader({ onComplete }: { onComplete: () => void }) {
   const called = useRef(false)
@@ -41,11 +64,11 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
   if (called.current) return null
 
-  // ------------------------------------------------------------
-  // Ring tick positions: 12 ticks around the aperture like a
-  // clock face — authentic film leader detail.
-  // ------------------------------------------------------------
+  // 12 clock-face ticks — authentic film leader detail
   const ticks = Array.from({ length: 12 }, (_, i) => i * 30)
+
+  // Curtain hold percentage — stays opaque through countdown + half the bloom, then fades
+  const curtainHoldPct = Math.round(((CD + BLOOM * 0.4) / TOTAL) * 100)
 
   return (
     <div
@@ -64,54 +87,76 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
         animation: `pldCurtain ${TOTAL}ms linear forwards`,
       }}
     >
-      {/* ── Inline keyframes ── */}
+      {/* ── Keyframes ── */}
       <style>{`
-        @font-face {
-          /* Ensure Rye is available — loaded via index.html but guard here */
-        }
-
-        /* Each digit burns in (scale up from slightly small, sharp fade in)
-           then holds still, then fades out upward like burning celluloid.    */
+        /* ── Digit: bloom entry → steady hold → clean exit ──
+           brightness(1.35) on entry creates a warm overexposure
+           moment, like the projector light first hitting the
+           film emulsion. It amplifies the text-shadow glow too,
+           creating a unified "the light catches the frame" bloom. */
         @keyframes pldDigit {
-          0%   { opacity: 0;    transform: scale(0.82) translateY(6px); filter: blur(6px); }
-          10%  { opacity: 1;    transform: scale(1.06) translateY(0);   filter: blur(0); }
-          18%  { opacity: 1;    transform: scale(1)    translateY(0);   filter: blur(0); }
-          78%  { opacity: 1;    transform: scale(1)    translateY(0);   filter: blur(0); }
-          100% { opacity: 0;    transform: scale(1.08) translateY(-5px); filter: blur(2px); }
+          0%   { opacity: 0;  transform: scale(0.96); filter: brightness(1); }
+          8%   { opacity: 1;  transform: scale(1.01); filter: brightness(1.35); }
+          20%  { opacity: 1;  transform: scale(1);    filter: brightness(1); }
+          82%  { opacity: 1;  transform: scale(1);    filter: brightness(1); }
+          100% { opacity: 0;  transform: scale(1);    filter: brightness(1); }
         }
 
-        /* The "frame number" oscillates very subtly — like an old projector
-           frame counter, not a sweep arm.                                    */
-        @keyframes pldFrameTick {
-          0%   { opacity: 0.18; }
-          50%  { opacity: 0.50; }
-          100% { opacity: 0.18; }
-        }
-
-        /* Outer ring breathes — slow, weighted, like a held breath */
+        /* ── Ring breathes: projector lamp pulse ──
+           Box-shadow warms on the inhale — as if the lamp
+           brightens slightly on each breath cycle. */
         @keyframes pldBreathe {
-          0%, 100% { opacity: 0.38; transform: scale(1); }
-          50%      { opacity: 0.70; transform: scale(1.005); }
+          0%, 100% {
+            opacity: 0.42;
+            box-shadow: 0 0 40px rgba(196,150,26,0.04),
+                        inset 0 0 30px rgba(196,150,26,0.03);
+          }
+          50% {
+            opacity: 0.72;
+            box-shadow: 0 0 70px rgba(196,150,26,0.09),
+                        inset 0 0 50px rgba(196,150,26,0.05);
+          }
         }
 
-        /* The blank flash frame at the end — SMPTE white flash before cut */
-        @keyframes pldFlashFrame {
+        /* ── Animated grain: 4-frame cycle ──
+           steps(4) = discrete jumps like individual film
+           frames advancing through the gate. */
+        @keyframes pldGrainShift {
+          0%   { background-position: 0 0; }
+          25%  { background-position: -37px -29px; }
+          50%  { background-position: 23px -47px; }
+          75%  { background-position: -19px 31px; }
+          100% { background-position: 0 0; }
+        }
+
+        /* ── Iris bloom: gate opens after final digit ──
+           The entire gate assembly scales up gently,
+           like a camera iris opening to the first frame. */
+        @keyframes pldIrisOpen {
+          0%   { transform: scale(1); }
+          100% { transform: scale(1.06); }
+        }
+
+        /* ── Warm bloom: amber light fills the center ──
+           Replaces the old flash frame with a warm, gentle
+           radial glow — the projector light hitting the
+           screen for the first time. */
+        @keyframes pldWarmBloom {
+          0%   { opacity: 0;    transform: scale(0.92); }
+          50%  { opacity: 0.30; transform: scale(1); }
+          100% { opacity: 0.12; transform: scale(1.05); }
+        }
+
+        /* ── Background warmth: center warms during countdown ──
+           Imperceptible but felt — the black gets warmer as
+           the projector lamp heats up across 3 digits. */
+        @keyframes pldWarmth {
           0%   { opacity: 0; }
-          20%  { opacity: 0.38; }
-          55%  { opacity: 0.32; }
-          100% { opacity: 0; }
+          60%  { opacity: 0.22; }
+          100% { opacity: 0.35; }
         }
 
-        /* Film-burn scratch lines flash near the end */
-        @keyframes pldScratch {
-          0%,100% { opacity: 0; }
-          20%     { opacity: 0.8; }
-          40%     { opacity: 0; }
-          60%     { opacity: 0.5; }
-          80%     { opacity: 0; }
-        }
-
-        /* Status label — slow film-projector flicker */
+        /* ── Status label: projector flicker ── */
         @keyframes pldFlicker {
           0%, 100% { opacity: 0.45; }
           33%      { opacity: 0.45; }
@@ -122,26 +167,28 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           69%      { opacity: 0.45; }
         }
 
-        /* Curtain: stays opaque, then fades at the very end */
+        /* ── Curtain: holds during countdown, dissolves at end ── */
         @keyframes pldCurtain {
-          0%, ${Math.round(((D * 3 + FLASH) / TOTAL) * 100)}%  { opacity: 1; }
-          100%                                                   { opacity: 0; }
+          0%, ${curtainHoldPct}%  { opacity: 1; }
+          100%                    { opacity: 0; }
         }
       `}</style>
 
-      {/* ── Deep vignette — heavy, like shooting through an aperture gate ── */}
+      {/* ── Deep vignette — aperture gate framing ── */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background: 'radial-gradient(ellipse 65% 65% at 50% 50%, transparent 20%, rgba(0,0,0,0.7) 65%, rgba(0,0,0,0.97) 100%)',
         zIndex: 1,
       }} />
 
-      {/* ── Film grain ── */}
+      {/* ── Animated film grain — alive, not static ── */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        opacity: 0.055, mixBlendMode: 'overlay', zIndex: 2,
+        opacity: 0.055, mixBlendMode: 'overlay' as const, zIndex: 2,
         backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
         backgroundSize: '150px',
+        animation: 'pldGrainShift 180ms steps(4) infinite',
+        willChange: 'background-position',
       }} />
 
       {/* ── Horizontal scan lines ── */}
@@ -151,8 +198,18 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
         background: 'repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.6) 3px, rgba(0,0,0,0.6) 4px)',
       }} />
 
+      {/* ── Background warmth — the lamp warms the center ── */}
+      <div style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1,
+        background: 'radial-gradient(circle at 50% 47%, rgba(40,28,12,0.5) 0%, transparent 40%)',
+        opacity: 0,
+        animation: `pldWarmth ${CD}ms ease-in forwards`,
+      }} />
+
       {/* ═══════════════════════════════════════════════════════════
-          THE GATE — Film leader aperture. No radar. No sweep arm.
+          THE GATE — Film leader aperture.
+          After the final digit, the gate scales up (iris bloom)
+          as warm light dissolves into the site.
           ======================================================= */}
       <div style={{
         width: 'min(300px, 68vw)',
@@ -163,9 +220,11 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
         justifyContent: 'center',
         flexShrink: 0,
         zIndex: 3,
+        willChange: 'transform',
+        animation: `pldIrisOpen ${BLOOM}ms ease-out ${CD}ms both`,
       }}>
 
-        {/* Outermost decorative ring — very faint, large */}
+        {/* Outermost decorative ring — faint, large, breathing */}
         <div style={{
           position: 'absolute',
           inset: '-8%',
@@ -174,7 +233,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           animation: 'pldBreathe 3s ease-in-out infinite',
         }} />
 
-        {/* Primary aperture ring */}
+        {/* Primary aperture ring — the main circle */}
         <div style={{
           position: 'absolute', inset: 0,
           border: '1.5px solid rgba(196,150,26,0.42)',
@@ -195,17 +254,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           pointerEvents: 'none',
         }} />
 
-        {/* Innermost small ring — the "gate" aperture itself */}
-        <div style={{
-          position: 'absolute', inset: '32%',
-          border: '0.75px solid rgba(196,150,26,0.10)',
-          borderRadius: '50%',
-          pointerEvents: 'none',
-        }} />
-
-        {/* ── 12 clock-face tick marks around the primary ring ── */}
+        {/* ── 12 clock-face tick marks ── */}
         {ticks.map((deg, i) => {
-          const isMajor = i % 3 === 0  // 4 major ticks at 0°, 90°, 180°, 270°
+          const isMajor = i % 3 === 0
           return (
             <div
               key={deg}
@@ -219,52 +270,22 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
                 top: '50%',
                 left: '50%',
                 transformOrigin: 'left center',
-                // Push tick to the edge of the ring
                 transform: `rotate(${deg}deg) translateX(min(141px, 32.5vw))`,
               }}
             />
           )
         })}
 
-        {/* ── Frame counter arc labels (static, aesthetic detail) ── */}
-        {(['III', 'VI', 'IX', 'XII'] as const).map((label, i) => {
-          const angles = [0, 90, 180, 270]
-          const deg = angles[i]
-          const rad = (deg - 90) * (Math.PI / 180)
-          const r = 42   // % from center
-          const x = 50 + r * Math.cos(rad)
-          const y = 50 + r * Math.sin(rad)
-          return (
-            <div
-              key={label}
-              style={{
-                position: 'absolute',
-                top: `${y}%`,
-                left: `${x}%`,
-                transform: 'translate(-50%, -50%)',
-                fontFamily: "'Rye', Georgia, serif",
-                fontSize: 'clamp(0.38rem, 1.0vw, 0.48rem)',
-                color: 'rgba(196,150,26,0.22)',
-                letterSpacing: '0.05em',
-                animation: 'pldFlicker 4s ease-in-out infinite',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {label}
-            </div>
-          )
-        })}
-
-        {/* ── DIGITS: 3 → 2 → 1 — CSS Grid overlap guarantees center ── */}
+        {/* ── DIGITS: 3 → 2 → 1 — progressively warmer ── */}
         <div style={{
           position: 'absolute', inset: 0,
           display: 'grid',
           placeItems: 'center',
           pointerEvents: 'none',
         }}>
-          {(['3', '2', '1'] as const).map((d, i) => (
+          {DIGITS.map((d) => (
             <span
-              key={d}
+              key={d.char}
               style={{
                 gridRow: 1, gridColumn: 1,
                 fontFamily: "'Rye', Georgia, serif",
@@ -273,17 +294,12 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
                 color: '#EDE5D8',
                 lineHeight: 1,
                 opacity: 0,
-                willChange: 'opacity, transform, filter',
-                // Primary glow + warm amber bloom
-                filter: [
-                  'drop-shadow(0 0 30px rgba(248,240,192,0.55))',
-                  'drop-shadow(0 0 70px rgba(196,150,26,0.30))',
-                  'drop-shadow(0 0 120px rgba(196,150,26,0.12))',
-                ].join(' '),
-                animation: `pldDigit ${D}ms cubic-bezier(0.16, 1, 0.3, 1) ${i * D}ms both`,
+                willChange: 'opacity, transform',
+                textShadow: d.shadow,
+                animation: `pldDigit ${d.dur}ms cubic-bezier(0.16, 1, 0.3, 1) ${d.delay}ms both`,
               }}
             >
-              {d}
+              {d.char}
             </span>
           ))}
         </div>
@@ -303,37 +319,16 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
-          BLANK FLASH FRAME — replaces the ● dot.
-          Classic SMPTE: after the last digit, a pure white/warm
-          flash frame burns in momentarily, then the curtain falls.
+          WARM BLOOM — replaces the old flash frame.
+          A gentle amber radial glow, centered on the gate.
+          The projector light hits the screen for the first time.
           ======================================================= */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
-        // Warm amber burn — soft, not blinding. Nitrate Noir palette.
-        background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(240,210,120,0.55) 0%, rgba(196,150,26,0.30) 45%, transparent 80%)',
+        background: 'radial-gradient(ellipse 42% 42% at 50% 47%, rgba(248,240,192,0.38) 0%, rgba(196,150,26,0.15) 50%, transparent 78%)',
         opacity: 0,
-        animation: `pldFlashFrame ${FLASH}ms cubic-bezier(0.4, 0, 0.6, 1) ${D * 3}ms both`,
+        animation: `pldWarmBloom ${BLOOM}ms ease-out ${CD}ms both`,
       }} />
-
-      {/* ── Film scratch lines — appear with the flash for texture ── */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 11,
-        opacity: 0,
-        animation: `pldScratch ${FLASH}ms ease-out ${D * 3}ms both`,
-      }}>
-        {/* Vertical scratch 1 */}
-        <div style={{
-          position: 'absolute', top: 0, bottom: 0,
-          left: '48.5%', width: '0.75px',
-          background: 'linear-gradient(180deg, transparent 5%, rgba(255,248,220,0.6) 20%, rgba(255,248,220,0.8) 50%, rgba(255,248,220,0.5) 80%, transparent 95%)',
-        }} />
-        {/* Vertical scratch 2 */}
-        <div style={{
-          position: 'absolute', top: 0, bottom: 0,
-          left: '53%', width: '0.5px',
-          background: 'linear-gradient(180deg, transparent 15%, rgba(255,248,220,0.3) 30%, rgba(255,248,220,0.5) 55%, transparent 90%)',
-        }} />
-      </div>
     </div>
   )
 }
