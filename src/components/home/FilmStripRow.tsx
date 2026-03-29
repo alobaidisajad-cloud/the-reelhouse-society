@@ -113,10 +113,10 @@ const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, desc
                                 />
                             </div>
                         ) : (
-                            // Desktop: cinematic reveal — opacity only (NO blur filter — it forces full GPU recomposition)
+                            // Desktop: cinematic reveal + projector spotlight hover
                             <motion.div
                                 key={film.id}
-                                className="scroll-item"
+                                className="scroll-item projector-beam-card"
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 whileInView={{ opacity: 1, scale: 1 }}
                                 viewport={{ once: true, margin: "100px" }}
@@ -126,6 +126,7 @@ const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, desc
                                     flexShrink: 0,
                                     width: '170px',
                                     transformOrigin: 'bottom center',
+                                    borderRadius: 'var(--radius-card)',
                                 }}
                             >
                                 <FilmCard

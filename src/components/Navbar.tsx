@@ -245,8 +245,6 @@ export default function Navbar() {
 
                     {/* Main Search Bar — TMDB Films, Actors, Directors */}
                     <MainSearchDropdown isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
-                    {/* Main Search Bar — TMDB Films, Actors, Directors */}
-                    <MainSearchDropdown isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
 
                     {/* People Search Bar — Members */}
                     <MemberSearchDropdown isOpen={peopleSearchOpen} onClose={() => setPeopleSearchOpen(false)} />

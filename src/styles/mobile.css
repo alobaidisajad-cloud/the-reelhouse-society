@@ -621,3 +621,51 @@
   }
   .navbar { padding-top: env(safe-area-inset-top); }
 }
+
+/* ═══════════════════════════════════════════
+   LOBBY ELEVATION — MOBILE OVERRIDES
+   ═══════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Scroll progress rail sits below the 56px navbar — no z-fighting */
+  .scroll-progress-rail {
+    top: 56px;
+    height: 2px;
+  }
+
+  /* Compact lobby dividers on mobile */
+  .lobby-section-divider {
+    margin: 0.25rem 0;
+  }
+
+  /* Hide the ✦ ornament on tiny screens to avoid layout reflow */
+  .lobby-section-divider::before {
+    display: none;
+  }
+
+  /* Projector beam hover — no-op on touch, disable to save GPU */
+  .projector-beam-card:hover::before { opacity: 0 !important; }
+  .projector-beam-card:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* Ambient breathe — skip on mobile to preserve battery */
+  .ambient-breathe { animation: none !important; }
+
+  /* Section beacons — match mobile color scheme */
+  .section-beacon { width: 5px; height: 5px; }
+
+  /* Poster display case — remove on mobile (FeaturedReview handles this via IS_TOUCH prop) */
+  .poster-display-case::after { display: none !important; }
+
+  /* Hero CTA show on homepage when authenticated (override the global hidden rule) */
+  section .hero-cta-row.authenticated { display: flex !important; }
+}
+
+@media (any-pointer: coarse) {
+  /* Disable curtain-rise filter on touch — sepia filter causes full recomposition */
+  .curtain-rise {
+    animation: pageFadeIn 0.25s ease-out both !important;
+  }
+}
+
