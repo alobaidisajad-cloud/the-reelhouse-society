@@ -1,186 +1,318 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-/**
- * Preloader — Cinematic film-leader countdown.
- *
- * ALL timeouts are scheduled at mount in a single useEffect.
- * No async/await, no cancellation refs, no race conditions.
- * The sequence is hardcoded: 3 → 2 → 1 → ● → [fade out]
- *
- * This is the simplest and most reliable implementation possible.
- */
+/*  ═══════════════════════════════════════════════════════════════
+    REELHOUSE — THE PROJECTOR SEQUENCE
+    A cinematic 3-2-1 film-leader countdown.
+    ═══════════════════════════════════════════════════════════════
 
-// ms each digit is held on screen
-const T = 950
+    ARCHITECTURE (bulletproof by design):
+    ─────────────────────────────────────
+    • All 4 digits exist in the DOM from first paint.
+    • A single `activeIdx` integer toggles which one is opaque.
+    • Sequencing uses CHAINED timeouts: each callback schedules
+      the next, so React 18 batching can never collapse them.
+    • CSS `transition` handles fade — runs on the compositor
+      thread, immune to main-thread jank.
+    • Framer Motion is used ONLY for the final curtain fade-out.
+    • Body scroll is locked for the entire duration.
+    ─────────────────────────────────────────────────────────────*/
 
-// Scheduled at: T*0, T*1, T*2, T*3, T*4, T*4+400
-// Digits:        '3'  '2'  '1'  '●'  null  [panel fade]
+const HOLD = 920   // ms a digit stays visible
+const DIGITS = ['3', '2', '1', '●'] as const
 
 export default function Preloader({ onComplete }: { onComplete: () => void }) {
-  const [digit, setDigit] = useState<string | null>(null)
-  const [visible, setVisible] = useState(true)
+  const [idx, setIdx] = useState(-1)       // which digit is lit (-1 = none)
+  const [curtain, setCurtain] = useState(true) // panel visible
+  const bag = useRef<number[]>([])         // timeout ids for cleanup
 
-  // Lock body scroll for the entire duration of the preloader
+  /* ── schedule helper — pushes every id into the cleanup bag ── */
+  const after = useCallback((ms: number, fn: () => void) => {
+    const id = window.setTimeout(fn, ms)
+    bag.current.push(id)
+  }, [])
+
+  /* ── lock scroll ── */
   useEffect(() => {
     const prev = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = prev }
   }, [])
 
+  /* ── the countdown chain ── */
   useEffect(() => {
-    // All timers fire from t=0 reference — nothing can interrupt the sequence
-    // Start null so '3' gets the same AnimatePresence entrance animation as other digits
-    const t0 = setTimeout(() => setDigit('3'), 80)   // tiny delay so first digit animates in
-    const t1 = setTimeout(() => setDigit('2'), T + 80)
-    const t2 = setTimeout(() => setDigit('1'), T * 2 + 80)
-    const t3 = setTimeout(() => setDigit('●'), T * 3 + 80)
-    const t4 = setTimeout(() => setDigit(null), T * 4 + 80)   // clear digit
-    const t5 = setTimeout(() => setVisible(false), T * 4 + 500) // fade out panel
-
-    return () => {
-      clearTimeout(t0)
-      clearTimeout(t1)
-      clearTimeout(t2)
-      clearTimeout(t3)
-      clearTimeout(t4)
-      clearTimeout(t5)
+    // Step through each digit one at a time.
+    // Each step only schedules the NEXT step inside its own callback,
+    // so React can never batch two setIdx calls together.
+    const chain = (i: number) => {
+      if (i < DIGITS.length) {
+        after(i === 0 ? 150 : HOLD, () => {
+          setIdx(i)
+          chain(i + 1)
+        })
+      } else {
+        // All digits shown → clear → fade out
+        after(HOLD, () => {
+          setIdx(-1)
+          after(350, () => setCurtain(false))
+        })
+      }
     }
+    chain(0)
+    return () => { bag.current.forEach(clearTimeout); bag.current = [] }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
     <AnimatePresence onExitComplete={onComplete}>
-      {visible && (
+      {curtain && (
         <motion.div
-          key="pld"
-          initial={{ opacity: 1 }}
+          key="projector"
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5, ease: 'easeInOut' }}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100000,
-            background: '#0A0806',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-          }}
+          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          style={S.curtain}
         >
-          {/* Vignette */}
-          <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none',
-            background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.72) 100%)',
-          }} />
+          {/* ── Layers: vignette + grain + scan lines ── */}
+          <div style={S.vignette} />
+          <div style={S.grain} />
+          <div style={S.scanlines} />
 
-          {/* Film grain */}
-          <div style={{
-            position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.3,
-            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
-            backgroundSize: '180px',
-          }} />
+          {/* ── The Gate — outer film-leader circle ── */}
+          <div style={S.gate}>
 
-          {/* Outer ring */}
-          <div style={{
-            width: 'min(270px, 64vw)',
-            height: 'min(270px, 64vw)',
-            border: '1.5px solid rgba(139,105,20,0.55)',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            animation: 'pldRing 2.4s ease-in-out infinite',
-            boxShadow: '0 0 80px rgba(139,105,20,0.06), inset 0 0 50px rgba(139,105,20,0.03)',
-          }}>
+            {/* Outer ring glow */}
+            <div style={S.ringOuter} />
 
-            {/* Inner decorative ring */}
-            <div style={{
-              position: 'absolute', inset: '11%',
-              border: '1px solid rgba(139,105,20,0.14)',
-              borderRadius: '50%', pointerEvents: 'none',
-            }} />
+            {/* Inner ring */}
+            <div style={S.ringInner} />
 
-            {/* Spinning sweep arm */}
-            <div style={{
-              position: 'absolute', top: '50%', left: '50%',
-              width: '50%', height: '1px',
-              background: 'linear-gradient(90deg, rgba(139,105,20,0.55) 0%, transparent 100%)',
-              transformOrigin: 'left center',
-              animation: 'pldSpin 1.8s linear infinite',
-            }} />
+            {/* Sweep arm — spinning radar line */}
+            <div style={S.sweep} />
 
-            {/* Crosshairs */}
-            <div style={{ position: 'absolute', top: '50%', left: '-6%', right: '-6%', height: '1px', background: 'rgba(139,105,20,0.09)' }} />
-            <div style={{ position: 'absolute', left: '50%', top: '-6%', bottom: '-6%', width: '1px', background: 'rgba(139,105,20,0.09)' }} />
+            {/* Cross hairs */}
+            <div style={S.hairH} />
+            <div style={S.hairV} />
 
-            {/* Tick marks */}
+            {/* Tick marks — 12 / 3 / 6 / 9 positions */}
             {[0, 90, 180, 270].map(deg => (
               <div key={deg} style={{
-                position: 'absolute', width: '9px', height: '1.5px',
-                background: 'rgba(139,105,20,0.32)',
-                top: '50%', left: '50%',
-                transformOrigin: 'left center',
-                transform: `rotate(${deg}deg) translateX(min(127px, 29vw))`,
+                ...S.tick,
+                transform: `rotate(${deg}deg) translateX(min(130px, 30vw))`,
               }} />
             ))}
 
-            {/* ── Digit — centered wrapper ensures it never drifts ── */}
-            <div style={{
-              position: 'absolute',
-              inset: 0,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
-            }}>
-              <AnimatePresence mode="wait">
-                {digit !== null && (
-                  <motion.span
-                    key={digit}
-                    initial={{ opacity: 0, scale: 0.55 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.92 }}
-                    transition={{ duration: 0.14, ease: 'easeOut' }}
-                    style={{
-                      fontFamily: 'var(--font-display, Georgia, serif)',
-                      fontSize: 'clamp(4rem, 15vw, 7.5rem)',
-                      color: '#E8DFC8',
-                      textShadow: '0 0 40px rgba(232,223,200,0.38), 0 0 90px rgba(139,105,20,0.18)',
-                      lineHeight: 1,
-                      userSelect: 'none',
-                      display: 'block',
-                    }}
-                  >
-                    {digit}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+            {/* Small circle center dot */}
+            <div style={S.centerDot} />
+
+            {/* ══════ DIGITS — all 4 in DOM, CSS transition toggles ══════ */}
+            <div style={S.digitBed}>
+              {DIGITS.map((d, i) => (
+                <span
+                  key={d}
+                  aria-hidden={idx !== i}
+                  style={{
+                    ...S.digit,
+                    opacity: idx === i ? 1 : 0,
+                    transform: idx === i ? 'scale(1)' : idx > i ? 'scale(1.2)' : 'scale(0.55)',
+                    filter: idx === i
+                      ? 'drop-shadow(0 0 40px rgba(248,240,192,0.5)) drop-shadow(0 0 80px rgba(196,150,26,0.25))'
+                      : 'none',
+                  }}
+                >
+                  {d}
+                </span>
+              ))}
             </div>
           </div>
 
-          {/* Status label */}
-          <div style={{
-            marginTop: 'clamp(1.4rem, 5vw, 2.2rem)',
-            fontFamily: 'var(--font-ui, monospace)',
-            fontSize: '0.58rem',
-            letterSpacing: '0.42em',
-            color: 'rgba(139,105,20,0.6)',
-            animation: 'pldFlicker 3.8s ease-in-out infinite',
-            userSelect: 'none',
-          }}>
-            THREADING PROJECTOR…
-          </div>
+          {/* ── "THREADING PROJECTOR…" label ── */}
+          <div style={S.label}>THREADING PROJECTOR…</div>
 
-          {/* Keyframes — injected once, only for ring/spin/flicker. Digit timing is 100% JS. */}
-          <style>{`
-            @keyframes pldSpin   { to { transform: rotate(360deg); } }
-            @keyframes pldRing   { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.013)} }
-            @keyframes pldFlicker{ 0%,100%{opacity:.5} 47%{opacity:.5} 48%{opacity:.15} 49%{opacity:.5} 93%{opacity:.5} 94%{opacity:.25} 95%{opacity:.5} }
-          `}</style>
+          {/* ── Film-burn flash (fires once near end) ── */}
+          <div
+            style={{
+              ...S.flash,
+              animationDelay: `${150 + HOLD * 3 + 200}ms`,
+            }}
+          />
+
+          {/* ── Keyframes (ring + sweep + flicker + flash only) ── */}
+          <style>{KEYFRAMES}</style>
         </motion.div>
       )}
     </AnimatePresence>
   )
 }
+
+
+/* ══════════════════════════════════════════════════════════════
+   STYLES — all inline for zero-dependency, zero-side-effect
+   ══════════════════════════════════════════════════════════════ */
+
+const S: Record<string, React.CSSProperties> = {
+  curtain: {
+    position: 'fixed',
+    inset: 0,
+    zIndex: 100000,
+    background: '#0A0806',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    touchAction: 'none',       // prevent mobile scroll / pull-to-refresh
+    userSelect: 'none',
+    WebkitUserSelect: 'none',
+  },
+
+  vignette: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    background: 'radial-gradient(ellipse 80% 75% at center, transparent 25%, rgba(0,0,0,0.85) 100%)',
+  },
+
+  grain: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    opacity: 0.06,
+    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E")`,
+    backgroundSize: '160px',
+    mixBlendMode: 'overlay',
+  },
+
+  scanlines: {
+    position: 'absolute', inset: 0, pointerEvents: 'none',
+    opacity: 0.04,
+    background: `repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.5) 2px, rgba(0,0,0,0.5) 4px)`,
+  },
+
+  /* ── The Gate (film-leader circle) ── */
+  gate: {
+    width: 'min(280px, 66vw)',
+    height: 'min(280px, 66vw)',
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+
+  ringOuter: {
+    position: 'absolute', inset: 0,
+    border: '1.5px solid rgba(196,150,26,0.45)',
+    borderRadius: '50%',
+    animation: 'pldPulse 2.6s ease-in-out infinite',
+    boxShadow: '0 0 60px rgba(196,150,26,0.06), 0 0 120px rgba(196,150,26,0.03), inset 0 0 40px rgba(196,150,26,0.03)',
+  },
+
+  ringInner: {
+    position: 'absolute', inset: '12%',
+    border: '1px solid rgba(196,150,26,0.12)',
+    borderRadius: '50%',
+    pointerEvents: 'none',
+  },
+
+  sweep: {
+    position: 'absolute',
+    top: '50%', left: '50%',
+    width: '50%', height: '1px',
+    background: 'linear-gradient(90deg, rgba(196,150,26,0.6) 0%, rgba(196,150,26,0) 85%)',
+    transformOrigin: 'left center',
+    animation: 'pldSweep 2s linear infinite',
+  },
+
+  hairH: {
+    position: 'absolute', top: '50%', left: '-8%', right: '-8%',
+    height: '1px',
+    background: 'rgba(196,150,26,0.08)',
+  },
+
+  hairV: {
+    position: 'absolute', left: '50%', top: '-8%', bottom: '-8%',
+    width: '1px',
+    background: 'rgba(196,150,26,0.08)',
+  },
+
+  tick: {
+    position: 'absolute',
+    width: '10px', height: '1.5px',
+    background: 'rgba(196,150,26,0.28)',
+    top: '50%', left: '50%',
+    transformOrigin: 'left center',
+  },
+
+  centerDot: {
+    position: 'absolute',
+    width: '4px', height: '4px',
+    borderRadius: '50%',
+    background: 'rgba(196,150,26,0.25)',
+    top: '50%', left: '50%',
+    transform: 'translate(-50%, -50%)',
+  },
+
+  /* ── Digit bed — covers the gate, flex-centers contents ── */
+  digitBed: {
+    position: 'absolute', inset: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    pointerEvents: 'none',
+  },
+
+  digit: {
+    position: 'absolute',
+    fontFamily: `'Rye', Georgia, serif`,
+    fontSize: 'clamp(4.2rem, 16vw, 8rem)',
+    color: '#EDE5D8',
+    lineHeight: 1,
+    transition: 'opacity 0.25s ease-out, transform 0.25s ease-out, filter 0.25s ease-out',
+    willChange: 'opacity, transform',
+  },
+
+  label: {
+    marginTop: 'clamp(1.6rem, 5vw, 2.4rem)',
+    fontFamily: `'Bungee', monospace, sans-serif`,
+    fontSize: 'clamp(0.42rem, 1.2vw, 0.56rem)',
+    letterSpacing: '0.45em',
+    color: 'rgba(196,150,26,0.55)',
+    animation: 'pldFlicker 3.5s ease-in-out infinite',
+    textTransform: 'uppercase' as const,
+    userSelect: 'none',
+  },
+
+  flash: {
+    position: 'absolute', inset: 0,
+    background: 'radial-gradient(circle at center, rgba(248,240,192,0.7) 0%, rgba(196,150,26,0.3) 40%, transparent 70%)',
+    pointerEvents: 'none',
+    opacity: 0,
+    animation: 'pldFlash 0.35s ease-out both',
+    zIndex: 2,
+  },
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   KEYFRAMES — only for ambient effects, NOT digit sequencing
+   ══════════════════════════════════════════════════════════════ */
+
+const KEYFRAMES = `
+@keyframes pldSweep {
+  to { transform: rotate(360deg); }
+}
+@keyframes pldPulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.008); }
+}
+@keyframes pldFlicker {
+  0%, 100% { opacity: 0.55; }
+  47%      { opacity: 0.55; }
+  48%      { opacity: 0.12; }
+  49%      { opacity: 0.55; }
+  93%      { opacity: 0.55; }
+  94%      { opacity: 0.2;  }
+  95%      { opacity: 0.55; }
+}
+@keyframes pldFlash {
+  0%   { opacity: 0; }
+  35%  { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+`
