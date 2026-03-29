@@ -5,15 +5,17 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
     const [count, setCount] = useState(3)
     const [loading, setLoading] = useState(true)
 
+    // Absolute timing — all timeouts scheduled upfront from the same origin.
+    // Chained timeouts via [count] get blocked when the main thread is busy
+    // mounting the rest of the app, causing numbers to batch/skip.
     useEffect(() => {
-        if (count > 0) {
-            const timer = setTimeout(() => setCount(count - 1), 550)
-            return () => clearTimeout(timer)
-        } else {
-            const timer = setTimeout(() => setLoading(false), 400)
-            return () => clearTimeout(timer)
-        }
-    }, [count])
+        const TICK = 400
+        const t1 = setTimeout(() => setCount(2), TICK)
+        const t2 = setTimeout(() => setCount(1), TICK * 2)
+        const t3 = setTimeout(() => setCount(0), TICK * 3)
+        const t4 = setTimeout(() => setLoading(false), TICK * 3 + 300)
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4) }
+    }, [])
 
     return (
         <AnimatePresence onExitComplete={onComplete}>
@@ -64,9 +66,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
 
                         <motion.div
                             key={count}
-                            initial={{ scale: 0.6, opacity: 0, filter: 'blur(4px)' }}
-                            animate={{ scale: [0.6, 1.08, 1], opacity: 1, filter: 'blur(0px)' }}
-                            transition={{ duration: 0.35, ease: [0.175, 0.885, 0.32, 1.275] }}
+                            initial={{ scale: 0.6, opacity: 0 }}
+                            animate={{ scale: [0.6, 1.05, 1], opacity: 1 }}
+                            transition={{ duration: 0.25, ease: 'easeOut' }}
                             style={{
                                 fontFamily: 'var(--font-display)',
                                 fontSize: '8rem',
@@ -93,7 +95,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
                         <motion.div
                             initial={{ opacity: 0 }}
                             animate={{ opacity: [0, 1, 0] }}
-                            transition={{ duration: 0.5 }}
+                            transition={{ duration: 0.4 }}
                             style={{
                                 position: 'absolute',
                                 inset: 0,
