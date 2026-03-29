@@ -18,20 +18,44 @@ export default function EmailConfirmationScreen({ confirmedEmail, resending, onR
                 aria-modal="true"
                 aria-label="Check your email"
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(5, 3, 1, 0.98)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+                style={{
+                    position: 'fixed', inset: 0, zIndex: 10000,
+                    /* ── Same immersive space as all auth screens ── */
+                    background: `
+                        radial-gradient(ellipse 50% 40% at 50% 45%, rgba(139, 105, 20, 0.03), transparent),
+                        rgba(5, 3, 1, 0.98)
+                    `,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem',
+                }}
             >
                 <motion.div
                     initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                    style={{ width: '100%', maxWidth: 480, background: 'var(--ink)', border: '1px solid var(--sepia)', borderRadius: '4px', padding: '3rem 2rem', position: 'relative', boxShadow: '0 0 40px rgba(139,105,20,0.15)', textAlign: 'center' }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+                    className="scanlines"
+                    style={{
+                        width: '100%', maxWidth: 480,
+                        background: 'radial-gradient(ellipse at center top, rgba(139, 105, 20, 0.04), transparent 60%), var(--ink)',
+                        border: '1px solid rgba(139, 105, 20, 0.3)',
+                        borderRadius: '4px', padding: '3rem 2rem',
+                        position: 'relative',
+                        boxShadow: '0 0 40px rgba(139,105,20,0.1)',
+                        textAlign: 'center',
+                    }}
                 >
-                    <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', opacity: 0.5 }}>
+                    <button onClick={onClose} style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', opacity: 0.5, zIndex: 2 }}>
                         <X size={16} />
                     </button>
 
+                    {/* ── Floating mail icon with breathing glow ── */}
                     <motion.div
                         animate={{ y: [0, -6, 0] }}
                         transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut' }}
-                        style={{ display: 'inline-flex', marginBottom: '1.5rem', background: 'rgba(139,105,20,0.1)', padding: '1.25rem', borderRadius: '50%', border: '1px solid var(--sepia)' }}
+                        style={{
+                            display: 'inline-flex', marginBottom: '1.5rem',
+                            background: 'rgba(139,105,20,0.1)', padding: '1.25rem', borderRadius: '50%',
+                            border: '1px solid var(--sepia)',
+                            animation: 'breatheGlow 3s ease-in-out infinite',
+                        }}
                     >
                         <Mail size={32} color="var(--sepia)" />
                     </motion.div>

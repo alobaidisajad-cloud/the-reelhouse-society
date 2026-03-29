@@ -10,13 +10,14 @@ import VelvetRopeGate from './signup/VelvetRopeGate'
 import ForgotPasswordScreen from './signup/ForgotPasswordScreen'
 import EmailConfirmationScreen from './signup/EmailConfirmationScreen'
 import { Portal } from './UI'
+import { useViewport } from '../hooks/useViewport'
 
 const PERSONAS = [
-    { id: 'The Midnight Devotee', desc: 'Haunts 3AM screenings. Darkness is your element.' },
-    { id: 'The Archivist', desc: 'Catalogues everything. Every film deserves a record.' },
-    { id: 'The Weeper', desc: 'Films hit you where it hurts. You enjoy it.' },
-    { id: 'The Contrarian', desc: 'Loved by critics? You\'re suspicious. Hated? Intrigued.' },
-    { id: 'The Completionist', desc: 'A director\'s filmography is a mission, not a suggestion.' },
+    { id: 'The Midnight Devotee', desc: 'Haunts 3AM screenings. Darkness is your element.', color: '#5C1A0B' },
+    { id: 'The Archivist', desc: 'Catalogues everything. Every film deserves a record.', color: '#8B6914' },
+    { id: 'The Weeper', desc: 'Films hit you where it hurts. You enjoy it.', color: '#4A6B8A' },
+    { id: 'The Contrarian', desc: 'Loved by critics? You\'re suspicious. Hated? Intrigued.', color: '#6B4A8A' },
+    { id: 'The Completionist', desc: 'A director\'s filmography is a mission, not a suggestion.', color: '#1C5C1A' },
 ]
 
 const VIBE_TAGS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace', 'Repertory', 'Horror House', 'Indie']
@@ -29,6 +30,7 @@ const VALID_CODES = import.meta.env.VITE_INVITE_CODES
 export default function SignupModal() {
     const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
     const { login, isAuthenticated } = useAuthStore()
+    const { isTouch } = useViewport()
 
     const [role, setRole] = useState(signupRole || 'cinephile')
     const [step, setStep] = useState(0)
@@ -378,32 +380,40 @@ export default function SignupModal() {
                 onClick={closeSignupModal}
                 style={{
                     position: 'fixed', inset: 0, zIndex: 10000,
-                    background: 'rgba(10,7,3,0.95)',
+                    /* ── Same immersive space as the Velvet Rope Gate ── */
+                    background: `
+                        radial-gradient(ellipse 50% 40% at 50% 45%, rgba(139, 105, 20, 0.03), transparent),
+                        rgba(5, 3, 1, 0.98)
+                    `,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '1rem',
                 }}
             >
                 <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    transition={{ type: 'spring', damping: 20, stiffness: 280 }}
+                    initial={{ scale: 0.95, opacity: 0, filter: isLogin ? 'none' : 'sepia(0.35)' }}
+                    animate={{ scale: 1, opacity: 1, filter: 'sepia(0)' }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
                     onClick={(e) => e.stopPropagation()}
+                    className="scanlines"
                     style={{
-                        background: 'var(--soot)',
-                        border: '1px solid var(--ash)',
+                        /* ── The Warm Room: faint projector glow from above ── */
+                        background: 'radial-gradient(ellipse at center top, rgba(139, 105, 20, 0.05), transparent 60%), var(--soot)',
+                        border: '1px solid rgba(139, 105, 20, 0.25)',
                         borderRadius: 'var(--radius-card)',
                         width: 'calc(100% - 2rem)',
                         maxWidth: 420,
                         maxHeight: 'calc(100dvh - 2rem)',
                         overflow: 'auto',
-                        margin: 'auto auto'
+                        margin: 'auto auto',
+                        boxShadow: '0 0 40px rgba(139,105,20,0.08)',
+                        position: 'relative',
                     }}
                 >
                     {/* Header */}
                     <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '1.25rem 1.5rem', borderBottom: '1px solid var(--ash)',
+                        padding: '1.25rem 1.5rem', borderBottom: '1px solid rgba(139, 105, 20, 0.15)',
                     }}>
                         <div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.2rem' }}>
@@ -412,11 +422,19 @@ export default function SignupModal() {
                             <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem' }}>
                                 {isLogin ? 'Sign Back In' : 'Enter The House'}
                             </h3>
+                            {/* ── The House Remembers — Login welcome line ── */}
+                            {isLogin && (
+                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.35rem', opacity: 0.7 }}>
+                                    The House remembers its own.
+                                </p>
+                            )}
                         </div>
                         <button onClick={closeSignupModal} style={{ background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer' }}>
                             <X size={20} />
                         </button>
                     </div>
+                    {/* ── Decorative sepia rule — chapter break ── */}
+                    <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.2), transparent)', margin: '0' }} />
 
                     <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
 
@@ -548,25 +566,62 @@ export default function SignupModal() {
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
                                         YOUR CINEMA PERSONA
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                                        {PERSONAS.map((p) => (
-                                            <button
-                                                key={p.id}
-                                                type="button"
-                                                onClick={() => setPersona(p.id)}
-                                                style={{
-                                                    background: persona === p.id ? 'rgba(139,105,20,0.12)' : 'transparent',
-                                                    border: `1px solid ${persona === p.id ? 'var(--sepia)' : 'var(--ash)'}`,
-                                                    borderRadius: 'var(--radius-wobbly)',
-                                                    padding: '0.6rem 0.75rem', cursor: 'pointer',
-                                                    textAlign: 'left', transition: 'all 0.2s',
-                                                }}
-                                            >
-                                                <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: persona === p.id ? 'var(--flicker)' : 'var(--parchment)' }}>{p.id}</div>
-                                                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', marginTop: '0.15rem' }}>{p.desc}</div>
-                                            </button>
-                                        ))}
-                                    </div>
+                                    {isTouch ? (
+                                        /* ── Mobile: compact horizontal persona pills ── */
+                                        <div>
+                                            <div style={{ display: 'flex', gap: '0.4rem', overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: '0.3rem', WebkitOverflowScrolling: 'touch' }}>
+                                                {PERSONAS.map((p) => (
+                                                    <button
+                                                        key={p.id}
+                                                        type="button"
+                                                        onClick={() => setPersona(p.id)}
+                                                        style={{
+                                                            flexShrink: 0,
+                                                            background: persona === p.id ? `rgba(${parseInt(p.color.slice(1,3),16)},${parseInt(p.color.slice(3,5),16)},${parseInt(p.color.slice(5,7),16)},0.15)` : 'transparent',
+                                                            border: `1px solid ${persona === p.id ? p.color : 'var(--ash)'}`,
+                                                            borderLeft: persona === p.id ? `3px solid ${p.color}` : `1px solid ${persona === p.id ? p.color : 'var(--ash)'}`,
+                                                            borderRadius: '2px',
+                                                            padding: '0.45rem 0.7rem', cursor: 'pointer',
+                                                            textAlign: 'left', transition: 'all 0.25s',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.72rem', color: persona === p.id ? 'var(--flicker)' : 'var(--bone)' }}>{p.id}</div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                            {/* Show selected persona description below */}
+                                            {persona && (
+                                                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)', marginTop: '0.4rem', fontStyle: 'italic', lineHeight: 1.4 }}>
+                                                    {PERSONAS.find(p => p.id === persona)?.desc}
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        /* ── Desktop: full persona cards with identity marks ── */
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            {PERSONAS.map((p) => (
+                                                <button
+                                                    key={p.id}
+                                                    type="button"
+                                                    onClick={() => setPersona(p.id)}
+                                                    style={{
+                                                        background: persona === p.id ? `rgba(${parseInt(p.color.slice(1,3),16)},${parseInt(p.color.slice(3,5),16)},${parseInt(p.color.slice(5,7),16)},0.08)` : 'transparent',
+                                                        border: `1px solid ${persona === p.id ? p.color : 'var(--ash)'}`,
+                                                        /* ── Identity mark: colored left stripe like a wax seal on a dossier ── */
+                                                        borderLeft: persona === p.id ? `3px solid ${p.color}` : `1px solid ${persona === p.id ? p.color : 'var(--ash)'}`,
+                                                        borderRadius: 'var(--radius-wobbly)',
+                                                        padding: '0.6rem 0.75rem', cursor: 'pointer',
+                                                        textAlign: 'left', transition: 'all 0.25s',
+                                                        boxShadow: persona === p.id ? `inset 0 0 20px rgba(${parseInt(p.color.slice(1,3),16)},${parseInt(p.color.slice(3,5),16)},${parseInt(p.color.slice(5,7),16)},0.06)` : 'none',
+                                                    }}
+                                                >
+                                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: persona === p.id ? 'var(--flicker)' : 'var(--parchment)' }}>{p.id}</div>
+                                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', marginTop: '0.15rem' }}>{p.desc}</div>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 

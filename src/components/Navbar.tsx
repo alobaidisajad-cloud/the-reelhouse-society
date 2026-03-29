@@ -25,7 +25,7 @@ const prefetchRoute = (path: string) => {
         '/cinemas': () => import('../pages/CinemasPage'),
         '/patronage': () => import('../pages/MembershipPage'),
     }
-    ;(routes as Record<string, (() => Promise<any>) | undefined>)[path]?.()
+        ; (routes as Record<string, (() => Promise<any>) | undefined>)[path]?.()
 }
 
 const NAV_LINKS = [
@@ -56,7 +56,7 @@ export default function Navbar() {
     const [notificationsOpen, setNotificationsOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false);
     const [hidden, setHidden] = useState(false);
-    
+
     const lastScrollY = useRef(0)
 
     useEffect(() => {
@@ -93,7 +93,7 @@ export default function Navbar() {
                 fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', textDecoration: 'none',
                 border: '1px solid var(--sepia)',
             }} onFocus={(e) => { e.currentTarget.style.left = '1rem'; e.currentTarget.style.top = '1rem'; e.currentTarget.style.width = 'auto'; e.currentTarget.style.height = 'auto' }}
-               onBlur={(e) => { e.currentTarget.style.left = '-9999px'; e.currentTarget.style.width = '1px'; e.currentTarget.style.height = '1px' }}>
+                onBlur={(e) => { e.currentTarget.style.left = '-9999px'; e.currentTarget.style.width = '1px'; e.currentTarget.style.height = '1px' }}>
                 SKIP TO CONTENT
             </a>
             {/* Navbar styles are defined in index.css — .navbar, .navbar-inner, .nav-link, etc. */}
@@ -259,7 +259,7 @@ export default function Navbar() {
                 onClose={() => setMobileOpen(false)}
                 onOpenNotifications={() => setNotificationsOpen(true)}
             />
-            
+
             {/* Mobile Notifications Panel — renders outside the desktop span when triggered from mobile menu */}
             {notificationsOpen && mobileOpen === false && typeof window !== 'undefined' && window.innerWidth <= 1024 && (
                 <div className="mobile-only-notifications">
