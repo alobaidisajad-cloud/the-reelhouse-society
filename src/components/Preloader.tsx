@@ -14,7 +14,7 @@ import { useEffect, useRef } from 'react'
     • ONE setTimeout calls onComplete after total duration.
     ────────────────────────────────────────────────────────────*/
 
-const D     = 700          // ms per digit — crisp, cinematic, not sluggish
+const D     = 580          // ms per digit — crisp, cinematic, not sluggish
 const FLASH = 380          // ms for the final blank flash frame
 const FADE  = 600          // ms for the curtain fade to black
 const TOTAL = D * 3 + FLASH + FADE
@@ -97,8 +97,8 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
         /* The blank flash frame at the end — SMPTE white flash before cut */
         @keyframes pldFlashFrame {
           0%   { opacity: 0; }
-          15%  { opacity: 1; }
-          60%  { opacity: 1; }
+          20%  { opacity: 0.38; }
+          55%  { opacity: 0.32; }
           100% { opacity: 0; }
         }
 
@@ -309,8 +309,8 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           ======================================================= */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10,
-        // Warm champagne-white, not cold white — Nitrate Noir palette
-        background: 'radial-gradient(ellipse 55% 55% at 50% 50%, rgba(255,248,220,0.96) 0%, rgba(240,220,160,0.85) 35%, rgba(196,150,26,0.4) 65%, transparent 85%)',
+        // Warm amber burn — soft, not blinding. Nitrate Noir palette.
+        background: 'radial-gradient(ellipse 50% 50% at 50% 50%, rgba(240,210,120,0.55) 0%, rgba(196,150,26,0.30) 45%, transparent 80%)',
         opacity: 0,
         animation: `pldFlashFrame ${FLASH}ms cubic-bezier(0.4, 0, 0.6, 1) ${D * 3}ms both`,
       }} />
