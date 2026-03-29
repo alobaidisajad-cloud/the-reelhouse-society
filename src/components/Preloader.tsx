@@ -175,17 +175,18 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           transform: 'translate(-50%, -50%)',
         }} />
 
-        {/* ══════ DIGITS — pure CSS, zero React state ══════ */}
+        {/* ══════ DIGITS — CSS Grid overlap = guaranteed center ══════ */}
         <div style={{
-          position: 'absolute', inset: 0, display: 'flex',
-          alignItems: 'center', justifyContent: 'center',
+          position: 'absolute', inset: 0,
+          display: 'grid',
+          placeItems: 'center',
           pointerEvents: 'none',
         }}>
           {(['3', '2', '1', '●'] as const).map((d, i) => (
             <span
               key={d}
               style={{
-                position: 'absolute',
+                gridRow: 1, gridColumn: 1,
                 fontFamily: "'Rye', Georgia, serif",
                 fontSize: 'clamp(4.2rem, 16vw, 8rem)',
                 color: '#EDE5D8',
