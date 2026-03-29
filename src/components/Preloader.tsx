@@ -1,100 +1,51 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /**
  * Preloader — Cinematic film-leader countdown.
  *
- * State-driven: each digit is advanced by a sequential setTimeout chain.
- * No CSS @keyframe injection — works perfectly regardless of CPU load,
- * paint timing, or browser animation quirks.
+ * ALL timeouts are scheduled at mount in a single useEffect.
+ * No async/await, no cancellation refs, no race conditions.
+ * The sequence is hardcoded: 3 → 2 → 1 → ● → [fade out]
  *
- * React state drives EVERYTHING. Framer Motion handles enter/exit per digit.
+ * This is the simplest and most reliable implementation possible.
  */
 
-const TICK = 950    // ms each digit is displayed (hold time)
-const EXIT_GAP = 350 // ms after last digit before fade-out begins
+// ms each digit is held on screen
+const T = 950
 
-const DIGITS = ['3', '2', '1', '●'] as const
-type Digit = typeof DIGITS[number]
-
-// Ring spin via inline CSS animation — simple, isolated, always works
-const ringSpinStyle: React.CSSProperties = {
-  animation: 'spin 2s linear infinite',
-}
+// Scheduled at: T*0, T*1, T*2, T*3, T*4, T*4+400
+// Digits:        '3'  '2'  '1'  '●'  null  [panel fade]
 
 export default function Preloader({ onComplete }: { onComplete: () => void }) {
-  const [currentDigit, setCurrentDigit] = useState<Digit | null>(null)
-  const [panelVisible, setPanelVisible] = useState(true)
-  const cancelledRef = useRef(false)
+  const [digit, setDigit] = useState<string | null>('3')
+  const [visible, setVisible] = useState(true)
 
-  // Inject only the simple spin keyframe — nothing digit-related
   useEffect(() => {
-    const style = document.createElement('style')
-    style.id = 'pld-spin'
-    style.textContent = `
-      @keyframes spin { to { transform: rotate(360deg); } }
-      @keyframes pldRing {
-        0%, 100% { opacity: 0.6; transform: scale(1); }
-        50%       { opacity: 1;   transform: scale(1.012); }
-      }
-      @keyframes pldFlicker {
-        0%, 100% { opacity: 0.5; }
-        47%      { opacity: 0.5; }
-        48%      { opacity: 0.18; }
-        49%      { opacity: 0.5; }
-        93%      { opacity: 0.5; }
-        94%      { opacity: 0.28; }
-        95%      { opacity: 0.5; }
-      }
-    `
-    document.head.appendChild(style)
-    return () => {
-      if (style.parentNode) document.head.removeChild(style)
-    }
-  }, [])
-
-  // Sequential state-driven countdown — 100% bulletproof
-  useEffect(() => {
-    cancelledRef.current = false
-
-    const delay = (ms: number) =>
-      new Promise<void>(resolve => {
-        const t = setTimeout(resolve, ms)
-        // Store timeout id so we can detect cancellation
-        return () => clearTimeout(t)
-      })
-
-    const run = async () => {
-      for (const digit of DIGITS) {
-        if (cancelledRef.current) return
-        setCurrentDigit(digit)
-        await delay(TICK)
-      }
-      if (cancelledRef.current) return
-
-      // All digits shown — clear digit, wait briefly, then fade panel out
-      setCurrentDigit(null)
-      await delay(EXIT_GAP)
-
-      if (cancelledRef.current) return
-      setPanelVisible(false)
-    }
-
-    run()
+    // All timers fire from t=0 reference — nothing can interrupt the sequence
+    const t1 = setTimeout(() => setDigit('2'), T)
+    const t2 = setTimeout(() => setDigit('1'), T * 2)
+    const t3 = setTimeout(() => setDigit('●'), T * 3)
+    const t4 = setTimeout(() => setDigit(null), T * 4)          // clear digit, hold empty ring briefly
+    const t5 = setTimeout(() => setVisible(false), T * 4 + 420) // fade out panel
 
     return () => {
-      cancelledRef.current = true
+      clearTimeout(t1)
+      clearTimeout(t2)
+      clearTimeout(t3)
+      clearTimeout(t4)
+      clearTimeout(t5)
     }
   }, [])
 
   return (
     <AnimatePresence onExitComplete={onComplete}>
-      {panelVisible && (
+      {visible && (
         <motion.div
-          key="preloader-panel"
+          key="pld"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.55, ease: 'easeInOut' }}
+          transition={{ duration: 0.5, ease: 'easeInOut' }}
           style={{
             position: 'fixed',
             inset: 0,
@@ -107,129 +58,108 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
             overflow: 'hidden',
           }}
         >
-          {/* Cinematic vignette */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              background: 'radial-gradient(ellipse at center, transparent 28%, rgba(0,0,0,0.75) 100%)',
-              pointerEvents: 'none',
-            }}
-          />
+          {/* Vignette */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: 'radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.72) 100%)',
+          }} />
 
-          {/* Film grain overlay */}
-          <div
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\' opacity=\'0.04\'/%3E%3C/svg%3E")',
-              backgroundSize: '180px 180px',
-              opacity: 0.35,
-              pointerEvents: 'none',
-            }}
-          />
+          {/* Film grain */}
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none', opacity: 0.3,
+            backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.08'/%3E%3C/svg%3E")`,
+            backgroundSize: '180px',
+          }} />
 
-          {/* ── Outer ring ── */}
-          <div
-            style={{
-              width: 'min(280px, 65vw)',
-              height: 'min(280px, 65vw)',
-              border: '1.5px solid rgba(139,105,20,0.55)',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              animation: 'pldRing 2.4s ease-in-out infinite',
-              boxShadow: '0 0 80px rgba(139,105,20,0.07), inset 0 0 50px rgba(139,105,20,0.04)',
-            }}
-          >
+          {/* Outer ring */}
+          <div style={{
+            width: 'min(270px, 64vw)',
+            height: 'min(270px, 64vw)',
+            border: '1.5px solid rgba(139,105,20,0.55)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            animation: 'pldRing 2.4s ease-in-out infinite',
+            boxShadow: '0 0 80px rgba(139,105,20,0.06), inset 0 0 50px rgba(139,105,20,0.03)',
+          }}>
+
             {/* Inner decorative ring */}
-            <div
-              style={{
-                position: 'absolute',
-                inset: '10%',
-                border: '1px solid rgba(139,105,20,0.15)',
-                borderRadius: '50%',
-                pointerEvents: 'none',
-              }}
-            />
+            <div style={{
+              position: 'absolute', inset: '11%',
+              border: '1px solid rgba(139,105,20,0.14)',
+              borderRadius: '50%', pointerEvents: 'none',
+            }} />
 
             {/* Spinning sweep arm */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '50%',
-                left: '50%',
-                width: '50%',
-                height: '1px',
-                background: 'linear-gradient(90deg, rgba(139,105,20,0.5) 0%, rgba(139,105,20,0) 100%)',
-                transformOrigin: 'left center',
-                ...ringSpinStyle,
-              }}
-            />
+            <div style={{
+              position: 'absolute', top: '50%', left: '50%',
+              width: '50%', height: '1px',
+              background: 'linear-gradient(90deg, rgba(139,105,20,0.55) 0%, transparent 100%)',
+              transformOrigin: 'left center',
+              animation: 'pldSpin 1.8s linear infinite',
+            }} />
 
-            {/* Crosshair lines */}
-            <div style={{ position: 'absolute', top: '50%', left: '-7%', right: '-7%', height: '1px', background: 'rgba(139,105,20,0.1)' }} />
-            <div style={{ position: 'absolute', left: '50%', top: '-7%', bottom: '-7%', width: '1px', background: 'rgba(139,105,20,0.1)' }} />
+            {/* Crosshairs */}
+            <div style={{ position: 'absolute', top: '50%', left: '-6%', right: '-6%', height: '1px', background: 'rgba(139,105,20,0.09)' }} />
+            <div style={{ position: 'absolute', left: '50%', top: '-6%', bottom: '-6%', width: '1px', background: 'rgba(139,105,20,0.09)' }} />
 
-            {/* Tick marks at 12 / 3 / 6 / 9 o'clock */}
+            {/* Tick marks */}
             {[0, 90, 180, 270].map(deg => (
-              <div
-                key={deg}
-                style={{
-                  position: 'absolute',
-                  width: '10px',
-                  height: '1.5px',
-                  background: 'rgba(139,105,20,0.35)',
-                  top: '50%',
-                  left: '50%',
-                  transformOrigin: 'left center',
-                  transform: `rotate(${deg}deg) translateX(min(132px, 30vw))`,
-                }}
-              />
+              <div key={deg} style={{
+                position: 'absolute', width: '9px', height: '1.5px',
+                background: 'rgba(139,105,20,0.32)',
+                top: '50%', left: '50%',
+                transformOrigin: 'left center',
+                transform: `rotate(${deg}deg) translateX(min(127px, 29vw))`,
+              }} />
             ))}
 
-            {/* ── Digit — ONE at a time, animated by Framer Motion ── */}
-            <AnimatePresence mode="wait">
-              {currentDigit !== null && (
+            {/* ── Digit — AnimatePresence mode sync = simultaneous crossfade ── */}
+            <AnimatePresence mode="sync">
+              {digit !== null && (
                 <motion.span
-                  key={currentDigit}
-                  initial={{ opacity: 0, scale: 0.55, y: 10 }}
+                  key={digit}
+                  initial={{ opacity: 0, scale: 0.6, y: 8 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.88, y: -8 }}
-                  transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  exit={{ opacity: 0, scale: 1.05, y: -6 }}
+                  transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
                   style={{
                     position: 'absolute',
                     fontFamily: 'var(--font-display, Georgia, serif)',
-                    fontSize: 'clamp(3.8rem, 15vw, 7.5rem)',
+                    fontSize: 'clamp(4rem, 15vw, 7.5rem)',
                     color: '#E8DFC8',
-                    textShadow: '0 0 40px rgba(232,223,200,0.4), 0 0 80px rgba(139,105,20,0.2)',
+                    textShadow: '0 0 40px rgba(232,223,200,0.38), 0 0 90px rgba(139,105,20,0.18)',
                     lineHeight: 1,
                     userSelect: 'none',
-                    letterSpacing: currentDigit === '●' ? '0' : '-0.02em',
                   }}
                 >
-                  {currentDigit}
+                  {digit}
                 </motion.span>
               )}
             </AnimatePresence>
           </div>
 
           {/* Status label */}
-          <div
-            style={{
-              marginTop: 'clamp(1.4rem, 5vw, 2.2rem)',
-              fontFamily: 'var(--font-ui, monospace)',
-              fontSize: '0.58rem',
-              letterSpacing: '0.42em',
-              color: 'rgba(139,105,20,0.65)',
-              animation: 'pldFlicker 3.8s ease-in-out infinite',
-              userSelect: 'none',
-            }}
-          >
+          <div style={{
+            marginTop: 'clamp(1.4rem, 5vw, 2.2rem)',
+            fontFamily: 'var(--font-ui, monospace)',
+            fontSize: '0.58rem',
+            letterSpacing: '0.42em',
+            color: 'rgba(139,105,20,0.6)',
+            animation: 'pldFlicker 3.8s ease-in-out infinite',
+            userSelect: 'none',
+          }}>
             THREADING PROJECTOR…
           </div>
+
+          {/* Keyframes — injected once, only for ring/spin/flicker. Digit timing is 100% JS. */}
+          <style>{`
+            @keyframes pldSpin   { to { transform: rotate(360deg); } }
+            @keyframes pldRing   { 0%,100%{opacity:.6;transform:scale(1)} 50%{opacity:1;transform:scale(1.013)} }
+            @keyframes pldFlicker{ 0%,100%{opacity:.5} 47%{opacity:.5} 48%{opacity:.15} 49%{opacity:.5} 93%{opacity:.5} 94%{opacity:.25} 95%{opacity:.5} }
+          `}</style>
         </motion.div>
       )}
     </AnimatePresence>
