@@ -12,19 +12,19 @@ import { motion, AnimatePresence } from 'framer-motion'
  * React only handles the final dismissal (one setTimeout).
  */
 
-const TICK = 900  // ms each digit stays visible
-const TOTAL = TICK * 4 + 500  // 3 digits + dot + exit buffer
+const TICK = 1000  // ms each digit stays visible
+const TOTAL = TICK * 4 + 800  // 3 digits + dot + exit buffer
 
 const DIGITS = ['3', '2', '1', '●'] as const
 
 // Injected once on mount, removed on unmount
 const CSS = `
 @keyframes pld-digit {
-  0%   { opacity: 0; transform: scale(0.5) translateY(4px); }
-  16%  { opacity: 1; transform: scale(1.06) translateY(0); }
-  26%  { opacity: 1; transform: scale(1); }
-  82%  { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.88); }
+  0%   { opacity: 0; transform: scale(0.6) translateY(6px); }
+  10%  { opacity: 1; transform: scale(1.05) translateY(0); }
+  18%  { opacity: 1; transform: scale(1); }
+  78%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9) translateY(-4px); }
 }
 @keyframes pld-sweep {
   to { transform: rotate(360deg); }
