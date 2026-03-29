@@ -126,29 +126,38 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
               }} />
             ))}
 
-            {/* ── Digit — AnimatePresence mode sync = simultaneous crossfade ── */}
-            <AnimatePresence mode="sync">
-              {digit !== null && (
-                <motion.span
-                  key={digit}
-                  initial={{ opacity: 0, scale: 0.6, y: 8 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 1.05, y: -6 }}
-                  transition={{ duration: 0.22, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  style={{
-                    position: 'absolute',
-                    fontFamily: 'var(--font-display, Georgia, serif)',
-                    fontSize: 'clamp(4rem, 15vw, 7.5rem)',
-                    color: '#E8DFC8',
-                    textShadow: '0 0 40px rgba(232,223,200,0.38), 0 0 90px rgba(139,105,20,0.18)',
-                    lineHeight: 1,
-                    userSelect: 'none',
-                  }}
-                >
-                  {digit}
-                </motion.span>
-              )}
-            </AnimatePresence>
+            {/* ── Digit — centered wrapper ensures it never drifts ── */}
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}>
+              <AnimatePresence mode="wait">
+                {digit !== null && (
+                  <motion.span
+                    key={digit}
+                    initial={{ opacity: 0, scale: 0.55 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.92 }}
+                    transition={{ duration: 0.14, ease: 'easeOut' }}
+                    style={{
+                      fontFamily: 'var(--font-display, Georgia, serif)',
+                      fontSize: 'clamp(4rem, 15vw, 7.5rem)',
+                      color: '#E8DFC8',
+                      textShadow: '0 0 40px rgba(232,223,200,0.38), 0 0 90px rgba(139,105,20,0.18)',
+                      lineHeight: 1,
+                      userSelect: 'none',
+                      display: 'block',
+                    }}
+                  >
+                    {digit}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {/* Status label */}
