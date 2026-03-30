@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useAuthStore, useNotificationStore } from '../store'
+import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 
 // Premium monochrome thematic glyphs — no colorful Unicode emojis
@@ -18,7 +18,6 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: st
     const [loading, setLoading] = useState(false)
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-    const pushNotif = useNotificationStore(s => s.push)
 
     // Fetch existing reactions for this log from Supabase
     useEffect(() => {
@@ -98,7 +97,7 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: st
 
                 // Push notification to log author (via Supabase notifications table)
                 if (logAuthor && logAuthor !== username) {
-                    // Insert notification into Supabase
+                    // Insert notification into Supabase for the log author
                     const { data: authorProfile } = await supabase
                         .from('profiles')
                         .select('id')
@@ -106,15 +105,15 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: st
                         .single()
 
                     if (authorProfile) {
-                        // DB Trigger generates the remote notification automatically now.
+                        // Insert a notification for the log OWNER (not the reactor)
+                        await supabase.from('notifications').insert({
+                            user_id: authorProfile.id,
+                            type: 'reaction',
+                            from_user: username,
+                            message: `${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
+                            read: false,
+                        })
                     }
-
-                    // Also push locally for immediate feedback
-                    pushNotif({
-                        type: 'reaction',
-                        from: username,
-                        message: `${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
-                    })
                 }
             }
         } catch {
