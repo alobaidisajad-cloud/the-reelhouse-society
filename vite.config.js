@@ -7,33 +7,15 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
+      // We use our own custom public/sw.js — do NOT generate a competing workbox SW
       registerType: 'autoUpdate',
+      injectRegister: false,        // Don't inject registerSW.js — we register manually in index.html
+      selfDestroying: true,         // If a previous workbox SW exists, destroy it
       workbox: {
-        skipWaiting: true,
-        clientsClaim: true,
-        // Don't precache index.html — always fetch fresh from network
+        // Disable workbox SW generation entirely
+        sourcemap: false,
+        globPatterns: [],            // Don't precache anything — our custom sw.js handles caching
         navigateFallback: null,
-        // Purge old caches on activate
-        cleanupOutdatedCaches: true,
-        // Force CSS/JS to always fetch fresh from network first
-        runtimeCaching: [
-          {
-            urlPattern: /\.(?:js|css)$/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'static-assets',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 }, // 1 hour
-            },
-          },
-          {
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'image-assets',
-              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 }, // 7 days
-            },
-          },
-        ],
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'gold-reel.svg'],
       manifest: {
