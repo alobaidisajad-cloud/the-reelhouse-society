@@ -7,6 +7,7 @@ import { supabase } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import CreateListModal from '../components/CreateListModal'
 import ListActions from '../components/ListActions'
+import ReportButton from '../components/ReportButton'
 import { useState } from 'react'
 
 import toast from 'react-hot-toast'
@@ -159,13 +160,14 @@ export default function ListDetailPage() {
                         </p>
                     )}
 
-                    <div style={{ marginTop: '2rem' }}>
+                    <div style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
                         <ListActions 
                             listId={id as string} 
                             certifyCount={certifyCount} 
                             isCertified={isCertified} 
                             commentCount={commentCount} 
                         />
+                        {!isOwner && <ReportButton contentType="list" contentId={id as string} />}
                     </div>
                 </header>
 

@@ -24,6 +24,8 @@ export interface User {
     is_social_private?: boolean
     created_at?: string
     preferences?: Record<string, unknown>
+    is_banned?: boolean
+    ban_reason?: string
 }
 
 // ── Film Log ──

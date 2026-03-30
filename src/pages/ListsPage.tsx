@@ -13,6 +13,8 @@ import ListActions from '../components/ListActions'
 import { motion } from 'framer-motion'
 
 import { useViewport } from '../hooks/useViewport'
+import { useBanCheck } from '../hooks/useBanCheck'
+import ReportButton from '../components/ReportButton'
 import '../styles/stacks.css'
 
 
@@ -118,19 +120,22 @@ function CommunityListCard({ list, index }: { list: any; index: number }) {
                     )}
 
                     {/* Certify + Comment Actions */}
-                    {!IS_TOUCH ? (
-                        <ListActions
-                            listId={list.id}
-                            certifyCount={list.certifyCount || 0}
-                            isCertified={list.isCertified || false}
-                            commentCount={list.commentCount || 0}
-                        />
-                    ) : (
-                        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: list.isCertified ? 'var(--sepia)' : 'var(--fog)', opacity: list.isCertified ? 1 : 0.6 }}><Award size={9} /> {list.certifyCount || 0}</span>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--fog)', opacity: 0.6 }}><MessageCircle size={9} /> {list.commentCount || 0}</span>
-                        </div>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        {!IS_TOUCH ? (
+                            <ListActions
+                                listId={list.id}
+                                certifyCount={list.certifyCount || 0}
+                                isCertified={list.isCertified || false}
+                                commentCount={list.commentCount || 0}
+                            />
+                        ) : (
+                            <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: list.isCertified ? 'var(--sepia)' : 'var(--fog)', opacity: list.isCertified ? 1 : 0.6 }}><Award size={9} /> {list.certifyCount || 0}</span>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--fog)', opacity: 0.6 }}><MessageCircle size={9} /> {list.commentCount || 0}</span>
+                            </div>
+                        )}
+                        <ReportButton contentType="list" contentId={list.id} size={IS_TOUCH ? 10 : 12} />
+                    </div>
                 </div>
             </Link>
         </motion.div>
@@ -178,7 +183,10 @@ export default function ListsPage() {
     const { isAuthenticated, user } = useAuthStore()
     const queryClient = useQueryClient()
 
+    const { checkBan } = useBanCheck()
+
     const handleCreateList = async (listData: any) => {
+        if (checkBan()) return
         // Create list via Supabase directly
         const { data: newList, error } = await supabase.from('lists').insert({
             title: listData.title,
