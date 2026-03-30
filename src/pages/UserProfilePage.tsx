@@ -494,14 +494,21 @@ export default function UserProfilePage() {
 
                     {/* ── Social Links ── */}
                     {(() => {
-                        const links = (profileUser as any).socialLinks || (isOwnProfile ? (currentUser as any)?.social_links : null) || {}
-                        const hasLinks = Object.values(links).some((v: any) => v && v.trim())
-                        if (!hasLinks) return null
-                        const iconMap: Record<string, string> = { instagram: '📸', twitter: '𝕏', youtube: '▶', facebook: 'f', letterboxd: '◉', website: '🌐' }
+                        const raw = (profileUser as any).socialLinks || (isOwnProfile ? (currentUser as any)?.social_links : null) || []
+                        // Support both array format [{title, url}] and legacy {platform: url}
+                        let linkItems: { title: string; url: string }[] = []
+                        if (Array.isArray(raw)) {
+                            linkItems = raw.filter((l: any) => l.url && l.url.trim())
+                        } else if (typeof raw === 'object') {
+                            linkItems = Object.entries(raw)
+                                .filter(([, v]: any) => v && (v as string).trim())
+                                .map(([k, v]: any) => ({ title: k.charAt(0).toUpperCase() + k.slice(1), url: v }))
+                        }
+                        if (linkItems.length === 0) return null
                         return (
                             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-                                {Object.entries(links).filter(([, v]: any) => v && v.trim()).map(([platform, url]: any) => (
-                                    <a key={platform} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" style={{
+                                {linkItems.map((link, i) => (
+                                    <a key={i} href={link.url.startsWith('http') ? link.url : `https://${link.url}`} target="_blank" rel="noopener noreferrer" style={{
                                         display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
                                         fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em',
                                         color: 'var(--fog)', textDecoration: 'none',
@@ -511,8 +518,8 @@ export default function UserProfilePage() {
                                         onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(139,105,20,0.3)'; e.currentTarget.style.color = 'var(--sepia)' }}
                                         onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(139,105,20,0.12)'; e.currentTarget.style.color = 'var(--fog)' }}
                                     >
-                                        <span>{iconMap[platform] || '🔗'}</span>
-                                        {platform.toUpperCase()}
+                                        <span>🔗</span>
+                                        {link.title.toUpperCase()}
                                     </a>
                                 ))}
                             </div>

@@ -1,6 +1,6 @@
 /**
  * EditProfilePage — Dedicated profile editing page.
- * Only profile-specific settings: avatar, bio, username, social links.
+ * Profile picture, bio, username, and dynamic custom links.
  * Nitrate Noir themed.
  */
 import { useState, useEffect, useRef } from 'react'
@@ -9,18 +9,19 @@ import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Camera, Instagram, Youtube, Twitter, Globe, Facebook, Link2 } from 'lucide-react'
+import { ArrowLeft, Camera, Link2, Plus, X, GripVertical } from 'lucide-react'
 import Buster from '../components/Buster'
 import '../styles/settings.css'
 
-const SOCIAL_PLATFORMS = [
-    { key: 'instagram', label: 'Instagram', icon: Instagram, placeholder: 'instagram.com/yourname' },
-    { key: 'twitter', label: 'X (Twitter)', icon: Twitter, placeholder: 'x.com/yourname' },
-    { key: 'youtube', label: 'YouTube', icon: Youtube, placeholder: 'youtube.com/@yourchannel' },
-    { key: 'facebook', label: 'Facebook', icon: Facebook, placeholder: 'facebook.com/yourname' },
-    { key: 'letterboxd', label: 'Letterboxd', icon: Globe, placeholder: 'letterboxd.com/yourname' },
-    { key: 'website', label: 'Website', icon: Link2, placeholder: 'yourwebsite.com' },
-]
+interface SocialLink {
+    id: string
+    title: string
+    url: string
+}
+
+function generateId() {
+    return Math.random().toString(36).slice(2, 9)
+}
 
 export default function EditProfilePage() {
     const { user, isAuthenticated } = useAuthStore()
@@ -35,15 +36,8 @@ export default function EditProfilePage() {
     const [uploadingAvatar, setUploadingAvatar] = useState(false)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
-    // ── Social Links ──
-    const [socialLinks, setSocialLinks] = useState<Record<string, string>>({
-        instagram: '',
-        twitter: '',
-        youtube: '',
-        facebook: '',
-        letterboxd: '',
-        website: '',
-    })
+    // ── Links ──
+    const [links, setLinks] = useState<SocialLink[]>([])
 
     // ── State ──
     const [saving, setSaving] = useState(false)
@@ -57,9 +51,17 @@ export default function EditProfilePage() {
         setBio(user.bio || '')
         setAvatarPreview(user.avatar_url || null)
 
-        // Load social links
-        const links = (user as any).social_links || {}
-        setSocialLinks(prev => ({ ...prev, ...links }))
+        // Load links from social_links (stored as array of {title, url})
+        const stored = (user as any).social_links
+        if (Array.isArray(stored)) {
+            setLinks(stored.map((l: any) => ({ id: generateId(), title: l.title || '', url: l.url || '' })))
+        } else if (stored && typeof stored === 'object') {
+            // Legacy format: { platform: url } — convert to new format
+            const converted = Object.entries(stored)
+                .filter(([, v]: any) => v && (v as string).trim())
+                .map(([k, v]: any) => ({ id: generateId(), title: k.charAt(0).toUpperCase() + k.slice(1), url: v }))
+            if (converted.length > 0) setLinks(converted)
+        }
     }, [user?.id])
 
     useEffect(() => {
@@ -105,7 +107,6 @@ export default function EditProfilePage() {
         if (newUsername.length > 20) { setUsernameError('Must be 20 characters or fewer'); return false }
         if (!/^[a-zA-Z0-9_]+$/.test(newUsername)) { setUsernameError('Only letters, numbers, and underscores'); return false }
 
-        // Check availability
         const { data } = await supabase
             .from('profiles')
             .select('id')
@@ -117,9 +118,18 @@ export default function EditProfilePage() {
         return true
     }
 
-    // ── Update Social Link ──
-    const updateSocialLink = (platform: string, value: string) => {
-        setSocialLinks(prev => ({ ...prev, [platform]: value }))
+    // ── Link Management ──
+    const addLink = () => {
+        if (links.length >= 10) { toast.error('Maximum 10 links allowed'); return }
+        setLinks(prev => [...prev, { id: generateId(), title: '', url: '' }])
+    }
+
+    const removeLink = (id: string) => {
+        setLinks(prev => prev.filter(l => l.id !== id))
+    }
+
+    const updateLink = (id: string, field: 'title' | 'url', value: string) => {
+        setLinks(prev => prev.map(l => l.id === id ? { ...l, [field]: value } : l))
     }
 
     // ── Save ──
@@ -128,7 +138,6 @@ export default function EditProfilePage() {
         if (displayName.trim().length > 50) { toast.error('Display name must be 50 or fewer characters.'); return }
         if (bio.trim().length > 500) { toast.error('Bio must be 500 or fewer characters.'); return }
 
-        // Validate username if changed
         if (username !== user.username) {
             const isValid = await validateUsername(username)
             if (!isValid) return
@@ -136,20 +145,17 @@ export default function EditProfilePage() {
 
         setSaving(true)
         try {
-            // Upload avatar if changed
             let avatarUrl = user.avatar_url
             if (avatarFile) {
                 const uploaded = await uploadAvatar()
                 if (uploaded) avatarUrl = uploaded
             }
 
-            // Clean social links — remove empty values
-            const cleanedLinks: Record<string, string> = {}
-            for (const [k, v] of Object.entries(socialLinks)) {
-                if (v && v.trim()) cleanedLinks[k] = v.trim()
-            }
+            // Clean links — remove entries with no URL
+            const cleanedLinks = links
+                .filter(l => l.url && l.url.trim())
+                .map(l => ({ title: l.title.trim() || 'Link', url: l.url.trim() }))
 
-            // Update profile
             const updateData: any = {
                 display_name: displayName.trim(),
                 bio: bio.trim(),
@@ -157,7 +163,6 @@ export default function EditProfilePage() {
                 social_links: cleanedLinks,
             }
 
-            // Only update username if changed
             if (username !== user.username) {
                 updateData.username = username.trim()
             }
@@ -168,7 +173,6 @@ export default function EditProfilePage() {
                 .eq('id', user.id)
             if (error) throw error
 
-            // Update local state
             useAuthStore.getState().updateUser({
                 bio: bio.trim(),
                 avatar_url: avatarUrl,
@@ -180,7 +184,6 @@ export default function EditProfilePage() {
             setAvatarFile(null)
             toast.success('Profile updated ✦')
 
-            // Navigate to new username profile if changed
             if (username !== user.username) {
                 navigate(`/user/${username}`, { replace: true })
             }
@@ -311,35 +314,115 @@ export default function EditProfilePage() {
             </div>
 
             {/* ════════════════════════════════════ */}
-            {/*   SOCIAL LINKS                      */}
+            {/*   LINKS                             */}
             {/* ════════════════════════════════════ */}
             <div className="settings-section">
                 <div className="settings-section-header">
-                    <Globe size={14} /> SOCIAL LINKS
+                    <Link2 size={14} /> LINKS
                 </div>
 
                 <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
-                    Connect your other profiles. These will appear on your public profile page.
+                    Add links to your profile. They will be visible to anyone who visits your page.
                 </p>
 
+                {/* Existing Links */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    {SOCIAL_PLATFORMS.map(platform => {
-                        const Icon = platform.icon
-                        return (
-                            <div key={platform.key} className="settings-field" style={{ marginBottom: 0 }}>
-                                <label className="settings-label" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                                    <Icon size={10} /> {platform.label.toUpperCase()}
-                                </label>
+                    {links.map((link, index) => (
+                        <div
+                            key={link.id}
+                            style={{
+                                padding: '1rem',
+                                background: 'rgba(10,7,3,0.5)',
+                                border: '1px solid rgba(139,105,20,0.1)',
+                                borderRadius: '4px',
+                                position: 'relative',
+                                transition: 'border-color 0.2s',
+                            }}
+                            onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)')}
+                            onMouseLeave={e => (e.currentTarget.style.borderColor = 'rgba(139,105,20,0.1)')}
+                        >
+                            {/* Link Number + Remove */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <GripVertical size={12} style={{ color: 'var(--ash)', opacity: 0.4 }} />
+                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
+                                        LINK {index + 1}
+                                    </span>
+                                </div>
+                                <button
+                                    onClick={() => removeLink(link.id)}
+                                    style={{
+                                        background: 'none', border: 'none', cursor: 'pointer',
+                                        color: 'var(--ash)', padding: '0.25rem',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        borderRadius: '3px', transition: 'color 0.2s, background 0.2s',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.color = '#c0392b'; e.currentTarget.style.background = 'rgba(162,36,36,0.1)' }}
+                                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--ash)'; e.currentTarget.style.background = 'none' }}
+                                    aria-label="Remove link"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
+
+                            {/* Title Field */}
+                            <div style={{ marginBottom: '0.5rem' }}>
+                                <label className="settings-label">TITLE</label>
                                 <input
                                     className="settings-input"
-                                    value={socialLinks[platform.key] || ''}
-                                    onChange={e => updateSocialLink(platform.key, e.target.value)}
-                                    placeholder={platform.placeholder}
+                                    value={link.title}
+                                    onChange={e => updateLink(link.id, 'title', e.target.value)}
+                                    placeholder="e.g. My Portfolio, Blog, Channel..."
+                                    maxLength={40}
                                 />
                             </div>
-                        )
-                    })}
+
+                            {/* URL Field */}
+                            <div>
+                                <label className="settings-label">URL</label>
+                                <input
+                                    className="settings-input"
+                                    value={link.url}
+                                    onChange={e => updateLink(link.id, 'url', e.target.value)}
+                                    placeholder="https://..."
+                                />
+                            </div>
+                        </div>
+                    ))}
                 </div>
+
+                {/* Add Link Button */}
+                <button
+                    onClick={addLink}
+                    style={{
+                        width: '100%',
+                        marginTop: links.length > 0 ? '1rem' : 0,
+                        padding: '0.9rem',
+                        background: 'rgba(139,105,20,0.05)',
+                        border: '1px dashed rgba(139,105,20,0.2)',
+                        borderRadius: '4px',
+                        color: 'var(--sepia)',
+                        fontFamily: 'var(--font-ui)',
+                        fontSize: '0.6rem',
+                        letterSpacing: '0.15em',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '0.5rem',
+                        transition: 'all 0.2s',
+                    }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.1)'; e.currentTarget.style.borderColor = 'rgba(139,105,20,0.35)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.05)'; e.currentTarget.style.borderColor = 'rgba(139,105,20,0.2)' }}
+                >
+                    <Plus size={14} /> ADD LINK
+                </button>
+
+                {links.length > 0 && (
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.1em', color: 'var(--ash)', marginTop: '0.5rem', textAlign: 'center' }}>
+                        {links.length}/10 LINKS
+                    </div>
+                )}
             </div>
 
             {/* ── SAVE BUTTON ── */}
