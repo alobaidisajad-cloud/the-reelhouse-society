@@ -5,6 +5,7 @@ import { Film, BookOpen, Lock, Check, RotateCcw, X } from 'lucide-react'
 import { useAuthStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
+import '../../styles/stacks.css'
 
 // ── PROFILE BACKDROP ──
 export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }: any) {
@@ -137,32 +138,98 @@ export const VaultSection = memo(function VaultSection({ vault }: any) {
     )
 })
 
-// ── LISTS SECTION ──
+// ── LISTS SECTION — Premium Stack Cards (matching community page) ──
 export function ListsSection({ lists, user }: any) {
     const { isAuthenticated } = useAuthStore()
     if (!isAuthenticated) return <div style={{ textAlign: 'center', padding: '2rem', border: '1px dashed var(--ash)', borderRadius: 'var(--radius-card)' }}><p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)', fontSize: '0.85rem' }}>Sign in to create and manage your lists</p></div>
 
+    const gradients = [
+        'linear-gradient(135deg, #1a0e05 0%, #3a2010 40%, #0a0703 100%)',
+        'linear-gradient(135deg, #0a0a0a 0%, #1c1710 50%, #2a1a05 100%)',
+        'linear-gradient(135deg, #05080a 0%, #101820 50%, #1a2010 100%)',
+        'linear-gradient(135deg, #0a0508 0%, #1a0f18 50%, #0a0508 100%)',
+    ]
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <>
+            <style>{`
+                .profile-stacks-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 1rem;
+                }
+                @media (min-width: 768px) {
+                    .profile-stacks-grid {
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 1.25rem;
+                    }
+                }
+            `}</style>
             {lists.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>No lists yet. The stacks are empty.</div>
-            ) : lists.map((list: any) => (
-                <Link key={list.id} to={`/lists/${list.id}`} style={{ textDecoration: 'none', display: 'block' }}>
-                    <motion.div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} whileHover={{ y: -2, transition: { type: 'spring', damping: 14 } }}>
-                        <div style={{ display: 'flex', gap: 2, height: 64, overflow: 'hidden' }}>
-                            {list.films.length > 0 ? list.films.slice(0, 4).map((f: any, i: number) => (
-                                <div key={i} style={{ flex: 1, overflow: 'hidden' }}>
-                                    {f.poster ? <img src={tmdb.poster(f.poster, 'w92') || undefined} alt="" decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4) brightness(0.7)' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--ash)' }} />}
+            ) : (
+                <div className="profile-stacks-grid">
+                    {lists.map((list: any, index: number) => {
+                        const posters = list.films.filter((f: any) => f.poster || f.poster_path).slice(0, 3).map((f: any) => f.poster || f.poster_path)
+                        const cardGradient = gradients[Math.abs((list.id || '').toString().charCodeAt(0) || index) % gradients.length]
+
+                        return (
+                            <Link key={list.id} to={`/lists/${list.id}`} className="stack-card" style={{ textDecoration: 'none', minHeight: 220 }}>
+                                {/* Poster Background (Triptych) */}
+                                <div className="stack-card-poster-wrap">
+                                    {posters.length === 0 ? (
+                                        <div style={{ width: '100%', height: '100%', background: cardGradient }} />
+                                    ) : (
+                                        posters.map((p: string, i: number) => (
+                                            <div key={i} className="stack-card-poster-panel">
+                                                <img
+                                                    src={tmdb.poster(p, 'w342') || undefined}
+                                                    alt=""
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                />
+                                                {i < posters.length - 1 && (
+                                                    <div className="stack-card-poster-fade" />
+                                                )}
+                                            </div>
+                                        ))
+                                    )}
                                 </div>
-                            )) : <div style={{ flex: 1, background: 'linear-gradient(135deg, var(--soot), var(--ash))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.2em' }}>EMPTY REEL</span></div>}
-                        </div>
-                        <div style={{ padding: '0.85rem 1rem' }}>
-                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{list.title}</div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.2rem' }}>{list.films.length} FILMS · {list.isPrivate ? '⊠ PRIVATE' : '◎ PUBLIC'}</div>
-                        </div>
-                    </motion.div>
-                </Link>
-            ))}
-        </div>
+
+                                {/* Overlays */}
+                                <div className="stack-card-glow" />
+                                <div className="stack-card-gradient" />
+
+                                {/* Content Pane */}
+                                <div className="stack-card-content">
+                                    {/* Meta Row — Film count badge */}
+                                    <div className="stack-card-meta-row">
+                                        <span className="stack-card-badge">
+                                            {list.films.length} FILMS
+                                        </span>
+                                        <div className="stack-card-meta-divider" />
+                                    </div>
+
+                                    {/* Title */}
+                                    <h3 className="stack-card-title">
+                                        {(list.title || '').toUpperCase()}
+                                    </h3>
+
+                                    {/* Description */}
+                                    {list.description && (
+                                        <p className="stack-card-desc">{list.description}</p>
+                                    )}
+
+                                    {/* Privacy indicator */}
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)', opacity: 0.5, marginTop: '0.25rem' }}>
+                                        {list.isPrivate ? '⊠ PRIVATE' : '◎ PUBLIC'}
+                                    </div>
+                                </div>
+                            </Link>
+                        )
+                    })}
+                </div>
+            )}
+        </>
     )
 }
