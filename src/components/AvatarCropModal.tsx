@@ -129,10 +129,11 @@ export default function AvatarCropModal({ imageSrc, onConfirm, onCancel }: Props
         }))
     }, [zoom])
 
-    // Export cropped image — must match exactly what the preview shows
+    // Export cropped image — directly copies the preview canvas
+    // This guarantees: what you see in the circle = what gets saved
     const handleConfirm = () => {
-        const img = imgRef.current
-        if (!img) return
+        const sourceCanvas = canvasRef.current
+        if (!sourceCanvas) return
 
         const outCanvas = document.createElement('canvas')
         outCanvas.width = OUTPUT_SIZE
@@ -140,30 +141,10 @@ export default function AvatarCropModal({ imageSrc, onConfirm, onCancel }: Props
         const ctx = outCanvas.getContext('2d')
         if (!ctx) return
 
-        // The preview canvas is 2x HiDPI (CANVAS_DISPLAY * 2 = 560px) 
-        // but displayed at CANVAS_DISPLAY = 280px CSS. 
-        // Image is drawn at img.width * zoom on the 560 canvas,
-        // so in CSS space it appears at (img.width * zoom) / 2.
-        // We need to map CSS display space → OUTPUT_SIZE.
-
-        const scale = OUTPUT_SIZE / CANVAS_DISPLAY  // 400 / 280
-
-        // Image size in CSS display space (divide by 2 for HiDPI)
-        const cssW = (img.width * zoom) / 2
-        const cssH = (img.height * zoom) / 2
-
-        // Image position in CSS display space
-        const cssDx = (CANVAS_DISPLAY - cssW) / 2 + offset.x
-        const cssDy = (CANVAS_DISPLAY - cssH) / 2 + offset.y
-
-        // Clip to circle
-        ctx.beginPath()
-        ctx.arc(OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, OUTPUT_SIZE / 2, 0, Math.PI * 2)
-        ctx.closePath()
-        ctx.clip()
-
-        // Draw at output scale — this now matches the preview exactly
-        ctx.drawImage(img, cssDx * scale, cssDy * scale, cssW * scale, cssH * scale)
+        // The preview canvas already contains the exact pixels the user sees
+        // (with circle clip, zoom, and offset baked in).
+        // Just scale it from the HiDPI canvas size to the output size.
+        ctx.drawImage(sourceCanvas, 0, 0, sourceCanvas.width, sourceCanvas.height, 0, 0, OUTPUT_SIZE, OUTPUT_SIZE)
 
         outCanvas.toBlob((blob) => {
             if (blob) onConfirm(blob)
