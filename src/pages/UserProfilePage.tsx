@@ -68,6 +68,7 @@ export default function UserProfilePage() {
                 role: data.role || 'cinephile',
                 bio: data.bio || '',
                 avatar: data.avatar_url || 'smiling',
+                avatar_url: data.avatar_url || null,
                 followersCount: data.followers_count || 0,
                 followingCount: data.following_count || 0,
                 isSocialPrivate: data.is_social_private || false,
@@ -282,8 +283,10 @@ export default function UserProfilePage() {
     }
 
     const renderAvatar = (avatarValue: any, size = 90) => {
-        if (!avatarValue) return <Buster size={size} mood="smiling" />
-        if (avatarValue.startsWith('data:image/') || avatarValue.startsWith('http')) return <img src={avatarValue} alt="User avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} />
+        if (!avatarValue || typeof avatarValue !== 'string') return <Buster size={size} mood="smiling" />
+        if (avatarValue.startsWith('http') || avatarValue.startsWith('data:image/') || avatarValue.startsWith('blob:')) {
+            return <img src={avatarValue} alt="User avatar" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }} onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }} />
+        }
         return <Buster size={size} mood={avatarValue} />
     }
 
@@ -442,7 +445,7 @@ export default function UserProfilePage() {
                                 boxShadow: `0 0 60px ${stats.color}50, 0 0 120px ${stats.color}20, inset 0 0 30px rgba(0,0,0,0.6)`, 
                                 overflow: 'hidden',
                             }}>
-                                {renderAvatar((profileUser?.avatar || 'smiling'), IS_TOUCH ? 75 : 100)}
+                                {renderAvatar(((profileUser as any)?.avatar_url || (profileUser as any)?.avatar || 'smiling'), IS_TOUCH ? 75 : 100)}
                             </div>
                             <div style={{ 
                                 position: 'absolute', bottom: -12, left: '50%', transform: 'translateX(-50%)', 
