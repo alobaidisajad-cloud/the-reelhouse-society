@@ -3,64 +3,37 @@ import { Link } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
-import { Plus, Lock, Globe, Search as SearchIcon, X, ChevronDown, Award, MessageCircle, Send } from 'lucide-react'
+import { Plus, Lock, Globe, Search as SearchIcon, X, ChevronDown, Award, MessageCircle } from 'lucide-react'
 import CreateListModal from '../components/CreateListModal'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 import PageSEO from '../components/PageSEO'
+import ListActions from '../components/ListActions'
+import { motion } from 'framer-motion'
 
 import { useViewport } from '../hooks/useViewport'
+import '../styles/stacks.css'
 
 
-
-function UnbreakablePoster({ posterPath, title, isTop }: any) {
-    const [failed, setFailed] = useState(!posterPath)
-
-    return (
-        <div style={{
-            width: 105, height: 158,
-            background: 'var(--soot)',
-            borderRadius: '3px',
-            overflow: 'hidden',
-            position: 'relative',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.8)',
-            border: '1px solid rgba(139,105,20,0.08)',
-            flexShrink: 0
-        }}>
-            {!failed ? (
-                <img
-                    src={tmdb.poster(posterPath, 'w185')}
-                    alt={title}
-                    loading="lazy"
-                    decoding="async"
-                    onError={() => setFailed(true)}
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', mixBlendMode: isTop ? 'normal' : 'luminosity', opacity: isTop ? 1 : 0.4 }}
-                />
-            ) : (
-                <div style={{
-                    width: '100%', height: '100%',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    padding: '0.5rem', textAlign: 'center',
-                    background: 'linear-gradient(45deg, #1A1710 0%, #0A0703 100%)',
-                    border: '1px solid rgba(139,105,20,0.2)'
-                }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', color: 'var(--sepia)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
-                        REELHOUSE
-                    </div>
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', color: 'var(--parchment)', lineHeight: 1.2, textTransform: 'uppercase' }}>
-                        {title}
-                    </div>
-                </div>
-            )}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.8) 100%)', pointerEvents: 'none' }} />
-        </div>
-    )
+// ── FRAMER MOTION VARIANTS (matching Society page pattern) ──
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.08, delayChildren: 0.1 }
+    }
+}
+const itemVariants = {
+    hidden: { opacity: 0, y: 24 },
+    visible: { opacity: 1, y: 0, transition: { type: 'spring', damping: 22, stiffness: 90 } }
 }
 
-import ListActions from '../components/ListActions'
 
-function CommunityListCard({ list }: any) {
+// ══════════════════════════════════════════════════════════
+// COMMUNITY STACK CARD — The Dossier
+// ══════════════════════════════════════════════════════════
+function CommunityListCard({ list, index }: { list: any; index: number }) {
     const { isTouch: IS_TOUCH } = useViewport()
     const gradients = [
         'linear-gradient(135deg, #1a0e05 0%, #3a2010 40%, #0a0703 100%)',
@@ -69,129 +42,101 @@ function CommunityListCard({ list }: any) {
         'linear-gradient(135deg, #0a0508 0%, #1a0f18 50%, #0a0508 100%)',
     ]
     const cardGradient = gradients[Math.abs(list.id.charCodeAt(0)) % gradients.length]
-
     const posters = list.films.filter((f: any) => f.poster_path).slice(0, 3).map((f: any) => f.poster_path)
 
+    // Generate catalog reference from list ID
+    const refCode = `REF: ${list.id.slice(0, 4).toUpperCase()}`
+
     return (
-        <Link
-            to={`/lists/${list.id}`}
-            className="fade-in-up"
-            style={{
-                textDecoration: 'none',
-                color: 'inherit',
-                background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.08)',
-                borderRadius: '2px', minHeight: IS_TOUCH ? 220 : 440, display: 'flex', flexDirection: 'column',
-                boxShadow: '0 15px 40px rgba(0,0,0,0.6)', cursor: 'pointer', transition: 'all 0.5s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                position: 'relative', overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(139,105,20,0.3)'
-                e.currentTarget.style.transform = 'translateY(-8px)'
-                e.currentTarget.style.boxShadow = '0 20px 50px rgba(0,0,0,0.7), 0 0 30px rgba(139,105,20,0.1)'
-                const posterContainer = e.currentTarget.querySelector('.main-poster') as HTMLElement
-                if (posterContainer) posterContainer.style.transform = 'scale(1.06)'
-                const glow = e.currentTarget.querySelector('.card-glow') as HTMLElement
-                if (glow) glow.style.opacity = '0.5'
-            }}
-            onMouseLeave={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(139,105,20,0.08)'
-                e.currentTarget.style.transform = 'translateY(0)'
-                e.currentTarget.style.boxShadow = '0 15px 40px rgba(0,0,0,0.6)'
-                const posterContainer = e.currentTarget.querySelector('.main-poster') as HTMLElement
-                if (posterContainer) posterContainer.style.transform = 'scale(1)'
-                const glow = e.currentTarget.querySelector('.card-glow') as HTMLElement
-                if (glow) glow.style.opacity = '0.25'
-            }}
-        >
-            {/* Main Visual Poster (Triptych) */}
-            <div
-                className="main-poster"
-                style={{
-                    position: 'absolute', inset: 0, zIndex: 0,
-                    transition: 'transform 1s cubic-bezier(0.2, 0.8, 0.2, 1)',
-                    display: 'flex', width: '100%', height: '100%'
-                }}
+        <motion.div variants={itemVariants as any}>
+            <Link
+                to={`/lists/${list.id}`}
+                className="stack-card"
+                style={{ minHeight: IS_TOUCH ? 200 : 440 }}
             >
-                {posters.length === 0 ? (
-                    <div style={{ width: '100%', height: '100%', background: cardGradient }} />
-                ) : (
-                    posters.map((p: string, i: number) => (
-                        <div key={i} style={{ flex: 1, height: '100%', position: 'relative', overflow: 'hidden' }}>
-                            <img
-                                src={tmdb.poster(p, 'w342')}
-                                alt=""
-                                loading="lazy"
-                                decoding="async"
-                                style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.65) sepia(0.15) contrast(1.05)', transform: 'scale(1.02)' }}
-                            />
-                            {/* Inner fade mask between posters */}
-                            {i < posters.length - 1 && (
-                                <div style={{ position: 'absolute', right: 0, top: 0, bottom: 0, width: '30%', background: 'linear-gradient(to left, rgba(10,7,3,0.9), transparent)', zIndex: 1 }} />
-                            )}
-                        </div>
-                    ))
-                )}
-            </div>
+                {/* Catalog Reference Stamp */}
+                <div className="stack-card-ref">{refCode}</div>
 
-            {/* Overlays */}
-            <div className="card-glow" style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at top left, var(--sepia) 0%, transparent 60%)', opacity: 0.25, zIndex: 1, transition: 'opacity 0.5s' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, transparent 20%, var(--ink) 90%)', zIndex: 2 }} />
-
-            {/* Content Pane */}
-            <div style={{
-                position: 'relative', zIndex: 10, marginTop: 'auto', padding: IS_TOUCH ? '0.6rem' : '1.75rem',
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: IS_TOUCH ? '0.25rem' : '0.75rem' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.4rem' : '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)', border: '1px solid rgba(139,105,20,0.3)', padding: '2px 6px', borderRadius: '2px', whiteSpace: 'nowrap' }}>
-                        {list.count} FILMS
-                    </span>
-                    {!IS_TOUCH && list.certifyCount > 0 && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--flicker)', display: 'flex', alignItems: 'center', gap: '0.2rem', opacity: 0.8 }}>
-                            <Award size={10} /> {list.certifyCount}
-                        </span>
+                {/* Poster Background (Triptych) */}
+                <div className="stack-card-poster-wrap">
+                    {posters.length === 0 ? (
+                        <div style={{ width: '100%', height: '100%', background: cardGradient }} />
+                    ) : (
+                        posters.map((p: string, i: number) => (
+                            <div key={i} className="stack-card-poster-panel">
+                                <img
+                                    src={tmdb.poster(p, 'w342')}
+                                    alt=""
+                                    loading="lazy"
+                                    decoding="async"
+                                />
+                                {i < posters.length - 1 && (
+                                    <div className="stack-card-poster-fade" />
+                                )}
+                            </div>
+                        ))
                     )}
-                    <div style={{ height: '1px', flex: 1, background: 'linear-gradient(to right, rgba(139,105,20,0.3), transparent)' }} />
                 </div>
 
-                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.8rem' : '1.6rem', color: 'var(--parchment)', marginBottom: IS_TOUCH ? '0.25rem' : '0.5rem', textShadow: '0 2px 10px rgba(0,0,0,0.9)', lineHeight: 1.15, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                    {list.title.toUpperCase()}
-                </h3>
+                {/* Overlays */}
+                <div className="stack-card-glow" />
+                <div className="stack-card-gradient" />
 
-                {!IS_TOUCH && list.desc && (
-                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.5, marginBottom: '0.5rem', opacity: 0.7, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                        {list.desc}
-                    </p>
-                )}
-
-                {!IS_TOUCH && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: 12, height: 12, background: 'var(--sepia)', borderRadius: '50%', opacity: 0.6 }} />
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
-                            @{list.user.toUpperCase()}
+                {/* Content Pane */}
+                <div className="stack-card-content">
+                    {/* Meta Row — Film count badge + certify count */}
+                    <div className="stack-card-meta-row">
+                        <span className="stack-card-badge">
+                            {list.count} FILMS
                         </span>
+                        {!IS_TOUCH && list.certifyCount > 0 && (
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--flicker)', display: 'flex', alignItems: 'center', gap: '0.2rem', opacity: 0.8 }}>
+                                <Award size={10} /> {list.certifyCount}
+                            </span>
+                        )}
+                        <div className="stack-card-meta-divider" />
                     </div>
-                )}
 
-                {/* Certify + Comment Actions */}
-                {!IS_TOUCH ? (
-                    <ListActions
-                        listId={list.id}
-                        certifyCount={list.certifyCount || 0}
-                        isCertified={list.isCertified || false}
-                        commentCount={list.commentCount || 0}
-                    />
-                ) : (
-                    <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: list.isCertified ? 'var(--sepia)' : 'var(--fog)', opacity: list.isCertified ? 1 : 0.6 }}><Award size={9} /> {list.certifyCount || 0}</span>
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--fog)', opacity: 0.6 }}><MessageCircle size={9} /> {list.commentCount || 0}</span>
-                    </div>
-                )}
-            </div>
-        </Link>
+                    {/* Title */}
+                    <h3 className="stack-card-title">
+                        {list.title.toUpperCase()}
+                    </h3>
+
+                    {/* Description — desktop only */}
+                    {!IS_TOUCH && list.desc && (
+                        <p className="stack-card-desc">{list.desc}</p>
+                    )}
+
+                    {/* Curator */}
+                    {!IS_TOUCH && (
+                        <div className="stack-card-curator">
+                            <div className="stack-card-curator-dot" />
+                            <span className="stack-card-curator-name">
+                                @{list.user.toUpperCase()}
+                            </span>
+                        </div>
+                    )}
+
+                    {/* Certify + Comment Actions */}
+                    {!IS_TOUCH ? (
+                        <ListActions
+                            listId={list.id}
+                            certifyCount={list.certifyCount || 0}
+                            isCertified={list.isCertified || false}
+                            commentCount={list.commentCount || 0}
+                        />
+                    ) : (
+                        <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.25rem' }}>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: list.isCertified ? 'var(--sepia)' : 'var(--fog)', opacity: list.isCertified ? 1 : 0.6 }}><Award size={9} /> {list.certifyCount || 0}</span>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', display: 'flex', alignItems: 'center', gap: '2px', color: 'var(--fog)', opacity: 0.6 }}><MessageCircle size={9} /> {list.commentCount || 0}</span>
+                        </div>
+                    )}
+                </div>
+            </Link>
+        </motion.div>
     )
 }
 
-// CreateListModal extracted to src/components/CreateListModal.tsx
 
 // ── FILTER PILL COMPONENT ──
 function FilterPill({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -220,25 +165,25 @@ function FilterPill({ label, active, onClick }: { label: string; active: boolean
     )
 }
 
+
 type TimeFilter = 'all' | 'week' | 'month'
 type SortOption = 'newest' | 'oldest' | 'most-certified'
 
+
+// ══════════════════════════════════════════════════════════
+// MAIN PAGE — THE STACKS
+// ══════════════════════════════════════════════════════════
 export default function ListsPage() {
     const { isTouch: IS_TOUCH } = useViewport()
     const { isAuthenticated, user } = useAuthStore()
     const { lists, createList, addFilmToList } = useFilmStore()
 
     const handleCreateListWithFilms = async (listData: any) => {
-        // 1. Create the list
         const { films, ...listInfo } = listData
         await createList(listInfo)
-        
-        // 2. Add films sequentially after creation (the newly created list will be first in store array)
-        // Give the state a tiny moment to flush, then grab the ID from the store
         setTimeout(async () => {
             const newListId = useFilmStore.getState().lists[0]?.id
             if (newListId && films && films.length > 0) {
-                // Background add tasks
                 for (const film of films) {
                     try {
                         await addFilmToList(newListId, film)
@@ -401,69 +346,68 @@ export default function ListsPage() {
     const hasActiveFilters = timeFilter !== 'all' || followingOnly || debouncedQuery.trim().length > 0
 
     return (
-        <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
-            {/* ── HERO HEADER ── */}
-            <div style={{
-                padding: IS_TOUCH ? '1.5rem 0 1.25rem' : '3.5rem 0 2.5rem',
-                position: 'relative',
-                overflow: 'hidden'
-            }}>
-                {/* Ambient glow */}
-                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
+        <div className="stacks-page">
+            <PageSEO
+                title="The Stacks — The ReelHouse Society"
+                description="Curated anthologies and film collections forged by the Society's devoted members. Discover, certify, and build your own cinema archive."
+            />
+
+            {/* ══════════════════════════════════════════
+                HERO HEADER — "The Library Entrance"
+            ══════════════════════════════════════════ */}
+            <motion.header
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.7 }}
+                className="stacks-header"
+            >
+                <div className="stacks-header-glow" />
 
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: IS_TOUCH ? '0.5rem' : '0.75rem', opacity: 0.8 }}>
-                        ✦ THE REELHOUSE SOCIETY ✦
-                    </div>
-                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '2rem' : '3.5rem', color: 'var(--parchment)', marginBottom: IS_TOUCH ? '0.5rem' : '1rem', lineHeight: 1.05 }}>
-                        The Stacks
-                    </h1>
-                    <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.85rem' : '1.05rem', color: 'var(--bone)', maxWidth: 520, margin: '0 auto', marginBottom: IS_TOUCH ? '1.25rem' : '2rem', lineHeight: 1.6, opacity: 0.7 }}>
-                        Curated anthologies meticulously assembled by the Society's devoted members.
+                    <div className="stacks-eyebrow">✦ THE REELHOUSE SOCIETY ✦</div>
+
+                    <h1 className="stacks-title">The Stacks</h1>
+
+                    <p className="stacks-subtitle">
+                        Behind these doors lies the permanent collection — curated anthologies forged by the Society's most devoted members.
                     </p>
 
+                    {/* Ornamental Divider */}
+                    <div className="stacks-ornament">
+                        <div className="stacks-ornament-line stacks-ornament-line--left" />
+                        <div className="stacks-ornament-dot" />
+                        <div className="stacks-ornament-line stacks-ornament-line--right" />
+                    </div>
+
                     {isAuthenticated ? (
-                        <button className="btn btn-primary" style={{ padding: '0.7rem 1.8rem', letterSpacing: '0.18em', fontSize: '0.65rem' }} onClick={() => setShowCreate(true)}>
-                            <Plus size={14} style={{ marginRight: '0.4rem' }} /> CREATE COLLECTION
+                        <button className="btn btn-primary stacks-cta" style={{ padding: '0.7rem 1.8rem', letterSpacing: '0.18em', fontSize: '0.65rem' }} onClick={() => setShowCreate(true)}>
+                            <Plus size={14} /> CREATE COLLECTION
                         </button>
                     ) : (
-                        <button className="btn btn-ghost" style={{ padding: '0.7rem 1.8rem', letterSpacing: '0.12em', fontSize: '0.6rem' }} onClick={() => openSignupModal()}>
+                        <button className="btn btn-ghost stacks-cta" style={{ padding: '0.7rem 1.8rem', letterSpacing: '0.12em', fontSize: '0.6rem' }} onClick={() => openSignupModal()}>
                             JOIN TO CREATE COLLECTIONS
                         </button>
                     )}
                 </div>
-            </div>
+            </motion.header>
 
-            {/* ── GOLD DIVIDER ── */}
-            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.25), transparent)' }} />
+            {/* Gold Divider */}
+            <div className="stacks-gold-divider" />
 
-            {/* ── SEARCH + FILTER BAR ── */}
-            <div style={{
-                background: 'var(--ink)',
-                padding: IS_TOUCH ? '0.75rem 0' : '1.25rem 0 1rem',
-                position: 'sticky', top: IS_TOUCH ? 56 : 60, zIndex: 50,
-                borderBottom: '1px solid rgba(139,105,20,0.1)',
-            }}>
+            {/* ══════════════════════════════════════════
+                SEARCH + FILTER BAR — "The Index Drawer"
+            ══════════════════════════════════════════ */}
+            <div className="stacks-filter-bar">
                 <div className="container" style={{ maxWidth: 800, display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '0.5rem' : '0.65rem' }}>
                     {/* Search Input */}
                     <div style={{ position: 'relative' }}>
                         <SearchIcon size={IS_TOUCH ? 14 : 16} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--sepia)', opacity: 0.6, zIndex: 1 }} />
                         <input
                             ref={searchRef}
-                            className="input"
-                            style={{
-                                width: '100%', padding: IS_TOUCH ? '0.75rem 2.5rem 0.75rem 2.5rem' : '0.85rem 3rem 0.85rem 2.75rem',
-                                fontSize: IS_TOUCH ? '0.85rem' : '0.95rem', fontFamily: 'var(--font-body)',
-                                background: 'rgba(10,7,3,0.8)', borderColor: 'rgba(139,105,20,0.12)',
-                                color: 'var(--parchment)', borderRadius: '4px',
-                                boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.4)', outline: 'none',
-                                transition: 'border-color 0.3s, box-shadow 0.3s', boxSizing: 'border-box'
-                            }}
-                            placeholder="Search lists, curators, keywords..."
+                            className="stacks-search-input"
+                            placeholder="Search the permanent collection..."
                             value={query}
                             onChange={(e: any) => setQuery(e.target.value)}
-                            onFocus={(e: any) => { e.target.style.borderColor = 'rgba(139,105,20,0.35)'; e.target.style.boxShadow = 'inset 0 2px 8px rgba(0,0,0,0.4), 0 0 12px rgba(139,105,20,0.08)' }}
-                            onBlur={(e: any) => { e.target.style.borderColor = 'rgba(139,105,20,0.12)'; e.target.style.boxShadow = 'inset 0 2px 8px rgba(0,0,0,0.4)' }}
                         />
                         {query && (
                             <button type="button" onClick={() => setQuery('')} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
@@ -474,24 +418,17 @@ export default function ListsPage() {
 
                     {/* Filter Pills + Sort */}
                     <div style={{ display: 'flex', gap: IS_TOUCH ? '0.35rem' : '0.5rem', alignItems: 'center', overflowX: IS_TOUCH ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' as any, paddingBottom: '2px', msOverflowStyle: 'none' as any }}>
-                        {/* Time Filters */}
                         <FilterPill label="ALL TIME" active={timeFilter === 'all'} onClick={() => setTimeFilter('all')} />
                         <FilterPill label="THIS WEEK" active={timeFilter === 'week'} onClick={() => setTimeFilter('week')} />
                         <FilterPill label="THIS MONTH" active={timeFilter === 'month'} onClick={() => setTimeFilter('month')} />
 
-                        {/* Separator */}
                         <div style={{ width: '1px', height: '14px', background: 'rgba(139,105,20,0.15)', flexShrink: 0 }} />
 
-                        {/* Following filter — only show if logged in */}
                         {isAuthenticated && (
-                            <FilterPill
-                                label="FOLLOWING"
-                                active={followingOnly}
-                                onClick={() => setFollowingOnly(!followingOnly)}
-                            />
+                            <FilterPill label="FOLLOWING" active={followingOnly} onClick={() => setFollowingOnly(!followingOnly)} />
                         )}
 
-                        {/* Sort dropdown — positioned with portal-like z-index */}
+                        {/* Sort dropdown */}
                         <div ref={sortMenuRef} style={{ position: 'relative', marginLeft: 'auto', flexShrink: 0 }}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setShowSortMenu(!showSortMenu) }}
@@ -541,7 +478,7 @@ export default function ListsPage() {
                         </div>
                     </div>
 
-                    {/* Results count — hide on mobile to save space */}
+                    {/* Results count */}
                     {!IS_TOUCH && (
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)', opacity: 0.6 }}>
                             {hasActiveFilters ? `${totalResults} RESULTS` : `${totalResults} ARCHIVES`}
@@ -550,151 +487,124 @@ export default function ListsPage() {
                 </div>
             </div>
 
-            {/* ── MAIN CONTENT ── */}
-            <main style={{ padding: IS_TOUCH ? '1.5rem 0 5rem' : '2.5rem 0 5rem' }}>
+            {/* ══════════════════════════════════════════
+                MAIN CONTENT
+            ══════════════════════════════════════════ */}
+            <main style={{ padding: IS_TOUCH ? '1.5rem 0 5rem' : '2.5rem 0 5rem', position: 'relative', zIndex: 1 }}>
                 <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '2rem' : '3rem' }}>
 
                     {/* ── MY COLLECTIONS ── */}
                     {isAuthenticated && filteredMyLists.length > 0 && (
                         <section>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                                <div style={{ width: '3px', height: '1.4rem', background: 'linear-gradient(to bottom, var(--sepia), transparent)', borderRadius: '2px' }} />
+                            <div className="stacks-section-header">
+                                <div className="stacks-section-accent" />
                                 <div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.15rem' }}>YOUR ARCHIVE</div>
-                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.6rem', color: 'var(--parchment)', lineHeight: 1 }}>My Collections</div>
+                                    <div className="stacks-section-eyebrow">YOUR ARCHIVE</div>
+                                    <div className="stacks-section-title">My Collections</div>
                                 </div>
                             </div>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.4rem' : '1.25rem' }}>
+
+                            <motion.div
+                                className="stacks-grid--mine"
+                                variants={containerVariants as any}
+                                initial="hidden"
+                                animate="visible"
+                            >
                                 {filteredMyLists.map((list: any) => {
                                     const posters = list.films.filter((f: any) => f.poster_path || f.poster).slice(0, 3).map((f: any) => f.poster_path || f.poster)
                                     return (
-                                    <Link
-                                        key={list.id}
-                                        to={`/lists/${list.id}`}
-                                        className="fade-in-up"
-                                        style={{
-                                            textDecoration: 'none', color: 'inherit', display: 'flex', flexDirection: 'column',
-                                            background: 'var(--ink)',
-                                            border: '1px solid rgba(139,105,20,0.08)',
-                                            borderRadius: '2px',
-                                            padding: IS_TOUCH ? '0.6rem' : '1.5rem',
-                                            position: 'relative', overflow: 'hidden',
-                                            borderLeft: IS_TOUCH ? 'none' : '3px solid rgba(139,105,20,0.4)',
-                                            borderBottom: IS_TOUCH ? '2px solid rgba(139,105,20,0.4)' : 'none',
-                                            transition: 'border-color 0.3s, box-shadow 0.3s, transform 0.3s',
-                                            minHeight: IS_TOUCH ? 130 : 180,
-                                            boxShadow: '0 8px 25px rgba(0,0,0,0.6)'
-                                        }}
-                                        onMouseEnter={(e: any) => {
-                                            e.currentTarget.style.borderColor = 'rgba(139,105,20,0.3)'
-                                            e.currentTarget.style.boxShadow = '0 12px 35px rgba(0,0,0,0.7), 0 0 20px rgba(139,105,20,0.08)'
-                                            e.currentTarget.style.transform = 'translateY(-3px)'
-                                            const bg = e.currentTarget.querySelector('.my-bg') as HTMLElement
-                                            if (bg) bg.style.transform = 'scale(1.04)'
-                                        }}
-                                        onMouseLeave={(e: any) => {
-                                            e.currentTarget.style.borderColor = 'rgba(139,105,20,0.08)'
-                                            e.currentTarget.style.boxShadow = '0 8px 25px rgba(0,0,0,0.6)'
-                                            e.currentTarget.style.transform = 'translateY(0)'
-                                            const bg = e.currentTarget.querySelector('.my-bg') as HTMLElement
-                                            if (bg) bg.style.transform = 'scale(1)'
-                                        }}
-                                    >
-                                        {/* Background Posters */}
-                                        <div className="my-bg" style={{ position: 'absolute', inset: 0, zIndex: 0, display: 'flex', width: '100%', height: '100%', transition: 'transform 0.5s' }}>
-                                            {posters.length === 0 ? (
-                                                <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(28,23,16,0.4) 0%, rgba(10,7,3,0.7) 100%)' }} />
-                                            ) : (
-                                                posters.map((p: string, i: number) => (
-                                                    <div key={i} style={{ flex: 1, height: '100%', position: 'relative', overflow: 'hidden' }}>
-                                                        <img
-                                                            src={tmdb.poster(p, 'w185')}
-                                                            alt=""
-                                                            loading="lazy"
-                                                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.35) sepia(0.3) contrast(1.1)' }}
-                                                        />
-                                                    </div>
-                                                ))
-                                            )}
-                                            {/* Unified Overlay */}
-                                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,7,3,0.6), rgba(5,4,2,0.95))', zIndex: 1 }} />
-                                        </div>
+                                        <motion.div key={list.id} variants={itemVariants as any}>
+                                            <Link
+                                                to={`/lists/${list.id}`}
+                                                className="stack-card--mine"
+                                                style={{ textDecoration: 'none' }}
+                                            >
+                                                {/* Background Posters */}
+                                                <div className="mine-bg">
+                                                    {posters.length === 0 ? (
+                                                        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(28,23,16,0.4) 0%, rgba(10,7,3,0.7) 100%)' }} />
+                                                    ) : (
+                                                        posters.map((p: string, i: number) => (
+                                                            <div key={i} style={{ flex: 1, height: '100%', position: 'relative', overflow: 'hidden' }}>
+                                                                <img
+                                                                    src={tmdb.poster(p, 'w185')}
+                                                                    alt=""
+                                                                    loading="lazy"
+                                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.35) sepia(0.3) contrast(1.1)' }}
+                                                                />
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                    <div className="mine-bg-overlay" />
+                                                </div>
 
-                                        {/* Content */}
-                                        <div style={{ position: 'relative', zIndex: 10, display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                                                <h3 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.75rem' : '1.3rem', color: 'var(--parchment)', lineHeight: 1.15, textShadow: '0 2px 10px rgba(0,0,0,0.8)', WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                                                    {list.title}
-                                                </h3>
-                                                {!IS_TOUCH && (
-                                                    <div style={{ color: 'var(--fog)', opacity: 0.5, flexShrink: 0, marginLeft: '0.5rem' }}>
-                                                        {list.isPrivate ? <Lock size={14} /> : <Globe size={14} />}
+                                                {/* Content */}
+                                                <div className="mine-content">
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
+                                                        <h3 className="mine-title">{list.title}</h3>
+                                                        {!IS_TOUCH && (
+                                                            <div style={{ color: 'var(--fog)', opacity: 0.5, flexShrink: 0, marginLeft: '0.5rem' }}>
+                                                                {list.isPrivate ? <Lock size={14} /> : <Globe size={14} />}
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                )}
-                                            </div>
-                                            {!IS_TOUCH && list.description && (
-                                                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: 'auto', lineHeight: 1.5, opacity: 0.7, WebkitLineClamp: 2, display: '-webkit-box', WebkitBoxOrient: 'vertical' as any, overflow: 'hidden' }}>
-                                                    {list.description}
-                                                </p>
-                                            )}
-                                            <div style={{ borderTop: '1px solid rgba(139,105,20,0.15)', paddingTop: '0.6rem', marginTop: !IS_TOUCH && list.description ? '1rem' : 'auto', fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.45rem' : '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <span>{list.films.length} FILMS</span>
-                                                {IS_TOUCH && list.isPrivate && <Lock size={10} style={{ opacity: 0.6 }} />}
-                                            </div>
-                                        </div>
-                                    </Link>
+                                                    {!IS_TOUCH && list.description && (
+                                                        <p className="mine-desc">{list.description}</p>
+                                                    )}
+                                                    <div className="mine-footer">
+                                                        <span>{list.films.length} FILMS</span>
+                                                        {IS_TOUCH && list.isPrivate && <Lock size={10} style={{ opacity: 0.6 }} />}
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        </motion.div>
                                     )
                                 })}
-                            </div>
+                            </motion.div>
                         </section>
                     )}
 
                     {/* ── SECTION DIVIDER ── */}
                     {isAuthenticated && filteredMyLists.length > 0 && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.25))' }} />
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.5, whiteSpace: 'nowrap' }}>✦ PUBLIC ARCHIVE ✦</span>
-                            <div style={{ flex: 1, height: '1px', background: 'linear-gradient(to left, transparent, rgba(139,105,20,0.25))' }} />
+                        <div className="stacks-archive-divider">
+                            <div className="stacks-archive-divider-line--left" />
+                            <span className="stacks-archive-divider-label">✦ PUBLIC ARCHIVE ✦</span>
+                            <div className="stacks-archive-divider-line--right" />
                         </div>
                     )}
 
                     {/* ── COMMUNITY LISTS ── */}
                     <section>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
-                            <div style={{ width: '3px', height: '1.4rem', background: 'linear-gradient(to bottom, var(--sepia), transparent)', borderRadius: '2px' }} />
+                        <div className="stacks-section-header">
+                            <div className="stacks-section-accent" />
                             <div>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '0.15rem' }}>SOCIETY ARCHIVES</div>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.6rem', color: 'var(--parchment)', lineHeight: 1 }}>
+                                <div className="stacks-section-eyebrow">SOCIETY ARCHIVES</div>
+                                <div className="stacks-section-title">
                                     {debouncedQuery ? `Results (${filteredCommunity.length})` : 'Curated Stacks'}
                                 </div>
                             </div>
                         </div>
 
                         {isLoading ? (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.4rem' : '1.5rem' }}>
+                            <div className="stacks-grid">
                                 {Array.from({ length: 4 }).map((_, i) => (
-                                    <div key={i} className="skeleton" style={{ height: IS_TOUCH ? 220 : 440, borderRadius: '2px' }} />
+                                    <div key={i} className="shimmer stacks-skeleton" style={{ animationDelay: `${i * 0.1}s` }} />
                                 ))}
                             </div>
                         ) : filteredCommunity.length === 0 ? (
-                            <div style={{
-                                border: '1px solid rgba(139,105,20,0.12)',
-                                padding: IS_TOUCH ? '2.5rem 1.5rem' : '3.5rem 2rem',
-                                textAlign: 'center',
-                                background: 'linear-gradient(180deg, rgba(28,23,16,0.4) 0%, transparent 100%)',
-                                position: 'relative', overflow: 'hidden', borderRadius: '2px',
-                            }}>
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                            /* ── EMPTY STATE — "The Empty Shelf" ── */
+                            <div className="stacks-empty">
+                                <div className="stacks-empty-rule" />
                                 <Buster size={IS_TOUCH ? 50 : 60} mood="peeking" />
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginTop: '1rem', marginBottom: '0.5rem' }}>
+                                <div className="stacks-empty-label">
                                     {debouncedQuery ? 'NO MATCHES' : 'ARCHIVE EMPTY'}
                                 </div>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.6rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>
+                                <div className="stacks-empty-title">
                                     {debouncedQuery ? 'No collections match your search.' : 'The Archive Awaits Its First Curator.'}
                                 </div>
                                 {!debouncedQuery && (
-                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', opacity: 0.6, maxWidth: 400, margin: '0 auto' }}>
-                                        Be the first to forge a public anthology for the Society.
+                                    <div className="stacks-empty-desc">
+                                        Every great library began with a single volume. Be the one to forge a permanent anthology for the Society.
                                     </div>
                                 )}
                                 {debouncedQuery && (
@@ -708,38 +618,32 @@ export default function ListsPage() {
                                 )}
                             </div>
                         ) : (
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.4rem' : '1.5rem' }}>
-                                {filteredCommunity.map((list: any) => (
-                                    <CommunityListCard key={list.id} list={list} />
+                            <motion.div
+                                className="stacks-grid"
+                                variants={containerVariants as any}
+                                initial="hidden"
+                                animate="visible"
+                            >
+                                {filteredCommunity.map((list: any, i: number) => (
+                                    <CommunityListCard key={list.id} list={list} index={i} />
                                 ))}
-                            </div>
+                            </motion.div>
                         )}
                     </section>
 
-                    {/* ── BOTTOM CTA ── */}
+                    {/* ── BOTTOM CTA — "The Vault Door" ── */}
                     {!isAuthenticated && (
-                        <div style={{
-                            background: 'linear-gradient(180deg, rgba(28,23,16,0.5) 0%, rgba(10,7,3,0.9) 100%)',
-                            border: '1px solid rgba(139,105,20,0.15)',
-                            padding: IS_TOUCH ? '2.5rem 1.5rem' : '3rem 2rem', textAlign: 'center',
-                            borderRadius: '2px',
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem',
-                            position: 'relative', overflow: 'hidden',
-                        }}>
-                            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.8 }}>
-                                MEMBERS ONLY
-                            </div>
-                            <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.5rem' : '1.8rem', color: 'var(--parchment)', lineHeight: 1.1 }}>
-                                The Archives Are Closed
-                            </div>
-                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', maxWidth: 420, lineHeight: 1.6, opacity: 0.7 }}>
+                        <div className="stacks-gate">
+                            <div className="stacks-gate-rule stacks-gate-rule--top" />
+                            <div className="stacks-gate-label">MEMBERS ONLY</div>
+                            <div className="stacks-gate-title">The Archives Are Closed</div>
+                            <div className="stacks-gate-desc">
                                 Forge your own collections. Immortalize your cinematic taste in the permanent archive.
                             </div>
-                            <button className="btn btn-primary" style={{ padding: '0.8rem 2.2rem', letterSpacing: '0.2em', fontSize: '0.65rem' }} onClick={() => openSignupModal()}>
+                            <button className="btn btn-primary stacks-gate-btn" style={{ padding: '0.8rem 2.2rem', letterSpacing: '0.2em', fontSize: '0.65rem' }} onClick={() => openSignupModal()}>
                                 CLAIM YOUR SEAT
                             </button>
-                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                            <div className="stacks-gate-rule stacks-gate-rule--bottom" />
                         </div>
                     )}
                 </div>

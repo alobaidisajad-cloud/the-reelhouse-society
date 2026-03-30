@@ -1,0 +1,743 @@
+/* ===========================================================
+   THE STACKS — NITRATE NOIR SECRET FILM LIBRARY
+   A dimly lit vault of curated cinematic anthologies.
+   Each stack is a dossier handcrafted by devoted Society members.
+   =========================================================== */
+
+/* ── Page Layout ── */
+.stacks-page {
+  min-height: 100dvh;
+  padding-top: 70px;
+  position: relative;
+  background: var(--ink);
+}
+
+/* Atmospheric projector-dust glow — same technique as Society page */
+.stacks-page::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 5%, rgba(139,105,20,0.07) 0%, transparent 70%),
+    radial-gradient(circle at 15% 70%, rgba(139,105,20,0.03) 0%, transparent 50%),
+    radial-gradient(circle at 85% 50%, rgba(139,105,20,0.03) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Hero Header — "The Library Entrance" ── */
+.stacks-header {
+  padding: 3.5rem 0 2.5rem;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  text-align: center;
+}
+
+.stacks-header-glow {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(ellipse at top, rgba(139,105,20,0.08) 0%, transparent 65%);
+  pointer-events: none;
+}
+
+.stacks-eyebrow {
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  letter-spacing: 0.45em;
+  color: var(--sepia);
+  margin-bottom: 0.75rem;
+  opacity: 0.8;
+  text-shadow: 0 0 20px rgba(139,105,20,0.3);
+}
+
+.stacks-title {
+  font-family: var(--font-display);
+  font-size: clamp(2.2rem, 5vw, 3.8rem);
+  color: var(--parchment);
+  margin-bottom: 1rem;
+  line-height: 1.05;
+  text-shadow: 0 4px 30px rgba(139,105,20,0.12);
+}
+
+.stacks-subtitle {
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--bone);
+  max-width: 540px;
+  margin: 0 auto 2rem;
+  line-height: 1.7;
+  opacity: 0.75;
+}
+
+/* Ornamental divider — gold line + star + gold line */
+.stacks-ornament {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0 auto 2rem;
+  width: 60%;
+  max-width: 240px;
+  opacity: 0.4;
+}
+.stacks-ornament-line {
+  flex: 1;
+  height: 1px;
+}
+.stacks-ornament-line--left {
+  background: linear-gradient(to right, transparent, var(--sepia));
+}
+.stacks-ornament-line--right {
+  background: linear-gradient(to left, transparent, var(--sepia));
+}
+.stacks-ornament-dot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--sepia);
+}
+
+.stacks-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ── Gold Divider (section separator) ── */
+.stacks-gold-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(139,105,20,0.25), transparent);
+}
+
+/* ── Search & Filter Bar — "The Index Drawer" ── */
+.stacks-filter-bar {
+  background: var(--ink);
+  padding: 1.25rem 0 1rem;
+  position: sticky;
+  top: 60px;
+  z-index: 50;
+  border-bottom: 1px solid rgba(139,105,20,0.1);
+}
+
+.stacks-search-input {
+  width: 100%;
+  padding: 0.85rem 3rem 0.85rem 2.75rem;
+  font-size: 0.95rem;
+  font-family: var(--font-body);
+  background: rgba(10,7,3,0.8);
+  border: 1px solid rgba(139,105,20,0.12);
+  color: var(--parchment);
+  border-radius: 4px;
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  box-sizing: border-box;
+}
+
+.stacks-search-input::placeholder {
+  color: rgba(196, 184, 152, 0.35);
+}
+
+.stacks-search-input:focus {
+  border-color: rgba(139,105,20,0.35);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.4), 0 0 15px rgba(139,105,20,0.1);
+}
+
+/* ── Section Headers ── */
+.stacks-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.stacks-section-accent {
+  width: 3px;
+  height: 1.4rem;
+  background: linear-gradient(to bottom, var(--sepia), transparent);
+  border-radius: 2px;
+}
+
+.stacks-section-eyebrow {
+  font-family: var(--font-ui);
+  font-size: 0.45rem;
+  letter-spacing: 0.3em;
+  color: var(--sepia);
+  margin-bottom: 0.15rem;
+}
+
+.stacks-section-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--parchment);
+  line-height: 1;
+}
+
+/* ── Section Divider — "✦ PUBLIC ARCHIVE ✦" ── */
+.stacks-archive-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.stacks-archive-divider-line--left {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(139,105,20,0.25));
+}
+.stacks-archive-divider-line--right {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to left, transparent, rgba(139,105,20,0.25));
+}
+.stacks-archive-divider-label {
+  font-family: var(--font-ui);
+  font-size: 0.45rem;
+  letter-spacing: 0.35em;
+  color: var(--sepia);
+  opacity: 0.5;
+  white-space: nowrap;
+}
+
+/* ══════════════════════════════════════════════════════════
+   STACK CARDS — The Dossier Treatment
+   Each card is a physical archive entry under a display light.
+   ══════════════════════════════════════════════════════════ */
+
+/* ── Community Stack Card (poster triptych) ── */
+.stack-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: 3px;
+  border: 1px solid rgba(139,105,20,0.08);
+  background: var(--ink);
+  box-shadow: 0 12px 35px rgba(0,0,0,0.6);
+  transition:
+    transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+    border-color 0.4s ease,
+    box-shadow 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+}
+
+/* Warm spotlight from above — display cabinet light */
+.stack-card::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200%;
+  height: 120px;
+  background: radial-gradient(ellipse at center, rgba(139,105,20,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 3;
+  transition: opacity 0.4s;
+}
+
+/* Gold accent rule at bottom */
+.stack-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sepia), transparent);
+  opacity: 0;
+  transition: opacity 0.4s;
+  z-index: 5;
+}
+
+.stack-card:hover {
+  border-color: rgba(139,105,20,0.3);
+  transform: translateY(-8px);
+  box-shadow: 0 22px 55px rgba(0,0,0,0.7), 0 0 35px rgba(139,105,20,0.08);
+}
+
+.stack-card:hover::before {
+  background: radial-gradient(ellipse at center, rgba(139,105,20,0.12) 0%, transparent 70%);
+}
+
+.stack-card:hover::after {
+  opacity: 0.5;
+}
+
+/* Poster background */
+.stack-card-poster-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.stack-card:hover .stack-card-poster-wrap {
+  transform: scale(1.06);
+}
+
+.stack-card-poster-panel {
+  flex: 1;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.stack-card-poster-panel img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(0.55) sepia(0.2) contrast(1.05);
+  transform: scale(1.02);
+  transition: filter 0.5s;
+}
+
+.stack-card:hover .stack-card-poster-panel img {
+  filter: brightness(0.7) sepia(0.1) contrast(1.08);
+}
+
+/* Fade between poster panels */
+.stack-card-poster-fade {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 30%;
+  background: linear-gradient(to left, rgba(10,7,3,0.85), transparent);
+  z-index: 1;
+}
+
+/* Ambient glow overlay */
+.stack-card-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at top left, var(--sepia) 0%, transparent 60%);
+  opacity: 0.15;
+  z-index: 1;
+  transition: opacity 0.5s;
+}
+.stack-card:hover .stack-card-glow {
+  opacity: 0.35;
+}
+
+/* Bottom gradient mask */
+.stack-card-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, transparent 15%, var(--ink) 88%);
+  z-index: 2;
+}
+
+/* Content pane */
+.stack-card-content {
+  position: relative;
+  z-index: 10;
+  margin-top: auto;
+  padding: 1.75rem;
+}
+
+/* Film count badge */
+.stack-card-badge {
+  display: inline-block;
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  letter-spacing: 0.2em;
+  color: var(--sepia);
+  border: 1px solid rgba(139,105,20,0.3);
+  padding: 2px 6px;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* Catalog reference stamp */
+.stack-card-ref {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  font-family: var(--font-body);
+  font-size: 0.5rem;
+  color: var(--fog);
+  opacity: 0.3;
+  letter-spacing: 0.05em;
+  z-index: 4;
+}
+
+.stack-card-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--parchment);
+  margin-bottom: 0.5rem;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.9);
+  line-height: 1.15;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.stack-card-desc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--bone);
+  line-height: 1.5;
+  margin-bottom: 0.5rem;
+  opacity: 0.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.stack-card-curator {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stack-card-curator-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--sepia);
+  border-radius: 50%;
+  opacity: 0.6;
+}
+
+.stack-card-curator-name {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--fog);
+}
+
+/* ── Meta row (badges + certify + film count) ── */
+.stack-card-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+.stack-card-meta-divider {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(to right, rgba(139,105,20,0.3), transparent);
+}
+
+/* ══════════════════════════════════════════════════════════
+   MY COLLECTIONS — Ledger Style
+   Clean, text-first cards with gold left border accent.
+   ══════════════════════════════════════════════════════════ */
+.stack-card--mine {
+  background: var(--ink);
+  border: 1px solid rgba(139,105,20,0.08);
+  border-left: 3px solid rgba(139,105,20,0.4);
+  border-radius: 2px;
+  padding: 1.5rem;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+  transition: border-color 0.3s, box-shadow 0.3s, transform 0.3s;
+  text-decoration: none;
+  color: inherit;
+  display: flex;
+  flex-direction: column;
+  min-height: 180px;
+}
+
+.stack-card--mine::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200%;
+  height: 120px;
+  background: radial-gradient(ellipse at center, rgba(139,105,20,0.04) 0%, transparent 70%);
+  pointer-events: none;
+  transition: opacity 0.4s;
+}
+
+.stack-card--mine:hover {
+  border-color: rgba(139,105,20,0.3);
+  box-shadow: 0 14px 40px rgba(0,0,0,0.7), 0 0 25px rgba(139,105,20,0.08);
+  transform: translateY(-4px);
+}
+
+.stack-card--mine:hover::before {
+  background: radial-gradient(ellipse at center, rgba(139,105,20,0.08) 0%, transparent 70%);
+}
+
+/* Background posters for my cards */
+.mine-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.5s;
+}
+
+.stack-card--mine:hover .mine-bg {
+  transform: scale(1.04);
+}
+
+.mine-bg-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(10,7,3,0.6), rgba(5,4,2,0.95));
+  z-index: 1;
+}
+
+.mine-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.mine-title {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: var(--parchment);
+  line-height: 1.15;
+  text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mine-desc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--bone);
+  margin-bottom: auto;
+  line-height: 1.5;
+  opacity: 0.7;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.mine-footer {
+  border-top: 1px solid rgba(139,105,20,0.15);
+  padding-top: 0.6rem;
+  margin-top: auto;
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.15em;
+  color: var(--sepia);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* ══════════════════════════════════════════════════════════
+   STACKS GRID
+   ══════════════════════════════════════════════════════════ */
+.stacks-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+}
+
+.stacks-grid--mine {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.25rem;
+}
+
+/* ══════════════════════════════════════════════════════════
+   EMPTY STATE — "The Empty Shelf"
+   ══════════════════════════════════════════════════════════ */
+.stacks-empty {
+  border: 1px solid rgba(139,105,20,0.12);
+  padding: 3.5rem 2rem;
+  text-align: center;
+  background: linear-gradient(180deg, rgba(28,23,16,0.4) 0%, transparent 100%);
+  position: relative;
+  overflow: hidden;
+  border-radius: 2px;
+}
+.stacks-empty-rule {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sepia), transparent);
+}
+.stacks-empty-label {
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  letter-spacing: 0.3em;
+  color: var(--sepia);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+.stacks-empty-title {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  color: var(--parchment);
+  margin-bottom: 0.5rem;
+}
+.stacks-empty-desc {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--bone);
+  opacity: 0.6;
+  max-width: 420px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* ══════════════════════════════════════════════════════════
+   MEMBERS-ONLY GATE — "The Vault Door"
+   ══════════════════════════════════════════════════════════ */
+.stacks-gate {
+  background: linear-gradient(180deg, rgba(28,23,16,0.5) 0%, rgba(10,7,3,0.9) 100%);
+  border: 1px solid rgba(139,105,20,0.15);
+  padding: 3rem 2rem;
+  text-align: center;
+  border-radius: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.stacks-gate-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--sepia), transparent);
+}
+.stacks-gate-rule--top { top: 0; }
+.stacks-gate-rule--bottom { bottom: 0; }
+
+/* Breathing radial glow behind gate text */
+.stacks-gate::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(139,105,20,0.06) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.stacks-gate-label {
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  letter-spacing: 0.35em;
+  color: var(--sepia);
+  opacity: 0.8;
+  position: relative;
+}
+.stacks-gate-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: var(--parchment);
+  line-height: 1.1;
+  position: relative;
+}
+.stacks-gate-desc {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--bone);
+  max-width: 420px;
+  line-height: 1.6;
+  opacity: 0.7;
+  position: relative;
+}
+.stacks-gate-btn {
+  position: relative;
+}
+
+/* ══════════════════════════════════════════════════════════
+   SKELETON LOADING
+   ══════════════════════════════════════════════════════════ */
+.stacks-skeleton {
+  height: 440px;
+  border-radius: 3px;
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE (≤768px)
+   2-column grid, compact cards, touch-optimized
+   ══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .stacks-page { padding-top: 56px; }
+
+  .stacks-header { padding: 1.5rem 0 1.25rem; }
+  .stacks-eyebrow { font-size: 0.4rem; letter-spacing: 0.35em; }
+  .stacks-title { font-size: clamp(1.8rem, 8vw, 2.5rem); }
+  .stacks-subtitle { font-size: 0.85rem; margin-bottom: 1.25rem; padding: 0 1rem; }
+  .stacks-ornament { margin-bottom: 1.25rem; }
+
+  .stacks-filter-bar {
+    padding: 0.75rem 0;
+    top: 56px;
+  }
+  .stacks-search-input {
+    padding: 0.75rem 2.5rem 0.75rem 2.5rem;
+    font-size: 0.85rem;
+  }
+
+  .stacks-section-title { font-size: 1.3rem; }
+
+  /* ── 2-Column Grid ── */
+  .stacks-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+  .stacks-grid--mine {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  /* Community Cards — compact */
+  .stack-card { min-height: 200px; }
+  .stack-card-content { padding: 0.6rem; }
+  .stack-card-title { font-size: 0.8rem; }
+  .stack-card-desc { display: none; }
+  .stack-card-curator { display: none; }
+  .stack-card-ref { display: none; }
+  .stack-card-badge { font-size: 0.4rem; padding: 1px 4px; }
+
+  /* My Cards — compact */
+  .stack-card--mine {
+    padding: 0.6rem;
+    min-height: 130px;
+    border-left: 2px solid rgba(139,105,20,0.4);
+  }
+  .mine-title { font-size: 0.75rem; }
+  .mine-desc { display: none; }
+  .mine-footer { font-size: 0.45rem; }
+
+  /* Empty states */
+  .stacks-empty { padding: 2.5rem 1.5rem; }
+  .stacks-empty-title { font-size: 1.3rem; }
+
+  /* Gate */
+  .stacks-gate { padding: 2.5rem 1.5rem; }
+  .stacks-gate-title { font-size: 1.5rem; }
+
+  .stacks-skeleton { height: 200px; }
+}
