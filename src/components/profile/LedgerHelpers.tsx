@@ -147,7 +147,7 @@ export function ListsSection({ lists, user }: any) {
             {lists.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>No lists yet. The stacks are empty.</div>
             ) : lists.map((list: any) => (
-                <Link key={list.id} to={`/list/${list.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                <Link key={list.id} to={`/lists/${list.id}`} style={{ textDecoration: 'none', display: 'block' }}>
                     <motion.div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} whileHover={{ y: -2, transition: { type: 'spring', damping: 14 } }}>
                         <div style={{ display: 'flex', gap: 2, height: 64, overflow: 'hidden' }}>
                             {list.films.length > 0 ? list.films.slice(0, 4).map((f: any, i: number) => (
