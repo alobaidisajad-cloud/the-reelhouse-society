@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import toast from 'react-hot-toast'
@@ -419,86 +420,96 @@ export default function DispatchPage() {
                 </footer>
             </div>
 
-            {/* FULL ARTICLE OVERLAY (Cooler, more premium) */}
-            <AnimatePresence>
-                {selectedArticle && (
-                    <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="article-reader-overlay"
-                    >
+            {/* FULL ARTICLE OVERLAY — Portal to body to escape stacking context */}
+            {createPortal(
+                <AnimatePresence>
+                    {selectedArticle && (
                         <motion.div
-                            initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
-                            className="article-reader-paper"
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="article-reader-overlay"
+                            onClick={closeArticle}
                         >
-                            <button onClick={closeArticle} className="btn-close-reader">
-                                <IconClose />
-                            </button>
-                            <div className="reader-watermark">REELHOUSE DIGITAL DOSSIER</div>
-
-                            <header className="reader-head">
-                                <h1 className="reader-title">{selectedArticle.title}</h1>
-                                {selectedArticle.author && (
-                                    <div className="reader-byline">
-                                        FILED BY <span className="highlight-author">{selectedArticle.author.toUpperCase()}</span>
-                                    </div>
-                                )}
-                            </header>
-
-                            <div className="reader-body">
-                                {selectedArticle.fullContent || selectedArticle.excerpt}
-                            </div>
-
-                            <div className="reader-endmark">— ✦ —</div>
-                        </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
-            {/* WRITE ESSAY PANEL (Slide-in from right, very premium) */}
-            <AnimatePresence>
-                {isWriting && (
-                    <motion.div
-                        initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className="writer-panel-overlay"
-                    >
-                        <motion.div
-                            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="writer-panel"
-                        >
-                            <div className="wp-header">
-                                <div className="wp-title">COMPOSE DOSSIER</div>
-                                <button onClick={() => setIsWriting(false)} className="btn-close-wp"><IconClose /></button>
-                            </div>
-
-                            <div className="wp-canvas">
-                                <input
-                                    className="wp-input-title"
-                                    placeholder="Enter your headline..."
-                                    value={formValues.title}
-                                    onChange={(e: any) => setFormValues({ ...formValues, title: e.target.value })}
-                                />
-
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-                                    DOSSIER CONTENTS
-                                </div>
-                                <textarea
-                                    className="input"
-                                    placeholder="Type your dossier in Markdown. Italics, bold, and blockquotes supported."
-                                    value={formValues.content}
-                                    onChange={(e: any) => setFormValues({ ...formValues, content: e.target.value })}
-                                />
-                            </div>
-
-                            <div className="wp-footer">
-                                <button onClick={submitEssay} disabled={isPublishing} className="btn-publish-dossier" style={{ opacity: isPublishing ? 0.6 : 1 }}>
-                                    {isPublishing ? 'TRANSMITTING...' : 'TRANSMIT TO NEWSLETTER'} <IconArrowRight />
+                            <motion.div
+                                initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+                                className="article-reader-paper"
+                                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                            >
+                                <button onClick={closeArticle} className="btn-close-reader">
+                                    <IconClose />
                                 </button>
-                            </div>
+                                <div className="reader-watermark">REELHOUSE DIGITAL DOSSIER</div>
+
+                                <header className="reader-head">
+                                    <h1 className="reader-title">{selectedArticle.title}</h1>
+                                    {selectedArticle.author && (
+                                        <div className="reader-byline">
+                                            FILED BY <span className="highlight-author">{selectedArticle.author.toUpperCase()}</span>
+                                        </div>
+                                    )}
+                                </header>
+
+                                <div className="reader-body">
+                                    {selectedArticle.fullContent || selectedArticle.excerpt}
+                                </div>
+
+                                <div className="reader-endmark">— ✦ —</div>
+                            </motion.div>
                         </motion.div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
+
+            {/* WRITE ESSAY PANEL — Portal to body */}
+            {createPortal(
+                <AnimatePresence>
+                    {isWriting && (
+                        <motion.div
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            className="writer-panel-overlay"
+                            onClick={() => setIsWriting(false)}
+                        >
+                            <motion.div
+                                initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                                className="writer-panel"
+                                onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                            >
+                                <div className="wp-header">
+                                    <div className="wp-title">COMPOSE DOSSIER</div>
+                                    <button onClick={() => setIsWriting(false)} className="btn-close-wp"><IconClose /></button>
+                                </div>
+
+                                <div className="wp-canvas">
+                                    <input
+                                        className="wp-input-title"
+                                        placeholder="Enter your headline..."
+                                        value={formValues.title}
+                                        onChange={(e: any) => setFormValues({ ...formValues, title: e.target.value })}
+                                    />
+
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
+                                        DOSSIER CONTENTS
+                                    </div>
+                                    <textarea
+                                        className="input"
+                                        placeholder="Type your dossier in Markdown. Italics, bold, and blockquotes supported."
+                                        value={formValues.content}
+                                        onChange={(e: any) => setFormValues({ ...formValues, content: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="wp-footer">
+                                    <button onClick={submitEssay} disabled={isPublishing} className="btn-publish-dossier" style={{ opacity: isPublishing ? 0.6 : 1 }}>
+                                        {isPublishing ? 'TRANSMITTING...' : 'TRANSMIT TO NEWSLETTER'} <IconArrowRight />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>,
+                document.body
+            )}
 
             {/* WRITER FLOATING ACTION BUTTON */}
             <AnimatePresence>

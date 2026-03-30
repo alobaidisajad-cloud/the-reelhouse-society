@@ -1,4 +1,4 @@
-﻿@charset "UTF-8";
+@charset "UTF-8";
 /* ============================================================
    REELHOUSE — NITRATE NOIR DESIGN SYSTEM v2.1 — BASE
    Variables · Reset · Body · Grain · Vignette · Typography
@@ -140,7 +140,7 @@ body::before {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 9999;
+  z-index: 900;
   pointer-events: none;
   opacity: 0.03;
   transform: translateZ(0);
@@ -156,7 +156,7 @@ body::after {
   content: '';
   position: fixed;
   inset: 0;
-  z-index: 9998;
+  z-index: 899;
   pointer-events: none;
   transform: translateZ(0);
   will-change: transform;
