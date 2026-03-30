@@ -289,51 +289,53 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         )
     }
 
-    // ── STANDARD FEED VIEW (INLINE LAYOUT) ──
+    // ── STANDARD FEED VIEW (INLINE LAYOUT) — "THE UNDERGROUND" ──
     return (
         <div
-            className="fade-in-up"
+            className="reel-dispatch"
             onClick={handleCardClick}
             style={{
-                background: 'linear-gradient(135deg, rgba(28,23,16,0.3) 0%, rgba(10,7,3,0.6) 100%)',
-                border: '1px solid rgba(139,105,20,0.08)',
-                borderRadius: '2px',
                 padding: IS_TOUCH ? '1rem' : '1.25rem',
-                position: 'relative',
                 display: 'flex',
                 gap: IS_TOUCH ? '1rem' : '1.25rem',
-                cursor: 'pointer',
-                transition: 'border-color 0.3s, box-shadow 0.3s',
-                overflow: 'hidden',
             }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.3)' }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(139,105,20,0.08)'; e.currentTarget.style.boxShadow = 'none' }}
         >
-            {/* Poster */}
-            <div style={{ width: IS_TOUCH ? 90 : 100, height: IS_TOUCH ? 135 : 150, flexShrink: 0, borderRadius: '4px', overflow: 'hidden', background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.15)', position: 'relative', boxShadow: '0 6px 16px rgba(0,0,0,0.5)' }}>
-                {log.film?.poster ? (
-                    <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.15) contrast(1.05)' }} />
-                ) : (
-                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0b09' }}><img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.7 }} /></div>
+            {/* Poster with Ambient Echo */}
+            <div className="reel-poster-wrap" style={{ width: IS_TOUCH ? 100 : 100, height: IS_TOUCH ? 150 : 150 }}>
+                {/* Ambient glow — blurred poster echo behind */}
+                {log.film?.poster && (
+                    <img
+                        src={tmdb.poster(log.film.poster, 'w92')}
+                        alt=""
+                        aria-hidden="true"
+                        className="reel-poster-glow"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
                 )}
-                <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.08)', pointerEvents: 'none', zIndex: 10, borderRadius: '4px' }} />
-                
-                {/* ── SOCIETY STAMP OVERLAY (FEED) ── */}
-                {endorsed && (
-                    <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-15%', right: '-35%', zIndex: 20 } as React.CSSProperties}>
-                        <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '90px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>
-                            <g transform="rotate(-2 150 60)">
-                                <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
-                                <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
-                                <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
-                                <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
-                                <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
-                                <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
-                                <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
-                            </g>
-                        </svg>
-                    </div>
-                )}
+                <div className="reel-poster-frame scanlines" style={{ width: '100%', height: '100%' }}>
+                    {log.film?.poster ? (
+                        <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.12) contrast(1.05)' }} />
+                    ) : (
+                        <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0d0b09' }}><img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.7 }} /></div>
+                    )}
+                    
+                    {/* ── SOCIETY STAMP OVERLAY (FEED) ── */}
+                    {endorsed && (
+                        <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-15%', right: '-35%', zIndex: 20 } as React.CSSProperties}>
+                            <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '90px', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}>
+                                <g transform="rotate(-2 150 60)">
+                                    <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
+                                    <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
+                                    <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
+                                    <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
+                                    <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
+                                    <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
+                                    <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
+                                </g>
+                            </svg>
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Content Body */}
@@ -341,12 +343,12 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 {/* User + timestamp row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden' }}>
-                        <Link to={`/user/${log.user}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+                        <Link to={`/user/${log.user}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', transition: 'text-shadow 0.2s' }} onMouseEnter={e => e.currentTarget.style.textShadow = '0 0 8px rgba(139,105,20,0.4)'} onMouseLeave={e => e.currentTarget.style.textShadow = 'none'}>
                             @{(log.user || 'anonymous').toUpperCase()}
                         </Link>
-                        {log.userRole === 'auteur' && <span style={{ color: 'var(--sepia)', fontSize: '0.55rem' }}>✦</span>}
+                        {log.userRole === 'auteur' && <span className="reel-auteur-badge">✦ AUTEUR</span>}
                     </div>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', whiteSpace: 'nowrap', flexShrink: 0, opacity: 0.7 }}>
                         {log.timestamp || 'RECENT'}
                     </span>
                 </div>
@@ -362,8 +364,12 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 {/* Rating */}
                 {log.rating > 0 && <div style={{ marginBottom: '0.5rem' }}><ReelRating value={log.rating} size="sm" /></div>}
 
-                {/* Pull Quote */}
-                {log.pullQuote && <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem', paddingLeft: '0.75rem', borderLeft: '3px solid var(--sepia)', fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.95rem' : '1.1rem', color: 'var(--sepia)', fontStyle: 'italic', lineHeight: 1.3, opacity: 0.9 }}>"{log.pullQuote}"</div>}
+                {/* Pull Quote — with French quotation marks */}
+                {log.pullQuote && (
+                    <div className="reel-pull-quote" style={{ marginTop: '0.5rem', marginBottom: '0.5rem', fontSize: IS_TOUCH ? '0.95rem' : '1.1rem' }}>
+                        {log.pullQuote}
+                    </div>
+                )}
 
                 {/* Review */}
                 {log.review && (
@@ -374,9 +380,9 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic' }}>Tap to decode spoilers.</span>
                             </div>
                         ) : log.dropCap ? (
-                            <><span style={{ float: 'left', fontSize: IS_TOUCH ? '2rem' : '2.5rem', lineHeight: IS_TOUCH ? '1.8rem' : '2.2rem', padding: '0.15rem 0.4rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)' }}>{log.review.charAt(0)}</span><span>{isExpanded ? log.review.slice(1) : (log.review.length > 300 ? log.review.slice(1, 300) + '…' : log.review.slice(1))}</span></>
+                            <><span style={{ float: 'left', fontSize: IS_TOUCH ? '2rem' : '2.5rem', lineHeight: IS_TOUCH ? '1.8rem' : '2.2rem', padding: '0.15rem 0.4rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)', textShadow: '0 2px 8px rgba(139,105,20,0.2)' }}>{log.review.charAt(0)}</span><span>{showFullText ? log.review.slice(1) : (log.review.length > 300 ? log.review.slice(1, 300) : log.review.slice(1))}</span>{!showFullText && log.review.length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
                         ) : (
-                            <span>{isExpanded ? log.review : (log.review.length > 300 ? log.review.slice(0, 300) + '…' : log.review)}</span>
+                            <><span>{showFullText ? log.review : (log.review.length > 300 ? log.review.slice(0, 300) : log.review)}</span>{!showFullText && log.review.length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
                         )}
                     </div>
                 )}
@@ -384,29 +390,29 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 {log.isAutopsied && log.autopsy && <RadarChart autopsy={log.autopsy} size={130} />}
 
                 {/* Feed Action Bar */}
-                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.75rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(139,105,20,0.15)', flexWrap: 'wrap', flexShrink: 0 }}>
+                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.75rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(139,105,20,0.1)', flexWrap: 'wrap', flexShrink: 0 }}>
                     <div style={{ position: 'relative' }}>
-                        <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
+                        <button className="reel-action-btn" onClick={handleEndorse} style={{ color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
                             {canEndorse ? <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span style={{ fontSize: '10px' }}><Lock size={9} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
                             {endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'LOCKED'} ({endorsementCount})
                         </button>
                     </div>
                     {canAnnotate ? (
-                        <button onClick={handleAnnotateToggle} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer' }}>
+                        <button className="reel-action-btn" onClick={handleAnnotateToggle} style={{ color: annotateOpen ? 'var(--parchment)' : 'var(--fog)' }}>
                             <MessageSquare size={12} /> CRITIQUE
                         </button>
                     ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--ash)', cursor: 'not-allowed' }}>
+                        <div className="reel-action-btn" style={{ color: 'var(--ash)', cursor: 'not-allowed' }}>
                             <span style={{ fontSize: '9px' }}><Lock size={9} style={{ display: "inline-block", verticalAlign: "middle" }} /></span> LOCKED
                         </div>
                     )}
                     <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         {isOwner && (
-                            <button onClick={(e) => { e.stopPropagation(); openLogModal({ id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }, log.id) }} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: 'var(--fog)', cursor: 'pointer' }}>
+                            <button className="reel-action-btn" onClick={(e) => { e.stopPropagation(); openLogModal({ id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }, log.id) }} style={{ color: 'var(--fog)' }}>
                                 <Edit3 size={12} /> EDIT
                             </button>
                         )}
-                        <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.12em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
+                        <button className="reel-action-btn" onClick={handleRetransmit} style={{ color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
                             <RefreshCw size={12} /> {retransmitted ? 'SENT ✦' : 'PUBLISH'}
                         </button>
                     </div>

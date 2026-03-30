@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useAuthStore, useUIStore } from '../store'
@@ -14,6 +14,9 @@ import PageSEO from '../components/PageSEO'
 
 import { useViewport } from '../hooks/useViewport'
 import { useScrollRevealAll } from '../hooks/useScrollReveal'
+
+// ── The Underground Styles ──
+import '../styles/reel.css'
 
 // ── Helper: map raw log rows to feed entries ──
 function mapLogsToFeed(data: any[]) {
@@ -57,7 +60,7 @@ function mapLogsToFeed(data: any[]) {
     })
 }
 
-// ── FEED PAGE ──
+// ── FEED PAGE — "THE UNDERGROUND" ──
 export default function FeedPage() {
     const { isTouch: IS_TOUCH } = useViewport()
     const feedContainerRef = useRef<HTMLDivElement>(null)
@@ -73,7 +76,6 @@ export default function FeedPage() {
     // ── Feed Data ──
     const [showLegend, setShowLegend] = useState(false)
     const [recentLists, setRecentLists] = useState<any[]>([])
-    const tabBarRef = useRef<HTMLDivElement>(null)
 
     // ── Fetch Helper ──
     const fetchFeed = async ({ pageParam = 0 }, mode: 'for-you' | 'following') => {
@@ -91,10 +93,6 @@ export default function FeedPage() {
 
         if (mode === 'following') {
             const followingArr = user?.following || []
-            // Instead of sub-querying profiles first, we can just filter natively by the following array
-            // if we filter on username via the embedded profile. 
-            // BUT Supabase JS restricts filtering embedded arrays easily.
-            // A quick subquery for just the IDs is fine for the "Following" tab:
             const { data: followedProfiles } = await supabase.from('profiles').select('id').in('username', followingArr)
             if (!followedProfiles?.length) return { items: [], hasNextPage: false }
             query = query.in('user_id', followedProfiles.map((p: any) => p.id))
@@ -207,10 +205,23 @@ export default function FeedPage() {
     const activeFeed = feedTab === 'following' ? followingFeed : communityFeed
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
 
+    // ── Derived stats (no new API calls) ──
+    const thisWeekCount = useMemo(() => {
+        const now = new Date()
+        const weekStart = new Date(now)
+        weekStart.setDate(weekStart.getDate() - weekStart.getDay() + 1)
+        weekStart.setHours(0, 0, 0, 0)
+        return communityFeed.filter((l: any) => {
+            const d = new Date(l.createdAt || l.timestamp || new Date().toISOString())
+            return d >= weekStart
+        }).length
+    }, [communityFeed])
+
     return (
-        <div ref={feedContainerRef} style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
-            <PageSEO title="The Feed" description="Community dispatches and global curation from The ReelHouse Society." />
-            {/* ── REFINED HEADER ── */}
+        <div ref={feedContainerRef} className="reel-lounge" style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)', position: 'relative', zIndex: 1 }}>
+            <PageSEO title="The Reel" description="Classified transmissions from The Underground — The ReelHouse Society." />
+            
+            {/* ── THE UNDERGROUND HEADER ── */}
             <div className="scroll-reveal" style={{
                 background: 'var(--ink)',
                 borderBottom: 'none',
@@ -219,22 +230,32 @@ export default function FeedPage() {
                 overflow: 'hidden',
                 flexShrink: 0
             }}>
-                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.11) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                {/* Ambient radial glow behind title */}
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.13) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '0.75rem', opacity: 0.8 }}>
                         ✦ THE REELHOUSE SOCIETY ✦
                     </div>
-                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.6rem, 5vw, 2.2rem)' : 'clamp(2.2rem, 5vw, 3.5rem)', color: 'var(--parchment)', marginBottom: '0.5rem', lineHeight: 1, textShadow: '0 8px 25px rgba(0,0,0,0.6)' }}>
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.6rem, 5vw, 2.2rem)' : 'clamp(2.2rem, 5vw, 3.5rem)', color: 'var(--parchment)', marginBottom: '0.5rem', lineHeight: 1, textShadow: '0 0 60px rgba(139,105,20,0.25), 0 4px 20px rgba(0,0,0,0.6)' }}>
                         The Reel
                     </h1>
-                    <p style={{ fontFamily: 'var(--font-sub)', fontSize: '0.95rem', color: 'var(--fog)', maxWidth: 500, margin: '0 auto', opacity: 0.7 }}>
-                        Dispatches from the society's finest critics.
+                    <p style={{ fontFamily: 'var(--font-sub)', fontSize: '0.95rem', color: 'var(--fog)', maxWidth: 500, margin: '0 auto 0.75rem', opacity: 0.7 }}>
+                        Classified transmissions from The Underground.
                     </p>
+                    
+                    {/* LIVE Indicator */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: IS_TOUCH ? '0.5rem' : '0' }}>
+                        <span className="reel-live-dot" />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.25em', color: 'var(--fog)', opacity: 0.7 }}>
+                            LIVE · {communityFeed.length > 0 ? `${communityFeed.length} DISPATCH${communityFeed.length === 1 ? '' : 'ES'}` : 'AWAITING SIGNAL'}
+                        </span>
+                    </div>
                 </div>
 
-                {/* ── STICKY TAB BAR — Following / For You ── */}
+                {/* ── STICKY TAB BAR ── */}
                 <div
-                    ref={tabBarRef}
+                    className="reel-tab-bar"
                     style={{
                         display: 'flex',
                         justifyContent: 'center',
@@ -243,49 +264,20 @@ export default function FeedPage() {
                         position: 'sticky',
                         top: IS_TOUCH ? 56 : 64,
                         zIndex: 100,
-                        background: 'rgba(8,6,4,0.95)',
-                        backdropFilter: 'blur(8px)',
-                        borderBottom: '1px solid rgba(139,105,20,0.15)',
                     }}
                 >
                     <button
+                        className="reel-tab"
+                        data-active={feedTab === 'for-you'}
                         onClick={() => setFeedTab('for-you')}
-                        style={{
-                            flex: 1,
-                            maxWidth: 240,
-                            padding: '1rem 1.5rem',
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: feedTab === 'for-you' ? '2px solid var(--sepia)' : '2px solid transparent',
-                            fontFamily: 'var(--font-ui)',
-                            fontSize: '0.6rem',
-                            letterSpacing: '0.2em',
-                            color: feedTab === 'for-you' ? 'var(--parchment)' : 'var(--fog)',
-                            cursor: 'pointer',
-                            transition: 'color 0.2s, border-color 0.3s',
-                            fontWeight: feedTab === 'for-you' ? 700 : 400,
-                        }}
                     >
                         MAIN REEL
                     </button>
                     {isAuthenticated && (
                         <button
+                            className="reel-tab"
+                            data-active={feedTab === 'following'}
                             onClick={() => setFeedTab('following')}
-                            style={{
-                                flex: 1,
-                                maxWidth: 240,
-                                padding: '1rem 1.5rem',
-                                background: 'none',
-                                border: 'none',
-                                borderBottom: feedTab === 'following' ? '2px solid var(--sepia)' : '2px solid transparent',
-                                fontFamily: 'var(--font-ui)',
-                                fontSize: '0.6rem',
-                                letterSpacing: '0.2em',
-                                color: feedTab === 'following' ? 'var(--parchment)' : 'var(--fog)',
-                                cursor: 'pointer',
-                                transition: 'color 0.2s, border-color 0.3s',
-                                fontWeight: feedTab === 'following' ? 700 : 400,
-                            }}
                         >
                             FOLLOWING
                         </button>
@@ -293,17 +285,56 @@ export default function FeedPage() {
                 </div>
             </div>
 
-            {/* ── GOLD GRADIENT DIVIDER ── */}
-            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent)', flexShrink: 0 }} />
+            {/* ── PERFORATION BAR ── */}
+            <div className="reel-perf-bar" />
 
             <main id="feed-scroller" className="page-top" style={{ paddingBottom: IS_TOUCH ? 'calc(5rem + env(safe-area-inset-bottom))' : '3rem', paddingTop: IS_TOUCH ? '1rem' : '2rem' }}>
                 <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'minmax(0, 1fr) 300px', gap: IS_TOUCH ? '2rem' : '3rem', alignItems: 'start' }}>
 
-                    {/* Main Feed */}
+                    {/* ── SIDEBAR ON MOBILE: Horizontal strip above feed ── */}
+                    {IS_TOUCH && (
+                        <SectionErrorBoundary label="SIDEBAR">
+                        <div className="reel-sidebar-strip">
+                            {/* Weekly Challenge — compact */}
+                            <div className="reel-bulletin" style={{ minWidth: 220 }}>
+                                <div className="reel-bulletin-label">SOCIETY DIRECTIVE</div>
+                                <WeeklyChallenge logs={communityFeed as any} />
+                            </div>
+                            
+                            {/* Currently Logged */}
+                            <div className="reel-bulletin" style={{ minWidth: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                                <div className="reel-bulletin-label">THIS WEEK</div>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: 'var(--parchment)', lineHeight: 1 }}>
+                                    {thisWeekCount}
+                                </div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--fog)', marginTop: '0.3rem' }}>
+                                    DISPATCHES FILED
+                                </div>
+                            </div>
+
+                            {/* Curated Lists — compact */}
+                            {recentLists.slice(0, 2).map((list: any) => (
+                                <Link key={list.id} to={`/lists/${list.id}`} style={{ textDecoration: 'none' }}>
+                                    <div className="reel-bulletin" style={{ minWidth: 200 }}>
+                                        <div className="reel-bulletin-label">MEMBERS' ARCHIVE</div>
+                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.25rem' }}>
+                                            {list.title}
+                                        </div>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                                            BY @{list.curator.toUpperCase()}
+                                        </div>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                        </SectionErrorBoundary>
+                    )}
+
+                    {/* ── MAIN FEED ── */}
                     <SectionErrorBoundary label="COMMUNITY FEED">
                     <div className="feed-main">
 
-                        {/* Rating Legend Toggle — clean inline */}
+                        {/* Rating Legend Toggle */}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
                             <button
                                 onClick={() => setShowLegend(!showLegend)}
@@ -323,34 +354,51 @@ export default function FeedPage() {
                         </div>
                         {showLegend && <RatingLegend />}
 
-                        {/* Sign-up CTA for non-authenticated users */}
+                        {/* Sign-up CTA for non-authenticated users — with blurred peek */}
                         {!isAuthenticated && (
-                            <div style={{
-                                background: 'linear-gradient(180deg, rgba(28,23,16,0.5) 0%, rgba(10,7,3,0.9) 100%)',
-                                border: '1px solid rgba(139,105,20,0.2)',
-                                padding: IS_TOUCH ? '2.5rem 1.5rem' : '3rem 2rem', textAlign: 'center',
-                                marginBottom: '2rem', borderRadius: '2px',
-                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem',
-                                position: 'relative', overflow: 'hidden',
-                            }}>
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.8 }}>
-                                    MEMBERS ONLY
+                            <div style={{ position: 'relative', marginBottom: '2rem' }}>
+                                {/* Blurred peek cards behind the CTA */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '-6rem', position: 'relative', zIndex: 0 }}>
+                                    {[1, 2, 3].map(i => (
+                                        <div key={i} className="reel-peek-card">
+                                            <div className="reel-peek-poster" />
+                                            <div className="reel-peek-lines">
+                                                <div className="reel-peek-line" />
+                                                <div className="reel-peek-line" />
+                                                <div className="reel-peek-line" />
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.6rem' : '2rem', color: 'var(--parchment)', lineHeight: 1.1 }}>
-                                    The Archives Are Closed
+                                
+                                {/* CTA Box */}
+                                <div className="reel-cta-breathing" style={{
+                                    background: 'linear-gradient(180deg, rgba(11,10,8,0.97) 0%, rgba(10,7,3,0.99) 100%)',
+                                    border: '1px solid rgba(139,105,20,0.2)',
+                                    padding: IS_TOUCH ? '2.5rem 1.5rem' : '3rem 2rem', textAlign: 'center',
+                                    borderRadius: '2px', position: 'relative', zIndex: 1,
+                                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.5rem',
+                                    overflow: 'hidden',
+                                }}>
+                                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.8 }}>
+                                        MEMBERS ONLY
+                                    </div>
+                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.6rem' : '2rem', color: 'var(--parchment)', lineHeight: 1.1 }}>
+                                        The Archives Are Closed
+                                    </div>
+                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.6, opacity: 0.7 }}>
+                                        Join The Society to trace the footsteps of the finest critics and publish your own cinematic dispatches.
+                                    </div>
+                                    <button className="btn btn-primary" style={{ padding: '0.85rem 2.5rem', letterSpacing: '0.2em', fontSize: '0.65rem' }} onClick={() => openSignupModal()}>
+                                        CLAIM YOUR SEAT
+                                    </button>
+                                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                                 </div>
-                                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.6, opacity: 0.7 }}>
-                                    Join The Society to trace the footsteps of the finest critics and publish your own cinematic dispatches.
-                                </div>
-                                <button className="btn btn-primary" style={{ padding: '0.85rem 2.5rem', letterSpacing: '0.2em', fontSize: '0.65rem' }} onClick={() => openSignupModal()}>
-                                    CLAIM YOUR SEAT
-                                </button>
-                                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                             </div>
                         )}
 
-                        {/* Following tab — empty state when not following anyone */}
+                        {/* Following tab — empty state */}
                         {feedTab === 'following' && isAuthenticated && !isLoading && activeFeed.length === 0 && (
                             <div style={{
                                 border: '1px solid rgba(139,105,20,0.15)',
@@ -420,7 +468,7 @@ export default function FeedPage() {
                                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                                 </div>
 
-                                {/* Society Picks — Dynamic Live Top Logs */}
+                                {/* Society Picks */}
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.3em', color: 'var(--ash)', textAlign: 'center', opacity: 0.5 }}>
                                     ✦ SOCIETY PICKS — TONIGHT'S RECOMMENDED VIEWING ✦
                                 </div>
@@ -452,7 +500,7 @@ export default function FeedPage() {
                             </div>
 
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                 {activeFeed.map((log: any, i: number) => {
                                     const isLast = i === activeFeed.length - 1
                                     return (
@@ -460,7 +508,7 @@ export default function FeedPage() {
                                             key={log.id + i}
                                             ref={isLast ? lastFeedElementRef : null}
                                             className="fade-in-up"
-                                            style={{ animationDelay: `${Math.min(i * 0.04, 0.4)}s` }}
+                                            style={{ animationDelay: `${Math.min(i * 0.04, 0.4)}s`, '--i': i } as any}
                                         >
                                             <ActivityCard log={log} />
                                         </div>
@@ -474,20 +522,39 @@ export default function FeedPage() {
                     </div>
                     </SectionErrorBoundary>
 
-                    {/* Sidebar */}
+                    {/* ── DESKTOP SIDEBAR — "The Society Bulletin Board" ── */}
+                    {!IS_TOUCH && (
                     <SectionErrorBoundary label="SIDEBAR">
-                    <div className="feed-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                    <div className="reel-sidebar-strip">
 
-                        {/* E2: Weekly Film Challenge */}
-                        <WeeklyChallenge logs={communityFeed as any} />
-
-
-                        {/* Curated Lists — Real Supabase data */}
-                        <div>
-                            <div className="section-title" style={{ borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.5rem' }}>
-                                CURATED LISTS
+                        {/* Currently Logged — Live Counter */}
+                        <div className="reel-bulletin">
+                            <div className="reel-bulletin-label">UNDERGROUND ACTIVITY</div>
+                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.2rem', color: 'var(--parchment)', lineHeight: 1 }}>
+                                    {thisWeekCount}
+                                </span>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
+                                    THIS WEEK
+                                </span>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--bone)', opacity: 0.5 }}>
+                                dispatches filed by the society
+                            </div>
+                        </div>
+
+                        {/* Weekly Challenge — Society Directive */}
+                        <div className="reel-bulletin">
+                            <div className="reel-bulletin-label">SOCIETY DIRECTIVE</div>
+                            <WeeklyChallenge logs={communityFeed as any} />
+                        </div>
+
+                        {/* Members' Archives */}
+                        <div>
+                            <div className="section-title" style={{ borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.5rem', fontSize: '0.5rem', letterSpacing: '0.25em' }}>
+                                MEMBERS' ARCHIVES
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
                                 {recentLists.length === 0 ? (
                                     <>
                                         {[
@@ -495,7 +562,7 @@ export default function FeedPage() {
                                             { title: 'Arthouse Manifesto', curator: 'THE ORACLE' },
                                         ].map(ph => (
                                             <Link key={ph.title} to="/lists" style={{ textDecoration: 'none' }}>
-                                                <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', opacity: 0.5, cursor: 'pointer', transition: 'opacity 0.2s' }} onMouseEnter={e => e.currentTarget.style.opacity = '0.8'} onMouseLeave={e => e.currentTarget.style.opacity = '0.5'}>
+                                                <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', borderLeft: '3px solid rgba(139,105,20,0.15)', opacity: 0.5, cursor: 'pointer', transition: 'opacity 0.2s, border-left-color 0.2s' }} onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderLeftColor = 'var(--sepia)' }} onMouseLeave={e => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.borderLeftColor = 'rgba(139,105,20,0.15)' }}>
                                                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
                                                         {ph.title}
                                                     </div>
@@ -508,7 +575,7 @@ export default function FeedPage() {
                                     </>
                                 ) : recentLists.map((list: any) => (
                                     <Link key={list.id} to={`/lists/${list.id}`} style={{ textDecoration: 'none' }}>
-                                        <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.2)', cursor: 'pointer', transition: 'border-color 0.2s' }} onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--sepia)'} onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(139,105,20,0.2)'}>
+                                        <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.15)', borderLeft: '3px solid rgba(139,105,20,0.2)', cursor: 'pointer', transition: 'border-left-color 0.2s, border-color 0.2s' }} onMouseEnter={e => { e.currentTarget.style.borderLeftColor = 'var(--sepia)'; e.currentTarget.style.borderColor = 'rgba(139,105,20,0.3)' }} onMouseLeave={e => { e.currentTarget.style.borderLeftColor = 'rgba(139,105,20,0.2)'; e.currentTarget.style.borderColor = 'rgba(139,105,20,0.15)' }}>
                                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
                                                 {list.title}
                                             </div>
@@ -524,9 +591,9 @@ export default function FeedPage() {
                             </Link>
                         </div>
 
-
                     </div>
                     </SectionErrorBoundary>
+                    )}
                 </div>
             </main>
         </div>

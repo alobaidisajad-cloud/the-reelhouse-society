@@ -1,0 +1,362 @@
+/* ============================================================
+   THE REEL — "THE UNDERGROUND" STYLES
+   Secret Lounge Beneath the Nitrate Noir Cinema
+   ============================================================ */
+
+/* ── LOUNGE AMBIENT GLOW ── */
+.reel-lounge {
+  position: relative;
+}
+
+.reel-lounge::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 60vh;
+  background: radial-gradient(ellipse at 50% 0%, rgba(139,105,20,0.09) 0%, transparent 55%);
+  pointer-events: none;
+  z-index: 0;
+  animation: reelAmbientBreathe 8s ease-in-out infinite;
+}
+
+@keyframes reelAmbientBreathe {
+  0%, 100% { opacity: 0.7; }
+  50%      { opacity: 1; }
+}
+
+/* ── LIVE PULSE INDICATOR ── */
+@keyframes livePulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(180,40,20,0.6); }
+  50%      { opacity: 0.7; box-shadow: 0 0 0 4px rgba(180,40,20,0); }
+}
+
+.reel-live-dot {
+  width: 6px; height: 6px;
+  background: #c0392b;
+  border-radius: 50%;
+  display: inline-block;
+  animation: livePulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+/* ── PERFORATION BAR ── */
+.reel-perf-bar {
+  height: 8px;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0px,
+    transparent 12px,
+    rgba(139,105,20,0.12) 12px,
+    rgba(139,105,20,0.12) 20px
+  );
+  flex-shrink: 0;
+}
+
+/* ── TAB BAR GLASSMORPHISM ── */
+.reel-tab-bar {
+  background: rgba(8,6,4,0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(139,105,20,0.12);
+}
+
+.reel-tab {
+  flex: 1;
+  max-width: 240px;
+  padding: 1rem 1.5rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  font-family: var(--font-ui);
+  font-size: 0.6rem;
+  letter-spacing: 0.2em;
+  cursor: pointer;
+  transition: color 0.25s, border-color 0.35s ease, text-shadow 0.3s;
+  font-weight: 400;
+  color: var(--fog);
+}
+
+.reel-tab:hover {
+  color: var(--bone);
+}
+
+.reel-tab[data-active="true"] {
+  color: var(--parchment);
+  border-bottom-color: var(--sepia);
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(139,105,20,0.2);
+}
+
+/* ── DISPATCH CARD BASE ── */
+.reel-dispatch {
+  background: linear-gradient(135deg, rgba(22,18,12,0.35) 0%, rgba(10,7,3,0.65) 100%);
+  border: 1px solid rgba(139,105,20,0.06);
+  border-left: 3px solid rgba(139,105,20,0.08);
+  border-radius: 2px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+}
+
+.reel-dispatch:hover {
+  border-left-color: var(--sepia);
+  background: linear-gradient(135deg, rgba(28,23,16,0.5) 0%, rgba(10,7,3,0.7) 100%);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4), inset 0 0 0 1px rgba(139,105,20,0.06);
+}
+
+/* Ornamental corner bracket — top right */
+.reel-dispatch::after {
+  content: '┐';
+  position: absolute;
+  top: 8px; right: 10px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--sepia);
+  opacity: 0.1;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.reel-dispatch:hover::after {
+  opacity: 0.25;
+}
+
+/* ── POSTER AMBIENT ECHO ── */
+.reel-poster-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.reel-poster-glow {
+  position: absolute;
+  inset: -12px;
+  z-index: 0;
+  border-radius: 50%;
+  filter: blur(28px) saturate(1.5) brightness(0.35);
+  opacity: 0.45;
+  pointer-events: none;
+  will-change: filter;
+}
+
+.reel-poster-frame {
+  position: relative;
+  z-index: 1;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--ink);
+  border: 1px solid rgba(139,105,20,0.15);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.5);
+}
+
+/* ── PULL-QUOTE FRAMING ── */
+.reel-pull-quote {
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--sepia);
+  font-family: var(--font-display);
+  font-style: italic;
+  line-height: 1.3;
+  opacity: 0.9;
+  color: var(--sepia);
+}
+
+.reel-pull-quote::before {
+  content: '« ';
+  font-size: 1.1em;
+  opacity: 0.6;
+}
+
+.reel-pull-quote::after {
+  content: ' »';
+  font-size: 1.1em;
+  opacity: 0.6;
+}
+
+/* ── ACTION BAR BUTTONS ── */
+.reel-action-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition: color 0.2s, text-shadow 0.3s;
+}
+
+.reel-action-btn:hover {
+  text-shadow: 0 0 8px rgba(139,105,20,0.3);
+}
+
+/* ── CERTIFY PULSE ── */
+@keyframes certifyPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(196,150,26,0.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(196,150,26,0); }
+  100% { box-shadow: 0 0 0 0 rgba(196,150,26,0); }
+}
+
+.reel-certify-pulse {
+  animation: certifyPulse 0.5s ease-out;
+  border-radius: 50%;
+}
+
+/* ── AUTEUR BADGE ── */
+.reel-auteur-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-family: var(--font-ui);
+  font-size: 0.38rem;
+  letter-spacing: 0.12em;
+  color: var(--ink);
+  background: linear-gradient(135deg, #8B6914, #DAA520);
+  padding: 0.1rem 0.4rem;
+  border-radius: 1px;
+  line-height: 1;
+  font-weight: 700;
+}
+
+/* ── SIDEBAR BULLETIN BOARD ── */
+.reel-bulletin {
+  position: relative;
+  padding: 1.5rem;
+  border: 1px solid rgba(139,105,20,0.15);
+  background: linear-gradient(160deg, rgba(35,28,20,0.6) 0%, rgba(10,7,3,0.9) 100%);
+}
+
+/* Corner brackets */
+.reel-bulletin::before {
+  content: '┌';
+  position: absolute;
+  top: 4px; left: 6px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--sepia);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.reel-bulletin::after {
+  content: '┘';
+  position: absolute;
+  bottom: 4px; right: 6px;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  color: var(--sepia);
+  opacity: 0.2;
+  pointer-events: none;
+}
+
+.reel-bulletin-label {
+  font-family: var(--font-ui);
+  font-size: 0.42rem;
+  letter-spacing: 0.25em;
+  color: var(--sepia);
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}
+
+/* ── CTA BREATHING BORDER ── */
+@keyframes ctaBorderBreathe {
+  0%, 100% { border-color: rgba(139,105,20,0.2); }
+  50%      { border-color: rgba(196,150,26,0.45); }
+}
+
+.reel-cta-breathing {
+  animation: ctaBorderBreathe 3s ease-in-out infinite;
+}
+
+/* ── BLURRED PEEK CARDS ── */
+.reel-peek-card {
+  height: 100px;
+  background: linear-gradient(135deg, rgba(28,23,16,0.3) 0%, rgba(10,7,3,0.6) 100%);
+  border: 1px solid rgba(139,105,20,0.06);
+  border-radius: 2px;
+  filter: blur(6px);
+  pointer-events: none;
+  opacity: 0.4;
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.reel-peek-poster {
+  width: 65px; height: 80px;
+  background: rgba(139,105,20,0.08);
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.reel-peek-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.reel-peek-line {
+  height: 8px;
+  background: rgba(139,105,20,0.06);
+  border-radius: 2px;
+}
+
+.reel-peek-line:nth-child(1) { width: 60%; }
+.reel-peek-line:nth-child(2) { width: 85%; }
+.reel-peek-line:nth-child(3) { width: 45%; }
+
+/* ── MOBILE RESPONSIVE ── */
+@media (max-width: 768px) {
+  .reel-dispatch {
+    border-radius: 0;
+    border-left-width: 2px;
+    margin-left: -1rem;
+    margin-right: -1rem;
+  }
+
+  .reel-sidebar-strip {
+    display: flex;
+    gap: 0.75rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+  }
+
+  .reel-sidebar-strip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .reel-sidebar-strip > * {
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    min-width: 220px;
+    max-width: 280px;
+  }
+
+  .reel-bulletin {
+    padding: 1rem;
+  }
+
+  .reel-tab {
+    padding: 0.85rem 1rem;
+  }
+
+  .reel-poster-glow {
+    inset: -8px;
+    filter: blur(20px) saturate(1.3) brightness(0.3);
+    opacity: 0.35;
+  }
+}
+
+@media (min-width: 769px) {
+  .reel-sidebar-strip {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+}
