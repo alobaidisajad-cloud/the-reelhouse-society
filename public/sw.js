@@ -1,11 +1,13 @@
 // ============================================================
-// REELHOUSE — SERVICE WORKER v8 (NUCLEAR RESET)
+// REELHOUSE — SERVICE WORKER v9 (NITRATE NOIR SYNC)
 // Forces a complete cache clear and re-activation.
+// Any byte change here triggers an automatic SW update.
 // ============================================================
 
-const IMAGE_CACHE = 'reelhouse-tmdb-images-v8';
-const API_CACHE = 'reelhouse-tmdb-api-v8';
-const OFFLINE_CACHE = 'reelhouse-offline-v8';
+const CACHE_VERSION = 'v9';
+const IMAGE_CACHE = 'reelhouse-tmdb-images-v9';
+const API_CACHE = 'reelhouse-tmdb-api-v9';
+const OFFLINE_CACHE = 'reelhouse-offline-v9';
 
 // Install — skip waiting to activate immediately
 self.addEventListener('install', (event) => {
