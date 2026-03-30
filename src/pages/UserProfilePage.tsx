@@ -26,6 +26,7 @@ import ReviewModal from '../components/profile/ReviewModal'
 import Achievements from '../components/profile/Achievements'
 import TasteMatch from '../components/profile/TasteMatch'
 import FilmRecommendations from '../components/profile/FilmRecommendations'
+import CinematicInsights from '../components/profile/CinematicInsights'
 import PhysicalArchiveTab from '../components/profile/PhysicalArchiveTab'
 import { VaultLedgerTab } from '../components/profile/VaultLedgerTab'
 import { VaultArchiveTab, VaultWatchlistTab } from '../components/profile/VaultArchiveTab'
@@ -767,15 +768,62 @@ export default function UserProfilePage() {
                                 {/* Section 2: Taste DNA */}
                                 <div>
                                     <TasteDNA stats={finalMetrics} />
+                                    {finalMetrics.total_logs >= 5 && isOwnProfile && (
+                                        <button
+                                            className="btn btn-ghost"
+                                            onClick={() => setShowDNA(true)}
+                                            style={{ width: '100%', justifyContent: 'center', fontSize: '0.6rem', letterSpacing: '0.15em', gap: '0.4rem', marginTop: '1rem' }}
+                                        >
+                                            <Share2 size={12} /> SHARE CINEMA DNA
+                                        </button>
+                                    )}
                                 </div>
-                                
-                                {/* Section 3: Cinematic Passport */}
+
+                                {/* Section 3: Cinematic Insights — Real Actor/Director/Genre Stats */}
+                                <div>
+                                    <SectionHeader label="REAL ANALYTICS" title="Cinematic Insights" />
+                                    <CinematicInsights logs={profileLogs} userId={profileUser?.id} />
+                                </div>
+
+                                {/* Section 4: Society Honors */}
+                                <div>
+                                    <SectionHeader label="UNLOCKABLE BADGES" title="Society Honors" />
+                                    <Achievements logs={profileLogs} />
+                                </div>
+
+                                {/* Section 5: Your Favourites */}
+                                {profileLogs.filter((l: any) => l.rating >= 4).length > 0 && (
+                                    <div>
+                                        <SectionHeader label="HIGHEST RATED" title="Your Favourites" />
+                                        <div className="card" style={{ padding: '1.25rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                {profileLogs.filter((l: any) => l.rating >= 4).slice(0, 6).map((log: any) => (
+                                                    <Link key={log.id} to={`/film/${log.filmId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
+                                                        {log.poster && (
+                                                            <div style={{ width: 28, height: 42, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', filter: 'sepia(0.3)' }}>
+                                                                <Poster path={log.poster} title={log.title} sizeHint="sm" />
+                                                            </div>
+                                                        )}
+                                                        <div>
+                                                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--parchment)', lineHeight: 1.2, marginBottom: '0.2rem' }}>{log.title}</div>
+                                                            <div style={{ display: 'block', width: '100%', flexShrink: 0 }}>
+                                                                <ReelRating value={log.rating} size="sm" />
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Section 6: Cinematic Passport */}
                                 <div>
                                     <SectionHeader label="CINEMATIC ACHIEVEMENTS" title="The Passport" />
                                     <NoirPassport logs={profileLogs} />
                                 </div>
 
-                                {/* Section 4: Projectionist's Calendar */}
+                                {/* Section 7: Projectionist's Calendar */}
                                 <div>
                                     <SectionHeader label="VIEWING HISTORY" title="The Projectionist's Calendar" />
                                     <ProjectionistCalendar {...{ logs: profileLogs, isPremium } as any} />
@@ -817,51 +865,15 @@ export default function UserProfilePage() {
 
                     {/* Sidebar */}
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                        <TasteDNA stats={finalMetrics} />
-                        {finalMetrics.total_logs >= 5 && isOwnProfile && (
-                            <button
-                                className="btn btn-ghost"
-                                onClick={() => setShowDNA(true)}
-                                style={{ width: '100%', justifyContent: 'center', fontSize: '0.6rem', letterSpacing: '0.15em', gap: '0.4rem', marginTop: '-0.75rem' }}
-                            >
-                                <Share2 size={12} /> SHARE CINEMA DNA
-                            </button>
-                        )}
                         <VaultSection {...{ vault: isOwnProfile ? currentWatchlist : [], user: profileUser, logs: profileLogs } as any} />
 
-                        {/* E1: Achievement Badges */}
-                        <Achievements logs={profileLogs} />
-
-                        {/* E3: Taste Match (other users only) */}
+                        {/* Taste Match (other users only) */}
                         {!isOwnProfile && currentLogs.length >= 5 && (
                             <TasteMatch myLogs={currentLogs} theirLogs={profileLogs} theirUsername={profileUser?.username || ''} />
                         )}
 
-                        {/* E4: Film Recommendations (own profile only) */}
+                        {/* Film Recommendations (own profile only) */}
                         {isOwnProfile && <FilmRecommendations />}
-
-                        {profileLogs.filter((l: any) => l.rating >= 4).length > 0 && (
-                            <div className="card">
-                                <div className="section-title" style={{ marginBottom: '0.75rem' }}>YOUR FAVOURITES</div>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                    {profileLogs.filter((l: any) => l.rating >= 4).slice(0, 4).map((log: any) => (
-                                        <Link key={log.id} to={`/film/${log.filmId}`} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-                                            {log.poster && (
-                                                <div style={{ width: 28, height: 42, flexShrink: 0, borderRadius: '2px', overflow: 'hidden', filter: 'sepia(0.3)' }}>
-                                                    <Poster path={log.poster} title={log.title} sizeHint="sm" />
-                                                </div>
-                                            )}
-                                            <div>
-                                                <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--parchment)', lineHeight: 1.2, marginBottom: '0.2rem' }}>{log.title}</div>
-                                                <div style={{ display: 'block', width: '100%', flexShrink: 0 }}>
-                                                    <ReelRating value={log.rating} size="sm" />
-                                                </div>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                     </div>
                 </div>
             </main>
