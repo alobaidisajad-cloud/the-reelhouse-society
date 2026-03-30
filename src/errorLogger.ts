@@ -3,16 +3,38 @@ import { supabase, isSupabaseConfigured } from './supabaseClient'
 /**
  * Log errors to Supabase error_logs table for production monitoring.
  * Silently fails if Supabase isn't configured or table doesn't exist.
+ * 
+ * ── HARDENED: Debounced error batching prevents identical errors from
+ *    flooding the database. Groups duplicate errors within a 5s window.
  */
+
+// ── Error dedup: suppress identical errors within 5 seconds ──
+const _recentErrors = new Map<string, number>()
+const ERROR_DEDUP_WINDOW = 5000
+
 export async function logError({ type = 'runtime', message, stack, component, userId }: { type?: string, message: any, stack?: any, component?: string, userId?: string }) {
     if (!isSupabaseConfigured) return
+
+    // Deduplicate: skip if this exact error was logged in the last 5s
+    const errorKey = `${type}:${String(message).slice(0, 200)}`
+    const lastLogged = _recentErrors.get(errorKey) || 0
+    if (Date.now() - lastLogged < ERROR_DEDUP_WINDOW) return
+    _recentErrors.set(errorKey, Date.now())
+
+    // Cleanup old entries periodically (prevent memory leak)
+    if (_recentErrors.size > 100) {
+        const now = Date.now()
+        for (const [key, ts] of _recentErrors) {
+            if (now - ts > ERROR_DEDUP_WINDOW * 2) _recentErrors.delete(key)
+        }
+    }
 
     try {
         await supabase.from('error_logs').insert([{
             user_id: userId || null,
             error_type: type,
-            error_message: message?.slice(0, 2000) || 'Unknown error',
-            error_stack: stack?.slice(0, 5000) || null,
+            error_message: message?.slice?.(0, 2000) || String(message).slice(0, 2000) || 'Unknown error',
+            error_stack: stack?.slice?.(0, 5000) || null,
             component: component || null,
             url: typeof window !== 'undefined' ? window.location.href : null,
             user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : null,

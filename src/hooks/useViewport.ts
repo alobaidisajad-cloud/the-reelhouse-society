@@ -1,60 +1,69 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 
-// Flawless, ResizeObserver-backed viewport hook that throttles DOM recalculations
-// to the exact animation frame to prevent thrashing, ensuring layout shifts perfectly.
-export function useViewport() {
-    const [isTouch, setIsTouch] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return window.matchMedia('(any-pointer: coarse)').matches;
-    });
+// ── Singleton viewport observer ──
+// All useViewport() consumers share ONE ResizeObserver + matchMedia listener
+// instead of each component spawning its own. This prevents observer thrashing
+// on complex pages with 20+ components using useViewport.
 
-    const [isMobile, setIsMobile] = useState(() => {
-        if (typeof window === 'undefined') return false;
-        return window.matchMedia('(max-width: 768px)').matches;
-    });
+type ViewportState = { isTouch: boolean; isMobile: boolean }
 
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
+let _state: ViewportState = {
+    isTouch: typeof window !== 'undefined' ? window.matchMedia('(any-pointer: coarse)').matches : false,
+    isMobile: typeof window !== 'undefined' ? window.matchMedia('(max-width: 768px)').matches : false,
+}
 
-        const checkViewport = () => {
-            const touchMatch = window.matchMedia('(any-pointer: coarse)').matches;
-            const mobileMatch = window.matchMedia('(max-width: 768px)').matches;
-            
-            // Only update state if values actually change to prevent unnecessary React re-renders
-            setIsTouch(prev => prev !== touchMatch ? touchMatch : prev);
-            setIsMobile(prev => prev !== mobileMatch ? mobileMatch : prev);
-        };
+const _listeners = new Set<() => void>()
+let _initialized = false
 
-        let frameId: number;
-        const resizeObserver = new ResizeObserver(() => {
-            if (frameId) window.cancelAnimationFrame(frameId);
-            frameId = window.requestAnimationFrame(() => {
-                checkViewport();
-            });
-        });
+function _notifyAll() {
+    _listeners.forEach(fn => fn())
+}
 
-        // Observe the body for fundamental layout changes
-        resizeObserver.observe(document.body);
+function _initObserver() {
+    if (_initialized || typeof window === 'undefined') return
+    _initialized = true
 
-        // Also fallback to matchMedia listeners for zero-delay hardware flips
-        const touchQuery = window.matchMedia('(any-pointer: coarse)');
-        const mobileQuery = window.matchMedia('(max-width: 768px)');
-        
-        const handleChange = () => {
-            if (frameId) window.cancelAnimationFrame(frameId);
-            frameId = window.requestAnimationFrame(checkViewport);
-        };
+    let frameId: number
 
-        touchQuery.addEventListener('change', handleChange);
-        mobileQuery.addEventListener('change', handleChange);
+    const checkViewport = () => {
+        const touchMatch = window.matchMedia('(any-pointer: coarse)').matches
+        const mobileMatch = window.matchMedia('(max-width: 768px)').matches
 
-        return () => {
-            if (frameId) window.cancelAnimationFrame(frameId);
-            resizeObserver.disconnect();
-            touchQuery.removeEventListener('change', handleChange);
-            mobileQuery.removeEventListener('change', handleChange);
-        };
-    }, []);
+        if (touchMatch !== _state.isTouch || mobileMatch !== _state.isMobile) {
+            _state = { isTouch: touchMatch, isMobile: mobileMatch }
+            _notifyAll()
+        }
+    }
 
-    return { isTouch, isMobile };
+    const resizeObserver = new ResizeObserver(() => {
+        if (frameId) window.cancelAnimationFrame(frameId)
+        frameId = window.requestAnimationFrame(checkViewport)
+    })
+    resizeObserver.observe(document.body)
+
+    const handleChange = () => {
+        if (frameId) window.cancelAnimationFrame(frameId)
+        frameId = window.requestAnimationFrame(checkViewport)
+    }
+
+    window.matchMedia('(any-pointer: coarse)').addEventListener('change', handleChange)
+    window.matchMedia('(max-width: 768px)').addEventListener('change', handleChange)
+}
+
+function subscribe(callback: () => void) {
+    _initObserver()
+    _listeners.add(callback)
+    return () => { _listeners.delete(callback) }
+}
+
+function getSnapshot(): ViewportState {
+    return _state
+}
+
+/**
+ * Singleton viewport hook — all consumers share ONE observer.
+ * Returns { isTouch, isMobile } that updates reactively.
+ */
+export function useViewport(): ViewportState {
+    return useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
 }

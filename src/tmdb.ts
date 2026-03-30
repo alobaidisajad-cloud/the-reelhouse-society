@@ -4,22 +4,57 @@ const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY || ''
 const TMDB_BASE = 'https://api.themoviedb.org/3'
 const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
-// Resilient fetch wrapper — 10s timeout, logs errors, always returns a safe fallback
+import { LRUCache, dedup } from './utils/retry'
+
+// ── Response cache: prevents redundant API calls across components (5min TTL) ──
+const _responseCache = new LRUCache<unknown>(200, 5 * 60 * 1000)
+
+// Resilient fetch wrapper — 10s timeout, retry on 429/503, LRU cached, deduped
 // `path` is the TMDB API path (e.g. /search/multi?query=...)
 async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
-    try {
-        const separator = path.includes('?') ? '&' : '?'
-        const url = `${TMDB_BASE}${path}${separator}api_key=${TMDB_API_KEY}`
-        const controller = new AbortController()
-        const timer = setTimeout(() => controller.abort(), 10000)
-        const res = await fetch(url, { signal: controller.signal })
-        clearTimeout(timer)
-        if (!res.ok) return fallback
-        return await res.json()
-    } catch (e: unknown) {
-        if (e instanceof Error && e.name !== 'AbortError') { /* silently swallow — fallback returned */ }
+    // Check LRU cache first
+    const cached = _responseCache.get(path)
+    if (cached !== undefined) return cached as T
+
+    // Deduplicate: if same path is already inflight, reuse existing promise
+    return dedup(`tmdb:${path}`, async () => {
+        let lastError: unknown
+        for (let attempt = 0; attempt < 3; attempt++) {
+            try {
+                const separator = path.includes('?') ? '&' : '?'
+                const url = `${TMDB_BASE}${path}${separator}api_key=${TMDB_API_KEY}`
+                const controller = new AbortController()
+                const timer = setTimeout(() => controller.abort(), 10000)
+                const res = await fetch(url, { signal: controller.signal })
+                clearTimeout(timer)
+
+                // Retry on transient errors (429 rate limit, 503 service unavailable)
+                if (res.status === 429 || res.status === 503) {
+                    const delay = Math.min(500 * Math.pow(2, attempt) + Math.random() * 200, 4000)
+                    await new Promise(r => setTimeout(r, delay))
+                    continue
+                }
+
+                if (!res.ok) return fallback
+                const data = await res.json()
+                // Cache successful responses (skip search results which vary)
+                if (!path.includes('/search/')) {
+                    _responseCache.set(path, data)
+                }
+                return data as T
+            } catch (e: unknown) {
+                lastError = e
+                if (e instanceof Error && e.name === 'AbortError') return fallback
+                // Retry on network errors
+                if (attempt < 2) {
+                    await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)))
+                    continue
+                }
+            }
+        }
+        if (lastError) { /* All retries exhausted — return fallback */ }
         return fallback
-    }
+    })
 }
 
 // Decode HTML entities from RSS text (fixes â€", â€™, &amp; etc.)
@@ -343,7 +378,13 @@ export const tmdb = {
     personCredits: async (id: number) => fetchTMDB<any>(`/person/${id}/movie_credits`, null),
 
     // NEW: Real-time News Proxy (Aggregates Film News)
+    // ── Cached for 15 minutes to prevent hammering RSS endpoints ──
     getNews: async () => {
+        const NEWS_CACHE_KEY = '__rh_news_cache'
+        const NEWS_TTL = 15 * 60 * 1000 // 15 minutes
+        const cached = (window as any)[NEWS_CACHE_KEY]
+        if (cached && Date.now() - cached.ts < NEWS_TTL) return cached.data
+
         // Compute relative dates at runtime so fallback news never looks stale
         const relDate = (daysAgo: number) => {
             const d = new Date()
@@ -424,7 +465,10 @@ export const tmdb = {
 
             const liveItems = results.flat()
 
-            if (liveItems.length === 0) return FALLBACK_NEWS
+            if (liveItems.length === 0) {
+                ;(window as any)[NEWS_CACHE_KEY] = { ts: Date.now(), data: FALLBACK_NEWS }
+                return FALLBACK_NEWS
+            }
 
             // Flatten, sort by date, and format for the UI
             const allItems = liveItems
@@ -442,9 +486,12 @@ export const tmdb = {
                     link: item.link
                 }))
 
-            return [...allItems, ...FALLBACK_NEWS]
+            const newsResult = [...allItems, ...FALLBACK_NEWS]
+            ;(window as any)[NEWS_CACHE_KEY] = { ts: Date.now(), data: newsResult }
+            return newsResult
         } catch (e) {
             console.warn("Archive Wire failed, switching to Deep Archive:", e)
+            ;(window as any)[NEWS_CACHE_KEY] = { ts: Date.now(), data: FALLBACK_NEWS }
             return FALLBACK_NEWS
         }
     }

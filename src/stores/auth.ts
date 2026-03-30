@@ -3,7 +3,20 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { logError } from '../errorLogger'
 import { User } from '../types'
+import toast from 'react-hot-toast'
 
+// ── Username → ID cache: prevents redundant profile lookups on follow/unfollow ──
+const _usernameIdCache = new Map<string, string>()
+async function resolveUsernameToId(username: string): Promise<string | null> {
+    const cached = _usernameIdCache.get(username)
+    if (cached) return cached
+    const { data } = await supabase.from('profiles').select('id').eq('username', username).single()
+    if (data?.id) {
+        _usernameIdCache.set(username, data.id)
+        return data.id
+    }
+    return null
+}
 export interface AuthState {
     user: User | null
     isAuthenticated: boolean
@@ -201,12 +214,11 @@ export const useAuthStore = create<AuthState>()(
                 // Background sync — rollback on failure
                 try {
                     if (userId) {
-                        const { data: targetProfile } = await supabase
-                            .from('profiles').select('id').eq('username', targetUsername).single()
-                        if (!targetProfile) throw new Error('User not found')
+                        const targetId = await resolveUsernameToId(targetUsername)
+                        if (!targetId) throw new Error('User not found')
                         const [{ error: followErr }] = await Promise.all([
                             supabase.from('interactions').insert([{
-                                user_id: userId, target_user_id: targetProfile.id, type: 'follow'
+                                user_id: userId, target_user_id: targetId, type: 'follow'
                             }])
                         ])
                         if (followErr && !followErr.message?.includes('duplicate')) throw followErr
@@ -216,7 +228,6 @@ export const useAuthStore = create<AuthState>()(
                     set((s) => ({
                         user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null,
                     }))
-                    const { default: toast } = await import('react-hot-toast')
                     toast.error('Follow failed — please try again.')
                 }
             },
@@ -233,12 +244,11 @@ export const useAuthStore = create<AuthState>()(
                 // Background sync — rollback on failure
                 try {
                     if (userId) {
-                        const { data: targetProfile } = await supabase
-                            .from('profiles').select('id').eq('username', targetUsername).single()
-                        if (targetProfile) {
+                        const targetId = await resolveUsernameToId(targetUsername)
+                        if (targetId) {
                             const { error } = await supabase.from('interactions').delete()
                                 .eq('user_id', userId)
-                                .eq('target_user_id', targetProfile.id)
+                                .eq('target_user_id', targetId)
                                 .eq('type', 'follow')
                             if (error) throw error
                         }
@@ -248,7 +258,6 @@ export const useAuthStore = create<AuthState>()(
                     set((s) => ({
                         user: s.user ? { ...s.user, following: prevFollowing } : null,
                     }))
-                    const { default: toast } = await import('react-hot-toast')
                     toast.error('Unfollow failed — please try again.')
                 }
             },

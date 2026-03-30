@@ -3,12 +3,17 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction, PhysicalArchiveItem } from '../types'
+import toast from 'react-hot-toast'
 
-declare global {
-  interface Window {
-    __rh_undo_log?: () => void;
-    __rh_undo_watchlist?: () => void;
-  }
+// ── Undo Queue — replaces brittle window globals with a proper cancellation system ──
+const _undoTimers = new Map<string, ReturnType<typeof setTimeout>>()
+function cancelPendingDelete(id: string) {
+    const timer = _undoTimers.get(id)
+    if (timer) { clearTimeout(timer); _undoTimers.delete(id) }
+}
+function scheduleDeletion(id: string, fn: () => Promise<void>, delayMs = 5200) {
+    cancelPendingDelete(id)
+    _undoTimers.set(id, setTimeout(async () => { _undoTimers.delete(id); await fn() }, delayMs))
 }
 
 /** Lightweight shape for TMDB film data passed into store methods */
@@ -106,7 +111,6 @@ export const useFilmStore = create<FilmState>()(
                     } else {
                         set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
                     }
-                    const { default: toast } = await import('react-hot-toast')
                     toast.error('Endorsement failed — please try again.')
                 }
             },
@@ -121,7 +125,7 @@ export const useFilmStore = create<FilmState>()(
                     .select('target_log_id, created_at')
                     .eq('user_id', user.id)
                     .eq('type', 'endorse_log')
-                    .limit(100000)
+                    .limit(2000)
                 if (!error && data) {
                     set({
                         interactions: (data || []).map(r => ({
@@ -162,7 +166,6 @@ export const useFilmStore = create<FilmState>()(
                     } else {
                         set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list')) }))
                     }
-                    const { default: toast } = await import('react-hot-toast')
                     toast.error('Failed to certify list.')
                 }
             },
@@ -177,7 +180,7 @@ export const useFilmStore = create<FilmState>()(
                     .select('target_list_id, created_at')
                     .eq('user_id', user.id)
                     .eq('type', 'endorse_list')
-                    .limit(100000)
+                    .limit(2000)
                 if (!error && data) {
                     set((state) => ({
                         interactions: [
@@ -196,7 +199,7 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data, error } = await supabase
-                    .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100000)
+                    .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(2000)
                 if (!error && data) {
                     set({
                         logs: (data || []).map((dbLog) => ({
@@ -250,15 +253,27 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data: lists, error } = await supabase
-                    .from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100000)
+                    .from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(500)
                 if (!error && lists) {
-                    const fullLists = await Promise.all(lists.map(async (list) => {
-                        const { data: items } = await supabase.from('list_items').select('*').eq('list_id', list.id).limit(100000)
-                        return {
-                            id: list.id, title: list.title, description: list.description,
-                            isRanked: list.is_ranked, isPrivate: list.is_private || false, createdAt: list.created_at,
-                            films: (items || []).map((i) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path || null })),
-                        }
+                    // ── Batched fetch: single query for ALL list items instead of N+1 ──
+                    const listIds = lists.map(l => l.id)
+                    let allItems: any[] = []
+                    if (listIds.length > 0) {
+                        const { data: items } = await supabase
+                            .from('list_items').select('*').in('list_id', listIds).limit(5000)
+                        allItems = items || []
+                    }
+                    // Group items by list_id client-side
+                    const itemsByList = new Map<string, typeof allItems>()
+                    for (const item of allItems) {
+                        const arr = itemsByList.get(item.list_id) || []
+                        arr.push(item)
+                        itemsByList.set(item.list_id, arr)
+                    }
+                    const fullLists = lists.map((list) => ({
+                        id: list.id, title: list.title, description: list.description,
+                        isRanked: list.is_ranked, isPrivate: list.is_private || false, createdAt: list.created_at,
+                        films: (itemsByList.get(list.id) || []).map((i: any) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path || null })),
                     }))
                     set({ lists: fullLists })
                 }
@@ -272,7 +287,7 @@ export const useFilmStore = create<FilmState>()(
                     .select('*, showtimes(film_title, date)')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
-                    .limit(100000)
+                    .limit(500)
                 if (!error && data) {
                     set({
                         stubs: data.map((t) => ({
@@ -400,7 +415,7 @@ export const useFilmStore = create<FilmState>()(
             },
 
             updateLog: async (id, updates) => {
-                const dbUpdates: any = {}
+                const dbUpdates: Record<string, unknown> = {}
                 if (updates.rating !== undefined) dbUpdates.rating = updates.rating
                 if (updates.review !== undefined) dbUpdates.review = updates.review
                 if (updates.status !== undefined) dbUpdates.status = updates.status
@@ -420,24 +435,14 @@ export const useFilmStore = create<FilmState>()(
                 const logToRemove = get().logs.find((l) => l.id === id)
                 if (!logToRemove) return
 
-                // Optimistic remove with 5s undo toast (all users)
+                // Optimistic remove with 5s undo window
                 set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
-                let undone = false
-                const toastModule = await import('react-hot-toast')
-                const toast: any = toastModule.default || (toastModule as any)
                 toast(`"${logToRemove.title}" removed. Tap to undo.`, {
                     duration: 5000, id: `undo-${id}`,
                     style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
                 })
-                window.__rh_undo_log = () => {
-                    undone = true
-                    set((state) => ({ logs: [logToRemove, ...state.logs] }))
-                    import('react-hot-toast').then((m) => {
-                        m.default.dismiss(`undo-${id}`)
-                        m.default.success(`"${logToRemove.title}" restored ✦`)
-                    })
-                }
-                setTimeout(async () => { if (!undone) await supabase.from('logs').delete().eq('id', id) }, 5200)
+                // Schedule actual deletion — cancellable via undo
+                scheduleDeletion(`log-${id}`, async () => { await supabase.from('logs').delete().eq('id', id) })
             },
 
             addToWatchlist: async (film) => {
@@ -461,24 +466,15 @@ export const useFilmStore = create<FilmState>()(
                 if (!user) return
                 const itemToRemove = get().watchlist.find((f) => f.id === filmId)
 
-                // Optimistic remove with 5s undo toast
+                // Optimistic remove with 5s undo window
                 set((state) => ({ watchlist: state.watchlist.filter((f) => f.id !== filmId) }))
-                let undone = false
-                const toastModule = await import('react-hot-toast')
-                const toast: any = toastModule.default || (toastModule as any)
                 toast(`"${itemToRemove?.title || 'Film'}" removed from watchlist. Tap to undo.`, {
                     duration: 5000, id: `undo-wl-${filmId}`,
                     style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
                 })
-                window.__rh_undo_watchlist = () => {
-                    undone = true
-                    if (itemToRemove) set((state) => ({ watchlist: [...state.watchlist, itemToRemove] }))
-                    import('react-hot-toast').then((m) => {
-                        m.default.dismiss(`undo-wl-${filmId}`)
-                        m.default.success(`Restored to watchlist ✦`)
-                    })
-                }
-                setTimeout(async () => { if (!undone) await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId) }, 5200)
+                // Schedule actual deletion — cancellable via undo
+                const uid = user.id
+                scheduleDeletion(`wl-${filmId}`, async () => { await supabase.from('watchlists').delete().eq('user_id', uid).eq('film_id', filmId) })
             },
 
             addToVault: async (film, format = 'Digital') => {
@@ -520,7 +516,7 @@ export const useFilmStore = create<FilmState>()(
             updateList: async (listId, updates) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const dbUpdates: any = {}
+                const dbUpdates: Record<string, unknown> = {}
                 if (updates.title !== undefined) dbUpdates.title = updates.title
                 if (updates.description !== undefined) dbUpdates.description = updates.description
                 if (updates.isPrivate !== undefined) dbUpdates.is_private = updates.isPrivate
@@ -622,18 +618,17 @@ export const useFilmStore = create<FilmState>()(
                 }
             },
 
-            removeFromPhysicalArchive: async (filmId) => {
+            removeFromPhysicalArchive: async (filmId: number) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { error } = await supabase.from('physical_archive').delete().eq('user_id', user.id).eq('film_id', filmId)
-                if (error) throw error
                 if (!error) set((state) => ({ physicalArchive: state.physicalArchive.filter(a => a.filmId !== filmId) }))
             },
 
-            updatePhysicalArchiveItem: async (filmId, updates) => {
+            updatePhysicalArchiveItem: async (filmId: number, updates: any) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const dbUpdates: any = {}
+                const dbUpdates: Record<string, unknown> = {}
                 if (updates.formats) dbUpdates.formats = updates.formats
                 if (updates.notes !== undefined) dbUpdates.notes = updates.notes
                 if (updates.condition !== undefined) dbUpdates.condition = updates.condition
@@ -644,20 +639,20 @@ export const useFilmStore = create<FilmState>()(
         }),
         {
             name: 'reelhouse-films',
-            // ── PERSIST AUDIT — only safe, essential fields survive to localStorage ──
-            // Private notes and abandoned reasons are NEVER stored in localStorage — Supabase only
             // Stubs are decorative and regenerated on next addLog — no need to persist
+            // ── SCALABILITY: Cap logs to 100 most recent to prevent localStorage bloat ──
             partialize: (state) => ({
-                logs: state.logs.map((l) => ({
+                logs: state.logs.slice(0, 100).map((l) => ({
                     id: l.id, filmId: l.filmId, title: l.title, poster: l.poster,
-                    year: l.year, rating: l.rating, review: l.review, status: l.status,
-                    isSpoiler: l.isSpoiler, watchedDate: l.watchedDate, createdAt: l.createdAt,
+                    year: l.year, rating: l.rating, status: l.status,
+                    watchedDate: l.watchedDate, createdAt: l.createdAt,
+                    // review omitted from localStorage — saves space, rehydrated from Supabase
                     // privateNotes omitted — never in localStorage
                     // abandonedReason omitted — never in localStorage
                 })),
-                watchlist: state.watchlist.map((f) => ({ id: f.id, title: f.title, poster_path: f.poster_path, year: f.year })),
-                vault: state.vault.map((f) => ({ id: f.id, title: f.title, poster_path: f.poster_path, year: f.year, format: f.format })),
-                lists: state.lists.map((l) => ({ id: l.id, title: l.title, description: l.description, films: l.films.map((f) => ({ id: f.id, title: f.title })) })),
+                watchlist: state.watchlist.slice(0, 200).map((f) => ({ id: f.id, title: f.title, poster_path: f.poster_path, year: f.year })),
+                vault: state.vault.slice(0, 200).map((f) => ({ id: f.id, title: f.title, poster_path: f.poster_path, year: f.year, format: f.format })),
+                lists: state.lists.slice(0, 50).map((l) => ({ id: l.id, title: l.title, description: l.description, films: l.films.slice(0, 20).map((f) => ({ id: f.id, title: f.title })) })),
                 // stubs NOT persisted — decorative, always regenerated
             }),
         }

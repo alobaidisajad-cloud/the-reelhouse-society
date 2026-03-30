@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useAuthStore, useUIStore } from '../store'
@@ -75,7 +75,6 @@ export default function FeedPage() {
 
     // ── Feed Data ──
     const [showLegend, setShowLegend] = useState(false)
-    const [recentLists, setRecentLists] = useState<any[]>([])
 
     // ── Fetch Helper ──
     const fetchFeed = async ({ pageParam = 0 }, mode: 'for-you' | 'following') => {
@@ -166,38 +165,32 @@ export default function FeedPage() {
         if (node) observer.current.observe(node)
     }, [feedTab, isFetchingNextCommunity, isFetchingNextFollowing, hasNextCommunity, hasNextFollowing, fetchNextCommunity, fetchNextFollowing])
 
-    // ── Sidebar Data ──
-    const fetchSidebarData = useCallback(async () => {
-        if (!isSupabaseConfigured) return
-        try {
+    // ── Sidebar Data (TanStack cached — no redundant fetches on navigation) ──
+    const { data: recentLists = [] } = useQuery({
+        queryKey: ['sidebar_lists'],
+        queryFn: async () => {
+            if (!isSupabaseConfigured) return []
             const { data: listsData } = await supabase
                 .from('lists')
                 .select('id, title, description, user_id')
                 .order('created_at', { ascending: false })
                 .limit(3)
-
-            if (listsData) {
-                const curatorIds = [...new Set(listsData.map((l: any) => l.user_id).filter(Boolean))]
-                let curatorMap: { [key: string]: string } = {}
-                if (curatorIds.length > 0) {
-                    const { data: curatorsData } = await supabase
-                        .from('profiles').select('id, username').in('id', curatorIds)
-                    if (curatorsData) curatorMap = Object.fromEntries(curatorsData.map((p: { id: string, username: string }) => [p.id, p.username]))
-                }
-                setRecentLists(listsData.map((l: { id: string, title: string, user_id: string }) => ({
-                    id: l.id,
-                    title: l.title,
-                    curator: curatorMap[l.user_id] || 'The Society'
-                })))
+            if (!listsData) return []
+            const curatorIds = [...new Set(listsData.map((l: any) => l.user_id).filter(Boolean))]
+            let curatorMap: { [key: string]: string } = {}
+            if (curatorIds.length > 0) {
+                const { data: curatorsData } = await supabase
+                    .from('profiles').select('id, username').in('id', curatorIds)
+                if (curatorsData) curatorMap = Object.fromEntries(curatorsData.map((p: { id: string, username: string }) => [p.id, p.username]))
             }
-        } catch {
-            // Sidebar is non-critical — fail silently so the feed still renders
-        }
-    }, [user?.username])
+            return listsData.map((l: { id: string, title: string, user_id: string }) => ({
+                id: l.id, title: l.title,
+                curator: curatorMap[l.user_id] || 'The Society'
+            }))
+        },
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    })
 
-    useEffect(() => {
-        fetchSidebarData()
-    }, [fetchSidebarData])
 
     // Active feed based on tab
     const communityFeed = communityData?.pages.flatMap(p => p.items) || []

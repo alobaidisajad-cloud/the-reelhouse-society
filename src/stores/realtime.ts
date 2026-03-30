@@ -9,6 +9,21 @@ import { useProgrammeStore } from './content'
 // These are module-level side effects, not stores.
 // Both guard against being called without Supabase configured.
 
+// ── Extracted hydration helper — eliminates code duplication ──
+async function hydrateAllStores() {
+    return Promise.all([
+        useFilmStore.getState().fetchLogs(),
+        useFilmStore.getState().fetchWatchlist(),
+        useFilmStore.getState().fetchVault(),
+        useFilmStore.getState().fetchLists(),
+        useFilmStore.getState().fetchStubs(),
+        useFilmStore.getState().fetchEndorsements(),
+        useFilmStore.getState().fetchPhysicalArchive(),
+        useProgrammeStore.getState().fetchProgrammes(),
+        hydrateFollowing(),
+    ]).catch(() => { /* background hydration failure is non-critical */ })
+}
+
 let _authSub: any = null
 export const initAuthSync = () => {
     if (!isSupabaseConfigured) return
@@ -22,7 +37,6 @@ export const initAuthSync = () => {
             useAuthStore.setState({ user: null, isAuthenticated: false })
             supabase.removeAllChannels()
             if (!window.location.pathname.includes('auth/reset-password')) {
-                // Must use href to force re-render, but sessionStorage persists
                 window.location.href = '/auth/reset-password'
             }
             return
@@ -35,8 +49,6 @@ export const initAuthSync = () => {
         }
 
         if (event === 'INITIAL_SESSION') {
-            // Page load/refresh — always re-fetch from Supabase so localStorage
-            // stale cache never beats live data
             if (session) {
                 const { data: profile } = await supabase
                     .from('profiles').select('*').eq('id', session.user.id).single()
@@ -44,20 +56,8 @@ export const initAuthSync = () => {
                     user: { ...session.user, ...profile },
                     isAuthenticated: true,
                 })
-                // Fire-and-forget: hydrate stores in background, don't block the UI
-                Promise.all([
-                    useFilmStore.getState().fetchLogs(),
-                    useFilmStore.getState().fetchWatchlist(),
-                    useFilmStore.getState().fetchVault(),
-                    useFilmStore.getState().fetchLists(),
-                    useFilmStore.getState().fetchStubs(),
-                    useFilmStore.getState().fetchEndorsements(),
-                    useFilmStore.getState().fetchPhysicalArchive(),
-                    useProgrammeStore.getState().fetchProgrammes(),
-                    hydrateFollowing(),
-                ]).catch(() => { /* background hydration failure is non-critical */ })
+                hydrateAllStores()
             } else {
-                // No session on load — clear any stale localStorage auth
                 useAuthStore.setState({ user: null, isAuthenticated: false })
             }
             return
@@ -65,33 +65,19 @@ export const initAuthSync = () => {
 
         if (event === 'SIGNED_IN' && session) {
             const currentUser = useAuthStore.getState().user
-            // Skip if login() already set the user with matching ID
             if (currentUser && currentUser.id === session.user.id) return
 
-            // New sign-in (e.g. from email confirmation callback)
             const { data: profile } = await supabase
                 .from('profiles').select('*').eq('id', session.user.id).single()
             useAuthStore.setState({
                 user: { ...session.user, ...profile },
                 isAuthenticated: true,
             })
-            // Fire-and-forget: hydrate stores in background
-            Promise.all([
-                useFilmStore.getState().fetchLogs(),
-                useFilmStore.getState().fetchWatchlist(),
-                useFilmStore.getState().fetchVault(),
-                useFilmStore.getState().fetchLists(),
-                useFilmStore.getState().fetchStubs(),
-                useFilmStore.getState().fetchEndorsements(),
-                useFilmStore.getState().fetchPhysicalArchive(),
-                useProgrammeStore.getState().fetchProgrammes(),
-                hydrateFollowing(),
-            ]).catch(() => { /* background hydration failure is non-critical */ })
+            hydrateAllStores()
         }
 
         if (event === 'SIGNED_OUT') {
             useAuthStore.setState({ user: null, isAuthenticated: false })
-            // Sever all Realtime sockets securely to prevent zombie memory
             supabase.removeAllChannels()
         }
     })
@@ -106,19 +92,22 @@ export const initRealtime = () => {
     if (supabase.getChannels().some(c => c.topic === 'realtime:global_logs_feed')) {
         // Already listening, skip to prevent multi-instance socket floods
     } else {
-        supabase
+        const channel = supabase
             .channel('global_logs_feed')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'logs' }, (payload) => {
             const currentUserId = useAuthStore.getState().user?.id
-
-            // Own logs are already handled via addLog() — skip entirely
             if (payload.new.user_id === currentUserId) return
-
-            // 🛡️ MAPPED REALTIME: Invalidate the TanStack feed cache organically
-            // The UI will silently background-fetch the delta without layout shift
             queryClient.invalidateQueries({ queryKey: ['feed'] })
         })
-        .subscribe()
+        .subscribe((status) => {
+            // ── RECONNECTION: Auto-reconnect on channel drop ──
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                setTimeout(() => {
+                    channel.unsubscribe()
+                    initRealtime() // Re-initialize with fresh channels
+                }, 5000)
+            }
+        })
     }
 
     // 2. Personal notifications — real-time delivery to logged-in user
