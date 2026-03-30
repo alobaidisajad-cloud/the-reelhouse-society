@@ -223,9 +223,21 @@ export default function CommandPalette() {
                                 color: 'var(--parchment)', fontFamily: 'var(--font-body)', fontSize: '1.2rem',
                             }}
                         />
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', border: '1px solid var(--ash)', padding: '0.2rem 0.4rem', borderRadius: 4 }}>
+                        <button
+                            onClick={() => setOpen(false)}
+                            aria-label="Close search"
+                            style={{
+                                background: 'none', border: '1px solid var(--ash)', borderRadius: '4px',
+                                color: 'var(--fog)', padding: '0.3rem 0.5rem', cursor: 'pointer',
+                                fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em',
+                                display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                transition: 'all 0.2s', flexShrink: 0,
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.color = 'var(--sepia)' }}
+                            onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.color = 'var(--fog)' }}
+                        >
                             ESC
-                        </div>
+                        </button>
                     </div>
 
                     {/* Results */}

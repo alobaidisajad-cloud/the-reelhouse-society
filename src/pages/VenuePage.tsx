@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MapPin, Users, Calendar, Check, ChevronLeft, ChevronRight, Clock, Film, Tag, Info } from 'lucide-react'
+import { MapPin, Users, Calendar, Check, ChevronLeft, ChevronRight, Clock, Film, Tag, Info, ArrowLeft } from 'lucide-react'
 import { useAuthStore, useUIStore, useVenueStore } from '../store'
 import { SectionHeader } from '../components/UI'
 import TicketFlow from '../components/TicketFlow'
@@ -340,6 +340,7 @@ function OtherPalacesSidebar({ currentId }: any) {
 
 export default function VenuePage() {
     const { id } = useParams()
+    const navigate = useNavigate()
     const { isAuthenticated } = useAuthStore()
     const { openSignupModal } = useUIStore()
 
@@ -446,6 +447,17 @@ export default function VenuePage() {
 
     return (
         <div className="page-top" style={{ minHeight: '100dvh' }}>
+            {/* ── Back Button ── */}
+            <div style={{ maxWidth: 1200, margin: '0 auto', padding: '1rem 1.5rem 0' }}>
+                <button
+                    onClick={() => navigate('/cinemas')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'color 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}
+                >
+                    <ArrowLeft size={14} /> BACK TO CINEMAS
+                </button>
+            </div>
             <AnimatePresence>
                 {ticketTarget && (
                     <TicketFlow

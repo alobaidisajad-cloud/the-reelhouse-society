@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
-import { Lock, Eye, EyeOff, Check, Circle } from 'lucide-react'
+import { Lock, Eye, EyeOff, Check, Circle, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageSEO from '../components/PageSEO'
 
@@ -172,6 +172,15 @@ export default function ResetPasswordPage() {
                         {loading ? 'RESETTING...' : 'RESET PASSWORD'}
                     </button>
                 </form>
+
+                <button
+                    onClick={() => navigate('/')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', marginTop: '1.5rem', padding: 0, transition: 'color 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}
+                >
+                    <ArrowLeft size={12} /> BACK TO THE LOBBY
+                </button>
             </div>
         </div>
     )

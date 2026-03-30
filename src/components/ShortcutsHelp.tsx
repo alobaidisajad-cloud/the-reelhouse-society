@@ -1,8 +1,5 @@
-/**
- * ShortcutsHelp — Keyboard shortcuts overlay triggered by '?' key.
- * Nitrate Noir styled modal showing all available shortcuts.
- */
 import { SHORTCUT_LIST } from '../hooks/useKeyboardShortcuts'
+import { X } from 'lucide-react'
 
 interface Props {
   onClose: () => void
@@ -28,9 +25,26 @@ export default function ShortcutsHelp({ onClose }: Props) {
           padding: '2rem',
           maxWidth: 420,
           width: '90%',
+          position: 'relative',
         }}
         onClick={e => e.stopPropagation()}
       >
+        <button
+          onClick={onClose}
+          aria-label="Close shortcuts"
+          style={{
+            position: 'absolute', top: '1rem', right: '1rem',
+            background: 'none', border: '1px solid var(--ash)',
+            borderRadius: '4px', padding: '0.35rem',
+            color: 'var(--fog)', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            transition: 'all 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--sepia)'; e.currentTarget.style.color = 'var(--sepia)' }}
+          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--ash)'; e.currentTarget.style.color = 'var(--fog)' }}
+        >
+          <X size={14} />
+        </button>
         <div style={{
           fontFamily: 'var(--font-display)',
           fontSize: '1.2rem',

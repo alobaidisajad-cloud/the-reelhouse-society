@@ -10,7 +10,7 @@ import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
-import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User } from 'lucide-react'
+import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft } from 'lucide-react'
 import { subscribeToWebPush } from '../utils/push'
 import '../styles/settings.css'
 
@@ -171,6 +171,16 @@ export default function SettingsPage() {
     return (
         <div className="settings-page">
             <PageSEO title="Settings" description="Manage your ReelHouse Society account settings." path="/settings" />
+
+            {/* ── Back Button ── */}
+            <button
+                onClick={() => navigate(`/user/${user.username}`)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '2rem', padding: 0, transition: 'color 0.2s' }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}
+            >
+                <ArrowLeft size={14} /> BACK TO PROFILE
+            </button>
 
             {/* ── HERO HEADER ── */}
             <div className="settings-hero">

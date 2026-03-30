@@ -1,8 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
-import { Shield, Trash2, Ban, CheckCircle, XCircle, AlertTriangle, Clock, Eye } from 'lucide-react'
+import { Shield, Trash2, Ban, CheckCircle, XCircle, AlertTriangle, Clock, Eye, ArrowLeft } from 'lucide-react'
 import toast from 'react-hot-toast'
 import PageSEO from '../components/PageSEO'
 
@@ -13,6 +14,7 @@ type FilterTab = 'pending' | 'resolved' | 'all'
 
 export default function TribunalPage() {
     const { user } = useAuthStore()
+    const navigate = useNavigate()
     const queryClient = useQueryClient()
     const [filter, setFilter] = useState<FilterTab>('pending')
     const [actionInProgress, setActionInProgress] = useState<string | null>(null)
@@ -168,6 +170,16 @@ export default function TribunalPage() {
             <PageSEO title="The Tribunal" description="Content moderation dashboard" />
 
             <div style={{ maxWidth: 1100, margin: '0 auto', padding: '3rem 1.5rem' }}>
+                {/* Back Button */}
+                <button
+                    onClick={() => navigate('/')}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', marginBottom: '2rem', padding: 0, transition: 'color 0.2s' }}
+                    onMouseEnter={e => e.currentTarget.style.color = 'var(--sepia)'}
+                    onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}
+                >
+                    <ArrowLeft size={14} /> BACK TO LOBBY
+                </button>
+
                 {/* Header */}
                 <div style={{ marginBottom: '3rem' }}>
                     <div style={{
