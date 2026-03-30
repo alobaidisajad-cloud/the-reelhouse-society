@@ -57,7 +57,7 @@ export default function UserProfilePage() {
         queryFn: async () => {
             const { data } = await supabase
                 .from('profiles')
-                .select('id, username, role, bio, avatar_url, followers_count, following_count, is_social_private, preferences, created_at, tier')
+                .select('id, username, role, bio, avatar_url, followers_count, following_count, is_social_private, preferences, created_at, tier, social_links')
                 .eq('username', routeUsername)
                 .single()
             if (!data) return null
@@ -75,6 +75,7 @@ export default function UserProfilePage() {
                 privacyAnnotations: (data as any).preferences?.privacy_annotations || 'everyone',
                 preferences: data.preferences || {},
                 createdAt: data.created_at,
+                socialLinks: (data as any).social_links || {},
             }
         },
         enabled: !isOwnProfile && !!routeUsername,
@@ -464,11 +465,16 @@ export default function UserProfilePage() {
                     </div>
 
                     {/* ── Follow / Settings ── */}
-                    <div style={{ marginBottom: '1rem' }}>
+                    <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                         {isOwnProfile ? (
-                            <button onClick={() => navigate('/settings')} className="btn btn-ghost" style={{ padding: '0.4rem 1rem', border: '1px solid rgba(139,105,20,0.25)', color: 'var(--sepia)', fontSize: '0.6rem', letterSpacing: '0.15em', gap: '0.4rem' }} aria-label="Settings">
-                                <Settings size={12} /> EDIT PROFILE
-                            </button>
+                            <>
+                                <button onClick={() => navigate('/edit-profile')} className="btn btn-ghost" style={{ padding: '0.4rem 1rem', border: '1px solid rgba(139,105,20,0.25)', color: 'var(--sepia)', fontSize: '0.6rem', letterSpacing: '0.15em', gap: '0.4rem' }}>
+                                    EDIT PROFILE
+                                </button>
+                                <button onClick={() => navigate('/settings')} className="btn btn-ghost" style={{ padding: '0.4rem 0.6rem', border: '1px solid rgba(139,105,20,0.15)', color: 'var(--fog)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Settings">
+                                    <Settings size={14} />
+                                </button>
+                            </>
                         ) : (
                             <button
                                 onClick={handleFollow}
@@ -482,9 +488,36 @@ export default function UserProfilePage() {
                     </div>
 
                     {/* ── Bio ── */}
-                    <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.95rem' : '1.05rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 500, margin: '0 auto 2rem', lineHeight: 1.6, opacity: profileUser.bio ? 0.8 : 0.4 }}>
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.95rem' : '1.05rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 500, margin: '0 auto 1rem', lineHeight: 1.6, opacity: profileUser.bio ? 0.8 : 0.4 }}>
                         {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
                     </p>
+
+                    {/* ── Social Links ── */}
+                    {(() => {
+                        const links = (profileUser as any).socialLinks || (isOwnProfile ? (currentUser as any)?.social_links : null) || {}
+                        const hasLinks = Object.values(links).some((v: any) => v && v.trim())
+                        if (!hasLinks) return null
+                        const iconMap: Record<string, string> = { instagram: '📸', twitter: '𝕏', youtube: '▶', facebook: 'f', letterboxd: '◉', website: '🌐' }
+                        return (
+                            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+                                {Object.entries(links).filter(([, v]: any) => v && v.trim()).map(([platform, url]: any) => (
+                                    <a key={platform} href={url.startsWith('http') ? url : `https://${url}`} target="_blank" rel="noopener noreferrer" style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: '0.35rem',
+                                        fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em',
+                                        color: 'var(--fog)', textDecoration: 'none',
+                                        padding: '0.3rem 0.6rem', border: '1px solid rgba(139,105,20,0.12)',
+                                        borderRadius: '3px', transition: 'all 0.2s',
+                                    }}
+                                        onMouseEnter={e => { e.currentTarget.style.borderColor = 'rgba(139,105,20,0.3)'; e.currentTarget.style.color = 'var(--sepia)' }}
+                                        onMouseLeave={e => { e.currentTarget.style.borderColor = 'rgba(139,105,20,0.12)'; e.currentTarget.style.color = 'var(--fog)' }}
+                                    >
+                                        <span>{iconMap[platform] || '🔗'}</span>
+                                        {platform.toUpperCase()}
+                                    </a>
+                                ))}
+                            </div>
+                        )
+                    })()}
 
                     {/* ── Stats as museum placards ── */}
                     <div style={{ 

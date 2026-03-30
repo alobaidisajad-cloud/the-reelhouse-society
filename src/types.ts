@@ -26,6 +26,7 @@ export interface User {
     preferences?: Record<string, unknown>
     is_banned?: boolean
     ban_reason?: string
+    social_links?: Record<string, string>
 }
 
 // ── Film Log ──

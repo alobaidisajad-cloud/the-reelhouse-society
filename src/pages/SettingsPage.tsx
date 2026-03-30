@@ -1,31 +1,22 @@
 /**
  * SettingsPage — "The Dossier Bureau"
- * Full account & privacy configuration.
- * Profile · Account · Privacy · Notifications · Legal · Danger Zone
+ * Account, Privacy, Notifications, Legal, and Account Actions.
+ * Profile editing lives at /edit-profile now.
  * Nitrate Noir elevated design.
  */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
-import { Camera, User, Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText } from 'lucide-react'
-import Buster from '../components/Buster'
+import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User } from 'lucide-react'
 import { subscribeToWebPush } from '../utils/push'
 import '../styles/settings.css'
 
 export default function SettingsPage() {
     const { user, isAuthenticated, logout } = useAuthStore()
     const navigate = useNavigate()
-
-    // ── Profile ──
-    const [displayName, setDisplayName] = useState(user?.display_name || user?.displayName || user?.username || '')
-    const [bio, setBio] = useState(user?.bio || '')
-    const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null)
-    const [avatarFile, setAvatarFile] = useState<File | null>(null)
-    const [uploadingAvatar, setUploadingAvatar] = useState(false)
-    const fileInputRef = useRef<HTMLInputElement>(null)
 
     // ── Account ──
     const [email] = useState(user?.email || '')
@@ -81,9 +72,6 @@ export default function SettingsPage() {
     useEffect(() => {
         if (!user) return
         try {
-            setDisplayName((user as any).display_name || (user as any).displayName || user.username || '')
-            setBio(user.bio || '')
-            setAvatarPreview(user.avatar_url || null)
             const p = (user.preferences || {}) as Record<string, any>
             setSocialVisibility(p.social_visibility || (user.is_social_private ? 'private' : 'public'))
             setPrivacyEndorsements(p.privacy_endorsements || 'everyone')
@@ -99,57 +87,14 @@ export default function SettingsPage() {
         if (!isAuthenticated) navigate('/')
     }, [isAuthenticated, navigate])
 
-    // ── Avatar Upload ──
-    const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-        if (file.size > 2 * 1024 * 1024) { toast.error('Image must be under 2MB'); return }
-        setAvatarFile(file)
-        setAvatarPreview(URL.createObjectURL(file))
-    }
-
-    const uploadAvatar = async () => {
-        if (!avatarFile || !user) return null
-        setUploadingAvatar(true)
-        try {
-            const ext = avatarFile.name.split('.').pop()?.toLowerCase() || 'jpg'
-            const path = `${user.id}/avatar.${ext}`
-            const { error: uploadError } = await supabase.storage
-                .from('avatars')
-                .upload(path, avatarFile, {
-                    upsert: true,
-                    contentType: avatarFile.type || `image/${ext === 'jpg' ? 'jpeg' : ext}`,
-                })
-            if (uploadError) throw uploadError
-            const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
-            return urlData.publicUrl + `?v=${Date.now()}`
-        } catch (e: any) {
-            toast.error('Avatar upload failed: ' + (e.message || 'Unknown error'))
-            return null
-        } finally {
-            setUploadingAvatar(false)
-        }
-    }
-
     // ── Save All ──
     const handleSave = async () => {
         if (!isSupabaseConfigured || !user) return
-        if (displayName.trim().length > 50) { toast.error('Display name must be 50 characters or fewer.'); return }
-        if (bio.trim().length > 500) { toast.error('Bio must be 500 characters or fewer.'); return }
         setSaving(true)
         try {
-            let avatarUrl = user.avatar_url
-            if (avatarFile) {
-                const uploaded = await uploadAvatar()
-                if (uploaded) avatarUrl = uploaded
-            }
-
             const { error } = await supabase
                 .from('profiles')
                 .update({
-                    display_name: displayName,
-                    bio,
-                    avatar_url: avatarUrl,
                     is_social_private: socialVisibility === 'private',
                 })
                 .eq('id', user.id)
@@ -164,12 +109,9 @@ export default function SettingsPage() {
             await useAuthStore.getState().setPreference('privacy_annotations', privacyAnnotations)
 
             useAuthStore.getState().updateUser({
-                bio, avatar_url: avatarUrl,
-                display_name: displayName,
                 is_social_private: socialVisibility === 'private',
             } as any)
 
-            setAvatarFile(null)
             toast.success('Settings archived successfully ✦')
         } catch (e: any) {
             toast.error(e.message || 'Failed to save')
@@ -239,71 +181,24 @@ export default function SettingsPage() {
                 </p>
             </div>
 
-            {/* ════════════════════════════════════════════════ */}
-            {/*   SECTION 1 — PROFILE                          */}
-            {/* ════════════════════════════════════════════════ */}
-            <div className="settings-section">
-                <div className="settings-section-header">
-                    <User size={14} /> PROFILE
-                </div>
-
-                {/* Avatar */}
-                <div className="settings-avatar-row">
-                    <div
-                        className="settings-avatar"
-                        onClick={() => fileInputRef.current?.click()}
-                    >
-                        {avatarPreview ? (
-                            <img src={avatarPreview} alt="Avatar" />
-                        ) : (
-                            <Buster size={48} mood="smiling" />
-                        )}
-                        <div className="settings-avatar-overlay">
-                            <Camera size={18} color="var(--parchment)" />
-                        </div>
+            {/* ═══════════════════════════════════════════ */}
+            {/*   EDIT PROFILE LINK                        */}
+            {/* ═══════════════════════════════════════════ */}
+            <div className="settings-section" style={{ cursor: 'pointer' }} onClick={() => navigate('/edit-profile')}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <User size={14} style={{ color: 'var(--sepia)', opacity: 0.7 }} />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.25em', color: 'var(--sepia)' }}>EDIT PROFILE</span>
                     </div>
-                    <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarSelect} />
-                    <div className="settings-avatar-info">
-                        <div className="settings-avatar-filename">
-                            {avatarFile ? avatarFile.name : 'Click to upload a portrait'}
-                        </div>
-                        <div className="settings-avatar-spec">
-                            JPG, PNG, or WEBP · MAX 2MB
-                        </div>
-                    </div>
-                </div>
-
-                {/* Display Name */}
-                <div className="settings-field">
-                    <label className="settings-label">DISPLAY NAME</label>
-                    <input
-                        className="settings-input"
-                        value={displayName}
-                        onChange={e => setDisplayName(e.target.value)}
-                        maxLength={30}
-                        placeholder="Your name in the credits..."
-                    />
-                </div>
-
-                {/* Bio */}
-                <div className="settings-field">
-                    <label className="settings-label">BIO</label>
-                    <textarea
-                        className="settings-input settings-textarea"
-                        value={bio}
-                        onChange={e => setBio(e.target.value)}
-                        maxLength={160}
-                        placeholder="A brief dispatch about your cinematic journey..."
-                    />
-                    <div className="settings-char-count">
-                        {bio.length}/160
-                    </div>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                        Avatar, Bio, Username, Social Links →
+                    </span>
                 </div>
             </div>
 
-            {/* ════════════════════════════════════════════════ */}
-            {/*   SECTION 2 — ACCOUNT                          */}
-            {/* ════════════════════════════════════════════════ */}
+            {/* ═══════════════════════════════════════════ */}
+            {/*   SECTION 1 — ACCOUNT                      */}
+            {/* ═══════════════════════════════════════════ */}
             <div className="settings-section">
                 <div className="settings-section-header">
                     <Lock size={14} /> ACCOUNT
@@ -368,9 +263,9 @@ export default function SettingsPage() {
                 )}
             </div>
 
-            {/* ════════════════════════════════════════════════ */}
-            {/*   SECTION 3 — PRIVACY                          */}
-            {/* ════════════════════════════════════════════════ */}
+            {/* ═══════════════════════════════════════════ */}
+            {/*   SECTION 2 — PRIVACY                      */}
+            {/* ═══════════════════════════════════════════ */}
             <div className="settings-section">
                 <div className="settings-section-header">
                     <Eye size={14} /> PRIVACY
@@ -431,9 +326,9 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {/* ════════════════════════════════════════════════ */}
-            {/*   SECTION 4 — NOTIFICATIONS                    */}
-            {/* ════════════════════════════════════════════════ */}
+            {/* ═══════════════════════════════════════════ */}
+            {/*   SECTION 3 — NOTIFICATIONS                */}
+            {/* ═══════════════════════════════════════════ */}
             <div className="settings-section">
                 <div className="settings-section-header">
                     <Bell size={14} /> NOTIFICATIONS
@@ -472,9 +367,9 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {/* ════════════════════════════════════════════════ */}
-            {/*   SECTION 5 — LEGAL                            */}
-            {/* ════════════════════════════════════════════════ */}
+            {/* ═══════════════════════════════════════════ */}
+            {/*   SECTION 4 — LEGAL                        */}
+            {/* ═══════════════════════════════════════════ */}
             <div className="settings-section">
                 <div className="settings-section-header">
                     <FileText size={14} /> LEGAL
@@ -490,9 +385,9 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            {/* ════════════════════════════════════════════════ */}
-            {/*   SECTION 6 — ACCOUNT ACTIONS                  */}
-            {/* ════════════════════════════════════════════════ */}
+            {/* ═══════════════════════════════════════════ */}
+            {/*   SECTION 5 — ACCOUNT ACTIONS              */}
+            {/* ═══════════════════════════════════════════ */}
             <div className="settings-section settings-section--danger">
                 <div className="settings-section-header" style={{ color: 'rgba(162,36,36,0.7)' }}>
                     <Shield size={14} /> ACCOUNT ACTIONS
@@ -516,9 +411,9 @@ export default function SettingsPage() {
             <button
                 className="settings-save-btn"
                 onClick={handleSave}
-                disabled={saving || uploadingAvatar}
+                disabled={saving}
             >
-                {uploadingAvatar ? 'UPLOADING PORTRAIT...' : saving ? 'ARCHIVING SETTINGS…' : '✦ SAVE SETTINGS ✦'}
+                {saving ? 'ARCHIVING SETTINGS…' : '✦ SAVE SETTINGS ✦'}
             </button>
 
             {/* ── Legal Footer Links ── */}
