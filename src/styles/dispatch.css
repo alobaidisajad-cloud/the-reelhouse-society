@@ -368,15 +368,17 @@
    8. OVERLAY READER — The Full Dossier
    ══════════════════════════════════════════ */
 .article-reader-overlay {
-  position: fixed; inset: 0; z-index: var(--z-overlay);
-  background: rgba(5,3,1,0.95); backdrop-filter: blur(8px);
+  position: fixed; inset: 0; z-index: 10001;
+  background: rgba(5,3,1,0.92); backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   display: flex; justify-content: center; padding: 2rem 1rem;
   overflow-y: auto;
 }
 .article-reader-paper {
-  background: #13100c; max-width: 720px; width: 100%;
+  background: #18140f; max-width: 720px; width: 100%;
   margin: auto; padding: 5rem 4rem; position: relative;
-  border: 1px solid rgba(139,105,20,0.15); border-radius: 4px;
+  border: 1px solid rgba(139,105,20,0.3); border-radius: 4px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 100px rgba(139,105,20,0.08);
 }
 .btn-close-reader {
   position: absolute; top: 1.5rem; right: 1.5rem;
@@ -421,7 +423,7 @@
    9. WRITE PANEL
    ══════════════════════════════════════════ */
 .writer-panel-overlay {
-  position: fixed; inset: 0; z-index: var(--z-modal);
+  position: fixed; inset: 0; z-index: 10001;
   background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
   display: flex; justify-content: flex-end;
 }
