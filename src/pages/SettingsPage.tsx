@@ -112,14 +112,17 @@ export default function SettingsPage() {
         if (!avatarFile || !user) return null
         setUploadingAvatar(true)
         try {
-            const ext = avatarFile.name.split('.').pop()
+            const ext = avatarFile.name.split('.').pop()?.toLowerCase() || 'jpg'
             const path = `${user.id}/avatar.${ext}`
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
-                .upload(path, avatarFile, { upsert: true })
+                .upload(path, avatarFile, {
+                    upsert: true,
+                    contentType: avatarFile.type || `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+                })
             if (uploadError) throw uploadError
             const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
-            return urlData.publicUrl + `?t=${Date.now()}`
+            return urlData.publicUrl + `?v=${Date.now()}`
         } catch (e: any) {
             toast.error('Avatar upload failed: ' + (e.message || 'Unknown error'))
             return null

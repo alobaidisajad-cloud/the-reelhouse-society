@@ -160,7 +160,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
 
                 {/* Focus Poster & Watermark Stamp */}
                 <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-                    <div style={{ width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)' }}>
+                    <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 24px 48px rgba(0,0,0,0.9)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.8)' }}>
                         {log.film?.poster ? (
                             <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
@@ -169,7 +169,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             </div>
                         )}
                         <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none' }} />
-                    </div>
+                    </Link>
 
                     {/* Watermark Stamp directly overlapping bottom-right safely (No text overlap) */}
                     {endorsed && (
@@ -301,7 +301,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             }}
         >
             {/* Poster with Ambient Echo */}
-            <div className="reel-poster-wrap" style={{ width: IS_TOUCH ? 100 : 100, height: IS_TOUCH ? 150 : 150 }}>
+            <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} className="reel-poster-wrap" style={{ width: IS_TOUCH ? 100 : 100, height: IS_TOUCH ? 150 : 150, display: 'block', textDecoration: 'none', cursor: 'pointer' }}>
                 {/* Ambient glow — blurred poster echo behind */}
                 {log.film?.poster && (
                     <img
@@ -336,7 +336,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         </div>
                     )}
                 </div>
-            </div>
+            </Link>
 
             {/* Content Body */}
             <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>

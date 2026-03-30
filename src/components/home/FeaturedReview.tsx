@@ -69,6 +69,7 @@ const FeaturedReview = memo(function FeaturedReview() {
 
                 const winner = sorted[0]
                 return {
+                    logId: winner.id,
                     text: winner.review,
                     author: ((winner as any).profiles?.username || 'ANONYMOUS').toUpperCase(),
                     rating: winner.rating || 0,
@@ -94,6 +95,7 @@ const FeaturedReview = memo(function FeaturedReview() {
             if (!fallback) return null
 
             return {
+                logId: fallback.id,
                 text: fallback.review,
                 author: ((fallback as any).profiles?.username || 'ANONYMOUS').toUpperCase(),
                 rating: fallback.rating || 0,
@@ -105,8 +107,8 @@ const FeaturedReview = memo(function FeaturedReview() {
     })
 
     const displayReview = featuredCritique
-        ? { text: featuredCritique.text, author: featuredCritique.author, rating: featuredCritique.rating, film: featuredCritique.film }
-        : { text: 'The projection box awaits. Be the first to file a dispatch on any title and claim this space in the archive.', author: 'THE SOCIETY', rating: 0, film: null }
+        ? { logId: featuredCritique.logId, text: featuredCritique.text, author: featuredCritique.author, rating: featuredCritique.rating, film: featuredCritique.film }
+        : { logId: null as string | null, text: 'The projection box awaits. Be the first to file a dispatch on any title and claim this space in the archive.', author: 'THE SOCIETY', rating: 0, film: null }
 
     const film = displayReview.film
 
@@ -222,7 +224,9 @@ const FeaturedReview = memo(function FeaturedReview() {
                         </div>
                     )}
 
-                    <p style={{
+                    <p
+                        onClick={() => displayReview.logId && navigate(`/log/${displayReview.logId}`)}
+                        style={{
                         fontFamily: 'var(--font-body)',
                         fontSize: IS_TOUCH ? '1rem' : '1.15rem',
                         fontStyle: 'italic',
@@ -231,7 +235,9 @@ const FeaturedReview = memo(function FeaturedReview() {
                         position: 'relative',
                         zIndex: 1,
                         textShadow: '0 1px 2px var(--ink)',
-                        marginBottom: '1.5rem'
+                        marginBottom: '1.5rem',
+                        cursor: displayReview.logId ? 'pointer' : 'default',
+                        transition: 'color 0.2s',
                     }}>
                         {displayReview.text.length > 280 ? displayReview.text.slice(0, 280) + '…' : displayReview.text}
                     </p>

@@ -110,9 +110,9 @@ const SocialPulse = memo(function SocialPulse() {
                                 {/* Content */}
                                 <div style={{ display: 'flex', gap: '1rem', flex: 1 }}>
                                     {act.film?.poster_path && (
-                                        <div className="cine-card" style={{ width: 56, height: 84, flexShrink: 0, borderRadius: '3px', overflow: 'hidden' }}>
+                                        <Link to={`/film/${act.film?.id}`} className="cine-card" style={{ width: 56, height: 84, flexShrink: 0, borderRadius: '3px', overflow: 'hidden', display: 'block' }}>
                                             <img src={tmdb.poster(act.film.poster_path, 'w92')} loading="lazy" alt={act.film.title} style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.2) contrast(1.1)' }} />
-                                        </div>
+                                        </Link>
                                     )}
                                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
                                         <Link to={`/film/${act.film?.id}`} style={{ fontFamily: 'var(--font-sub)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1.2, textDecoration: 'none', marginBottom: '0.3rem' }}>{act.film?.title}</Link>
@@ -132,7 +132,7 @@ const SocialPulse = memo(function SocialPulse() {
                         )
 
                         if (IS_TOUCH) {
-                            return <div key={act.id} style={cardStyle}>{cardContent}</div>
+                            return <Link key={act.id} to={`/log/${act.id}`} style={{ ...cardStyle, textDecoration: 'none', color: 'inherit' }}>{cardContent}</Link>
                         }
 
                         return (
@@ -146,7 +146,9 @@ const SocialPulse = memo(function SocialPulse() {
                                 onMouseEnter={(e: any) => { e.currentTarget.style.borderLeftColor = 'var(--flicker)' }}
                                 onMouseLeave={(e: any) => { e.currentTarget.style.borderLeftColor = 'var(--sepia)' }}
                             >
-                                {cardContent}
+                                <Link to={`/log/${act.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'contents' }}>
+                                    {cardContent}
+                                </Link>
                             </motion.div>
                         )
                     })}
