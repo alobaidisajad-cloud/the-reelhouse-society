@@ -15,6 +15,25 @@ export default defineConfig({
         navigateFallback: null,
         // Purge old caches on activate
         cleanupOutdatedCaches: true,
+        // Force CSS/JS to always fetch fresh from network first
+        runtimeCaching: [
+          {
+            urlPattern: /\.(?:js|css)$/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'static-assets',
+              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 }, // 1 hour
+            },
+          },
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-assets',
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 7 }, // 7 days
+            },
+          },
+        ],
       },
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'gold-reel.svg'],
       manifest: {
