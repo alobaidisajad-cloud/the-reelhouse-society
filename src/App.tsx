@@ -146,11 +146,8 @@ export default function App() {
   // ── Persistent Achievements — detect new badge unlocks ──
   const { newBadges, dismissNewBadge } = useAchievements(user?.id, logs)
 
-  const degradationClass = useMemo(() => {
-    if (logCount > 40) return 'level-obsessed'
-    if (logCount > 15) return 'level-degrade'
-    return ''
-  }, [logCount])
+  // Degradation filters REMOVED — they were applying brightness(0.95) saturate(0.9)
+  // to the entire app when logged in, killing the warm Nitrate Noir atmosphere
 
   // Desktop and Mobile: show 3-count clapperboard preloader only once per session
   const [showPreloader, setShowPreloader] = useState(() => {
@@ -208,7 +205,7 @@ export default function App() {
   }, [openLogModal])
 
   return (
-    <div className={degradationClass} style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100dvh' }}>
       {/* Skip-to-content link — visible only on keyboard focus */}
       <a
         href="#main-content"
