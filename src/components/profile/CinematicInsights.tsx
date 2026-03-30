@@ -46,26 +46,42 @@ export default function CinematicInsights({ logs, userId }: InsightsProps) {
         return Array.from(ids)
     }, [logs])
 
-    // Fetch credits for all unique films (batched, cached)
+    // Fetch credits for all unique films — BATCHED to respect TMDB rate limits
     const { data: insights, isLoading } = useQuery({
-        queryKey: ['cinematic-insights', userId || 'self', filmIds.length],
+        queryKey: ['cinematic-insights', userId || 'self', filmIds.join(',')],
         queryFn: async () => {
             if (filmIds.length === 0) return null
 
-            // Only fetch credits for up to 50 unique films to avoid rate limiting
-            const idsToFetch = filmIds.slice(0, 50)
-            const results = await Promise.allSettled(
-                idsToFetch.map(id => tmdb.movieDetails(id))
-            )
+            const idsToFetch = filmIds.slice(0, 80)
+            const BATCH_SIZE = 5
+            const BATCH_DELAY = 350 // ms between batches to avoid TMDB rate limit (40 req/10s)
+
+            const allMovies: any[] = []
+
+            // Process in sequential batches
+            for (let i = 0; i < idsToFetch.length; i += BATCH_SIZE) {
+                const batch = idsToFetch.slice(i, i + BATCH_SIZE)
+                const batchResults = await Promise.allSettled(
+                    batch.map(id => tmdb.movieDetails(id))
+                )
+
+                for (const result of batchResults) {
+                    if (result.status === 'fulfilled' && result.value) {
+                        allMovies.push(result.value)
+                    }
+                }
+
+                // Wait between batches to avoid rate limiting
+                if (i + BATCH_SIZE < idsToFetch.length) {
+                    await new Promise(resolve => setTimeout(resolve, BATCH_DELAY))
+                }
+            }
 
             const actorMap = new Map<number, PersonCount>()
             const directorMap = new Map<number, PersonCount>()
             const genreMap = new Map<string, number>()
 
-            for (const result of results) {
-                if (result.status !== 'fulfilled' || !result.value) continue
-                const movie = result.value
-
+            for (const movie of allMovies) {
                 // Genres
                 if (movie.genres) {
                     for (const g of movie.genres) {
@@ -132,10 +148,17 @@ export default function CinematicInsights({ logs, userId }: InsightsProps) {
                 .sort((a, b) => b.count - a.count)
                 .slice(0, 8)
 
-            return { topActors, topDirectors, topGenres, totalFilms: idsToFetch.length }
+            return {
+                topActors,
+                topDirectors,
+                topGenres,
+                totalFilms: idsToFetch.length,
+                fetchedFilms: allMovies.length,
+            }
         },
         enabled: filmIds.length >= 3,
-        staleTime: 1000 * 60 * 15, // 15 min
+        staleTime: 1000 * 60 * 30, // 30 min cache — data doesn't change often
+        gcTime: 1000 * 60 * 60, // Keep in cache for 1 hour
     })
 
     if (filmIds.length < 3) {
@@ -155,9 +178,12 @@ export default function CinematicInsights({ logs, userId }: InsightsProps) {
         return (
             <div className="card" style={{ padding: '3rem', textAlign: 'center' }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem' }}>
-                    ANALYZING YOUR REELS
+                    ANALYZING {filmIds.length} LOGGED FILMS
                 </div>
                 <Loader size={20} style={{ color: 'var(--sepia)', animation: 'spin 1s linear infinite', margin: '0 auto' }} />
+                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.75rem' }}>
+                    Fetching credits from TMDB...
+                </div>
             </div>
         )
     }
@@ -170,6 +196,10 @@ export default function CinematicInsights({ logs, userId }: InsightsProps) {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+            {/* Data source note */}
+            <div style={{ textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.15em', color: 'var(--ash)' }}>
+                BASED ON {insights.fetchedFilms} OF {filmIds.length} LOGGED FILMS
+            </div>
             {/* ── TOP ACTORS ── */}
             {insights.topActors.length > 0 && (
                 <div className="card" style={{ padding: '1.75rem', overflow: 'hidden', position: 'relative' }}>
