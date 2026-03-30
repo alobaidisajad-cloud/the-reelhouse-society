@@ -59,6 +59,8 @@ const DebugPanel = lazy(() => import('./pages/DebugPanel'))
 const StudioPage = lazy(() => import('./pages/StudioPage'))
 const LogDetailPage = lazy(() => import('./pages/LogDetailPage'))
 const TribunalPage = lazy(() => import('./pages/TribunalPage'))
+const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
+const TermsOfServicePage = lazy(() => import('./pages/TermsOfServicePage'))
 
 // Desktop and Mobile use simple, fast hardware-accelerated fades (The Seamless Splice)
 // We remove clipPath to eliminate the "janky" aperture flash and make it feel like a cohesive SPA
@@ -287,6 +289,8 @@ export default function App() {
               <Route path="/admin" element={<ErrorBoundary key="admin"><PageWrapper><DebugPanel /></PageWrapper></ErrorBoundary>} />
               <Route path="/studio" element={<ErrorBoundary key="studio"><PageWrapper><StudioPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/tribunal" element={<ErrorBoundary key="tribunal"><PageWrapper><TribunalPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/privacy" element={<ErrorBoundary key="privacy"><PageWrapper><PrivacyPolicyPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/terms" element={<ErrorBoundary key="terms"><PageWrapper><TermsOfServicePage /></PageWrapper></ErrorBoundary>} />
               <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
 
             </Routes>

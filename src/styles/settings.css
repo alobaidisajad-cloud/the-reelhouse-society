@@ -1,0 +1,527 @@
+/* ═══════════════════════════════════════════════════════
+   SETTINGS PAGE — "The Dossier Bureau"
+   Premium Nitrate Noir configuration interface
+   ═══════════════════════════════════════════════════════ */
+
+.settings-page {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 5.5rem 1.5rem 5rem;
+    min-height: 100dvh;
+    position: relative;
+}
+
+/* ── Hero Header ── */
+.settings-hero {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid rgba(139,105,20,0.12);
+    position: relative;
+}
+
+.settings-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -1px;
+    left: 20%;
+    right: 20%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent);
+}
+
+.settings-hero-eyebrow {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.4em;
+    color: var(--sepia);
+    margin-bottom: 0.75rem;
+    opacity: 0.7;
+}
+
+.settings-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 2.8rem);
+    color: var(--parchment);
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+}
+
+.settings-hero-desc {
+    font-family: var(--font-sub);
+    font-size: 0.9rem;
+    color: var(--fog);
+    max-width: 400px;
+    margin: 0 auto;
+    line-height: 1.5;
+}
+
+/* ── Section Card ── */
+.settings-section {
+    position: relative;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+    background: linear-gradient(180deg, rgba(139,105,20,0.03) 0%, transparent 30%), rgba(18,14,9,0.85);
+    border: 1px solid rgba(139,105,20,0.12);
+    border-radius: 4px;
+    overflow: hidden;
+    transition: border-color 0.3s;
+}
+
+.settings-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent);
+}
+
+.settings-section:hover {
+    border-color: rgba(139,105,20,0.2);
+}
+
+/* Danger section */
+.settings-section--danger {
+    border-color: rgba(162,36,36,0.15);
+}
+
+.settings-section--danger::before {
+    background: linear-gradient(90deg, transparent, rgba(162,36,36,0.2), transparent);
+}
+
+/* ── Section Header ── */
+.settings-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    color: var(--sepia);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(139,105,20,0.08);
+}
+
+.settings-section-header svg {
+    opacity: 0.7;
+}
+
+/* ── Form Elements ── */
+.settings-label {
+    font-family: var(--font-ui);
+    font-size: 0.48rem;
+    letter-spacing: 0.2em;
+    color: var(--sepia);
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.settings-input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: rgba(10,7,3,0.6);
+    border: 1px solid rgba(139,105,20,0.1);
+    border-radius: 3px;
+    color: var(--parchment);
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-sizing: border-box;
+}
+
+.settings-input:focus {
+    border-color: rgba(139,105,20,0.35);
+    box-shadow: 0 0 12px rgba(139,105,20,0.08);
+}
+
+.settings-input::placeholder {
+    color: var(--ash);
+    font-style: italic;
+    opacity: 0.6;
+}
+
+.settings-input--readonly {
+    opacity: 0.45;
+    cursor: not-allowed;
+    user-select: none;
+}
+
+.settings-textarea {
+    min-height: 90px;
+    resize: vertical;
+    line-height: 1.6;
+}
+
+.settings-char-count {
+    font-family: var(--font-ui);
+    font-size: 0.4rem;
+    letter-spacing: 0.1em;
+    color: var(--ash);
+    text-align: right;
+    margin-top: 0.3rem;
+}
+
+/* ── Avatar ── */
+.settings-avatar-row {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.settings-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(10,7,3,0.8);
+    border: 2px solid rgba(139,105,20,0.25);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.3s, box-shadow 0.3s;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+.settings-avatar:hover {
+    border-color: var(--sepia);
+    box-shadow: 0 4px 20px rgba(139,105,20,0.15);
+}
+
+.settings-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.settings-avatar-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.2s;
+    border-radius: 50%;
+}
+
+.settings-avatar:hover .settings-avatar-overlay {
+    opacity: 1;
+}
+
+.settings-avatar-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+}
+
+.settings-avatar-filename {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    color: var(--bone);
+}
+
+.settings-avatar-spec {
+    font-family: var(--font-ui);
+    font-size: 0.4rem;
+    letter-spacing: 0.12em;
+    color: var(--fog);
+}
+
+/* ── Toggle Switch ── */
+.settings-toggle {
+    width: 40px;
+    height: 22px;
+    border-radius: 11px;
+    cursor: pointer;
+    border: none;
+    position: relative;
+    transition: background 0.3s;
+    flex-shrink: 0;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.3);
+}
+
+.settings-toggle--on {
+    background: linear-gradient(135deg, var(--sepia), rgba(196,150,26,0.8));
+}
+
+.settings-toggle--off {
+    background: rgba(139,105,20,0.12);
+}
+
+.settings-toggle-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    position: absolute;
+    top: 3px;
+    transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+.settings-toggle-dot--on {
+    left: 21px;
+    background: var(--parchment);
+}
+
+.settings-toggle-dot--off {
+    left: 3px;
+    background: var(--fog);
+}
+
+/* ── Notification Row ── */
+.settings-notif-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 0;
+    border-bottom: 1px solid rgba(139,105,20,0.06);
+    transition: background 0.2s;
+}
+
+.settings-notif-row:last-of-type {
+    border-bottom: none;
+}
+
+.settings-notif-row:hover {
+    background: rgba(139,105,20,0.02);
+}
+
+.settings-notif-label {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--parchment);
+}
+
+.settings-notif-desc {
+    font-family: var(--font-ui);
+    font-size: 0.42rem;
+    letter-spacing: 0.1em;
+    color: var(--fog);
+    margin-top: 0.2rem;
+}
+
+/* ── Radio Options ── */
+.settings-radio-option {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0.5rem;
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    transition: color 0.2s, background 0.2s;
+    border-radius: 3px;
+    margin: 0 -0.5rem;
+}
+
+.settings-radio-option:hover {
+    background: rgba(139,105,20,0.03);
+}
+
+.settings-radio-option--active {
+    color: var(--parchment);
+}
+
+.settings-radio-option--inactive {
+    color: var(--fog);
+}
+
+.settings-radio-option input[type="radio"] {
+    accent-color: var(--sepia);
+    width: 14px;
+    height: 14px;
+}
+
+/* ── Action Buttons ── */
+.settings-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    border: 1px solid rgba(139,105,20,0.08);
+    border-radius: 3px;
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    letter-spacing: 0.12em;
+    color: var(--fog);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+}
+
+.settings-action-btn:hover {
+    background: rgba(139,105,20,0.05);
+    border-color: rgba(139,105,20,0.15);
+    color: var(--parchment);
+}
+
+.settings-action-btn--danger {
+    border-color: rgba(162,36,36,0.15);
+    color: rgba(162,36,36,0.7);
+}
+
+.settings-action-btn--danger:hover {
+    background: rgba(162,36,36,0.05);
+    border-color: rgba(162,36,36,0.3);
+    color: #c0392b;
+}
+
+/* ── Save Button ── */
+.settings-save-btn {
+    width: 100%;
+    padding: 1.1rem;
+    font-family: var(--font-ui);
+    font-size: 0.7rem;
+    letter-spacing: 0.2em;
+    background: linear-gradient(135deg, rgba(139,105,20,0.2), rgba(139,105,20,0.1));
+    border: 1px solid rgba(139,105,20,0.3);
+    border-radius: 3px;
+    color: var(--sepia);
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.settings-save-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(139,105,20,0.1), transparent);
+    transition: left 0.5s;
+}
+
+.settings-save-btn:hover::before {
+    left: 100%;
+}
+
+.settings-save-btn:hover {
+    background: linear-gradient(135deg, rgba(139,105,20,0.3), rgba(139,105,20,0.15));
+    border-color: var(--sepia);
+    box-shadow: 0 4px 20px rgba(139,105,20,0.15);
+}
+
+.settings-save-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ── Legal Links ── */
+.settings-legal {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(139,105,20,0.08);
+}
+
+.settings-legal a {
+    font-family: var(--font-ui);
+    font-size: 0.42rem;
+    letter-spacing: 0.15em;
+    color: var(--fog);
+    text-decoration: none;
+    transition: color 0.2s;
+    opacity: 0.6;
+}
+
+.settings-legal a:hover {
+    color: var(--sepia);
+    opacity: 1;
+}
+
+/* ── Member Since Badge ── */
+.settings-member-badge {
+    font-family: var(--font-ui);
+    font-size: 0.4rem;
+    letter-spacing: 0.15em;
+    color: var(--fog);
+    text-align: center;
+    margin-top: 1.25rem;
+    opacity: 0.4;
+}
+
+/* ── Section Divider ── */
+.settings-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139,105,20,0.15), transparent);
+    margin: 0.5rem 0 1.5rem;
+}
+
+/* ── Push CTA ── */
+.settings-push-section {
+    margin-top: 0.75rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(139,105,20,0.06);
+}
+
+.settings-push-desc {
+    font-family: var(--font-ui);
+    font-size: 0.4rem;
+    letter-spacing: 0.05em;
+    color: var(--ash);
+    line-height: 1.5;
+    margin-top: 0.5rem;
+}
+
+/* ── Field Group ── */
+.settings-field {
+    margin-bottom: 1.25rem;
+}
+
+.settings-field:last-child {
+    margin-bottom: 0;
+}
+
+/* ── Privacy Section Label ── */
+.settings-privacy-group {
+    margin-bottom: 1.5rem;
+}
+
+.settings-privacy-group:last-child {
+    margin-bottom: 0;
+}
+
+/* ── Password Change Panel ── */
+.settings-password-panel {
+    margin-top: 1rem;
+    padding: 1.25rem;
+    background: rgba(10,7,3,0.5);
+    border-radius: 3px;
+    border: 1px solid rgba(139,105,20,0.06);
+}
+
+/* ── Responsive ── */
+@media (max-width: 600px) {
+    .settings-page {
+        padding: 5rem 1rem 5rem;
+    }
+
+    .settings-section {
+        padding: 1.5rem 1.25rem;
+    }
+
+    .settings-avatar-row {
+        gap: 1rem;
+    }
+
+    .settings-avatar {
+        width: 64px;
+        height: 64px;
+    }
+}

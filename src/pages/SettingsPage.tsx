@@ -1,18 +1,19 @@
 /**
- * SettingsPage — Full account settings.
- * Profile (avatar, display name, bio), Account (email, password),
- * Privacy, Notifications, and Danger Zone.
- * Nitrate Noir themed.
+ * SettingsPage — "The Dossier Bureau"
+ * Full account & privacy configuration.
+ * Profile · Account · Privacy · Notifications · Legal · Danger Zone
+ * Nitrate Noir elevated design.
  */
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
-import { Camera, User, Lock, Eye, Bell, AlertTriangle, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone } from 'lucide-react'
+import { Camera, User, Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText } from 'lucide-react'
 import Buster from '../components/Buster'
 import { subscribeToWebPush } from '../utils/push'
+import '../styles/settings.css'
 
 export default function SettingsPage() {
     const { user, isAuthenticated, logout } = useAuthStore()
@@ -52,7 +53,7 @@ export default function SettingsPage() {
     const [notifSystem, setNotifSystem] = useState(prefs.notif_system !== false)
     const [pushEnabled, setPushEnabled] = useState(false)
 
-    // Check if push is already enabled in the browser locally
+    // Check if push is already enabled
     useEffect(() => {
         if ('serviceWorker' in navigator && 'PushManager' in window) {
             navigator.serviceWorker.ready.then(reg => {
@@ -62,7 +63,7 @@ export default function SettingsPage() {
             })
         }
     }, [])
-    
+
     const handleEnablePush = async () => {
         const success = await subscribeToWebPush()
         if (success) {
@@ -76,8 +77,7 @@ export default function SettingsPage() {
     // ── General ──
     const [saving, setSaving] = useState(false)
 
-
-    // ── Re-sync local state when the user object updates (e.g. after initAuthSync re-fetches from Supabase) ──
+    // ── Re-sync local state when the user object updates ──
     useEffect(() => {
         if (!user) return
         try {
@@ -134,19 +134,16 @@ export default function SettingsPage() {
     // ── Save All ──
     const handleSave = async () => {
         if (!isSupabaseConfigured || !user) return
-        // Guard against extreme-length strings that would blow the DB column
         if (displayName.trim().length > 50) { toast.error('Display name must be 50 characters or fewer.'); return }
         if (bio.trim().length > 500) { toast.error('Bio must be 500 characters or fewer.'); return }
         setSaving(true)
         try {
-            // Upload avatar if changed
             let avatarUrl = user.avatar_url
             if (avatarFile) {
                 const uploaded = await uploadAvatar()
                 if (uploaded) avatarUrl = uploaded
             }
 
-            // Save profile fields
             const { error } = await supabase
                 .from('profiles')
                 .update({
@@ -158,7 +155,6 @@ export default function SettingsPage() {
                 .eq('id', user.id)
             if (error) throw error
 
-            // Save notification preferences via auth store
             await useAuthStore.getState().setPreference('notif_follows', notifFollows)
             await useAuthStore.getState().setPreference('notif_endorsements', notifEndorsements)
             await useAuthStore.getState().setPreference('notif_comments', notifComments)
@@ -167,7 +163,6 @@ export default function SettingsPage() {
             await useAuthStore.getState().setPreference('privacy_endorsements', privacyEndorsements)
             await useAuthStore.getState().setPreference('privacy_annotations', privacyAnnotations)
 
-            // Update local state
             useAuthStore.getState().updateUser({
                 bio, avatar_url: avatarUrl,
                 display_name: displayName,
@@ -175,7 +170,7 @@ export default function SettingsPage() {
             } as any)
 
             setAvatarFile(null)
-            toast.success('Settings saved to the archive ✦')
+            toast.success('Settings archived successfully ✦')
         } catch (e: any) {
             toast.error(e.message || 'Failed to save')
         } finally {
@@ -220,179 +215,152 @@ export default function SettingsPage() {
 
     if (!user) return null
 
-    // ── Styles ──
-    const sectionStyle: React.CSSProperties = {
-        padding: '1.75rem', marginBottom: '1.25rem',
-        background: 'rgba(22,18,12,0.5)',
-        border: '1px solid rgba(139,105,20,0.15)',
-        borderRadius: '2px',
-    }
-    const sectionHeaderStyle: React.CSSProperties = {
-        display: 'flex', alignItems: 'center', gap: '0.65rem',
-        fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.25em',
-        color: 'var(--sepia)', marginBottom: '1.25rem', paddingBottom: '0.75rem',
-        borderBottom: '1px solid rgba(139,105,20,0.1)',
-    }
-    const labelStyle: React.CSSProperties = {
-        fontFamily: 'var(--font-ui)', fontSize: '0.48rem', letterSpacing: '0.2em',
-        color: 'var(--sepia)', marginBottom: '0.5rem', display: 'block',
-    }
-    const inputStyle: React.CSSProperties = {
-        width: '100%', padding: '0.75rem', background: 'var(--soot)',
-        border: '1px solid rgba(139,105,20,0.1)', borderRadius: '3px',
-        color: 'var(--parchment)', fontFamily: 'var(--font-body)', fontSize: '0.9rem',
-        outline: 'none', transition: 'border-color 0.2s',
-    }
-    const toggleStyle = (active: boolean): React.CSSProperties => ({
-        width: 36, height: 20, borderRadius: 10, cursor: 'pointer',
-        background: active ? 'var(--sepia)' : 'rgba(139,105,20,0.15)',
-        border: 'none', position: 'relative', transition: 'background 0.2s',
-        flexShrink: 0,
-    })
-    const toggleDotStyle = (active: boolean): React.CSSProperties => ({
-        width: 14, height: 14, borderRadius: '50%',
-        background: active ? 'var(--parchment)' : 'var(--fog)',
-        position: 'absolute', top: 3,
-        left: active ? 19 : 3, transition: 'left 0.2s',
-    })
+    // ── Toggle Component ──
+    const Toggle = ({ active, onToggle, label }: { active: boolean; onToggle: () => void; label: string }) => (
+        <button
+            className={`settings-toggle ${active ? 'settings-toggle--on' : 'settings-toggle--off'}`}
+            onClick={onToggle}
+            aria-label={`Toggle ${label}`}
+        >
+            <div className={`settings-toggle-dot ${active ? 'settings-toggle-dot--on' : 'settings-toggle-dot--off'}`} />
+        </button>
+    )
 
     return (
-        <div style={{ maxWidth: 600, margin: '0 auto', padding: '5.5rem 1.5rem 4rem' }}>
+        <div className="settings-page">
             <PageSEO title="Settings" description="Manage your ReelHouse Society account settings." path="/settings" />
 
-            {/* ── Page Header ── */}
-            <div style={{ marginBottom: '2rem' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '0.5rem', opacity: 0.8 }}>
-                    ✦ MANAGE YOUR DOSSIER ✦
-                </div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.5rem, 4vw, 2rem)', color: 'var(--parchment)', lineHeight: 1 }}>
-                    Settings
-                </div>
+            {/* ── HERO HEADER ── */}
+            <div className="settings-hero">
+                <div className="settings-hero-eyebrow">✦ THE DOSSIER BUREAU ✦</div>
+                <h1 className="settings-hero-title">Settings</h1>
+                <p className="settings-hero-desc">
+                    Configure your presence within The Society.
+                </p>
             </div>
 
-            {/* ════════════════════════════════════════ */}
-            {/*   SECTION 1 — PROFILE                   */}
-            {/* ════════════════════════════════════════ */}
-            <div style={sectionStyle}>
-                <div style={sectionHeaderStyle}>
+            {/* ════════════════════════════════════════════════ */}
+            {/*   SECTION 1 — PROFILE                          */}
+            {/* ════════════════════════════════════════════════ */}
+            <div className="settings-section">
+                <div className="settings-section-header">
                     <User size={14} /> PROFILE
                 </div>
 
                 {/* Avatar */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem' }}>
+                <div className="settings-avatar-row">
                     <div
+                        className="settings-avatar"
                         onClick={() => fileInputRef.current?.click()}
-                        style={{
-                            width: 72, height: 72, borderRadius: '50%', overflow: 'hidden',
-                            background: 'var(--ink)', border: '2px solid rgba(139,105,20,0.3)',
-                            cursor: 'pointer', position: 'relative', flexShrink: 0,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        }}
                     >
                         {avatarPreview ? (
-                            <img src={avatarPreview} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <img src={avatarPreview} alt="Avatar" />
                         ) : (
                             <Buster size={48} mood="smiling" />
                         )}
-                        <div style={{
-                            position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            opacity: 0, transition: 'opacity 0.2s',
-                        }}
-                            onMouseEnter={e => e.currentTarget.style.opacity = '1'}
-                            onMouseLeave={e => e.currentTarget.style.opacity = '0'}
-                        >
+                        <div className="settings-avatar-overlay">
                             <Camera size={18} color="var(--parchment)" />
                         </div>
                     </div>
                     <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarSelect} />
-                    <div>
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', marginBottom: '0.25rem' }}>
-                            {avatarFile ? avatarFile.name : 'Click to upload a photo'}
+                    <div className="settings-avatar-info">
+                        <div className="settings-avatar-filename">
+                            {avatarFile ? avatarFile.name : 'Click to upload a portrait'}
                         </div>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                        <div className="settings-avatar-spec">
                             JPG, PNG, or WEBP · MAX 2MB
                         </div>
                     </div>
                 </div>
 
                 {/* Display Name */}
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={labelStyle}>DISPLAY NAME</label>
-                    <input value={displayName} onChange={e => setDisplayName(e.target.value)} style={inputStyle} maxLength={30} />
+                <div className="settings-field">
+                    <label className="settings-label">DISPLAY NAME</label>
+                    <input
+                        className="settings-input"
+                        value={displayName}
+                        onChange={e => setDisplayName(e.target.value)}
+                        maxLength={30}
+                        placeholder="Your name in the credits..."
+                    />
                 </div>
 
                 {/* Bio */}
-                <div>
-                    <label style={labelStyle}>BIO</label>
+                <div className="settings-field">
+                    <label className="settings-label">BIO</label>
                     <textarea
-                        value={bio} onChange={e => setBio(e.target.value)}
-                        style={{ ...inputStyle, minHeight: 80, resize: 'vertical' }}
+                        className="settings-input settings-textarea"
+                        value={bio}
+                        onChange={e => setBio(e.target.value)}
                         maxLength={160}
                         placeholder="A brief dispatch about your cinematic journey..."
                     />
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--ash)', textAlign: 'right', marginTop: '0.25rem' }}>
+                    <div className="settings-char-count">
                         {bio.length}/160
                     </div>
                 </div>
             </div>
 
-            {/* ════════════════════════════════════════ */}
-            {/*   SECTION 2 — ACCOUNT                   */}
-            {/* ════════════════════════════════════════ */}
-            <div style={sectionStyle}>
-                <div style={sectionHeaderStyle}>
+            {/* ════════════════════════════════════════════════ */}
+            {/*   SECTION 2 — ACCOUNT                          */}
+            {/* ════════════════════════════════════════════════ */}
+            <div className="settings-section">
+                <div className="settings-section-header">
                     <Lock size={14} /> ACCOUNT
                 </div>
 
-                {/* Username (read-only) */}
-                <div style={{ marginBottom: '1rem' }}>
-                    <label style={labelStyle}>USERNAME</label>
-                    <div style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}>
+                {/* Username */}
+                <div className="settings-field">
+                    <label className="settings-label">USERNAME</label>
+                    <div className="settings-input settings-input--readonly">
                         @{user.username}
                     </div>
                 </div>
 
-                {/* Email (read-only) */}
-                <div style={{ marginBottom: '1.25rem' }}>
-                    <label style={labelStyle}>EMAIL</label>
-                    <div style={{ ...inputStyle, opacity: 0.5, cursor: 'not-allowed' }}>
+                {/* Email */}
+                <div className="settings-field">
+                    <label className="settings-label">EMAIL</label>
+                    <div className="settings-input settings-input--readonly">
                         {email}
                     </div>
                 </div>
 
                 {/* Password Change */}
                 <button
-                    className="btn btn-ghost"
+                    className="settings-action-btn"
                     onClick={() => setShowPasswordChange(!showPasswordChange)}
-                    style={{ fontSize: '0.6rem', padding: '0.5rem 1rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                    style={{ marginTop: '0.25rem' }}
                 >
-                    <Lock size={11} /> CHANGE PASSWORD {showPasswordChange ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+                    <Lock size={12} /> CHANGE PASSWORD {showPasswordChange ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
                 </button>
 
                 {showPasswordChange && (
-                    <div style={{ marginTop: '1rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '3px', border: '1px solid rgba(139,105,20,0.08)' }}>
-                        <div style={{ marginBottom: '0.75rem' }}>
-                            <label style={labelStyle}>NEW PASSWORD</label>
+                    <div className="settings-password-panel">
+                        <div className="settings-field">
+                            <label className="settings-label">NEW PASSWORD</label>
                             <input
-                                type="password" value={newPassword}
+                                type="password"
+                                className="settings-input"
+                                value={newPassword}
                                 onChange={e => setNewPassword(e.target.value)}
-                                style={inputStyle} placeholder="Min. 8 characters"
+                                placeholder="Min. 8 characters"
                             />
                         </div>
-                        <div style={{ marginBottom: '0.75rem' }}>
-                            <label style={labelStyle}>CONFIRM PASSWORD</label>
+                        <div className="settings-field">
+                            <label className="settings-label">CONFIRM PASSWORD</label>
                             <input
-                                type="password" value={confirmPassword}
+                                type="password"
+                                className="settings-input"
+                                value={confirmPassword}
                                 onChange={e => setConfirmPassword(e.target.value)}
-                                style={inputStyle} placeholder="Repeat password"
+                                placeholder="Repeat password"
                             />
                         </div>
                         <button
-                            className="btn btn-primary"
+                            className="settings-save-btn"
                             onClick={handlePasswordChange}
                             disabled={changingPassword || !newPassword || !confirmPassword}
-                            style={{ fontSize: '0.6rem', padding: '0.5rem 1.25rem', letterSpacing: '0.15em', opacity: changingPassword ? 0.5 : 1 }}
+                            style={{ marginTop: '0.5rem' }}
                         >
                             {changingPassword ? 'UPDATING...' : 'UPDATE PASSWORD'}
                         </button>
@@ -400,89 +368,74 @@ export default function SettingsPage() {
                 )}
             </div>
 
-            {/* ════════════════════════════════════════ */}
-            {/*   SECTION 3 — PRIVACY                   */}
-            {/* ════════════════════════════════════════ */}
-            <div style={sectionStyle}>
-                <div style={sectionHeaderStyle}>
+            {/* ════════════════════════════════════════════════ */}
+            {/*   SECTION 3 — PRIVACY                          */}
+            {/* ════════════════════════════════════════════════ */}
+            <div className="settings-section">
+                <div className="settings-section-header">
                     <Eye size={14} /> PRIVACY
                 </div>
 
-                <label style={{ ...labelStyle, marginBottom: '0.75rem' }}>SOCIAL VISIBILITY</label>
-                {[
-                    { value: 'public', label: 'Public — Visible to everyone' },
-                    { value: 'followers', label: 'Followers Only — Only your followers can see your profile' },
-                    { value: 'private', label: 'Private — Only you can see your activity' },
-                ].map(opt => (
-                    <label key={opt.value} style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem',
-                        padding: '0.55rem 0', cursor: 'pointer',
-                        color: socialVisibility === opt.value ? 'var(--parchment)' : 'var(--fog)',
-                        fontFamily: 'var(--font-body)', fontSize: '0.85rem',
-                        transition: 'color 0.2s',
-                    }}>
-                        <input
-                            type="radio" name="visibility"
-                            checked={socialVisibility === opt.value}
-                            onChange={() => setSocialVisibility(opt.value)}
-                            style={{ accentColor: 'var(--sepia)' }}
-                        />
-                        {opt.label}
-                    </label>
-                ))}
+                <div className="settings-privacy-group">
+                    <label className="settings-label" style={{ marginBottom: '0.75rem' }}>SOCIAL VISIBILITY</label>
+                    {[
+                        { value: 'public', label: 'Public — Visible to everyone' },
+                        { value: 'followers', label: 'Followers Only — Only your followers can see' },
+                        { value: 'private', label: 'Private — Only you can see your activity' },
+                    ].map(opt => (
+                        <label key={opt.value} className={`settings-radio-option ${socialVisibility === opt.value ? 'settings-radio-option--active' : 'settings-radio-option--inactive'}`}>
+                            <input
+                                type="radio" name="visibility"
+                                checked={socialVisibility === opt.value}
+                                onChange={() => setSocialVisibility(opt.value)}
+                            />
+                            {opt.label}
+                        </label>
+                    ))}
+                </div>
 
-                <label style={{ ...labelStyle, marginTop: '1.5rem', marginBottom: '0.75rem' }}>WHO CAN CERTIFY</label>
-                {[
-                    { value: 'everyone', label: 'Everyone' },
-                    { value: 'followers', label: 'Followers Only' },
-                    { value: 'nobody', label: 'Nobody' },
-                ].map(opt => (
-                    <label key={opt.value} style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem',
-                        padding: '0.4rem 0', cursor: 'pointer',
-                        color: privacyEndorsements === opt.value ? 'var(--parchment)' : 'var(--fog)',
-                        fontFamily: 'var(--font-body)', fontSize: '0.85rem',
-                        transition: 'color 0.2s',
-                    }}>
-                        <input
-                            type="radio" name="privacyEndorse"
-                            checked={privacyEndorsements === opt.value}
-                            onChange={() => setPrivacyEndorsements(opt.value)}
-                            style={{ accentColor: 'var(--sepia)' }}
-                        />
-                        {opt.label}
-                    </label>
-                ))}
+                <div className="settings-privacy-group">
+                    <label className="settings-label" style={{ marginBottom: '0.75rem' }}>WHO CAN CERTIFY</label>
+                    {[
+                        { value: 'everyone', label: 'Everyone' },
+                        { value: 'followers', label: 'Followers Only' },
+                        { value: 'nobody', label: 'Nobody' },
+                    ].map(opt => (
+                        <label key={opt.value} className={`settings-radio-option ${privacyEndorsements === opt.value ? 'settings-radio-option--active' : 'settings-radio-option--inactive'}`}>
+                            <input
+                                type="radio" name="privacyEndorse"
+                                checked={privacyEndorsements === opt.value}
+                                onChange={() => setPrivacyEndorsements(opt.value)}
+                            />
+                            {opt.label}
+                        </label>
+                    ))}
+                </div>
 
-                <label style={{ ...labelStyle, marginTop: '1.5rem', marginBottom: '0.75rem' }}>WHO CAN ANNOTATE</label>
-                {[
-                    { value: 'everyone', label: 'Everyone' },
-                    { value: 'followers', label: 'Followers Only' },
-                    { value: 'nobody', label: 'Nobody' },
-                ].map(opt => (
-                    <label key={opt.value} style={{
-                        display: 'flex', alignItems: 'center', gap: '0.75rem',
-                        padding: '0.4rem 0', cursor: 'pointer',
-                        color: privacyAnnotations === opt.value ? 'var(--parchment)' : 'var(--fog)',
-                        fontFamily: 'var(--font-body)', fontSize: '0.85rem',
-                        transition: 'color 0.2s',
-                    }}>
-                        <input
-                            type="radio" name="privacyAnnotate"
-                            checked={privacyAnnotations === opt.value}
-                            onChange={() => setPrivacyAnnotations(opt.value)}
-                            style={{ accentColor: 'var(--sepia)' }}
-                        />
-                        {opt.label}
-                    </label>
-                ))}
+                <div className="settings-privacy-group">
+                    <label className="settings-label" style={{ marginBottom: '0.75rem' }}>WHO CAN ANNOTATE</label>
+                    {[
+                        { value: 'everyone', label: 'Everyone' },
+                        { value: 'followers', label: 'Followers Only' },
+                        { value: 'nobody', label: 'Nobody' },
+                    ].map(opt => (
+                        <label key={opt.value} className={`settings-radio-option ${privacyAnnotations === opt.value ? 'settings-radio-option--active' : 'settings-radio-option--inactive'}`}>
+                            <input
+                                type="radio" name="privacyAnnotate"
+                                checked={privacyAnnotations === opt.value}
+                                onChange={() => setPrivacyAnnotations(opt.value)}
+                            />
+                            {opt.label}
+                        </label>
+                    ))}
+                </div>
             </div>
 
-            {/* ════════════════════════════════════════ */}
-            {/*   SECTION 4 — NOTIFICATIONS             */}
-            {/* ════════════════════════════════════════ */}
-            <div style={sectionStyle}>
-                <div style={sectionHeaderStyle}>
+            {/* ════════════════════════════════════════════════ */}
+            {/*   SECTION 4 — NOTIFICATIONS                    */}
+            {/* ════════════════════════════════════════════════ */}
+            <div className="settings-section">
+                <div className="settings-section-header">
                     <Bell size={14} /> NOTIFICATIONS
                 </div>
 
@@ -492,95 +445,90 @@ export default function SettingsPage() {
                     { label: 'Annotations', desc: 'When someone comments on your log', value: notifComments, setter: setNotifComments },
                     { label: 'System Alerts', desc: 'Society announcements and updates', value: notifSystem, setter: setNotifSystem },
                 ].map(item => (
-                    <div key={item.label} style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '0.75rem 0',
-                        borderBottom: '1px solid rgba(139,105,20,0.1)',
-                    }}>
+                    <div key={item.label} className="settings-notif-row">
                         <div>
-                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{item.label}</div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.15rem' }}>{item.desc}</div>
+                            <div className="settings-notif-label">{item.label}</div>
+                            <div className="settings-notif-desc">{item.desc}</div>
                         </div>
-                        <button
-                            style={toggleStyle(item.value)}
-                            onClick={() => item.setter(!item.value)}
-                            aria-label={`Toggle ${item.label}`}
-                        >
-                            <div style={toggleDotStyle(item.value)} />
-                        </button>
+                        <Toggle active={item.value} onToggle={() => item.setter(!item.value)} label={item.label} />
                     </div>
                 ))}
 
-                <div style={{ padding: '1.25rem 0 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid rgba(139,105,20,0.1)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
+                <div className="settings-push-section">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.65rem' }}>
                         <Smartphone size={10} /> MOBILE INTEGRATION
                     </div>
-                    <button 
-                        className="btn btn-primary"
+                    <button
+                        className="settings-save-btn"
                         onClick={handleEnablePush}
                         disabled={pushEnabled}
-                        style={{ fontSize: '0.55rem', padding: '0.6rem', letterSpacing: '0.1em', opacity: pushEnabled ? 0.5 : 1, width: '100%', justifyContent: 'center' }}
+                        style={{ opacity: pushEnabled ? 0.5 : 1 }}
                     >
-                        {pushEnabled ? 'PUSH NOTIFICATIONS ACTIVE' : 'ENABLE SECURE PUSH NOTIFICATIONS'}
+                        {pushEnabled ? '✦ PUSH NOTIFICATIONS ACTIVE' : 'ENABLE SECURE PUSH NOTIFICATIONS'}
                     </button>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--ash)', lineHeight: 1.4 }}>
-                        Receive immediate cinematic alerts directly to your device lock screen when the society interacts with your archive.
+                    <div className="settings-push-desc">
+                        Receive immediate cinematic alerts directly to your device when the society interacts with your archive.
                     </div>
                 </div>
             </div>
 
-            {/* ════════════════════════════════════════ */}
-            {/*   SECTION 5 — ACCOUNT ACTIONS            */}
-            {/* ════════════════════════════════════════ */}
-            <div style={sectionStyle}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
-                    <button
-                        className="btn btn-ghost"
-                        onClick={handleSignOut}
-                        style={{ fontSize: '0.6rem', padding: '0.65rem 1rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', width: '100%' }}
-                    >
+            {/* ════════════════════════════════════════════════ */}
+            {/*   SECTION 5 — LEGAL                            */}
+            {/* ════════════════════════════════════════════════ */}
+            <div className="settings-section">
+                <div className="settings-section-header">
+                    <FileText size={14} /> LEGAL
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <Link to="/privacy" className="settings-action-btn" style={{ textDecoration: 'none' }}>
+                        <Shield size={12} /> PRIVACY POLICY
+                    </Link>
+                    <Link to="/terms" className="settings-action-btn" style={{ textDecoration: 'none' }}>
+                        <FileText size={12} /> TERMS OF SERVICE
+                    </Link>
+                </div>
+            </div>
+
+            {/* ════════════════════════════════════════════════ */}
+            {/*   SECTION 6 — ACCOUNT ACTIONS                  */}
+            {/* ════════════════════════════════════════════════ */}
+            <div className="settings-section settings-section--danger">
+                <div className="settings-section-header" style={{ color: 'rgba(162,36,36,0.7)' }}>
+                    <Shield size={14} /> ACCOUNT ACTIONS
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    <button className="settings-action-btn" onClick={handleSignOut}>
                         <LogOut size={12} /> SIGN OUT
                     </button>
-                    <button
-                        className="btn btn-ghost"
-                        onClick={() => { toast.success('CSV export available from your profile page') }}
-                        style={{ fontSize: '0.6rem', padding: '0.65rem 1rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', width: '100%' }}
-                    >
+                    <button className="settings-action-btn" onClick={() => toast.success('CSV export available from your profile page')}>
                         <Download size={12} /> EXPORT DATA (CSV)
                     </button>
-                    <div style={{ height: 1, background: 'rgba(139,105,20,0.08)', margin: '0.25rem 0' }} />
-                    <button
-                        className="btn btn-ghost"
-                        onClick={handleDeleteAccount}
-                        style={{
-                            fontSize: '0.6rem', padding: '0.65rem 1rem', letterSpacing: '0.1em',
-                            borderColor: 'rgba(162,36,36,0.25)', color: '#a82424',
-                            display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start', width: '100%',
-                        }}
-                    >
+                    <div className="settings-divider" />
+                    <button className="settings-action-btn settings-action-btn--danger" onClick={handleDeleteAccount}>
                         <Trash2 size={12} /> DELETE ACCOUNT
                     </button>
                 </div>
             </div>
 
-            {/* ── GOLD DIVIDER ── */}
-            <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)', margin: '0.5rem 0 1.25rem' }} />
-
             {/* ── SAVE BUTTON ── */}
             <button
-                className="btn btn-primary"
+                className="settings-save-btn"
                 onClick={handleSave}
                 disabled={saving || uploadingAvatar}
-                style={{
-                    width: '100%', padding: '1rem', fontSize: '0.7rem',
-                    letterSpacing: '0.15em', justifyContent: 'center',
-                    opacity: saving || uploadingAvatar ? 0.6 : 1,
-                }}
             >
-                {uploadingAvatar ? 'UPLOADING AVATAR...' : saving ? 'SAVING TO THE ARCHIVE…' : 'SAVE SETTINGS'}
+                {uploadingAvatar ? 'UPLOADING PORTRAIT...' : saving ? 'ARCHIVING SETTINGS…' : '✦ SAVE SETTINGS ✦'}
             </button>
 
-            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.1em', color: 'var(--fog)', textAlign: 'center', marginTop: '1rem', opacity: 0.5 }}>
+            {/* ── Legal Footer Links ── */}
+            <div className="settings-legal">
+                <Link to="/privacy">PRIVACY POLICY</Link>
+                <Link to="/terms">TERMS OF SERVICE</Link>
+            </div>
+
+            {/* ── Member Since ── */}
+            <div className="settings-member-badge">
                 MEMBER SINCE {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'THE BEGINNING'}
             </div>
         </div>
