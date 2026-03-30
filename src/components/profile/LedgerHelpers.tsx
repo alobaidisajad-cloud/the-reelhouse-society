@@ -139,58 +139,29 @@ export const VaultSection = memo(function VaultSection({ vault }: any) {
 
 // ── LISTS SECTION ──
 export function ListsSection({ lists, user }: any) {
-    const [posterMode, setPosterMode] = useState<any>(null)
     const { isAuthenticated } = useAuthStore()
     if (!isAuthenticated) return <div style={{ textAlign: 'center', padding: '2rem', border: '1px dashed var(--ash)', borderRadius: 'var(--radius-card)' }}><p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)', fontSize: '0.85rem' }}>Sign in to create and manage your lists</p></div>
-    if (posterMode) {
-        return (
-            <div className="poster-export-view" style={{ position: 'fixed', inset: 0, zIndex: 100005, background: 'var(--ink)', padding: '4rem', display: 'flex', flexDirection: 'column', alignItems: 'center', overflowY: 'auto' }}>
-                <button onClick={() => setPosterMode(null)} className="btn btn-ghost" style={{ position: 'fixed', top: '1rem', right: '1rem', zIndex: 100006 }}>{<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} CLOSE POSTER</button>
-                <div className="card" style={{ width: '100%', maxWidth: '800px', padding: '4rem', border: '4px double var(--sepia)', background: 'var(--soot)', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
-                    <div style={{ textAlign: 'center' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.8rem', letterSpacing: '0.5em', color: 'var(--sepia)', marginBottom: '1rem' }}>REELHOUSE ARCHIVE NO. {posterMode.id.toString().slice(0, 6)}</div>
-                        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '3.5rem', color: 'var(--parchment)', marginBottom: '1rem' }}>{posterMode.title.toUpperCase()}</h1>
-                        <div style={{ fontFamily: 'var(--font-sub)', fontSize: '1rem', color: 'var(--fog)', letterSpacing: '0.2em' }}>CURATED BY @{user.username}</div>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
-                        {posterMode.films.map((film: any) => (
-                            <div key={film.id} style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                <img src={tmdb.poster(film.poster_path, 'w185') || undefined} alt={film.title} loading="lazy" decoding="async" style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', border: '1px solid var(--ash)' }} />
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{film.title.toUpperCase()}</div>
-                            </div>
-                        ))}
-                    </div>
-                    <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', borderTop: '1px solid var(--ash)', paddingTop: '2rem' }}>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', color: 'var(--sepia)', opacity: 0.5 }}>REELHOUSE</div>
-                        <div style={{ textAlign: 'right', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>GENERATED {new Date().toLocaleDateString()}<br />{posterMode.films.length} TITLES IN SEQUENCE</div>
-                    </div>
-                </div>
-            </div>
-        )
-    }
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             {lists.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--fog)', fontFamily: 'var(--font-body)', fontSize: '0.85rem' }}>No lists yet. The stacks are empty.</div>
             ) : lists.map((list: any) => (
-                <motion.div key={list.id} className="card" style={{ padding: 0, overflow: 'hidden' }} whileHover={{ y: -2, transition: { type: 'spring', damping: 14 } }}>
-                    <div style={{ display: 'flex', gap: 2, height: 64, overflow: 'hidden' }}>
-                        {list.films.length > 0 ? list.films.slice(0, 4).map((f: any, i: number) => (
-                            <div key={i} style={{ flex: 1, overflow: 'hidden' }}>
-                                {f.poster ? <img src={tmdb.poster(f.poster, 'w92') || undefined} alt="" decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4) brightness(0.7)' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--ash)' }} />}
-                            </div>
-                        )) : <div style={{ flex: 1, background: 'linear-gradient(135deg, var(--soot), var(--ash))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.2em' }}>EMPTY REEL</span></div>}
-                    </div>
-                    <div style={{ padding: '0.85rem 1rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{list.title}</div>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.2rem' }}>{list.films.length} FILMS · {list.isPrivate ? '⊠ PRIVATE' : '◎ PUBLIC'}</div>
-                            </div>
-                            <button onClick={() => setPosterMode(list)} className="btn btn-ghost" style={{ fontSize: '0.5rem', padding: '0.3rem 0.6rem' }}>POSTER</button>
+                <Link key={list.id} to={`/list/${list.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                    <motion.div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }} whileHover={{ y: -2, transition: { type: 'spring', damping: 14 } }}>
+                        <div style={{ display: 'flex', gap: 2, height: 64, overflow: 'hidden' }}>
+                            {list.films.length > 0 ? list.films.slice(0, 4).map((f: any, i: number) => (
+                                <div key={i} style={{ flex: 1, overflow: 'hidden' }}>
+                                    {f.poster ? <img src={tmdb.poster(f.poster, 'w92') || undefined} alt="" decoding="async" loading="lazy" style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.4) brightness(0.7)' }} /> : <div style={{ width: '100%', height: '100%', background: 'var(--ash)' }} />}
+                                </div>
+                            )) : <div style={{ flex: 1, background: 'linear-gradient(135deg, var(--soot), var(--ash))', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.2em' }}>EMPTY REEL</span></div>}
                         </div>
-                    </div>
-                </motion.div>
+                        <div style={{ padding: '0.85rem 1rem' }}>
+                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--parchment)' }}>{list.title}</div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.2rem' }}>{list.films.length} FILMS · {list.isPrivate ? '⊠ PRIVATE' : '◎ PUBLIC'}</div>
+                        </div>
+                    </motion.div>
+                </Link>
             ))}
         </div>
     )
