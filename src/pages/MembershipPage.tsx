@@ -66,7 +66,7 @@ export default function MembershipPage() {
 
     return (
         <div className="membership-page">
-            <div className="container" style={{ maxWidth: 1000 }}>
+            <div className="container" style={{ maxWidth: 1200 }}>
                 {/* Header */}
                 <motion.div
                     initial={{ opacity: 0, y: 30 }}
@@ -156,7 +156,6 @@ export default function MembershipPage() {
                             {[
                                 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)', 
                                 'The Vault (Private Notes)', 
-                                'Ad-Free Experience', 
                                 'Priority Support &\nEarly Access', 
                                 'The Nightly Programme\n(Curate Double Features)'
                             ].map((feature, i) => (
