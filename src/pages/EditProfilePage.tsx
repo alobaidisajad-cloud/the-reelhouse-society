@@ -11,6 +11,7 @@ import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Camera, Link2, Plus, X, GripVertical } from 'lucide-react'
 import Buster from '../components/Buster'
+import AvatarCropModal from '../components/AvatarCropModal'
 import '../styles/settings.css'
 
 interface SocialLink {
@@ -34,6 +35,8 @@ export default function EditProfilePage() {
     const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null)
     const [avatarFile, setAvatarFile] = useState<File | null>(null)
     const [uploadingAvatar, setUploadingAvatar] = useState(false)
+    const [showCropModal, setShowCropModal] = useState(false)
+    const [rawImageSrc, setRawImageSrc] = useState<string | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     // ── Links ──
@@ -72,9 +75,26 @@ export default function EditProfilePage() {
     const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
-        if (file.size > 2 * 1024 * 1024) { toast.error('Image must be under 2MB'); return }
-        setAvatarFile(file)
-        setAvatarPreview(URL.createObjectURL(file))
+        if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+        // Open crop modal with the raw image
+        const objectUrl = URL.createObjectURL(file)
+        setRawImageSrc(objectUrl)
+        setShowCropModal(true)
+        // Reset file input so the same file can be re-selected
+        if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+
+    const handleCropConfirm = (croppedBlob: Blob) => {
+        const croppedFile = new File([croppedBlob], 'avatar.png', { type: 'image/png' })
+        setAvatarFile(croppedFile)
+        setAvatarPreview(URL.createObjectURL(croppedBlob))
+        setShowCropModal(false)
+        setRawImageSrc(null)
+    }
+
+    const handleCropCancel = () => {
+        setShowCropModal(false)
+        setRawImageSrc(null)
     }
 
     const uploadAvatar = async () => {
@@ -245,12 +265,21 @@ export default function EditProfilePage() {
                     <input ref={fileInputRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarSelect} />
                     <div style={{ textAlign: 'center' }}>
                         <div className="settings-avatar-filename">
-                            {avatarFile ? avatarFile.name : 'Click portrait to change'}
+                            {avatarFile ? '✦ Portrait cropped and ready' : 'Click portrait to change'}
                         </div>
                         <div className="settings-avatar-spec">
-                            JPG, PNG, or WEBP · MAX 2MB
+                            JPG, PNG, or WEBP · MAX 5MB · ZOOM & POSITION
                         </div>
                     </div>
+
+                    {/* Avatar Crop Modal */}
+                    {showCropModal && rawImageSrc && (
+                        <AvatarCropModal
+                            imageSrc={rawImageSrc}
+                            onConfirm={handleCropConfirm}
+                            onCancel={handleCropCancel}
+                        />
+                    )}
                 </div>
             </div>
 
