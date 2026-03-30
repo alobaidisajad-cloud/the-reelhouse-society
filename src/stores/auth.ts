@@ -17,6 +17,10 @@ async function resolveUsernameToId(username: string): Promise<string | null> {
     }
     return null
 }
+
+// ── Action throttle: prevents spam-clicking social buttons ──
+const _actionThrottles = new Map<string, number>()
+
 export interface AuthState {
     user: User | null
     isAuthenticated: boolean
@@ -203,6 +207,13 @@ export const useAuthStore = create<AuthState>()(
                 const state = get()
                 const following = state.user?.following || []
                 if (following.includes(targetUsername)) return
+
+                // ── Throttle: prevent spam-clicking (2s cooldown) ──
+                const throttleKey = `follow:${targetUsername}`
+                const lastCall = _actionThrottles.get(throttleKey) || 0
+                if (Date.now() - lastCall < 2000) return
+                _actionThrottles.set(throttleKey, Date.now())
+
                 const fromUsername = state.user?.username || 'someone'
                 const userId = state.user?.id
 
@@ -233,6 +244,12 @@ export const useAuthStore = create<AuthState>()(
             },
 
             unfollowUser: async (targetUsername) => {
+                // ── Throttle: prevent spam-clicking (2s cooldown) ──
+                const throttleKey = `unfollow:${targetUsername}`
+                const lastCall = _actionThrottles.get(throttleKey) || 0
+                if (Date.now() - lastCall < 2000) return
+                _actionThrottles.set(throttleKey, Date.now())
+
                 const prevFollowing = get().user?.following || []
                 const userId = get().user?.id
 

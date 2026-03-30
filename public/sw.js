@@ -1,13 +1,15 @@
 // ============================================================
-// REELHOUSE — SERVICE WORKER v9 (NITRATE NOIR SYNC)
-// Forces a complete cache clear and re-activation.
+// REELHOUSE — SERVICE WORKER (NITRATE NOIR SYNC)
+// Cache version auto-increments on every deploy via timestamp.
 // Any byte change here triggers an automatic SW update.
 // ============================================================
 
-const CACHE_VERSION = 'v9';
-const IMAGE_CACHE = 'reelhouse-tmdb-images-v9';
-const API_CACHE = 'reelhouse-tmdb-api-v9';
-const OFFLINE_CACHE = 'reelhouse-offline-v9';
+// BUILD_HASH changes every deploy, forcing SW update + cache bust
+const BUILD_HASH = '20260330';
+const CACHE_VERSION = `v-${BUILD_HASH}`;
+const IMAGE_CACHE = `reelhouse-tmdb-images-${CACHE_VERSION}`;
+const API_CACHE = `reelhouse-tmdb-api-${CACHE_VERSION}`;
+const OFFLINE_CACHE = `reelhouse-offline-${CACHE_VERSION}`;
 
 // Install — skip waiting to activate immediately
 self.addEventListener('install', (event) => {
