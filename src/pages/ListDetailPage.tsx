@@ -1,29 +1,28 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useFilmStore } from '../store'
+import { useAuthStore } from '../store'
 import { FilmCard, SectionHeader, LoadingReel } from '../components/UI'
 import { ArrowLeft, Clock, Film, Edit3, Trash2 } from 'lucide-react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import CreateListModal from '../components/CreateListModal'
 import ListActions from '../components/ListActions'
 import { useState } from 'react'
-import { useAuthStore } from '../store'
+
 import toast from 'react-hot-toast'
 
 export default function ListDetailPage() {
     const { id } = useParams()
     const navigate = useNavigate()
-    const { lists: userLists, deleteList, updateList, addFilmToList, removeFilmFromList } = useFilmStore()
     const { user: currentUser } = useAuthStore()
+    const queryClient = useQueryClient()
 
     const [isEditing, setIsEditing] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
-    // Check local user lists first — fast, no network needed
-    const localList = userLists.find((l: any) => l.id.toString() === id)
 
-    // Fetch from Supabase for any community list (only fires when not found locally)
+
+    // Fetch list detail from Supabase
     const { data: remoteList, isLoading } = useQuery({
         queryKey: ['list-detail', id],
         queryFn: async () => {
@@ -53,6 +52,7 @@ export default function ListDetailPage() {
                 id: data.id,
                 title: data.title,
                 description: data.description,
+                userId: data.user_id,
                 user: profile?.username || 'anonymous',
                 films: (items || []).map((item: any) => ({
                     id: item.film_id,
@@ -66,11 +66,11 @@ export default function ListDetailPage() {
                 commentCount: commentsResp.count || 0,
             }
         },
-        enabled: !!id, // Removed !localList because we need the remote endorsement counts regardless
-        staleTime: 1000 * 60 * 5,
+        enabled: !!id,
+        staleTime: 1000 * 60 * 2,
     })
 
-    if (!localList && isLoading) return (
+    if (isLoading) return (
         <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             <div style={{ maxWidth: 1000, margin: '0 auto', padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
                 <div className="shimmer" style={{ height: '0.6rem', width: 100, borderRadius: '2px' }} />
@@ -95,7 +95,7 @@ export default function ListDetailPage() {
         </div>
     )
 
-    const list = localList || remoteList
+    const list = remoteList
 
     if (!list) {
         return (
@@ -107,7 +107,8 @@ export default function ListDetailPage() {
         )
     }
 
-    const { title, description, desc, user: listUser, films = [], createdAt, certifyCount = 0, isCertified = false, commentCount = 0 } = list as any
+    const { title, description, desc, user: listUser, userId: listUserId, films = [], createdAt, certifyCount = 0, isCertified = false, commentCount = 0 } = list as any
+    const isOwner = currentUser?.id && listUserId && currentUser.id === listUserId
     const displayDesc = description || desc
     const authorParam = listUser || 'YOU'
 
@@ -125,7 +126,7 @@ export default function ListDetailPage() {
                 <header style={{ borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '2.5rem', position: 'relative' }}>
                     
                     {/* Actions for owner */}
-                    {currentUser && currentUser.username === listUser && (
+                    {isOwner && (
                         <div style={{ position: 'absolute', top: 0, right: 0, display: 'flex', gap: '0.5rem' }}>
                             <button onClick={() => setIsEditing(true)} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--fog)' }} title="Edit List">
                                 <Edit3 size={16} />
@@ -178,7 +179,7 @@ export default function ListDetailPage() {
                         <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'rgba(22,18,12,0.5)', border: '1px dashed rgba(139,105,20,0.25)', borderRadius: '2px' }}>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>Empty Archive</div>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--fog)', lineHeight: 1.5, maxWidth: 400, margin: '0 auto' }}>
-                                {localList 
+                                {isOwner
                                     ? "To populate this anthology, search for a film, click 'LOG', and toggle it in the 'Add to Anthology' drawer."
                                     : "No films have been added to this collection yet."}
                             </div>
@@ -208,30 +209,48 @@ export default function ListDetailPage() {
                     onClose={() => setIsEditing(false)}
                     onCreate={async (updates: any) => {
                         try {
-                            // 1. Update primitive fields
-                            await updateList(list.id, {
-                                title: updates.title,
-                                description: updates.description,
-                                isPrivate: updates.isPrivate
-                            })
-                            // 2. Sync films if needed (diffing old vs new)
+                            // 1. Update list metadata in Supabase
+                            const dbUpdates: any = {}
+                            if (updates.title !== undefined) dbUpdates.title = updates.title
+                            if (updates.description !== undefined) dbUpdates.description = updates.description
+                            if (updates.isPrivate !== undefined) dbUpdates.is_private = updates.isPrivate
+
+                            const { error } = await supabase.from('lists').update(dbUpdates).eq('id', list.id).eq('user_id', currentUser!.id)
+                            if (error) throw error
+
+                            // 2. Sync films (diff old vs new)
                             if (updates.films) {
-                                const oldIds = new Set(list.films.map((f:any) => f.id))
-                                const newIds = new Set(updates.films.map((f:any) => f.id))
-                                
-                                const toAdd = updates.films.filter((f:any) => !oldIds.has(f.id))
-                                const toRemove = list.films.filter((f:any) => !newIds.has(f.id))
-                                
+                                const oldIds = new Set(list.films.map((f: any) => f.id))
+                                const newIds = new Set(updates.films.map((f: any) => f.id))
+
+                                const toAdd = updates.films.filter((f: any) => !oldIds.has(f.id))
+                                const toRemove = list.films.filter((f: any) => !newIds.has(f.id))
+
                                 for (const f of toAdd) {
-                                    await addFilmToList(list.id, f).catch(console.error)
+                                    try {
+                                        await supabase.from('list_items').insert({
+                                            list_id: list.id,
+                                            film_id: f.id,
+                                            film_title: f.title || 'Unknown',
+                                            poster_path: f.poster_path || null,
+                                        })
+                                    } catch (e) { console.error(e) }
                                 }
                                 for (const f of toRemove) {
-                                    await removeFilmFromList(list.id, f.id).catch(console.error)
+                                    try {
+                                        await supabase.from('list_items').delete()
+                                            .eq('list_id', list.id).eq('film_id', f.id)
+                                    } catch (e) { console.error(e) }
                                 }
                             }
+
+                            toast.success('Collection updated!')
+                            // Refresh detail + stacks page
+                            queryClient.invalidateQueries({ queryKey: ['list-detail', id] })
+                            queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
                         } catch (e) {
                             console.error('Failed updating list', e)
-                            throw e 
+                            toast.error('Failed to update collection')
                         }
                     }}
                 />
@@ -250,9 +269,13 @@ export default function ListDetailPage() {
                             <button className="btn btn-ghost" style={{ flex: 1, justifyContent: 'center' }} onClick={() => setIsDeleting(false)}>ABORT</button>
                             <button className="btn" style={{ flex: 1, justifyContent: 'center', background: 'var(--soot)', color: 'var(--danger)', border: '1px solid var(--danger)' }} onClick={async () => {
                                 try {
-                                    await deleteList(list.id)
+                                    // Delete list items first, then the list
+                                    await supabase.from('list_items').delete().eq('list_id', list.id)
+                                    const { error } = await supabase.from('lists').delete().eq('id', list.id).eq('user_id', currentUser!.id)
+                                    if (error) throw error
                                     toast.success('Archive destroyed.')
-                                    navigate('/lists')
+                                    queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
+                                    navigate('/stacks')
                                 } catch (e) { toast.error('Failed to destroy archive.') }
                             }}>CONFIRM</button>
                         </div>
