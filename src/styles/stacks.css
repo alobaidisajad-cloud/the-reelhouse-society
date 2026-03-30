@@ -295,13 +295,13 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  filter: brightness(0.55) sepia(0.2) contrast(1.05);
+  filter: brightness(0.7) sepia(0.15) contrast(1.05);
   transform: scale(1.02);
   transition: filter 0.5s;
 }
 
 .stack-card:hover .stack-card-poster-panel img {
-  filter: brightness(0.7) sepia(0.1) contrast(1.08);
+  filter: brightness(0.85) sepia(0.08) contrast(1.08);
 }
 
 /* Fade between poster panels */
@@ -332,7 +332,7 @@
 .stack-card-gradient {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, transparent 15%, var(--ink) 88%);
+  background: linear-gradient(to bottom, transparent 35%, var(--ink) 92%);
   z-index: 2;
 }
 
