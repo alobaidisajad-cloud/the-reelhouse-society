@@ -129,7 +129,7 @@ export default function AvatarCropModal({ imageSrc, onConfirm, onCancel }: Props
         }))
     }, [zoom])
 
-    // Export cropped image
+    // Export cropped image — must match exactly what the preview shows
     const handleConfirm = () => {
         const img = imgRef.current
         if (!img) return
@@ -140,11 +140,21 @@ export default function AvatarCropModal({ imageSrc, onConfirm, onCancel }: Props
         const ctx = outCanvas.getContext('2d')
         if (!ctx) return
 
-        const drawW = img.width * zoom
-        const drawH = img.height * zoom
-        const scale = OUTPUT_SIZE / CANVAS_DISPLAY
-        const dx = (OUTPUT_SIZE - drawW * scale) / 2 + offset.x * scale
-        const dy = (OUTPUT_SIZE - drawH * scale) / 2 + offset.y * scale
+        // The preview canvas is 2x HiDPI (CANVAS_DISPLAY * 2 = 560px) 
+        // but displayed at CANVAS_DISPLAY = 280px CSS. 
+        // Image is drawn at img.width * zoom on the 560 canvas,
+        // so in CSS space it appears at (img.width * zoom) / 2.
+        // We need to map CSS display space → OUTPUT_SIZE.
+
+        const scale = OUTPUT_SIZE / CANVAS_DISPLAY  // 400 / 280
+
+        // Image size in CSS display space (divide by 2 for HiDPI)
+        const cssW = (img.width * zoom) / 2
+        const cssH = (img.height * zoom) / 2
+
+        // Image position in CSS display space
+        const cssDx = (CANVAS_DISPLAY - cssW) / 2 + offset.x
+        const cssDy = (CANVAS_DISPLAY - cssH) / 2 + offset.y
 
         // Clip to circle
         ctx.beginPath()
@@ -152,7 +162,8 @@ export default function AvatarCropModal({ imageSrc, onConfirm, onCancel }: Props
         ctx.closePath()
         ctx.clip()
 
-        ctx.drawImage(img, dx, dy, drawW * scale, drawH * scale)
+        // Draw at output scale — this now matches the preview exactly
+        ctx.drawImage(img, cssDx * scale, cssDy * scale, cssW * scale, cssH * scale)
 
         outCanvas.toBlob((blob) => {
             if (blob) onConfirm(blob)
