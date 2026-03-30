@@ -48,10 +48,10 @@ function parseCSVExport(text: string) {
 }
 
 describe('CSV Import Parser', () => {
-    it('parses a standard Letterboxd diary export', () => {
-        const csv = `Date,Name,Year,Letterboxd URI,Rating,Rewatch,Tags,Watched Date
-2024-01-15,Inception,2010,https://letterboxd.com/film/inception/,4.5,No,,2024-01-15
-2024-01-10,Parasite,2019,https://letterboxd.com/film/parasite/,5,No,,2024-01-10`
+    it('parses a standard diary CSV export', () => {
+        const csv = `Date,Name,Year,URI,Rating,Rewatch,Tags,Watched Date
+2024-01-15,Inception,2010,https://example.com/film/inception/,4.5,No,,2024-01-15
+2024-01-10,Parasite,2019,https://example.com/film/parasite/,5,No,,2024-01-10`
 
         const result = parseCSVExport(csv)
         expect(result).toHaveLength(2)
