@@ -541,11 +541,32 @@ export default function FilmDetailPage() {
         staleTime: 1000 * 60 * 10,
     })
 
-    // Dynamically inject SEO & Social tags once loaded
+    // Dynamically inject SEO & Social tags + JSON-LD Movie schema
+    const director = film?.credits?.crew?.find((c: any) => c.job === 'Director')
     useSEOSync(
         film ? `${film.title} (${film.release_date?.slice(0, 4) || 'Unknown'})` : undefined,
         film?.overview?.substring(0, 160) || undefined,
-        film?.poster_path ? (tmdb.poster(film.poster_path, 'w500') ?? undefined) : undefined
+        film?.poster_path ? (tmdb.poster(film.poster_path, 'w500') ?? undefined) : undefined,
+        film ? {
+            jsonLd: {
+                '@context': 'https://schema.org',
+                '@type': 'Movie',
+                name: film.title,
+                url: `https://thereelhousesociety.com/film/${film.id}`,
+                image: film.poster_path ? tmdb.poster(film.poster_path, 'w500') : undefined,
+                description: film.overview?.substring(0, 300),
+                datePublished: film.release_date,
+                duration: film.runtime ? `PT${film.runtime}M` : undefined,
+                genre: film.genres?.map((g: any) => g.name),
+                director: director ? { '@type': 'Person', name: director.name } : undefined,
+                aggregateRating: film.vote_count > 0 ? {
+                    '@type': 'AggregateRating',
+                    ratingValue: (film.vote_average / 2).toFixed(1),
+                    bestRating: '5',
+                    ratingCount: film.vote_count,
+                } : undefined,
+            }
+        } : undefined
     )
 
     if (isLoading) return (

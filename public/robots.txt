@@ -1,6 +1,30 @@
 User-agent: *
 Allow: /
+Allow: /discover
+Allow: /film/
+Allow: /person/
+Allow: /stacks
+Allow: /lists/
+Allow: /dispatch
+Allow: /patronage
+Allow: /privacy
+Allow: /terms
 Disallow: /auth/
 Disallow: /api/
+Disallow: /admin
+Disallow: /tribunal
+Disallow: /settings
+Disallow: /edit-profile
+Disallow: /studio
+Disallow: /venue-dashboard
+
+# Specific bot rules
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 2
 
 Sitemap: https://thereelhousesociety.com/sitemap.xml

@@ -3,10 +3,17 @@ import { useEffect } from 'react'
 /**
  * INTELLIGENCE PROTOCOL: DYNAMIC OPEN-GRAPH & SEO
  * Updates <head> metadata on route changes for search engines that execute JS.
+ * Also injects JSON-LD structured data for rich Google snippets.
  * NOTE: For fully static crawlers (Twitter/iMessage), a Vercel Edge function
  * would be needed to intercept the initial HTML request.
  */
-export function useSEOSync(customTitle?: string, description?: string, ogImage?: string) {
+
+interface SEOSyncOptions {
+    /** JSON-LD structured data object to inject */
+    jsonLd?: Record<string, unknown>
+}
+
+export function useSEOSync(customTitle?: string, description?: string, ogImage?: string, options?: SEOSyncOptions) {
     useEffect(() => {
         const base = "The ReelHouse Society — Track, Discover, and Live Cinema"
         document.title = customTitle ? `${customTitle} | The ReelHouse Society` : base
@@ -37,6 +44,25 @@ export function useSEOSync(customTitle?: string, description?: string, ogImage?:
             setMeta('og:image', ogImage)
             setMeta('twitter:image', ogImage)
         }
-    }, [customTitle, description, ogImage])
-}
 
+        // ── JSON-LD Structured Data — makes Google show rich snippets ──
+        // Remove any previous JSON-LD we injected
+        const oldScript = document.querySelector('script[data-rh-jsonld]')
+        if (oldScript) oldScript.remove()
+
+        if (options?.jsonLd) {
+            const script = document.createElement('script')
+            script.type = 'application/ld+json'
+            script.setAttribute('data-rh-jsonld', 'true')
+            script.textContent = JSON.stringify(options.jsonLd)
+            document.head.appendChild(script)
+        }
+
+        // Cleanup on unmount — restore defaults & remove JSON-LD
+        return () => {
+            document.title = base
+            const injectedLd = document.querySelector('script[data-rh-jsonld]')
+            if (injectedLd) injectedLd.remove()
+        }
+    }, [customTitle, description, ogImage, options?.jsonLd])
+}
