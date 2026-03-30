@@ -64,7 +64,7 @@ function NightlyTransmission() {
                     ◉ TRANSMISSION INCOMING
                 </div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', marginBottom: '1.5rem' }}>
-                    THE SOCIETY PRESENTS — NIGHTLY TRANSMISSION №{transmissionNum}
+                    TONIGHT'S SCREENING — TRANSMISSION №{transmissionNum}
                 </div>
 
                 {tonightFilm ? (
@@ -259,16 +259,20 @@ export default function DispatchPage() {
             {/* THE NEWSLETTER DOCUMENT */}
             <div className="dispatch-document">
 
-                {/* HEAD & MASTHEAD */}
+                {/* HEAD & MASTHEAD — Architectural Newspaper Header */}
                 <header className="dispatch-masthead">
+                    <div className="masthead-publisher">✦ THE REELHOUSE SOCIETY ✦</div>
+                    <div className="masthead-rule-top" />
+                    <h1 className="masthead-title">THE DISPATCH</h1>
+                    <div className="masthead-rule-bottom" />
                     <div className="masthead-meta">
                         <span>VOL. {String(Math.floor((Date.now() - new Date('2026-03-12T00:00:00Z').getTime()) / (7 * 24 * 60 * 60 * 1000)) + 1).padStart(3, '0')}</span>
                         <span className="pulse-dot"></span>
+                        <span>EST. 1924</span>
+                        <span className="pulse-dot"></span>
                         <span>{new Date().toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric' }).toUpperCase()}</span>
                     </div>
-                    <h1 className="masthead-title">THE DISPATCH</h1>
-                    <div className="masthead-subtitle">The official newsletter of The ReelHouse Society Underground.</div>
-                    <div className="masthead-texture"></div>
+                    <div className="masthead-subtitle">A journal of cinema — for those who see in the dark.</div>
                 </header>
 
                 {/* ELEGANT DIVIDER */}
@@ -287,11 +291,14 @@ export default function DispatchPage() {
                         {dossiers.slice((currentPage - 1) * DOSSIERS_PER_PAGE, currentPage * DOSSIERS_PER_PAGE).map((report: any) => (
                             <article key={report.id} onClick={() => openArticle(report)} className="dossier-card">
                                 <div className="dossier-meta">
-                                    <span className="dm-author">BY {report.author.toUpperCase()}</span>
-                                    <span className="dm-date">{report.date}</span>
+                                    <span className="dm-author">✦ BY {report.author.toUpperCase()}</span>
+                                    <span className="dm-date">FILED {report.date}</span>
                                 </div>
                                 <h3 className="dossier-title">{report.title}</h3>
-                                <p className="dossier-excerpt">{report.excerpt}</p>
+                                <p className="dossier-excerpt">
+                                    {report.excerpt && <span className="dossier-drop-cap">{report.excerpt.charAt(0)}</span>}
+                                    {report.excerpt?.slice(1)}
+                                </p>
                                 <div className="dossier-readmore">READ DOSSIER <IconArrowRight /></div>
                             </article>
                         ))}
@@ -339,29 +346,55 @@ export default function DispatchPage() {
                 {/* ── DAILY FRAME — A cinematic still that changes every day ── */}
                 <DailyFrame />
 
-                {/* GLOBAL INDUSTRY WIRE (TMDB NEWS) */}
+                {/* GLOBAL INDUSTRY WIRE — Lead Story + Decoded Telegrams */}
 
                 <section className="dispatch-section">
                     <div className="section-header-block">
                         <h2 className="sh-title">The Global Wire</h2>
-                        <p className="sh-sub">Decrypted signals from the worldwide movie industry.</p>
+                        <p className="sh-sub">Decoded signals from the worldwide cinema industry.</p>
                     </div>
 
-                    <div className="global-wire-list">
-                        {loading ? (
-                            <div className="wire-loader">Decrypting incoming signals...</div>
-                        ) : (
-                            news.map((item: any) => (
-                                <article key={item.id} onClick={() => openArticle(item)} className="wire-item">
-                                    <div className="wire-bullet"></div>
-                                    <div className="wire-content">
-                                        <h4 className="wire-title">{item.title}</h4>
-                                        <p className="wire-excerpt">{item.excerpt}</p>
+                    {loading ? (
+                        <div className="wire-loader">Decrypting incoming signals...</div>
+                    ) : (
+                        <>
+                            {/* LEAD STORY — First wire item promoted to hero */}
+                            {news[0] && (
+                                <article className="wire-lead" onClick={() => openArticle(news[0])}>
+                                    {news[0].image && (
+                                        <div className="wire-lead-img-wrap">
+                                            <img src={news[0].image} alt="" className="wire-lead-img" loading="lazy" />
+                                        </div>
+                                    )}
+                                    <div className="wire-lead-body">
+                                        <div className="wire-lead-category">[{news[0].category || 'WIRE'}]</div>
+                                        <h3 className="wire-lead-title">{news[0].title}</h3>
+                                        <p className="wire-lead-excerpt">{news[0].excerpt}</p>
+                                        <div className="wire-lead-meta">
+                                            {news[0].date} · {news[0].time} · BY {(news[0].author || 'THE ORACLE').toUpperCase()}
+                                        </div>
                                     </div>
                                 </article>
-                            ))
-                        )}
-                    </div>
+                            )}
+
+                            {/* REMAINING WIRE — Telegram format */}
+                            <div className="global-wire-list">
+                                {news.slice(1).map((item: any) => (
+                                    <article key={item.id} onClick={() => openArticle(item)} className="wire-item">
+                                        <div className="wire-content">
+                                            <div className="wire-category">[{item.category || 'WIRE'}]</div>
+                                            <h4 className="wire-title">{item.title}</h4>
+                                            <p className="wire-excerpt">{item.excerpt}</p>
+                                            <div className="wire-meta">
+                                                {item.date} · {item.time} · BY {(item.author || 'THE ORACLE').toUpperCase()}
+                                            </div>
+                                        </div>
+                                        {item.image && <img src={item.image} alt="" className="wire-thumb" loading="lazy" />}
+                                    </article>
+                                ))}
+                            </div>
+                        </>
+                    )}
                 </section>
 
                 {/* THE GOOFY EDITOR'S NOTE WITH BUSTER (Moved to Footer for cooler flow) */}
@@ -370,15 +403,19 @@ export default function DispatchPage() {
                         <Buster size={80} mood="peeking" />
                     </div>
                     <div className="note-text">
-                        <div className="note-label">Archival Footnote:</div>
+                        <div className="note-label">FROM THE EDITOR'S DESK</div>
                         <p>"I know you're looking for the romantic comedies, but I hid them. We are only projecting German Expressionism tonight until morale improves."</p>
                     </div>
                 </div>
 
-                {/* FOOTER */}
+                {/* FOOTER — Heritage Stamp */}
                 <footer className="dispatch-footer">
+                    <div className="ornamental-divider" style={{ maxWidth: 200, margin: '0 auto 2rem' }}>
+                        <span></span><div className="diamond"></div><span></span>
+                    </div>
                     <div className="footer-mark">END OF TRANSMISSION</div>
-                    <p>© 2026 The ReelHouse Society. Issued directly from the projection booth.</p>
+                    <div className="footer-heritage">EST. 1924 — PRINTED FROM THE PROJECTION BOOTH</div>
+                    <p>© 1924–2026 The ReelHouse Society. All dispatches are classified.</p>
                 </footer>
             </div>
 
@@ -411,7 +448,7 @@ export default function DispatchPage() {
                                 {selectedArticle.fullContent || selectedArticle.excerpt}
                             </div>
 
-                            <div className="reader-endmark">■ ■ ■</div>
+                            <div className="reader-endmark">— ✦ —</div>
                         </motion.div>
                     </motion.div>
                 )}

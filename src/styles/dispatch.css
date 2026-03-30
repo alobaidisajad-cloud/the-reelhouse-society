@@ -1,9 +1,9 @@
 /* ============================================================
-   THE DISPATCH — Newsletter Page Styles
-   (Extracted from DispatchPage.jsx inline <style>)
+   THE DISPATCH — "The Gazette of 1924"
+   A journal of cinema — for those who see in the dark.
    ============================================================ */
 
-/* ── COOL, REFINED NEWSLETTER AESTHETIC ── */
+/* ── THE BROADSHEET ROOT ── */
 .dispatch-newsletter-root {
   background: var(--ink);
   min-height: 100dvh;
@@ -19,10 +19,12 @@
   background: radial-gradient(circle at 50% 0%, rgba(139, 105, 20, 0.12) 0%, transparent 65%);
 }
 
-/* WRITER BAR */
+/* ── WRITER BAR — Sticky Editorial ── */
 .dispatch-writer-bar {
   position: fixed; top: 70px; left: 0; right: 0;
-  background: var(--ink);
+  background: rgba(11,10,8,0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(139,105,20,0.15);
   z-index: var(--z-sticky);
 }
@@ -31,21 +33,14 @@
   display: flex; justify-content: space-between; align-items: center;
   flex-wrap: wrap; gap: 0.5rem;
 }
-@media (max-width: 600px) {
-  .wb-content { flex-direction: column; align-items: flex-start; padding: 0.75rem 1.25rem; gap: 0.6rem; }
+.wb-logo {
+  font-family: var(--font-display); font-size: var(--text-lg); color: var(--parchment);
+  letter-spacing: 0.1em;
+  text-shadow: 0 0 30px rgba(139,105,20,0.3);
 }
-.wb-logo { font-family: var(--font-display); font-size: var(--text-lg); color: var(--parchment); letter-spacing: 0.1em; }
-.btn-write-transmission {
-  background: var(--parchment); color: var(--ink); border: none;
-  display: flex; align-items: center; gap: 0.6rem;
-  padding: 0.6rem 1.2rem; border-radius: 2px;
-  font-family: var(--font-ui); font-size: 0.75rem; font-weight: bold; letter-spacing: 0.1em;
-  cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
-}
-.btn-write-transmission:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(232,223,200,0.2); }
 .wb-locked { font-family: var(--font-ui); font-size: 0.7rem; color: var(--sepia); letter-spacing: 0.1em; opacity: 0.6; }
 
-/* THE REFINED DOCUMENT */
+/* ── THE REFINED DOCUMENT ── */
 .dispatch-document {
   background: #110e0c;
   max-width: 720px;
@@ -56,96 +51,322 @@
   box-shadow: 0 20px 40px rgba(0,0,0,0.5);
   position: relative; z-index: calc(var(--z-base) + 1);
 }
-@media (max-width: 768px) {
-  .dispatch-document { margin: 2rem 1rem 0; padding: 2rem 1.25rem; }
-  .dispatch-masthead { margin-bottom: 2.5rem; }
-  .masthead-title { font-size: var(--text-h1) !important; margin-bottom: 1rem; }
-  .masthead-subtitle { font-size: var(--text-sm); }
-  .masthead-meta { font-size: var(--text-micro); letter-spacing: 0.2em; gap: 0.75rem; margin-bottom: 1.5rem; }
-  .section-header-block { margin-bottom: 2rem; }
-  .sh-title { font-size: var(--text-h2); }
-  .sh-sub { font-size: var(--text-sm); }
-  .dossier-card { padding: 1.5rem; }
-  .dossier-title { font-size: var(--text-h3); }
-  .dossier-excerpt { font-size: var(--text-base); margin-bottom: 1.25rem; }
-  .dossier-meta { font-size: var(--text-micro); letter-spacing: 0.15em; margin-bottom: 1rem; }
-  .ornamental-divider { margin: 2.5rem 0; }
-  .wire-title { font-size: var(--text-lg); }
-  .wire-excerpt { font-size: var(--text-base); }
-  .dispatch-buster-note { margin-top: 3rem; padding: 2rem 0; }
+
+/* ══════════════════════════════════════════
+   1. THE MASTHEAD — Architectural Newspaper
+   ══════════════════════════════════════════ */
+.dispatch-masthead {
+  text-align: center;
+  margin-bottom: 4rem;
+  position: relative;
 }
 
-/* MASTHEAD */
-.dispatch-masthead { text-align: center; margin-bottom: 4rem; position: relative; }
-.masthead-meta {
-  display: flex; justify-content: center; align-items: center; gap: 1rem;
-  font-family: var(--font-ui); font-size: 0.7rem; color: var(--sepia); letter-spacing: 0.3em; margin-bottom: 2rem;
+/* Publisher identity above the masthead */
+.masthead-publisher {
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  letter-spacing: 0.5em;
+  color: var(--sepia);
+  opacity: 0.7;
+  margin-bottom: 1.5rem;
 }
-.pulse-dot { width: 4px; height: 4px; background: var(--blood-reel); border-radius: 50%; opacity: 0.8; }
+
+/* Double-rule top border — thin/thick architectural line */
+.masthead-rule-top {
+  border-top: 3px double var(--sepia);
+  border-bottom: 1px solid rgba(139,105,20,0.3);
+  padding-bottom: 0;
+  margin-bottom: 2.5rem;
+  height: 6px;
+  opacity: 0.6;
+}
+
 .masthead-title {
   font-family: var(--font-display); font-size: var(--text-jumbo);
-  color: var(--parchment); line-height: 0.85; margin-bottom: 1.5rem;
-  text-shadow: 0 0 80px rgba(139,105,20,0.25), 0 2px 4px rgba(0,0,0,0.8);
+  color: var(--parchment); line-height: 0.85; margin-bottom: 2rem;
+  text-shadow: 0 0 80px rgba(139,105,20,0.35), 0 0 120px rgba(139,105,20,0.15), 0 2px 4px rgba(0,0,0,0.8);
   letter-spacing: 0.04em;
 }
-.masthead-subtitle { font-family: var(--font-ui); font-size: var(--text-base); color: var(--sepia); opacity: 0.7; letter-spacing: 0.2em; text-transform: uppercase; }
 
-/* ORNAMENTAL DIVIDER */
+/* Double-rule bottom border — mirrors the top */
+.masthead-rule-bottom {
+  border-top: 1px solid rgba(139,105,20,0.3);
+  border-bottom: 3px double var(--sepia);
+  padding-top: 0;
+  margin-bottom: 1.5rem;
+  height: 6px;
+  opacity: 0.6;
+}
+
+.masthead-meta {
+  display: flex; justify-content: center; align-items: center; gap: 1rem;
+  font-family: var(--font-ui); font-size: 0.6rem; color: var(--sepia);
+  letter-spacing: 0.3em; margin-bottom: 1.5rem;
+}
+.pulse-dot { width: 4px; height: 4px; background: var(--blood-reel); border-radius: 50%; opacity: 0.8; }
+
+.masthead-subtitle {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  color: var(--bone);
+  opacity: 0.5;
+  letter-spacing: 0.05em;
+  font-style: italic;
+}
+
+/* ══════════════════════════════════════════
+   2. ORNAMENTAL DIVIDERS
+   ══════════════════════════════════════════ */
 .ornamental-divider { display: flex; align-items: center; gap: 1rem; margin: 4rem 0; opacity: 0.5; }
 .ornamental-divider span { flex: 1; height: 1px; background: var(--sepia); }
 .ornamental-divider .diamond { width: 6px; height: 6px; background: var(--sepia); transform: rotate(45deg); }
 
-/* SECTION HEADERS */
+/* ══════════════════════════════════════════
+   3. SECTION HEADERS
+   ══════════════════════════════════════════ */
 .section-header-block { text-align: center; margin-bottom: 3.5rem; }
 .sh-title { font-family: var(--font-display); font-size: var(--text-h1); color: var(--parchment); margin-bottom: 0.5rem; }
 .sh-sub { font-family: var(--font-ui); font-size: var(--text-base); letter-spacing: 0.1em; color: var(--sepia); opacity: 0.7; }
 
-/* AUTEUR DOSSIERS */
+/* ══════════════════════════════════════════
+   4. AUTEUR DOSSIERS — Literary Typesetting
+   ══════════════════════════════════════════ */
 .auteur-dossier-list { display: flex; flex-direction: column; gap: 3rem; }
+
 .dossier-card {
-  padding: 2.5rem; background: rgba(255,255,255,0.015); border: 1px solid rgba(139,105,20,0.18);
-  border-radius: 2px; cursor: pointer; transition: background 0.2s, transform 0.2s; position: relative;
+  padding: 2.5rem;
+  background: rgba(255,255,255,0.015);
+  border: 1px solid rgba(139,105,20,0.18);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+  position: relative;
 }
-.dossier-card::before { content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px; width: 3px; background: var(--sepia); transform: scaleY(0); transform-origin: top; transition: transform 0.2s; }
+.dossier-card::before {
+  content: ''; position: absolute; left: -1px; top: -1px; bottom: -1px;
+  width: 3px; background: var(--sepia);
+  transform: scaleY(0); transform-origin: top; transition: transform 0.3s;
+}
 .dossier-card:hover { background: rgba(255,255,255,0.03); transform: translateX(5px); }
 .dossier-card:hover::before { transform: scaleY(1); }
 
-.dossier-meta { display: flex; justify-content: space-between; font-family: var(--font-ui); font-size: var(--text-sm); color: var(--sepia); letter-spacing: 0.2rem; margin-bottom: 1.5rem; }
-.dossier-title { font-family: var(--font-display); font-size: var(--text-h2); color: var(--parchment); line-height: 1.1; margin-bottom: 1rem; }
-.dossier-excerpt { font-size: var(--text-lg); line-height: 1.6; color: var(--bone); opacity: 0.7; margin-bottom: 2rem; }
-.dossier-readmore { display: flex; align-items: center; gap: 0.5rem; font-family: var(--font-ui); font-size: 0.75rem; font-weight: bold; color: var(--parchment); letter-spacing: 0.1em; transition: color 0.2s; }
-.dossier-card:hover .dossier-readmore { color: var(--sepia); }
+.dossier-meta {
+  display: flex; justify-content: space-between; align-items: center;
+  font-family: var(--font-ui); font-size: var(--text-sm);
+  color: var(--sepia); letter-spacing: 0.2rem; margin-bottom: 1.5rem;
+}
+.dm-author {
+  display: flex; align-items: center; gap: 0.4rem;
+  border-bottom: 1px solid rgba(139,105,20,0.25);
+  padding-bottom: 2px;
+}
+.dm-date {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  opacity: 0.7;
+}
 
-/* GLOBAL WIRE */
-.global-wire-list { display: flex; flex-direction: column; gap: 2rem; }
-.wire-item { display: flex; align-items: flex-start; gap: 1.5rem; padding-bottom: 2rem; border-bottom: 1px dotted rgba(255,255,255,0.1); cursor: pointer; transition: opacity 0.2s; }
+.dossier-title {
+  font-family: var(--font-display); font-size: var(--text-h2);
+  color: var(--parchment); line-height: 1.1; margin-bottom: 1rem;
+}
+
+/* Drop-cap initial on dossier excerpts */
+.dossier-drop-cap {
+  float: left;
+  font-family: var(--font-display);
+  font-size: 2.5rem;
+  color: var(--sepia);
+  line-height: 1;
+  padding: 0.1rem 0.5rem 0 0;
+  opacity: 0.9;
+}
+
+.dossier-excerpt {
+  font-family: var(--font-body);
+  font-size: var(--text-lg);
+  line-height: 1.7;
+  color: var(--bone);
+  opacity: 0.7;
+  margin-bottom: 2rem;
+}
+
+.dossier-readmore {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-family: var(--font-ui); font-size: 0.75rem; font-weight: bold;
+  color: var(--parchment); letter-spacing: 0.1em; transition: color 0.2s;
+}
+.dossier-readmore svg {
+  transition: transform 0.2s;
+}
+.dossier-card:hover .dossier-readmore { color: var(--sepia); }
+.dossier-card:hover .dossier-readmore svg { transform: translateX(4px); }
+
+/* ══════════════════════════════════════════
+   5. THE GLOBAL WIRE — Lead Story + Telegrams
+   ══════════════════════════════════════════ */
+
+/* Lead story — first wire item promoted to hero */
+.wire-lead {
+  cursor: pointer;
+  margin-bottom: 3rem;
+  border: 1px solid rgba(139,105,20,0.15);
+  overflow: hidden;
+  position: relative;
+  transition: border-color 0.3s;
+}
+.wire-lead:hover { border-color: rgba(139,105,20,0.35); }
+
+.wire-lead-img-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 21/9;
+  overflow: hidden;
+}
+.wire-lead-img {
+  width: 100%; height: 100%; object-fit: cover;
+  filter: sepia(0.3) contrast(1.05) brightness(0.85);
+}
+.wire-lead-img-wrap::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(10,7,3,0.95) 0%, rgba(10,7,3,0.3) 40%, transparent 100%);
+}
+
+.wire-lead-body { padding: 2rem 2.5rem 2.5rem; }
+
+.wire-lead-category {
+  font-family: var(--font-ui);
+  font-size: 0.55rem;
+  letter-spacing: 0.3em;
+  color: var(--sepia);
+  margin-bottom: 0.75rem;
+}
+.wire-lead-title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.5rem);
+  color: var(--parchment);
+  line-height: 1.05;
+  margin-bottom: 1rem;
+}
+.wire-lead-excerpt {
+  font-family: var(--font-body);
+  font-size: var(--text-base);
+  line-height: 1.65;
+  color: var(--bone);
+  opacity: 0.7;
+  margin-bottom: 1.25rem;
+}
+.wire-lead-meta {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  color: var(--sepia);
+  opacity: 0.6;
+}
+
+/* Remaining wire items — telegram format */
+.global-wire-list { display: flex; flex-direction: column; gap: 0; }
+
+.wire-item {
+  display: flex; align-items: flex-start; gap: 1.5rem;
+  padding: 1.75rem 0;
+  border-bottom: 1px solid rgba(139,105,20,0.08);
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
 .wire-item:last-child { border-bottom: none; }
-.wire-item:hover { opacity: 0.6; }
-.wire-bullet { width: 5px; height: 5px; background: var(--sepia); border-radius: 50%; margin-top: 0.6rem; opacity: 0.5; flex-shrink: 0; }
-.wire-title { font-family: var(--font-display); font-size: var(--text-h3); color: var(--parchment); margin-bottom: 0.5rem; }
-.wire-excerpt { font-size: var(--text-base); line-height: 1.5; color: var(--bone); opacity: 0.6; }
+.wire-item::before {
+  content: ''; position: absolute; left: -2.5rem; top: 0; bottom: 0;
+  width: 2px; background: var(--sepia);
+  transform: scaleY(0); transform-origin: top; transition: transform 0.25s;
+}
+.wire-item:hover { background: rgba(255,255,255,0.015); }
+.wire-item:hover::before { transform: scaleY(1); }
+
+.wire-content { flex: 1; min-width: 0; }
+
+.wire-category {
+  font-family: var(--font-ui);
+  font-size: 0.5rem;
+  letter-spacing: 0.25em;
+  color: var(--sepia);
+  margin-bottom: 0.4rem;
+  opacity: 0.8;
+}
+.wire-title {
+  font-family: var(--font-display); font-size: var(--text-h3);
+  color: var(--parchment); margin-bottom: 0.5rem; line-height: 1.15;
+}
+.wire-excerpt { font-size: var(--text-base); line-height: 1.5; color: var(--bone); opacity: 0.6; margin-bottom: 0.6rem; }
+.wire-meta {
+  font-family: 'Courier Prime', monospace;
+  font-size: 0.55rem;
+  letter-spacing: 0.1em;
+  color: var(--sepia);
+  opacity: 0.5;
+}
+
+.wire-thumb {
+  width: 90px; height: 65px; object-fit: cover;
+  border: 1px solid rgba(139,105,20,0.15);
+  filter: sepia(0.25) brightness(0.9);
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+.wire-bullet { display: none; } /* Replaced by ::before accent */
+
 .wire-loader { text-align: center; color: var(--sepia); font-family: var(--font-ui); font-size: 0.8rem; letter-spacing: 0.2em; opacity: 0.5; padding: 3rem 0; }
 
-/* BUSTER FOOTNOTE */
+/* ══════════════════════════════════════════
+   6. BUSTER'S NOTE — From the Editor's Desk
+   ══════════════════════════════════════════ */
 .dispatch-buster-note {
   display: flex; align-items: center; gap: 2rem;
-  border-top: 1px solid rgba(139,105,20,0.15);
+  border-top: 3px double rgba(139,105,20,0.25);
   border-bottom: 1px solid rgba(139,105,20,0.15);
   padding: 3rem 0; margin-top: 6rem;
+  position: relative;
 }
 .buster-avatar { flex-shrink: 0; opacity: 0.8; }
-.note-label { font-family: var(--font-ui); font-size: 0.75rem; letter-spacing: 0.2em; color: var(--sepia); margin-bottom: 0.5rem; text-transform: uppercase; }
-.note-text p { font-size: 1.05rem; line-height: 1.6; color: var(--bone); font-style: italic; opacity: 0.7; }
-@media (max-width: 600px) {
-  .dispatch-buster-note { flex-direction: column; text-align: center; padding: 2rem 1.5rem; }
+.note-label {
+  font-family: var(--font-ui); font-size: 0.65rem; letter-spacing: 0.25em;
+  color: var(--sepia); margin-bottom: 0.75rem; text-transform: uppercase;
+}
+.note-text { position: relative; }
+.note-text::before {
+  content: '\201C';
+  position: absolute; top: -0.5rem; left: -0.75rem;
+  font-family: var(--font-display); font-size: 3rem;
+  color: var(--sepia); opacity: 0.15; line-height: 1;
+  pointer-events: none;
+}
+.note-text p {
+  font-size: 1.05rem; line-height: 1.65;
+  color: var(--bone); font-style: italic; opacity: 0.7;
 }
 
-/* FOOTER */
+/* ══════════════════════════════════════════
+   7. FOOTER — Heritage Stamp
+   ══════════════════════════════════════════ */
 .dispatch-footer { text-align: center; margin-top: 4rem; }
-.footer-mark { font-family: var(--font-ui); font-size: 0.7rem; letter-spacing: 0.4em; color: var(--sepia); margin-bottom: 1rem; opacity: 0.5; }
+.dispatch-footer .ornamental-divider { margin: 0 auto 2rem; max-width: 200px; }
+.footer-mark {
+  font-family: var(--font-ui); font-size: 0.7rem; letter-spacing: 0.4em;
+  color: var(--sepia); margin-bottom: 0.75rem; opacity: 0.5;
+}
+.footer-heritage {
+  font-family: var(--font-ui); font-size: 0.5rem; letter-spacing: 0.3em;
+  color: var(--sepia); opacity: 0.3; margin-bottom: 0.75rem;
+}
 .dispatch-footer p { font-size: 0.85rem; color: var(--bone); opacity: 0.3; }
 
-/* ── OVERLAY READER ── */
+/* ══════════════════════════════════════════
+   8. OVERLAY READER — The Full Dossier
+   ══════════════════════════════════════════ */
 .article-reader-overlay {
   position: fixed; inset: 0; z-index: var(--z-overlay);
   background: rgba(5,3,1,0.95); backdrop-filter: blur(8px);
@@ -153,24 +374,52 @@
   overflow-y: auto;
 }
 .article-reader-paper {
-  background: #110e0c; max-width: 720px; width: 100%;
+  background: #13100c; max-width: 720px; width: 100%;
   margin: auto; padding: 5rem 4rem; position: relative;
   border: 1px solid rgba(139,105,20,0.15); border-radius: 4px;
 }
-@media (max-width: 768px) { .article-reader-paper { padding: 4rem 2rem; } }
-.btn-close-reader { position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; color: var(--sepia); opacity: 0.6; cursor: pointer; transition: opacity 0.2s, transform 0.2s; }
+.btn-close-reader {
+  position: absolute; top: 1.5rem; right: 1.5rem;
+  background: none; border: none; color: var(--sepia); opacity: 0.6;
+  cursor: pointer; transition: opacity 0.2s, transform 0.2s;
+}
 .btn-close-reader:hover { opacity: 1; transform: scale(1.1); }
 
-.reader-watermark { font-family: var(--font-ui); font-size: 0.6rem; color: var(--sepia); letter-spacing: 0.4em; opacity: 0.4; margin-bottom: 4rem; text-align: center; }
+.reader-watermark {
+  font-family: var(--font-ui); font-size: 0.6rem; color: var(--sepia);
+  letter-spacing: 0.4em; opacity: 0.4; margin-bottom: 4rem; text-align: center;
+}
 .reader-head { text-align: center; margin-bottom: 4rem; }
-.reader-title { font-family: var(--font-display); font-size: var(--text-h1); color: var(--parchment); line-height: 0.9; margin-bottom: 2rem; }
-.reader-byline { font-family: var(--font-ui); font-size: var(--text-sm); color: var(--bone); letter-spacing: 0.2em; opacity: 0.6; }
+.reader-title {
+  font-family: var(--font-display); font-size: var(--text-h1);
+  color: var(--parchment); line-height: 0.9; margin-bottom: 2rem;
+}
+.reader-byline {
+  font-family: var(--font-ui); font-size: var(--text-sm);
+  color: var(--bone); letter-spacing: 0.2em; opacity: 0.6;
+}
 .highlight-author { color: var(--sepia); font-weight: bold; }
 
-.reader-body { font-size: 1.3rem; line-height: 1.8; color: var(--bone); white-space: pre-wrap; margin-bottom: 5rem; }
-.reader-endmark { text-align: center; color: var(--sepia); opacity: 0.3; font-size: 0.8rem; letter-spacing: 0.5em; }
+.reader-body {
+  font-size: 1.15rem; line-height: 1.85; color: var(--bone);
+  white-space: pre-wrap; margin-bottom: 5rem;
+}
+.reader-body::first-letter {
+  float: left;
+  font-family: var(--font-display);
+  font-size: 3.5rem;
+  color: var(--sepia);
+  line-height: 0.8;
+  padding: 0.2rem 0.5rem 0 0;
+}
+.reader-endmark {
+  text-align: center; color: var(--sepia); opacity: 0.3;
+  font-size: 0.8rem; letter-spacing: 0.5em;
+}
 
-/* ── WRITE PANEL ── */
+/* ══════════════════════════════════════════
+   9. WRITE PANEL
+   ══════════════════════════════════════════ */
 .writer-panel-overlay {
   position: fixed; inset: 0; z-index: var(--z-modal);
   background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
@@ -205,7 +454,9 @@
 }
 .btn-publish-dossier:hover { filter: brightness(1.15); }
 
-/* ── AUTEUR FAB ── */
+/* ══════════════════════════════════════════
+   10. AUTEUR FAB
+   ══════════════════════════════════════════ */
 .auteur-fab-container { position: fixed; bottom: 2rem; right: 2rem; z-index: var(--z-sticky); }
 .auteur-fab-button {
   background: var(--sepia); color: var(--ink); border: none;
@@ -219,7 +470,47 @@
   transform: translateY(-4px); filter: brightness(1.1);
   box-shadow: 0 15px 40px rgba(139,105,20,0.5);
 }
+
+/* ══════════════════════════════════════════
+   MOBILE — The Pocket Edition
+   ══════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .auteur-fab-container { bottom: 1.5rem; right: 1.5rem; }
+  .dispatch-document { margin: 2rem 0.75rem 0; padding: 2.5rem 1.5rem; }
+  .dispatch-masthead { margin-bottom: 2.5rem; }
+  .masthead-publisher { font-size: 0.45rem; letter-spacing: 0.35em; margin-bottom: 1rem; }
+  .masthead-rule-top, .masthead-rule-bottom { margin-bottom: 1.5rem; }
+  .masthead-title { font-size: var(--text-h1) !important; margin-bottom: 1.25rem; }
+  .masthead-subtitle { font-size: var(--text-sm); }
+  .masthead-meta { font-size: 0.5rem; letter-spacing: 0.2em; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; justify-content: center; }
+
+  .section-header-block { margin-bottom: 2rem; }
+  .sh-title { font-size: var(--text-h2); }
+  .sh-sub { font-size: var(--text-sm); }
+
+  .dossier-card { padding: 1.5rem; }
+  .dossier-drop-cap { font-size: 2rem; }
+  .dossier-title { font-size: var(--text-h3); }
+  .dossier-excerpt { font-size: var(--text-base); margin-bottom: 1.25rem; }
+  .dossier-meta { font-size: var(--text-micro); letter-spacing: 0.15em; margin-bottom: 1rem; }
+
+  .ornamental-divider { margin: 2.5rem 0; }
+
+  .wire-lead-body { padding: 1.5rem; }
+  .wire-lead-title { font-size: var(--text-h3); }
+  .wire-lead-img-wrap { aspect-ratio: 16/9; }
+  .wire-thumb { display: none; }
+  .wire-item::before { left: -1.5rem; }
+  .wire-title { font-size: var(--text-lg); }
+  .wire-excerpt { font-size: var(--text-sm); }
+
+  .dispatch-buster-note { flex-direction: column; text-align: center; padding: 2rem 1.5rem; gap: 1.5rem; }
+  .note-text::before { display: none; }
+}
+
+@media (max-width: 600px) {
+  .wb-content { flex-direction: column; align-items: flex-start; padding: 0.75rem 1.25rem; gap: 0.6rem; }
+  .auteur-fab-container { bottom: 5rem; right: 1.5rem; }
   .auteur-fab-button { padding: 0.8rem 1.2rem; font-size: 0.75rem; }
+  .article-reader-paper { padding: 3rem 1.5rem; }
+  .reader-body::first-letter { font-size: 2.5rem; }
 }
