@@ -33,7 +33,16 @@ export default function MembershipPage() {
     const [archivistEmail, setArchivistEmail] = useState('')
     const [auteurEmail, setAuteurEmail] = useState('')
     const [projectionistEmail, setProjectionistEmail] = useState('')
-    const [waitlistSent, setWaitlistSent] = useState(false)
+    // Per-tier waitlist flags — submitting one tier's form doesn't hide the others
+    const [archivistWaitlistSent, setArchivistWaitlistSent] = useState(false)
+    const [auteurWaitlistSent, setAuteurWaitlistSent] = useState(false)
+    const [projectionistWaitlistSent, setProjectionistWaitlistSent] = useState(false)
+
+    // Role detection for "YOUR CURRENT RANK" badges
+    const userRole = user?.role as string
+    const isCurrentArchivist = userRole === 'archivist'
+    const isCurrentAuteur = userRole === 'auteur'
+    const isCurrentProjectionist = userRole === 'projectionist'
 
     const handleWaitlist = async (tier: string, email: string) => {
         const trimmed = email.trim()
@@ -45,7 +54,9 @@ export default function MembershipPage() {
             setIsRedirecting(true)
             await supabase.from('waitlist').insert({ email: trimmed, tier, created_at: new Date().toISOString() })
             toast.success('You\'re on the list. We\'ll be in touch.', { icon: '✦' })
-            setWaitlistSent(true)
+            if (tier === 'archivist') setArchivistWaitlistSent(true)
+            else if (tier === 'auteur') setAuteurWaitlistSent(true)
+            else if (tier === 'projectionist') setProjectionistWaitlistSent(true)
         } catch {
             toast.error('Something went wrong. Try again.')
         } finally {
@@ -147,7 +158,7 @@ export default function MembershipPage() {
                                 'The Vault (Private Notes)', 
                                 'Ad-Free Experience', 
                                 'Priority Support &\nEarly Access', 
-                                'The Projectionist\'s\nCalendar'
+                                'The Nightly Programme\n(Curate Double Features)'
                             ].map((feature, i) => (
                                 <div key={i} className="feature-item feature-item--pro">
                                     <div className="feature-dot feature-dot--archivist" />
@@ -156,7 +167,9 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        {waitlistSent ? (
+                        {isAuthenticated && isCurrentArchivist ? (
+                            <div className="current-rank" style={{ borderColor: 'var(--sepia)', color: 'var(--sepia)' }}>✦ YOUR CURRENT RANK ✦</div>
+                        ) : archivistWaitlistSent ? (
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
                                 ✦ YOU'RE ON THE LIST ✦
                             </div>
@@ -201,7 +214,7 @@ export default function MembershipPage() {
                                 <div className="feature-dot feature-dot--auteur" />
                                 <div>
                                     <div className="featured-feature-title featured-feature-title--auteur">The Breakdown<br/>Engine</div>
-                                    <div className="featured-feature-desc">Break down films across 5 specific axes. Attach gorgeous, dynamic radar charts to your reviews.</div>
+                                    <div className="featured-feature-desc">Break down films across 6 specific axes — Story, Script, Acting, Cinematography, Editing & Sound. Attach gorgeous, dynamic radar charts to your reviews.</div>
                                 </div>
                             </div>
 
@@ -221,7 +234,9 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        {waitlistSent ? (
+                        {isAuthenticated && isCurrentAuteur ? (
+                            <div className="current-rank" style={{ borderColor: '#7d1f1f', color: '#7d1f1f' }}>★ YOUR CURRENT RANK ★</div>
+                        ) : auteurWaitlistSent ? (
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
                                 ✦ YOU'RE ON THE LIST ✦
                             </div>
@@ -249,7 +264,7 @@ export default function MembershipPage() {
 
                     {/* The Creator Tier */}
                     <motion.div variants={itemVariants as any} className="card card-tier tier-card tier-card--projectionist">
-                        <div className="new-badge">NEW</div>
+                        <div className="new-badge">COMING SOON</div>
 
                         <h3 className="tier-name tier-name--projectionist">The<br/>Projectionist</h3>
                         <div className="tier-label tier-label--projectionist">CREATOR ECONOMY</div>
@@ -288,7 +303,9 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        {waitlistSent ? (
+                        {isAuthenticated && isCurrentProjectionist ? (
+                            <div className="current-rank" style={{ borderColor: '#c4872a', color: '#c4872a' }}>◈ YOUR CURRENT RANK ◈</div>
+                        ) : projectionistWaitlistSent ? (
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
                                 ✦ YOU'RE ON THE LIST ✦
                             </div>
