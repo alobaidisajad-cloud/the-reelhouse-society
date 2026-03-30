@@ -584,8 +584,8 @@
 }
 
 /* ═══════════════════════════════════════════════════════
-   RESPONSIVE — MOBILE (≤768px)
-   4 columns → 1 column stacked posters
+   RESPONSIVE — TABLET (≤1200px)
+   4 columns → 2 columns
    ═══════════════════════════════════════════════════════ */
 @media (max-width: 1200px) {
   .tiers-grid {
@@ -594,34 +594,85 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVE — MOBILE (≤768px)
+   Horizontal snap-scroll cinema poster carousel
+   ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
   .membership-page { padding-top: 70px; padding-bottom: 3rem; }
-  .membership-header { margin-bottom: 2.5rem; }
-  .membership-title { font-size: clamp(1.8rem, 5vw, 3rem); }
-  .membership-subtitle { font-size: 0.95rem; margin-top: 1rem; }
+  .membership-header { margin-bottom: 2rem; }
+  .membership-title { font-size: clamp(2rem, 6vw, 3rem); }
+  .membership-subtitle { font-size: 0.9rem; margin-top: 1rem; padding: 0 1rem; }
   
+  /* ── Horizontal Scroll Carousel ── */
   .tiers-grid { 
-    grid-template-columns: 1fr !important; 
-    gap: 1.25rem; 
-    margin-bottom: 3rem; 
-    max-width: 400px;
-    margin-inline: auto;
+    display: flex !important;
+    grid-template-columns: unset !important;
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 1rem;
+    margin-bottom: 3rem;
+    margin-top: 1rem;
+    padding: 1.5rem 1rem 1rem;
+    /* Hide scrollbar but keep scroll functionality */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .tiers-grid::-webkit-scrollbar { display: none; }
+  
+  /* Each card is a fixed-width poster in the carousel */
+  .tiers-grid > * {
+    flex: 0 0 78vw;
+    max-width: 78vw;
+    scroll-snap-align: center;
   }
   
-  .tier-card { padding: 2rem 1.5rem; }
+  .tier-card { 
+    padding: 2rem 1.5rem; 
+    min-height: auto;
+  }
   .tier-card--archivist { padding: 2.5rem 1.5rem 1.5rem; }
-  .tier-name { font-size: 1.5rem; }
-  .price-amount { font-size: 2.8rem; }
-  .price-amount--free { font-size: 2rem; }
+  .tier-name { font-size: 1.6rem; }
+  .price-amount { font-size: 3rem; }
+  .price-amount--free { font-size: 2.2rem; }
   .price-currency { font-size: 1rem; }
+  .price-billing { font-size: 0.5rem; }
   
+  /* Feature boxes */
+  .featured-feature { padding: 0.85rem; }
+  .featured-feature-title { font-size: 0.9rem; }
+  .featured-feature-desc { font-size: 0.75rem; }
+  .feature-text { font-size: 0.78rem; }
+  
+  /* Badges need to stay visible above cards */
+  .popular-badge, .new-badge { 
+    font-size: 0.5rem;
+    padding: 0.3rem 0.8rem;
+    white-space: nowrap;
+  }
+  
+  /* Tier buttons */
+  .tier-btn { padding: 0.8rem; font-size: 0.65rem; }
+  
+  /* Scroll hint — subtle gradient fade on edges */
+  .tiers-grid::before,
+  .tiers-grid::after {
+    content: '';
+    flex: 0 0 0.5rem;
+  }
+  
+  /* ── Founding Members ── */
   .founding-banner { padding: 2rem 1.5rem; margin-bottom: 3rem; }
-  .founding-title { font-size: clamp(1.5rem, 4vw, 2.2rem); }
+  .founding-title { font-size: clamp(1.5rem, 5vw, 2.2rem); }
   .founding-price-amount { font-size: 2.5rem; }
-  .founding-desc { font-size: 0.9rem; }
+  .founding-desc { font-size: 0.88rem; padding: 0 0.5rem; }
   .founding-btn { padding: 0.8rem 2rem; font-size: 0.65rem; }
   
+  /* ── Philosophy ── */
   .philosophy-section { padding-top: 2.5rem; }
-  .philosophy-title { font-size: 1.6rem; }
-  .philosophy-body { font-size: 0.95rem; }
+  .philosophy-title { font-size: 1.5rem; }
+  .philosophy-body { font-size: 0.9rem; padding: 0 1rem; }
 }
+
