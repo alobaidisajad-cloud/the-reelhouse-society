@@ -1,11 +1,11 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { useFilmStore, useAuthStore, useUIStore } from '../store'
+import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
-import { Plus, Lock, Globe, Search as SearchIcon, X, ChevronDown, Award, MessageCircle } from 'lucide-react'
+import { Plus, Search as SearchIcon, X, ChevronDown, Award, MessageCircle } from 'lucide-react'
 import CreateListModal from '../components/CreateListModal'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import toast from 'react-hot-toast'
 import PageSEO from '../components/PageSEO'
@@ -176,21 +176,36 @@ type SortOption = 'newest' | 'oldest' | 'most-certified'
 export default function ListsPage() {
     const { isTouch: IS_TOUCH } = useViewport()
     const { isAuthenticated, user } = useAuthStore()
-    const { lists, createList, addFilmToList } = useFilmStore()
+    const queryClient = useQueryClient()
 
-    const handleCreateListWithFilms = async (listData: any) => {
-        const { films, ...listInfo } = listData
-        await createList(listInfo)
-        setTimeout(async () => {
-            const newListId = useFilmStore.getState().lists[0]?.id
-            if (newListId && films && films.length > 0) {
-                for (const film of films) {
-                    try {
-                        await addFilmToList(newListId, film)
-                    } catch (e) { console.error('Failed to add film silently', e) }
-                }
-            }
-        }, 100)
+    const handleCreateList = async (listData: any) => {
+        // Create list via Supabase directly
+        const { data: newList, error } = await supabase.from('lists').insert({
+            title: listData.title,
+            description: listData.description || '',
+            is_private: listData.isPrivate || false,
+            user_id: user?.id,
+        }).select().single()
+
+        if (error || !newList) {
+            toast.error('Failed to create collection')
+            return
+        }
+
+        // Add films if any
+        if (listData.films && listData.films.length > 0) {
+            const filmRows = listData.films.map((film: any) => ({
+                list_id: newList.id,
+                film_id: film.id,
+                film_title: film.title,
+                poster_path: film.poster_path || null,
+            }))
+            await supabase.from('list_items').insert(filmRows)
+        }
+
+        toast.success('Collection created!')
+        // Refresh the list
+        queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
     }
 
     const { openSignupModal } = useUIStore()
@@ -222,16 +237,16 @@ export default function ListsPage() {
     }, [showSortMenu])
 
     // Fetch public community lists from Supabase
-    const { data: communityLists = [], isLoading } = useQuery({
-        queryKey: ['public-lists', user?.id],
+    // Fetch ALL public lists from Supabase (no user exclusion)
+    const { data: allLists = [], isLoading } = useQuery({
+        queryKey: ['all-public-lists'],
         queryFn: async () => {
-            let q = supabase
+            const q = supabase
                 .from('lists')
                 .select('id, title, description, created_at, user_id, is_private')
                 .eq('is_private', false)
                 .order('created_at', { ascending: false })
-                .limit(50)
-            if (user?.id) q = q.neq('user_id', user.id)
+                .limit(100)
             const { data, error } = await q
             if (error || !data || data.length === 0) return []
 
@@ -338,9 +353,8 @@ export default function ListsPage() {
         return result
     }, [debouncedQuery, timeFilter, followingOnly, sortBy, user?.following])
 
-    const filteredMyLists = useMemo(() => filterAndSort(lists, false), [lists, filterAndSort])
-    const filteredCommunity = useMemo(() => filterAndSort(communityLists, true), [communityLists, filterAndSort])
-    const totalResults = filteredMyLists.length + filteredCommunity.length
+    const filteredLists = useMemo(() => filterAndSort(allLists, true), [allLists, filterAndSort])
+    const totalResults = filteredLists.length
 
     const sortLabels: Record<SortOption, string> = { 'newest': 'NEWEST', 'oldest': 'OLDEST', 'most-certified': 'MOST CERTIFIED' }
     const hasActiveFilters = timeFilter !== 'all' || followingOnly || debouncedQuery.trim().length > 0
@@ -380,7 +394,7 @@ export default function ListsPage() {
                     </div>
 
                     {isAuthenticated ? (
-                        <button className="btn btn-primary stacks-cta" style={{ padding: '0.7rem 1.8rem', letterSpacing: '0.18em', fontSize: '0.65rem' }} onClick={() => setShowCreate(true)}>
+                        <button className="btn btn-primary stacks-cta" style={{ padding: '0.7rem 1.8rem', letterSpacing: '0.18em', fontSize: '0.65rem' }} onClick={() => setShowCreate(true)} id="create-collection-btn">
                             <Plus size={14} /> CREATE COLLECTION
                         </button>
                     ) : (
@@ -493,105 +507,27 @@ export default function ListsPage() {
             <main style={{ padding: IS_TOUCH ? '1.5rem 0 5rem' : '2.5rem 0 5rem', position: 'relative', zIndex: 1 }}>
                 <div className="container" style={{ display: 'flex', flexDirection: 'column', gap: IS_TOUCH ? '2rem' : '3rem' }}>
 
-                    {/* ── MY COLLECTIONS ── */}
-                    {isAuthenticated && filteredMyLists.length > 0 && (
-                        <section>
-                            <div className="stacks-section-header">
-                                <div className="stacks-section-accent" />
-                                <div>
-                                    <div className="stacks-section-eyebrow">YOUR ARCHIVE</div>
-                                    <div className="stacks-section-title">My Collections</div>
-                                </div>
-                            </div>
 
-                            <motion.div
-                                className="stacks-grid--mine"
-                                variants={containerVariants as any}
-                                initial="hidden"
-                                animate="visible"
-                            >
-                                {filteredMyLists.map((list: any) => {
-                                    const posters = list.films.filter((f: any) => f.poster_path || f.poster).slice(0, 3).map((f: any) => f.poster_path || f.poster)
-                                    return (
-                                        <motion.div key={list.id} variants={itemVariants as any}>
-                                            <Link
-                                                to={`/lists/${list.id}`}
-                                                className="stack-card--mine"
-                                                style={{ textDecoration: 'none' }}
-                                            >
-                                                {/* Background Posters */}
-                                                <div className="mine-bg">
-                                                    {posters.length === 0 ? (
-                                                        <div style={{ width: '100%', height: '100%', background: 'linear-gradient(135deg, rgba(28,23,16,0.4) 0%, rgba(10,7,3,0.7) 100%)' }} />
-                                                    ) : (
-                                                        posters.map((p: string, i: number) => (
-                                                            <div key={i} style={{ flex: 1, height: '100%', position: 'relative', overflow: 'hidden' }}>
-                                                                <img
-                                                                    src={tmdb.poster(p, 'w185')}
-                                                                    alt=""
-                                                                    loading="lazy"
-                                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.35) sepia(0.3) contrast(1.1)' }}
-                                                                />
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                    <div className="mine-bg-overlay" />
-                                                </div>
 
-                                                {/* Content */}
-                                                <div className="mine-content">
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem' }}>
-                                                        <h3 className="mine-title">{list.title}</h3>
-                                                        {!IS_TOUCH && (
-                                                            <div style={{ color: 'var(--fog)', opacity: 0.5, flexShrink: 0, marginLeft: '0.5rem' }}>
-                                                                {list.isPrivate ? <Lock size={14} /> : <Globe size={14} />}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    {!IS_TOUCH && list.description && (
-                                                        <p className="mine-desc">{list.description}</p>
-                                                    )}
-                                                    <div className="mine-footer">
-                                                        <span>{list.films.length} FILMS</span>
-                                                        {IS_TOUCH && list.isPrivate && <Lock size={10} style={{ opacity: 0.6 }} />}
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        </motion.div>
-                                    )
-                                })}
-                            </motion.div>
-                        </section>
-                    )}
-
-                    {/* ── SECTION DIVIDER ── */}
-                    {isAuthenticated && filteredMyLists.length > 0 && (
-                        <div className="stacks-archive-divider">
-                            <div className="stacks-archive-divider-line--left" />
-                            <span className="stacks-archive-divider-label">✦ PUBLIC ARCHIVE ✦</span>
-                            <div className="stacks-archive-divider-line--right" />
-                        </div>
-                    )}
-
-                    {/* ── COMMUNITY LISTS ── */}
+                    {/* ── ALL PUBLIC LISTS ── */}
                     <section>
                         <div className="stacks-section-header">
                             <div className="stacks-section-accent" />
                             <div>
                                 <div className="stacks-section-eyebrow">SOCIETY ARCHIVES</div>
                                 <div className="stacks-section-title">
-                                    {debouncedQuery ? `Results (${filteredCommunity.length})` : 'Curated Stacks'}
+                                    {debouncedQuery ? `Results (${filteredLists.length})` : 'Curated Stacks'}
                                 </div>
                             </div>
                         </div>
 
                         {isLoading ? (
                             <div className="stacks-grid">
-                                {Array.from({ length: 4 }).map((_, i) => (
+                                {Array.from({ length: 6 }).map((_, i) => (
                                     <div key={i} className="shimmer stacks-skeleton" style={{ animationDelay: `${i * 0.1}s` }} />
                                 ))}
                             </div>
-                        ) : filteredCommunity.length === 0 ? (
+                        ) : filteredLists.length === 0 ? (
                             /* ── EMPTY STATE — "The Empty Shelf" ── */
                             <div className="stacks-empty">
                                 <div className="stacks-empty-rule" />
@@ -624,7 +560,7 @@ export default function ListsPage() {
                                 initial="hidden"
                                 animate="visible"
                             >
-                                {filteredCommunity.map((list: any, i: number) => (
+                                {filteredLists.map((list: any, i: number) => (
                                     <CommunityListCard key={list.id} list={list} index={i} />
                                 ))}
                             </motion.div>
@@ -652,7 +588,7 @@ export default function ListsPage() {
             {showCreate && (
                 <CreateListModal
                     onClose={() => setShowCreate(false)}
-                    onCreate={handleCreateListWithFilms}
+                    onCreate={handleCreateList}
                 />
             )}
         </div>
