@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
-import { FilmCard, SectionHeader, LoadingReel } from '../components/UI'
+import { SectionHeader, LoadingReel } from '../components/UI'
 import { ArrowLeft, Clock, Film, Edit3, Trash2 } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
@@ -118,7 +118,23 @@ export default function ListDetailPage() {
 
     return (
         <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
-            <div style={{ maxWidth: 1000, margin: '0 auto', padding: '3rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+            <style>{`
+                .list-detail-container {
+                    max-width: 1000px;
+                    margin: 0 auto;
+                    padding: 2rem 1rem;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2rem;
+                }
+                @media (min-width: 600px) {
+                    .list-detail-container {
+                        padding: 3rem 1.5rem;
+                        gap: 3rem;
+                    }
+                }
+            `}</style>
+            <div className="list-detail-container">
 
                 <button onClick={() => navigate(-1)} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem', marginLeft: '-0.5rem', alignSelf: 'flex-start', transition: 'color 0.2s' }} onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'} onMouseLeave={e => e.currentTarget.style.color = 'var(--sepia)'}>
                     <ArrowLeft size={12} /> GO BACK
@@ -175,6 +191,9 @@ export default function ListDetailPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '1.5rem' }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>INDEXED REELS</div>
                         <div style={{ height: 1, flex: 1, background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)', margin: '0 1rem' }} />
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                            {films.length} {films.length === 1 ? 'FILM' : 'FILMS'}
+                        </div>
                     </div>
 
                     {films.length === 0 ? (
@@ -187,19 +206,135 @@ export default function ListDetailPage() {
                             </div>
                         </div>
                     ) : (
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1.5rem' }}>
-                            {films.map((f: any, i: number) => (
-                                <Link key={f.id ?? i} to={`/film/${f.id}`} style={{ textDecoration: 'none', display: 'block' }} className="fade-in-up">
-                                    <div style={{ position: 'relative' }}>
-                                        <div style={{ position: 'absolute', top: -10, left: -10, width: 30, height: 30, background: 'var(--sepia)', color: 'var(--ink)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', fontWeight: 'bold', zIndex: 10, boxShadow: '0 4px 10px rgba(0,0,0,0.5)' }}>
-                                            {i + 1}
-                                        </div>
-                                        <FilmCard film={f} />
-                                    </div>
-                                    <div style={{ marginTop: '0.75rem', fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)', lineHeight: 1.2, textAlign: 'center' }}>{f.title}</div>
-                                </Link>
-                            ))}
-                        </div>
+                        <>
+                            {/* Responsive CSS — 3 columns on mobile, auto-fill on desktop */}
+                            <style>{`
+                                .list-film-grid {
+                                    display: grid;
+                                    grid-template-columns: repeat(3, 1fr);
+                                    gap: 0.6rem;
+                                }
+                                @media (min-width: 600px) {
+                                    .list-film-grid {
+                                        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                                        gap: 1.25rem;
+                                    }
+                                }
+                                @media (min-width: 900px) {
+                                    .list-film-grid {
+                                        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+                                        gap: 1.5rem;
+                                    }
+                                }
+                                .list-film-item {
+                                    position: relative;
+                                    text-decoration: none;
+                                    display: block;
+                                    border-radius: 3px;
+                                    overflow: hidden;
+                                    transition: transform 0.2s ease, box-shadow 0.2s ease;
+                                }
+                                .list-film-item:hover {
+                                    transform: translateY(-3px);
+                                    box-shadow: 0 8px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,105,20,0.3);
+                                }
+                                .list-film-poster {
+                                    width: 100%;
+                                    aspect-ratio: 2/3;
+                                    object-fit: cover;
+                                    display: block;
+                                    background: #0d0b09;
+                                    border: 1px solid rgba(139,105,20,0.1);
+                                    border-radius: 3px;
+                                }
+                                .list-film-number {
+                                    position: absolute;
+                                    top: -1px;
+                                    left: -1px;
+                                    width: 22px;
+                                    height: 22px;
+                                    background: var(--sepia);
+                                    color: var(--ink);
+                                    border-radius: 0 0 6px 0;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                    font-family: var(--font-ui);
+                                    font-size: 0.5rem;
+                                    font-weight: bold;
+                                    z-index: 5;
+                                    letter-spacing: 0;
+                                }
+                                @media (min-width: 600px) {
+                                    .list-film-number {
+                                        width: 26px;
+                                        height: 26px;
+                                        font-size: 0.55rem;
+                                    }
+                                }
+                                .list-film-title {
+                                    margin-top: 0.4rem;
+                                    font-family: var(--font-sub);
+                                    font-size: 0.65rem;
+                                    color: var(--parchment);
+                                    line-height: 1.2;
+                                    text-align: center;
+                                    overflow: hidden;
+                                    text-overflow: ellipsis;
+                                    display: -webkit-box;
+                                    -webkit-line-clamp: 2;
+                                    -webkit-box-orient: vertical;
+                                }
+                                @media (min-width: 600px) {
+                                    .list-film-title {
+                                        font-size: 0.8rem;
+                                        margin-top: 0.6rem;
+                                    }
+                                }
+                                .list-film-fallback {
+                                    width: 100%;
+                                    aspect-ratio: 2/3;
+                                    background: #0d0b09;
+                                    border: 1px solid rgba(139,105,20,0.12);
+                                    border-radius: 3px;
+                                    display: flex;
+                                    align-items: center;
+                                    justify-content: center;
+                                }
+                            `}</style>
+                            <div className="list-film-grid">
+                                {films.map((f: any, i: number) => {
+                                    const posterUrl = f.poster_path
+                                        ? `https://image.tmdb.org/t/p/w342${f.poster_path}`
+                                        : null
+
+                                    return (
+                                        <Link
+                                            key={f.id ?? i}
+                                            to={`/film/${f.id}`}
+                                            className="list-film-item fade-in-up"
+                                            style={{ animationDelay: `${Math.min(i * 0.03, 0.5)}s` }}
+                                        >
+                                            <div className="list-film-number">{i + 1}</div>
+                                            {posterUrl ? (
+                                                <img
+                                                    src={posterUrl}
+                                                    alt={f.title || 'Film'}
+                                                    className="list-film-poster"
+                                                    loading="lazy"
+                                                    decoding="async"
+                                                />
+                                            ) : (
+                                                <div className="list-film-fallback">
+                                                    <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.3 }} />
+                                                </div>
+                                            )}
+                                            <div className="list-film-title">{f.title}</div>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        </>
                     )}
                 </section>
             </div>
