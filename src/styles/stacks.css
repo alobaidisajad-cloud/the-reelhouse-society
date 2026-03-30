@@ -685,11 +685,11 @@
 @media (max-width: 768px) {
   .stacks-page { padding-top: 56px; }
 
-  .stacks-header { padding: 1.5rem 0 1.25rem; }
-  .stacks-eyebrow { font-size: 0.4rem; letter-spacing: 0.35em; }
-  .stacks-title { font-size: clamp(1.8rem, 8vw, 2.5rem); }
-  .stacks-subtitle { font-size: 0.85rem; margin-bottom: 1.25rem; padding: 0 1rem; }
-  .stacks-ornament { margin-bottom: 1.25rem; }
+  .stacks-header { padding: 1rem 0 0.75rem; }
+  .stacks-eyebrow { font-size: 0.4rem; letter-spacing: 0.35em; margin-bottom: 0.4rem; }
+  .stacks-title { font-size: clamp(1.8rem, 8vw, 2.5rem); margin-bottom: 0.5rem; }
+  .stacks-subtitle { font-size: 0.8rem; margin-bottom: 0.75rem; padding: 0 1rem; line-height: 1.5; }
+  .stacks-ornament { margin-bottom: 0.75rem; }
 
   .stacks-filter-bar {
     padding: 0.75rem 0;
