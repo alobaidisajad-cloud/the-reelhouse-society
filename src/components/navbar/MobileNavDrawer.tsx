@@ -1,6 +1,6 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Users, Bell } from 'lucide-react'
+import { X, Users, Bell, Settings } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../../store'
 import Buster from '../Buster'
 
@@ -75,6 +75,9 @@ export default function MobileNavDrawer({ isOpen, onClose, onOpenNotifications }
                                         <Bell size={14} /> TRANSMISSIONS
                                     </button>
                                 )}
+                                <Link to="/settings" className="mobile-nav-link" onClick={onClose} style={{ fontSize: '1.2rem', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Settings size={14} /> Settings
+                                </Link>
                                 <button className="btn btn-primary" onClick={() => { openLogModal(); onClose() }}>
                                     + Log a Film
                                 </button>
