@@ -413,69 +413,113 @@ export default function UserProfilePage() {
         <div className={`page-top ${stats.count > 50 ? 'level-obsessed' : stats.count > 10 ? 'level-degrade' : ''}`} style={{ minHeight: '100dvh' }}>
             {/* Header */}
             {!activeTab ? (
-                <div style={{ borderBottom: '1px solid rgba(139,105,20,0.2)', background: 'linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '1.5rem 0 1rem' : '4rem 0 3rem', position: 'relative', overflow: 'hidden' }}>
-                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.14) 0%, rgba(139,105,20,0.04) 40%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.3), transparent)', pointerEvents: 'none', zIndex: 0 }} />
-                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.4) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
-                <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 1600 }}>
-                    <div className="profile-hero" style={{ display: 'flex', gap: IS_TOUCH ? '1.25rem' : '3rem', alignItems: IS_TOUCH ? 'center' : 'flex-end', flexWrap: 'wrap', flexDirection: IS_TOUCH ? 'column' : 'row' }}>
-                        {/* Avatar */}
-                        <div style={{ position: 'relative', flexShrink: 0, marginBottom: IS_TOUCH ? '1rem' : 0 }}>
-                            <div className="profile-avatar-ring" style={{ width: 140, height: 140, borderRadius: '50%', background: 'var(--ink)', border: `2px solid ${stats.color}`, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', boxShadow: `0 0 40px ${stats.color}40, 0 0 80px ${stats.color}18, inset 0 0 20px rgba(0,0,0,0.5)`, overflow: 'hidden', margin: '0 auto' }}>
-                                {renderAvatar((profileUser?.avatar || 'smiling'), 90)}
+                <div style={{ borderBottom: '1px solid rgba(139,105,20,0.15)', background: 'linear-gradient(180deg, rgba(15,10,5,1) 0%, var(--ink) 100%)', padding: IS_TOUCH ? '2rem 0 1.5rem' : '4.5rem 0 3rem', position: 'relative', overflow: 'hidden' }}>
+                
+                {/* Atmospheric projector spotlight */}
+                <div style={{ position: 'absolute', top: '-20%', left: '50%', transform: 'translateX(-50%)', width: '80%', height: '120%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.18) 0%, rgba(139,105,20,0.05) 35%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
+                
+                {/* Film grain texture */}
+                <div style={{ position: 'absolute', inset: 0, opacity: 0.03, backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'4\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\'/%3E%3C/svg%3E")', backgroundSize: '128px 128px', pointerEvents: 'none', zIndex: 0 }} />
+                
+                {/* Bottom gold edge */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent 10%, rgba(139,105,20,0.35) 50%, transparent 90%)', pointerEvents: 'none', zIndex: 0 }} />
+                
+                {/* Auteur backdrop or dark base */}
+                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.3) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
+                
+                <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 900, textAlign: 'center' }}>
+                    {/* ── Avatar — Centered with dramatic glow ── */}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '1.5rem' }}>
+                        <div style={{ position: 'relative' }}>
+                            <div className="profile-avatar-ring profile-avatar-breathe" style={{ 
+                                width: IS_TOUCH ? 120 : 160, height: IS_TOUCH ? 120 : 160, 
+                                borderRadius: '50%', background: 'var(--ink)', 
+                                border: `2px solid ${stats.color}`, 
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                                position: 'relative', 
+                                boxShadow: `0 0 60px ${stats.color}50, 0 0 120px ${stats.color}20, inset 0 0 30px rgba(0,0,0,0.6)`, 
+                                overflow: 'hidden',
+                            }}>
+                                {renderAvatar((profileUser?.avatar || 'smiling'), IS_TOUCH ? 75 : 100)}
                             </div>
-                            <div style={{ position: 'absolute', bottom: -10, left: '50%', transform: 'translateX(-50%)', background: 'var(--ink)', border: `1px solid ${stats.color}`, padding: '0.2rem 0.6rem', borderRadius: '4px', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', color: stats.color, whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(0,0,0,0.5)', zIndex: 2 }}>✦ {stats.level}</div>
-                        </div>
-
-                        {/* Identity */}
-                        <div className="profile-identity" style={{ flex: 1, minWidth: IS_TOUCH ? 0 : 300, display: 'flex', flexDirection: 'column', alignItems: IS_TOUCH ? 'center' : 'flex-start', textAlign: IS_TOUCH ? 'center' : 'left' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '0.5rem', flexWrap: 'wrap', justifyContent: IS_TOUCH ? 'center' : 'flex-start' }}>
-                                <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.6rem, 6vw, 2.2rem)' : '2.5rem', color: 'var(--parchment)', lineHeight: 1.1, display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                                    @{profileUser.username.toUpperCase()}
-                                    {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem' }}><Star size={10} fill="currentColor" /> AUTEUR</span>}
-                                </h1>
-                                {isOwnProfile ? (
-                                    <button onClick={() => navigate('/settings')} className="btn btn-ghost" style={{ padding: '0.4rem', border: '1px solid rgba(139,105,20,0.3)', color: 'var(--sepia)' }} aria-label="Settings">
-                                        <Settings size={14} />
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={handleFollow}
-                                        disabled={followLoading}
-                                        className={`btn ${isFollowing ? 'btn-ghost' : 'btn-primary'}`}
-                                        style={{ fontSize: '0.65rem', padding: '0.4rem 1.2rem', opacity: followLoading ? 0.6 : 1 }}
-                                    >
-                                        {followLoading ? '...' : isFollowing ? 'UNFOLLOW' : '+ FOLLOW'}
-                                    </button>
-                                )}
-                            </div>
-
-                            <p style={{ fontFamily: 'var(--font-sub)', fontSize: IS_TOUCH ? '0.9rem' : '1rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 600, lineHeight: 1.5, opacity: profileUser.bio ? 0.85 : 0.45, marginBottom: '1.5rem' }}>
-                                {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
-                            </p>
-
-                            {/* Core Stats Row */}
-                            <div className="profile-stats-row" style={{ display: 'flex', gap: IS_TOUCH ? '1.5rem' : '3rem', flexWrap: 'wrap', justifyContent: IS_TOUCH ? 'center' : 'flex-start' }}>
-                                {[
-                                    { value: profileLogs.length, label: 'ACTIVITY', onClick: null },
-                                    { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
-                                    { value: isOwnProfile ? (ownCounts?.followingCount ?? (currentUser as any)?.following_count ?? 0) : ((profileUser as any)?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
-                                ].map(({ value, label, onClick }) => (
-                                    <div key={label} onClick={onClick as any} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', cursor: onClick ? 'pointer' : 'default', alignItems: IS_TOUCH ? 'center' : 'flex-start' }}>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.4rem' : '1.8rem', color: 'var(--parchment)', lineHeight: 1 }}>{value}</div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>{label}</div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* The Triptych Display */}
-                        <div style={{ flexShrink: 0, alignSelf: IS_TOUCH ? 'center' : 'flex-end', width: IS_TOUCH ? '100%' : 'auto', minWidth: IS_TOUCH ? 0 : 320 }}>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', textAlign: 'center', marginBottom: '0.6rem', textShadow: '0 0 15px rgba(139,105,20,0.3)' }}>✦ FAVORITE FILMS ✦</div>
-                            <ProfileTriptych user={profileUser} isOwnProfile={isOwnProfile} />
+                            <div style={{ 
+                                position: 'absolute', bottom: -12, left: '50%', transform: 'translateX(-50%)', 
+                                background: 'linear-gradient(135deg, rgba(15,10,5,0.95), rgba(25,18,10,0.95))', 
+                                border: `1px solid ${stats.color}`, 
+                                padding: '0.25rem 0.75rem', borderRadius: '3px', 
+                                fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em',
+                                color: stats.color, whiteSpace: 'nowrap', 
+                                boxShadow: `0 4px 15px rgba(0,0,0,0.6), 0 0 10px ${stats.color}20`, 
+                                zIndex: 2 
+                            }}>✦ {stats.level}</div>
                         </div>
                     </div>
+
+                    {/* ── Username ── */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.8rem, 7vw, 2.5rem)' : '3rem', color: 'var(--parchment)', lineHeight: 1.1, textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
+                            @{profileUser.username.toUpperCase()}
+                        </h1>
+                        {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><Star size={9} fill="currentColor" /> AUTEUR</span>}
+                    </div>
+
+                    {/* ── Follow / Settings ── */}
+                    <div style={{ marginBottom: '1rem' }}>
+                        {isOwnProfile ? (
+                            <button onClick={() => navigate('/settings')} className="btn btn-ghost" style={{ padding: '0.4rem 1rem', border: '1px solid rgba(139,105,20,0.25)', color: 'var(--sepia)', fontSize: '0.6rem', letterSpacing: '0.15em', gap: '0.4rem' }} aria-label="Settings">
+                                <Settings size={12} /> EDIT PROFILE
+                            </button>
+                        ) : (
+                            <button
+                                onClick={handleFollow}
+                                disabled={followLoading}
+                                className={`btn ${isFollowing ? 'btn-ghost' : 'btn-primary'}`}
+                                style={{ fontSize: '0.65rem', padding: '0.5rem 2rem', opacity: followLoading ? 0.6 : 1, letterSpacing: '0.15em' }}
+                            >
+                                {followLoading ? '...' : isFollowing ? 'UNFOLLOW' : '+ FOLLOW'}
+                            </button>
+                        )}
+                    </div>
+
+                    {/* ── Bio ── */}
+                    <p style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.95rem' : '1.05rem', color: 'var(--bone)', fontStyle: 'italic', maxWidth: 500, margin: '0 auto 2rem', lineHeight: 1.6, opacity: profileUser.bio ? 0.8 : 0.4 }}>
+                        {profileUser.bio || (isOwnProfile ? "No bio yet. Tell the society who you are." : "No bio on file.")}
+                    </p>
+
+                    {/* ── Stats as museum placards ── */}
+                    <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: IS_TOUCH ? 'repeat(4, 1fr)' : 'repeat(4, auto)',
+                        justifyContent: IS_TOUCH ? 'stretch' : 'center',
+                        gap: IS_TOUCH ? '0.5rem' : '3.5rem', 
+                        marginBottom: IS_TOUCH ? '2rem' : '3rem',
+                        maxWidth: IS_TOUCH ? '100%' : 'none',
+                    }}>
+                        {[
+                            { value: profileLogs.length, label: 'FILMS', onClick: null },
+                            { value: isOwnProfile ? (ownCounts?.followersCount ?? (currentUser as any)?.followers_count ?? 0) : ((profileUser as any)?.followersCount || 0), label: 'FOLLOWERS', onClick: () => openSocialModal('followers') },
+                            { value: isOwnProfile ? (ownCounts?.followingCount ?? (currentUser as any)?.following_count ?? 0) : ((profileUser as any)?.followingCount || 0), label: 'FOLLOWING', onClick: () => openSocialModal('following') },
+                            { value: profileWatchlist.length, label: 'WATCHLIST', onClick: null },
+                        ].map(({ value, label, onClick }) => (
+                            <div key={label} onClick={onClick as any} style={{ 
+                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem',
+                                cursor: onClick ? 'pointer' : 'default',
+                                padding: '0.5rem 0',
+                                borderTop: '1px solid rgba(139,105,20,0.15)',
+                            }}>
+                                <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.4rem' : '2.2rem', color: 'var(--parchment)', lineHeight: 1, textShadow: '0 0 20px rgba(139,105,20,0.15)' }}>{value}</div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: IS_TOUCH ? '0.4rem' : '0.5rem', letterSpacing: '0.15em', color: 'var(--fog)', opacity: 0.7 }}>{label}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* ── Favorite Films Triptych — Centered & Prominent ── */}
+                    <div style={{ maxWidth: IS_TOUCH ? '100%' : 450, margin: '0 auto' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', textAlign: 'center', marginBottom: '0.75rem', textShadow: '0 0 15px rgba(139,105,20,0.3)' }}>✦ FAVORITE FILMS ✦</div>
+                        <ProfileTriptych user={profileUser} isOwnProfile={isOwnProfile} />
+                    </div>
                 </div>
+                
 
                 {/* Recently Watched — 3 latest film logs */}
                 {(() => {
@@ -568,8 +612,9 @@ export default function UserProfilePage() {
             )}
 
             {!activeTab && (
-                <div className="container" style={{ padding: IS_TOUCH ? 0 : '0 1rem', maxWidth: 1600, margin: '0 auto', paddingBottom: '3rem' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem', padding: '1.5rem 0.5rem' }}>
+                <div className="container" style={{ padding: IS_TOUCH ? '0 1rem' : '0 1rem', maxWidth: 900, margin: '0 auto', paddingBottom: '3rem' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', textAlign: 'center', marginBottom: '1rem', marginTop: '2rem', textShadow: '0 0 15px rgba(139,105,20,0.3)' }}>✦ THE COLLECTION ✦</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: IS_TOUCH ? '0.5rem' : '0.75rem' }}>
                         {[
                             { id: 'archive', label: 'Archive', count: profileLogs.length, icon: Archive, active: activeTab === 'archive', desc: 'Watched' },
                             { id: 'diary', label: 'The Ledger', count: profileLogs.length, icon: BookOpen, active: activeTab === 'diary', desc: 'Diary' },
