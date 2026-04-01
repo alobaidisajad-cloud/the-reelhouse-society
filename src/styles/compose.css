@@ -320,22 +320,24 @@
   color: var(--fog);
 }
 
-/* ── Bottom Publish Bar (sticky) ── */
+/* ── Bottom Publish Bar (fixed above everything) ── */
 .wr-stats-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.65rem 1.5rem;
-  border-top: 1px solid rgba(139,105,20,0.15);
-  background: rgba(14,11,8,0.98);
-  backdrop-filter: blur(12px);
+  padding: 0.75rem 1.5rem;
+  border-top: 1px solid rgba(139,105,20,0.25);
+  background: rgba(11,9,6,0.98);
+  backdrop-filter: blur(16px);
   font-family: var(--font-ui);
   font-size: 0.45rem;
   letter-spacing: 0.15em;
   color: var(--fog);
-  position: sticky;
+  position: fixed;
   bottom: 0;
-  z-index: 50;
+  left: 0;
+  right: 0;
+  z-index: 9999;
 }
 
 .wr-stats-left {
