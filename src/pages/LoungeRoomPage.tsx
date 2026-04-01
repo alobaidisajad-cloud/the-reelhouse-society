@@ -102,15 +102,15 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
     return (
         <div className={`lounge-msg-wrapper ${isSelf ? 'msg-self' : 'msg-other'} ${showAuthor ? 'mt-author' : 'mt-compact'}`}>
             {showAuthor && (
-                <div className="lounge-msg-avatar">
+                <Link to={`/user/${msg.username}`} className="lounge-msg-avatar" style={{ textDecoration: 'none', cursor: 'pointer' }}>
                    {msg.avatar_url ? <img src={msg.avatar_url} alt="" /> : <div className="lounge-msg-avatar-fallback">{msg.username[0]?.toUpperCase()}</div>}
-                </div>
+                </Link>
             )}
             
             <div className="lounge-msg-content-col">
                 {showAuthor && (
                     <div className="lounge-msg-header">
-                        <span className="lounge-msg-author">{isSelf ? 'You' : msg.username}</span>
+                        <Link to={`/user/${msg.username}`} className="lounge-msg-author" style={{ textDecoration: 'none', cursor: 'pointer' }}>{isSelf ? 'You' : msg.username}</Link>
                         <span className="lounge-msg-time">{formatTime(msg.created_at)}</span>
                     </div>
                 )}
