@@ -55,6 +55,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     // ── SPOILER GUARD & EXPANSION ──
     const [spoilersRevealed, setSpoilersRevealed] = useState(false)
     const [isExpanded, setIsExpanded] = useState(false)
+    const [autopsyOpen, setAutopsyOpen] = useState(!IS_TOUCH)
     const showFullText = isExpandedView || isExpanded
 
     // ── PRIVACY ENFORCEMENT ──
@@ -531,7 +532,62 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     </div>
                 )}
 
-                {log.isAutopsied && log.autopsy && <RadarChart autopsy={log.autopsy} size={130} />}
+                {log.isAutopsied && log.autopsy && (
+                    IS_TOUCH ? (
+                        <div style={{ marginTop: '0.6rem' }}>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setAutopsyOpen(!autopsyOpen) }}
+                                style={{
+                                    width: '100%', background: 'linear-gradient(135deg, rgba(11,10,8,0.95) 0%, rgba(25,20,12,0.95) 100%)',
+                                    border: '1px solid rgba(139,105,20,0.25)', borderRadius: '4px',
+                                    padding: '0.75rem 1rem', cursor: 'pointer',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                    transition: 'border-color 0.3s, background 0.3s',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                                    <span style={{
+                                        width: '6px', height: '6px', borderRadius: '50%',
+                                        background: 'var(--sepia)',
+                                        boxShadow: '0 0 8px rgba(139,105,20,0.6)',
+                                        animation: autopsyOpen ? 'none' : 'pulse 2s ease-in-out infinite',
+                                    }} />
+                                    <span style={{
+                                        fontFamily: 'var(--font-display)', fontSize: '0.75rem',
+                                        letterSpacing: '0.15em', color: 'var(--parchment)',
+                                    }}>
+                                        THE AUTOPSY
+                                    </span>
+                                    <span style={{
+                                        fontFamily: 'var(--font-ui)', fontSize: '0.45rem',
+                                        letterSpacing: '0.2em', color: 'var(--sepia)', opacity: 0.6,
+                                    }}>
+                                        CONFIDENTIAL
+                                    </span>
+                                </div>
+                                <span style={{
+                                    fontFamily: 'var(--font-ui)', fontSize: '0.5rem',
+                                    letterSpacing: '0.15em', color: 'var(--fog)',
+                                    transition: 'transform 0.3s',
+                                    transform: autopsyOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                }}>
+                                    ▼
+                                </span>
+                            </button>
+                            {autopsyOpen && (
+                                <div style={{
+                                    overflow: 'hidden',
+                                    animation: 'fadeSlideIn 0.3s ease-out',
+                                    marginTop: '0.5rem',
+                                }}>
+                                    <RadarChart autopsy={log.autopsy} size={130} />
+                                </div>
+                            )}
+                        </div>
+                    ) : (
+                        <RadarChart autopsy={log.autopsy} size={130} />
+                    )
+                )}
 
                 {/* Feed Action Bar */}
                 <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.75rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(139,105,20,0.1)', flexWrap: 'wrap', flexShrink: 0 }}>
