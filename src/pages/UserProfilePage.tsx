@@ -404,7 +404,7 @@ export default function UserProfilePage() {
     const isPremium = currentUser?.role === 'archivist' || currentUser?.role === 'auteur'
 
     const TABS = [
-        { id: 'diary', label: 'The Ledger', count: isOwnProfile ? filteredLogs.length : (finalMetrics.total_logs || null) },
+        { id: 'diary', label: 'The Ledger', count: isOwnProfile ? filteredLogs.length : profileLogs.filter((l: any) => l.rating > 0 || (l.review && l.review.length > 0)).length },
         { id: 'passport', label: 'Passport', count: null },
         { id: 'projector', label: 'Projector Room', count: null },
         { id: 'lists', label: 'Lists', count: profileLists.length },
@@ -661,7 +661,7 @@ export default function UserProfilePage() {
                     <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? 'repeat(3, 1fr)' : 'repeat(6, 1fr)', gap: IS_TOUCH ? '0.5rem' : '0.75rem' }}>
                         {[
                             { id: 'archive', label: 'Archive', count: profileLogs.length, icon: Archive, active: activeTab === 'archive', desc: 'Watched' },
-                            { id: 'diary', label: 'The Ledger', count: profileLogs.length, icon: BookOpen, active: activeTab === 'diary', desc: 'Diary' },
+                            { id: 'diary', label: 'The Ledger', count: profileLogs.filter((l: any) => l.rating > 0 || (l.review && l.review.length > 0)).length, icon: BookOpen, active: activeTab === 'diary', desc: 'Diary' },
                             { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, icon: Bookmark, active: activeTab === 'watchlist', desc: 'To See' },
                             { id: 'lists', label: 'Stacks', count: profileLists.length, icon: LayoutList, active: activeTab === 'lists', desc: 'Lists' },
                             { id: 'tickets', label: 'Stubs', count: 'SOON', icon: Ticket, active: activeTab === 'tickets', disabled: true, desc: 'Box Office' },
