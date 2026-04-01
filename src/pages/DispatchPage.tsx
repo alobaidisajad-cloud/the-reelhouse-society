@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { tmdb } from '../tmdb'
 import { useAuthStore, useDispatchStore } from '../store'
+import { supabase } from '../supabaseClient'
 import Buster from '../components/Buster'
 import '../styles/dispatch.css'
 import PageSEO from '../components/PageSEO'
@@ -194,19 +195,47 @@ export default function DispatchPage() {
         return () => { document.body.style.overflow = 'unset' }
     }, [])
 
-    const openArticle = (item: any) => {
+    const openArticle = async (item: any) => {
         scrollPos.current = window.scrollY
         setSelectedArticle(item)
         document.body.style.overflow = 'hidden'
+        // Increment view count (fire-and-forget, seed articles skip)
+        if (item.id && !item.id.startsWith('seed-')) {
+            try { await supabase.rpc('increment_dossier_views', { dossier_uuid: item.id }) } catch {}
+        }
     }
     const closeArticle = () => {
         setSelectedArticle(null)
+        setCertified(false)
         document.body.style.overflow = 'unset'
         window.scrollTo(0, scrollPos.current)
     }
 
+    // ── Certify state ──
+    const [certified, setCertified] = useState(false)
+    const [certifyLoading, setCertifyLoading] = useState(false)
 
+    const handleCertify = async () => {
+        if (!user || !selectedArticle?.id || selectedArticle.id.startsWith('seed-') || certifyLoading) return
+        setCertifyLoading(true)
+        try {
+            const { data } = await supabase.rpc('toggle_dossier_certify', { dossier_uuid: selectedArticle.id })
+            setCertified(!!data)
+            toast(data ? 'Dossier Certified ✦' : 'Certification removed', { duration: 1500 })
+        } catch { toast.error('Failed to certify') }
+        setCertifyLoading(false)
+    }
 
+    const handleShare = () => {
+        const url = `${window.location.origin}/dispatch`
+        const text = `"${selectedArticle?.title}" — a dossier by @${selectedArticle?.authorUsername || selectedArticle?.author} on The Dispatch`
+        if (navigator.share) {
+            navigator.share({ title: selectedArticle?.title, text, url }).catch(() => {})
+        } else {
+            navigator.clipboard.writeText(`${text}\n${url}`)
+            toast.success('Link copied to clipboard')
+        }
+    }
     return (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
@@ -419,13 +448,81 @@ export default function DispatchPage() {
                                     <h1 className="reader-title">{selectedArticle.title}</h1>
                                     {selectedArticle.author && (
                                         <div className="reader-byline">
-                                            FILED BY <span className="highlight-author">{selectedArticle.author.toUpperCase()}</span>
+                                            FILED BY{' '}
+                                            {selectedArticle.authorUsername ? (
+                                                <Link
+                                                    to={`/user/${selectedArticle.authorUsername}`}
+                                                    onClick={(e: React.MouseEvent) => { e.stopPropagation(); closeArticle() }}
+                                                    style={{ color: 'var(--sepia)', textDecoration: 'none', borderBottom: '1px solid rgba(139,105,20,0.4)', transition: 'color 0.2s' }}
+                                                    onMouseEnter={(e: any) => e.currentTarget.style.color = 'var(--parchment)'}
+                                                    onMouseLeave={(e: any) => e.currentTarget.style.color = 'var(--sepia)'}
+                                                >
+                                                    @{selectedArticle.author}
+                                                </Link>
+                                            ) : (
+                                                <span className="highlight-author">{selectedArticle.author}</span>
+                                            )}
+                                            {selectedArticle.date && (
+                                                <span style={{ marginLeft: '1rem', color: 'var(--fog)', fontSize: '0.65rem' }}>{selectedArticle.date}</span>
+                                            )}
                                         </div>
                                     )}
+
+                                    {/* Engagement stats bar */}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.15)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                                            {(selectedArticle.views || 0) + 1} VIEWS
+                                        </span>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: certified ? 'var(--sepia)' : 'var(--fog)' }}>
+                                            ✦ {selectedArticle.certifyCount || 0} CERTIFIED
+                                        </span>
+                                    </div>
                                 </header>
 
                                 <div className="reader-body">
                                     {selectedArticle.fullContent || selectedArticle.excerpt}
+                                </div>
+
+                                {/* ── Engagement Footer ── */}
+                                <div style={{ borderTop: '1px solid rgba(139,105,20,0.15)', paddingTop: '1.5rem', marginTop: '2rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
+                                    {/* Certify Button */}
+                                    {user && (
+                                        <button
+                                            onClick={handleCertify}
+                                            disabled={certifyLoading}
+                                            style={{
+                                                background: certified ? 'linear-gradient(135deg, rgba(139,105,20,0.25), rgba(180,140,20,0.15))' : 'transparent',
+                                                border: `1px solid ${certified ? 'rgba(196,150,26,0.5)' : 'rgba(139,105,20,0.25)'}`,
+                                                color: certified ? 'var(--sepia)' : 'var(--fog)',
+                                                fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em',
+                                                padding: '0.6rem 1.5rem', cursor: 'pointer',
+                                                transition: 'all 0.3s', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                            }}
+                                            onMouseEnter={(e: any) => { if (!certified) e.currentTarget.style.borderColor = 'rgba(196,150,26,0.5)' }}
+                                            onMouseLeave={(e: any) => { if (!certified) e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)' }}
+                                        >
+                                            ✦ {certified ? 'CERTIFIED' : 'CERTIFY'}
+                                        </button>
+                                    )}
+
+                                    {/* Share Button */}
+                                    <button
+                                        onClick={handleShare}
+                                        style={{
+                                            background: 'transparent',
+                                            border: '1px solid rgba(139,105,20,0.25)',
+                                            color: 'var(--fog)',
+                                            fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em',
+                                            padding: '0.6rem 1.5rem', cursor: 'pointer',
+                                            transition: 'all 0.3s', display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                        }}
+                                        onMouseEnter={(e: any) => e.currentTarget.style.borderColor = 'rgba(196,150,26,0.5)'}
+                                        onMouseLeave={(e: any) => e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)'}
+                                    >
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                                        SHARE
+                                    </button>
                                 </div>
 
                                 <div className="reader-endmark">— ✦ —</div>

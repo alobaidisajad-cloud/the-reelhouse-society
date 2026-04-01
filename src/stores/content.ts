@@ -31,6 +31,10 @@ export const useDispatchStore = create<DispatchState>((set) => ({
                     excerpt: d.excerpt || '',
                     fullContent: d.full_content || '',
                     author: d.author_username?.toUpperCase() || 'ANONYMOUS',
+                    authorUsername: d.author_username || '',
+                    authorId: d.user_id,
+                    views: d.views || 0,
+                    certifyCount: d.certify_count || 0,
                     date: new Date(d.created_at).toLocaleDateString('en-US', {
                         month: 'short', day: '2-digit', year: 'numeric',
                     }).toUpperCase(),
@@ -82,6 +86,10 @@ export const useDispatchStore = create<DispatchState>((set) => ({
                 id: data.id, title: data.title, excerpt: data.excerpt,
                 fullContent: data.full_content,
                 author: data.author_username?.toUpperCase(),
+                authorUsername: data.author_username || user.username,
+                authorId: data.user_id,
+                views: 0,
+                certifyCount: 0,
                 date: new Date(data.created_at).toLocaleDateString('en-US', {
                     month: 'short', day: '2-digit', year: 'numeric',
                 }).toUpperCase(),
