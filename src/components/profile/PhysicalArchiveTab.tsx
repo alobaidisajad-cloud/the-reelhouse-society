@@ -4,6 +4,9 @@ import { Search, Plus, X, Disc, Disc2, Disc3, Film, Archive, Trash2, CircleDot, 
 import { useFilmStore } from '../../stores/films'
 import { tmdb } from '../../tmdb'
 import Poster from '../film/Poster'
+import { FilmCard } from '../UI'
+import { Link } from 'react-router-dom'
+import { useViewport } from '../../hooks/useViewport'
 import toast from 'react-hot-toast'
 import type { PhysicalArchiveItem } from '../../types'
 
@@ -46,6 +49,7 @@ interface Props {
 }
 
 export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Props) {
+    const { isTouch: IS_TOUCH } = useViewport()
     const { addToPhysicalArchive, removeFromPhysicalArchive, updatePhysicalArchiveItem, fetchPhysicalArchive } = useFilmStore()
     
     const [searchOpen, setSearchOpen] = useState(false)
@@ -129,13 +133,16 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
         setQuery('')
         setResults([])
         setSearchOpen(false)
+        setEditingId(null)
     }
 
     const startEdit = (item: PhysicalArchiveItem) => {
+        setSelectedFilm({ id: item.filmId, title: item.title, poster_path: item.poster_path, release_date: item.year?.toString() })
         setEditingId(item.filmId)
         setSelectedFormats([...item.formats])
         setNotes(item.notes || '')
         setCondition(item.condition || 'good')
+        setSearchOpen(true)
     }
 
     const filteredArchive = filterFormat
@@ -231,7 +238,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                             </button>
 
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>
-                                ADD TO YOUR COLLECTION
+                                {editingId !== null ? 'EDIT ARCHIVE ENTRY' : 'ADD TO YOUR COLLECTION'}
                             </div>
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', color: 'var(--parchment)', marginBottom: '1.5rem' }}>
                                 {selectedFilm ? (selectedFilm.title || selectedFilm.name) : 'Search for a Film'}
@@ -301,9 +308,11 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', letterSpacing: '0.1em', alignSelf: 'flex-end' }}>
                                             {selectedFilm.release_date ? new Date(selectedFilm.release_date).getFullYear() : '—'}
                                             <br />
-                                            <button onClick={() => setSelectedFilm(null)} style={{ background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', padding: 0, marginTop: '0.25rem' }}>
-                                                ← CHANGE FILM
-                                            </button>
+                                            {editingId === null && (
+                                                <button onClick={() => setSelectedFilm(null)} style={{ background: 'none', border: 'none', color: 'var(--sepia)', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', padding: 0, marginTop: '0.25rem' }}>
+                                                    ← CHANGE FILM
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
 
@@ -368,11 +377,11 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
 
                                     <button
                                         className="btn btn-primary"
-                                        onClick={handleAdd}
+                                        onClick={() => editingId !== null ? handleUpdate(editingId) : handleAdd()}
                                         disabled={selectedFormats.length === 0}
                                         style={{ width: '100%', justifyContent: 'center', padding: '0.8rem', opacity: selectedFormats.length === 0 ? 0.5 : 1 }}
                                     >
-                                        <Archive size={14} /> ADD TO COLLECTION
+                                        <Archive size={14} /> {editingId !== null ? 'SAVE CHANGES' : 'ADD TO COLLECTION'}
                                     </button>
                                 </>
                             )}
@@ -408,128 +417,35 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '0.5rem' }}>
                                     {month}
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '1rem' }}>
+                                <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: IS_TOUCH ? '0.2rem' : '0.75rem' }}>
                                     {grouped[month].map((item: any) => (
-                                        <motion.div
-                                            key={item.filmId}
-                                            layout
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            style={{
-                                                background: 'var(--soot)', border: '1px solid var(--ash)',
-                                                borderRadius: '6px', overflow: 'hidden',
-                                                transition: 'border-color 0.2s',
-                                                display: 'flex', flexDirection: 'column',
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem' }}>
-                                                {/* Poster */}
-                                                {item.poster_path ? (
-                                                    <div style={{ width: 55, height: 82, flexShrink: 0, borderRadius: '3px', overflow: 'hidden', border: '1px solid var(--ash)' }}>
-                                                        <Poster path={item.poster_path} title={item.title} sizeHint="sm" />
-                                                    </div>
-                                                ) : (
-                                                    <div style={{ width: 55, height: 82, background: 'var(--ink)', border: '1px solid var(--ash)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                                        <Disc size={20} color="var(--fog)" />
-                                                    </div>
-                                                )}
-
-                                                {/* Info */}
-                                                <div style={{ flex: 1, minWidth: 0 }}>
-                                                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.95rem', color: 'var(--parchment)', lineHeight: 1.2, marginBottom: '0.2rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {item.title}
-                                                    </div>
-                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em', marginBottom: '0.5rem' }}>
-                                                        {item.year || '—'} · {CONDITIONS.find(c => c.id === item.condition)?.label || 'Good'}
-                                                    </div>
-
-                                                    {/* Format badges */}
-                                                    {editingId === item.filmId ? (
-                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem', marginBottom: '0.5rem' }}>
-                                                            {FORMATS.map(f => (
-                                                                <button
-                                                                    key={f.id}
-                                                                    onClick={() => toggleFormat(f.id)}
-                                                                    style={{
-                                                                        fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em',
-                                                                        padding: '0.2rem 0.4rem', borderRadius: '2px', cursor: 'pointer',
-                                                                        border: `1px solid ${selectedFormats.includes(f.id) ? f.color : 'var(--ash)'}`,
-                                                                        background: selectedFormats.includes(f.id) ? `${f.color}22` : 'transparent',
-                                                                        color: selectedFormats.includes(f.id) ? f.color : 'var(--fog)',
-                                                                        transition: 'all 0.15s',
-                                                                    }}
-                                                                >
-                                                                    <FormatIcon id={f.id} />
-                                                                </button>
-                                                            ))}
-                                                        </div>
-                                                    ) : (
-                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.25rem' }}>
-                                                            {item.formats.map((fId: string) => {
-                                                                const fmt = FORMATS.find(f => f.id === fId)
-                                                                return fmt ? (
-                                                                    <span
-                                                                        key={fId}
-                                                                        style={{
-                                                                            fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em',
-                                                                            padding: '0.15rem 0.4rem', borderRadius: '2px',
-                                                                            border: `1px solid ${fmt.color}55`,
-                                                                            background: `${fmt.color}15`,
-                                                                            color: fmt.color,
-                                                                        }}
-                                                                    >
-                                                                        <FormatIcon id={fId} /> {fmt.label}
-                                                                    </span>
-                                                                ) : null
-                                                            })}
-                                                        </div>
-                                                    )}
-
-                                                    {item.notes && !editingId && (
-                                                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic', marginTop: '0.35rem', lineHeight: 1.4 }}>
-                                                            "{item.notes}"
-                                                        </div>
-                                                    )}
+                                        <div key={item.filmId} style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                                            <Link to={`/film/${item.filmId}`} style={{ display: 'block', position: 'relative' }}>
+                                                <FilmCard film={{ id: item.filmId, title: item.title, poster_path: item.poster_path, release_date: item.year ? item.year.toString() : '' } as any} />
+                                                
+                                                <div style={{ position: 'absolute', top: 4, right: 4, display: 'flex', gap: '0.2rem', pointerEvents: 'none', flexDirection: 'column' }}>
+                                                    {item.formats.slice(0, 3).map((fId: string) => {
+                                                        const fmt = FORMATS.find(f => f.id === fId)
+                                                        return fmt ? (
+                                                            <div key={fId} style={{ background: 'rgba(10,5,0,0.85)', backdropFilter: 'blur(4px)', border: `1px solid ${fmt.color}aa`, borderRadius: '3px', padding: '0.15rem 0.35rem', color: fmt.color, boxShadow: '0 2px 5px rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center' }}>
+                                                                <FormatIcon id={fId} size={11} />
+                                                            </div>
+                                                        ) : null
+                                                    })}
                                                 </div>
-                                            </div>
-
-                                            {/* Actions */}
+                                            </Link>
+                                            
                                             {isOwnProfile && (
-                                                <div style={{ display: 'flex', marginTop: 'auto', borderTop: '1px solid rgba(139,105,20,0.1)', background: 'rgba(0,0,0,0.15)' }}>
-                                                    {editingId === item.filmId ? (
-                                                        <>
-                                                            <button
-                                                                onClick={() => handleUpdate(item.filmId)}
-                                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--sepia)', background: 'none', border: 'none', cursor: 'pointer' }}
-                                                            >
-                                                                {<Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} SAVE
-                                                            </button>
-                                                            <button
-                                                                onClick={() => { setEditingId(null); setSelectedFormats([]); setNotes(''); setCondition('good') }}
-                                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', borderLeft: '1px solid rgba(139,105,20,0.1)', cursor: 'pointer' }}
-                                                            >
-                                                                CANCEL
-                                                            </button>
-                                                        </>
-                                                    ) : (
-                                                        <>
-                                                            <button
-                                                                onClick={() => startEdit(item)}
-                                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', cursor: 'pointer', transition: 'color 0.15s' }}
-                                                            >
-                                                                EDIT
-                                                            </button>
-                                                            <button
-                                                                onClick={() => handleRemove(item.filmId, item.title)}
-                                                                style={{ flex: 1, padding: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.12em', color: 'var(--fog)', background: 'none', border: 'none', borderLeft: '1px solid rgba(139,105,20,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', transition: 'color 0.15s' }}
-                                                            >
-                                                                <Trash2 size={10} /> REMOVE
-                                                            </button>
-                                                        </>
-                                                    )}
+                                                <div style={{ display: 'flex', marginTop: '0.4rem', gap: '0.35rem' }}>
+                                                    <button onClick={() => startEdit(item)} style={{ flex: 1, padding: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)', background: 'var(--soot)', border: '1px solid rgba(139,105,20,0.15)', borderRadius: '2px', cursor: 'pointer', transition: 'all 0.15s' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.2)'; e.currentTarget.style.color = 'var(--sepia)' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--soot)'; e.currentTarget.style.color = 'var(--fog)' }}>
+                                                        EDIT
+                                                    </button>
+                                                    <button onClick={() => handleRemove(item.filmId, item.title)} style={{ flex: 1, padding: '0.35rem', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--fog)', background: 'var(--soot)', border: '1px solid rgba(139,105,20,0.15)', borderRadius: '2px', cursor: 'pointer', transition: 'all 0.15s', display: 'flex', justifyContent: 'center', alignItems: 'center' }} onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,30,30,0.2)'; e.currentTarget.style.color = 'var(--blood-reel)' }} onMouseLeave={e => { e.currentTarget.style.background = 'var(--soot)'; e.currentTarget.style.color = 'var(--fog)' }}>
+                                                        <Trash2 size={10} />
+                                                    </button>
                                                 </div>
                                             )}
-                                        </motion.div>
+                                        </div>
                                     ))}
                                 </div>
                             </div>
