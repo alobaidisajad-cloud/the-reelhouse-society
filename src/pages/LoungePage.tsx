@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, Plus, Lock, Users, Copy, Check, Search, Info, X } from 'lucide-react'
@@ -182,7 +183,7 @@ function JoinedLoungeCard({ lounge, unread }: { lounge: any; unread: number }) {
 function LoungeInfoModal({ lounge, onClose }: { lounge: any; onClose: () => void }) {
     const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w780') : null
 
-    return (
+    return createPortal(
         <div className="lounge-info-modal-wrapper">
             <div className="lounge-create-backdrop" onClick={onClose} style={{ backdropFilter: 'blur(12px)', background: 'rgba(0,0,0,0.7)' }} />
             <motion.div
@@ -192,7 +193,7 @@ function LoungeInfoModal({ lounge, onClose }: { lounge: any; onClose: () => void
                 exit={{ opacity: 0, scale: 0.95, y: 20, filter: 'blur(10px)' }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-                <button className="lounge-create-close" onClick={onClose} style={{ zIndex: 50 }}><X size={16} /></button>
+                <button className="lounge-settings-close" onClick={onClose} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 50 }}><X size={16} /></button>
                 
                 {coverUrl && (
                     <div className="lounge-info-premium-bg" style={{ backgroundImage: `url(${coverUrl})` }} />
@@ -224,7 +225,8 @@ function LoungeInfoModal({ lounge, onClose }: { lounge: any; onClose: () => void
                     </div>
                 </div>
             </motion.div>
-        </div>
+        </div>,
+        document.body
     )
 }
 
