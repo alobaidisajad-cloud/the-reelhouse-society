@@ -63,17 +63,17 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                 <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '14px 14px 0 0' }}>
 
                     {/* Atmospheric backdrop — uses editorial header if available, falls back to blurred poster */}
-                    <div style={{ position: 'relative', height: viewLog.editorialHeader ? 220 : 200 }}>
+                    <div style={{ position: 'relative', height: viewLog.editorialHeader ? 280 : 200 }}>
                         {viewLog.editorialHeader ? (
                             <img
-                                src={tmdb.backdrop(viewLog.editorialHeader, 'w780')}
+                                src={tmdb.backdrop(viewLog.editorialHeader, 'w1280')}
                                 alt=""
                                 aria-hidden
                                 style={{
                                     position: 'absolute', inset: 0,
                                     width: '100%', height: '100%',
-                                    objectFit: 'cover',
-                                    filter: 'sepia(0.15) contrast(1.05) brightness(0.5)',
+                                    objectFit: 'cover', objectPosition: 'center 25%',
+                                    filter: 'sepia(0.08) contrast(1.1) brightness(0.45)',
                                 }}
                             />
                         ) : poster ? (
@@ -95,8 +95,14 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                         {/* Gradient that transitions smoothly to the card body */}
                         <div style={{
                             position: 'absolute', inset: 0,
-                            background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(13,11,8,0.7) 60%, rgba(13,11,8,1) 100%)',
+                            background: viewLog.editorialHeader
+                                ? 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 25%, rgba(13,11,8,0.6) 55%, rgba(13,11,8,1) 100%)'
+                                : 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(13,11,8,0.7) 60%, rgba(13,11,8,1) 100%)',
                         }} />
+                        {/* Side vignette for editorial headers */}
+                        {viewLog.editorialHeader && (
+                            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center 35%, transparent 30%, rgba(13,11,8,0.45) 100%)' }} />
+                        )}
                         {/* Horizontal scanlines */}
                         <div style={{
                             position: 'absolute', inset: 0, pointerEvents: 'none',

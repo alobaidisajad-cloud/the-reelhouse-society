@@ -148,78 +148,125 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         return (
             <div className="fade-in-up" onClick={e => e.stopPropagation()} style={{ padding: '0.5rem 0 3rem 0', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                {/* ── EDITORIAL HEADER STILL (Archivist Feature) ── */}
-                {log.editorialHeader && (
-                    <div style={{ position: 'relative', width: '100%', aspectRatio: '2.2/1', borderRadius: '4px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,105,20,0.15)' }}>
-                        <img
-                            src={tmdb.backdrop(log.editorialHeader, 'w1280')}
-                            alt="Editorial header"
-                            loading="lazy"
-                            decoding="async"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.1) contrast(1.08) brightness(0.7)' }}
-                        />
-                        {/* Deep cinematic vignette layers */}
-                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.35) 0%, transparent 25%, transparent 55%, rgba(11,10,8,0.8) 100%)' }} />
-                        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 35%, rgba(11,10,8,0.5) 100%)' }} />
-                        {/* Film grain overlay */}
-                        <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)', pointerEvents: 'none' }} />
-                        {/* Golden bottom accent */}
-                        <div style={{ position: 'absolute', bottom: 0, left: '15%', right: '15%', height: '2px', background: 'linear-gradient(90deg, transparent, rgba(218,165,32,0.5), transparent)', filter: 'blur(0.5px)' }} />
-                        {/* Editorial badge */}
-                        <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.3em', color: 'rgba(218,165,32,0.9)', background: 'rgba(11,10,8,0.65)', backdropFilter: 'blur(8px)', padding: '0.3rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.3)' }}>
-                            ✦ EDITORIAL
+                {/* ── CINEMATIC HERO (Archivist Editorial) ── */}
+                {log.editorialHeader ? (
+                    <div style={{ position: 'relative', marginBottom: '1rem' }}>
+                        {/* Full-bleed editorial backdrop */}
+                        <div style={{ position: 'relative', width: 'calc(100% + 2rem)', marginLeft: '-1rem', overflow: 'hidden' }}>
+                            <div style={{ position: 'relative', width: '100%', paddingBottom: '50%', minHeight: 280 }}>
+                                <img
+                                    src={tmdb.backdrop(log.editorialHeader, 'w1280')}
+                                    alt=""
+                                    loading="lazy"
+                                    decoding="async"
+                                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', filter: 'sepia(0.08) contrast(1.1) brightness(0.55)' }}
+                                />
+                                {/* Deep cinematic vignette — fades seamlessly into page background */}
+                                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.2) 0%, transparent 20%, transparent 40%, rgba(11,10,8,0.95) 85%, rgba(11,10,8,1) 100%)' }} />
+                                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center 30%, transparent 30%, rgba(11,10,8,0.55) 100%)' }} />
+                                {/* Film grain */}
+                                <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)', pointerEvents: 'none' }} />
+
+                                {/* Editorial badge — floats in the header */}
+                                <div style={{ position: 'absolute', top: '1rem', left: '1rem', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.3em', color: 'rgba(218,165,32,0.85)', background: 'rgba(11,10,8,0.5)', backdropFilter: 'blur(8px)', padding: '0.35rem 0.7rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.2)' }}>
+                                    ✦ EDITORIAL
+                                </div>
+
+                                {/* User identity — sits inside the header at the bottom */}
+                                <div style={{ position: 'absolute', bottom: '4.5rem', left: '1rem', right: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'rgba(232,223,200,0.9)', textDecoration: 'none', textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+                                            @{log.user || 'anonymous'}
+                                        </Link>
+                                        {log.userRole === 'auteur' && <span style={{ color: 'var(--sepia)', fontSize: '0.8rem' }}>✦</span>}
+                                        {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
+                                    </div>
+                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'rgba(232,223,200,0.5)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
+                                        {log.timestamp || 'RECENT'}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Poster emerging from the darkness — overlaps the header bottom */}
+                        <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginTop: '-3.5rem', zIndex: 3 }}>
+                            {/* Warm projector light behind the poster */}
+                            {log.film?.poster && (
+                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 220, height: 300, background: 'radial-gradient(ellipse, rgba(139,105,20,0.15) 0%, rgba(139,105,20,0.05) 40%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+                            )}
+                            <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '3px', overflow: 'hidden', border: '1px solid rgba(196,150,26,0.3)', position: 'relative', boxShadow: '0 24px 60px rgba(0,0,0,0.9), 0 0 40px rgba(139,105,20,0.08), 0 0 0 1px rgba(196,150,26,0.1)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s', zIndex: 1 }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 28px 70px rgba(0,0,0,0.95), 0 0 50px rgba(139,105,20,0.12)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 24px 60px rgba(0,0,0,0.9), 0 0 40px rgba(139,105,20,0.08), 0 0 0 1px rgba(196,150,26,0.1)' }}>
+                                {log.film?.poster ? (
+                                    <img src={tmdb.poster(log.film.poster, 'w342')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : (
+                                    <div style={{ width: '100%', height: '100%', background: '#0d0b09', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.8 }} /></div>
+                                )}
+                            </Link>
+
+                            {/* Watermark Stamp */}
+                            {endorsed && (
+                                <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-20px', right: '50%', transform: 'translateX(90px)', zIndex: 10, pointerEvents: 'none' } as React.CSSProperties}>
+                                    <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '140px', opacity: 0.15, mixBlendMode: 'screen', filter: 'none' }}>
+                                        <g transform="rotate(-2 150 60)">
+                                            <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
+                                            <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
+                                            <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
+                                            <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
+                                            <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
+                                            <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
+                                            <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
+                                        </g>
+                                    </svg>
+                                </div>
+                            )}
                         </div>
                     </div>
-                )}
-                
-                {/* Focus Header: User Identity & Time */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '1rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', textTransform: 'uppercase' }}>
-                            @{log.user || 'anonymous'}
-                        </Link>
-                        {log.userRole === 'auteur' && <span style={{ color: 'var(--sepia)', fontSize: '0.8rem' }}>✦</span>}
-                        {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
+                ) : (
+                    <>
+                    {/* Non-editorial: standard user row + poster */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', textTransform: 'uppercase' }}>
+                                @{log.user || 'anonymous'}
+                            </Link>
+                            {log.userRole === 'auteur' && <span style={{ color: 'var(--sepia)', fontSize: '0.8rem' }}>✦</span>}
+                            {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
+                            {log.timestamp || 'RECENT'}
+                        </div>
                     </div>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
-                        {log.timestamp || 'RECENT'}
-                    </div>
-                </div>
 
-                {/* Focus Poster & Watermark Stamp */}
-                <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-                    {/* Ambient poster light (Archivist only) */}
-                    {isArchivistLog && log.film?.poster && (
-                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 180, height: 250, background: 'radial-gradient(ellipse, rgba(139,105,20,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
-                    )}
-                    <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: isArchivistLog ? '1px solid rgba(196,150,26,0.35)' : '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: isArchivistLog ? '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.1)' : '0 20px 40px rgba(0,0,0,0.8)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s', zIndex: 1 }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = isArchivistLog ? '0 24px 48px rgba(0,0,0,0.9), 0 0 40px rgba(139,105,20,0.15)' : '0 24px 48px rgba(0,0,0,0.9)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = isArchivistLog ? '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.1)' : '0 20px 40px rgba(0,0,0,0.8)' }}>
-                        {log.film?.poster ? (
-                            <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                            <div style={{ width: '100%', height: '100%', background: '#0d0b09', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.8 }} />
+                    <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
+                        {isArchivistLog && log.film?.poster && (
+                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 180, height: 250, background: 'radial-gradient(ellipse, rgba(139,105,20,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+                        )}
+                        <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: isArchivistLog ? '1px solid rgba(196,150,26,0.35)' : '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: isArchivistLog ? '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.1)' : '0 20px 40px rgba(0,0,0,0.8)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s', zIndex: 1 }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 24px 48px rgba(0,0,0,0.9)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.8)' }}>
+                            {log.film?.poster ? (
+                                <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                <div style={{ width: '100%', height: '100%', background: '#0d0b09', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.8 }} /></div>
+                            )}
+                            <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none' }} />
+                        </Link>
+
+                        {endorsed && (
+                            <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-20px', right: '50%', transform: 'translateX(90px)', zIndex: 10, pointerEvents: 'none' } as React.CSSProperties}>
+                                <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '140px', opacity: 0.15, mixBlendMode: 'screen', filter: 'none' }}>
+                                    <g transform="rotate(-2 150 60)">
+                                        <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
+                                        <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
+                                        <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
+                                        <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
+                                        <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
+                                        <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
+                                        <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
+                                    </g>
+                                </svg>
                             </div>
                         )}
-                        <div style={{ position: 'absolute', inset: 0, border: '1px solid rgba(139,105,20,0.1)', pointerEvents: 'none' }} />
-                    </Link>
-
-                    {/* Watermark Stamp directly overlapping bottom-right safely (No text overlap) */}
-                    {endorsed && (
-                        <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-20px', right: '50%', transform: 'translateX(90px)', zIndex: 10, pointerEvents: 'none' } as React.CSSProperties}>
-                            <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '140px', opacity: 0.15, mixBlendMode: 'screen', filter: 'none' }}>
-                                <g transform="rotate(-2 150 60)">
-                                    <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
-                                    <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
-                                    <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
-                                    <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
-                                    <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
-                                    <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
-                                    <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
-                                </g>
-                            </svg>
-                        </div>
-                    )}
-                </div>
+                    </div>
+                    </>
+                )}
 
                 {/* Focus Title & Rating */}
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
