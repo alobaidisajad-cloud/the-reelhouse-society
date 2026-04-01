@@ -744,7 +744,7 @@ export default function UserProfilePage() {
                 <div className="container layout-sidebar reversed">
                     <div>
                         {activeTab === 'diary' && (
-                            <VaultLedgerTab profileLogs={profileLogs} isOwnProfile={isOwnProfile} setViewLog={setViewLog} />
+                            <VaultLedgerTab profileLogs={profileLogs} isOwnProfile={isOwnProfile} setViewLog={setViewLog} userRole={profileUser?.role} />
                         )}
 
                         {activeTab === 'tickets' && (

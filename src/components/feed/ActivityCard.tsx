@@ -396,7 +396,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             }}
         >
             {/* ── EDITORIAL HEADER STRIP (Feed — Archivist Feature) ── */}
-            {log.editorialHeader && (
+            {log.editorialHeader ? (
                 <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 120 : 160, overflow: 'hidden' }}>
                     <img
                         src={tmdb.backdrop(log.editorialHeader, 'w780')}
@@ -415,7 +415,20 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         ✦ EDITORIAL
                     </div>
                 </div>
-            )}
+            ) : isArchivistLog && log.film?.poster ? (
+                /* Atmospheric blurred poster backdrop for archivist cards without editorial header */
+                <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 60 : 70, overflow: 'hidden' }}>
+                    <img
+                        src={tmdb.poster(log.film.poster, 'w342')}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%', filter: 'blur(18px) sepia(0.25) brightness(0.3) saturate(0.7)', transform: 'scale(1.3)' }}
+                    />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.3) 0%, rgba(11,10,8,0.95) 100%)' }} />
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(196,150,26,0.2), transparent)' }} />
+                </div>
+            ) : null}
             <div style={{ padding: IS_TOUCH ? '1rem' : '1.25rem', display: 'flex', gap: IS_TOUCH ? '1rem' : '1.25rem' }}>
             {/* Poster with Ambient Echo */}
             <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} className="reel-poster-wrap" style={{ width: IS_TOUCH ? 100 : 100, height: IS_TOUCH ? 150 : 150, display: 'block', textDecoration: 'none', cursor: 'pointer' }}>

@@ -7,7 +7,8 @@ import { useViewport } from '../../hooks/useViewport'
 
 import { FilmLog } from '../../types'
 
-export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog }: { profileLogs: FilmLog[], isOwnProfile: boolean, setViewLog: (log: FilmLog) => void }) {
+export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole }: { profileLogs: FilmLog[], isOwnProfile: boolean, setViewLog: (log: FilmLog) => void, userRole?: string }) {
+    const isArchivist = userRole === 'archivist'
     const { isTouch: IS_TOUCH } = useViewport()
     const [sieve, setSieve] = useState<number | 'all'>('all')
     const [visibleLogCount, setVisibleLogCount] = useState(40)
@@ -105,7 +106,7 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog }: { prof
                                 <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: IS_TOUCH ? '0.2rem' : '0.75rem' }}>
                                     {grouped[month].map((log) => {
                                         const hl = halfLifeMap[log.filmId]
-                                        const isPremiumLog = log.editorialHeader || log.dropCap || log.pullQuote
+                                        const isPremiumLog = isArchivist
                                         return (
                                             <div
                                                 key={log.id}

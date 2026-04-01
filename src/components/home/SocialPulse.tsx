@@ -106,7 +106,7 @@ const SocialPulse = memo(function SocialPulse() {
                                 <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isArchivist ? '2px' : '1px', background: isArchivist ? 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)' : `linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)`, backgroundSize: isArchivist ? '200% 100%' : undefined, animation: isArchivist ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
 
                                 {/* Editorial Header Strip — Archivist Feature */}
-                                {act.editorialHeader && (
+                                {act.editorialHeader ? (
                                     <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 80 : 120, overflow: 'hidden', borderBottom: '1px solid rgba(139,105,20,0.15)' }}>
                                         <img
                                             src={tmdb.backdrop(act.editorialHeader, 'w780')}
@@ -120,7 +120,19 @@ const SocialPulse = memo(function SocialPulse() {
                                         {/* ✦ EDITORIAL badge */}
                                         <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.25em', color: 'rgba(218,165,32,0.85)', background: 'rgba(11,10,8,0.55)', backdropFilter: 'blur(6px)', padding: '0.2rem 0.4rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.2)' }}>✦ EDITORIAL</div>
                                     </div>
-                                )}
+                                ) : isArchivist && act.film?.poster_path ? (
+                                    /* Atmospheric blurred poster strip for archivist cards without editorial header */
+                                    <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 50 : 60, overflow: 'hidden', borderBottom: '1px solid rgba(139,105,20,0.1)' }}>
+                                        <img
+                                            src={tmdb.poster(act.film.poster_path, 'w342')}
+                                            alt=""
+                                            loading="lazy"
+                                            decoding="async"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%', filter: 'blur(18px) sepia(0.25) brightness(0.35) saturate(0.7)', transform: 'scale(1.3)' }}
+                                        />
+                                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.3) 0%, rgba(18,14,9,0.95) 100%)' }} />
+                                    </div>
+                                ) : null}
 
                                 <div style={{ padding: IS_TOUCH ? '1rem' : '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
                                 {/* Header */}
