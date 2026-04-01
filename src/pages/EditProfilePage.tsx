@@ -9,10 +9,11 @@ import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
-import { ArrowLeft, Camera, Link2, Plus, X, GripVertical } from 'lucide-react'
+import { ArrowLeft, Camera, Link2, Plus, X, GripVertical, Film } from 'lucide-react'
 import Buster from '../components/Buster'
 import AvatarCropModal from '../components/AvatarCropModal'
 import '../styles/settings.css'
+import { ProfileTriptych } from '../components/profile/ProfileTriptych'
 
 interface SocialLink {
     id: string
@@ -339,6 +340,21 @@ export default function EditProfilePage() {
                     <div className="settings-char-count">
                         {bio.length}/160
                     </div>
+                </div>
+            </div>
+
+            {/* ════════════════════════════════════ */}
+            {/*   FAVORITE FILMS                    */}
+            {/* ════════════════════════════════════ */}
+            <div className="settings-section">
+                <div className="settings-section-header">
+                    <Film size={14} /> FAVORITE FILMS
+                </div>
+                <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--fog)', marginBottom: '1.5rem', lineHeight: 1.5 }}>
+                    Choose 3 films that define your cinematic identity. Tap a slot to search and select.
+                </p>
+                <div style={{ maxWidth: 380, margin: '0 auto' }}>
+                    <ProfileTriptych user={user} isOwnProfile={true} userRole={user?.role as string} />
                 </div>
             </div>
 

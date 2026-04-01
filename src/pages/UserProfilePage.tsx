@@ -588,10 +588,10 @@ export default function UserProfilePage() {
 
                     return (
                         <div className="container" style={{ maxWidth: 1600, padding: IS_TOUCH ? '1.5rem 1rem 0' : '2rem 1rem 0' }}>
-                            <div style={{ maxWidth: IS_TOUCH ? 'none' : 600, margin: '0 auto' }}>
+                            <div style={{ maxWidth: IS_TOUCH ? 'none' : 450, margin: '0 auto' }}>
                                 <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)', marginBottom: '1.25rem' }} />
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', textAlign: 'center', marginBottom: '0.8rem', textShadow: '0 0 15px rgba(139,105,20,0.3)' }}>✦ RECENTLY WATCHED ✦</div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.6rem' : '1rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                                 {recentLogs.map((log: any) => (
                                     <Link
                                         key={log.id || log.filmId}
