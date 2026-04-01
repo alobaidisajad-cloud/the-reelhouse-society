@@ -8,6 +8,8 @@ export interface DispatchState {
     loading: boolean
     fetchDossiers: () => Promise<void>
     addDossier: (dossier: Partial<Dossier> & { fullContent?: string }) => Promise<void>
+    updateDossier: (id: string, updates: { title?: string; excerpt?: string; fullContent?: string }) => Promise<void>
+    deleteDossier: (id: string) => Promise<void>
 }
 
 // ── DISPATCH STORE — Auteur dossiers ──
@@ -94,6 +96,46 @@ export const useDispatchStore = create<DispatchState>((set) => ({
                     month: 'short', day: '2-digit', year: 'numeric',
                 }).toUpperCase(),
             }, ...state.dossiers],
+        }))
+    },
+
+    updateDossier: async (id, updates) => {
+        const user = useAuthStore.getState().user
+        if (!user) throw new Error("Must be logged in")
+        const dbUpdates: Record<string, any> = {}
+        if (updates.title) dbUpdates.title = updates.title
+        if (updates.excerpt) dbUpdates.excerpt = updates.excerpt
+        if (updates.fullContent) dbUpdates.full_content = updates.fullContent
+
+        const { error } = await supabase
+            .from('dispatch_dossiers')
+            .update(dbUpdates)
+            .eq('id', id)
+            .eq('user_id', user.id)
+
+        if (error) throw error
+
+        set((state) => ({
+            dossiers: state.dossiers.map((d: any) =>
+                d.id === id ? { ...d, ...updates, author: d.author } : d
+            ),
+        }))
+    },
+
+    deleteDossier: async (id) => {
+        const user = useAuthStore.getState().user
+        if (!user) throw new Error("Must be logged in")
+
+        const { error } = await supabase
+            .from('dispatch_dossiers')
+            .delete()
+            .eq('id', id)
+            .eq('user_id', user.id)
+
+        if (error) throw error
+
+        set((state) => ({
+            dossiers: state.dossiers.filter((d: any) => d.id !== id),
         }))
     },
 }))

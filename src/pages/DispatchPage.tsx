@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { tmdb } from '../tmdb'
 import { useAuthStore, useDispatchStore } from '../store'
+const EDIT_DRAFT_KEY = 'reelhouse_dossier_edit'
 import { supabase } from '../supabaseClient'
 import Buster from '../components/Buster'
 import DossierCritiquePanel from '../components/feed/DossierCritiquePanel'
@@ -552,6 +553,51 @@ export default function DispatchPage() {
                                         )}
                                     </div>
                                 </div>
+
+                                {/* ── Author Controls (only visible to dossier owner) ── */}
+                                {user && selectedArticle.authorId === user.id && !selectedArticle.id?.startsWith('seed-') && (
+                                    <div style={{
+                                        display: 'flex', gap: '1rem', marginTop: '1.5rem', paddingTop: '1rem',
+                                        borderTop: '1px dashed rgba(139,105,20,0.12)',
+                                        justifyContent: 'flex-end',
+                                    }}>
+                                        <button
+                                            className="reel-action-btn"
+                                            onClick={() => {
+                                                // Save dossier data for the compose page to pick up
+                                                localStorage.setItem(EDIT_DRAFT_KEY, JSON.stringify({
+                                                    id: selectedArticle.id,
+                                                    title: selectedArticle.title,
+                                                    content: selectedArticle.fullContent || selectedArticle.excerpt,
+                                                }))
+                                                closeArticle()
+                                                navigate('/dispatch/compose?edit=true')
+                                            }}
+                                            style={{ color: 'var(--sepia)' }}
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                                            EDIT
+                                        </button>
+                                        <button
+                                            className="reel-action-btn"
+                                            onClick={async () => {
+                                                if (!window.confirm('Delete this dossier permanently? This cannot be undone.')) return
+                                                try {
+                                                    const { deleteDossier } = useDispatchStore.getState()
+                                                    await deleteDossier(selectedArticle.id)
+                                                    closeArticle()
+                                                    toast.success('Dossier deleted')
+                                                } catch {
+                                                    toast.error('Failed to delete dossier')
+                                                }
+                                            }}
+                                            style={{ color: '#8b2020' }}
+                                        >
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                            DELETE
+                                        </button>
+                                    </div>
+                                )}
 
                                 {/* Critique Panel */}
                                 {selectedArticle.id && !selectedArticle.id.startsWith('seed-') && (

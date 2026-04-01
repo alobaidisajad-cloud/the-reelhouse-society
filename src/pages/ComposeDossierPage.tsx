@@ -60,6 +60,7 @@ function inlineFormat(text: string): string {
 
 /* ── Autosave key ── */
 const DRAFT_KEY = 'reelhouse_dossier_draft'
+const EDIT_DRAFT_KEY = 'reelhouse_dossier_edit'
 
 /* ══════════════════════════════════════════════════════
    THE WRITING ROOM
@@ -68,7 +69,7 @@ const DRAFT_KEY = 'reelhouse_dossier_draft'
 export default function ComposeDossierPage() {
     const navigate = useNavigate()
     const { user } = useAuthStore()
-    const { addDossier } = useDispatchStore()
+    const { addDossier, updateDossier } = useDispatchStore()
     const { isMobile } = useViewport()
     const textareaRef = useRef<HTMLTextAreaElement>(null)
 
@@ -78,6 +79,7 @@ export default function ComposeDossierPage() {
     const [isPublishing, setIsPublishing] = useState(false)
     const [mobileTab, setMobileTab] = useState<'write' | 'preview'>('write')
     const [draftSaved, setDraftSaved] = useState(false)
+    const [editId, setEditId] = useState<string | null>(null)
 
     // ── Auth guard ──
     const canWrite = user?.role === 'auteur'
@@ -89,8 +91,26 @@ export default function ComposeDossierPage() {
         }
     }, [canWrite, navigate])
 
-    // ── Restore draft from localStorage ──
+    // ── Restore draft or edit data from localStorage ──
     useEffect(() => {
+        // Check if we're in edit mode
+        const params = new URLSearchParams(window.location.search)
+        if (params.get('edit') === 'true') {
+            try {
+                const editData = localStorage.getItem(EDIT_DRAFT_KEY)
+                if (editData) {
+                    const parsed = JSON.parse(editData)
+                    setEditId(parsed.id || null)
+                    setTitle(parsed.title || '')
+                    setContent(parsed.content || '')
+                    localStorage.removeItem(EDIT_DRAFT_KEY)
+                    toast('Editing dossier', { icon: '✏️', duration: 2000 })
+                    return
+                }
+            } catch { /* ignore corrupt data */ }
+        }
+
+        // Normal draft restore
         try {
             const saved = localStorage.getItem(DRAFT_KEY)
             if (saved) {
@@ -104,9 +124,10 @@ export default function ComposeDossierPage() {
         } catch { /* ignore corrupt data */ }
     }, [])
 
-    // ── Autosave every 3 seconds (debounced) ──
+    // ── Autosave every 3 seconds (debounced) — only for new dossiers ──
     useEffect(() => {
         if (!title && !content) return
+        if (editId) return // Don't autosave edits to the draft key
 
         const timeout = setTimeout(() => {
             try {
@@ -117,7 +138,7 @@ export default function ComposeDossierPage() {
         }, 3000)
 
         return () => clearTimeout(timeout)
-    }, [title, content])
+    }, [title, content, editId])
 
     // ── Word count & read time ──
     const stats = useMemo(() => {
@@ -167,21 +188,32 @@ export default function ComposeDossierPage() {
         }
     }
 
-    // ── Publish ──
+    // ── Publish or Update ──
     const handlePublish = async () => {
         if (!title.trim() || !content.trim() || isPublishing) return
 
         try {
             setIsPublishing(true)
-            await addDossier({
-                title: title.trim(),
-                excerpt: content.trim().substring(0, 150) + (content.length > 150 ? '...' : ''),
-                fullContent: content.trim(),
-            })
 
-            // Clear draft
-            localStorage.removeItem(DRAFT_KEY)
-            toast.success('Dossier published to The Dispatch')
+            if (editId) {
+                // Update existing dossier
+                await updateDossier(editId, {
+                    title: title.trim(),
+                    excerpt: content.trim().substring(0, 150) + (content.length > 150 ? '...' : ''),
+                    fullContent: content.trim(),
+                })
+                toast.success('Dossier updated')
+            } else {
+                // Create new dossier
+                await addDossier({
+                    title: title.trim(),
+                    excerpt: content.trim().substring(0, 150) + (content.length > 150 ? '...' : ''),
+                    fullContent: content.trim(),
+                })
+                localStorage.removeItem(DRAFT_KEY)
+                toast.success('Dossier published to The Dispatch')
+            }
+
             navigate('/dispatch')
         } catch (err: any) {
             toast.error(err.message || 'Failed to publish. Try again.')
@@ -348,7 +380,7 @@ export default function ComposeDossierPage() {
                     disabled={!isReady || isPublishing}
                     onClick={handlePublish}
                 >
-                    {isPublishing ? 'TRANSMITTING…' : '✦ PUBLISH DOSSIER'}
+                    {isPublishing ? 'TRANSMITTING…' : editId ? '✦ UPDATE DOSSIER' : '✦ PUBLISH DOSSIER'}
                 </button>
             </div>
         </motion.div>
