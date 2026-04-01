@@ -598,7 +598,7 @@ export default function UserProfilePage() {
                                         to={`/film/${log.filmId}`}
                                         style={{ textDecoration: 'none', display: 'block' }}
                                     >
-                                        <div className={isArchivistPlus && profileUser?.role === 'archivist' ? 'archivist-card-glow' : ''} style={{
+                                        <div className={isArchivistPlus && profileUser?.role === 'archivist' ? 'archivist-card-glow' : isArchivistPlus && profileUser?.role === 'auteur' ? 'auteur-card-glow' : ''} style={{
                                             position: 'relative',
                                             aspectRatio: '2/3',
                                             borderRadius: '6px',

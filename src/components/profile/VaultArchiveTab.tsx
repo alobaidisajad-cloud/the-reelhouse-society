@@ -24,6 +24,7 @@ interface VaultArchiveTabProps {
 
 export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archiveSieve, setArchiveSieve, archiveVisibleCount, setArchiveVisibleCount, archiveFilteredLogs, userRole }: VaultArchiveTabProps) {
     const isArchivist = userRole === 'archivist'
+    const isAuteur = userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
     return (
         <div>
@@ -61,7 +62,7 @@ export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archive
                                 </div>
                                 <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: IS_TOUCH ? '0.2rem' : '0.75rem' }}>
                                     {grouped[month].map((log) => (
-                                        <div key={log.id} onClick={() => setViewLog(log)} className={isArchivist ? 'archivist-card-glow' : ''} style={{ position: 'relative', cursor: 'pointer' }}>
+                                        <div key={log.id} onClick={() => setViewLog(log)} className={isArchivist ? 'archivist-card-glow' : isAuteur ? 'auteur-card-glow' : ''} style={{ position: 'relative', cursor: 'pointer' }}>
                                             <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status } as any} />
                                             {log.status === 'rewatched' && (
                                                 <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(10,7,3,0.85)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.15rem 0.35rem', pointerEvents: 'none' }}>
@@ -92,6 +93,7 @@ export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archive
 
 export function VaultWatchlistTab({ profileWatchlist, isOwnProfile, userRole }: { profileWatchlist: WatchlistItem[], isOwnProfile: boolean, userRole?: string }) {
     const isArchivist = userRole === 'archivist'
+    const isAuteur = userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
     return (
         <div>
@@ -104,7 +106,7 @@ export function VaultWatchlistTab({ profileWatchlist, isOwnProfile, userRole }: 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: IS_TOUCH ? '0.2rem' : '1rem' }}>
                         {profileWatchlist.map((film) => (
                             <Link key={film.id} to={`/film/${film.id}`}>
-                                <motion.div className={isArchivist ? 'archivist-card-glow' : ''} whileHover={{ y: -3, transition: { type: 'spring', damping: 12 } }}><FilmCard film={film as any} /></motion.div>
+                                <motion.div className={isArchivist ? 'archivist-card-glow' : isAuteur ? 'auteur-card-glow' : ''} whileHover={{ y: -3, transition: { type: 'spring', damping: 12 } }}><FilmCard film={film as any} /></motion.div>
                             </Link>
                         ))}
                     </div>

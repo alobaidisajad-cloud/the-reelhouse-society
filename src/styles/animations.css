@@ -521,6 +521,8 @@
   .ambient-breathe { animation: none !important; }
   .archivist-card-glow { animation: none !important; border-color: rgba(196,150,26,0.4) !important; box-shadow: 0 6px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(139,105,20,0.15), 0 0 20px rgba(139,105,20,0.08) !important; }
   .archivist-card-glow::before { animation: none !important; }
+  .auteur-card-glow { animation: none !important; border-color: rgba(125,31,31,0.4) !important; box-shadow: 0 6px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(125,31,31,0.15), 0 0 20px rgba(125,31,31,0.08) !important; }
+  .auteur-card-glow::before { animation: none !important; }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -801,3 +803,90 @@
   text-shadow: 0 1px 8px rgba(139,105,20,0.8), 0 0 20px rgba(196,150,26,0.5);
 }
 
+/* ── AUTEUR CARD GLOW — Crimson Velvet treatment for poster grid cards ──
+   The Auteur's visual signature. Deep crimson replaces gold.
+   Uses the same premiumShimmer keyframe but with blood-red colors. */
+
+.auteur-card-glow {
+  position: relative;
+  border-radius: 4px;
+  border: 1px solid rgba(125,31,31,0.35) !important;
+  box-shadow:
+    0 6px 24px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(125,31,31,0.15),
+    0 0 20px rgba(125,31,31,0.08),
+    inset 0 1px 0 rgba(180,45,45,0.12);
+  animation: auteurCardBreathe 4s ease-in-out infinite;
+  overflow: visible;
+}
+
+@keyframes auteurCardBreathe {
+  0%, 100% {
+    border-color: rgba(125,31,31,0.30);
+    box-shadow:
+      0 6px 24px rgba(0,0,0,0.45),
+      0 0 0 1px rgba(125,31,31,0.12),
+      0 0 15px rgba(125,31,31,0.06),
+      inset 0 1px 0 rgba(180,45,45,0.08);
+  }
+  50% {
+    border-color: rgba(180,45,45,0.55);
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(125,31,31,0.25),
+      0 0 30px rgba(125,31,31,0.12),
+      inset 0 1px 0 rgba(180,45,45,0.18);
+  }
+}
+
+/* Crimson shimmer line at top */
+.auteur-card-glow::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      rgba(125,31,31,0.1) 15%,
+      rgba(180,45,45,0.6) 35%,
+      rgba(220,80,80,0.8) 50%,
+      rgba(180,45,45,0.6) 65%,
+      rgba(125,31,31,0.1) 85%,
+      transparent 100%
+    );
+  background-size: 200% 100%;
+  animation: premiumShimmer 6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 4;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Crimson ★ auteur indicator */
+.auteur-card-glow::after {
+  content: '★';
+  position: absolute;
+  top: 5px;
+  right: 6px;
+  font-size: 0.55rem;
+  color: rgba(180,45,45,0.85);
+  text-shadow: 0 1px 6px rgba(125,31,31,0.6), 0 0 12px rgba(180,45,45,0.3);
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Hover — intensified crimson glow */
+.auteur-card-glow:hover {
+  border-color: rgba(180,45,45,0.7) !important;
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(125,31,31,0.3),
+    0 0 40px rgba(125,31,31,0.15),
+    inset 0 1px 0 rgba(180,45,45,0.2);
+  animation: none;
+}
+
+.auteur-card-glow:hover::after {
+  color: rgba(180,45,45,1);
+  text-shadow: 0 1px 8px rgba(125,31,31,0.8), 0 0 20px rgba(180,45,45,0.5);
+}

@@ -26,6 +26,8 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
     const statusColor = viewLog.status === 'abandoned' ? 'var(--blood-reel)' : viewLog.status === 'rewatched' ? 'var(--flicker)' : 'var(--sepia)'
     const statusLabel = viewLog.status === 'watched' ? 'WATCHED' : viewLog.status === 'rewatched' ? '⟳ REWATCH' : '✕ ABANDONED'
     const isArchivistLog = viewLog.editorialHeader || viewLog.dropCap || viewLog.pullQuote
+    const isAuteurLog = profileUser?.role === 'auteur'
+    const isPremiumLog = isArchivistLog || isAuteurLog
 
     return (
         <Portal>
@@ -49,15 +51,15 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                     overflowX: 'hidden',
                     borderRadius: '14px',
                     background: '#0D0B08',
-                    boxShadow: isArchivistLog
-                        ? '0 32px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(196,150,26,0.3), 0 0 60px rgba(139,105,20,0.08)'
+                    boxShadow: isPremiumLog
+                        ? (isAuteurLog ? '0 32px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(180,45,45,0.3), 0 0 60px rgba(125,31,31,0.08)' : '0 32px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(196,150,26,0.3), 0 0 60px rgba(139,105,20,0.08)')
                         : '0 32px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(196,150,26,0.18)',
                     scrollbarWidth: 'none',
                 }}
             >
-                {/* Premium shimmer line (Archivist only) */}
-                {isArchivistLog && (
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', borderRadius: '14px 14px 0 0', background: 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)', backgroundSize: '200% 100%', animation: 'premiumShimmer 4s ease-in-out infinite', zIndex: 10 }} />
+                {/* Premium shimmer line */}
+                {isPremiumLog && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', borderRadius: '14px 14px 0 0', background: isAuteurLog ? 'linear-gradient(90deg, transparent 0%, rgba(125,31,31,0.4) 30%, rgba(180,45,45,0.6) 50%, rgba(125,31,31,0.4) 70%, transparent 100%)' : 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)', backgroundSize: '200% 100%', animation: 'premiumShimmer 4s ease-in-out infinite', zIndex: 10 }} />
                 )}
 
                 {/* ══════════════════════════════════════
@@ -125,7 +127,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                             {statusLabel}
                         </div>
 
-                        {/* Archivist badge — top right corner when editorial features are used */}
+                        {/* Premium badge — top right corner */}
                         {isArchivistLog && (
                             <div style={{
                                 position: 'absolute', top: '0.9rem', right: '2.8rem',
@@ -137,6 +139,19 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                                 padding: '0.2rem 0.5rem', borderRadius: '3px',
                             }}>
                                 ✦ ARCHIVIST
+                            </div>
+                        )}
+                        {isAuteurLog && (
+                            <div style={{
+                                position: 'absolute', top: '0.9rem', right: '2.8rem',
+                                fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.2em',
+                                color: '#B42D2D',
+                                background: 'rgba(11,10,8,0.6)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(180,45,45,0.3)',
+                                padding: '0.2rem 0.5rem', borderRadius: '3px',
+                            }}>
+                                ★ AUTEUR
                             </div>
                         )}
 

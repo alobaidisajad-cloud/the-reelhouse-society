@@ -114,6 +114,8 @@ const FeaturedReview = memo(function FeaturedReview() {
 
     const film = displayReview.film
     const isArchivistCritique = featuredCritique?.authorRole === 'archivist'
+    const isAuteurCritique = featuredCritique?.authorRole === 'auteur'
+    const isPremiumCritique = isArchivistCritique || isAuteurCritique
 
     return (
         <div className="layout-sidebar" style={{ alignItems: 'flex-start' }}>
@@ -127,9 +129,9 @@ const FeaturedReview = memo(function FeaturedReview() {
                             padding: '0.5rem',
                             background: 'var(--soot)',
                             borderRadius: '4px',
-                            border: isArchivistCritique ? '1px solid rgba(196,150,26,0.25)' : '1px solid rgba(139,105,20,0.15)',
-                            boxShadow: isArchivistCritique
-                                ? '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(196,150,26,0.1), 0 0 25px rgba(139,105,20,0.06)'
+                            border: isPremiumCritique ? (isAuteurCritique ? '1px solid rgba(180,45,45,0.25)' : '1px solid rgba(196,150,26,0.25)') : '1px solid rgba(139,105,20,0.15)',
+                            boxShadow: isPremiumCritique
+                                ? (isAuteurCritique ? '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(180,45,45,0.1), 0 0 25px rgba(125,31,31,0.06)' : '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(196,150,26,0.1), 0 0 25px rgba(139,105,20,0.06)')
                                 : '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,105,20,0.08)',
                             cursor: film ? 'pointer' : 'default',
                         }}
@@ -259,6 +261,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.2em', color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 {displayReview.author.toUpperCase()}
                                 {featuredCritique?.authorRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.38rem' }}>✦ ARCHIVIST</span>}
+                                {featuredCritique?.authorRole === 'auteur' && <span className="reel-auteur-badge" style={{ fontSize: '0.38rem' }}>★ AUTEUR</span>}
                             </div>
                         </div>
                         {displayReview.rating > 0 && <ReelRating value={displayReview.rating} size="sm" />}

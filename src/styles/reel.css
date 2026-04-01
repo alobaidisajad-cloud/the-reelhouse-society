@@ -229,6 +229,108 @@
   text-shadow: 0 0 6px rgba(196,150,26,0.3);
 }
 
+/* ── AUTEUR DISPATCH — Crimson Velvet tier ── */
+/* The director's cut. Blood-red velvet replaces gold. */
+
+@keyframes auteurBorderBreathe {
+  0%, 100% { border-left-color: rgba(125,31,31,0.45); }
+  50%      { border-left-color: rgba(180,45,45,0.7); }
+}
+
+.reel-dispatch--auteur {
+  border-color: rgba(125,31,31,0.12);
+  border-left: 4px solid rgba(125,31,31,0.5);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(125,31,31,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(125,31,31,0.04) 0%, transparent 40%),
+    linear-gradient(135deg, rgba(40,18,18,0.55) 0%, rgba(14,5,5,0.85) 100%);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(125,31,31,0.1),
+    inset 0 1px 0 rgba(180,45,45,0.1),
+    inset 0 -1px 0 rgba(180,45,45,0.04);
+  animation: auteurBorderBreathe 4s ease-in-out infinite;
+}
+
+/* Crimson shimmer line at top */
+.reel-dispatch--auteur::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      rgba(125,31,31,0.1) 15%,
+      rgba(180,45,45,0.6) 35%,
+      rgba(220,80,80,0.8) 50%,
+      rgba(180,45,45,0.6) 65%,
+      rgba(125,31,31,0.1) 85%,
+      transparent 100%
+    );
+  background-size: 200% 100%;
+  animation: premiumShimmer 6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Crimson corner bracket */
+.reel-dispatch--auteur::after {
+  content: '┐';
+  color: rgba(180,45,45,0.4);
+  opacity: 0.35;
+  text-shadow: 0 0 12px rgba(125,31,31,0.3);
+}
+
+.reel-dispatch--auteur:hover {
+  border-left-color: rgba(180,45,45,0.8);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(125,31,31,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(125,31,31,0.06) 0%, transparent 40%),
+    linear-gradient(135deg, rgba(48,22,22,0.65) 0%, rgba(16,6,6,0.9) 100%);
+  box-shadow:
+    0 16px 48px rgba(0,0,0,0.6),
+    0 0 40px rgba(125,31,31,0.08),
+    0 0 0 1px rgba(180,45,45,0.15),
+    inset 0 1px 0 rgba(180,45,45,0.12);
+  animation: none;
+}
+
+.reel-dispatch--auteur:hover::after {
+  opacity: 0.5;
+}
+
+/* Crimson poster frame treatment */
+.reel-dispatch--auteur .reel-poster-frame {
+  border-color: rgba(180,45,45,0.3);
+  box-shadow:
+    0 6px 16px rgba(0,0,0,0.5),
+    0 0 20px rgba(125,31,31,0.12);
+}
+
+.reel-dispatch--auteur .reel-poster-glow {
+  filter: blur(28px) saturate(2) brightness(0.45);
+  opacity: 0.6;
+}
+
+/* ── AUTEUR BADGE — Crimson Red ── */
+.reel-auteur-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-family: var(--font-ui);
+  font-size: 0.35rem;
+  letter-spacing: 0.18em;
+  color: #B42D2D;
+  background: linear-gradient(135deg, rgba(125,31,31,0.18) 0%, rgba(180,45,45,0.08) 100%);
+  border: 1px solid rgba(180,45,45,0.35);
+  padding: 0.1rem 0.4rem;
+  border-radius: 1px;
+  line-height: 1;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(125,31,31,0.3);
+}
+
 /* ── POSTER AMBIENT ECHO ── */
 .reel-poster-wrap {
   position: relative;

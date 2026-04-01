@@ -80,19 +80,21 @@ const SocialPulse = memo(function SocialPulse() {
                 <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))', gap: IS_TOUCH ? '1rem' : '2rem' }}>
                     {activities.map((act: any, i: number) => {
                         const isArchivist = act.userRole === 'archivist' || act.editorialHeader || act.pullQuote
+                        const isAuteur = act.userRole === 'auteur'
+                        const isPremium = isArchivist || isAuteur
                         const cardStyle: React.CSSProperties = {
                             position: 'relative',
                             padding: 0,
                             background: isArchivist
                                 ? 'linear-gradient(180deg, rgba(139,105,20,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(139,105,20,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)'
                                 : 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.95)',
-                            borderLeft: `${isArchivist ? '3' : '2'}px solid ${isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
-                            borderTop: `1px solid rgba(139,105,20,${isArchivist ? '0.18' : '0.1'})`,
+                            borderLeft: `${isPremium ? '3' : '2'}px solid ${isAuteur ? 'rgba(180,45,45,0.5)' : isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
+                            borderTop: `1px solid rgba(139,105,20,${isPremium ? '0.18' : '0.1'})`,
                             borderBottom: '1px solid rgba(139,105,20,0.05)',
                             borderRight: '1px solid rgba(139,105,20,0.05)',
                             borderRadius: '0 8px 8px 0',
-                            boxShadow: isArchivist
-                                ? '0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(196,150,26,0.1), 0 0 20px rgba(139,105,20,0.04)'
+                            boxShadow: isPremium
+                                ? (isAuteur ? '0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(180,45,45,0.1), 0 0 20px rgba(125,31,31,0.04)' : '0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(196,150,26,0.1), 0 0 20px rgba(139,105,20,0.04)')
                                 : '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.05)',
                             display: 'flex',
                             flexDirection: 'column',
@@ -143,6 +145,7 @@ const SocialPulse = memo(function SocialPulse() {
                                         </div>
                                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--parchment)' }}>@{act.user}</span>
                                         {isArchivist && <span className="reel-archivist-badge">✦ ARCHIVIST</span>}
+                                        {isAuteur && <span className="reel-auteur-badge">★ AUTEUR</span>}
                                     </div>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{act.time}</span>
                                 </div>

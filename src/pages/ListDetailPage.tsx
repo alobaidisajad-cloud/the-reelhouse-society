@@ -23,6 +23,7 @@ export default function ListDetailPage() {
     const [isDeleting, setIsDeleting] = useState(false)
     const [showShareLounge, setShowShareLounge] = useState(false)
     const isArchivist = currentUser && ['archivist', 'auteur', 'projectionist'].includes((currentUser as any).role)
+    const isAuteurRole = (currentUser as any)?.role === 'auteur'
 
 
 
@@ -324,7 +325,7 @@ export default function ListDetailPage() {
                                         <Link
                                             key={f.id ?? i}
                                             to={`/film/${f.id}`}
-                                            className={`list-film-item fade-in-up${isOwner && isArchivist ? ' archivist-card-glow' : ''}`}
+                                            className={`list-film-item fade-in-up${isOwner && isArchivist && !isAuteurRole ? ' archivist-card-glow' : isOwner && isAuteurRole ? ' auteur-card-glow' : ''}`}
                                             style={{ animationDelay: `${Math.min(i * 0.03, 0.5)}s` }}
                                         >
                                             <div className="list-film-number">{i + 1}</div>

@@ -143,8 +143,10 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         }
     }
 
-    // ── Archivist Premium Detection (shared by both views) ──
+    // ── Premium Tier Detection (shared by both views) ──
     const isArchivistLog = log.userRole === 'archivist' || log.editorialHeader || log.dropCap || log.pullQuote
+    const isAuteurLog = log.userRole === 'auteur'
+    const isPremiumLog = isArchivistLog || isAuteurLog
 
     // ── EXPANDED FOCUS VIEW (CINEMATIC LAYOUT) ──
     if (isExpandedView) {
@@ -181,8 +183,8 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                                         <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'rgba(232,223,200,0.9)', textDecoration: 'none', textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                                             @{log.user || 'anonymous'}
                                         </Link>
-                                        {log.userRole === 'auteur' && <span style={{ color: 'var(--sepia)', fontSize: '0.8rem' }}>✦</span>}
                                         {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
+                                        {log.userRole === 'auteur' && <span className="reel-auteur-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>★ AUTEUR</span>}
                                     </div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'rgba(232,223,200,0.5)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                                         {log.timestamp || 'RECENT'}
@@ -231,8 +233,8 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', textTransform: 'uppercase' }}>
                                 @{log.user || 'anonymous'}
                             </Link>
-                            {log.userRole === 'auteur' && <span style={{ color: 'var(--sepia)', fontSize: '0.8rem' }}>✦</span>}
                             {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
+                            {log.userRole === 'auteur' && <span className="reel-auteur-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>★ AUTEUR</span>}
                         </div>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
                             {log.timestamp || 'RECENT'}
@@ -395,7 +397,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     // ── STANDARD FEED VIEW (INLINE LAYOUT) — "THE UNDERGROUND" ──
     return (
         <div
-            className={`reel-dispatch${isArchivistLog ? ' reel-dispatch--premium' : ''}`}
+            className={`reel-dispatch${isArchivistLog ? ' reel-dispatch--premium' : isAuteurLog ? ' reel-dispatch--auteur' : ''}`}
             onClick={handleCardClick}
             style={{
                 padding: 0,
@@ -484,8 +486,8 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         <Link to={`/user/${log.user}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', whiteSpace: 'nowrap', transition: 'text-shadow 0.2s' }} onMouseEnter={e => e.currentTarget.style.textShadow = '0 0 8px rgba(139,105,20,0.4)'} onMouseLeave={e => e.currentTarget.style.textShadow = 'none'}>
                             @{(log.user || 'anonymous').toUpperCase()}
                         </Link>
-                        {log.userRole === 'auteur' && <span className="reel-auteur-badge">✦ AUTEUR</span>}
                         {log.userRole === 'archivist' && <span className="reel-archivist-badge">✦ ARCHIVIST</span>}
+                        {log.userRole === 'auteur' && <span className="reel-auteur-badge">★ AUTEUR</span>}
                     </div>
                     <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', whiteSpace: 'nowrap', flexShrink: 0, opacity: 0.7 }}>
                         {log.timestamp || 'RECENT'}

@@ -9,6 +9,7 @@ import { FilmLog } from '../../types'
 
 export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole }: { profileLogs: FilmLog[], isOwnProfile: boolean, setViewLog: (log: FilmLog) => void, userRole?: string }) {
     const isArchivist = userRole === 'archivist'
+    const isAuteur = userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
     const [sieve, setSieve] = useState<number | 'all'>('all')
     const [visibleLogCount, setVisibleLogCount] = useState(40)
@@ -106,20 +107,20 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole
                                 <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: IS_TOUCH ? '0.2rem' : '0.75rem' }}>
                                     {grouped[month].map((log) => {
                                         const hl = halfLifeMap[log.filmId]
-                                        const isPremiumLog = isArchivist
+                                        const isPremiumLog = isArchivist || isAuteur
                                         return (
                                             <div
                                                 key={log.id}
                                                 onClick={() => setViewLog(log)}
-                                                className={isPremiumLog ? 'reel-dispatch--premium' : ''}
+                                                className={isArchivist ? 'reel-dispatch--premium' : isAuteur ? 'reel-dispatch--auteur' : ''}
                                                 style={{
                                                     position: 'relative', cursor: 'pointer',
                                                     borderRadius: '4px',
-                                                    boxShadow: isPremiumLog ? '0 4px 20px rgba(139,105,20,0.12), 0 0 0 1px rgba(196,150,26,0.2)' : undefined,
+                                                    boxShadow: isArchivist ? '0 4px 20px rgba(139,105,20,0.12), 0 0 0 1px rgba(196,150,26,0.2)' : isAuteur ? '0 4px 20px rgba(125,31,31,0.12), 0 0 0 1px rgba(180,45,45,0.2)' : undefined,
                                                     transition: 'box-shadow 0.3s, transform 0.3s',
                                                 }}
-                                                onMouseEnter={e => { if (isPremiumLog) e.currentTarget.style.boxShadow = '0 8px 30px rgba(139,105,20,0.2), 0 0 0 1px rgba(196,150,26,0.35)' }}
-                                                onMouseLeave={e => { if (isPremiumLog) e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,105,20,0.12), 0 0 0 1px rgba(196,150,26,0.2)' }}
+                                                onMouseEnter={e => { if (isArchivist) e.currentTarget.style.boxShadow = '0 8px 30px rgba(139,105,20,0.2), 0 0 0 1px rgba(196,150,26,0.35)'; else if (isAuteur) e.currentTarget.style.boxShadow = '0 8px 30px rgba(125,31,31,0.2), 0 0 0 1px rgba(180,45,45,0.35)' }}
+                                                onMouseLeave={e => { if (isArchivist) e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,105,20,0.12), 0 0 0 1px rgba(196,150,26,0.2)'; else if (isAuteur) e.currentTarget.style.boxShadow = '0 4px 20px rgba(125,31,31,0.12), 0 0 0 1px rgba(180,45,45,0.2)' }}
                                             >
                                                 <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status } as any} />
                                                 {/* Archivist premium indicator */}
