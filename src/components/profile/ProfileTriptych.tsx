@@ -14,7 +14,8 @@ interface TriptychFilm {
     poster_path: string
 }
 
-export function ProfileTriptych({ user, isOwnProfile }: { user: any, isOwnProfile: boolean }) {
+export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, isOwnProfile: boolean, userRole?: string }) {
+    const isArchivist = userRole === 'archivist'
     const { updateUser } = useAuthStore()
     const favorites = (user?.preferences?.favorites as TriptychFilm[]) || []
     
@@ -112,6 +113,7 @@ export function ProfileTriptych({ user, isOwnProfile }: { user: any, isOwnProfil
                     <div 
                         key={i}
                         onClick={() => handleSelectSlot(i)}
+                        className={film && isArchivist ? 'archivist-card-glow' : ''}
                         style={{ 
                             position: 'relative', 
                             aspectRatio: '2/3', 

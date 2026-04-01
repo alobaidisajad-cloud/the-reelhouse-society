@@ -561,7 +561,7 @@ export default function UserProfilePage() {
                     {/* ── Favorite Films Triptych — Centered & Prominent ── */}
                     <div style={{ maxWidth: IS_TOUCH ? '100%' : 450, margin: '0 auto' }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', textAlign: 'center', marginBottom: '0.75rem', textShadow: '0 0 15px rgba(139,105,20,0.3)' }}>✦ FAVORITE FILMS ✦</div>
-                        <ProfileTriptych user={profileUser} isOwnProfile={isOwnProfile} />
+                        <ProfileTriptych user={profileUser} isOwnProfile={isOwnProfile} userRole={profileUser?.role} />
                     </div>
                 </div>
                 
