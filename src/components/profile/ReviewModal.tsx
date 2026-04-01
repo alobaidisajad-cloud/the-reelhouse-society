@@ -25,6 +25,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
     const ratingLabel = ['', 'Walks Out', 'Poor Cut', 'Solid Frame', 'Compelling', 'Masterpiece'][Math.ceil(viewLog.rating)] || ''
     const statusColor = viewLog.status === 'abandoned' ? 'var(--blood-reel)' : viewLog.status === 'rewatched' ? 'var(--flicker)' : 'var(--sepia)'
     const statusLabel = viewLog.status === 'watched' ? 'WATCHED' : viewLog.status === 'rewatched' ? '⟳ REWATCH' : '✕ ABANDONED'
+    const isArchivistLog = viewLog.editorialHeader || viewLog.dropCap || viewLog.pullQuote
 
     return (
         <Portal>
@@ -48,7 +49,9 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                     overflowX: 'hidden',
                     borderRadius: '14px',
                     background: '#0D0B08',
-                    boxShadow: '0 32px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(196,150,26,0.18)',
+                    boxShadow: isArchivistLog
+                        ? '0 32px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(196,150,26,0.3), 0 0 60px rgba(139,105,20,0.08)'
+                        : '0 32px 100px rgba(0,0,0,0.95), 0 0 0 1px rgba(196,150,26,0.18)',
                     scrollbarWidth: 'none',
                 }}
             >
@@ -59,9 +62,21 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                 ══════════════════════════════════════ */}
                 <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '14px 14px 0 0' }}>
 
-                    {/* Atmospheric blurred backdrop */}
-                    <div style={{ position: 'relative', height: 200 }}>
-                        {poster ? (
+                    {/* Atmospheric backdrop — uses editorial header if available, falls back to blurred poster */}
+                    <div style={{ position: 'relative', height: viewLog.editorialHeader ? 220 : 200 }}>
+                        {viewLog.editorialHeader ? (
+                            <img
+                                src={tmdb.backdrop(viewLog.editorialHeader, 'w780')}
+                                alt=""
+                                aria-hidden
+                                style={{
+                                    position: 'absolute', inset: 0,
+                                    width: '100%', height: '100%',
+                                    objectFit: 'cover',
+                                    filter: 'sepia(0.15) contrast(1.05) brightness(0.5)',
+                                }}
+                            />
+                        ) : poster ? (
                             <img
                                 src={tmdb.poster(poster, 'w780')}
                                 alt=""
@@ -99,6 +114,21 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                         }}>
                             {statusLabel}
                         </div>
+
+                        {/* Archivist badge — top right corner when editorial features are used */}
+                        {isArchivistLog && (
+                            <div style={{
+                                position: 'absolute', top: '0.9rem', right: '2.8rem',
+                                fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.2em',
+                                color: 'var(--sepia)',
+                                background: 'rgba(11,10,8,0.6)',
+                                backdropFilter: 'blur(8px)',
+                                border: '1px solid rgba(139,105,20,0.3)',
+                                padding: '0.2rem 0.5rem', borderRadius: '3px',
+                            }}>
+                                ✦ ARCHIVIST
+                            </div>
+                        )}
 
                         {/* X close button — top right */}
                         <button
@@ -217,20 +247,20 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
 
                     {/* ── Pull Quote ── */}
                     {viewLog.pullQuote && (
-                        <blockquote style={{
-                            margin: 0,
-                            padding: '0.85rem 1rem',
-                            background: 'rgba(196,150,26,0.04)',
-                            borderLeft: '3px solid var(--sepia)',
-                            borderRadius: '0 4px 4px 0',
-                        }}>
-                            <div style={{
-                                fontFamily: 'var(--font-sub)', fontStyle: 'italic',
-                                fontSize: '1rem', color: 'var(--flicker)', lineHeight: 1.55,
-                            }}>
-                                "{viewLog.pullQuote}"
+                        <div style={{ position: 'relative', padding: '1rem 1.25rem', background: 'rgba(196,150,26,0.04)', borderRadius: '0 4px 4px 0', borderLeft: '3px solid var(--sepia)' }}>
+                            {/* Ornamental divider */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.2em', color: 'var(--sepia)', opacity: 0.6 }}>✦ PULL QUOTE</span>
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(139,105,20,0.2), transparent)' }} />
                             </div>
-                        </blockquote>
+                            <div style={{
+                                fontFamily: 'var(--font-display)', fontStyle: 'italic',
+                                fontSize: '1.1rem', color: 'var(--flicker)', lineHeight: 1.55,
+                                textShadow: '0 1px 8px rgba(139,105,20,0.1)',
+                            }}>
+                                « {viewLog.pullQuote} »
+                            </div>
+                        </div>
                     )}
 
                     {/* ── Review / Field Notes ── */}

@@ -19,8 +19,8 @@ const SocialPulse = memo(function SocialPulse() {
             const { data } = await supabase
                 .from('logs')
                 .select(`
-                    id, film_id, film_title, poster_path, rating, review, status, watched_with, created_at, user_id,
-                    profiles!logs_user_id_fkey ( username )
+                    id, film_id, film_title, poster_path, rating, review, status, watched_with, pull_quote, drop_cap, editorial_header, created_at, user_id,
+                    profiles!logs_user_id_fkey ( username, role )
                 `)
                 .or('rating.gt.0,review.neq.')
                 .order('created_at', { ascending: false })
@@ -29,11 +29,14 @@ const SocialPulse = memo(function SocialPulse() {
                 id: log.id,
                 type: 'log',
                 user: log.profiles?.username || 'cinephile',
+                userRole: log.profiles?.role || 'cinephile',
                 film: { id: log.film_id, title: log.film_title, poster_path: log.poster_path },
                 rating: log.rating,
                 text: log.review,
                 status: log.status,
                 watchedWith: log.watched_with,
+                pullQuote: log.pull_quote || '',
+                editorialHeader: log.editorial_header || null,
                 time: new Date(log.created_at || Date.now()).toLocaleDateString(),
             }))
         },
@@ -76,17 +79,22 @@ const SocialPulse = memo(function SocialPulse() {
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))', gap: IS_TOUCH ? '1rem' : '2rem' }}>
                     {activities.map((act: any, i: number) => {
+                        const isArchivist = act.userRole === 'archivist' || act.editorialHeader || act.pullQuote
                         const cardStyle: React.CSSProperties = {
                             position: 'relative',
-                            padding: IS_TOUCH ? '1rem' : '1.5rem',
+                            padding: 0,
                             /* ── Warm depth: light from above ── */
-                            background: 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.95)',
-                            borderLeft: '2px solid var(--sepia)',
-                            borderTop: '1px solid rgba(139,105,20,0.1)',
+                            background: isArchivist
+                                ? 'linear-gradient(180deg, rgba(139,105,20,0.06) 0%, transparent 30%), rgba(18,14,9,0.95)'
+                                : 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.95)',
+                            borderLeft: `2px solid ${isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
+                            borderTop: `1px solid rgba(139,105,20,${isArchivist ? '0.15' : '0.1'})`,
                             borderBottom: '1px solid rgba(139,105,20,0.05)',
                             borderRight: '1px solid rgba(139,105,20,0.05)',
                             borderRadius: '0 8px 8px 0',
-                            boxShadow: '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.05)',
+                            boxShadow: isArchivist
+                                ? '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(196,150,26,0.08)'
+                                : '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.05)',
                             display: 'flex',
                             flexDirection: 'column',
                             transition: 'border-color 0.3s ease',
@@ -96,14 +104,31 @@ const SocialPulse = memo(function SocialPulse() {
                         const cardContent = (
                             <>
                                 {/* Top-edge warm highlight line */}
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)' }} />
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, rgba(${isArchivist ? '196,150,26' : '139,105,20'},0.2), transparent)` }} />
+
+                                {/* Editorial Header Strip — Archivist Feature */}
+                                {act.editorialHeader && (
+                                    <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 60 : 80, overflow: 'hidden', borderBottom: '1px solid rgba(139,105,20,0.15)' }}>
+                                        <img
+                                            src={tmdb.backdrop(act.editorialHeader, 'w780')}
+                                            alt=""
+                                            loading="lazy"
+                                            decoding="async"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%', filter: 'sepia(0.2) contrast(1.05) brightness(0.65)' }}
+                                        />
+                                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(18,14,9,0.85) 100%)' }} />
+                                    </div>
+                                )}
+
+                                <div style={{ padding: IS_TOUCH ? '1rem' : '1.5rem', display: 'flex', flexDirection: 'column', flex: 1 }}>
                                 {/* Header */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.8rem', borderBottom: '1px dashed rgba(139,105,20,0.2)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--ash)', border: '1px solid var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
+                                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--ash)', border: `1px solid ${isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
                                             <Buster size={14} mood={act.rating >= 4 ? 'smiling' : 'neutral'} />
                                         </div>
                                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--parchment)' }}>@{act.user}</span>
+                                        {isArchivist && <span className="reel-archivist-badge">✦ ARCHIVIST</span>}
                                     </div>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{act.time}</span>
                                 </div>
@@ -120,6 +145,12 @@ const SocialPulse = memo(function SocialPulse() {
                                             {act.rating && <ReelRating value={act.rating} size="sm" />}
                                             {act.status === 'rewatched' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', border: '1px solid var(--sepia)', padding: '0.1rem 0.3rem', borderRadius: '2px' }}>{<RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />} REWATCHED</span>}
                                         </div>
+                                        {/* Pull Quote — Archivist Feature */}
+                                        {act.pullQuote && (
+                                            <div style={{ padding: '0.35rem 0 0.35rem 0.5rem', borderLeft: '2px solid var(--sepia)', fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--sepia)', lineHeight: 1.4, marginBottom: '0.4rem', opacity: 0.9 }}>
+                                                « {act.pullQuote} »
+                                            </div>
+                                        )}
                                         {act.text && <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', fontStyle: 'italic', lineHeight: 1.5, opacity: 0.9, marginTop: '0.2rem' }}>"{act.text.length > 150 ? act.text.slice(0, 150) + '…' : act.text}"</p>}
                                         {act.watchedWith && (
                                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: 'auto', paddingTop: '0.75rem' }}>
@@ -127,6 +158,7 @@ const SocialPulse = memo(function SocialPulse() {
                                             </div>
                                         )}
                                     </div>
+                                </div>
                                 </div>
                             </>
                         )

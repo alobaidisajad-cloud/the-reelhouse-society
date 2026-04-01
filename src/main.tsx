@@ -9,6 +9,7 @@ import ErrorBoundary from './components/ErrorBoundary.jsx'
 import App from './App.jsx'
 import { queryClient } from './queryClient'
 import './index.css'
+import './styles/reel.css'
 
 // ── Sentry Error Monitoring (production only, zero dev overhead) ──
 // DSN is intentionally public — it's a client-side key by Sentry's design

@@ -29,7 +29,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                 .from('logs')
                 .select(`
                     id, film_id, film_title, poster_path, rating, review, created_at, user_id,
-                    profiles!logs_user_id_fkey ( username )
+                    profiles!logs_user_id_fkey ( username, role )
                 `)
                 .not('review', 'is', null)
                 .neq('review', '')
@@ -72,6 +72,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                     logId: winner.id,
                     text: winner.review,
                     author: ((winner as any).profiles?.username || 'ANONYMOUS').toUpperCase(),
+                    authorRole: (winner as any).profiles?.role || 'cinephile',
                     rating: winner.rating || 0,
                     film: { id: winner.film_id, title: winner.film_title, poster_path: winner.poster_path },
                     endorsements: engagement[winner.id] || 0,
@@ -83,7 +84,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                 .from('logs')
                 .select(`
                     id, film_id, film_title, poster_path, rating, review, created_at, user_id,
-                    profiles!logs_user_id_fkey ( username )
+                    profiles!logs_user_id_fkey ( username, role )
                 `)
                 .not('review', 'is', null)
                 .neq('review', '')
@@ -98,6 +99,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                 logId: fallback.id,
                 text: fallback.review,
                 author: ((fallback as any).profiles?.username || 'ANONYMOUS').toUpperCase(),
+                authorRole: (fallback as any).profiles?.role || 'cinephile',
                 rating: fallback.rating || 0,
                 film: { id: fallback.film_id, title: fallback.film_title, poster_path: fallback.poster_path },
                 endorsements: 0,
@@ -247,8 +249,9 @@ const FeaturedReview = memo(function FeaturedReview() {
                             <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--ash)', border: '1px solid var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
                                 <Buster size={16} mood="smiling" />
                             </div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.2em', color: 'var(--bone)' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.2em', color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                 {displayReview.author.toUpperCase()}
+                                {featuredCritique?.authorRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.38rem' }}>✦ ARCHIVIST</span>}
                             </div>
                         </div>
                         {displayReview.rating > 0 && <ReelRating value={displayReview.rating} size="sm" />}
