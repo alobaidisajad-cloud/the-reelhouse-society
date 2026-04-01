@@ -1,12 +1,30 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 // ── NITRATE NOIR APERTURE CURSOR ──
 // Uses the proven vanilla-DOM + rAF approach — no React state, no lag.
-// Classes match the global cursor:none rules already in index.css.
+// IMPORTANT: This is DESKTOP-ONLY. Touch devices (phones, tablets) must never
+// see this cursor or have their native cursor hidden.
+
+/** Bulletproof desktop-only detection.
+ *  Many Android devices (Samsung S-Pen, etc.) report BOTH fine AND coarse pointers.
+ *  We require: fine pointer + NO coarse pointer + NO touch support + wide viewport.
+ */
+function isDesktopPointerDevice(): boolean {
+  if (typeof window === 'undefined') return false
+  const hasFinePointer = window.matchMedia('(pointer: fine)').matches
+  const hasCoarsePointer = window.matchMedia('(any-pointer: coarse)').matches
+  const hasTouchPoints = navigator.maxTouchPoints > 0
+  const isWideEnough = window.innerWidth >= 1024
+  // Must have a fine PRIMARY pointer, NO coarse pointer at all, no touch, and desktop width
+  return hasFinePointer && !hasCoarsePointer && !hasTouchPoints && isWideEnough
+}
 
 export default function CustomCursor() {
+  // Evaluate once on mount — if not a desktop pointer device, render NOTHING
+  const [isDesktop] = useState(() => isDesktopPointerDevice())
+
   useEffect(() => {
-    if (!window.matchMedia('(any-pointer: fine)').matches) return
+    if (!isDesktop) return
 
     const outer = document.createElement('div')
     const dot = document.createElement('div')
@@ -73,7 +91,6 @@ export default function CustomCursor() {
     const onOut = (e: MouseEvent) => { if (isInteractive(e.target as Element)) outer.classList.remove('cursor-hover') }
 
     // Hide custom cursor + restore real cursor when mouse leaves / window loses focus
-    // Must use setProperty with 'important' to override `cursor: none !important` in index.css
     const onLeave = () => {
       outer.style.opacity = '0'
       dot.style.opacity = '0'
@@ -125,7 +142,10 @@ export default function CustomCursor() {
       dot.remove()
       cursorStyle.remove()
     }
-  }, [])
+  }, [isDesktop])
+
+  // On touch/mobile devices, render NOTHING — no styles, no DOM, no interference
+  if (!isDesktop) return null
 
   return (
     <style>{`
