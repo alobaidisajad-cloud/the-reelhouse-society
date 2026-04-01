@@ -353,6 +353,17 @@ export const useFilmStore = create<FilmState>()(
                 set((state) => ({
                     logs: [{ ...log, id: data.id, createdAt: data.created_at } as FilmLog, ...state.logs],
                 }))
+
+                // Auto-sync into Physical Archive if they claimed ownership
+                const syncFormatMap: Record<string, string> = { 'DVD': 'dvd', 'Blu-Ray': 'bluray', '4K UHD': '4k', 'VHS': 'vhs' }
+                if (log.physicalMedia && syncFormatMap[log.physicalMedia] && log.filmId !== undefined) {
+                    const fmt = syncFormatMap[log.physicalMedia]
+                    try {
+                        await get().addToPhysicalArchive({ id: log.filmId, title: log.title || '', poster_path: log.poster, release_date: log.year?.toString() }, [fmt])
+                    } catch (e) {
+                        console.error('Failed to auto-sync physical archive', e)
+                    }
+                }
             },
 
             markAsWatched: async (film, status = 'watched') => {
@@ -432,7 +443,23 @@ export const useFilmStore = create<FilmState>()(
                 if (updates.editorialHeader !== undefined) dbUpdates.editorial_header = updates.editorialHeader
                 if (updates.altPoster !== undefined) dbUpdates.alt_poster = updates.altPoster
                 const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id)
-                if (!error) set((state) => ({ logs: state.logs.map((l) => l.id === id ? { ...l, ...updates } : l) }))
+                if (!error) {
+                    set((state) => ({ logs: state.logs.map((l) => l.id === id ? { ...l, ...updates } : l) }))
+                    
+                    // Auto-sync into Physical Archive if they updated a log to physical media
+                    const syncFormatMap: Record<string, string> = { 'DVD': 'dvd', 'Blu-Ray': 'bluray', '4K UHD': '4k', 'VHS': 'vhs' }
+                    if (updates.physicalMedia && syncFormatMap[updates.physicalMedia]) {
+                        const fmt = syncFormatMap[updates.physicalMedia]
+                        const logToUpdate = get().logs.find(l => l.id === id)
+                        if (logToUpdate && logToUpdate.filmId !== undefined) {
+                            try {
+                                await get().addToPhysicalArchive({ id: logToUpdate.filmId, title: logToUpdate.title || '', poster_path: logToUpdate.poster, release_date: logToUpdate.year?.toString() }, [fmt])
+                            } catch (e) {
+                                console.error('Failed to auto-sync physical archive on update', e)
+                            }
+                        }
+                    }
+                }
             },
 
             removeLog: async (id) => {
