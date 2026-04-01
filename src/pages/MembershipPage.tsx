@@ -157,7 +157,7 @@ export default function MembershipPage() {
                                 'The Physical Archive\n(Track 4K/Blu-Ray/VHS)', 
                                 'The Vault (Private Notes)', 
                                 'Priority Support &\nEarly Access', 
-                                'The Nightly Programme\n(Curate Double Features)'
+                                'The Lounge\n(Exclusive Cinema Chat Rooms)'
                             ].map((feature, i) => (
                                 <div key={i} className="feature-item feature-item--pro">
                                     <div className="feature-dot feature-dot--archivist" />

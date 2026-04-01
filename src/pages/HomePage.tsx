@@ -15,7 +15,7 @@ import PageSEO from '../components/PageSEO'
 // ── Below-fold: lazy loaded (saves ~30KB from initial bundle) ──
 const Buster = lazy(() => import('../components/Buster'))
 const FeaturedReview = lazy(() => import('../components/home/FeaturedReview'))
-const VenueSpotlight = lazy(() => import('../components/home/VenueSpotlight'))
+
 const SocialPulse = lazy(() => import('../components/home/SocialPulse'))
 
 import { useViewport } from '../hooks/useViewport'
@@ -274,13 +274,6 @@ export default function HomePage() {
                             <div style={{ display: 'flex', gap: IS_TOUCH ? '0.5rem' : '1rem', width: IS_TOUCH ? '100%' : 'auto' }}>
                                 <button
                                     className="btn btn-ghost"
-                                    style={{ fontSize: IS_TOUCH ? '0.7rem' : '0.85rem', padding: IS_TOUCH ? '0.7em 1em' : '0.9em 2em', borderColor: 'rgba(139,105,20,0.4)', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em', flex: IS_TOUCH ? 1 : 'none' }}
-                                    onClick={() => openSignupModal('venue_owner')}
-                                >
-                                    I MANAGE A VENUE
-                                </button>
-                                <button
-                                    className="btn btn-ghost"
                                     style={{ fontSize: IS_TOUCH ? '0.7rem' : '0.85rem', padding: IS_TOUCH ? '0.7em 1em' : '0.9em 2em', background: 'rgba(10,7,3,0.7)', letterSpacing: '0.12em', flex: IS_TOUCH ? 1 : 'none' }}
                                     onClick={() => navigate('/discover')}
                                 >
@@ -401,13 +394,7 @@ export default function HomePage() {
                         </SectionErrorBoundary>
                     </div>
 
-                    {/* ── SECTION: VENUE SPOTLIGHT ── */}
-                    <div className="scroll-reveal">
-                        <LobbyDivider />
-                        <SectionErrorBoundary label="VENUE SPOTLIGHT">
-                            <Suspense fallback={null}><VenueSpotlight /></Suspense>
-                        </SectionErrorBoundary>
-                    </div>
+
 
                     {/* ── SECTION: BUSTER CTA (unauthenticated only) ── */}
                     {!isAuthenticated && (

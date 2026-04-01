@@ -115,8 +115,6 @@ export const useAuthStore = create<AuthState>()(
                         // Sending role here was a vector for free premium access - removed.
                         data: {
                             username,
-                            // Allow 'venue_owner' only — trigger rejects all other non-default roles
-                            ...(role === 'venue_owner' ? { role: 'venue_owner' } : {}),
                         },
                         emailRedirectTo: redirectTo,
                     }
@@ -132,7 +130,7 @@ export const useAuthStore = create<AuthState>()(
                         username,
                         role,
                         persona: persona || (role === 'cinephile' ? 'The Cinephile' : 'The Society'),
-                        tier: role === 'venue_owner' ? 'free' : 'free',
+                        tier: 'free',
                     }).eq('id', data.user!.id)
                     const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user!.id).single()
                     set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true })
@@ -161,7 +159,7 @@ export const useAuthStore = create<AuthState>()(
                 localStorage.removeItem('reelhouse-films')
                 localStorage.removeItem('reelhouse-ui')
                 localStorage.removeItem('reelhouse-social')
-                localStorage.removeItem('reelhouse-venue')
+
                 localStorage.removeItem('reelhouse-content')
 
                 // 4. Force full page reload to clear any in-memory state

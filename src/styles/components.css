@@ -412,7 +412,7 @@
   padding: 0.1em 0.5em;
 }
 
-/* ── VENUE PLAYBILL ── */
+/* ── MARQUEE HEADER ── */
 .venue-marquee-header {
   background: linear-gradient(180deg, var(--soot) 0%, var(--ink) 100%);
   border-bottom: 3px double var(--sepia);
@@ -773,7 +773,7 @@
   letter-spacing: 0.1em;
 }
 
-/* ── Tab Buttons (profile, venue dashboard) ── */
+/* ── Tab Buttons (profile, dashboard) ── */
 .tab-btn {
   font-family: var(--font-ui);
   font-size: 0.55rem;

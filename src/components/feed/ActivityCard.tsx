@@ -3,13 +3,14 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
-import { Heart, MessageSquare, Download, Send, RefreshCw, Lock, Edit3 } from 'lucide-react'
+import { Heart, MessageSquare, Download, Send, RefreshCw, Lock, Edit3, MessageCircle } from 'lucide-react'
 import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import toast from 'react-hot-toast'
 import { throttleAction } from '../../errorLogger'
 import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
+import ShareToLoungeModal from '../ShareToLoungeModal'
 
 import { useViewport } from '../../hooks/useViewport'
 
@@ -48,6 +49,8 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     // ── ANNOTATE ──
     const [annotateOpen, setAnnotateOpen] = useState(isExpandedView)
     const { user: currentUser } = useAuthStore()
+    const [showShareLounge, setShowShareLounge] = useState(false)
+    const isLoungeEligible = currentUser && ['archivist', 'auteur', 'projectionist'].includes((currentUser as any).role)
 
     // ── SPOILER GUARD & EXPANSION ──
     const [spoilersRevealed, setSpoilersRevealed] = useState(false)
@@ -360,6 +363,11 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
                             <RefreshCw size={16} /> {retransmitted ? 'PUBLISHED ✦' : 'PUBLISH'}
                         </button>
+                        {isLoungeEligible && (
+                            <button onClick={(e) => { e.stopPropagation(); setShowShareLounge(true) }} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'pointer' }}>
+                                <MessageCircle size={16} /> LOUNGE
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -548,6 +556,11 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         <button className="reel-action-btn" onClick={handleRetransmit} style={{ color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
                             <RefreshCw size={12} /> {retransmitted ? 'SENT ✦' : 'PUBLISH'}
                         </button>
+                        {isLoungeEligible && (
+                            <button className="reel-action-btn" onClick={(e) => { e.stopPropagation(); setShowShareLounge(true) }} style={{ color: 'var(--fog)' }}>
+                                <MessageCircle size={12} /> LOUNGE
+                            </button>
+                        )}
                     </div>
                 </div>
 
@@ -561,6 +574,27 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                   */}
             </div>
             </div>
+
+            {showShareLounge && (
+                <ShareToLoungeModal
+                    payload={{
+                        type: 'log_share',
+                        title: log.film?.title || 'Film',
+                        subtitle: `${log.rating > 0 ? '★'.repeat(Math.round(log.rating)) + ' · ' : ''}by @${log.user || 'anonymous'}`,
+                        image: log.film?.poster ? `https://image.tmdb.org/t/p/w185${log.film.poster}` : undefined,
+                        metadata: {
+                            logId: log.id,
+                            filmId: log.film?.id || log.filmId,
+                            title: log.film?.title,
+                            poster: log.film?.poster,
+                            rating: log.rating,
+                            reviewer: log.user,
+                            review: log.review?.slice(0, 200),
+                        },
+                    }}
+                    onClose={() => setShowShareLounge(false)}
+                />
+            )}
         </div>
     )
 }

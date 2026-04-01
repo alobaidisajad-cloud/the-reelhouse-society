@@ -132,7 +132,7 @@
 
 /* ── COMPONENT PATTERNS (A2 extraction) ── */
 
-/* Detail row — metadata display in film/venue/profile pages */
+/* Detail row — metadata display in film/profile pages */
 .detail-row {
   display: flex;
   align-items: center;

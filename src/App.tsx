@@ -44,9 +44,8 @@ const DiscoverPage = lazy(() => import('./pages/DiscoverPage'))
 const FeedPage = lazy(() => import('./pages/FeedPage'))
 const ListsPage = lazy(() => import('./pages/ListsPage'))
 const ListDetailPage = lazy(() => import('./pages/ListDetailPage'))
-const VenuePage = lazy(() => import('./pages/VenuePage'))
-const VenueDashboard = lazy(() => import('./pages/VenueDashboard'))
-const CinemasPage = lazy(() => import('./pages/CinemasPage'))
+const LoungePage = lazy(() => import('./pages/LoungePage'))
+const LoungeRoomPage = lazy(() => import('./pages/LoungeRoomPage'))
 const PersonPage = lazy(() => import('./pages/PersonPage'))
 const DispatchPage = lazy(() => import('./pages/DispatchPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
@@ -274,9 +273,8 @@ export default function App() {
               <Route path="/stacks" element={<ErrorBoundary key="stacks"><PageWrapper><ListsPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/lists/:id" element={<ErrorBoundary key="list-detail"><PageWrapper><ListDetailPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/stacks/:id" element={<ErrorBoundary key="stack-detail"><PageWrapper><ListDetailPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/venue/:venueId" element={<ErrorBoundary key="venue"><PageWrapper><VenuePage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/venue-dashboard" element={<ErrorBoundary key="venue-dash"><PageWrapper><VenueDashboard /></PageWrapper></ErrorBoundary>} />
-              <Route path="/cinemas" element={<ErrorBoundary key="cinemas"><PageWrapper><CinemasPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/lounge" element={<ErrorBoundary key="lounge"><PageWrapper><LoungePage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/lounge/:loungeId" element={<ErrorBoundary key="lounge-room"><PageWrapper><LoungeRoomPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/person/:id" element={<ErrorBoundary key="person"><PageWrapper><PersonPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/dispatch" element={<ErrorBoundary key="dispatch"><PageWrapper><DispatchPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/patronage" element={<ErrorBoundary key="patronage"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />

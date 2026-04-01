@@ -10,7 +10,7 @@ export interface User {
     bio?: string
     avatar?: string
     avatar_url?: string
-    role: 'free' | 'cinephile' | 'archivist' | 'auteur' | 'projectionist' | 'venue_owner'
+    role: 'free' | 'cinephile' | 'archivist' | 'auteur' | 'projectionist'
     tier?: 'free' | 'cinephile' | 'archivist' | 'auteur' | 'projectionist'
     displayName?: string
     display_name?: string
@@ -123,7 +123,7 @@ export interface TicketStub {
     id: string
     filmTitle?: string
     film_title?: string
-    venue_name?: string
+    venue_name?: string  // Legacy — kept for existing ticket stubs in DB
     showtime_date?: string
     date?: string
     seat_label?: string
@@ -180,107 +180,8 @@ export interface Notification {
     timestamp: string
 }
 
-// ── Venue ──
-export interface Venue {
-    id: string | null
-    name: string
-    location: string
-    address: string
-    description: string
-    bio: string
-    email: string
-    phone: string
-    website: string
-    instagram: string
-    twitter?: string
-    mapLink?: string
-    logo: string | null
-    vibes: string[]
-    seatLayout: SeatLayout
-    screens: Screen[]
-    lat: number | null
-    lng: number | null
-    followers: number
-    verified: boolean
-    paymentConnected: boolean
-    paymentAccountName?: string
-    paymentLast4?: string
-    paymentBrand?: string
-    platformFeePercent: number
-}
-
-export interface SeatLayout {
-    rows: number
-    cols: number
-    vipRows: number
-    aisleAfterCol: number
-    blockedSeats: string[]
-}
-
-export interface Screen {
-    id?: string
-    name: string
-    color?: string
-    seatLayout: SeatLayout
-}
-
-// ── Showtime ──
-export interface ShowtimeSlot {
-    id: string
-    time: string
-    format: string
-    notes?: string
-    ticketTypes?: Array<{ id: string; type: string; price: number; perks?: string }>
-    bookedSeats?: string[]
-}
-
-export interface Showtime {
-    id: string
-    film: string
-    film_title?: string
-    date: string
-    time?: string
-    venue_id?: string
-    screen_name?: string
-    screenName?: string
-    filmId?: number
-    slots: ShowtimeSlot[]
-    durationMins: number
-    price?: number
-}
-
-// ── Venue Event ──
-export interface VenueEvent {
-    id: string
-    title: string
-    desc?: string
-    date: string
-    time?: string
-    type?: string
-    price: number
-    totalTickets: number
-    ticketsLeft: number
-}
-
-// ── Payment Info ──
-export interface PaymentInfo {
-    paymentAccountName?: string
-    paymentLast4?: string
-    paymentBrand?: string
-}
-
-// ── Cinema Review ──
-export interface CinemaReview {
-    id: string
-    venue_id?: string
-    user_id?: string
-    username: string
-    rating: number
-    text?: string
-    review?: string
-    created_at?: string
-    createdAt?: string
-}
+// ── Legacy venue/cinema types removed — replaced by The Lounge ──
+// DB tables preserved for safe rollback; frontend no longer references them.
 
 // ── TMDB API Types ──
 export interface TMDBMovie {

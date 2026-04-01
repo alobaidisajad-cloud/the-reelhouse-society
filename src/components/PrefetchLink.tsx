@@ -14,7 +14,7 @@ const routeMap = {
     '/feed': () => import('../pages/FeedPage'),
     '/profile': () => import('../pages/UserProfilePage'),
     '/membership': () => import('../pages/MembershipPage'),
-    '/venue': () => import('../pages/VenuePage'),
+    '/lounge': () => import('../pages/LoungePage'),
 }
 
 export default function PrefetchLink({ to, children, ...props }: { to: string; children: React.ReactNode; [key: string]: any }) {

@@ -75,15 +75,7 @@
   .nav-mobile-toggle { display: flex !important; }
   .hide-mobile { display: none !important; }
 
-  .venue-tab-strip {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    flex-wrap: nowrap !important;
-    padding-bottom: 2px;
-  }
 
-  .venue-tab-strip::-webkit-scrollbar { display: none; }
 }
 
 /* ═══════════════════════════════════════════
@@ -334,26 +326,10 @@
     white-space: nowrap;
   }
 
-  /* === CINEMAS === */
-  .cinemas-grid { grid-template-columns: 1fr !important; gap: 1rem !important; }
-  .cinemas-search-row { flex-direction: column !important; gap: 0.6rem !important; }
-  .cinemas-search-row .input, .cinemas-search-row > * { width: 100% !important; min-width: 0 !important; }
-  .cinemas-filter-grid { grid-template-columns: 1fr 1fr !important; gap: 0.5rem !important; }
 
-  /* === VENUE === */
+  /* === LEGACY VENUE (classes kept for safety — no active pages use them) === */
   .venue-marquee-header { padding: 1.5rem 1rem !important; }
-  .venue-showtime-card { flex-direction: column !important; align-items: flex-start !important; gap: 0.75rem !important; }
-  .seat-cell { width: 22px !important; height: 22px !important; font-size: 0.4rem !important; }
-  .seat-row-label { font-size: 0.55rem !important; width: 18px !important; }
-  .seat-map-container, .seat-map-grid { overflow-x: auto !important; -webkit-overflow-scrolling: touch; max-width: 100% !important; }
-  .venue-tab-strip { overflow-x: auto !important; flex-wrap: nowrap !important; scrollbar-width: none !important; gap: 0.15rem !important; padding: 0 1rem 4px !important; }
-  .venue-tab-strip::-webkit-scrollbar { display: none !important; }
-  .venue-tab-btn { white-space: nowrap !important; padding: 0.5em 0.8em !important; font-size: 0.48rem !important; flex-shrink: 0 !important; }
   .venue-stats-grid { grid-template-columns: 1fr 1fr !important; gap: 0.75rem !important; }
-  .analytics-charts-row { grid-template-columns: 1fr !important; }
-  .schedule-calendar-grid { grid-template-columns: 1fr 1fr !important; gap: 0.5rem !important; }
-  .venue-dashboard-header { flex-direction: column !important; align-items: flex-start !important; gap: 1rem !important; }
-  .seat-map-editor-layout { flex-direction: column !important; gap: 1rem !important; }
   .venue-grid { grid-template-columns: 1fr !important; }
 
   /* === PROFILE === */

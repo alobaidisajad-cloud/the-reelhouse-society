@@ -20,7 +20,7 @@ const PERSONAS = [
     { id: 'The Completionist', desc: 'A director\'s filmography is a mission, not a suggestion.', color: '#1C5C1A' },
 ]
 
-const VIBE_TAGS = ['Arthouse', 'Drive-In', 'Historic', 'IMAX', 'Midnight Palace', 'Repertory', 'Horror House', 'Indie']
+
 // Invite codes — MUST be set via VITE_INVITE_CODES in Vercel (comma-separated).
 // No fallback codes shipped in the bundle — prevents view-source discovery.
 const VALID_CODES = import.meta.env.VITE_INVITE_CODES
@@ -38,9 +38,8 @@ export default function SignupModal() {
     const [password, setPassword] = useState('')
     const [username, setUsername] = useState('')
     const [persona, setPersona] = useState('')
-    const [venueName, setVenueName] = useState('')
-    const [venueDesc, setVenueDesc] = useState('')
-    const [vibes, setVibes] = useState<string[]>([])
+
+
     const [isLogin, setIsLogin] = useState(false)
 
     // Username availability state
@@ -149,9 +148,6 @@ export default function SignupModal() {
     }, [awaitingConfirmation, emailOrUsername, password])
 
     const [showPassword, setShowPassword] = useState(false)
-    const toggleVibe = (v: string) => setVibes((prev) =>
-        prev.includes(v) ? prev.filter((x) => x !== v) : [...prev, v]
-    )
 
     // ── PASSWORD STRENGTH ──
     const passwordChecks = {
@@ -260,18 +256,7 @@ export default function SignupModal() {
 
                 if (result?.session) {
                     // Email confirmation disabled — user is logged in immediately
-                    // For venue owners: create their venue row in Supabase
-                    if (role === 'venue_owner' && venueName.trim() && (result as any).user?.id) {
-                        const slug = venueName.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-                        await (supabase.from('venues').insert([{
-                            owner_id: (result as any).user.id,
-                            name: venueName.trim(),
-                            slug,
-                            location: 'TBD',
-                            description: venueDesc.trim() || null,
-                            vibes: vibes.length > 0 ? vibes : null,
-                        }]) as any).catch(() => {})
-                    }
+
                     toast.success(`Welcome to The ReelHouse Society, ${formattedUsername}! 🎬`)
                     closeSignupModal()
                     resetForm()
@@ -302,7 +287,7 @@ export default function SignupModal() {
 
     const resetForm = () => {
         setStep(0); setEmailOrUsername(''); setPassword(''); setUsername('')
-        setPersona(''); setVenueName(''); setVenueDesc(''); setVibes([])
+        setPersona('')
         setHasClearance(false); setClearanceCode(''); setClearanceStatus('idle')
         setAwaitingConfirmation(false); setConfirmedEmail('')
         setForgotMode(false); setUsernameStatus('idle')
@@ -440,43 +425,7 @@ export default function SignupModal() {
 
 
                         {/* Role selection (signup only) */}
-                        {!isLogin && (
-                            <div>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
-                                    I AM A...
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                                    {[
-                                        { val: 'cinephile', label: 'Cinephile', sub: 'Film lover & critic', icon: <Film size={20} /> },
-                                        { val: 'venue_owner', label: 'Cinema Owner', sub: 'I run a venue', icon: <Building size={20} /> },
-                                    ].map(({ val, label, sub, icon }) => (
-                                        <button
-                                            key={val}
-                                            onClick={() => {
-                                                setRole(val)
-                                                // Reset role-specific state to prevent cross-contamination
-                                                if (val === 'venue_owner') { setPersona('') }
-                                                if (val === 'cinephile') { setVenueName(''); setVenueDesc(''); setVibes([]) }
-                                            }}
-                                            style={{
-                                                background: role === val ? 'rgba(139,105,20,0.15)' : 'var(--ink)',
-                                                border: `1px solid ${role === val ? 'var(--sepia)' : 'var(--ash)'}`,
-                                                borderRadius: 'var(--radius-card)',
-                                                padding: '1rem',
-                                                textAlign: 'center', cursor: 'pointer',
-                                                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem',
-                                                color: role === val ? 'var(--flicker)' : 'var(--fog)',
-                                                transition: 'all 0.2s',
-                                            }}
-                                        >
-                                            {icon}
-                                            <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: role === val ? 'var(--parchment)' : 'var(--bone)' }}>{label}</span>
-                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>{sub}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+
 
                         {/* Fields */}
                         <form
@@ -625,21 +574,7 @@ export default function SignupModal() {
                                 </div>
                             )}
 
-                            {/* Venue fields */}
-                            {!isLogin && role === 'venue_owner' && (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                                    <input className="input" placeholder="Venue name" value={venueName} onChange={(e) => setVenueName(e.target.value)} />
-                                    <textarea className="input" placeholder="Describe your venue..." value={venueDesc} onChange={(e) => setVenueDesc(e.target.value)} style={{ minHeight: 80 }} />
-                                    <div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>VIBE TAGS</div>
-                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                                            {VIBE_TAGS.map((v) => (
-                                                <button key={v} type="button" className={`tag ${vibes.includes(v) ? 'tag-flicker' : 'tag-vibe'}`} onClick={() => toggleVibe(v)} style={{ cursor: 'pointer' }}>{v}</button>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
+
 
                             <button className="btn btn-primary" type="submit" disabled={submitting} style={{ width: '100%', justifyContent: 'center', padding: '0.7em', opacity: submitting ? 0.6 : 1 }}>
                                 {submitting ? 'THREADING...' : isLogin ? 'Enter the House' : 'Claim Your Seat'}

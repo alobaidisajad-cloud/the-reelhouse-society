@@ -6,8 +6,7 @@
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import type { 
     User, FilmLog, WatchlistItem, FilmList, 
-    Notification, Interaction, Venue, Showtime, 
-    CinemaReview, Dossier 
+    Notification, Interaction, Dossier 
 } from '../types'
 
 // ── Strict Generic Error wrapper ──
@@ -202,43 +201,7 @@ export async function removeInteraction(userId: string, targetLogId: string, typ
   )
 }
 
-// ══════════════════════════════════════════
-// VENUES & SHOWTIMES
-// ══════════════════════════════════════════
-
-export async function fetchVenueByOwner(ownerId: string) {
-  return query<Venue>(() =>
-    supabase.from('venues').select('*').eq('owner_id', ownerId).single()
-  )
-}
-
-export async function fetchAllVenues() {
-  return query<Venue[]>(() =>
-    supabase.from('venues').select('*').order('name')
-  )
-}
-
-export async function fetchShowtimes(venueId: string) {
-  return query<Showtime[]>(() =>
-    supabase.from('showtimes').select('*').eq('venue_id', venueId).order('date')
-  )
-}
-
-// ══════════════════════════════════════════
-// CINEMA REVIEWS
-// ══════════════════════════════════════════
-
-export async function fetchCinemaReviews(cinemaId: string) {
-  return query<CinemaReview[]>(() =>
-    supabase.from('cinema_reviews').select('*').eq('cinema_id', cinemaId).order('created_at', { ascending: false })
-  )
-}
-
-export async function insertCinemaReview(review: { user_id: string; cinema_id: string; cinema_name: string; rating: number; review?: string }) {
-  return query<CinemaReview>(() =>
-    supabase.from('cinema_reviews').upsert(review, { onConflict: 'user_id,cinema_id' }).select().single()
-  )
-}
+// Legacy venue/showtime/cinema API functions removed — replaced by The Lounge
 
 // ══════════════════════════════════════════
 // DISPATCH (Dossiers)

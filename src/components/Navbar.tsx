@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Film, BookOpen, Compass, User, Users, Menu, X, LogIn, Star, Crown, FileText, MapPin, Loader, UserPlus, UserCheck } from 'lucide-react'
+import { Search, Film, BookOpen, Compass, User, Users, Menu, X, LogIn, Star, Crown, FileText, MessageCircle, Loader, UserPlus, UserCheck } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { tmdb } from '../tmdb'
@@ -22,7 +22,7 @@ const prefetchRoute = (path: string) => {
         '/membership': () => import('../pages/MembershipPage'),
         '/dispatch': () => import('../pages/DispatchPage'),
         '/lists': () => import('../pages/ListsPage'),
-        '/cinemas': () => import('../pages/CinemasPage'),
+        '/lounge': () => import('../pages/LoungePage'),
         '/patronage': () => import('../pages/MembershipPage'),
     }
         ; (routes as Record<string, (() => Promise<any>) | undefined>)[path]?.()
@@ -34,7 +34,7 @@ const NAV_LINKS = [
     { path: '/feed', label: 'The Reel', icon: BookOpen },
     { path: '/dispatch', label: 'The Dispatch', icon: FileText },
     { path: '/lists', label: 'The Stacks', icon: Star },
-    { path: '/cinemas', label: 'The Cinemas', icon: MapPin },
+    { path: '/lounge', label: 'The Lounge', icon: MessageCircle },
     { path: '/society', label: 'The Society', icon: Crown },
 ]
 
@@ -176,16 +176,7 @@ export default function Navbar() {
                                         onOpenChange={setNotificationsOpen}
                                     />
                                 </span>
-                                {user?.role === 'venue_owner' && (
-                                    <Link
-                                        to="/venue-dashboard"
-                                        className="user-badge hide-mobile"
-                                        style={{ borderColor: 'var(--flicker)', color: 'var(--flicker)' }}
-                                    >
-                                        <Film size={12} />
-                                        My Venue
-                                    </Link>
-                                )}
+
                                 <Link
                                     to={`/user/${user?.username || 'me'}`}
                                     className="user-badge hide-mobile"

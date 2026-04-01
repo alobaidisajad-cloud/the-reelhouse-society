@@ -1,13 +1,14 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { SectionHeader, LoadingReel } from '../components/UI'
-import { ArrowLeft, Clock, Film, Edit3, Trash2 } from 'lucide-react'
+import { ArrowLeft, Clock, Film, Edit3, Trash2, MessageCircle } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import CreateListModal from '../components/CreateListModal'
 import ListActions from '../components/ListActions'
 import ReportButton from '../components/ReportButton'
+import ShareToLoungeModal from '../components/ShareToLoungeModal'
 import { useState } from 'react'
 
 import toast from 'react-hot-toast'
@@ -20,6 +21,8 @@ export default function ListDetailPage() {
 
     const [isEditing, setIsEditing] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [showShareLounge, setShowShareLounge] = useState(false)
+    const isArchivist = currentUser && ['archivist', 'auteur', 'projectionist'].includes((currentUser as any).role)
 
 
 
@@ -184,6 +187,15 @@ export default function ListDetailPage() {
                             commentCount={commentCount} 
                         />
                         {!isOwner && <ReportButton contentType="list" contentId={id as string} />}
+                        {isArchivist && (
+                            <button
+                                className="btn btn-ghost"
+                                onClick={() => setShowShareLounge(true)}
+                                style={{ fontSize: '0.6rem', padding: '0.35rem 0.75rem', borderColor: 'rgba(139,105,20,0.3)', color: 'var(--sepia)' }}
+                            >
+                                <MessageCircle size={12} /> Lounge
+                            </button>
+                        )}
                     </div>
                 </header>
 
@@ -418,6 +430,25 @@ export default function ListDetailPage() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {showShareLounge && list && (
+                <ShareToLoungeModal
+                    payload={{
+                        type: 'list_share',
+                        title: title,
+                        subtitle: `${films.length} films · by @${authorParam}`,
+                        image: films[0]?.poster_path ? `https://image.tmdb.org/t/p/w185${films[0].poster_path}` : undefined,
+                        metadata: {
+                            listId: list.id,
+                            title: title,
+                            filmCount: films.length,
+                            curator: authorParam,
+                            topPosters: films.slice(0, 4).map((f: any) => f.poster_path),
+                        },
+                    }}
+                    onClose={() => setShowShareLounge(false)}
+                />
             )}
         </div>
     )

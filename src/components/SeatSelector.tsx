@@ -3,7 +3,15 @@
 
 import { X, Check } from 'lucide-react'
 import { useState, useEffect, CSSProperties } from 'react'
-import { ShowtimeSlot, SeatLayout } from '../types'
+// Legacy venue types — defined locally since they were removed from types.ts
+interface ShowtimeSlot {
+    id: string; time: string; format: string; notes?: string;
+    ticketTypes?: Array<{ id: string; type: string; price: number; perks?: string }>;
+    bookedSeats?: string[];
+}
+interface SeatLayout {
+    rows: number; cols: number; vipRows: number; aisleAfterCol: number; blockedSeats: string[];
+}
 
 const ROW_LABELS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J']
 

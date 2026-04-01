@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camera, ArrowUpRight, Check, RotateCcw, Eye, EyeOff } from 'lucide-react'
+import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camera, ArrowUpRight, Check, RotateCcw, Eye, EyeOff, MessageCircle } from 'lucide-react'
 import { tmdb, obscurityScore, formatRuntime, getYear } from '../tmdb'
 import { ReelRating, ObscurityBadge, GenreTags, FilmCard, LoadingReel, SectionHeader, PersonPlaceholder } from '../components/UI'
 import { useSEOSync } from '../components/useSEOSync'
@@ -22,6 +22,8 @@ import WatchProviders from '../components/film/WatchProviders'
 import CountryReleases from '../components/film/CountryReleases'
 import Poster from '../components/film/Poster'
 import CriticsBooth from '../components/film/CriticsBooth'
+import ShareToLoungeModal from '../components/ShareToLoungeModal'
+import type { SharePayload } from '../components/ShareToLoungeModal'
 
 
 
@@ -31,6 +33,9 @@ function FilmHero({ film, onPlayTrailer }: any) {
     const { openLogModal } = useUIStore()
     const { watchlist, addToWatchlist, removeFromWatchlist, logs, markAsWatched, unmarkWatched } = useFilmStore()
     const [showExport, setShowExport] = useState(false)
+    const [showShareLounge, setShowShareLounge] = useState(false)
+    const user = useAuthStore((s: any) => s.user)
+    const isArchivist = user && ['archivist', 'auteur', 'projectionist'].includes(user.role)
     const isWatchlisted = watchlist.some((f: any) => f.id === film.id)
     const score = obscurityScore(film)
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
@@ -193,6 +198,11 @@ function FilmHero({ film, onPlayTrailer }: any) {
                                     <Play size={13} /> Trailer
                                 </button>
                             )}
+                            {isArchivist && (
+                                <button className="btn btn-ghost" style={{ justifyContent: 'center', fontSize: '0.65rem', borderColor: 'rgba(139,105,20,0.4)', color: 'var(--sepia)' }} onClick={() => setShowShareLounge(true)}>
+                                    <MessageCircle size={13} /> Lounge
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -332,6 +342,11 @@ function FilmHero({ film, onPlayTrailer }: any) {
                                 <Play size={14} /> Watch Trailer
                             </button>
                         )}
+                        {isArchivist && (
+                            <button className="btn btn-ghost" style={{ fontSize: '0.75rem', borderColor: 'rgba(139,105,20,0.4)', color: 'var(--sepia)' }} onClick={() => setShowShareLounge(true)}>
+                                <MessageCircle size={14} /> Share to Lounge
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -339,6 +354,24 @@ function FilmHero({ film, onPlayTrailer }: any) {
         )}
 
         {showExport && existingLog && <DossierExportModal film={film} log={existingLog} onClose={() => setShowExport(false)} />}
+        {showShareLounge && (
+            <ShareToLoungeModal
+                payload={{
+                    type: 'film_share',
+                    title: film.title,
+                    subtitle: film.release_date?.slice(0, 4),
+                    image: film.poster_path ? `https://image.tmdb.org/t/p/w185${film.poster_path}` : undefined,
+                    metadata: {
+                        filmId: film.id,
+                        title: film.title,
+                        poster: film.poster_path,
+                        year: film.release_date?.slice(0, 4),
+                        rating: film.vote_average,
+                    },
+                }}
+                onClose={() => setShowShareLounge(false)}
+            />
+        )}
         </>
     )
 }

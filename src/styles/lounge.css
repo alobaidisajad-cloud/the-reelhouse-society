@@ -1,0 +1,1527 @@
+/* ═══════════════════════════════════════════════════════════════════════
+   THE LOUNGE — Cinematic Chat Aesthetic
+   Where cinema lives between the frames.
+   A private cinema club. Velvet seats. Whispered debates.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Entrance Animations ── */
+@keyframes loungeEnter {
+    from { opacity: 0; transform: translateY(20px); filter: blur(4px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes loungeGlowPulse {
+    0%, 100% { opacity: 0.4; }
+    50% { opacity: 0.7; }
+}
+
+@keyframes loungeTitleReveal {
+    0% { opacity: 0; letter-spacing: 0.4em; filter: blur(6px); }
+    60% { letter-spacing: 0.08em; filter: blur(0); }
+    100% { opacity: 1; letter-spacing: 0.06em; }
+}
+
+@keyframes loungeSubReveal {
+    0% { opacity: 0; transform: translateY(8px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes loungeLineGrow {
+    from { width: 0; opacity: 0; }
+    to { width: 80px; opacity: 1; }
+}
+
+@keyframes msgSendRipple {
+    0% { box-shadow: 0 0 0 0 rgba(139, 105, 20, 0.3); }
+    70% { box-shadow: 0 0 0 10px rgba(139, 105, 20, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(139, 105, 20, 0); }
+}
+
+/* ── Page Layout ── */
+.lounge-page {
+    min-height: calc(100vh - 64px);
+    padding: 2rem 1.5rem 6rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    position: relative;
+    animation: loungeEnter 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Atmospheric projector glow — warm overhead beam */
+.lounge-page::before {
+    content: '';
+    position: fixed;
+    top: -20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 800px;
+    height: 600px;
+    background: radial-gradient(
+        ellipse 50% 50% at 50% 30%,
+        rgba(139, 105, 20, 0.04) 0%,
+        rgba(139, 105, 20, 0.015) 40%,
+        transparent 70%
+    );
+    pointer-events: none;
+    z-index: 0;
+    animation: loungeGlowPulse 8s ease-in-out infinite;
+}
+
+.lounge-page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    position: relative;
+    z-index: 1;
+}
+
+.lounge-page-header::after {
+    content: '';
+    display: block;
+    width: 80px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--sepia), transparent);
+    margin: 1.5rem auto 0;
+    animation: loungeLineGrow 1.2s 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lounge-title {
+    font-family: var(--font-display);
+    font-size: 2.8rem;
+    color: var(--parchment);
+    letter-spacing: 0.06em;
+    margin-bottom: 0.5rem;
+    text-shadow: 0 0 60px rgba(139, 105, 20, 0.2), 0 0 120px rgba(139, 105, 20, 0.08);
+    animation: loungeTitleReveal 1.2s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lounge-subtitle {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--fog);
+    letter-spacing: 0.03em;
+    font-style: italic;
+    animation: loungeSubReveal 0.8s 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ── Section Headers ── */
+.lounge-section-label {
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.3em;
+    color: var(--sepia);
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.lounge-section-label::before {
+    content: '';
+    width: 12px;
+    height: 1px;
+    background: var(--sepia);
+    opacity: 0.5;
+}
+
+/* ── Horizontal Scroll — Joined Lounges ── */
+.lounge-joined-strip {
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0 1.5rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    mask-image: linear-gradient(to right, transparent 0%, black 2%, black 96%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2%, black 96%, transparent 100%);
+}
+
+.lounge-joined-strip::-webkit-scrollbar {
+    display: none;
+}
+
+/* ── Lounge Card (Joined) ── */
+.lounge-card {
+    flex-shrink: 0;
+    width: 200px;
+    height: 240px;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    scroll-snap-align: start;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.35s ease;
+    border: 1px solid rgba(139, 105, 20, 0.15);
+    background: linear-gradient(160deg, rgba(28, 23, 16, 0.9) 0%, var(--ink) 100%);
+}
+
+.lounge-card:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6),
+                0 0 30px rgba(139, 105, 20, 0.08);
+    border-color: rgba(139, 105, 20, 0.35);
+}
+
+.lounge-card-cover {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.2;
+    filter: sepia(0.3) brightness(0.5);
+    transition: opacity 0.4s ease;
+}
+
+.lounge-card:hover .lounge-card-cover {
+    opacity: 0.3;
+}
+
+.lounge-card-content {
+    position: relative;
+    z-index: 1;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 1.25rem;
+    background: linear-gradient(to top, rgba(10, 7, 3, 0.95) 0%, rgba(10, 7, 3, 0.4) 50%, transparent 100%);
+}
+
+.lounge-card-name {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--parchment);
+    line-height: 1.2;
+    margin-bottom: 0.35rem;
+}
+
+.lounge-card-preview {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    color: var(--fog);
+    line-height: 1.4;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    opacity: 0.7;
+}
+
+.lounge-card-meta {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    color: var(--sepia);
+    margin-top: 0.5rem;
+    opacity: 0.6;
+}
+
+/* ── Unread Badge ── */
+.lounge-unread-badge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #c44848 0%, #8b2020 100%);
+    color: #fff;
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+    box-shadow: 0 2px 8px rgba(196, 72, 72, 0.4),
+                0 0 0 2px var(--ink);
+    animation: unreadPulse 2s ease-in-out infinite;
+}
+
+@keyframes unreadPulse {
+    0%, 100% { box-shadow: 0 2px 8px rgba(196, 72, 72, 0.4), 0 0 0 2px var(--ink); }
+    50% { box-shadow: 0 2px 12px rgba(196, 72, 72, 0.6), 0 0 0 2px var(--ink), 0 0 0 4px rgba(196, 72, 72, 0.15); }
+}
+
+/* ── Public Lounge Grid ── */
+.lounge-public-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+/* ── Public Lounge Card ── */
+.lounge-public-card {
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(139, 105, 20, 0.1);
+    background: linear-gradient(160deg, rgba(28, 23, 16, 0.7) 0%, var(--ink) 100%);
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s ease,
+                border-color 0.3s ease;
+}
+
+.lounge-public-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5),
+                0 0 20px rgba(139, 105, 20, 0.06);
+    border-color: rgba(139, 105, 20, 0.3);
+}
+
+.lounge-public-card-cover {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    opacity: 0.35;
+    filter: sepia(0.3) brightness(0.5);
+}
+
+.lounge-public-card-body {
+    padding: 1.25rem;
+}
+
+.lounge-public-card-name {
+    font-family: var(--font-display);
+    font-size: 1rem;
+    color: var(--parchment);
+    line-height: 1.2;
+    margin-bottom: 0.4rem;
+}
+
+.lounge-public-card-desc {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--fog);
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.lounge-public-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.lounge-public-card-members {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    color: var(--fog);
+    opacity: 0.6;
+}
+
+.lounge-join-btn {
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: var(--sepia);
+    background: rgba(139, 105, 20, 0.1);
+    border: 1px solid rgba(139, 105, 20, 0.3);
+    padding: 0.45em 1.2em;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.lounge-join-btn:hover {
+    background: rgba(139, 105, 20, 0.2);
+    border-color: var(--sepia);
+    color: var(--parchment);
+    box-shadow: 0 0 15px rgba(139, 105, 20, 0.15);
+}
+
+/* ── Chat Room ── */
+.lounge-room {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 64px);
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--ink);
+    position: relative;
+}
+
+/* Subtle ambient glow inside the room */
+.lounge-room::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 300px;
+    background: radial-gradient(
+        ellipse 60% 40% at 50% 0%,
+        rgba(139, 105, 20, 0.03) 0%,
+        transparent 70%
+    );
+    pointer-events: none;
+    z-index: 0;
+}
+
+.lounge-room-header {
+    position: sticky;
+    top: 64px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(10, 7, 3, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(139, 105, 20, 0.15);
+}
+
+.lounge-room-back {
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    color: var(--parchment);
+    background: none;
+    border: 1px solid rgba(139, 105, 20, 0.3);
+    padding: 0.4em 0.8em;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.lounge-room-back:hover {
+    border-color: var(--sepia);
+    background: rgba(139, 105, 20, 0.1);
+}
+
+.lounge-room-title {
+    font-family: var(--font-display);
+    font-size: 1.1rem;
+    color: var(--parchment);
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.lounge-room-members-count {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.15em;
+    color: var(--fog);
+    opacity: 0.6;
+    flex-shrink: 0;
+}
+
+/* ── Message List ── */
+.lounge-messages {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(139, 105, 20, 0.2) transparent;
+}
+
+.lounge-messages::-webkit-scrollbar {
+    width: 4px;
+}
+
+.lounge-messages::-webkit-scrollbar-thumb {
+    background: rgba(139, 105, 20, 0.2);
+    border-radius: 2px;
+}
+
+/* ── Message Bubble ── */
+.lounge-msg {
+    max-width: 75%;
+    animation: msgSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.lounge-msg--self {
+    align-self: flex-end;
+}
+
+.lounge-msg--other {
+    align-self: flex-start;
+}
+
+@keyframes msgSlideIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.lounge-msg-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.2rem;
+}
+
+.lounge-msg-author {
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    color: var(--sepia);
+    font-weight: 500;
+}
+
+.lounge-msg--self .lounge-msg-author {
+    color: var(--parchment);
+}
+
+.lounge-msg-time {
+    font-family: var(--font-ui);
+    font-size: 0.45rem;
+    letter-spacing: 0.1em;
+    color: var(--fog);
+    opacity: 0.4;
+}
+
+.lounge-msg-body {
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    position: relative;
+}
+
+.lounge-msg--other .lounge-msg-body {
+    background: rgba(28, 23, 16, 0.6);
+    border: 1px solid rgba(139, 105, 20, 0.08);
+    color: var(--bone);
+    border-top-left-radius: 2px;
+}
+
+.lounge-msg--self .lounge-msg-body {
+    background: linear-gradient(135deg, rgba(139, 105, 20, 0.12) 0%, rgba(139, 105, 20, 0.06) 100%);
+    border: 1px solid rgba(139, 105, 20, 0.2);
+    color: var(--parchment);
+    border-top-right-radius: 2px;
+}
+
+/* ── Message Delete ── */
+.lounge-msg-delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(10, 7, 3, 0.8);
+    border: 1px solid rgba(196, 72, 72, 0.3);
+    color: rgba(196, 72, 72, 0.7);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.lounge-msg:hover .lounge-msg-delete {
+    display: flex;
+}
+
+.lounge-msg-delete:hover {
+    background: rgba(196, 72, 72, 0.2);
+    border-color: rgba(196, 72, 72, 0.6);
+    color: #e8a0a0;
+}
+
+/* ── Shared Content Card ── */
+.lounge-shared-card {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    margin-top: 0.5rem;
+    border-radius: 6px;
+    background: rgba(10, 7, 3, 0.5);
+    border: 1px solid rgba(139, 105, 20, 0.12);
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.lounge-shared-card:hover {
+    border-color: rgba(139, 105, 20, 0.3);
+    background: rgba(28, 23, 16, 0.6);
+}
+
+.lounge-shared-poster {
+    width: 45px;
+    height: 67px;
+    object-fit: cover;
+    border-radius: 3px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.lounge-shared-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+
+.lounge-shared-type {
+    font-family: var(--font-ui);
+    font-size: 0.45rem;
+    letter-spacing: 0.2em;
+    color: var(--sepia);
+    margin-bottom: 0.2rem;
+}
+
+.lounge-shared-title {
+    font-family: var(--font-sub);
+    font-size: 0.82rem;
+    color: var(--parchment);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lounge-shared-sub {
+    font-family: var(--font-body);
+    font-size: 0.7rem;
+    color: var(--fog);
+    opacity: 0.6;
+}
+
+/* ── Input Bar ── */
+.lounge-input-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.5rem;
+    background: rgba(10, 7, 3, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(139, 105, 20, 0.12);
+}
+
+.lounge-input {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(139, 105, 20, 0.15);
+    border-radius: 6px;
+    color: var(--bone);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    resize: none;
+    min-height: 40px;
+    max-height: 120px;
+}
+
+.lounge-input:focus {
+    border-color: rgba(139, 105, 20, 0.4);
+    box-shadow: 0 0 0 2px rgba(139, 105, 20, 0.08);
+}
+
+.lounge-input::placeholder {
+    color: var(--fog);
+    opacity: 0.4;
+    font-style: italic;
+}
+
+.lounge-send-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(139, 105, 20, 0.3) 0%, rgba(139, 105, 20, 0.15) 100%);
+    border: 1px solid rgba(139, 105, 20, 0.4);
+    color: var(--sepia);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+    flex-shrink: 0;
+}
+
+.lounge-send-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, rgba(139, 105, 20, 0.5) 0%, rgba(139, 105, 20, 0.3) 100%);
+    box-shadow: 0 0 20px rgba(139, 105, 20, 0.2);
+    color: var(--parchment);
+    transform: scale(1.05);
+}
+
+.lounge-send-btn:active:not(:disabled) {
+    animation: msgSendRipple 0.6s ease-out;
+    transform: scale(0.95);
+}
+
+.lounge-send-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+.lounge-share-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: none;
+    border: 1px solid rgba(139, 105, 20, 0.15);
+    color: var(--fog);
+    opacity: 0.5;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.lounge-share-btn:hover {
+    opacity: 1;
+    border-color: rgba(139, 105, 20, 0.3);
+    color: var(--sepia);
+}
+
+/* ── Create Lounge Modal ── */
+.lounge-create-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+}
+
+.lounge-create-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+}
+
+.lounge-create-card {
+    position: relative;
+    width: 100%;
+    max-width: 500px;
+    background: linear-gradient(160deg, rgba(28, 23, 16, 0.98) 0%, var(--ink) 100%);
+    border: 1px solid rgba(139, 105, 20, 0.25);
+    border-radius: 12px;
+    padding: 2.5rem;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.7),
+                0 0 60px rgba(139, 105, 20, 0.05);
+}
+
+.lounge-create-title {
+    font-family: var(--font-display);
+    font-size: 1.8rem;
+    color: var(--parchment);
+    text-align: center;
+    margin-bottom: 0.3rem;
+}
+
+.lounge-create-subtitle {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.3em;
+    color: var(--sepia);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.lounge-create-field {
+    margin-bottom: 1.25rem;
+}
+
+.lounge-create-label {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.2em;
+    color: var(--fog);
+    margin-bottom: 0.4rem;
+    display: block;
+}
+
+.lounge-create-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(139, 105, 20, 0.15);
+    border-radius: 6px;
+    color: var(--bone);
+    font-family: var(--font-body);
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.lounge-create-input:focus {
+    border-color: rgba(139, 105, 20, 0.4);
+}
+
+.lounge-create-textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.lounge-create-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    padding: 0.75rem 0;
+}
+
+.lounge-create-toggle-track {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(139, 105, 20, 0.2);
+    position: relative;
+    transition: background 0.25s ease, border-color 0.25s ease;
+    flex-shrink: 0;
+}
+
+.lounge-create-toggle-track.active {
+    background: rgba(139, 105, 20, 0.3);
+    border-color: var(--sepia);
+}
+
+.lounge-create-toggle-knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--fog);
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background 0.25s ease;
+}
+
+.lounge-create-toggle-track.active .lounge-create-toggle-knob {
+    transform: translateX(16px);
+    background: var(--sepia);
+}
+
+.lounge-create-toggle-label {
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.15em;
+    color: var(--bone);
+}
+
+.lounge-create-toggle-hint {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    color: var(--fog);
+    opacity: 0.5;
+}
+
+/* ── Gate (Non-Archivist) ── */
+.lounge-gate {
+    min-height: calc(100vh - 64px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.lounge-gate::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 30% 40%, rgba(139, 105, 20, 0.04) 0%, transparent 50%),
+        radial-gradient(circle at 70% 60%, rgba(139, 105, 20, 0.03) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.lounge-gate-card {
+    text-align: center;
+    max-width: 460px;
+    position: relative;
+    z-index: 1;
+}
+
+.lounge-gate-icon {
+    color: var(--sepia);
+    opacity: 0.4;
+    margin-bottom: 1.5rem;
+}
+
+.lounge-gate-title {
+    font-family: var(--font-display);
+    font-size: 2.4rem;
+    color: var(--parchment);
+    margin-bottom: 0.5rem;
+    line-height: 1.1;
+}
+
+.lounge-gate-sub {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.35em;
+    color: var(--sepia);
+    margin-bottom: 1.5rem;
+}
+
+.lounge-gate-desc {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    color: var(--fog);
+    line-height: 1.7;
+    margin-bottom: 2rem;
+}
+
+/* ── Day Separator ── */
+.lounge-day-separator {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.lounge-day-separator::before,
+.lounge-day-separator::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(139, 105, 20, 0.15), transparent);
+}
+
+.lounge-day-label {
+    font-family: var(--font-ui);
+    font-size: 0.45rem;
+    letter-spacing: 0.25em;
+    color: var(--fog);
+    opacity: 0.4;
+    flex-shrink: 0;
+}
+
+/* ── Empty States ── */
+.lounge-empty {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.lounge-empty-icon {
+    color: var(--sepia);
+    opacity: 0.2;
+    margin-bottom: 1rem;
+}
+
+.lounge-empty-text {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    color: var(--fog);
+    opacity: 0.5;
+    max-width: 300px;
+    margin: 0 auto;
+    line-height: 1.6;
+}
+
+/* ── Loading Shimmer ── */
+.lounge-shimmer {
+    background: linear-gradient(
+        90deg,
+        rgba(139, 105, 20, 0.03) 25%,
+        rgba(139, 105, 20, 0.08) 50%,
+        rgba(139, 105, 20, 0.03) 75%
+    );
+    background-size: 200% 100%;
+    animation: loungeShimmer 1.5s ease-in-out infinite;
+    border-radius: 6px;
+}
+
+@keyframes loungeShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Menu Dropdown ── */
+.lounge-menu {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    margin-top: 0.5rem;
+    min-width: 180px;
+    background: rgba(28, 23, 16, 0.98);
+    border: 1px solid rgba(139, 105, 20, 0.2);
+    border-radius: 8px;
+    padding: 0.5rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+    z-index: 200;
+}
+
+.lounge-menu-item {
+    width: 100%;
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.12em;
+    color: var(--bone);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.lounge-menu-item:hover {
+    background: rgba(139, 105, 20, 0.1);
+    color: var(--parchment);
+}
+
+.lounge-menu-item--danger {
+    color: rgba(196, 72, 72, 0.7);
+}
+
+.lounge-menu-item--danger:hover {
+    background: rgba(196, 72, 72, 0.1);
+    color: #e8a0a0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — Tablet
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+    .lounge-public-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .lounge-card {
+        width: 180px;
+        height: 220px;
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+    .lounge-page {
+        padding: 1.25rem 1rem 6rem;
+    }
+
+    .lounge-title {
+        font-size: 1.8rem;
+    }
+
+    .lounge-subtitle {
+        font-size: 0.8rem;
+    }
+
+    .lounge-public-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.75rem;
+    }
+
+    .lounge-card {
+        width: 160px;
+        height: 200px;
+    }
+
+    .lounge-card-name {
+        font-size: 0.95rem;
+    }
+
+    .lounge-room-header {
+        padding: 0.6rem 1rem;
+    }
+
+    .lounge-room-title {
+        font-size: 0.95rem;
+    }
+
+    .lounge-messages {
+        padding: 1rem;
+    }
+
+    .lounge-msg {
+        max-width: 85%;
+    }
+
+    /* Mobile: always show delete button (no hover on touch) */
+    .lounge-msg-delete {
+        display: flex;
+        opacity: 0.5;
+    }
+
+    .lounge-input-bar {
+        padding: 0.6rem 1rem;
+        padding-bottom: calc(0.6rem + env(safe-area-inset-bottom, 0px));
+    }
+
+    .lounge-create-card {
+        padding: 1.75rem;
+    }
+
+    .lounge-create-title {
+        font-size: 1.4rem;
+    }
+
+    .lounge-gate-title {
+        font-size: 1.8rem;
+    }
+
+    /* Mobile: reply button always visible */
+    .lounge-msg-reply {
+        display: flex;
+        opacity: 0.4;
+    }
+
+    /* Mobile: settings panel full-width */
+    .lounge-settings-panel {
+        width: 100% !important;
+        max-width: 100% !important;
+        border-radius: 0 !important;
+        height: 100% !important;
+    }
+
+    /* Mobile: action sheet overlay */
+    .lounge-action-sheet {
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        border-radius: 16px 16px 0 0;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    }
+}
+
+/* ════════════════════════════════════════════════════════════
+   REPLY SYSTEM — Quoted messages & reply bar
+   ════════════════════════════════════════════════════════════ */
+
+/* Reply button on hover */
+.lounge-msg-reply {
+    position: absolute;
+    top: 4px;
+    right: 28px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: rgba(10, 7, 3, 0.8);
+    border: 1px solid rgba(139, 105, 20, 0.3);
+    color: rgba(139, 105, 20, 0.7);
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.5rem;
+    transition: all 0.2s ease;
+}
+
+.lounge-msg:hover .lounge-msg-reply {
+    display: flex;
+}
+
+.lounge-msg-reply:hover {
+    background: rgba(139, 105, 20, 0.15);
+    border-color: rgba(139, 105, 20, 0.5);
+    color: var(--sepia);
+}
+
+/* Quoted reply snippet above message */
+.lounge-reply-quote {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    color: var(--fog);
+    padding: 0.4rem 0.65rem;
+    margin-bottom: 0.3rem;
+    border-left: 2px solid rgba(139, 105, 20, 0.5);
+    background: rgba(139, 105, 20, 0.04);
+    border-radius: 0 4px 4px 0;
+    line-height: 1.4;
+    max-height: 2.8em;
+    overflow: hidden;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.lounge-reply-quote:hover {
+    background: rgba(139, 105, 20, 0.08);
+}
+
+.lounge-reply-quote-author {
+    font-family: var(--font-ui);
+    font-size: 0.45rem;
+    letter-spacing: 0.1em;
+    color: var(--sepia);
+    margin-bottom: 0.15rem;
+}
+
+/* Reply preview bar above input */
+.lounge-reply-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 1.5rem;
+    background: rgba(139, 105, 20, 0.04);
+    border-top: 1px solid rgba(139, 105, 20, 0.15);
+    border-bottom: none;
+    animation: loungeSubReveal 0.2s ease-out both;
+}
+
+.lounge-reply-bar-content {
+    flex: 1;
+    min-width: 0;
+    border-left: 2px solid var(--sepia);
+    padding-left: 0.65rem;
+}
+
+.lounge-reply-bar-author {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.12em;
+    color: var(--sepia);
+    margin-bottom: 0.1rem;
+}
+
+.lounge-reply-bar-text {
+    font-family: var(--font-body);
+    font-size: 0.78rem;
+    color: var(--fog);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lounge-reply-bar-close {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: none;
+    border: 1px solid rgba(139, 105, 20, 0.2);
+    color: var(--fog);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.2s;
+}
+
+.lounge-reply-bar-close:hover {
+    background: rgba(139, 105, 20, 0.1);
+    color: var(--parchment);
+}
+
+/* ════════════════════════════════════════════════════════════
+   ADMIN SETTINGS PANEL — Creator management
+   ════════════════════════════════════════════════════════════ */
+
+.lounge-settings-panel {
+    position: fixed;
+    top: 64px;
+    right: 0;
+    bottom: 0;
+    width: 380px;
+    max-width: 100%;
+    background: linear-gradient(180deg, rgba(20, 16, 10, 0.99) 0%, var(--ink) 100%);
+    border-left: 1px solid rgba(139, 105, 20, 0.15);
+    z-index: 150;
+    display: flex;
+    flex-direction: column;
+    box-shadow: -8px 0 40px rgba(0, 0, 0, 0.5);
+    animation: loungeSettingsSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes loungeSettingsSlide {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+.lounge-settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(139, 105, 20, 0.12);
+}
+
+.lounge-settings-title {
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    letter-spacing: 0.25em;
+    color: var(--sepia);
+}
+
+.lounge-settings-close {
+    background: none;
+    border: 1px solid rgba(139, 105, 20, 0.2);
+    color: var(--fog);
+    cursor: pointer;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.lounge-settings-close:hover {
+    border-color: var(--sepia);
+    color: var(--parchment);
+}
+
+.lounge-settings-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.lounge-settings-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.lounge-settings-section-label {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.25em;
+    color: var(--fog);
+    opacity: 0.5;
+}
+
+.lounge-settings-input {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(139, 105, 20, 0.15);
+    border-radius: 6px;
+    color: var(--bone);
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s;
+    box-sizing: border-box;
+}
+
+.lounge-settings-input:focus {
+    border-color: rgba(139, 105, 20, 0.4);
+}
+
+/* Member list in settings */
+.lounge-member-item {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.65rem 0;
+    border-bottom: 1px solid rgba(139, 105, 20, 0.06);
+}
+
+.lounge-member-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(139, 105, 20, 0.2), var(--ink));
+    border: 1px solid rgba(139, 105, 20, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+.lounge-member-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lounge-member-name {
+    font-family: var(--font-ui);
+    font-size: 0.6rem;
+    letter-spacing: 0.1em;
+    color: var(--bone);
+    flex: 1;
+}
+
+.lounge-member-role {
+    font-family: var(--font-ui);
+    font-size: 0.4rem;
+    letter-spacing: 0.15em;
+    color: var(--sepia);
+    opacity: 0.6;
+}
+
+.lounge-member-kick {
+    background: none;
+    border: 1px solid rgba(196, 72, 72, 0.2);
+    color: rgba(196, 72, 72, 0.6);
+    cursor: pointer;
+    padding: 0.3rem 0.6rem;
+    border-radius: 4px;
+    font-family: var(--font-ui);
+    font-size: 0.45rem;
+    letter-spacing: 0.15em;
+    transition: all 0.2s;
+}
+
+.lounge-member-kick:hover {
+    background: rgba(196, 72, 72, 0.1);
+    border-color: rgba(196, 72, 72, 0.5);
+    color: #e8a0a0;
+}
+
+/* Danger zone in settings */
+.lounge-settings-danger {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgba(196, 72, 72, 0.15);
+}
+
+.lounge-settings-danger-btn {
+    width: 100%;
+    padding: 0.7rem;
+    background: rgba(196, 72, 72, 0.06);
+    border: 1px solid rgba(196, 72, 72, 0.25);
+    border-radius: 6px;
+    color: rgba(196, 72, 72, 0.7);
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.lounge-settings-danger-btn:hover {
+    background: rgba(196, 72, 72, 0.12);
+    border-color: rgba(196, 72, 72, 0.5);
+    color: #e8a0a0;
+}
+
+/* ════════════════════════════════════════════════════════════
+   MOBILE ACTION SHEET — Touch-friendly message actions
+   ════════════════════════════════════════════════════════════ */
+
+.lounge-action-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+    animation: fadeIn 0.15s ease both;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.lounge-action-sheet {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(180deg, rgba(28, 23, 16, 0.99) 0%, var(--ink) 100%);
+    border-top: 1px solid rgba(139, 105, 20, 0.2);
+    border-radius: 16px 16px 0 0;
+    padding: 0.75rem 0;
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    z-index: 10000;
+    animation: actionSheetUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes actionSheetUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.lounge-action-sheet-handle {
+    width: 36px;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(139, 105, 20, 0.3);
+    margin: 0 auto 0.75rem;
+}
+
+.lounge-action-sheet-item {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    font-family: var(--font-ui);
+    font-size: 0.65rem;
+    letter-spacing: 0.12em;
+    color: var(--bone);
+    cursor: pointer;
+    transition: background 0.15s;
+    text-align: left;
+}
+
+.lounge-action-sheet-item:active {
+    background: rgba(139, 105, 20, 0.08);
+}
+
+.lounge-action-sheet-item--danger {
+    color: rgba(196, 72, 72, 0.8);
+}
+
+.lounge-action-sheet-item--danger:active {
+    background: rgba(196, 72, 72, 0.08);
+}
+
+/* ════════════════════════════════════════════════════════════
+   LOUNGE CARD ENHANCEMENTS — Premium feel
+   ════════════════════════════════════════════════════════════ */
+
+/* Warm inner glow on joined cards */
+.lounge-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(
+        ellipse at 50% 100%,
+        rgba(139, 105, 20, 0.06) 0%,
+        transparent 60%
+    );
+    pointer-events: none;
+    z-index: 0;
+    transition: opacity 0.3s;
+    opacity: 0;
+}
+
+.lounge-card:hover::after {
+    opacity: 1;
+}
+
+/* Notification dot animation enhancement */
+@keyframes notifBreathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+.lounge-unread-badge {
+    animation: unreadPulse 2s ease-in-out infinite,
+               notifBreathe 3s ease-in-out infinite;
+}

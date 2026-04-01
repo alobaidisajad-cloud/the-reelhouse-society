@@ -10,7 +10,7 @@ const NAV_LINKS = [
     { path: '/feed', label: 'The Reel' },
     { path: '/dispatch', label: 'The Dispatch' },
     { path: '/lists', label: 'The Stacks' },
-    { path: '/cinemas', label: 'The Cinemas' },
+    { path: '/lounge', label: 'The Lounge' },
     { path: '/society', label: 'The Society' },
 ]
 

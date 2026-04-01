@@ -1,18 +1,24 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Film, Star } from 'lucide-react'
+import { ArrowLeft, Film, Star, MessageCircle } from 'lucide-react'
 import { tmdb, obscurityScore } from '../tmdb'
 import { FilmCard, LoadingReel, SectionHeader, ObscurityBadge, PersonPlaceholder } from '../components/UI'
 import PageSEO from '../components/PageSEO'
 import Poster from '../components/film/Poster'
+import ShareToLoungeModal from '../components/ShareToLoungeModal'
 
 import { useViewport } from '../hooks/useViewport'
+import { useAuthStore } from '../store'
 
 export default function PersonPage() {
     const { id } = useParams()
     const navigate = useNavigate()
     const { isTouch: IS_TOUCH } = useViewport()
+    const [showShareLounge, setShowShareLounge] = useState(false)
+    const user = useAuthStore((s: any) => s.user)
+    const isArchivist = user && ['archivist', 'auteur', 'projectionist'].includes(user.role)
 
     const { data: person, isLoading: loadingPerson } = useQuery({
         queryKey: ['person', id],
@@ -304,6 +310,21 @@ export default function PersonPage() {
                                         </span>
                                     </div>
                                 )}
+                                {isArchivist && (
+                                    <button
+                                        className="btn btn-ghost"
+                                        onClick={() => setShowShareLounge(true)}
+                                        style={{
+                                            fontSize: '0.55rem',
+                                            padding: '0.3rem 0.65rem',
+                                            borderColor: 'rgba(139,105,20,0.3)',
+                                            color: 'var(--sepia)',
+                                            minHeight: 'auto',
+                                        }}
+                                    >
+                                        <MessageCircle size={11} /> Lounge
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
@@ -516,6 +537,25 @@ export default function PersonPage() {
 
             {/* Bottom breathing room */}
             <div style={{ height: IS_TOUCH ? 'calc(4rem + env(safe-area-inset-bottom))' : '4rem' }} />
+
+            {showShareLounge && person && (
+                <ShareToLoungeModal
+                    payload={{
+                        type: 'person_share',
+                        title: person.name,
+                        subtitle: person.known_for_department,
+                        image: person.profile_path ? `https://image.tmdb.org/t/p/w185${person.profile_path}` : undefined,
+                        metadata: {
+                            personId: person.id,
+                            name: person.name,
+                            photo: person.profile_path,
+                            department: person.known_for_department,
+                            knownFor: definingWorks.slice(0, 3).map((f: any) => f.title),
+                        },
+                    }}
+                    onClose={() => setShowShareLounge(false)}
+                />
+            )}
         </div>
     )
 }
