@@ -8,8 +8,11 @@ import { tmdb } from '../tmdb'
 import { useAuthStore, useDispatchStore } from '../store'
 import { supabase } from '../supabaseClient'
 import Buster from '../components/Buster'
+import DossierCritiquePanel from '../components/feed/DossierCritiquePanel'
+import ShareToLoungeModal from '../components/ShareToLoungeModal'
 import '../styles/dispatch.css'
 import PageSEO from '../components/PageSEO'
+import { parseMarkdown } from '../utils/markdownParser'
 
 /* ── REFINED NOIR ICONS ── */
 const IconFeather = () => (
@@ -207,13 +210,17 @@ export default function DispatchPage() {
     const closeArticle = () => {
         setSelectedArticle(null)
         setCertified(false)
+        setCritiqueOpen(false)
         document.body.style.overflow = 'unset'
         window.scrollTo(0, scrollPos.current)
     }
 
-    // ── Certify state ──
+    // ── Engagement state ──
     const [certified, setCertified] = useState(false)
     const [certifyLoading, setCertifyLoading] = useState(false)
+    const [critiqueOpen, setCritiqueOpen] = useState(false)
+    const [showShareLounge, setShowShareLounge] = useState(false)
+    const isLoungeEligible = user && ['archivist', 'auteur', 'projectionist'].includes((user as any).role)
 
     const handleCertify = async () => {
         if (!user || !selectedArticle?.id || selectedArticle.id.startsWith('seed-') || certifyLoading) return
@@ -480,50 +487,43 @@ export default function DispatchPage() {
                                     </div>
                                 </header>
 
-                                <div className="reader-body">
-                                    {selectedArticle.fullContent || selectedArticle.excerpt}
-                                </div>
+                                <div className="reader-body" dangerouslySetInnerHTML={{ __html: parseMarkdown(selectedArticle.fullContent || selectedArticle.excerpt || '') }} />
 
-                                {/* ── Engagement Footer ── */}
-                                <div style={{ borderTop: '1px solid rgba(139,105,20,0.15)', paddingTop: '1.5rem', marginTop: '2rem', display: 'flex', flexWrap: 'wrap', gap: '0.75rem', justifyContent: 'center' }}>
-                                    {/* Certify Button */}
-                                    {user && (
-                                        <button
-                                            onClick={handleCertify}
-                                            disabled={certifyLoading}
-                                            style={{
-                                                background: certified ? 'linear-gradient(135deg, rgba(139,105,20,0.25), rgba(180,140,20,0.15))' : 'transparent',
-                                                border: `1px solid ${certified ? 'rgba(196,150,26,0.5)' : 'rgba(139,105,20,0.25)'}`,
-                                                color: certified ? 'var(--sepia)' : 'var(--fog)',
-                                                fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em',
-                                                padding: '0.6rem 1.5rem', cursor: 'pointer',
-                                                transition: 'all 0.3s', display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                            }}
-                                            onMouseEnter={(e: any) => { if (!certified) e.currentTarget.style.borderColor = 'rgba(196,150,26,0.5)' }}
-                                            onMouseLeave={(e: any) => { if (!certified) e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)' }}
-                                        >
-                                            ✦ {certified ? 'CERTIFIED' : 'CERTIFY'}
-                                        </button>
-                                    )}
-
-                                    {/* Share Button */}
-                                    <button
-                                        onClick={handleShare}
-                                        style={{
-                                            background: 'transparent',
-                                            border: '1px solid rgba(139,105,20,0.25)',
-                                            color: 'var(--fog)',
-                                            fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em',
-                                            padding: '0.6rem 1.5rem', cursor: 'pointer',
-                                            transition: 'all 0.3s', display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                        }}
-                                        onMouseEnter={(e: any) => e.currentTarget.style.borderColor = 'rgba(196,150,26,0.5)'}
-                                        onMouseLeave={(e: any) => e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)'}
-                                    >
-                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
-                                        SHARE
+                                {/* ── Action Bar (mirrors feed cards) ── */}
+                                <div style={{ borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '0.75rem', marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                                    {/* CERTIFY */}
+                                    <button className="reel-action-btn" onClick={handleCertify} disabled={certifyLoading} style={{ color: certified ? 'var(--sepia)' : 'var(--fog)', cursor: user ? 'pointer' : 'not-allowed' }}>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill={certified ? 'var(--sepia)' : 'none'} stroke={certified ? 'var(--sepia)' : 'currentColor'} strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                                        {certified ? 'CERTIFIED' : 'CERTIFY'} ({selectedArticle.certifyCount || 0})
                                     </button>
+
+                                    {/* CRITIQUE */}
+                                    <button className="reel-action-btn" onClick={() => setCritiqueOpen(!critiqueOpen)} style={{ color: critiqueOpen ? 'var(--parchment)' : 'var(--fog)' }}>
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                                        CRITIQUE
+                                    </button>
+
+                                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                                        {/* SHARE */}
+                                        <button className="reel-action-btn" onClick={handleShare} style={{ color: 'var(--fog)' }}>
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+                                            SHARE
+                                        </button>
+
+                                        {/* LOUNGE */}
+                                        {isLoungeEligible && (
+                                            <button className="reel-action-btn" onClick={() => setShowShareLounge(true)} style={{ color: 'var(--fog)' }}>
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                                                LOUNGE
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
+
+                                {/* Critique Panel */}
+                                {selectedArticle.id && !selectedArticle.id.startsWith('seed-') && (
+                                    <DossierCritiquePanel dossierId={selectedArticle.id} open={critiqueOpen} />
+                                )}
 
                                 <div className="reader-endmark">— ✦ —</div>
                             </motion.div>
@@ -531,6 +531,23 @@ export default function DispatchPage() {
                     )}
                 </AnimatePresence>,
                 document.body
+            )}
+            {/* SHARE TO LOUNGE MODAL */}
+            {showShareLounge && selectedArticle && (
+                <ShareToLoungeModal
+                    payload={{
+                        type: 'dossier_share',
+                        title: selectedArticle.title || 'Dossier',
+                        subtitle: `Dossier by @${selectedArticle.authorUsername || selectedArticle.author || 'anonymous'}`,
+                        metadata: {
+                            dossierId: selectedArticle.id,
+                            title: selectedArticle.title,
+                            author: selectedArticle.authorUsername || selectedArticle.author,
+                            excerpt: (selectedArticle.excerpt || '').slice(0, 200),
+                        },
+                    }}
+                    onClose={() => setShowShareLounge(false)}
+                />
             )}
 
             {/* WRITER FLOATING ACTION BUTTON */}

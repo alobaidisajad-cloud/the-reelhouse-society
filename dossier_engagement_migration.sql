@@ -1,5 +1,5 @@
 -- ══════════════════════════════════════════════════════
--- DISPATCH DOSSIER ENGAGEMENT — Views, Certifications
+-- DISPATCH DOSSIER ENGAGEMENT — Views, Certifications, Critiques
 -- Run in Supabase SQL Editor
 -- ══════════════════════════════════════════════════════
 
@@ -28,7 +28,31 @@ CREATE POLICY "Authenticated users can certify" ON public.dossier_certifications
 CREATE POLICY "Users can uncertify" ON public.dossier_certifications
     FOR DELETE USING (auth.uid() = user_id);
 
--- 3) RPC to increment view count (avoids race conditions)
+-- 3) Dossier comments / critiques table
+CREATE TABLE IF NOT EXISTS public.dossier_comments (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    dossier_id UUID REFERENCES public.dispatch_dossiers(id) ON DELETE CASCADE NOT NULL,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
+    username TEXT NOT NULL,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.dossier_comments ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Dossier comments viewable by everyone" ON public.dossier_comments
+    FOR SELECT USING (TRUE);
+
+CREATE POLICY "Authenticated users can comment on dossiers" ON public.dossier_comments
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage their own dossier comments" ON public.dossier_comments
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS dossier_comments_dossier_id_idx ON public.dossier_comments(dossier_id);
+CREATE INDEX IF NOT EXISTS dossier_comments_created_at_idx ON public.dossier_comments(created_at DESC);
+
+-- 4) RPC to increment view count (avoids race conditions)
 CREATE OR REPLACE FUNCTION public.increment_dossier_views(dossier_uuid UUID)
 RETURNS void AS $$
 BEGIN
@@ -38,7 +62,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 4) RPC to toggle certification (insert or delete + update counter)
+-- 5) RPC to toggle certification (insert or delete + update counter)
 CREATE OR REPLACE FUNCTION public.toggle_dossier_certify(dossier_uuid UUID)
 RETURNS BOOLEAN AS $$
 DECLARE

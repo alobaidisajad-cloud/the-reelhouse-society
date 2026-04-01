@@ -8,7 +8,7 @@ import { X, MessageCircle, Send, Users, Check, Lock } from 'lucide-react'
 import { useLoungeStore } from '../stores/lounge'
 import type { Lounge } from '../stores/lounge'
 
-export type ShareType = 'film_share' | 'log_share' | 'person_share' | 'list_share'
+export type ShareType = 'film_share' | 'log_share' | 'person_share' | 'list_share' | 'dossier_share'
 
 export interface SharePayload {
     type: ShareType

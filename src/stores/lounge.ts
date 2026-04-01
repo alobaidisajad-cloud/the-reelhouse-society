@@ -30,7 +30,7 @@ export interface LoungeMessage {
     username: string
     avatar_url?: string
     content: string
-    type: 'text' | 'film_share' | 'log_share' | 'person_share' | 'list_share'
+    type: 'text' | 'film_share' | 'log_share' | 'person_share' | 'list_share' | 'dossier_share'
     metadata: Record<string, any>
     created_at: string
     reply_to_id?: string | null
