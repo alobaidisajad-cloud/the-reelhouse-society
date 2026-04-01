@@ -15,6 +15,7 @@ export interface Lounge {
     member_count: number
     max_members: number
     created_at: string
+    is_member?: boolean
     last_message?: {
         content: string
         username: string
@@ -46,7 +47,9 @@ export interface LoungeStoreState {
     isLoading: boolean
     isSending: boolean
     hasMoreMessages: boolean
+    searchQuery: string
 
+    setSearchQuery: (query: string) => void
     fetchMyLounges: () => Promise<void>
     fetchPublicLounges: () => Promise<void>
     createLounge: (data: { name: string; description: string; isPrivate: boolean; coverImage?: string }) => Promise<string | null>
@@ -86,6 +89,9 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
     isLoading: false,
     isSending: false,
     hasMoreMessages: true,
+    searchQuery: '',
+
+    setSearchQuery: (query) => set({ searchQuery: query }),
 
     fetchMyLounges: async () => {
         const user = useAuthStore.getState().user
@@ -292,6 +298,19 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
 
         if (!lounge) { set({ isLoading: false }); return }
 
+        // Check if user is member
+        const user = useAuthStore.getState().user
+        let is_member = false
+        if (user) {
+            const { data: memberCheck } = await supabase
+                .from('lounge_members')
+                .select('id')
+                .eq('lounge_id', loungeId)
+                .eq('user_id', user.id)
+                .single()
+            is_member = !!memberCheck
+        }
+
         // Fetch initial messages
         const { data: msgs } = await supabase
             .from('lounge_messages')
@@ -316,7 +335,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         }))
 
         set({
-            activeLounge: { ...lounge, creator_username: (lounge as any).profiles?.username },
+            activeLounge: { ...lounge, creator_username: (lounge as any).profiles?.username, is_member },
             messages,
             isLoading: false,
             hasMoreMessages: (msgs || []).length === PAGE_SIZE,
@@ -535,28 +554,40 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const user = useAuthStore.getState().user
         if (!user) return
 
-        await supabase
+        const { error } = await supabase
             .from('lounges')
             .update(updates)
             .eq('id', loungeId)
             .eq('creator_id', user.id) // Only creator can update
 
         // If toggling private, generate invite code
-        if (updates.is_private === true) {
-            const { data: existing } = await supabase.from('lounges').select('invite_code').eq('id', loungeId).single()
-            if (!existing?.invite_code) {
-                await supabase.from('lounges').update({ invite_code: generateInviteCode() }).eq('id', loungeId)
-            }
-        } else if (updates.is_private === false) {
-            await supabase.from('lounges').update({ invite_code: null }).eq('id', loungeId)
-        }
+        
+        if (!error) {
+            set(s => {
+                // If invite code was cleared (made public) or generated (made private)
+                const newActive = s.activeLounge?.id === loungeId 
+                    ? { ...s.activeLounge, ...updates }
+                    // Update invite code explicitly if privacy changed
+                    : s.activeLounge
 
-        set(s => ({
-            activeLounge: s.activeLounge?.id === loungeId
-                ? { ...s.activeLounge, ...updates }
-                : s.activeLounge,
-            myLounges: s.myLounges.map(l => l.id === loungeId ? { ...l, ...updates } : l),
-        }))
+                if (newActive && 'is_private' in updates && updates.is_private === false) {
+                    newActive.invite_code = null
+                } else if (newActive && 'is_private' in updates && updates.is_private === true && !newActive.invite_code) {
+                    newActive.invite_code = generateInviteCode()
+                    // We also need to update this actual token to the DB in a perfect world, 
+                    // but the RLS actually prevents modifying invite_code directly by default unless we allow it,
+                    // but wait - our UI does the updates via this store call. 
+                    // Let's ensure if privacy changes to true, we auto-generate an invite code via another DB shot
+                    supabase.from('lounges').update({ invite_code: newActive.invite_code }).eq('id', loungeId)
+                }
+
+                return {
+                    activeLounge: newActive as Lounge,
+                    myLounges: s.myLounges.map(l => l.id === loungeId ? { ...l, ...updates } : l),
+                    publicLounges: s.publicLounges.map(l => l.id === loungeId ? { ...l, ...updates } : l)
+                }
+            })
+        }
     },
 
     kickMember: async (loungeId, userId) => {

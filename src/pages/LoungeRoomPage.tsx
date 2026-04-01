@@ -48,7 +48,6 @@ const SharedCard = memo(function SharedCard({ msg }: { msg: LoungeMessage }) {
     const meta = msg.metadata
     if (!meta?.title) return null
 
-    const posterUrl = meta.poster_path ? tmdb.poster(meta.poster_path, 'w92') : null
     const link = meta.type === 'film_share' ? `/film/${meta.filmId}`
         : meta.type === 'person_share' ? `/person/${meta.personId}`
         : meta.type === 'log_share' ? `/log/${meta.logId}`
@@ -61,9 +60,15 @@ const SharedCard = memo(function SharedCard({ msg }: { msg: LoungeMessage }) {
         : meta.type === 'list_share' ? 'STACK'
         : 'SHARED'
 
+    const posterUrl = meta.poster_path ? tmdb.poster(meta.poster_path, 'w500') : meta.profile_path ? tmdb.profile(meta.profile_path, 'w500') : null
+    const backdropUrl = meta.backdrop_path ? tmdb.backdrop(meta.backdrop_path, 'w780') : posterUrl
+
     const CardInner = (
-        <div className="lounge-shared-card">
+        <div className="lounge-shared-card-cinematic" style={backdropUrl ? { backgroundImage: `url(${backdropUrl})` } : {}}>
+            <div className="lounge-shared-card-overlay" />
+            
             {posterUrl && <img src={posterUrl} alt="" className="lounge-shared-poster" loading="lazy" />}
+            
             <div className="lounge-shared-info">
                 <div className="lounge-shared-type">✦ {typeLabel}</div>
                 <div className="lounge-shared-title">{meta.title}</div>
@@ -95,46 +100,55 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
     }
 
     return (
-        <>
-            <div
-                className={`lounge-msg ${isSelf ? 'lounge-msg--self' : 'lounge-msg--other'}`}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                onTouchMove={handleTouchEnd}
-            >
+        <div className={`lounge-msg-wrapper ${isSelf ? 'msg-self' : 'msg-other'} ${showAuthor ? 'mt-author' : 'mt-compact'}`}>
+            {!isSelf && showAuthor && (
+                <div className="lounge-msg-avatar">
+                   {msg.avatar_url ? <img src={msg.avatar_url} alt="" /> : <div className="lounge-msg-avatar-fallback">{msg.username[0]?.toUpperCase()}</div>}
+                </div>
+            )}
+            
+            <div className="lounge-msg-content-col">
                 {showAuthor && (
                     <div className="lounge-msg-header">
                         <span className="lounge-msg-author">{isSelf ? 'You' : msg.username}</span>
                         <span className="lounge-msg-time">{formatTime(msg.created_at)}</span>
                     </div>
                 )}
-                <div className="lounge-msg-body">
-                    {/* Reply quote */}
-                    {msg.reply_to_content && (
-                        <div className="lounge-reply-quote">
-                            <div className="lounge-reply-quote-author">
-                                ↩ {msg.reply_to_username || 'Unknown'}
+                
+                <div
+                    className={`lounge-msg ${isSelf ? 'lounge-msg--self' : 'lounge-msg--other'}`}
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={handleTouchEnd}
+                    onTouchMove={handleTouchEnd}
+                >
+                    <div className="lounge-msg-body">
+                        {/* Reply quote */}
+                        {msg.reply_to_content && (
+                            <div className="lounge-reply-quote">
+                                <div className="lounge-reply-quote-author">
+                                    ↩ {msg.reply_to_username || 'Unknown'}
+                                </div>
+                                {msg.reply_to_content}
                             </div>
-                            {msg.reply_to_content}
-                        </div>
-                    )}
+                        )}
 
-                    {msg.content && <div>{msg.content}</div>}
-                    {msg.type !== 'text' && <SharedCard msg={msg} />}
+                        {msg.content && <div>{msg.content}</div>}
+                        {msg.type !== 'text' && <SharedCard msg={msg} />}
 
-                    {/* Reply button — hover on desktop */}
-                    {onReply && (
-                        <button className="lounge-msg-reply" onClick={(e) => { e.stopPropagation(); onReply() }} title="Reply">
-                            <Reply size={10} />
-                        </button>
-                    )}
+                        {/* Reply button — hover on desktop */}
+                        {onReply && (
+                            <button className="lounge-msg-reply" onClick={(e) => { e.stopPropagation(); onReply() }} title="Reply">
+                                <Reply size={10} />
+                            </button>
+                        )}
 
-                    {/* Delete button — hover on desktop, always visible on mobile */}
-                    {isSelf && onDelete && (
-                        <button className="lounge-msg-delete" onClick={(e) => { e.stopPropagation(); onDelete() }} title="Delete message">
-                            <Trash2 size={10} />
-                        </button>
-                    )}
+                        {/* Delete button — hover on desktop, always visible on mobile */}
+                        {isSelf && onDelete && (
+                            <button className="lounge-msg-delete" onClick={(e) => { e.stopPropagation(); onDelete() }} title="Delete message">
+                                <Trash2 size={10} />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -160,7 +174,7 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
                     </div>
                 </>
             )}
-        </>
+        </div>
     )
 })
 
@@ -170,6 +184,7 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
     const navigate = useNavigate()
     const user = useAuthStore(s => s.user)
     const [name, setName] = useState(lounge.name)
+    const [description, setDescription] = useState(lounge.description || '')
     const [isPrivate, setIsPrivate] = useState(lounge.is_private)
     const [members, setMembers] = useState<Array<{ user_id: string; username: string; avatar_url: string | null; joined_at: string }>>([])
     const [saving, setSaving] = useState(false)
@@ -183,7 +198,9 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
         setSaving(true)
         const updates: any = {}
         if (name.trim() !== lounge.name) updates.name = name.trim()
+        if (description.trim() !== (lounge.description || '')) updates.description = description.trim()
         if (isPrivate !== lounge.is_private) updates.is_private = isPrivate
+        
         if (Object.keys(updates).length > 0) {
             await updateLounge(lounge.id, updates)
             toast.success('Lounge updated.')
@@ -228,15 +245,29 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
                 <div className="lounge-settings-body">
                     {/* Name & Privacy — Creator only */}
                     {isCreator && (
-                        <div className="lounge-settings-section">
-                            <div className="lounge-settings-section-label">LOUNGE NAME</div>
-                            <input
-                                className="lounge-settings-input"
-                                value={name}
-                                onChange={e => setName(e.target.value)}
-                                maxLength={60}
-                            />
-                        </div>
+                        <>
+                            <div className="lounge-settings-section">
+                                <div className="lounge-settings-section-label">LOUNGE NAME</div>
+                                <input
+                                    className="lounge-settings-input"
+                                    value={name}
+                                    onChange={e => setName(e.target.value)}
+                                    maxLength={60}
+                                />
+                            </div>
+                            
+                            <div className="lounge-settings-section">
+                                <div className="lounge-settings-section-label">DESCRIPTION</div>
+                                <textarea
+                                    className="lounge-settings-input"
+                                    value={description}
+                                    onChange={e => setDescription(e.target.value)}
+                                    maxLength={280}
+                                    style={{ minHeight: '80px', resize: 'vertical' }}
+                                    placeholder="What is this space about?"
+                                />
+                            </div>
+                        </>
                     )}
 
                     {isCreator && (
@@ -516,51 +547,71 @@ export default function LoungeRoomPage() {
                     <div ref={messagesEndRef} />
                 </div>
 
-                {/* ── Reply Bar ── */}
-                <AnimatePresence>
-                    {replyTo && (
-                        <motion.div
-                            className="lounge-reply-bar"
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <Reply size={14} color="var(--sepia)" style={{ flexShrink: 0 }} />
-                            <div className="lounge-reply-bar-content">
-                                <div className="lounge-reply-bar-author">{replyTo.username}</div>
-                                <div className="lounge-reply-bar-text">{replyTo.content || 'Shared content'}</div>
-                            </div>
-                            <button
-                                className="lounge-reply-bar-close"
-                                onClick={() => setReplyTo(null)}
-                            >
-                                <X size={12} />
-                            </button>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                {/* ── Input Bar or Preview Banner ── */}
+                {activeLounge.is_member ? (
+                    <>
+                        <AnimatePresence>
+                            {replyTo && (
+                                <motion.div
+                                    className="lounge-reply-bar"
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    <Reply size={14} color="var(--sepia)" style={{ flexShrink: 0 }} />
+                                    <div className="lounge-reply-bar-content">
+                                        <div className="lounge-reply-bar-author">{replyTo.username}</div>
+                                        <div className="lounge-reply-bar-text">{replyTo.content || 'Shared content'}</div>
+                                    </div>
+                                    <button
+                                        className="lounge-reply-bar-close"
+                                        onClick={() => setReplyTo(null)}
+                                    >
+                                        <X size={12} />
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
-                {/* ── Input Bar ── */}
-                <div className="lounge-input-bar">
-                    <textarea
-                        ref={inputRef}
-                        className="lounge-input"
-                        placeholder="Say something about cinema..."
-                        value={input}
-                        onChange={e => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        rows={1}
-                    />
-                    <button
-                        className="lounge-send-btn"
-                        onClick={handleSend}
-                        disabled={!input.trim() || isSending}
-                        title="Send"
-                    >
-                        <Send size={16} />
-                    </button>
-                </div>
+                        <div className="lounge-input-bar">
+                            <textarea
+                                ref={inputRef}
+                                className="lounge-input"
+                                placeholder="Say something about cinema..."
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                rows={1}
+                            />
+                            <button
+                                className="lounge-send-btn"
+                                onClick={handleSend}
+                                disabled={!input.trim() || isSending}
+                                title="Send"
+                            >
+                                <Send size={16} />
+                            </button>
+                        </div>
+                    </>
+                ) : (
+                    <div className="lounge-preview-banner">
+                        <div className="lounge-preview-banner-text">
+                            You are previewing this salon.
+                        </div>
+                        <button 
+                            className="btn btn-primary" 
+                            style={{ letterSpacing: '0.15em', padding: '0.5rem 1rem', fontSize: '0.65rem' }}
+                            onClick={async () => {
+                                await useLoungeStore.getState().joinLounge(activeLounge.id)
+                                // Trigger a re-fetch of openLounge to refresh membership state
+                                await useLoungeStore.getState().openLounge(activeLounge.id)
+                            }}
+                        >
+                            TAKE A SEAT
+                        </button>
+                    </div>
+                )}
             </div>
 
             {/* ── Settings Panel ── */}

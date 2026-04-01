@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, Plus, Lock, Users, Copy, Check } from 'lucide-react'
+import { MessageCircle, Plus, Lock, Users, Copy, Check, Search, Info, X } from 'lucide-react'
 import { useLoungeStore } from '../stores/lounge'
 import { useAuthStore } from '../stores/auth'
 import { tmdb } from '../tmdb'
@@ -162,45 +162,90 @@ function JoinedLoungeCard({ lounge, unread }: { lounge: any; unread: number }) {
     )
 }
 
-// ── Public Lounge Card ──
-function PublicLoungeCard({ lounge, onJoin }: { lounge: any; onJoin: () => void }) {
-    const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w300') : null
-    const [joining, setJoining] = useState(false)
+// ── Lounge Info Modal ──
+function LoungeInfoModal({ lounge, onClose }: { lounge: any; onClose: () => void }) {
+    const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w780') : null
 
-    const handleJoin = async (e: React.MouseEvent) => {
+    return (
+        <div className="lounge-info-modal-wrapper">
+            <div className="lounge-create-backdrop" onClick={onClose} />
+            <motion.div
+                className="lounge-info-card"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            >
+                <button className="lounge-create-close" onClick={onClose}><X size={16} /></button>
+                {coverUrl ? (
+                    <div className="lounge-info-hero" style={{ backgroundImage: `url(${coverUrl})` }} />
+                ) : (
+                    <div className="lounge-info-hero" style={{ background: 'linear-gradient(135deg, rgba(28,23,16,0.8), rgba(139,105,20,0.05))' }} />
+                )}
+                <div className="lounge-info-content">
+                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '0.25rem' }}>{lounge.name}</h2>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--fog)', opacity: 0.7, marginBottom: '1.25rem' }}>
+                        ✦ EST. {new Date(lounge.created_at).getFullYear()} ✦ BY {lounge.creator_username?.toUpperCase() || 'FOUNDER'}
+                    </div>
+                    
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', lineHeight: '1.6', marginBottom: '1.5rem', flex: 1, whiteSpace: 'pre-wrap' }}>
+                        {lounge.description || 'A quiet, exclusive space for true cinephiles.'}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1rem', marginTop: 'auto' }}>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
+                            <Users size={12} style={{ verticalAlign: 'middle', marginRight: 6 }} />
+                            {lounge.member_count} / {lounge.max_members} SEATING
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
+        </div>
+    )
+}
+
+// ── Public Lounge Card ──
+function PublicLoungeCard({ lounge }: { lounge: any }) {
+    const navigate = useNavigate()
+    const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w300') : null
+    const [showInfo, setShowInfo] = useState(false)
+
+    const handleInfoClick = (e: React.MouseEvent) => {
         e.stopPropagation()
-        setJoining(true)
-        await onJoin()
-        setJoining(false)
+        setShowInfo(true)
     }
 
     return (
-        <div className="lounge-public-card">
-            {coverUrl ? (
-                <img src={coverUrl} alt="" className="lounge-public-card-cover" loading="lazy" decoding="async" />
-            ) : (
-                <div className="lounge-public-card-cover" style={{ background: 'linear-gradient(135deg, rgba(28,23,16,0.8), rgba(139,105,20,0.05))' }} />
-            )}
-            <div className="lounge-public-card-body">
-                <div className="lounge-public-card-name">{lounge.name}</div>
-                {lounge.description && (
-                    <div className="lounge-public-card-desc">{lounge.description}</div>
+        <>
+            <div className="lounge-public-card" onClick={() => navigate(`/lounge/${lounge.id}`)}>
+                {coverUrl ? (
+                    <img src={coverUrl} alt="" className="lounge-public-card-cover" loading="lazy" decoding="async" />
+                ) : (
+                    <div className="lounge-public-card-cover" style={{ background: 'linear-gradient(135deg, rgba(28,23,16,0.8), rgba(139,105,20,0.05))' }} />
                 )}
-                <div className="lounge-public-card-footer">
-                    <div className="lounge-public-card-members">
-                        <Users size={10} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                        {lounge.member_count} / {lounge.max_members}
+                
+                <button className="lounge-info-btn-overlay" onClick={handleInfoClick}>
+                    <Info size={14} />
+                </button>
+
+                <div className="lounge-public-card-body">
+                    <div className="lounge-public-card-name">{lounge.name}</div>
+                    {lounge.description && (
+                        <div className="lounge-public-card-desc">{lounge.description}</div>
+                    )}
+                    <div className="lounge-public-card-footer">
+                        <div className="lounge-public-card-members">
+                            <Users size={10} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                            {lounge.member_count} / {lounge.max_members}
+                        </div>
+                        <div className="lounge-public-card-preview-txt">PREVIEW</div>
                     </div>
-                    <button
-                        className="lounge-join-btn"
-                        onClick={handleJoin}
-                        disabled={joining}
-                    >
-                        {joining ? 'JOINING...' : 'TAKE A SEAT'}
-                    </button>
                 </div>
             </div>
-        </div>
+
+            <AnimatePresence>
+                {showInfo && <LoungeInfoModal lounge={lounge} onClose={() => setShowInfo(false)} />}
+            </AnimatePresence>
+        </>
     )
 }
 
@@ -249,7 +294,7 @@ function InviteCodeInput() {
 export default function LoungePage() {
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
-    const { myLounges, publicLounges, unreadCounts, fetchMyLounges, fetchPublicLounges, fetchUnreadCounts, joinLounge } = useLoungeStore()
+    const { myLounges, publicLounges, unreadCounts, fetchMyLounges, fetchPublicLounges, fetchUnreadCounts, searchQuery, setSearchQuery } = useLoungeStore()
     const [showCreate, setShowCreate] = useState(false)
 
     const isArchivist = user?.role === 'archivist' || user?.role === 'auteur' || user?.role === 'projectionist'
@@ -281,6 +326,18 @@ export default function LoungePage() {
         }
     }, [])
 
+    const query = searchQuery.toLowerCase().trim()
+    const filteredMyLounges = myLounges.filter(l => 
+        l.name.toLowerCase().includes(query) || 
+        l.description?.toLowerCase().includes(query) ||
+        l.creator_username?.toLowerCase().includes(query)
+    )
+    const filteredPublicLounges = publicLounges.filter(l => 
+        l.name.toLowerCase().includes(query) || 
+        l.description?.toLowerCase().includes(query) ||
+        l.creator_username?.toLowerCase().includes(query)
+    )
+
     return (
         <>
             <PageSEO title="The Lounge — The ReelHouse Society" description="Cinema chat rooms for Archivist members." />
@@ -298,12 +355,29 @@ export default function LoungePage() {
                     </div>
                 </div>
 
+                <div className="lounge-search-container" style={{ marginBottom: '2.5rem' }}>
+                    <div className="lounge-search-input-wrapper">
+                        <Search size={16} className="lounge-search-icon" />
+                        <input
+                            className="lounge-search-input"
+                            placeholder="SEARCH SCREENING ROOMS & SALONS..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                        {searchQuery && (
+                            <button className="lounge-search-clear" onClick={() => setSearchQuery('')}>
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
                 {/* ── Actions Row ── */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div className="lounge-actions-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
                     <button
                         className="btn btn-primary"
                         onClick={() => setShowCreate(true)}
-                        style={{ letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        style={{ letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 20px rgba(139,105,20,0.15)' }}
                     >
                         <Plus size={14} /> OPEN A LOUNGE
                     </button>
@@ -311,11 +385,11 @@ export default function LoungePage() {
                 </div>
 
                 {/* ── YOUR SCREENING ROOMS (Joined) ── */}
-                {myLounges.length > 0 && (
-                    <section style={{ marginBottom: '3rem' }}>
+                {filteredMyLounges.length > 0 && (
+                    <section style={{ marginBottom: '4rem' }}>
                         <div className="lounge-section-label">YOUR PRIVATE SCREENING ROOMS</div>
                         <div className="lounge-joined-strip">
-                            {myLounges.map(lounge => (
+                            {filteredMyLounges.map(lounge => (
                                 <JoinedLoungeCard
                                     key={lounge.id}
                                     lounge={lounge}
@@ -326,7 +400,7 @@ export default function LoungePage() {
                     </section>
                 )}
 
-                {myLounges.length === 0 && (
+                {myLounges.length === 0 && !searchQuery && (
                     <div className="lounge-empty" style={{ marginBottom: '3rem' }}>
                         <div className="lounge-empty-icon"><MessageCircle size={48} strokeWidth={1} /></div>
                         <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', marginBottom: '0.5rem' }}>
@@ -341,16 +415,15 @@ export default function LoungePage() {
                 {/* ── OPEN SALONS (Public) ── */}
                 <section>
                     <div className="lounge-section-label">OPEN SALONS — TAKE A SEAT</div>
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--fog)', opacity: 0.5, fontStyle: 'italic', marginBottom: '1.25rem', marginTop: '-0.5rem' }}>
-                        Public conversations. Join the discourse.
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.78rem', color: 'var(--fog)', opacity: 0.5, fontStyle: 'italic', marginBottom: '1.5rem', marginTop: '-0.5rem' }}>
+                        Public conversations. Preview the discourse.
                     </div>
-                    {publicLounges.length > 0 ? (
+                    {filteredPublicLounges.length > 0 ? (
                         <div className="lounge-public-grid">
-                            {publicLounges.map(lounge => (
+                            {filteredPublicLounges.map(lounge => (
                                 <PublicLoungeCard
                                     key={lounge.id}
                                     lounge={lounge}
-                                    onJoin={() => joinLounge(lounge.id)}
                                 />
                             ))}
                         </div>
