@@ -105,13 +105,26 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog }: { prof
                                 <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: IS_TOUCH ? '0.2rem' : '0.75rem' }}>
                                     {grouped[month].map((log) => {
                                         const hl = halfLifeMap[log.filmId]
+                                        const isPremiumLog = log.editorialHeader || log.dropCap || log.pullQuote
                                         return (
                                             <div
                                                 key={log.id}
                                                 onClick={() => setViewLog(log)}
-                                                style={{ position: 'relative', cursor: 'pointer' }}
+                                                className={isPremiumLog ? 'reel-dispatch--premium' : ''}
+                                                style={{
+                                                    position: 'relative', cursor: 'pointer',
+                                                    borderRadius: '4px',
+                                                    boxShadow: isPremiumLog ? '0 4px 20px rgba(139,105,20,0.12), 0 0 0 1px rgba(196,150,26,0.2)' : undefined,
+                                                    transition: 'box-shadow 0.3s, transform 0.3s',
+                                                }}
+                                                onMouseEnter={e => { if (isPremiumLog) e.currentTarget.style.boxShadow = '0 8px 30px rgba(139,105,20,0.2), 0 0 0 1px rgba(196,150,26,0.35)' }}
+                                                onMouseLeave={e => { if (isPremiumLog) e.currentTarget.style.boxShadow = '0 4px 20px rgba(139,105,20,0.12), 0 0 0 1px rgba(196,150,26,0.2)' }}
                                             >
                                                 <FilmCard film={{ id: log.filmId, title: log.title, poster_path: log.altPoster || log.poster, release_date: log.year + '-01-01', userRating: log.rating, status: log.status } as any} />
+                                                {/* Archivist premium indicator */}
+                                                {isPremiumLog && (
+                                                    <div style={{ position: 'absolute', top: 4, right: 4, fontSize: '0.55rem', color: '#DAA520', textShadow: '0 1px 4px rgba(0,0,0,0.9)', pointerEvents: 'none', zIndex: 2 }}>✦</div>
+                                                )}
                                                 {hl && (
                                                     <div style={{ position: 'absolute', bottom: 6, left: 4, right: 4, background: 'rgba(10,7,3,0.88)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.3)', borderRadius: '2px', padding: '0.25rem 0.4rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.3rem', pointerEvents: 'none' }}>
                                                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', whiteSpace: 'nowrap', color: hl.trajectory === 'ASCENDING' ? '#7cb87a' : hl.trajectory === 'DECAYING' ? 'var(--blood-reel)' : 'var(--sepia)' }}>{hl.trajectory === 'ASCENDING' ? '↑' : hl.trajectory === 'DECAYING' ? '↓' : '—'} {hl.trajectory}</span>

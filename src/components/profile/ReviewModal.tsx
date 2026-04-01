@@ -55,6 +55,10 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                     scrollbarWidth: 'none',
                 }}
             >
+                {/* Premium shimmer line (Archivist only) */}
+                {isArchivistLog && (
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '2px', borderRadius: '14px 14px 0 0', background: 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)', backgroundSize: '200% 100%', animation: 'premiumShimmer 4s ease-in-out infinite', zIndex: 10 }} />
+                )}
 
                 {/* ══════════════════════════════════════
                     HERO — backdrop + poster + title inline
@@ -253,16 +257,16 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
 
                     {/* ── Pull Quote ── */}
                     {viewLog.pullQuote && (
-                        <div style={{ position: 'relative', padding: '1rem 1.25rem', background: 'rgba(196,150,26,0.04)', borderRadius: '0 4px 4px 0', borderLeft: '3px solid var(--sepia)' }}>
+                        <div style={{ position: 'relative', padding: '1rem 1.25rem', background: 'rgba(196,150,26,0.04)', borderRadius: '0 4px 4px 0', borderLeft: '3px solid', borderImage: 'linear-gradient(180deg, rgba(218,165,32,0.7), rgba(139,105,20,0.3)) 1' }}>
                             {/* Ornamental divider */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.2em', color: 'var(--sepia)', opacity: 0.6 }}>✦ PULL QUOTE</span>
-                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(139,105,20,0.2), transparent)' }} />
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.2em', color: '#DAA520', opacity: 0.7 }}>✦ PULL QUOTE</span>
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(218,165,32,0.25), transparent)' }} />
                             </div>
                             <div style={{
                                 fontFamily: 'var(--font-display)', fontStyle: 'italic',
-                                fontSize: '1.1rem', color: 'var(--flicker)', lineHeight: 1.55,
-                                textShadow: '0 1px 8px rgba(139,105,20,0.1)',
+                                fontSize: '1.1rem', color: '#DAA520', lineHeight: 1.55,
+                                textShadow: '0 1px 8px rgba(139,105,20,0.15)',
                             }}>
                                 « {viewLog.pullQuote} »
                             </div>

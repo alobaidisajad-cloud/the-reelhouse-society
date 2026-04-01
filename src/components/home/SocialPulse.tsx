@@ -83,40 +83,42 @@ const SocialPulse = memo(function SocialPulse() {
                         const cardStyle: React.CSSProperties = {
                             position: 'relative',
                             padding: 0,
-                            /* ── Warm depth: light from above ── */
                             background: isArchivist
-                                ? 'linear-gradient(180deg, rgba(139,105,20,0.06) 0%, transparent 30%), rgba(18,14,9,0.95)'
+                                ? 'linear-gradient(180deg, rgba(139,105,20,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(139,105,20,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)'
                                 : 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.95)',
-                            borderLeft: `2px solid ${isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
-                            borderTop: `1px solid rgba(139,105,20,${isArchivist ? '0.15' : '0.1'})`,
+                            borderLeft: `${isArchivist ? '3' : '2'}px solid ${isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
+                            borderTop: `1px solid rgba(139,105,20,${isArchivist ? '0.18' : '0.1'})`,
                             borderBottom: '1px solid rgba(139,105,20,0.05)',
                             borderRight: '1px solid rgba(139,105,20,0.05)',
                             borderRadius: '0 8px 8px 0',
                             boxShadow: isArchivist
-                                ? '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(196,150,26,0.08)'
+                                ? '0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(196,150,26,0.1), 0 0 20px rgba(139,105,20,0.04)'
                                 : '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.05)',
                             display: 'flex',
                             flexDirection: 'column',
-                            transition: 'border-color 0.3s ease',
+                            transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
                             overflow: 'hidden',
                         }
 
                         const cardContent = (
                             <>
-                                {/* Top-edge warm highlight line */}
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, rgba(${isArchivist ? '196,150,26' : '139,105,20'},0.2), transparent)` }} />
+                                {/* Top shimmer line (animated for archivist) */}
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isArchivist ? '2px' : '1px', background: isArchivist ? 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)' : `linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)`, backgroundSize: isArchivist ? '200% 100%' : undefined, animation: isArchivist ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
 
                                 {/* Editorial Header Strip — Archivist Feature */}
                                 {act.editorialHeader && (
-                                    <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 60 : 80, overflow: 'hidden', borderBottom: '1px solid rgba(139,105,20,0.15)' }}>
+                                    <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 80 : 120, overflow: 'hidden', borderBottom: '1px solid rgba(139,105,20,0.15)' }}>
                                         <img
                                             src={tmdb.backdrop(act.editorialHeader, 'w780')}
                                             alt=""
                                             loading="lazy"
                                             decoding="async"
-                                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%', filter: 'sepia(0.2) contrast(1.05) brightness(0.65)' }}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%', filter: 'sepia(0.12) contrast(1.08) brightness(0.55)' }}
                                         />
-                                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(18,14,9,0.85) 100%)' }} />
+                                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.2) 0%, transparent 30%, rgba(18,14,9,0.9) 100%)' }} />
+                                        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 40%, rgba(18,14,9,0.4) 100%)' }} />
+                                        {/* ✦ EDITORIAL badge */}
+                                        <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.25em', color: 'rgba(218,165,32,0.85)', background: 'rgba(11,10,8,0.55)', backdropFilter: 'blur(6px)', padding: '0.2rem 0.4rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.2)' }}>✦ EDITORIAL</div>
                                     </div>
                                 )}
 
@@ -145,9 +147,9 @@ const SocialPulse = memo(function SocialPulse() {
                                             {act.rating && <ReelRating value={act.rating} size="sm" />}
                                             {act.status === 'rewatched' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--sepia)', border: '1px solid var(--sepia)', padding: '0.1rem 0.3rem', borderRadius: '2px' }}>{<RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} />} REWATCHED</span>}
                                         </div>
-                                        {/* Pull Quote — Archivist Feature */}
+                                        {/* Pull Quote — Archivist Premium */}
                                         {act.pullQuote && (
-                                            <div style={{ padding: '0.35rem 0 0.35rem 0.5rem', borderLeft: '2px solid var(--sepia)', fontFamily: 'var(--font-display)', fontSize: '0.75rem', fontStyle: 'italic', color: 'var(--sepia)', lineHeight: 1.4, marginBottom: '0.4rem', opacity: 0.9 }}>
+                                            <div style={{ padding: '0.45rem 0 0.45rem 0.6rem', borderLeft: '2px solid', borderImage: 'linear-gradient(180deg, rgba(218,165,32,0.7), rgba(139,105,20,0.3)) 1', fontFamily: 'var(--font-display)', fontSize: '0.78rem', fontStyle: 'italic', color: '#DAA520', lineHeight: 1.45, marginBottom: '0.4rem', textShadow: '0 1px 6px rgba(139,105,20,0.15)' }}>
                                                 « {act.pullQuote} »
                                             </div>
                                         )}

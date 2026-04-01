@@ -113,6 +113,7 @@ const FeaturedReview = memo(function FeaturedReview() {
         : { logId: null as string | null, text: 'The projection box awaits. Be the first to file a dispatch on any title and claim this space in the archive.', author: 'THE SOCIETY', rating: 0, film: null }
 
     const film = displayReview.film
+    const isArchivistCritique = featuredCritique?.authorRole === 'archivist'
 
     return (
         <div className="layout-sidebar" style={{ alignItems: 'flex-start' }}>
@@ -126,8 +127,10 @@ const FeaturedReview = memo(function FeaturedReview() {
                             padding: '0.5rem',
                             background: 'var(--soot)',
                             borderRadius: '4px',
-                            border: '1px solid rgba(139,105,20,0.15)',
-                            boxShadow: '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,105,20,0.08)',
+                            border: isArchivistCritique ? '1px solid rgba(196,150,26,0.25)' : '1px solid rgba(139,105,20,0.15)',
+                            boxShadow: isArchivistCritique
+                                ? '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(196,150,26,0.1), 0 0 25px rgba(139,105,20,0.06)'
+                                : '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,105,20,0.08)',
                             cursor: film ? 'pointer' : 'default',
                         }}
                         onClick={() => film && navigate(`/film/${film.id}`)}
@@ -191,19 +194,23 @@ const FeaturedReview = memo(function FeaturedReview() {
                 <div style={{
                     position: 'relative',
                     padding: IS_TOUCH ? '1.5rem 1.25rem' : '2rem 2.5rem',
-                    background: 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.95)',
-                    borderLeft: '2px solid var(--sepia)',
-                    borderTop: '1px solid rgba(139,105,20,0.1)',
+                    background: isArchivistCritique
+                        ? 'linear-gradient(180deg, rgba(139,105,20,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(139,105,20,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)'
+                        : 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.95)',
+                    borderLeft: `${isArchivistCritique ? '3' : '2'}px solid ${isArchivistCritique ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
+                    borderTop: `1px solid rgba(139,105,20,${isArchivistCritique ? '0.18' : '0.1'})`,
                     borderBottom: '1px solid rgba(139,105,20,0.05)',
                     borderRight: '1px solid rgba(139,105,20,0.05)',
                     borderRadius: '0 8px 8px 0',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.05)',
+                    boxShadow: isArchivistCritique
+                        ? '0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(196,150,26,0.1)'
+                        : '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.05)',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
                 }}>
-                    {/* Top-edge warm highlight line */}
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)' }} />
+                    {/* Top shimmer line (animated for archivist) */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isArchivistCritique ? '2px' : '1px', background: isArchivistCritique ? 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)' : 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)', backgroundSize: isArchivistCritique ? '200% 100%' : undefined, animation: isArchivistCritique ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
                     {/* Spotlight quotation mark */}
                     <div style={{
                         position: 'absolute', top: '1.5rem', left: IS_TOUCH ? '-0.75rem' : '-1.5rem',
