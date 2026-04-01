@@ -152,7 +152,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 {log.editorialHeader ? (
                     <div style={{ position: 'relative', marginBottom: '1rem' }}>
                         {/* Full-bleed editorial backdrop */}
-                        <div style={{ position: 'relative', width: 'calc(100% + 2rem)', marginLeft: '-1rem', overflow: 'hidden' }}>
+                        <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
                             <div style={{ position: 'relative', width: '100%', paddingBottom: '50%', minHeight: 280 }}>
                                 <img
                                     src={tmdb.backdrop(log.editorialHeader, 'w1280')}

@@ -116,7 +116,7 @@ export default function LogDetailPage() {
                 </div>
             </div>
 
-            <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto', padding: '1rem' }}>
+            <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto', padding: log.editorialHeader ? '0 0 1rem 0' : '1rem' }}>
                 <ActivityCard log={log} isExpandedView={true} />
             </div>
         </div>
