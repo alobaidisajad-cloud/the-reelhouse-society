@@ -427,6 +427,10 @@ export const useFilmStore = create<FilmState>()(
                 if (updates.physicalMedia !== undefined) dbUpdates.physical_media = updates.physicalMedia
                 if (updates.isAutopsied !== undefined) dbUpdates.is_autopsied = updates.isAutopsied
                 if (updates.autopsy !== undefined) dbUpdates.autopsy = updates.autopsy
+                if (updates.pullQuote !== undefined) dbUpdates.pull_quote = updates.pullQuote
+                if (updates.dropCap !== undefined) dbUpdates.drop_cap = updates.dropCap
+                if (updates.editorialHeader !== undefined) dbUpdates.editorial_header = updates.editorialHeader
+                if (updates.altPoster !== undefined) dbUpdates.alt_poster = updates.altPoster
                 const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id)
                 if (!error) set((state) => ({ logs: state.logs.map((l) => l.id === id ? { ...l, ...updates } : l) }))
             },

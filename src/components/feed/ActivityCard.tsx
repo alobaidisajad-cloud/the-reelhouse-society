@@ -172,6 +172,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             @{log.user || 'anonymous'}
                         </Link>
                         {log.userRole === 'auteur' && <span style={{ color: 'var(--sepia)', fontSize: '0.8rem' }}>✦</span>}
+                        {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
                     </div>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--fog)' }}>
                         {log.timestamp || 'RECENT'}
@@ -224,10 +225,24 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     {log.rating > 0 && <ReelRating value={log.rating} size="lg" />}
                 </div>
 
-                {/* Focus Pull Quote */}
+                {/* Focus Pull Quote — Magazine Presentation */}
                 {log.pullQuote && (
-                    <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.2rem, 5vw, 1.6rem)', color: 'var(--sepia)', fontStyle: 'italic', textAlign: 'center', padding: '0 1.5rem', lineHeight: 1.3 }}>
-                        "{log.pullQuote}"
+                    <div style={{ padding: '1.5rem 1.5rem', position: 'relative', textAlign: 'center' }}>
+                        {/* Ornamental divider top */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '1rem' }}>
+                            <div style={{ flex: 1, maxWidth: 80, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.4))' }} />
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.3em', color: 'var(--sepia)', opacity: 0.7 }}>✦</span>
+                            <div style={{ flex: 1, maxWidth: 80, height: '1px', background: 'linear-gradient(90deg, rgba(139,105,20,0.4), transparent)' }} />
+                        </div>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.2rem, 5vw, 1.6rem)', color: 'var(--sepia)', fontStyle: 'italic', lineHeight: 1.35, textShadow: '0 2px 12px rgba(139,105,20,0.15)' }}>
+                            « {log.pullQuote} »
+                        </div>
+                        {/* Ornamental divider bottom */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginTop: '1rem' }}>
+                            <div style={{ flex: 1, maxWidth: 80, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.4))' }} />
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.3em', color: 'var(--sepia)', opacity: 0.7 }}>✦</span>
+                            <div style={{ flex: 1, maxWidth: 80, height: '1px', background: 'linear-gradient(90deg, rgba(139,105,20,0.4), transparent)' }} />
+                        </div>
                     </div>
                 )}
 
@@ -309,10 +324,13 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         )
     }
 
+    // ── Archivist Premium Detection ──
+    const isArchivistLog = log.userRole === 'archivist' || log.editorialHeader || log.dropCap || log.pullQuote
+
     // ── STANDARD FEED VIEW (INLINE LAYOUT) — "THE UNDERGROUND" ──
     return (
         <div
-            className="reel-dispatch"
+            className={`reel-dispatch${isArchivistLog ? ' reel-dispatch--premium' : ''}`}
             onClick={handleCardClick}
             style={{
                 padding: 0,
@@ -384,6 +402,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             @{(log.user || 'anonymous').toUpperCase()}
                         </Link>
                         {log.userRole === 'auteur' && <span className="reel-auteur-badge">✦ AUTEUR</span>}
+                        {log.userRole === 'archivist' && <span className="reel-archivist-badge">✦ ARCHIVIST</span>}
                     </div>
                     <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', whiteSpace: 'nowrap', flexShrink: 0, opacity: 0.7 }}>
                         {log.timestamp || 'RECENT'}

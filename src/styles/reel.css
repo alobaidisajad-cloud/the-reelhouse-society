@@ -122,6 +122,47 @@
   opacity: 0.25;
 }
 
+/* ── PREMIUM DISPATCH — Archivist Tier ── */
+.reel-dispatch--premium {
+  border-color: rgba(139,105,20,0.15);
+  border-left: 3px solid rgba(196,150,26,0.4);
+  background: linear-gradient(135deg, rgba(35,28,16,0.45) 0%, rgba(14,10,5,0.75) 100%);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(139,105,20,0.06);
+}
+
+.reel-dispatch--premium::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.3) 30%, rgba(196,150,26,0.3) 70%, transparent 100%);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.reel-dispatch--premium:hover {
+  border-left-color: var(--sepia);
+  background: linear-gradient(135deg, rgba(40,32,18,0.55) 0%, rgba(14,10,5,0.8) 100%);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(139,105,20,0.06);
+}
+
+/* ── ARCHIVIST BADGE ── */
+.reel-archivist-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  font-family: var(--font-ui);
+  font-size: 0.35rem;
+  letter-spacing: 0.15em;
+  color: var(--sepia);
+  background: rgba(139,105,20,0.12);
+  border: 1px solid rgba(139,105,20,0.25);
+  padding: 0.08rem 0.35rem;
+  border-radius: 1px;
+  line-height: 1;
+  font-weight: 600;
+}
+
 /* ── POSTER AMBIENT ECHO ── */
 .reel-poster-wrap {
   position: relative;
