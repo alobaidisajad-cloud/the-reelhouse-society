@@ -48,6 +48,7 @@ const LoungePage = lazy(() => import('./pages/LoungePage'))
 const LoungeRoomPage = lazy(() => import('./pages/LoungeRoomPage'))
 const PersonPage = lazy(() => import('./pages/PersonPage'))
 const DispatchPage = lazy(() => import('./pages/DispatchPage'))
+const ComposeDossierPage = lazy(() => import('./pages/ComposeDossierPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
@@ -277,6 +278,7 @@ export default function App() {
               <Route path="/lounge/:loungeId" element={<ErrorBoundary key="lounge-room"><PageWrapper><LoungeRoomPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/person/:id" element={<ErrorBoundary key="person"><PageWrapper><PersonPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/dispatch" element={<ErrorBoundary key="dispatch"><PageWrapper><DispatchPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/dispatch/compose" element={<ErrorBoundary key="compose"><PageWrapper><ComposeDossierPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/patronage" element={<ErrorBoundary key="patronage"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/society" element={<ErrorBoundary key="society"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/auth/callback" element={<ErrorBoundary key="auth"><AuthCallbackPage /></ErrorBoundary>} />

@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { tmdb } from '../tmdb'
 import { useAuthStore, useDispatchStore } from '../store'
@@ -161,14 +161,12 @@ function DailyFrame() {
 }
 
 export default function DispatchPage() {
+    const navigate = useNavigate()
     const { user } = useAuthStore()
-    const { dossiers, addDossier, fetchDossiers } = useDispatchStore()
+    const { dossiers, fetchDossiers } = useDispatchStore()
     const [news, setNews] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [selectedArticle, setSelectedArticle] = useState<any>(null)
-    const [isWriting, setIsWriting] = useState(false)
-    const [isPublishing, setIsPublishing] = useState(false)
-    const [formValues, setFormValues] = useState({ title: '', content: '' })
 
     const [currentPage, setCurrentPage] = useState(1)
     const DOSSIERS_PER_PAGE = 6
@@ -207,29 +205,7 @@ export default function DispatchPage() {
         window.scrollTo(0, scrollPos.current)
     }
 
-    const submitEssay = async () => {
-        if (!formValues.title.trim() || !formValues.content.trim()) return
 
-        const newEssay = {
-            title: formValues.title,
-            excerpt: formValues.content.substring(0, 150) + '...',
-            fullContent: formValues.content,
-            author: user?.username || "AUTEUR",
-            date: "JUST FILED",
-        }
-        
-        try {
-            setIsPublishing(true)
-            await addDossier(newEssay)
-            toast.success('Dossier published to the Global Wire')
-            setIsWriting(false)
-            setFormValues({ title: '', content: '' })
-        } catch (error: any) {
-            toast.error(error.message || 'Failed to publish dossier. Archive connection severed.')
-        } finally {
-            setIsPublishing(false)
-        }
-    }
 
     return (
         <motion.div
@@ -247,7 +223,7 @@ export default function DispatchPage() {
                         <button
                             className="btn btn-ghost"
                             style={{ padding: '0.4em 1em', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'var(--parchment)', borderColor: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                            onClick={() => setIsWriting(true)}
+                            onClick={() => navigate('/dispatch/compose')}
                         >
                             <IconFeather /> FILE DOSSIER
                         </button>
@@ -460,65 +436,14 @@ export default function DispatchPage() {
                 document.body
             )}
 
-            {/* WRITE ESSAY PANEL — Portal to body */}
-            {createPortal(
-                <AnimatePresence>
-                    {isWriting && (
-                        <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="writer-panel-overlay"
-                            onClick={() => setIsWriting(false)}
-                        >
-                            <motion.div
-                                initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                                transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                                className="writer-panel"
-                                onClick={(e: React.MouseEvent) => e.stopPropagation()}
-                            >
-                                <div className="wp-header">
-                                    <div className="wp-title">COMPOSE DOSSIER</div>
-                                    <button onClick={() => setIsWriting(false)} className="btn-close-wp"><IconClose /></button>
-                                </div>
-
-                                <div className="wp-canvas">
-                                    <input
-                                        className="wp-input-title"
-                                        placeholder="Enter your headline..."
-                                        value={formValues.title}
-                                        onChange={(e: any) => setFormValues({ ...formValues, title: e.target.value })}
-                                    />
-
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.5rem', marginBottom: '0.5rem' }}>
-                                        DOSSIER CONTENTS
-                                    </div>
-                                    <textarea
-                                        className="input"
-                                        placeholder="Type your dossier in Markdown. Italics, bold, and blockquotes supported."
-                                        value={formValues.content}
-                                        onChange={(e: any) => setFormValues({ ...formValues, content: e.target.value })}
-                                    />
-                                </div>
-
-                                <div className="wp-footer">
-                                    <button onClick={submitEssay} disabled={isPublishing} className="btn-publish-dossier" style={{ opacity: isPublishing ? 0.6 : 1 }}>
-                                        {isPublishing ? 'TRANSMITTING...' : 'TRANSMIT TO NEWSLETTER'} <IconArrowRight />
-                                    </button>
-                                </div>
-                            </motion.div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>,
-                document.body
-            )}
-
             {/* WRITER FLOATING ACTION BUTTON */}
             <AnimatePresence>
-                {canWrite && !isWriting && (
+                {canWrite && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.8, y: 20 }}
                         className="auteur-fab-container"
                     >
-                        <button onClick={() => setIsWriting(true)} className="auteur-fab-button">
+                        <button onClick={() => navigate('/dispatch/compose')} className="auteur-fab-button">
                             <IconFeather /> FILE DOSSIER
                         </button>
                     </motion.div>
