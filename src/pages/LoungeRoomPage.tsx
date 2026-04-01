@@ -135,19 +135,19 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
                         {msg.content && <div>{msg.content}</div>}
                         {msg.type !== 'text' && <SharedCard msg={msg} />}
 
-                        {/* Reply button — hover on desktop */}
-                        {onReply && (
-                            <button className="lounge-msg-reply" onClick={(e) => { e.stopPropagation(); onReply() }} title="Reply">
-                                <Reply size={10} />
-                            </button>
-                        )}
+                        <div className="lounge-msg-actions">
+                            {onReply && (
+                                <button className="lounge-msg-reply" onClick={(e) => { e.stopPropagation(); onReply() }} title="Reply">
+                                    <Reply size={12} />
+                                </button>
+                            )}
 
-                        {/* Delete button — hover on desktop, always visible on mobile */}
-                        {isSelf && onDelete && (
-                            <button className="lounge-msg-delete" onClick={(e) => { e.stopPropagation(); onDelete() }} title="Delete message">
-                                <Trash2 size={10} />
-                            </button>
-                        )}
+                            {isSelf && onDelete && (
+                                <button className="lounge-msg-delete" onClick={(e) => { e.stopPropagation(); onDelete() }} title="Delete message">
+                                    <Trash2 size={12} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>

@@ -400,11 +400,11 @@ export default function LoungePage() {
                 </div>
 
                 {/* ── Actions Row ── */}
-                <div className="lounge-actions-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <div className="lounge-actions-row">
                     <button
                         className="btn btn-primary"
                         onClick={() => setShowCreate(true)}
-                        style={{ letterSpacing: '0.15em', display: 'flex', alignItems: 'center', gap: '0.5rem', boxShadow: '0 4px 20px rgba(139,105,20,0.15)' }}
+                        style={{ letterSpacing: '0.15em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', boxShadow: '0 4px 20px rgba(139,105,20,0.15)' }}
                     >
                         <Plus size={14} /> OPEN A LOUNGE
                     </button>
