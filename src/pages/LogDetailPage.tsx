@@ -107,7 +107,7 @@ export default function LogDetailPage() {
         <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <PageSEO title={`Log details by ${log.user} on ${log.film?.title || 'Unknown Film'}`} />
             
-            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.2)', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, background: 'rgba(10,7,3,0.95)', backdropFilter: 'blur(12px)', zIndex: 10 }}>
+            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.2)', display: 'flex', alignItems: 'center', position: 'sticky', top: 64, background: 'rgba(10,7,3,0.95)', backdropFilter: 'blur(12px)', zIndex: 10 }}>
                 <button
                     onClick={() => navigate(-1)}
                     className="btn btn-ghost"
