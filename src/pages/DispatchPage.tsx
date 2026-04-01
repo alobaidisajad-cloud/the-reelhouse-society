@@ -533,7 +533,7 @@ export default function DispatchPage() {
                 document.body
             )}
             {/* SHARE TO LOUNGE MODAL */}
-            {showShareLounge && selectedArticle && (
+            {showShareLounge && selectedArticle && createPortal(
                 <ShareToLoungeModal
                     payload={{
                         type: 'dossier_share',
@@ -547,7 +547,8 @@ export default function DispatchPage() {
                         },
                     }}
                     onClose={() => setShowShareLounge(false)}
-                />
+                />,
+                document.body
             )}
 
             {/* WRITER FLOATING ACTION BUTTON */}
