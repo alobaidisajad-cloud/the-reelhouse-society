@@ -1602,41 +1602,126 @@
     padding: 1.5rem;
 }
 
-.lounge-info-card {
+/* ── Premium Lounge Info Modal ── */
+.lounge-info-card-premium {
     position: relative;
-    background: var(--ink);
-    border: 1px solid rgba(139, 105, 20, 0.2);
-    border-radius: 12px;
     width: 100%;
     max-width: 440px;
-    height: 500px;
+    height: 520px;
+    border-radius: 12px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(139, 105, 20, 0.1);
+    justify-content: flex-end;
+    background: var(--ink);
+    border: 1px solid rgba(139, 105, 20, 0.25);
+    box-shadow: 0 40px 80px rgba(0,0,0,0.9), 0 0 60px rgba(139, 105, 20, 0.15), inset 0 0 0 1px rgba(255,255,255,0.05);
+    z-index: 1010;
 }
 
-.lounge-info-hero {
-    height: 200px;
-    background-size: cover;
-    background-position: center;
-    position: relative;
-    flex-shrink: 0;
-}
-
-.lounge-info-hero::after {
-    content: '';
+.lounge-info-premium-bg {
     position: absolute;
     inset: 0;
-    background: linear-gradient(to bottom, transparent, var(--ink));
+    background-size: cover;
+    background-position: center;
+    z-index: 0;
+    opacity: 0.6;
+    filter: sepia(0.2) contrast(1.1);
 }
 
-.lounge-info-content {
-    padding: 1.5rem;
-    flex: 1;
+.lounge-info-premium-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15,12,9,0.2) 0%, rgba(15,12,9,0.8) 40%, rgba(15,12,9,0.95) 100%);
+    z-index: 1;
+}
+
+.lounge-info-premium-overlay.no-cover {
+    background: radial-gradient(circle at 50% 0%, rgba(139, 105, 20, 0.15) 0%, rgba(15,12,9,1) 70%);
+}
+
+.lounge-info-premium-content {
+    position: relative;
+    z-index: 10;
+    padding: 3rem 2.5rem 2rem;
+    text-align: center;
     display: flex;
     flex-direction: column;
-    background: var(--ink);
+    align-items: center;
+}
+
+.lounge-info-premium-badge {
+    font-family: var(--font-ui);
+    font-size: 0.5rem;
+    letter-spacing: 0.4em;
+    color: var(--sepia);
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    padding: 0.4rem 1rem;
+    border: 1px solid rgba(139, 105, 20, 0.3);
+    border-radius: 30px;
+    background: rgba(139, 105, 20, 0.05);
+    backdrop-filter: blur(4px);
+}
+
+.lounge-info-premium-title {
+    font-family: var(--font-display);
+    font-size: 2.2rem;
+    color: var(--parchment);
+    line-height: 1.1;
+    margin-bottom: 0.75rem;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.8);
+}
+
+.lounge-info-premium-founder {
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.25em;
+    color: var(--fog);
+    opacity: 0.8;
+    margin-bottom: 2rem;
+}
+
+.lounge-info-premium-divider {
+    width: 40px;
+    height: 1px;
+    background: var(--sepia);
+    opacity: 0.4;
+    margin-bottom: 2rem;
+}
+
+.lounge-info-premium-desc {
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+    line-height: 1.7;
+    color: var(--bone);
+    opacity: 0.9;
+    margin-bottom: 2.5rem;
+    max-width: 90%;
+    font-style: italic;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.8);
+    white-space: pre-wrap;
+}
+
+.lounge-info-premium-footer {
+    width: 100%;
+    border-top: 1px solid rgba(139, 105, 20, 0.15);
+    padding-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+}
+
+.lounge-info-premium-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-ui);
+    font-size: 0.55rem;
+    letter-spacing: 0.2em;
+    color: var(--sepia);
+    background: rgba(139, 105, 20, 0.08);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
 }
 
 /* ── Public Card Overlay ── */
@@ -1828,7 +1913,7 @@
         text-align: center;
         padding-bottom: calc(1rem + env(safe-area-inset-bottom));
     }
-    .lounge-info-card {
+    .lounge-info-card-premium {
         height: 80vh;
     }
 }

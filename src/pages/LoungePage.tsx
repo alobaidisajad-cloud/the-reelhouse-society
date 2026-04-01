@@ -184,33 +184,42 @@ function LoungeInfoModal({ lounge, onClose }: { lounge: any; onClose: () => void
 
     return (
         <div className="lounge-info-modal-wrapper">
-            <div className="lounge-create-backdrop" onClick={onClose} />
+            <div className="lounge-create-backdrop" onClick={onClose} style={{ backdropFilter: 'blur(12px)', background: 'rgba(0,0,0,0.7)' }} />
             <motion.div
-                className="lounge-info-card"
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="lounge-info-card-premium"
+                initial={{ opacity: 0, scale: 0.95, y: 30, filter: 'blur(10px)' }}
+                animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+                exit={{ opacity: 0, scale: 0.95, y: 20, filter: 'blur(10px)' }}
+                transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-                <button className="lounge-create-close" onClick={onClose}><X size={16} /></button>
-                {coverUrl ? (
-                    <div className="lounge-info-hero" style={{ backgroundImage: `url(${coverUrl})` }} />
-                ) : (
-                    <div className="lounge-info-hero" style={{ background: 'linear-gradient(135deg, rgba(28,23,16,0.8), rgba(139,105,20,0.05))' }} />
+                <button className="lounge-create-close" onClick={onClose} style={{ zIndex: 50 }}><X size={16} /></button>
+                
+                {coverUrl && (
+                    <div className="lounge-info-premium-bg" style={{ backgroundImage: `url(${coverUrl})` }} />
                 )}
-                <div className="lounge-info-content">
-                    <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)', marginBottom: '0.25rem' }}>{lounge.name}</h2>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--fog)', opacity: 0.7, marginBottom: '1.25rem' }}>
-                        ✦ EST. {new Date(lounge.created_at).getFullYear()} ✦ BY {lounge.creator_username?.toUpperCase() || 'FOUNDER'}
+                <div className={`lounge-info-premium-overlay ${!coverUrl ? 'no-cover' : ''}`} />
+
+                <div className="lounge-info-premium-content">
+                    <div className="lounge-info-premium-badge">
+                        ✦ CINEMA SALON ✦
                     </div>
                     
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--fog)', lineHeight: '1.6', marginBottom: '1.5rem', flex: 1, whiteSpace: 'pre-wrap' }}>
-                        {lounge.description || 'A quiet, exclusive space for true cinephiles.'}
+                    <h2 className="lounge-info-premium-title">{lounge.name}</h2>
+                    
+                    <div className="lounge-info-premium-founder">
+                        EST. {new Date(lounge.created_at).getFullYear()} / BY {lounge.creator_username?.toUpperCase() || 'FOUNDER'}
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '1rem', marginTop: 'auto' }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
-                            <Users size={12} style={{ verticalAlign: 'middle', marginRight: 6 }} />
-                            {lounge.member_count} / {lounge.max_members} SEATING
+                    <div className="lounge-info-premium-divider" />
+                    
+                    <p className="lounge-info-premium-desc">
+                        {lounge.description || 'Step out of the noise. A quiet, exclusive space for true cinephiles to dissect the frame.'}
+                    </p>
+
+                    <div className="lounge-info-premium-footer">
+                        <div className="lounge-info-premium-stat">
+                            <Users size={12} strokeWidth={1.5} />
+                            <span>{lounge.member_count} / {lounge.max_members} SEATING</span>
                         </div>
                     </div>
                 </div>
