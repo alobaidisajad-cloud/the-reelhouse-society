@@ -201,16 +201,37 @@ export default function DispatchPage() {
     const openArticle = async (item: any) => {
         scrollPos.current = window.scrollY
         setSelectedArticle(item)
+        setCertified(false)
+        setCritiqueOpen(false)
+        setShowShareLounge(false)
+        setLocalCertifyCount(item.certifyCount || 0)
+        setLocalViews((item.views || 0) + 1)
         document.body.style.overflow = 'hidden'
-        // Increment view count (fire-and-forget, seed articles skip)
+
+        // Real DB operations for non-seed articles
         if (item.id && !item.id.startsWith('seed-')) {
+            // Increment view
             try { await supabase.rpc('increment_dossier_views', { dossier_uuid: item.id }) } catch {}
+
+            // Check if current user already certified this dossier
+            if (user) {
+                try {
+                    const { data } = await supabase
+                        .from('dossier_certifications')
+                        .select('id')
+                        .eq('user_id', user.id)
+                        .eq('dossier_id', item.id)
+                        .maybeSingle()
+                    setCertified(!!data)
+                } catch {}
+            }
         }
     }
     const closeArticle = () => {
         setSelectedArticle(null)
         setCertified(false)
         setCritiqueOpen(false)
+        setShowShareLounge(false)
         document.body.style.overflow = 'unset'
         window.scrollTo(0, scrollPos.current)
     }
@@ -220,16 +241,28 @@ export default function DispatchPage() {
     const [certifyLoading, setCertifyLoading] = useState(false)
     const [critiqueOpen, setCritiqueOpen] = useState(false)
     const [showShareLounge, setShowShareLounge] = useState(false)
+    const [localCertifyCount, setLocalCertifyCount] = useState(0)
+    const [localViews, setLocalViews] = useState(0)
     const isLoungeEligible = user && ['archivist', 'auteur', 'projectionist'].includes((user as any).role)
 
     const handleCertify = async () => {
         if (!user || !selectedArticle?.id || selectedArticle.id.startsWith('seed-') || certifyLoading) return
         setCertifyLoading(true)
+        // Optimistic update
+        const wasCertified = certified
+        setCertified(!wasCertified)
+        setLocalCertifyCount(prev => wasCertified ? Math.max(0, prev - 1) : prev + 1)
         try {
-            const { data } = await supabase.rpc('toggle_dossier_certify', { dossier_uuid: selectedArticle.id })
+            const { data, error } = await supabase.rpc('toggle_dossier_certify', { dossier_uuid: selectedArticle.id })
+            if (error) throw error
             setCertified(!!data)
             toast(data ? 'Dossier Certified ✦' : 'Certification removed', { duration: 1500 })
-        } catch { toast.error('Failed to certify') }
+        } catch {
+            // Rollback on failure
+            setCertified(wasCertified)
+            setLocalCertifyCount(prev => wasCertified ? prev + 1 : Math.max(0, prev - 1))
+            toast.error('Failed to certify')
+        }
         setCertifyLoading(false)
     }
 
@@ -479,10 +512,10 @@ export default function DispatchPage() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginTop: '1rem', paddingTop: '0.75rem', borderTop: '1px dashed rgba(139,105,20,0.15)', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-                                            {(selectedArticle.views || 0) + 1} VIEWS
+                                            {localViews} VIEWS
                                         </span>
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: certified ? 'var(--sepia)' : 'var(--fog)' }}>
-                                            ✦ {selectedArticle.certifyCount || 0} CERTIFIED
+                                            ✦ {localCertifyCount} CERTIFIED
                                         </span>
                                     </div>
                                 </header>
@@ -494,7 +527,7 @@ export default function DispatchPage() {
                                     {/* CERTIFY */}
                                     <button className="reel-action-btn" onClick={handleCertify} disabled={certifyLoading} style={{ color: certified ? 'var(--sepia)' : 'var(--fog)', cursor: user ? 'pointer' : 'not-allowed' }}>
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill={certified ? 'var(--sepia)' : 'none'} stroke={certified ? 'var(--sepia)' : 'currentColor'} strokeWidth="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
-                                        {certified ? 'CERTIFIED' : 'CERTIFY'} ({selectedArticle.certifyCount || 0})
+                                        {certified ? 'CERTIFIED' : 'CERTIFY'} ({localCertifyCount})
                                     </button>
 
                                     {/* CRITIQUE */}
@@ -511,8 +544,8 @@ export default function DispatchPage() {
                                         </button>
 
                                         {/* LOUNGE */}
-                                        {isLoungeEligible && (
-                                            <button className="reel-action-btn" onClick={() => setShowShareLounge(true)} style={{ color: 'var(--fog)' }}>
+                                        {user && (
+                                            <button className="reel-action-btn" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setShowShareLounge(true) }} style={{ color: 'var(--fog)' }}>
                                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
                                                 LOUNGE
                                             </button>
