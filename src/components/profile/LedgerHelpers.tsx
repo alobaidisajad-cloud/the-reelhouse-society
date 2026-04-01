@@ -7,19 +7,78 @@ import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
 import '../../styles/stacks.css'
 
-// ── PROFILE BACKDROP ──
-export const ProfileBackdrop = memo(function ProfileBackdrop({ logs }: any) {
-    const posters = logs.filter((l: any) => l.poster).slice(0, 12).map((l: any) => tmdb.poster(l.poster, 'w185'))
-    if (posters.length < 4) return null
+// ── PROFILE BACKDROP — Dynamic Favorite Films ──
+export const ProfileBackdrop = memo(function ProfileBackdrop({ logs, user }: any) {
+    const favorites = (user?.preferences?.favorites || []).filter((f: any) => f && f.poster_path)
+    
+    // Use favorites if available, otherwise fall back to log posters
+    const backdropImages = favorites.length > 0
+        ? favorites.slice(0, 3).map((f: any) => `https://image.tmdb.org/t/p/w780${f.poster_path}`)
+        : logs?.filter((l: any) => l.poster).slice(0, 3).map((l: any) => tmdb.poster(l.poster, 'w342')) || []
+
+    if (backdropImages.length === 0) return null
+
+    const count = backdropImages.length
+
     return (
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
-            <div style={{ position: 'absolute', inset: 0, display: 'flex', gap: 2, overflow: 'hidden' }}>
-                {posters.map((src: any, i: number) => (
-                    <img key={i} src={src || undefined} alt="" decoding="async" loading="lazy"
-                        style={{ flex: '1 0 auto', height: '100%', objectFit: 'cover', filter: 'sepia(0.8) brightness(0.15) contrast(1.2)', transform: `rotate(${(i % 3 - 1) * 0.5}deg) scale(1.04)` }} />
+            {/* Poster panels */}
+            <div style={{
+                position: 'absolute', inset: 0,
+                display: 'grid',
+                gridTemplateColumns: count === 1 ? '1fr' : count === 2 ? '1fr 1fr' : '1fr 1fr 1fr',
+                gap: 0,
+            }}>
+                {backdropImages.map((src: string, i: number) => (
+                    <div key={i} style={{ position: 'relative', overflow: 'hidden' }}>
+                        <img
+                            src={src || undefined}
+                            alt=""
+                            decoding="async"
+                            loading="lazy"
+                            style={{
+                                width: '100%', height: '100%', objectFit: 'cover',
+                                filter: 'saturate(0.6) brightness(0.35) contrast(1.15)',
+                                transform: 'scale(1.08)',
+                                animation: 'profileBackdropBreathe 12s ease-in-out infinite',
+                                animationDelay: `${i * 2}s`,
+                            }}
+                        />
+                        {/* Panel separator — subtle vertical gold line between posters */}
+                        {i < count - 1 && (
+                            <div style={{
+                                position: 'absolute', top: '15%', right: 0, bottom: '15%',
+                                width: '1px',
+                                background: 'linear-gradient(180deg, transparent, rgba(139,105,20,0.3), transparent)',
+                                zIndex: 2,
+                            }} />
+                        )}
+                    </div>
                 ))}
             </div>
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,7,3,0.5) 0%, rgba(10,7,3,0.85) 60%, var(--ink) 100%)' }} />
+
+            {/* Cinematic vignette overlay */}
+            <div style={{
+                position: 'absolute', inset: 0,
+                background: `
+                    radial-gradient(ellipse at 50% 30%, transparent 20%, rgba(10,7,3,0.4) 60%, rgba(10,7,3,0.85) 100%),
+                    linear-gradient(180deg, rgba(10,7,3,0.15) 0%, rgba(10,7,3,0.5) 50%, var(--ink) 100%)
+                `,
+            }} />
+
+            {/* Top edge fade for seamless navbar blend */}
+            <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: '60px',
+                background: 'linear-gradient(180deg, rgba(10,7,3,0.9) 0%, transparent 100%)',
+            }} />
+
+            {/* Warm gold atmospheric glow centered */}
+            <div style={{
+                position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)',
+                width: '70%', height: '60%',
+                background: 'radial-gradient(ellipse, rgba(139,105,20,0.08) 0%, transparent 70%)',
+                animation: 'profileBackdropBreathe 8s ease-in-out infinite',
+            }} />
         </div>
     )
 })

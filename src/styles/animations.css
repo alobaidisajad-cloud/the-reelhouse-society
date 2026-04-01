@@ -714,6 +714,11 @@
   to   { opacity: 0.7; }
 }
 
+@keyframes profileBackdropBreathe {
+  0%, 100% { transform: scale(1.08); }
+  50%      { transform: scale(1.12); }
+}
+
 /* ── ARCHIVIST CARD GLOW — Premium gold treatment for poster grid cards ──
    Mirrors the `reel-dispatch--premium` aesthetic from the Ledger/Feed
    but adapted for 2:3 poster card grids.

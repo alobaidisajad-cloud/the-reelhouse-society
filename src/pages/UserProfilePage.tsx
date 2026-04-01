@@ -431,7 +431,7 @@ export default function UserProfilePage() {
                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent 10%, rgba(139,105,20,0.35) 50%, transparent 90%)', pointerEvents: 'none', zIndex: 0 }} />
                 
                 {/* Auteur backdrop or dark base */}
-                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.3) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
+                {profileUser?.role === 'auteur' ? <ProfileBackdrop logs={profileLogs as any[]} user={profileUser} /> : <div style={{ position: 'absolute', inset: 0, zIndex: 0, background: 'linear-gradient(180deg, rgba(20,15,10,0.3) 0%, var(--ink) 100%)', pointerEvents: 'none' }} />}
                 
                 <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 900, textAlign: 'center' }}>
                     {/* ── Avatar — Centered with dramatic glow ── */}
