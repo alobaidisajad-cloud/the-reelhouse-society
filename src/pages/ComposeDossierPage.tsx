@@ -330,7 +330,7 @@ export default function ComposeDossierPage() {
 
             </div>
 
-            {/* ── STATS BAR ── */}
+            {/* ── BOTTOM PUBLISH BAR ── */}
             <div className="wr-stats-bar">
                 <div className="wr-stats-left">
                     <span className="wr-stat">
@@ -343,9 +343,13 @@ export default function ComposeDossierPage() {
                         READ TIME <span className="wr-stat-value">~{stats.readMin} MIN</span>
                     </span>
                 </div>
-                <div>
-                    FILED BY <span style={{ color: 'var(--sepia)' }}>@{user?.username?.toUpperCase()}</span>
-                </div>
+                <button
+                    className="wr-publish-btn"
+                    disabled={!isReady || isPublishing}
+                    onClick={handlePublish}
+                >
+                    {isPublishing ? 'TRANSMITTING…' : '✦ PUBLISH DOSSIER'}
+                </button>
             </div>
         </motion.div>
     )
