@@ -123,44 +123,110 @@
 }
 
 /* ── PREMIUM DISPATCH — Archivist Tier ── */
-.reel-dispatch--premium {
-  border-color: rgba(139,105,20,0.15);
-  border-left: 3px solid rgba(196,150,26,0.4);
-  background: linear-gradient(135deg, rgba(35,28,16,0.45) 0%, rgba(14,10,5,0.75) 100%);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.3), inset 0 1px 0 rgba(139,105,20,0.06);
+/* The paid experience. Must feel unmistakably elevated. */
+
+@keyframes premiumShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
+@keyframes premiumBorderBreathe {
+  0%, 100% { border-left-color: rgba(196,150,26,0.45); }
+  50%      { border-left-color: rgba(218,165,32,0.7); }
+}
+
+.reel-dispatch--premium {
+  border-color: rgba(196,150,26,0.12);
+  border-left: 4px solid rgba(196,150,26,0.5);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(139,105,20,0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(139,105,20,0.04) 0%, transparent 40%),
+    linear-gradient(135deg, rgba(40,32,18,0.55) 0%, rgba(14,10,5,0.85) 100%);
+  box-shadow:
+    0 8px 32px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(139,105,20,0.1),
+    inset 0 1px 0 rgba(196,150,26,0.1),
+    inset 0 -1px 0 rgba(196,150,26,0.04);
+  animation: premiumBorderBreathe 4s ease-in-out infinite;
+}
+
+/* ── Gold shimmer line at top ── */
 .reel-dispatch--premium::before {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.3) 30%, rgba(196,150,26,0.3) 70%, transparent 100%);
+  height: 2px;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      rgba(139,105,20,0.1) 15%,
+      rgba(218,165,32,0.6) 35%,
+      rgba(242,232,160,0.8) 50%,
+      rgba(218,165,32,0.6) 65%,
+      rgba(139,105,20,0.1) 85%,
+      transparent 100%
+    );
+  background-size: 200% 100%;
+  animation: premiumShimmer 6s ease-in-out infinite;
   pointer-events: none;
-  z-index: 1;
+  z-index: 2;
+}
+
+/* ── Warm corner brackets glow for premium ── */
+.reel-dispatch--premium::after {
+  content: '┐';
+  color: rgba(218,165,32,0.4);
+  opacity: 0.35;
+  text-shadow: 0 0 12px rgba(196,150,26,0.3);
 }
 
 .reel-dispatch--premium:hover {
-  border-left-color: var(--sepia);
-  background: linear-gradient(135deg, rgba(40,32,18,0.55) 0%, rgba(14,10,5,0.8) 100%);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.5), 0 0 30px rgba(139,105,20,0.06);
+  border-left-color: rgba(218,165,32,0.8);
+  background:
+    radial-gradient(ellipse at 0% 0%, rgba(139,105,20,0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(139,105,20,0.06) 0%, transparent 40%),
+    linear-gradient(135deg, rgba(48,38,22,0.65) 0%, rgba(16,12,6,0.9) 100%);
+  box-shadow:
+    0 16px 48px rgba(0,0,0,0.6),
+    0 0 40px rgba(139,105,20,0.08),
+    0 0 0 1px rgba(196,150,26,0.15),
+    inset 0 1px 0 rgba(196,150,26,0.12);
+  animation: none;
 }
 
-/* ── ARCHIVIST BADGE ── */
+.reel-dispatch--premium:hover::after {
+  opacity: 0.5;
+}
+
+/* ── Premium poster frame — golden light treatment ── */
+.reel-dispatch--premium .reel-poster-frame {
+  border-color: rgba(196,150,26,0.3);
+  box-shadow:
+    0 6px 16px rgba(0,0,0,0.5),
+    0 0 20px rgba(139,105,20,0.12);
+}
+
+.reel-dispatch--premium .reel-poster-glow {
+  filter: blur(28px) saturate(2) brightness(0.45);
+  opacity: 0.6;
+}
+
+/* ── ARCHIVIST BADGE — Premium Gold ── */
 .reel-archivist-badge {
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
   font-family: var(--font-ui);
   font-size: 0.35rem;
-  letter-spacing: 0.15em;
-  color: var(--sepia);
-  background: rgba(139,105,20,0.12);
-  border: 1px solid rgba(139,105,20,0.25);
-  padding: 0.08rem 0.35rem;
+  letter-spacing: 0.18em;
+  color: #DAA520;
+  background: linear-gradient(135deg, rgba(139,105,20,0.18) 0%, rgba(196,150,26,0.08) 100%);
+  border: 1px solid rgba(196,150,26,0.35);
+  padding: 0.1rem 0.4rem;
   border-radius: 1px;
   line-height: 1;
-  font-weight: 600;
+  font-weight: 700;
+  text-shadow: 0 0 6px rgba(196,150,26,0.3);
 }
 
 /* ── POSTER AMBIENT ECHO ── */

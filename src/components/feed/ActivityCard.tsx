@@ -140,6 +140,9 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         }
     }
 
+    // ── Archivist Premium Detection (shared by both views) ──
+    const isArchivistLog = log.userRole === 'archivist' || log.editorialHeader || log.dropCap || log.pullQuote
+
     // ── EXPANDED FOCUS VIEW (CINEMATIC LAYOUT) ──
     if (isExpandedView) {
         return (
@@ -147,19 +150,23 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
 
                 {/* ── EDITORIAL HEADER STILL (Archivist Feature) ── */}
                 {log.editorialHeader && (
-                    <div style={{ position: 'relative', width: '100%', aspectRatio: '21/9', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(139,105,20,0.2)' }}>
+                    <div style={{ position: 'relative', width: '100%', aspectRatio: '2.2/1', borderRadius: '4px', overflow: 'hidden', boxShadow: '0 12px 40px rgba(0,0,0,0.7), 0 0 0 1px rgba(139,105,20,0.15)' }}>
                         <img
-                            src={tmdb.backdrop(log.editorialHeader, 'w780')}
+                            src={tmdb.backdrop(log.editorialHeader, 'w1280')}
                             alt="Editorial header"
                             loading="lazy"
                             decoding="async"
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.15) contrast(1.05) brightness(0.85)' }}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.1) contrast(1.08) brightness(0.7)' }}
                         />
-                        {/* Cinematic vignette overlay */}
-                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.3) 0%, transparent 30%, transparent 60%, rgba(11,10,8,0.7) 100%)' }} />
-                        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 50%, rgba(11,10,8,0.5) 100%)' }} />
+                        {/* Deep cinematic vignette layers */}
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.35) 0%, transparent 25%, transparent 55%, rgba(11,10,8,0.8) 100%)' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 35%, rgba(11,10,8,0.5) 100%)' }} />
+                        {/* Film grain overlay */}
+                        <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)', pointerEvents: 'none' }} />
+                        {/* Golden bottom accent */}
+                        <div style={{ position: 'absolute', bottom: 0, left: '15%', right: '15%', height: '2px', background: 'linear-gradient(90deg, transparent, rgba(218,165,32,0.5), transparent)', filter: 'blur(0.5px)' }} />
                         {/* Editorial badge */}
-                        <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.3em', color: 'var(--sepia)', background: 'rgba(11,10,8,0.7)', backdropFilter: 'blur(8px)', padding: '0.3rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(139,105,20,0.3)' }}>
+                        <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.3em', color: 'rgba(218,165,32,0.9)', background: 'rgba(11,10,8,0.65)', backdropFilter: 'blur(8px)', padding: '0.3rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.3)' }}>
                             ✦ EDITORIAL
                         </div>
                     </div>
@@ -181,7 +188,11 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
 
                 {/* Focus Poster & Watermark Stamp */}
                 <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-                    <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: '0 20px 40px rgba(0,0,0,0.8)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s' }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 24px 48px rgba(0,0,0,0.9)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.8)' }}>
+                    {/* Ambient poster light (Archivist only) */}
+                    {isArchivistLog && log.film?.poster && (
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 180, height: 250, background: 'radial-gradient(ellipse, rgba(139,105,20,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+                    )}
+                    <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: isArchivistLog ? '1px solid rgba(196,150,26,0.35)' : '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: isArchivistLog ? '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.1)' : '0 20px 40px rgba(0,0,0,0.8)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s', zIndex: 1 }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = isArchivistLog ? '0 24px 48px rgba(0,0,0,0.9), 0 0 40px rgba(139,105,20,0.15)' : '0 24px 48px rgba(0,0,0,0.9)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = isArchivistLog ? '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.1)' : '0 20px 40px rgba(0,0,0,0.8)' }}>
                         {log.film?.poster ? (
                             <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         ) : (
@@ -324,8 +335,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         )
     }
 
-    // ── Archivist Premium Detection ──
-    const isArchivistLog = log.userRole === 'archivist' || log.editorialHeader || log.dropCap || log.pullQuote
+
 
     // ── STANDARD FEED VIEW (INLINE LAYOUT) — "THE UNDERGROUND" ──
     return (
@@ -340,16 +350,21 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         >
             {/* ── EDITORIAL HEADER STRIP (Feed — Archivist Feature) ── */}
             {log.editorialHeader && (
-                <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 80 : 100, overflow: 'hidden', borderBottom: '1px solid rgba(139,105,20,0.2)' }}>
+                <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 120 : 160, overflow: 'hidden' }}>
                     <img
                         src={tmdb.backdrop(log.editorialHeader, 'w780')}
                         alt=""
                         loading="lazy"
                         decoding="async"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%', filter: 'sepia(0.2) contrast(1.05) brightness(0.7)' }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 30%', filter: 'sepia(0.12) contrast(1.08) brightness(0.6)' }}
                     />
-                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(11,10,8,0.85) 100%)' }} />
-                    <div style={{ position: 'absolute', top: '0.4rem', right: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.25em', color: 'var(--sepia)', opacity: 0.8 }}>
+                    {/* Cinematic vignette layers */}
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.25) 0%, transparent 40%, rgba(11,10,8,0.9) 100%)' }} />
+                    <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 40%, rgba(11,10,8,0.4) 100%)' }} />
+                    {/* Golden bottom border accent */}
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(196,150,26,0.4), transparent)' }} />
+                    {/* Editorial badge */}
+                    <div style={{ position: 'absolute', top: '0.6rem', right: '0.6rem', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.25em', color: 'rgba(218,165,32,0.9)', background: 'rgba(11,10,8,0.6)', backdropFilter: 'blur(6px)', padding: '0.25rem 0.5rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.25)' }}>
                         ✦ EDITORIAL
                     </div>
                 </div>
@@ -420,10 +435,12 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 {/* Rating */}
                 {log.rating > 0 && <div style={{ marginBottom: '0.5rem' }}><ReelRating value={log.rating} size="sm" /></div>}
 
-                {/* Pull Quote — with French quotation marks */}
+                {/* Pull Quote — Premium inline treatment */}
                 {log.pullQuote && (
-                    <div className="reel-pull-quote" style={{ marginTop: '0.5rem', marginBottom: '0.5rem', fontSize: IS_TOUCH ? '0.95rem' : '1.1rem' }}>
-                        {log.pullQuote}
+                    <div style={{ margin: '0.6rem 0', padding: '0.65rem 0.85rem', borderLeft: isArchivistLog ? '3px solid rgba(218,165,32,0.6)' : '3px solid var(--sepia)', background: isArchivistLog ? 'linear-gradient(90deg, rgba(139,105,20,0.06) 0%, transparent 60%)' : 'none', borderRadius: '0 2px 2px 0' }}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.95rem' : '1.1rem', fontStyle: 'italic', color: isArchivistLog ? 'rgba(218,165,32,0.9)' : 'var(--sepia)', lineHeight: 1.35, textShadow: isArchivistLog ? '0 1px 8px rgba(139,105,20,0.15)' : 'none' }}>
+                            « {log.pullQuote} »
+                        </div>
                     </div>
                 )}
 
