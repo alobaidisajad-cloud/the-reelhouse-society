@@ -519,7 +519,8 @@
   .curtain-rise { animation: none !important; opacity: 1 !important; }
   .film-threading { animation: none !important; opacity: 1 !important; transform: none !important; }
   .ambient-breathe { animation: none !important; }
-  .archivist-card-glow { animation: none !important; box-shadow: 0 4px 15px rgba(139,105,20,0.10), 0 0 0 1px rgba(196,150,26,0.35) !important; }
+  .archivist-card-glow { animation: none !important; border-color: rgba(196,150,26,0.4) !important; box-shadow: 0 6px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(139,105,20,0.15), 0 0 20px rgba(139,105,20,0.08) !important; }
+  .archivist-card-glow::before { animation: none !important; }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -711,26 +712,92 @@
   to   { opacity: 0.7; }
 }
 
-/* ── ARCHIVIST CARD GLOW — Premium gold aura for poster grid cards ── */
-@keyframes archivistCardBreathe {
-  0%, 100% { box-shadow: 0 4px 15px rgba(139,105,20,0.10), 0 0 0 1px rgba(196,150,26,0.25); }
-  50%      { box-shadow: 0 6px 25px rgba(139,105,20,0.18), 0 0 0 1px rgba(196,150,26,0.45); }
-}
+/* ── ARCHIVIST CARD GLOW — Premium gold treatment for poster grid cards ──
+   Mirrors the `reel-dispatch--premium` aesthetic from the Ledger/Feed
+   but adapted for 2:3 poster card grids.
+   Uses the same keyframes: premiumBorderBreathe + premiumShimmer (defined in reel.css) */
 
 .archivist-card-glow {
-  animation: archivistCardBreathe 4s ease-in-out infinite;
-  border-radius: 4px;
   position: relative;
+  border-radius: 4px;
+  border: 1px solid rgba(196,150,26,0.35) !important;
+  box-shadow:
+    0 6px 24px rgba(0,0,0,0.45),
+    0 0 0 1px rgba(139,105,20,0.15),
+    0 0 20px rgba(139,105,20,0.08),
+    inset 0 1px 0 rgba(196,150,26,0.12);
+  animation: archivistCardBreathe 4s ease-in-out infinite;
+  overflow: visible;
 }
 
+@keyframes archivistCardBreathe {
+  0%, 100% {
+    border-color: rgba(196,150,26,0.30);
+    box-shadow:
+      0 6px 24px rgba(0,0,0,0.45),
+      0 0 0 1px rgba(139,105,20,0.12),
+      0 0 15px rgba(139,105,20,0.06),
+      inset 0 1px 0 rgba(196,150,26,0.08);
+  }
+  50% {
+    border-color: rgba(218,165,32,0.55);
+    box-shadow:
+      0 8px 32px rgba(0,0,0,0.5),
+      0 0 0 1px rgba(196,150,26,0.25),
+      0 0 30px rgba(139,105,20,0.12),
+      inset 0 1px 0 rgba(196,150,26,0.18);
+  }
+}
+
+/* Gold shimmer line at top — identical to reel-dispatch--premium::before */
+.archivist-card-glow::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background:
+    linear-gradient(90deg,
+      transparent 0%,
+      rgba(139,105,20,0.1) 15%,
+      rgba(218,165,32,0.6) 35%,
+      rgba(242,232,160,0.8) 50%,
+      rgba(218,165,32,0.6) 65%,
+      rgba(139,105,20,0.1) 85%,
+      transparent 100%
+    );
+  background-size: 200% 100%;
+  animation: premiumShimmer 6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 4;
+  border-radius: 4px 4px 0 0;
+}
+
+/* Gold ✦ archivist indicator */
 .archivist-card-glow::after {
   content: '✦';
   position: absolute;
-  top: 4px;
+  top: 5px;
   right: 6px;
   font-size: 0.55rem;
-  color: #DAA520;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  color: rgba(218,165,32,0.85);
+  text-shadow: 0 1px 6px rgba(139,105,20,0.6), 0 0 12px rgba(196,150,26,0.3);
   pointer-events: none;
-  z-index: 3;
+  z-index: 5;
 }
+
+/* Hover — intensified glow, pause breathing */
+.archivist-card-glow:hover {
+  border-color: rgba(218,165,32,0.7) !important;
+  box-shadow:
+    0 12px 40px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(196,150,26,0.3),
+    0 0 40px rgba(139,105,20,0.15),
+    inset 0 1px 0 rgba(196,150,26,0.2);
+  animation: none;
+}
+
+.archivist-card-glow:hover::after {
+  color: rgba(218,165,32,1);
+  text-shadow: 0 1px 8px rgba(139,105,20,0.8), 0 0 20px rgba(196,150,26,0.5);
+}
+
