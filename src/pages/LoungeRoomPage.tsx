@@ -48,16 +48,16 @@ const SharedCard = memo(function SharedCard({ msg }: { msg: LoungeMessage }) {
     const meta = msg.metadata
     if (!meta?.title) return null
 
-    const link = meta.type === 'film_share' ? `/film/${meta.filmId}`
-        : meta.type === 'person_share' ? `/person/${meta.personId}`
-        : meta.type === 'log_share' ? `/log/${meta.logId}`
-        : meta.type === 'list_share' ? `/stacks/${meta.listId}`
+    const link = msg.type === 'film_share' ? `/film/${meta.filmId}`
+        : msg.type === 'person_share' ? `/person/${meta.personId}`
+        : msg.type === 'log_share' ? `/log/${meta.logId}`
+        : msg.type === 'list_share' ? `/stacks/${meta.listId}`
         : null
 
-    const typeLabel = meta.type === 'film_share' ? 'FILM'
-        : meta.type === 'person_share' ? 'PERSON'
-        : meta.type === 'log_share' ? 'LOG'
-        : meta.type === 'list_share' ? 'STACK'
+    const typeLabel = msg.type === 'film_share' ? 'FILM'
+        : msg.type === 'person_share' ? 'PERSON'
+        : msg.type === 'log_share' ? 'LOG'
+        : msg.type === 'list_share' ? 'STACK'
         : 'SHARED'
 
     const posterUrl = meta.poster_path ? tmdb.poster(meta.poster_path, 'w500') : meta.profile_path ? tmdb.profile(meta.profile_path, 'w500') : null
