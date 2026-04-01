@@ -3,7 +3,7 @@ import { motion } from 'framer-motion'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight, ChevronLeft, Archive, Bookmark, LayoutList, Ticket, LineChart, BookOpen } from 'lucide-react'
+import { Star, Lock, Camera, Settings, Globe, Download, Share2, Film, LogOut, RotateCcw, X, ChevronRight, ChevronLeft, Archive, Bookmark, LayoutList, Ticket, LineChart, BookOpen, Disc } from 'lucide-react'
 import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../store'
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
@@ -401,7 +401,8 @@ export default function UserProfilePage() {
     })
 
 
-    const isPremium = currentUser?.role === 'archivist' || currentUser?.role === 'auteur'
+    const isPremium = currentUser?.role === 'archivist' || currentUser?.role === 'auteur' || currentUser?.role === 'projectionist'
+    const isArchivistPlus = ['archivist', 'auteur', 'projectionist'].includes((profileUser as any)?.role || '')
 
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: isOwnProfile ? filteredLogs.length : profileLogs.filter((l: any) => l.rating > 0 || (l.review && l.review.length > 0)).length },
@@ -409,8 +410,8 @@ export default function UserProfilePage() {
         { id: 'projector', label: 'Projector Room', count: null },
         { id: 'lists', label: 'Lists', count: profileLists.length },
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
-        { id: 'tickets', label: 'Ticket Stubs', count: profileStubs.length > 0 ? profileStubs.length : null },
-        { id: 'archive', label: 'The Archive', count: physicalArchive.length > 0 ? physicalArchive.length : null },
+        { id: 'physical', label: isArchivistPlus ? 'Physical Archive' : <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> Physical Archive</>, count: isArchivistPlus ? (physicalArchive.length > 0 ? physicalArchive.length : null) : 'LOCKED' },
+        { id: 'archive', label: 'The Archive', count: profileLogs.length > 0 ? profileLogs.length : null },
         ...(isOwnProfile ? [{ id: 'calendar', label: isPremium ? '✦ The Calendar' : <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> The Calendar</>, count: null }] : []),
     ]
 
@@ -664,7 +665,7 @@ export default function UserProfilePage() {
                             { id: 'diary', label: 'The Ledger', count: profileLogs.filter((l: any) => l.rating > 0 || (l.review && l.review.length > 0)).length, icon: BookOpen, active: activeTab === 'diary', desc: 'Diary' },
                             { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length, icon: Bookmark, active: activeTab === 'watchlist', desc: 'To See' },
                             { id: 'lists', label: 'Stacks', count: profileLists.length, icon: LayoutList, active: activeTab === 'lists', desc: 'Lists' },
-                            { id: 'tickets', label: 'Stubs', count: 'SOON', icon: Ticket, active: activeTab === 'tickets', disabled: true, desc: 'Box Office' },
+                            { id: 'physical', label: 'Physical Archive', count: isArchivistPlus ? (physicalArchive.length > 0 ? physicalArchive.length : '0') : 'LOCKED', icon: Disc, active: activeTab === 'physical', disabled: !isArchivistPlus, desc: 'Collection' },
                             { id: 'projector', label: 'Analytics', count: 'LIFETIME', icon: LineChart, active: activeTab === 'projector', highlight: true, desc: 'Projector' },
                         ].map(item => (
                             <button
@@ -747,8 +748,8 @@ export default function UserProfilePage() {
                             <VaultLedgerTab profileLogs={profileLogs} isOwnProfile={isOwnProfile} setViewLog={setViewLog} userRole={profileUser?.role} />
                         )}
 
-                        {activeTab === 'tickets' && (
-                            <div><SectionHeader label="ADMISSION HISTORY" title="Ticket Stubs" /><TicketBooth stubs={profileStubs} /></div>
+                        {activeTab === 'physical' && (
+                            <PhysicalArchiveTab archive={physicalArchive} isOwnProfile={isOwnProfile} userId={profileUser?.id} />
                         )}
 
                         {activeTab === 'projector' && (
