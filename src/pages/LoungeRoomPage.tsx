@@ -101,7 +101,7 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
 
     return (
         <div className={`lounge-msg-wrapper ${isSelf ? 'msg-self' : 'msg-other'} ${showAuthor ? 'mt-author' : 'mt-compact'}`}>
-            {!isSelf && showAuthor && (
+            {showAuthor && (
                 <div className="lounge-msg-avatar">
                    {msg.avatar_url ? <img src={msg.avatar_url} alt="" /> : <div className="lounge-msg-avatar-fallback">{msg.username[0]?.toUpperCase()}</div>}
                 </div>

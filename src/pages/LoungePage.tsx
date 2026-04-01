@@ -135,30 +135,46 @@ function CreateLoungeModal({ onClose }: { onClose: () => void }) {
 function JoinedLoungeCard({ lounge, unread }: { lounge: any; unread: number }) {
     const navigate = useNavigate()
     const coverUrl = lounge.cover_image ? tmdb.backdrop(lounge.cover_image, 'w300') : null
+    const [showInfo, setShowInfo] = useState(false)
+
+    const handleInfoClick = (e: React.MouseEvent) => {
+        e.stopPropagation()
+        setShowInfo(true)
+    }
 
     return (
-        <div
-            className="lounge-card"
-            onClick={() => navigate(`/lounge/${lounge.id}`)}
-            role="button"
-            tabIndex={0}
-        >
-            {coverUrl && <img src={coverUrl} alt="" className="lounge-card-cover" loading="lazy" decoding="async" />}
+        <>
+            <div
+                className="lounge-card"
+                onClick={() => navigate(`/lounge/${lounge.id}`)}
+                role="button"
+                tabIndex={0}
+            >
+                {coverUrl && <img src={coverUrl} alt="" className="lounge-card-cover" loading="lazy" decoding="async" />}
 
-            {unread > 0 && (
-                <div className="lounge-unread-badge">{unread > 99 ? '99+' : unread}</div>
-            )}
+                <button className="lounge-info-btn-overlay" onClick={handleInfoClick}>
+                    <Info size={14} />
+                </button>
 
-            <div className="lounge-card-content">
-                <div className="lounge-card-name">{lounge.name}</div>
-                {lounge.last_message && (
-                    <div className="lounge-card-preview">
-                        <strong>{lounge.last_message.username}:</strong> {lounge.last_message.content}
-                    </div>
+                {unread > 0 && (
+                    <div className="lounge-unread-badge">{unread > 99 ? '99+' : unread}</div>
                 )}
-                <div className="lounge-card-meta">{lounge.member_count} MEMBER{lounge.member_count !== 1 ? 'S' : ''}</div>
+
+                <div className="lounge-card-content">
+                    <div className="lounge-card-name">{lounge.name}</div>
+                    {lounge.last_message && (
+                        <div className="lounge-card-preview">
+                            <strong>{lounge.last_message.username}:</strong> {lounge.last_message.content}
+                        </div>
+                    )}
+                    <div className="lounge-card-meta">{lounge.member_count} MEMBER{lounge.member_count !== 1 ? 'S' : ''}</div>
+                </div>
             </div>
-        </div>
+
+            <AnimatePresence>
+                {showInfo && <LoungeInfoModal lounge={lounge} onClose={() => setShowInfo(false)} />}
+            </AnimatePresence>
+        </>
     )
 }
 

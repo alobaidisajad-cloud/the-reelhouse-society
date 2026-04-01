@@ -1660,7 +1660,8 @@
     opacity: 0; /* Hidden by default until hover */
 }
 
-.lounge-public-card:hover .lounge-info-btn-overlay {
+.lounge-public-card:hover .lounge-info-btn-overlay,
+.lounge-card:hover .lounge-info-btn-overlay {
     opacity: 1;
 }
 
