@@ -39,12 +39,12 @@ export default function ShareToLoungeModal({ payload, onClose }: Props) {
         try {
             // Build the dispatch message
             const caption = payload.type === 'film_share'
-                ? `🎬 ${payload.title}${payload.subtitle ? ` (${payload.subtitle})` : ''}`
+                ? `${payload.title}${payload.subtitle ? ` (${payload.subtitle})` : ''}`
                 : payload.type === 'person_share'
-                    ? `🎭 ${payload.title}${payload.subtitle ? ` — ${payload.subtitle}` : ''}`
+                    ? `${payload.title}${payload.subtitle ? ` — ${payload.subtitle}` : ''}`
                     : payload.type === 'list_share'
-                        ? `📋 ${payload.title}${payload.subtitle ? ` · ${payload.subtitle}` : ''}`
-                        : `📝 ${payload.title}`
+                        ? `${payload.title}${payload.subtitle ? ` · ${payload.subtitle}` : ''}`
+                        : `${payload.title}`
 
             // We need to open the lounge channel to send, then restore previous state
             const previousLoungeId = activeLounge?.id

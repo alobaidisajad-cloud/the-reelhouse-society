@@ -65,7 +65,7 @@ const SharedCard = memo(function SharedCard({ msg }: { msg: LoungeMessage }) {
         <div className="lounge-shared-card">
             {posterUrl && <img src={posterUrl} alt="" className="lounge-shared-poster" loading="lazy" />}
             <div className="lounge-shared-info">
-                <div className="lounge-shared-type">🎬 {typeLabel}</div>
+                <div className="lounge-shared-type">✦ {typeLabel}</div>
                 <div className="lounge-shared-title">{meta.title}</div>
                 {meta.subtitle && <div className="lounge-shared-sub">{meta.subtitle}</div>}
             </div>

@@ -194,7 +194,10 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .select()
             .single()
 
-        if (error || !data) return null
+        if (error || !data) {
+            console.error('[Lounge] Create failed:', error)
+            return null
+        }
 
         // Auto-join the creator
         await supabase.from('lounge_members').insert([{
