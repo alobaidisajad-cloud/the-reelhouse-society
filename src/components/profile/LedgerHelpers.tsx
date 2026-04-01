@@ -7,17 +7,23 @@ import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
 import '../../styles/stacks.css'
 
-// ── PROFILE BACKDROP — Dynamic Favorite Films ──
+import { useViewport } from '../../hooks/useViewport'
+
+// ── PROFILE BACKDROP — Dynamic Favorite Films (Auteur-only) ──
 export const ProfileBackdrop = memo(function ProfileBackdrop({ logs, user }: any) {
+    const { isTouch } = useViewport()
     const favorites = (user?.preferences?.favorites || []).filter((f: any) => f && f.poster_path)
     
     // Use favorites if available, otherwise fall back to log posters
-    const backdropImages = favorites.length > 0
+    const allImages = favorites.length > 0
         ? favorites.slice(0, 3).map((f: any) => `https://image.tmdb.org/t/p/w780${f.poster_path}`)
         : logs?.filter((l: any) => l.poster).slice(0, 3).map((l: any) => tmdb.poster(l.poster, 'w342')) || []
 
-    if (backdropImages.length === 0) return null
+    if (allImages.length === 0) return null
 
+    // On mobile: show only the FIRST poster as a full-bleed hero
+    // On desktop: show all posters in a dynamic grid
+    const backdropImages = isTouch ? [allImages[0]] : allImages
     const count = backdropImages.length
 
     return (
@@ -38,14 +44,17 @@ export const ProfileBackdrop = memo(function ProfileBackdrop({ logs, user }: any
                             loading="lazy"
                             style={{
                                 width: '100%', height: '100%', objectFit: 'cover',
-                                filter: 'saturate(0.6) brightness(0.35) contrast(1.15)',
+                                objectPosition: isTouch ? 'center 20%' : 'center center',
+                                filter: isTouch
+                                    ? 'saturate(0.5) brightness(0.4) contrast(1.2)'
+                                    : 'saturate(0.6) brightness(0.35) contrast(1.15)',
                                 transform: 'scale(1.08)',
                                 animation: 'profileBackdropBreathe 12s ease-in-out infinite',
                                 animationDelay: `${i * 2}s`,
                             }}
                         />
-                        {/* Panel separator — subtle vertical gold line between posters */}
-                        {i < count - 1 && (
+                        {/* Panel separator — subtle vertical gold line between posters (desktop only) */}
+                        {!isTouch && i < count - 1 && (
                             <div style={{
                                 position: 'absolute', top: '15%', right: 0, bottom: '15%',
                                 width: '1px',
@@ -57,26 +66,51 @@ export const ProfileBackdrop = memo(function ProfileBackdrop({ logs, user }: any
                 ))}
             </div>
 
-            {/* Cinematic vignette overlay */}
+            {/* Cinematic vignette overlay — tighter on mobile for focus on center */}
             <div style={{
                 position: 'absolute', inset: 0,
-                background: `
-                    radial-gradient(ellipse at 50% 30%, transparent 20%, rgba(10,7,3,0.4) 60%, rgba(10,7,3,0.85) 100%),
-                    linear-gradient(180deg, rgba(10,7,3,0.15) 0%, rgba(10,7,3,0.5) 50%, var(--ink) 100%)
-                `,
+                background: isTouch
+                    ? `
+                        radial-gradient(ellipse at 50% 35%, transparent 10%, rgba(10,7,3,0.35) 45%, rgba(10,7,3,0.8) 100%),
+                        linear-gradient(180deg, rgba(10,7,3,0.1) 0%, rgba(10,7,3,0.4) 40%, var(--ink) 100%)
+                    `
+                    : `
+                        radial-gradient(ellipse at 50% 30%, transparent 20%, rgba(10,7,3,0.4) 60%, rgba(10,7,3,0.85) 100%),
+                        linear-gradient(180deg, rgba(10,7,3,0.15) 0%, rgba(10,7,3,0.5) 50%, var(--ink) 100%)
+                    `,
             }} />
 
             {/* Top edge fade for seamless navbar blend */}
             <div style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: '60px',
+                position: 'absolute', top: 0, left: 0, right: 0,
+                height: isTouch ? '40px' : '60px',
                 background: 'linear-gradient(180deg, rgba(10,7,3,0.9) 0%, transparent 100%)',
             }} />
 
+            {/* Side fades on mobile for vignette framing */}
+            {isTouch && (
+                <>
+                    <div style={{
+                        position: 'absolute', top: 0, left: 0, bottom: 0, width: '25%',
+                        background: 'linear-gradient(90deg, rgba(10,7,3,0.7) 0%, transparent 100%)',
+                    }} />
+                    <div style={{
+                        position: 'absolute', top: 0, right: 0, bottom: 0, width: '25%',
+                        background: 'linear-gradient(270deg, rgba(10,7,3,0.7) 0%, transparent 100%)',
+                    }} />
+                </>
+            )}
+
             {/* Warm gold atmospheric glow centered */}
             <div style={{
-                position: 'absolute', top: '10%', left: '50%', transform: 'translateX(-50%)',
-                width: '70%', height: '60%',
-                background: 'radial-gradient(ellipse, rgba(139,105,20,0.08) 0%, transparent 70%)',
+                position: 'absolute',
+                top: isTouch ? '5%' : '10%',
+                left: '50%', transform: 'translateX(-50%)',
+                width: isTouch ? '90%' : '70%',
+                height: isTouch ? '70%' : '60%',
+                background: isTouch
+                    ? 'radial-gradient(ellipse, rgba(139,105,20,0.1) 0%, transparent 65%)'
+                    : 'radial-gradient(ellipse, rgba(139,105,20,0.08) 0%, transparent 70%)',
                 animation: 'profileBackdropBreathe 8s ease-in-out infinite',
             }} />
         </div>
