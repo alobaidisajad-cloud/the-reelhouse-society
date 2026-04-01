@@ -598,7 +598,7 @@ export default function UserProfilePage() {
                                         to={`/film/${log.filmId}`}
                                         style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}
                                     >
-                                        <div style={{
+                                        <div className={isArchivistPlus && profileUser?.role === 'archivist' ? 'archivist-card-glow' : ''} style={{
                                             position: 'relative',
                                             aspectRatio: '2/3',
                                             borderRadius: '4px',
@@ -749,7 +749,7 @@ export default function UserProfilePage() {
                         )}
 
                         {activeTab === 'physical' && (
-                            <PhysicalArchiveTab archive={physicalArchive} isOwnProfile={isOwnProfile} userId={profileUser?.id} />
+                            <PhysicalArchiveTab archive={physicalArchive} isOwnProfile={isOwnProfile} userId={profileUser?.id} userRole={profileUser?.role} />
                         )}
 
                         {activeTab === 'projector' && (
@@ -850,7 +850,7 @@ export default function UserProfilePage() {
                         )}
 
                         {activeTab === 'watchlist' && (
-                            <VaultWatchlistTab profileWatchlist={profileWatchlist} isOwnProfile={isOwnProfile} />
+                            <VaultWatchlistTab profileWatchlist={profileWatchlist} isOwnProfile={isOwnProfile} userRole={profileUser?.role} />
                         )}
 
                         {activeTab === 'archive' && (
@@ -862,7 +862,8 @@ export default function UserProfilePage() {
                                 setArchiveSieve={setArchiveSieve} 
                                 archiveVisibleCount={archiveVisibleCount} 
                                 setArchiveVisibleCount={setArchiveVisibleCount} 
-                                archiveFilteredLogs={archiveFilteredLogs} 
+                                archiveFilteredLogs={archiveFilteredLogs}
+                                userRole={profileUser?.role}
                             />
                         )}
                     </div>

@@ -8,7 +8,7 @@ SELECT
     film_id,
     film_title,
     poster_path,
-    year,
+    CAST(NULLIF(year::text, '') AS integer),
     CASE 
         WHEN physical_media = 'DVD' THEN ARRAY['dvd']
         WHEN physical_media = 'Blu-Ray' THEN ARRAY['bluray']

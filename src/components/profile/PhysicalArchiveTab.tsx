@@ -46,9 +46,11 @@ interface Props {
     isOwnProfile: boolean
     archive: PhysicalArchiveItem[]
     userId?: string
+    userRole?: string
 }
 
-export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Props) {
+export default function PhysicalArchiveTab({ isOwnProfile, archive, userId, userRole }: Props) {
+    const isArchivist = userRole === 'archivist'
     const { isTouch: IS_TOUCH } = useViewport()
     const { addToPhysicalArchive, removeFromPhysicalArchive, updatePhysicalArchiveItem, fetchPhysicalArchive } = useFilmStore()
     
@@ -419,7 +421,7 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId }: Pr
                                 </div>
                                 <div className="profile-log-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: IS_TOUCH ? '0.2rem' : '0.75rem' }}>
                                     {grouped[month].map((item: any) => (
-                                        <div key={item.filmId} style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                                        <div key={item.filmId} className={isArchivist ? 'archivist-card-glow' : ''} style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
                                             <Link to={`/film/${item.filmId}`} style={{ display: 'block', position: 'relative' }}>
                                                 <FilmCard film={{ id: item.filmId, title: item.title, poster_path: item.poster_path, release_date: item.year ? item.year.toString() : '' } as any} />
                                                 

@@ -519,6 +519,7 @@
   .curtain-rise { animation: none !important; opacity: 1 !important; }
   .film-threading { animation: none !important; opacity: 1 !important; transform: none !important; }
   .ambient-breathe { animation: none !important; }
+  .archivist-card-glow { animation: none !important; box-shadow: 0 4px 15px rgba(139,105,20,0.10), 0 0 0 1px rgba(196,150,26,0.35) !important; }
 }
 
 /* ═══════════════════════════════════════════════════
@@ -708,4 +709,28 @@
 @keyframes avatarBreathe {
   from { opacity: 0.3; }
   to   { opacity: 0.7; }
+}
+
+/* ── ARCHIVIST CARD GLOW — Premium gold aura for poster grid cards ── */
+@keyframes archivistCardBreathe {
+  0%, 100% { box-shadow: 0 4px 15px rgba(139,105,20,0.10), 0 0 0 1px rgba(196,150,26,0.25); }
+  50%      { box-shadow: 0 6px 25px rgba(139,105,20,0.18), 0 0 0 1px rgba(196,150,26,0.45); }
+}
+
+.archivist-card-glow {
+  animation: archivistCardBreathe 4s ease-in-out infinite;
+  border-radius: 4px;
+  position: relative;
+}
+
+.archivist-card-glow::after {
+  content: '✦';
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  font-size: 0.55rem;
+  color: #DAA520;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+  pointer-events: none;
+  z-index: 3;
 }

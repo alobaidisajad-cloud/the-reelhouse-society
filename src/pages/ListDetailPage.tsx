@@ -324,7 +324,7 @@ export default function ListDetailPage() {
                                         <Link
                                             key={f.id ?? i}
                                             to={`/film/${f.id}`}
-                                            className="list-film-item fade-in-up"
+                                            className={`list-film-item fade-in-up${isOwner && isArchivist ? ' archivist-card-glow' : ''}`}
                                             style={{ animationDelay: `${Math.min(i * 0.03, 0.5)}s` }}
                                         >
                                             <div className="list-film-number">{i + 1}</div>
