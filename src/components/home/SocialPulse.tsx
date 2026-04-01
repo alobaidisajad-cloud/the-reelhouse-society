@@ -103,7 +103,7 @@ const SocialPulse = memo(function SocialPulse() {
                         const cardContent = (
                             <>
                                 {/* Top shimmer line (animated for archivist) */}
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isArchivist ? '2px' : '1px', background: isArchivist ? 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)' : `linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)`, backgroundSize: isArchivist ? '200% 100%' : undefined, animation: isArchivist ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isArchivist ? '2px' : '1px', zIndex: 2, background: isArchivist ? 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)' : `linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)`, backgroundSize: isArchivist ? '200% 100%' : undefined, animation: isArchivist ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
 
                                 {/* Editorial Header Strip — Archivist Feature */}
                                 {act.editorialHeader ? (

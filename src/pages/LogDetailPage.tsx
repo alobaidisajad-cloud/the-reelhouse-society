@@ -107,9 +107,17 @@ export default function LogDetailPage() {
         <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
             <PageSEO title={`Log details by ${log.user} on ${log.film?.title || 'Unknown Film'}`} />
             
-            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.2)', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, background: 'rgba(10,7,3,0.9)', backdropFilter: 'blur(10px)', zIndex: 10 }}>
-                <button onClick={() => navigate(-1)} className="btn btn-ghost" style={{ padding: '0.4rem', color: 'var(--sepia)' }} aria-label="Go back">
-                    <ArrowLeft size={18} />
+            <div style={{ padding: '0.75rem 1rem', borderBottom: '1px solid rgba(139,105,20,0.2)', display: 'flex', alignItems: 'center', position: 'sticky', top: 0, background: 'rgba(10,7,3,0.95)', backdropFilter: 'blur(12px)', zIndex: 10 }}>
+                <button
+                    onClick={() => navigate(-1)}
+                    className="btn btn-ghost"
+                    style={{ padding: '0.4rem 0.75rem', color: 'var(--parchment)', display: 'flex', alignItems: 'center', gap: '0.4rem', border: '1px solid rgba(139,105,20,0.25)', borderRadius: '4px', background: 'rgba(139,105,20,0.08)', transition: 'all 0.2s' }}
+                    aria-label="Go back"
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.15)'; e.currentTarget.style.borderColor = 'rgba(196,150,26,0.4)' }}
+                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(139,105,20,0.08)'; e.currentTarget.style.borderColor = 'rgba(139,105,20,0.25)' }}
+                >
+                    <ArrowLeft size={16} />
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em' }}>BACK</span>
                 </button>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em', color: 'var(--bone)', marginLeft: '1rem' }}>
                     TRANSMISSION LOG
