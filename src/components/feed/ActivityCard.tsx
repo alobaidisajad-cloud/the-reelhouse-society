@@ -144,9 +144,10 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     }
 
     // ── Premium Tier Detection (shared by both views) ──
-    const isArchivistLog = log.userRole === 'archivist' || log.editorialHeader || log.dropCap || log.pullQuote
     const isAuteurLog = log.userRole === 'auteur'
-    const isPremiumLog = isArchivistLog || isAuteurLog
+    const isArchivistLog = log.userRole === 'archivist'
+    const hasEditorialFeatures = !!(log.editorialHeader || log.dropCap || log.pullQuote)
+    const isPremiumLog = isArchivistLog || isAuteurLog || hasEditorialFeatures
 
     // ── EXPANDED FOCUS VIEW (CINEMATIC LAYOUT) ──
     if (isExpandedView) {

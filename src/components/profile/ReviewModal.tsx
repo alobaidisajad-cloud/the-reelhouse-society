@@ -25,9 +25,9 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
     const ratingLabel = ['', 'Walks Out', 'Poor Cut', 'Solid Frame', 'Compelling', 'Masterpiece'][Math.ceil(viewLog.rating)] || ''
     const statusColor = viewLog.status === 'abandoned' ? 'var(--blood-reel)' : viewLog.status === 'rewatched' ? 'var(--flicker)' : 'var(--sepia)'
     const statusLabel = viewLog.status === 'watched' ? 'WATCHED' : viewLog.status === 'rewatched' ? '⟳ REWATCH' : '✕ ABANDONED'
-    const isArchivistLog = viewLog.editorialHeader || viewLog.dropCap || viewLog.pullQuote
+    const isArchivistLog = profileUser?.role === 'archivist'
     const isAuteurLog = profileUser?.role === 'auteur'
-    const isPremiumLog = isArchivistLog || isAuteurLog
+    const isPremiumLog = isArchivistLog || isAuteurLog || viewLog.editorialHeader || viewLog.dropCap || viewLog.pullQuote
 
     return (
         <Portal>

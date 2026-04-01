@@ -79,9 +79,9 @@ const SocialPulse = memo(function SocialPulse() {
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))', gap: IS_TOUCH ? '1rem' : '2rem' }}>
                     {activities.map((act: any, i: number) => {
-                        const isArchivist = act.userRole === 'archivist' || act.editorialHeader || act.pullQuote
+                        const isArchivist = act.userRole === 'archivist'
                         const isAuteur = act.userRole === 'auteur'
-                        const isPremium = isArchivist || isAuteur
+                        const isPremium = isArchivist || isAuteur || act.editorialHeader || act.pullQuote
                         const cardStyle: React.CSSProperties = {
                             position: 'relative',
                             padding: 0,
