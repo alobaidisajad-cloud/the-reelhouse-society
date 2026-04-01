@@ -144,6 +144,26 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     if (isExpandedView) {
         return (
             <div className="fade-in-up" onClick={e => e.stopPropagation()} style={{ padding: '0.5rem 0 3rem 0', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+
+                {/* ── EDITORIAL HEADER STILL (Archivist Feature) ── */}
+                {log.editorialHeader && (
+                    <div style={{ position: 'relative', width: '100%', aspectRatio: '21/9', borderRadius: '4px', overflow: 'hidden', border: '1px solid rgba(139,105,20,0.2)' }}>
+                        <img
+                            src={tmdb.backdrop(log.editorialHeader, 'w780')}
+                            alt="Editorial header"
+                            loading="lazy"
+                            decoding="async"
+                            style={{ width: '100%', height: '100%', objectFit: 'cover', filter: 'sepia(0.15) contrast(1.05) brightness(0.85)' }}
+                        />
+                        {/* Cinematic vignette overlay */}
+                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.3) 0%, transparent 30%, transparent 60%, rgba(11,10,8,0.7) 100%)' }} />
+                        <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 50%, rgba(11,10,8,0.5) 100%)' }} />
+                        {/* Editorial badge */}
+                        <div style={{ position: 'absolute', top: '0.75rem', left: '0.75rem', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.3em', color: 'var(--sepia)', background: 'rgba(11,10,8,0.7)', backdropFilter: 'blur(8px)', padding: '0.3rem 0.6rem', borderRadius: '2px', border: '1px solid rgba(139,105,20,0.3)' }}>
+                            ✦ EDITORIAL
+                        </div>
+                    </div>
+                )}
                 
                 {/* Focus Header: User Identity & Time */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '1rem' }}>
@@ -295,11 +315,28 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             className="reel-dispatch"
             onClick={handleCardClick}
             style={{
-                padding: IS_TOUCH ? '1rem' : '1.25rem',
+                padding: 0,
                 display: 'flex',
-                gap: IS_TOUCH ? '1rem' : '1.25rem',
+                flexDirection: 'column',
             }}
         >
+            {/* ── EDITORIAL HEADER STRIP (Feed — Archivist Feature) ── */}
+            {log.editorialHeader && (
+                <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 80 : 100, overflow: 'hidden', borderBottom: '1px solid rgba(139,105,20,0.2)' }}>
+                    <img
+                        src={tmdb.backdrop(log.editorialHeader, 'w780')}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 25%', filter: 'sepia(0.2) contrast(1.05) brightness(0.7)' }}
+                    />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, transparent 0%, rgba(11,10,8,0.85) 100%)' }} />
+                    <div style={{ position: 'absolute', top: '0.4rem', right: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.25em', color: 'var(--sepia)', opacity: 0.8 }}>
+                        ✦ EDITORIAL
+                    </div>
+                </div>
+            )}
+            <div style={{ padding: IS_TOUCH ? '1rem' : '1.25rem', display: 'flex', gap: IS_TOUCH ? '1rem' : '1.25rem' }}>
             {/* Poster with Ambient Echo */}
             <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} className="reel-poster-wrap" style={{ width: IS_TOUCH ? 100 : 100, height: IS_TOUCH ? 150 : 150, display: 'block', textDecoration: 'none', cursor: 'pointer' }}>
                 {/* Ambient glow — blurred poster echo behind */}
@@ -426,6 +463,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                   * Note: ReactionBar is entirely removed from the Feed layout. 
                   * Emoji fetching 50x was blocking the main thread. It remains exclusively in Focus Views. 
                   */}
+            </div>
             </div>
         </div>
     )

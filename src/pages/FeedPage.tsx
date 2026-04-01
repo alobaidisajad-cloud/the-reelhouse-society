@@ -39,6 +39,7 @@ function mapLogsToFeed(data: any[]) {
             review: l.review,
             pullQuote: l.pull_quote || '',
             dropCap: l.drop_cap || false,
+            editorialHeader: l.editorial_header || null,
             autopsy: l.autopsy,
             isAutopsied: l.is_autopsied || false,
             endorsementCount: 0,

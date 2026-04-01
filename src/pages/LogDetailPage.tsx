@@ -26,7 +26,7 @@ export default function LogDetailPage() {
             const { data, error } = await supabase
                 .from('logs')
                 .select(`
-                    id, rating, review, pull_quote, drop_cap, is_spoiler, is_autopsied, autopsy, created_at,
+                    id, rating, review, pull_quote, drop_cap, editorial_header, is_spoiler, is_autopsied, autopsy, created_at,
                     user_id, film_id, film_title, poster_path, year, status,
                     profiles!logs_user_id_fkey ( username, role, preferences )
                 `)
@@ -59,6 +59,7 @@ export default function LogDetailPage() {
                 tags: [], // Deprecated concept
                 pullQuote: data.pull_quote || '',
                 dropCap: data.drop_cap || false,
+                editorialHeader: data.editorial_header || null,
                 isSpoiler: data.is_spoiler || false,
                 timestamp: new Date(data.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase(),
                 endorsementCount: count || 0,
