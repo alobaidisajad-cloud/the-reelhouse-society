@@ -196,23 +196,23 @@ const FeaturedReview = memo(function FeaturedReview() {
                 <div style={{
                     position: 'relative',
                     padding: IS_TOUCH ? '1.5rem 1.25rem' : '2rem 2.5rem',
-                    background: isArchivistCritique
-                        ? 'linear-gradient(180deg, rgba(139,105,20,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(139,105,20,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)'
+                    background: isPremiumCritique
+                        ? (isAuteurCritique ? 'linear-gradient(180deg, rgba(125,31,31,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(125,31,31,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)' : 'linear-gradient(180deg, rgba(139,105,20,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(139,105,20,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)')
                         : 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.95)',
-                    borderLeft: `${isArchivistCritique ? '3' : '2'}px solid ${isArchivistCritique ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
-                    borderTop: `1px solid rgba(139,105,20,${isArchivistCritique ? '0.18' : '0.1'})`,
+                    borderLeft: `${isPremiumCritique ? '3' : '2'}px solid ${isAuteurCritique ? 'rgba(180,45,45,0.5)' : isPremiumCritique ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
+                    borderTop: `1px solid rgba(139,105,20,${isPremiumCritique ? '0.18' : '0.1'})`,
                     borderBottom: '1px solid rgba(139,105,20,0.05)',
                     borderRight: '1px solid rgba(139,105,20,0.05)',
                     borderRadius: '0 8px 8px 0',
-                    boxShadow: isArchivistCritique
-                        ? '0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(196,150,26,0.1)'
+                    boxShadow: isPremiumCritique
+                        ? (isAuteurCritique ? '0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(180,45,45,0.1)' : '0 10px 30px rgba(0,0,0,0.55), inset 0 1px 0 rgba(196,150,26,0.1)')
                         : '0 10px 25px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.05)',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
                 }}>
-                    {/* Top shimmer line (animated for archivist) */}
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isArchivistCritique ? '2px' : '1px', zIndex: 2, background: isArchivistCritique ? 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)' : 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)', backgroundSize: isArchivistCritique ? '200% 100%' : undefined, animation: isArchivistCritique ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
+                    {/* Top shimmer line (animated for premium tiers) */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isPremiumCritique ? '2px' : '1px', zIndex: 2, background: isPremiumCritique ? (isAuteurCritique ? 'linear-gradient(90deg, transparent 0%, rgba(125,31,31,0.4) 30%, rgba(180,45,45,0.6) 50%, rgba(125,31,31,0.4) 70%, transparent 100%)' : 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)') : 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)', backgroundSize: isPremiumCritique ? '200% 100%' : undefined, animation: isPremiumCritique ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
                     {/* Spotlight quotation mark */}
                     <div style={{
                         position: 'absolute', top: '1.5rem', left: IS_TOUCH ? '-0.75rem' : '-1.5rem',

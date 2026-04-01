@@ -243,10 +243,10 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     </div>
 
                     <div style={{ position: 'relative', display: 'flex', justifyContent: 'center' }}>
-                        {isArchivistLog && log.film?.poster && (
-                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 180, height: 250, background: 'radial-gradient(ellipse, rgba(139,105,20,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+                        {isPremiumLog && log.film?.poster && (
+                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 180, height: 250, background: isAuteurLog ? 'radial-gradient(ellipse, rgba(125,31,31,0.12) 0%, transparent 70%)' : 'radial-gradient(ellipse, rgba(139,105,20,0.12) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
                         )}
-                        <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: isArchivistLog ? '1px solid rgba(196,150,26,0.35)' : '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: isArchivistLog ? '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.1)' : '0 20px 40px rgba(0,0,0,0.8)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s', zIndex: 1 }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 24px 48px rgba(0,0,0,0.9)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.8)' }}>
+                        <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '2px', overflow: 'hidden', border: isAuteurLog ? '1px solid rgba(180,45,45,0.35)' : isPremiumLog ? '1px solid rgba(196,150,26,0.35)' : '1px solid rgba(139,105,20,0.3)', position: 'relative', boxShadow: isAuteurLog ? '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(125,31,31,0.1)' : isPremiumLog ? '0 20px 40px rgba(0,0,0,0.8), 0 0 30px rgba(139,105,20,0.1)' : '0 20px 40px rgba(0,0,0,0.8)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s', zIndex: 1 }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.03)'; e.currentTarget.style.boxShadow = '0 24px 48px rgba(0,0,0,0.9)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 20px 40px rgba(0,0,0,0.8)' }}>
                             {log.film?.poster ? (
                                 <img src={tmdb.poster(log.film.poster, 'w185')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                             ) : (
@@ -426,7 +426,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         ✦ EDITORIAL
                     </div>
                 </div>
-            ) : isArchivistLog && log.film?.poster ? (
+            ) : isPremiumLog && log.film?.poster ? (
                 /* Atmospheric blurred poster backdrop for archivist cards without editorial header */
                 <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 60 : 70, overflow: 'hidden' }}>
                     <img
@@ -508,8 +508,8 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
 
                 {/* Pull Quote — Premium inline treatment */}
                 {log.pullQuote && (
-                    <div style={{ margin: '0.6rem 0', padding: '0.65rem 0.85rem', borderLeft: isArchivistLog ? '3px solid rgba(218,165,32,0.6)' : '3px solid var(--sepia)', background: isArchivistLog ? 'linear-gradient(90deg, rgba(139,105,20,0.06) 0%, transparent 60%)' : 'none', borderRadius: '0 2px 2px 0' }}>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.95rem' : '1.1rem', fontStyle: 'italic', color: isArchivistLog ? 'rgba(218,165,32,0.9)' : 'var(--sepia)', lineHeight: 1.35, textShadow: isArchivistLog ? '0 1px 8px rgba(139,105,20,0.15)' : 'none' }}>
+                    <div style={{ margin: '0.6rem 0', padding: '0.65rem 0.85rem', borderLeft: isAuteurLog ? '3px solid rgba(180,45,45,0.6)' : isPremiumLog ? '3px solid rgba(218,165,32,0.6)' : '3px solid var(--sepia)', background: isAuteurLog ? 'linear-gradient(90deg, rgba(125,31,31,0.06) 0%, transparent 60%)' : isPremiumLog ? 'linear-gradient(90deg, rgba(139,105,20,0.06) 0%, transparent 60%)' : 'none', borderRadius: '0 2px 2px 0' }}>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '0.95rem' : '1.1rem', fontStyle: 'italic', color: isAuteurLog ? 'rgba(180,45,45,0.9)' : isPremiumLog ? 'rgba(218,165,32,0.9)' : 'var(--sepia)', lineHeight: 1.35, textShadow: isPremiumLog ? (isAuteurLog ? '0 1px 8px rgba(125,31,31,0.15)' : '0 1px 8px rgba(139,105,20,0.15)') : 'none' }}>
                             « {log.pullQuote} »
                         </div>
                     </div>

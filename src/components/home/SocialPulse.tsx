@@ -85,8 +85,8 @@ const SocialPulse = memo(function SocialPulse() {
                         const cardStyle: React.CSSProperties = {
                             position: 'relative',
                             padding: 0,
-                            background: isArchivist
-                                ? 'linear-gradient(180deg, rgba(139,105,20,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(139,105,20,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)'
+                            background: isPremium
+                                ? (isAuteur ? 'linear-gradient(180deg, rgba(125,31,31,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(125,31,31,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)' : 'linear-gradient(180deg, rgba(139,105,20,0.07) 0%, transparent 30%), radial-gradient(ellipse at top right, rgba(139,105,20,0.035) 0%, transparent 60%), rgba(18,14,9,0.95)')
                                 : 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.95)',
                             borderLeft: `${isPremium ? '3' : '2'}px solid ${isAuteur ? 'rgba(180,45,45,0.5)' : isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`,
                             borderTop: `1px solid rgba(139,105,20,${isPremium ? '0.18' : '0.1'})`,
@@ -104,8 +104,8 @@ const SocialPulse = memo(function SocialPulse() {
 
                         const cardContent = (
                             <>
-                                {/* Top shimmer line (animated for archivist) */}
-                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isArchivist ? '2px' : '1px', zIndex: 2, background: isArchivist ? 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)' : `linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)`, backgroundSize: isArchivist ? '200% 100%' : undefined, animation: isArchivist ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
+                                {/* Top shimmer line (animated for premium tiers) */}
+                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: isPremium ? '2px' : '1px', zIndex: 2, background: isPremium ? (isAuteur ? 'linear-gradient(90deg, transparent 0%, rgba(125,31,31,0.4) 30%, rgba(180,45,45,0.6) 50%, rgba(125,31,31,0.4) 70%, transparent 100%)' : 'linear-gradient(90deg, transparent 0%, rgba(196,150,26,0.4) 30%, rgba(218,165,32,0.6) 50%, rgba(196,150,26,0.4) 70%, transparent 100%)') : `linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)`, backgroundSize: isPremium ? '200% 100%' : undefined, animation: isPremium ? 'premiumShimmer 4s ease-in-out infinite' : undefined }} />
 
                                 {/* Editorial Header Strip — Archivist Feature */}
                                 {act.editorialHeader ? (
@@ -122,7 +122,7 @@ const SocialPulse = memo(function SocialPulse() {
                                         {/* ✦ EDITORIAL badge */}
                                         <div style={{ position: 'absolute', top: '0.5rem', right: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.25em', color: 'rgba(218,165,32,0.85)', background: 'rgba(11,10,8,0.55)', backdropFilter: 'blur(6px)', padding: '0.2rem 0.4rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.2)' }}>✦ EDITORIAL</div>
                                     </div>
-                                ) : isArchivist && act.film?.poster_path ? (
+                                ) : isPremium && act.film?.poster_path ? (
                                     /* Atmospheric blurred poster strip for archivist cards without editorial header */
                                     <div style={{ position: 'relative', width: '100%', height: IS_TOUCH ? 50 : 60, overflow: 'hidden', borderBottom: '1px solid rgba(139,105,20,0.1)' }}>
                                         <img
@@ -140,7 +140,7 @@ const SocialPulse = memo(function SocialPulse() {
                                 {/* Header */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', paddingBottom: '0.8rem', borderBottom: '1px dashed rgba(139,105,20,0.2)' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--ash)', border: `1px solid ${isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
+                                        <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'var(--ash)', border: `1px solid ${isAuteur ? 'rgba(180,45,45,0.5)' : isArchivist ? 'rgba(196,150,26,0.5)' : 'var(--sepia)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
                                             <Buster size={14} mood={act.rating >= 4 ? 'smiling' : 'neutral'} />
                                         </div>
                                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.12em', color: 'var(--parchment)' }}>@{act.user}</span>
