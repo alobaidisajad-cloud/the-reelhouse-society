@@ -588,46 +588,46 @@ export default function UserProfilePage() {
 
                     return (
                         <div className="container" style={{ maxWidth: 1600, padding: IS_TOUCH ? '1.5rem 1rem 0' : '2rem 1rem 0' }}>
-                            <div style={{ maxWidth: IS_TOUCH ? 'none' : 450, margin: '0 auto' }}>
+                            <div style={{ maxWidth: 450, margin: '0 auto' }}>
                                 <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)', marginBottom: '1.25rem' }} />
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.3em', color: 'var(--sepia)', textAlign: 'center', marginBottom: '0.8rem', textShadow: '0 0 15px rgba(139,105,20,0.3)' }}>✦ RECENTLY WATCHED ✦</div>
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', textAlign: 'center', marginBottom: '0.75rem', textShadow: '0 0 15px rgba(139,105,20,0.3)' }}>✦ RECENTLY WATCHED ✦</div>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                                 {recentLogs.map((log: any) => (
                                     <Link
                                         key={log.id || log.filmId}
                                         to={`/film/${log.filmId}`}
-                                        style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}
+                                        style={{ textDecoration: 'none', display: 'block' }}
                                     >
                                         <div className={isArchivistPlus && profileUser?.role === 'archivist' ? 'archivist-card-glow' : ''} style={{
                                             position: 'relative',
                                             aspectRatio: '2/3',
-                                            borderRadius: '4px',
+                                            borderRadius: '6px',
                                             overflow: 'hidden',
                                             border: '1px solid rgba(139,105,20,0.2)',
-                                            boxShadow: '0 6px 20px rgba(0,0,0,0.4)',
+                                            boxShadow: '0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.1)',
                                             transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
                                         }}
-                                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 12px 30px rgba(0,0,0,0.6), 0 0 15px rgba(139,105,20,0.15)' }}
-                                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.4)' }}
+                                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'translateY(-4px)'; e.currentTarget.style.boxShadow = '0 15px 40px rgba(0,0,0,0.7), 0 0 20px rgba(139,105,20,0.2)' }}
+                                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.1)' }}
                                         >
                                             <img
                                                 src={`https://image.tmdb.org/t/p/w185${log.altPoster || log.poster}`}
                                                 alt={log.title}
                                                 loading="lazy"
-                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9 }}
                                             />
-                                            {/* Warm gradient overlay at bottom */}
-                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%', background: 'linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%)', pointerEvents: 'none' }} />
-                                            {/* Rating at bottom-left */}
+                                            {/* Bottom gradient for overlaid text */}
+                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '55%', background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 50%, transparent 100%)', pointerEvents: 'none' }} />
+                                            {/* Rating inside card */}
                                             {log.rating > 0 && (
                                                 <div style={{ position: 'absolute', bottom: '0.4rem', left: '0.4rem', zIndex: 1 }}>
                                                     <ReelRating value={log.rating} size="sm" />
                                                 </div>
                                             )}
-                                        </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.1rem' }}>
-                                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: IS_TOUCH ? '0.7rem' : '0.75rem', color: 'var(--parchment)', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{log.title}</div>
-                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)', opacity: 0.7 }}>{timeAgo(log.watchedDate || log.createdAt)}</div>
+                                            {/* Time ago inside card */}
+                                            <div style={{ position: 'absolute', bottom: '0.4rem', right: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.1em', color: 'var(--fog)', opacity: 0.8, zIndex: 1 }}>
+                                                {timeAgo(log.watchedDate || log.createdAt)}
+                                            </div>
                                         </div>
                                     </Link>
                                 ))}
