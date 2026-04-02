@@ -22,7 +22,8 @@ const SocialPulse = memo(function SocialPulse() {
                     id, film_id, film_title, poster_path, rating, review, status, watched_with, pull_quote, drop_cap, editorial_header, created_at, user_id,
                     profiles!logs_user_id_fkey ( username, role )
                 `)
-                .or('rating.gt.0,review.neq.')
+                .neq('review', '')
+                .not('review', 'is', null)
                 .order('created_at', { ascending: false })
                 .limit(6)
             return (data || []).map((log: any) => ({

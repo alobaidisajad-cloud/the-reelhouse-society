@@ -138,8 +138,8 @@ export default function FeedPage() {
         const { data, error } = await query
         if (error || !data?.length) return { items: [], hasNextPage: false }
         
-        // Filter out simple "watched" logs—only broadcast reviews/ratings to the feed
-        const publicData = data.filter((l: any) => l.rating > 0 || (l.review && l.review.trim() !== ''))
+        // Filter out simple "watched" logs—only broadcast actual written reviews to the feed
+        const publicData = data.filter((l: any) => l.review && l.review.trim() !== '')
         return { items: mapLogsToFeed(publicData), hasNextPage: data.length === 20 }
     }
 
