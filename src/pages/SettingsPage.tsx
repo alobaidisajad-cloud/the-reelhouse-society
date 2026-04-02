@@ -542,8 +542,10 @@ export default function SettingsPage() {
                                 </div>
                             )}
                             {importResult.errors.length > 0 && (
-                                <div style={{ marginTop: '0.5rem', fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: 'rgba(162,36,36,0.8)', fontStyle: 'italic' }}>
-                                    {importResult.errors.slice(0, 3).join(' · ')}
+                                <div style={{ marginTop: '0.5rem', fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: 'rgba(162,36,36,0.8)', fontStyle: 'italic', maxHeight: '120px', overflowY: 'auto' }}>
+                                    {importResult.errors.map((err, i) => (
+                                        <div key={i} style={{ marginBottom: '0.25rem' }}>• {err}</div>
+                                    ))}
                                 </div>
                             )}
                             <button
