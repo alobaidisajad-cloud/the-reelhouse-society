@@ -23,7 +23,7 @@ export default function ListDetailPage() {
     const [isDeleting, setIsDeleting] = useState(false)
     const [showShareLounge, setShowShareLounge] = useState(false)
     const isArchivist = currentUser && ['archivist', 'auteur', 'projectionist'].includes((currentUser as any).role)
-    const isAuteurRole = (currentUser as any)?.role === 'auteur'
+    const isAuteurRole = (currentUser as any)?.role === 'auteur' || (currentUser as any)?.role === 'projectionist'
 
 
 
