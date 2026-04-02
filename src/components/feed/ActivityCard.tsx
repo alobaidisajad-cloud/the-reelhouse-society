@@ -345,37 +345,57 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     </div>
                 )}
 
-                {/* ── Screening Room Video — Cinematic Player ── */}
+                {/* ── The Screening Room — Cinematic Video Theater ── */}
                 {hasVideoReview && (
-                    <div style={{ marginTop: '1.5rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(196,135,42,0.15), rgba(162,36,36,0.15))', border: '1px solid rgba(196,135,42,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#c4872a" strokeWidth="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <div style={{ marginTop: '2rem', position: 'relative' }}>
+                        {/* Warm ambient glow behind the theater */}
+                        <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '120%', height: '120%', background: 'radial-gradient(ellipse at center, rgba(196,135,42,0.06) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                        
+                        {/* Section Header — Ornamental */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1rem', marginBottom: '1.25rem', position: 'relative', zIndex: 1 }}>
+                            <div style={{ flex: 1, maxWidth: 80, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(196,135,42,0.4))' }} />
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.2rem' }}>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.35em', color: 'rgba(196,135,42,0.5)' }}>◎ PROJECTIONIST EXCLUSIVE</span>
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', letterSpacing: '0.08em', color: '#c4872a', textShadow: '0 0 20px rgba(196,135,42,0.25)' }}>The Screening Room</span>
                             </div>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.2em', color: '#c4872a' }}>THE SCREENING ROOM</span>
-                            <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(196,135,42,0.3), transparent)' }} />
+                            <div style={{ flex: 1, maxWidth: 80, height: '1px', background: 'linear-gradient(90deg, rgba(196,135,42,0.4), transparent)' }} />
                         </div>
-                        <div style={{
-                            position: 'relative', borderRadius: '8px', overflow: 'hidden',
-                            border: '1px solid rgba(196,135,42,0.2)',
-                            boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 40px rgba(196,135,42,0.06)',
-                        }}>
-                            <video
-                                src={log.videoUrl}
-                                controls
-                                preload="metadata"
-                                playsInline
-                                style={{ width: '100%', maxHeight: '420px', display: 'block', background: '#000', borderRadius: '8px' }}
-                            />
-                            <div style={{
-                                position: 'absolute', top: 8, right: 8,
-                                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
-                                border: '1px solid rgba(196,135,42,0.3)',
-                                padding: '0.2rem 0.5rem', borderRadius: '3px',
-                                display: 'flex', alignItems: 'center', gap: '0.25rem', pointerEvents: 'none',
-                            }}>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.12em', color: '#c4872a' }}>◎ VIDEO REVIEW</span>
+
+                        {/* Theater Frame */}
+                        <div style={{ position: 'relative', zIndex: 1, borderRadius: '4px', overflow: 'hidden', background: '#000' }}>
+                            {/* Top film perforation strip */}
+                            <div style={{ height: 14, background: '#0a0806', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, borderBottom: '1px solid rgba(196,135,42,0.12)' }}>
+                                {Array.from({ length: 28 }).map((_, i) => (
+                                    <div key={i} style={{ width: 6, height: 4, borderRadius: '1px', background: 'rgba(196,135,42,0.15)' }} />
+                                ))}
                             </div>
+
+                            {/* Video */}
+                            <div style={{ position: 'relative' }}>
+                                <video
+                                    src={log.videoUrl}
+                                    controls
+                                    preload="metadata"
+                                    playsInline
+                                    style={{ width: '100%', maxHeight: '460px', display: 'block', background: '#000' }}
+                                />
+                                {/* Film grain overlay */}
+                                <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.015) 2px, rgba(0,0,0,0.015) 4px)', pointerEvents: 'none', mixBlendMode: 'multiply' }} />
+                                {/* Subtle vignette */}
+                                <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 80px rgba(0,0,0,0.4)', pointerEvents: 'none' }} />
+                            </div>
+
+                            {/* Bottom film perforation strip */}
+                            <div style={{ height: 14, background: '#0a0806', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, borderTop: '1px solid rgba(196,135,42,0.12)' }}>
+                                {Array.from({ length: 28 }).map((_, i) => (
+                                    <div key={i} style={{ width: 6, height: 4, borderRadius: '1px', background: 'rgba(196,135,42,0.15)' }} />
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Footer credit line */}
+                        <div style={{ textAlign: 'center', marginTop: '0.6rem' }}>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.3rem', letterSpacing: '0.3em', color: 'rgba(196,135,42,0.35)' }}>PRESENTED BY THE REELHOUSE SOCIETY · SCREENING ROOM</span>
                         </div>
                     </div>
                 )}
@@ -626,17 +646,38 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
 
                 {/* ── Screening Room Video (Compact) ── */}
                 {hasVideoReview && (
-                    <div onClick={e => e.stopPropagation()} style={{ marginTop: '0.75rem', position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(196,135,42,0.2)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
-                        <video
-                            src={log.videoUrl}
-                            controls
-                            preload="metadata"
-                            playsInline
-                            style={{ width: '100%', maxHeight: IS_TOUCH ? '200px' : '240px', display: 'block', background: '#000', borderRadius: '6px' }}
-                        />
-                        <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(196,135,42,0.3)', padding: '0.15rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem', pointerEvents: 'none' }}>
-                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#c4872a" strokeWidth="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.3rem', letterSpacing: '0.12em', color: '#c4872a' }}>VIDEO REVIEW</span>
+                    <div onClick={e => e.stopPropagation()} style={{ marginTop: '0.75rem' }}>
+                        {/* Mini header */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                            <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#c4872a', boxShadow: '0 0 6px rgba(196,135,42,0.5)' }} />
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.65rem', letterSpacing: '0.08em', color: '#c4872a' }}>The Screening Room</span>
+                            <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(196,135,42,0.25), transparent)' }} />
+                        </div>
+                        {/* Theater frame */}
+                        <div style={{ borderRadius: '4px', overflow: 'hidden', background: '#000' }}>
+                            {/* Film perforations top */}
+                            <div style={{ height: 10, background: '#0a0806', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderBottom: '1px solid rgba(196,135,42,0.1)' }}>
+                                {Array.from({ length: 20 }).map((_, i) => (
+                                    <div key={i} style={{ width: 5, height: 3, borderRadius: '1px', background: 'rgba(196,135,42,0.12)' }} />
+                                ))}
+                            </div>
+                            <div style={{ position: 'relative' }}>
+                                <video
+                                    src={log.videoUrl}
+                                    controls
+                                    preload="metadata"
+                                    playsInline
+                                    style={{ width: '100%', maxHeight: IS_TOUCH ? '200px' : '240px', display: 'block', background: '#000' }}
+                                />
+                                {/* Film grain + vignette */}
+                                <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 50px rgba(0,0,0,0.35)', pointerEvents: 'none' }} />
+                            </div>
+                            {/* Film perforations bottom */}
+                            <div style={{ height: 10, background: '#0a0806', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, borderTop: '1px solid rgba(196,135,42,0.1)' }}>
+                                {Array.from({ length: 20 }).map((_, i) => (
+                                    <div key={i} style={{ width: 5, height: 3, borderRadius: '1px', background: 'rgba(196,135,42,0.12)' }} />
+                                ))}
+                            </div>
                         </div>
                     </div>
                 )}
