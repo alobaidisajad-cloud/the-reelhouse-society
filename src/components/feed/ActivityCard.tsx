@@ -374,7 +374,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
 
                 {/* ── The Screening Room ── */}
                 {hasVideoReview && (
-                    <div style={{ marginTop: '1.5rem' }}>
+                    <div onClick={e => e.stopPropagation()} style={{ marginTop: '1.5rem' }}>
                         <ScreeningRoomPlayer src={log.videoUrl} filmTitle={log.film?.title} />
                     </div>
                 )}
