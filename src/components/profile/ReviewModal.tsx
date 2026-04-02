@@ -270,6 +270,56 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                         </div>
                     )}
 
+                    {/* ── Screening Room Video ── */}
+                    {viewLog.videoUrl && (
+                        <div style={{ position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.2em', color: '#c4872a', opacity: 0.9 }}>◎ THE SCREENING ROOM</span>
+                                <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(196,135,42,0.3), transparent)' }} />
+                            </div>
+                            <div style={{
+                                position: 'relative',
+                                borderRadius: '8px',
+                                overflow: 'hidden',
+                                border: '1px solid rgba(196,135,42,0.25)',
+                                boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 30px rgba(196,135,42,0.08)',
+                            }}>
+                                <video
+                                    src={viewLog.videoUrl}
+                                    controls
+                                    preload="metadata"
+                                    playsInline
+                                    style={{
+                                        width: '100%',
+                                        maxHeight: '340px',
+                                        display: 'block',
+                                        background: '#000',
+                                        borderRadius: '8px',
+                                    }}
+                                />
+                                {/* Screening badge */}
+                                <div style={{
+                                    position: 'absolute', top: 8, right: 8,
+                                    background: 'rgba(0,0,0,0.75)',
+                                    backdropFilter: 'blur(10px)',
+                                    border: '1px solid rgba(196,135,42,0.3)',
+                                    padding: '0.2rem 0.5rem',
+                                    borderRadius: '3px',
+                                    display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                    pointerEvents: 'none',
+                                }}>
+                                    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#c4872a" strokeWidth="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                                    <span style={{
+                                        fontFamily: 'var(--font-ui)', fontSize: '0.35rem',
+                                        letterSpacing: '0.15em', color: '#c4872a',
+                                    }}>
+                                        VIDEO REVIEW
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* ── Pull Quote ── */}
                     {viewLog.pullQuote && (
                         <div style={{ position: 'relative', padding: '1rem 1.25rem', background: 'rgba(196,150,26,0.04)', borderRadius: '0 4px 4px 0', borderLeft: '3px solid', borderImage: 'linear-gradient(180deg, rgba(218,165,32,0.7), rgba(139,105,20,0.3)) 1' }}>

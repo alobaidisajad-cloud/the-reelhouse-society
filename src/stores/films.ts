@@ -234,6 +234,7 @@ export const useFilmStore = create<FilmState>()(
                         editorialHeader: dbLog.editorial_header || null,
                         dropCap: dbLog.drop_cap || false,
                         pullQuote: dbLog.pull_quote || '',
+                        videoUrl: dbLog.video_url || null,
                         createdAt: dbLog.created_at,
                     })),
                 })
@@ -364,6 +365,7 @@ export const useFilmStore = create<FilmState>()(
                     is_autopsied: log.isAutopsied || false, autopsy: log.autopsy || null,
                     alt_poster: log.altPoster || null, editorial_header: log.editorialHeader || null,
                     drop_cap: log.dropCap || false, pull_quote: log.pullQuote || '',
+                    video_url: log.videoUrl || null,
                     format: log.physicalMedia || 'Digital',
                 }]).select().single()
 
@@ -461,6 +463,7 @@ export const useFilmStore = create<FilmState>()(
                 if (updates.dropCap !== undefined) dbUpdates.drop_cap = updates.dropCap
                 if (updates.editorialHeader !== undefined) dbUpdates.editorial_header = updates.editorialHeader
                 if (updates.altPoster !== undefined) dbUpdates.alt_poster = updates.altPoster
+                if (updates.videoUrl !== undefined) dbUpdates.video_url = updates.videoUrl
                 const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id)
                 if (!error) {
                     set((state) => ({ logs: state.logs.map((l) => l.id === id ? { ...l, ...updates } : l) }))

@@ -145,9 +145,11 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     }
 
     // ── Premium Tier Detection (shared by both views) ──
-    const isAuteurLog = log.userRole === 'auteur'
+    const isAuteurLog = log.userRole === 'auteur' || log.userRole === 'projectionist'
     const isArchivistLog = log.userRole === 'archivist'
+    const isProjectionistLog = log.userRole === 'projectionist'
     const hasEditorialFeatures = !!(log.editorialHeader || log.dropCap || log.pullQuote)
+    const hasVideoReview = !!(log as any).video_url || !!(log as any).videoUrl
     const isPremiumLog = isArchivistLog || isAuteurLog || hasEditorialFeatures
 
     // ── EXPANDED FOCUS VIEW (CINEMATIC LAYOUT) ──
@@ -187,6 +189,8 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                                         </Link>
                                         {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
                                         {log.userRole === 'auteur' && <span className="reel-auteur-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>★ AUTEUR</span>}
+                                        {isProjectionistLog && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: '#c4872a', background: 'rgba(196,135,42,0.12)', border: '1px solid rgba(196,135,42,0.3)', padding: '0.1rem 0.5rem', borderRadius: '2px' }}>◎ PROJECTIONIST</span>}
+                                        {hasVideoReview && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.12em', color: '#c4872a', background: 'rgba(196,135,42,0.08)', border: '1px solid rgba(196,135,42,0.25)', padding: '0.1rem 0.5rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem' }}>🎬 VIDEO</span>}
                                     </div>
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'rgba(232,223,200,0.5)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
                                         {log.timestamp || 'RECENT'}

@@ -263,7 +263,6 @@ export default function MembershipPage() {
 
                     {/* The Creator Tier */}
                     <motion.div variants={itemVariants as any} className="card card-tier tier-card tier-card--projectionist">
-                        <div className="new-badge">COMING SOON</div>
 
                         <h3 className="tier-name tier-name--projectionist">The<br/>Projectionist</h3>
                         <div className="tier-label tier-label--projectionist">CREATOR ECONOMY</div>

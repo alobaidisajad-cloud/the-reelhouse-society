@@ -66,6 +66,7 @@ export interface FilmLog {
     autopsy?: string | null
     editorialHeader?: string | null
     dropCap?: boolean
+    videoUrl?: string | null
 }
 
 // ── Watchlist ──

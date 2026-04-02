@@ -6,6 +6,7 @@ import { tmdb } from '../../tmdb'
 import { ReelRating } from '../UI'
 import EditorialDesk from './EditorialDesk'
 import AuteurToolkit from './AuteurToolkit'
+import ScreeningRoom from './ScreeningRoom'
 import LogDateSelector from './LogDateSelector'
 import LogReviewEditor from './LogReviewEditor'
 import LogActionRow from './LogActionRow'
@@ -51,6 +52,7 @@ export default function LogForm({ film }: { film: any }) {
     const [availableBackdrops, setAvailableBackdrops] = useState<any[]>([])
     const [autopsyOpen, setAutopsyOpen] = useState(false)
     const [isAutopsied, setIsAutopsied] = useState(false)
+    const [videoUrl, setVideoUrl] = useState<string | null>(null)
     const [moreOpen, setMoreOpen] = useState(() => typeof window !== 'undefined' && window.matchMedia('(any-pointer: coarse)').matches)
     const [calendarOpen, setCalendarOpen] = useState(false)
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -58,6 +60,7 @@ export default function LogForm({ film }: { film: any }) {
 
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur' || user?.role === 'projectionist'
     const isAuteur = user?.role === 'auteur' || user?.role === 'projectionist'
+    const isProjectionist = user?.role === 'projectionist'
 
     useEffect(() => {
         if (film && isPremium) {
@@ -99,6 +102,7 @@ export default function LogForm({ film }: { film: any }) {
                 setPullQuote(existingLog.pullQuote || '')
                 setIsAutopsied(existingLog.isAutopsied || false)
                 setAutopsyOpen(existingLog.isAutopsied || false)
+                setVideoUrl(existingLog.videoUrl || null)
                 setMoreOpen(!!(existingLog.watchedWith || existingLog.privateNotes || (existingLog.physicalMedia && existingLog.physicalMedia !== 'None')))
             }
         }
@@ -168,7 +172,8 @@ export default function LogForm({ film }: { film: any }) {
             autopsy: isPremium && isAutopsied ? autopsy : null,
             editorialHeader: isPremium ? editorialHeader : null,
             dropCap: isPremium ? dropCap : false,
-            pullQuote: isPremium ? pullQuote : undefined
+            pullQuote: isPremium ? pullQuote : undefined,
+            videoUrl: isProjectionist ? videoUrl : null,
         }
 
         setSubmitting(true)
@@ -363,6 +368,15 @@ export default function LogForm({ film }: { film: any }) {
                 availablePosters={availablePosters}
                 onUpgrade={() => { closeLogModal(); navigate('/patronage') }}
             />
+            )}
+
+            {/* Screening Room — Projectionist Exclusive Video Reviews */}
+            {isProjectionist && status !== 'abandoned' && (
+                <ScreeningRoom
+                    videoUrl={videoUrl}
+                    setVideoUrl={setVideoUrl}
+                    filmId={film.id}
+                />
             )}
 
             {/* Physical Media */}
