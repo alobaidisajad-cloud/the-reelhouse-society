@@ -239,12 +239,12 @@ const FeaturedReview = memo(function FeaturedReview() {
                         {displayReview.text.replace(/<[^>]+>/g, '').length > 280 ? displayReview.text.replace(/<[^>]+>/g, '').slice(0, 280) + '…' : displayReview.text.replace(/<[^>]+>/g, '')}
                     </p>
 
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem', alignItems: 'center', paddingTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>
                             <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--ash)', border: '1px solid var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 5px rgba(0,0,0,0.5)' }}>
                                 <Buster size={16} mood="smiling" />
                             </div>
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.2em', color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.2em', color: 'var(--bone)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                                 {displayReview.author.toUpperCase()}
                                 {featuredCritique?.authorRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.38rem' }}>✦ ARCHIVIST</span>}
                                 {featuredCritique?.authorRole === 'auteur' && <span className="reel-auteur-badge" style={{ fontSize: '0.38rem' }}>★ AUTEUR</span>}

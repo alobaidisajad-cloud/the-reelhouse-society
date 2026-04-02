@@ -48,6 +48,31 @@
   .page-top {
     animation: page-fade 0.25s ease-out;
   }
+
+  /* ═══════════════════════════════════════════
+     THE NATIVE APP ENGINE OVERRIDES
+     ═══════════════════════════════════════════ */
+  
+  /* 1. UI Element Touch-Locking (Surgical Precision)
+     Disables the ugly blue text highlight when tapping UI elements quickly. */
+  .bottom-nav, .navbar, .nav-actions, .mobile-menu, .nav-mobile-toggle,
+  .btn, .tag, .filter-tabs, .profile-tabs, [data-modal], .modal-panel {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+  }
+
+  /* 2. Zero-Delay Touch Execution (Anti-Zoom)
+     Tells Safari "Do not wait 300ms to check for double-tap-to-zoom".
+     Results in instant, hardware-level tap registration. */
+  button, a, .btn, .card-film, .nav-link, input, select, textarea {
+    touch-action: manipulation !important;
+  }
+
+  /* 3. Killing the Browser "Hold-to-Save" Image Hijack
+     Disables Apple/Android default popups when holding a thumb on a movie poster or logo. */
+  .card-film img, .hero-grid, .nav-logo {
+    -webkit-touch-callout: none !important;
+  }
 }
 
 /* ── Touch interaction improvements ── */
@@ -102,10 +127,17 @@
 @media (max-width: 768px) {
 
   /* === CORE LAYOUT === */
-  .navbar-inner { padding: 0 1rem; height: 56px; }
-  .search-bar { top: 56px; padding: 0.6rem 1rem; }
+  .navbar-inner { 
+    padding-left: max(1rem, env(safe-area-inset-left)); 
+    padding-right: max(1.25rem, env(safe-area-inset-right)); 
+    height: 56px; 
+  }
+  .search-bar { top: 56px; padding: 0.6rem max(1rem, env(safe-area-inset-right)); }
   .page-top { padding-top: 56px !important; }
-  .container { padding: 0 1rem !important; }
+  .container { 
+    padding-left: max(1rem, env(safe-area-inset-left)) !important; 
+    padding-right: max(1rem, env(safe-area-inset-right)) !important; 
+  }
 
   /* Prevent ANY horizontal page scrolling */
   html, body { overflow-x: hidden !important; }
@@ -404,7 +436,10 @@
   .dispatch-writer-bar .wb-content { padding: 0 1rem !important; }
 
   /* === FOOTER === */
-  footer .container { padding: 0 1rem !important; }
+  footer .container { 
+    padding-left: max(1rem, env(safe-area-inset-left)) !important; 
+    padding-right: max(1rem, env(safe-area-inset-right)) !important; 
+  }
   footer .container > div:first-child { display: none !important; }
   footer a { min-height: 44px; display: inline-flex; align-items: center; }
 
