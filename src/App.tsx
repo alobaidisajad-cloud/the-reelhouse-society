@@ -56,7 +56,7 @@ const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const YearInCinemaPage = lazy(() => import('./pages/YearInCinemaPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
 const DebugPanel = lazy(() => import('./pages/DebugPanel'))
-const StudioPage = lazy(() => import('./pages/StudioPage'))
+
 const LogDetailPage = lazy(() => import('./pages/LogDetailPage'))
 const TribunalPage = lazy(() => import('./pages/TribunalPage'))
 const PrivacyPolicyPage = lazy(() => import('./pages/PrivacyPolicyPage'))
@@ -288,7 +288,7 @@ export default function App() {
               <Route path="/year-in-cinema" element={<ErrorBoundary key="yic"><PageWrapper><YearInCinemaPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/settings" element={<ErrorBoundary key="settings"><PageWrapper><SettingsPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/admin" element={<ErrorBoundary key="admin"><PageWrapper><DebugPanel /></PageWrapper></ErrorBoundary>} />
-              <Route path="/studio" element={<ErrorBoundary key="studio"><PageWrapper><StudioPage /></PageWrapper></ErrorBoundary>} />
+
               <Route path="/tribunal" element={<ErrorBoundary key="tribunal"><PageWrapper><TribunalPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/privacy" element={<ErrorBoundary key="privacy"><PageWrapper><PrivacyPolicyPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/terms" element={<ErrorBoundary key="terms"><PageWrapper><TermsOfServicePage /></PageWrapper></ErrorBoundary>} />

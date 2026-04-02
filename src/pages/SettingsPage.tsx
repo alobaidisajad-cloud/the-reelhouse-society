@@ -10,7 +10,7 @@ import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
-import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft, Upload, CheckCircle, AlertCircle } from 'lucide-react'
+import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft, Upload, CheckCircle, AlertCircle, Crown } from 'lucide-react'
 import { subscribeToWebPush } from '../utils/push'
 import { importLetterboxdZip } from '../utils/letterboxdImport'
 import { useFilmStore } from '../store'
@@ -237,6 +237,69 @@ export default function SettingsPage() {
                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
                         Avatar, Bio, Username, Social Links →
                     </span>
+                </div>
+            </div>
+
+            {/* ═══════════════════════════════════════════ */}
+            {/*   PATRONAGE & BILLING                      */}
+            {/* ═══════════════════════════════════════════ */}
+            <div className="settings-section">
+                <div className="settings-section-header">
+                    <Crown size={14} /> PATRONAGE & BILLING
+                </div>
+
+                {/* Current Tier */}
+                <div className="settings-field">
+                    <label className="settings-label">YOUR RANK</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <span style={{
+                            fontFamily: 'var(--font-display)', fontSize: '1rem',
+                            color: (user.role === 'auteur') ? '#7d1f1f' : (user.role === 'archivist') ? 'var(--sepia)' : 'var(--fog)',
+                            textTransform: 'uppercase',
+                        }}>
+                            {(user.role === 'auteur') ? '★ Auteur' : (user.role === 'archivist') ? '✦ Archivist' : 'Cinephile'}
+                        </span>
+                        {(user.role === 'auteur' || user.role === 'archivist') && (
+                            <span style={{
+                                fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em',
+                                color: 'var(--sepia)', background: 'rgba(196,150,26,0.08)',
+                                border: '1px solid rgba(196,150,26,0.3)', padding: '0.15rem 0.5rem', borderRadius: '2px',
+                            }}>
+                                ACTIVE
+                            </span>
+                        )}
+                    </div>
+                </div>
+
+                {/* Upgrade / Manage */}
+                <div className="settings-field" style={{ borderTop: '1px solid rgba(139,105,20,0.08)', paddingTop: '1rem' }}>
+                    {(!user.role || user.role === 'cinephile' || user.role === 'free') ? (
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: '0.75rem', lineHeight: 1.6 }}>
+                                Unlock The Editorial Desk, The Physical Archive, The Lounge, and more by upgrading your patronage.
+                            </div>
+                            <button className="btn btn-primary" onClick={() => navigate('/patronage')} style={{ fontSize: '0.7rem', padding: '0.7rem 1.5rem' }}>
+                                UPGRADE YOUR RANK
+                            </button>
+                        </div>
+                    ) : user.role === 'archivist' ? (
+                        <div>
+                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', marginBottom: '0.75rem', lineHeight: 1.6 }}>
+                                You're an Archivist. Upgrade to Auteur for radar breakdowns, curatorial poster control, and the gold Dispatch badge.
+                            </div>
+                            <button className="btn btn-primary" onClick={() => navigate('/patronage')} style={{ fontSize: '0.7rem', padding: '0.7rem 1.5rem' }}>
+                                UPGRADE TO AUTEUR
+                            </button>
+                        </div>
+                    ) : (
+                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', lineHeight: 1.6 }}>
+                            You hold the highest rank in The Society. All features are unlocked.
+                        </div>
+                    )}
+                </div>
+
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.75rem', opacity: 0.5 }}>
+                    PAYMENTS PROCESSED SECURELY VIA PAYTABS · MANAGE BILLING AT PATRONAGE
                 </div>
             </div>
 

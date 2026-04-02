@@ -222,7 +222,7 @@ describe('Store Resilience Patterns', () => {
         // Simulate the per-tier state pattern used in MembershipPage
         let archivistEmail = ''
         let auteurEmail = ''
-        let projectionistEmail = ''
+        let AUTEUREmail = ''
 
         // User types in Archivist input
         archivistEmail = 'user@test.com'
@@ -233,6 +233,6 @@ describe('Store Resilience Patterns', () => {
         // Archivist email should NOT be affected
         expect(archivistEmail).toBe('user@test.com')
         expect(auteurEmail).toBe('other@test.com')
-        expect(projectionistEmail).toBe('')
+        expect(AUTEUREmail).toBe('')
     })
 })

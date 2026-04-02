@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
-import { Crown, Star, Upload, Video } from 'lucide-react'
+import { Crown, Star, Upload } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import CSVImport from '../components/CSVImport'
@@ -29,37 +29,23 @@ export default function MembershipPage() {
     }
 
     const [isRedirecting, setIsRedirecting] = useState(false)
-    // Per-tier email state — each input is independent so typing in one never clears another
-    const [archivistEmail, setArchivistEmail] = useState('')
-    const [auteurEmail, setAuteurEmail] = useState('')
-    const [projectionistEmail, setProjectionistEmail] = useState('')
-    // Per-tier waitlist flags — submitting one tier's form doesn't hide the others
-    const [archivistWaitlistSent, setArchivistWaitlistSent] = useState(false)
-    const [auteurWaitlistSent, setAuteurWaitlistSent] = useState(false)
-    const [projectionistWaitlistSent, setProjectionistWaitlistSent] = useState(false)
 
     // Role detection for "YOUR CURRENT RANK" badges
     const userRole = user?.role as string
     const isCurrentArchivist = userRole === 'archivist'
     const isCurrentAuteur = userRole === 'auteur'
-    const isCurrentProjectionist = userRole === 'projectionist'
 
-    const handleWaitlist = async (tier: string, email: string) => {
-        const trimmed = email.trim()
-        if (!trimmed || !trimmed.includes('@')) {
-            toast.error('Enter a valid email address.')
-            return
-        }
+    const handleCheckout = async (tier: string) => {
+        if (!isAuthenticated || !user) { openSignupModal(tier); return }
+        setIsRedirecting(true)
         try {
-            setIsRedirecting(true)
-            await supabase.from('waitlist').insert({ email: trimmed, tier, created_at: new Date().toISOString() })
-            toast.success('You\'re on the list. We\'ll be in touch.', { icon: '✦' })
-            if (tier === 'archivist') setArchivistWaitlistSent(true)
-            else if (tier === 'auteur') setAuteurWaitlistSent(true)
-            else if (tier === 'projectionist') setProjectionistWaitlistSent(true)
-        } catch {
-            toast.error('Something went wrong. Try again.')
-        } finally {
+            const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {
+                body: { checkout_type: 'membership', user_id: user.id, tier }
+            })
+            if (error || !data?.redirect_url) throw error
+            window.location.href = data.redirect_url
+        } catch (err) {
+            toast.error('Checkout unavailable right now. Try again.')
             setIsRedirecting(false)
         }
     }
@@ -168,29 +154,15 @@ export default function MembershipPage() {
 
                         {isAuthenticated && isCurrentArchivist ? (
                             <div className="current-rank" style={{ borderColor: 'var(--sepia)', color: 'var(--sepia)' }}>✦ YOUR CURRENT RANK ✦</div>
-                        ) : archivistWaitlistSent ? (
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
-                                ✦ YOU'RE ON THE LIST ✦
-                            </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
-                                <input
-                                    type="email"
-                                    className="input"
-                                    placeholder="your@email.com"
-                                    value={archivistEmail}
-                                    onChange={e => setArchivistEmail(e.target.value)}
-                                    style={{ textAlign: 'center', fontSize: '0.75rem' }}
-                                />
-                                <button
-                                    className="btn btn-primary tier-btn"
-                                    style={{ opacity: isRedirecting ? 0.7 : 1 }}
-                                    disabled={isRedirecting}
-                                    onClick={() => handleWaitlist('archivist', archivistEmail)}
-                                >
-                                    {isRedirecting ? 'JOINING...' : 'JOIN THE ARCHIVIST WAITLIST'}
-                                </button>
-                            </div>
+                            <button
+                                className="btn btn-primary tier-btn"
+                                style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.75rem', letterSpacing: '0.2em', opacity: isRedirecting ? 0.7 : 1 }}
+                                disabled={isRedirecting}
+                                onClick={() => handleCheckout('archivist')}
+                            >
+                                {isRedirecting ? 'SECURING LEDGER...' : 'BECOME AN ARCHIVIST'}
+                            </button>
                         )}
                     </motion.div>
 
@@ -235,97 +207,15 @@ export default function MembershipPage() {
 
                         {isAuthenticated && isCurrentAuteur ? (
                             <div className="current-rank" style={{ borderColor: '#7d1f1f', color: '#7d1f1f' }}>★ YOUR CURRENT RANK ★</div>
-                        ) : auteurWaitlistSent ? (
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
-                                ✦ YOU'RE ON THE LIST ✦
-                            </div>
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
-                                <input
-                                    type="email"
-                                    className="input"
-                                    placeholder="your@email.com"
-                                    value={auteurEmail}
-                                    onChange={e => setAuteurEmail(e.target.value)}
-                                    style={{ textAlign: 'center', fontSize: '0.75rem' }}
-                                />
-                                <button
-                                    className="btn btn-primary tier-btn tier-btn--auteur"
-                                    style={{ opacity: isRedirecting ? 0.7 : 1 }}
-                                    disabled={isRedirecting}
-                                    onClick={() => handleWaitlist('auteur', auteurEmail)}
-                                >
-                                    {isRedirecting ? 'JOINING...' : 'JOIN THE AUTEUR WAITLIST'}
-                                </button>
-                            </div>
-                        )}
-                    </motion.div>
-
-                    {/* The Creator Tier */}
-                    <motion.div variants={itemVariants as any} className="card card-tier tier-card tier-card--projectionist">
-
-                        <h3 className="tier-name tier-name--projectionist">The<br/>Projectionist</h3>
-                        <div className="tier-label tier-label--projectionist">CREATOR ECONOMY</div>
-
-                        <div className="tier-price">
-                            <span className="price-currency">$</span>
-                            <span className="price-amount">9.99</span>
-                            <span className="price-period">/ MO</span>
-                        </div>
-                        <div className="price-billing">BILLED ANNUALLY ($99.99/YR)</div>
-
-                        <div className="tier-features tier-features--pro">
-                            <div className="tier-includes tier-includes--projectionist">Everything in Auteur, plus:</div>
-                            
-                            <div className="featured-feature featured-feature--projectionist">
-                                <div className="feature-dot feature-dot--projectionist" />
-                                <div>
-                                    <div className="featured-feature-title featured-feature-title--projectionist">The Screening<br/>Room</div>
-                                    <div className="featured-feature-desc">Upload video reviews up to 10 minutes in 1080p. Build your audience and earn directly from your critics.</div>
-                                </div>
-                            </div>
-
-                            {[
-                                'Video Upload Studio\n(Up to 10 Min / 1080p)', 
-                                'Audience Support &\nDirect Earnings', 
-                                'Creator Analytics\nDashboard', 
-                                'Priority Homepage\nPlacement', 
-                                'Exclusive "Projectionist"\nProfile Badge',
-                            ].map((feature, i) => (
-                                <div key={i} className="feature-item feature-item--pro">
-                                    <div className="projectionist-icon">
-                                        <Video size={8} color="#c4872a" />
-                                    </div>
-                                    <span className="feature-text">{feature}</span>
-                                </div>
-                            ))}
-                        </div>
-
-                        {isAuthenticated && isCurrentProjectionist ? (
-                            <div className="current-rank" style={{ borderColor: '#c4872a', color: '#c4872a' }}>◈ YOUR CURRENT RANK ◈</div>
-                        ) : projectionistWaitlistSent ? (
-                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', padding: '0.75rem 0' }}>
-                                ✦ YOU'RE ON THE LIST ✦
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%', marginTop: '0.5rem' }}>
-                                <input
-                                    type="email"
-                                    className="input"
-                                    placeholder="your@email.com"
-                                    value={projectionistEmail}
-                                    onChange={e => setProjectionistEmail(e.target.value)}
-                                    style={{ textAlign: 'center', fontSize: '0.75rem' }}
-                                />
-                                <button
-                                    className="btn btn-primary tier-btn tier-btn--projectionist"
-                                    style={{ opacity: isRedirecting ? 0.7 : 1 }}
-                                    disabled={isRedirecting}
-                                    onClick={() => handleWaitlist('projectionist', projectionistEmail)}
-                                >
-                                    {isRedirecting ? 'JOINING...' : 'JOIN THE PROJECTIONISTS'}
-                                </button>
-                            </div>
+                            <button
+                                className="btn btn-primary tier-btn tier-btn--auteur"
+                                style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.75rem', letterSpacing: '0.2em', opacity: isRedirecting ? 0.7 : 1 }}
+                                disabled={isRedirecting}
+                                onClick={() => handleCheckout('auteur')}
+                            >
+                                {isRedirecting ? 'SECURING LEDGER...' : 'BECOME AN AUTEUR'}
+                            </button>
                         )}
                     </motion.div>
                 </motion.div>

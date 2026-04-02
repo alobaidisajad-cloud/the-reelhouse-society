@@ -3,7 +3,7 @@ import { ReelRating } from '../UI'
 import { tmdb } from '../../tmdb'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { Link } from 'react-router-dom'
-import ScreeningRoomPlayer from '../ScreeningRoomPlayer'
+
 import { Portal } from '../UI'
 
 /**
@@ -27,7 +27,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
     const statusColor = viewLog.status === 'abandoned' ? 'var(--blood-reel)' : viewLog.status === 'rewatched' ? 'var(--flicker)' : 'var(--sepia)'
     const statusLabel = viewLog.status === 'watched' ? 'WATCHED' : viewLog.status === 'rewatched' ? '⟳ REWATCH' : '✕ ABANDONED'
     const isArchivistLog = profileUser?.role === 'archivist'
-    const isAuteurLog = profileUser?.role === 'auteur' || profileUser?.role === 'projectionist'
+    const isAuteurLog = profileUser?.role === 'auteur'
     const isPremiumLog = isArchivistLog || isAuteurLog || viewLog.editorialHeader || viewLog.dropCap || viewLog.pullQuote
 
     return (
@@ -152,7 +152,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                                 border: '1px solid rgba(180,45,45,0.3)',
                                 padding: '0.2rem 0.5rem', borderRadius: '3px',
                             }}>
-                                ★ {profileUser?.role === 'projectionist' ? 'PROJECTIONIST' : 'AUTEUR'}
+                                ★ AUTEUR
                             </div>
                         )}
 
@@ -271,10 +271,7 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                         </div>
                     )}
 
-                    {/* ── The Screening Room ── */}
-                    {viewLog.videoUrl && (
-                        <ScreeningRoomPlayer src={viewLog.videoUrl} filmTitle={viewLog.filmTitle} />
-                    )}
+
 
                     {/* ── Pull Quote ── */}
                     {viewLog.pullQuote && (

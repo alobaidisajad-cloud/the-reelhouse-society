@@ -324,7 +324,7 @@ export default function LoungePage() {
     const { myLounges, publicLounges, unreadCounts, fetchMyLounges, fetchPublicLounges, fetchUnreadCounts, searchQuery, setSearchQuery } = useLoungeStore()
     const [showCreate, setShowCreate] = useState(false)
 
-    const isArchivist = user?.role === 'archivist' || user?.role === 'auteur' || user?.role === 'projectionist'
+    const isArchivist = user?.role === 'archivist' || user?.role === 'auteur'
 
     // Gate for non-archivists
     if (!isAuthenticated || !isArchivist) {

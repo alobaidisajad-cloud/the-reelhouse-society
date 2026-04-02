@@ -24,7 +24,7 @@ interface VaultArchiveTabProps {
 
 export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archiveSieve, setArchiveSieve, archiveVisibleCount, setArchiveVisibleCount, archiveFilteredLogs, userRole }: VaultArchiveTabProps) {
     const isArchivist = userRole === 'archivist'
-    const isAuteur = userRole === 'auteur' || userRole === 'projectionist'
+    const isAuteur = userRole === 'auteur' || userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
     return (
         <div>
@@ -93,7 +93,7 @@ export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archive
 
 export function VaultWatchlistTab({ profileWatchlist, isOwnProfile, userRole }: { profileWatchlist: WatchlistItem[], isOwnProfile: boolean, userRole?: string }) {
     const isArchivist = userRole === 'archivist'
-    const isAuteur = userRole === 'auteur' || userRole === 'projectionist'
+    const isAuteur = userRole === 'auteur' || userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
     return (
         <div>

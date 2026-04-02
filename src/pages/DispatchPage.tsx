@@ -244,7 +244,7 @@ export default function DispatchPage() {
     const [showShareLounge, setShowShareLounge] = useState(false)
     const [localCertifyCount, setLocalCertifyCount] = useState(0)
     const [localViews, setLocalViews] = useState(0)
-    const isLoungeEligible = user && ['archivist', 'auteur', 'projectionist'].includes((user as any).role)
+    const isLoungeEligible = user && ['archivist', 'auteur'].includes((user as any).role)
 
     const handleCertify = async () => {
         if (!user || !selectedArticle?.id || selectedArticle.id.startsWith('seed-') || certifyLoading) return

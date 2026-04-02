@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 
 export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     const isMaster = stats.total_logs > 50
-    const isPremium = user?.role === 'archivist' || user?.role === 'auteur' || user?.role === 'projectionist'
+    const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
 
     const downloadCsv = async () => {
         if (!isPremium) {

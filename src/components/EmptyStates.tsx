@@ -198,7 +198,7 @@ export function EmptyReviews() {
             <Ornament />
             <p style={emptyStateStyles.title}>NO CRITICS HAVE SCREENED THIS</p>
             <p style={emptyStateStyles.subtitle}>
-                Be the first to share your take. The screening room is waiting for its first projectionist.
+                Be the first to share your take. The screening room is waiting for its first AUTEUR.
             </p>
         </div>
     )

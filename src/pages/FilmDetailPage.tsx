@@ -21,7 +21,7 @@ import DirectorPanel from '../components/film/DirectorPanel'
 import WatchProviders from '../components/film/WatchProviders'
 import CountryReleases from '../components/film/CountryReleases'
 import Poster from '../components/film/Poster'
-import CriticsBooth from '../components/film/CriticsBooth'
+
 import ShareToLoungeModal from '../components/ShareToLoungeModal'
 import type { SharePayload } from '../components/ShareToLoungeModal'
 
@@ -35,7 +35,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
     const [showExport, setShowExport] = useState(false)
     const [showShareLounge, setShowShareLounge] = useState(false)
     const user = useAuthStore((s: any) => s.user)
-    const isArchivist = user && ['archivist', 'auteur', 'projectionist'].includes(user.role)
+    const isArchivist = user && ['archivist', 'auteur'].includes(user.role)
     const isWatchlisted = watchlist.some((f: any) => f.id === film.id)
     const score = obscurityScore(film)
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
@@ -674,9 +674,7 @@ export default function FilmDetailPage() {
                     </button>
                     <FilmDetails film={film} onPlayVideo={handlePlayVideo} />
 
-                    <SectionErrorBoundary label="VIDEO REVIEWS">
-                        <CriticsBooth filmId={film.id} />
-                    </SectionErrorBoundary>
+
 
                     <SectionErrorBoundary label="SIMILAR FILMS">
                     {Array.isArray(similar) && similar.length > 0 && (

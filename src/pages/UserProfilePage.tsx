@@ -18,7 +18,7 @@ import { NoirPassport } from '../components/profile/NoirPassport'
 import { ProjectorRoom } from '../components/profile/ProjectorRoom'
 import { TicketBooth } from '../components/profile/TicketBooth'
 import { ProgrammesSection } from '../components/profile/ProgrammesSection'
-import { ProjectionistCalendar } from '../components/profile/ProjectionistCalendar'
+import { AUTEURCalendar } from '../components/profile/AUTEURCalendar'
 import { ProfileBackdrop, FilmLogRow, LazyLogRow, VaultSection, ListsSection } from '../components/profile/LedgerHelpers'
 import exportLogsCSV from '../components/profile/exportLogsCSV'
 import SocialModal from '../components/profile/SocialModal'
@@ -448,8 +448,8 @@ export default function UserProfilePage() {
     })
 
 
-    const isPremium = currentUser?.role === 'archivist' || currentUser?.role === 'auteur' || currentUser?.role === 'projectionist'
-    const isArchivistPlus = ['archivist', 'auteur', 'projectionist'].includes((profileUser as any)?.role || '')
+    const isPremium = currentUser?.role === 'archivist' || currentUser?.role === 'auteur'
+    const isArchivistPlus = ['archivist', 'auteur'].includes((profileUser as any)?.role || '')
 
     const TABS = [
         { id: 'diary', label: 'The Ledger', count: isOwnProfile ? filteredLogs.length : profileLogs.filter((l: any) => l.rating > 0 || (l.review && l.review.length > 0)).length },
@@ -645,7 +645,7 @@ export default function UserProfilePage() {
                                         to={`/film/${log.filmId}`}
                                         style={{ textDecoration: 'none', display: 'block' }}
                                     >
-                                        <div className={isArchivistPlus && profileUser?.role === 'archivist' ? 'archivist-card-glow' : isArchivistPlus && (profileUser?.role === 'auteur' || profileUser?.role === 'projectionist') ? 'auteur-card-glow' : ''} style={{
+                                        <div className={isArchivistPlus && profileUser?.role === 'archivist' ? 'archivist-card-glow' : isArchivistPlus && (profileUser?.role === 'auteur') ? 'auteur-card-glow' : ''} style={{
                                             position: 'relative',
                                             aspectRatio: '2/3',
                                             borderRadius: '6px',
@@ -874,10 +874,10 @@ export default function UserProfilePage() {
                                     <NoirPassport logs={profileLogs} />
                                 </div>
 
-                                {/* Section 7: Projectionist's Calendar */}
+                                {/* Section 7: AUTEUR's Calendar */}
                                 <div>
-                                    <SectionHeader label="VIEWING HISTORY" title="The Projectionist's Calendar" />
-                                    <ProjectionistCalendar {...{ logs: profileLogs, isPremium } as any} />
+                                    <SectionHeader label="VIEWING HISTORY" title="The AUTEUR's Calendar" />
+                                    <AUTEURCalendar {...{ logs: profileLogs, isPremium } as any} />
                                 </div>
 
                                 {isOwnProfile && currentProgrammes?.length > 0 && (

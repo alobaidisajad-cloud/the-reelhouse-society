@@ -16,7 +16,7 @@ interface TriptychFilm {
 
 export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, isOwnProfile: boolean, userRole?: string }) {
     const isArchivist = userRole === 'archivist'
-    const isAuteur = userRole === 'auteur' || userRole === 'projectionist'
+    const isAuteur = userRole === 'auteur' || userRole === 'auteur'
     const { updateUser } = useAuthStore()
     const favorites = (user?.preferences?.favorites as TriptychFilm[]) || []
     

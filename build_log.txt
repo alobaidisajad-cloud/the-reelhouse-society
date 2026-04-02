@@ -1,0 +1,51 @@
+﻿[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 419 modules transformed.
+node.exe : [31mΓ£ù[39m Build failed in 2.38s
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([31mΓ£ù[ 
+   39m Build failed in 2.38s:String) [], RemoteExcepti  
+  on
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[31merror during build:
+[31m[vite-plugin-pwa:build] [plugin 
+vite-plugin-pwa:build] src/styles/membership.css 
+(165:0): There was an error during the build:
+  [postcss] C:/Users/OMEN/OneDrive/Desktop/divisionops/r
+eelhouse/src/styles/membership.css:165:1: Unexpected }
+Additionally, handling the error in the 'buildEnd' hook 
+caused the following error:
+  [postcss] C:/Users/OMEN/OneDrive/Desktop/divisionops/r
+eelhouse/src/styles/membership.css:165:1: Unexpected 
+}[31m
+file: [36mC:/Users/OMEN/OneDrive/Desktop/divisionops/re
+elhouse/src/styles/membership.css:165:0[31m
+    at getRollupError (file:///C:/Users/OMEN/OneDrive/De
+sktop/divisionops/reelhouse/node_modules/rollup/dist/es/
+shared/parseAst.js:402:41)
+    at file:///C:/Users/OMEN/OneDrive/Desktop/divisionop
+s/reelhouse/node_modules/rollup/dist/es/shared/node-entr
+y.js:23467:39
+    at async catchUnfinishedHookActions (file:///C:/User
+s/OMEN/OneDrive/Desktop/divisionops/reelhouse/node_modul
+es/rollup/dist/es/shared/node-entry.js:22925:16)
+    at async rollupInternal (file:///C:/Users/OMEN/OneDr
+ive/Desktop/divisionops/reelhouse/node_modules/rollup/di
+st/es/shared/node-entry.js:23450:5)
+    at async buildEnvironment (file:///C:/Users/OMEN/One
+Drive/Desktop/divisionops/reelhouse/node_modules/vite/di
+st/node/chunks/config.js:33541:12)
+    at async Object.build (file:///C:/Users/OMEN/OneDriv
+e/Desktop/divisionops/reelhouse/node_modules/vite/dist/n
+ode/chunks/config.js:33900:19)
+    at async Object.buildApp (file:///C:/Users/OMEN/OneD
+rive/Desktop/divisionops/reelhouse/node_modules/vite/dis
+t/node/chunks/config.js:33897:153)
+    at async CAC.<anonymous> (file:///C:/Users/OMEN/OneD
+rive/Desktop/divisionops/reelhouse/node_modules/vite/dis
+t/node/cli.js:629:3)[39m

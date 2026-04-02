@@ -18,7 +18,7 @@ export default function PersonPage() {
     const { isTouch: IS_TOUCH } = useViewport()
     const [showShareLounge, setShowShareLounge] = useState(false)
     const user = useAuthStore((s: any) => s.user)
-    const isArchivist = user && ['archivist', 'auteur', 'projectionist'].includes(user.role)
+    const isArchivist = user && ['archivist', 'auteur'].includes(user.role)
 
     const { data: person, isLoading: loadingPerson } = useQuery({
         queryKey: ['person', id],

@@ -46,7 +46,7 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
         }
     }
 
-    const isAuteur = logs.length >= 20 || user?.role === 'auteur' || user?.role === 'archivist' || user?.role === 'projectionist'
+    const isAuteur = logs.length >= 20 || user?.role === 'auteur' || user?.role === 'archivist'
 
     return (
         <div>

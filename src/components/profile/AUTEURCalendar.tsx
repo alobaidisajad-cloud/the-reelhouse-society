@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { Lock } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -25,9 +25,9 @@ interface DayCell {
     display: Date
 }
 
-// ── PROJECTIONIST'S CALENDAR ──
+// ΓöÇΓöÇ The Calendar ΓöÇΓöÇ
 // GitHub-style 52-week film activity heatmap, Archivist tier
-export function ProjectionistCalendar({ logs = [], isPremium = false }: { logs?: CalendarLog[]; isPremium?: boolean }) {
+export function AUTEURCalendar({ logs = [], isPremium = false }: { logs?: CalendarLog[]; isPremium?: boolean }) {
     const [tooltip, setTooltip] = useState<TooltipData | null>(null)
 
     // Build a map of date -> films watched
@@ -125,10 +125,10 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }: { logs?:
             }}>
                 <Lock size={28} color="var(--sepia)" />
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)' }}>
-                    The Projectionist's Calendar
+                    The The Calendar
                 </div>
                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', maxWidth: 380, lineHeight: 1.6 }}>
-                    Your complete visual history of film activity — every film, every day, across an entire year.
+                    Your complete visual history of film activity ΓÇö every film, every day, across an entire year.
                     Available with the Archivist membership.
                 </div>
                 <Link to="/society" style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)', border: '1px solid var(--sepia)', padding: '0.6rem 1.4rem', borderRadius: '2px', textDecoration: 'none', transition: 'background 0.2s', display: 'inline-block' }}>
@@ -255,7 +255,7 @@ export function ProjectionistCalendar({ logs = [], isPremium = false }: { logs?:
                                 </div>
                                 {tooltip.films.slice(0, 3).map((title: string, i: number) => (
                                     <div key={i} style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)', fontStyle: 'italic', lineHeight: 1.4 }}>
-                                        · {title}
+                                        ┬╖ {title}
                                     </div>
                                 ))}
                                 {tooltip.films.length > 3 && (

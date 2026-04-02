@@ -96,7 +96,7 @@ export default function DebugPanel() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '2rem' }}>
                     <Buster mood="peeking" size={40} />
                     <div>
-                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)' }}>Projectionist's Console</div>
+                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', color: 'var(--parchment)' }}>AUTEUR's Console</div>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>INTERNAL QA · DEBUG · DIAGNOSTICS</div>
                     </div>
                 </div>

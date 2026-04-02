@@ -9,7 +9,7 @@ import { FilmLog } from '../../types'
 
 export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole }: { profileLogs: FilmLog[], isOwnProfile: boolean, setViewLog: (log: FilmLog) => void, userRole?: string }) {
     const isArchivist = userRole === 'archivist'
-    const isAuteur = userRole === 'auteur' || userRole === 'projectionist'
+    const isAuteur = userRole === 'auteur' || userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
     const [sieve, setSieve] = useState<number | 'all'>('all')
     const [visibleLogCount, setVisibleLogCount] = useState(40)

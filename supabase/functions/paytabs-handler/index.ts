@@ -73,15 +73,6 @@ serve(async (req) => {
                 else if (tier === 'founding') { amount = 49.00; description = 'ReelHouse Founding Board Seat' }
                 else throw new Error("Invalid tier")
                 cartIdMetadata = `MEMBERSHIP|${user_id}|${tier}`
-            } 
-            else if (checkout_type === 'tip') {
-                // Ensure from_username comes from body (we verified user_id above)
-                const { amount: tipAmount, video_id, to_user_id, message, from_username } = body
-                amount = parseFloat(tipAmount)
-                description = `Tip to Creator / Video Support`
-                // Compress metadata: TIP|fromId|fromUsername|toId|videoId|message
-                const safeMessage = (message || '').replace(/\|/g, '').substring(0, 50)
-                cartIdMetadata = `TIP|${user_id}|${from_username}|${to_user_id}|${video_id}|${safeMessage}`
             }
 
             // Construct PayTabs Request Payload
@@ -161,34 +152,6 @@ serve(async (req) => {
                     const { error } = await supabaseAdmin.from('profiles').update({ role: newRole }).eq('id', userId)
                     if (error) console.error('Error auto-upgrading user role:', error)
                     else console.log(`✅ IPN Success: User ${userId} upgraded to ${newRole}`)
-                } 
-                else if (type === 'TIP') {
-                    const fromUserId = parts[1]
-                    const fromUsername = parts[2]
-                    const toUserId = parts[3]
-                    const videoId = parts[4]
-                    const message = parts[5] || null
-
-                    // Insert the Tip safely
-                    const { error: tipError } = await supabaseAdmin.from('tips').insert({
-                        from_user_id: fromUserId,
-                        from_username: fromUsername,
-                        to_user_id: toUserId,
-                        video_id: videoId,
-                        amount: amount,
-                        message: message
-                    })
-
-                    // Handle video tip_total synchronization
-                    if (!tipError) {
-                        const { data: video } = await supabaseAdmin.from('video_reviews').select('tip_total').eq('id', videoId).single()
-                        if (video) {
-                            await supabaseAdmin.from('video_reviews').update({ tip_total: (video.tip_total || 0) + amount }).eq('id', videoId)
-                        }
-                        console.log(`✅ IPN Success: Tip of $${amount} delivered to Video ${videoId}`)
-                    } else {
-                        console.error('IPN Tip Database Error:', tipError)
-                    }
                 }
             }
 
