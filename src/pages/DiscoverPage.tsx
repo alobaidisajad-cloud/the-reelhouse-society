@@ -372,7 +372,7 @@ export default function DiscoverPage() {
                     <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.8rem, 7vw, 2.5rem)' : 'clamp(2.5rem, 6vw, 4.5rem)', color: 'var(--parchment)', marginBottom: IS_TOUCH ? '1.25rem' : '2.5rem', lineHeight: 1 }}>
                         Search the Archive
                     </h1>
-                    <form onSubmit={handleSearch} style={{ position: 'relative' }}>
+                    <form onSubmit={handleSearch} style={{ position: 'relative', maxWidth: 600, margin: '0 auto' }}>
                         <Search size={IS_TOUCH ? 16 : 22} style={{ position: 'absolute', left: '1.25rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--sepia)', opacity: 0.8, zIndex: 1 }} />
                         <input
                             className="input"

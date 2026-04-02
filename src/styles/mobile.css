@@ -64,6 +64,13 @@
 /* ── Motion handling fully offloaded to GPU ── */
 
 /* ═══════════════════════════════════════════
+   DESKTOP (≥1025px)
+   ═══════════════════════════════════════════ */
+@media (min-width: 1025px) {
+  .bottom-nav { display: none !important; }
+}
+
+/* ═══════════════════════════════════════════
    TABLET (≤1024px)
    ═══════════════════════════════════════════ */
 @media (max-width: 1024px) {
@@ -81,6 +88,11 @@
   .nav-mobile-toggle { display: flex !important; }
   .hide-mobile { display: none !important; }
 
+  /* ── MODAL RESPONSIVENESS ── */
+  .log-modal-poster {
+    max-height: 160px !important;
+    width: 106px !important;
+  }
 
 }
 

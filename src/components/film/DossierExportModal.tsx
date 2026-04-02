@@ -203,7 +203,7 @@ export default function DossierExportModal({
                     </div>
 
                     {/* Actions */}
-                    <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 300, display: 'flex', gap: '0.6rem', marginTop: '1.1rem' }}>
+                    <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 300, display: 'flex', gap: '0.6rem', marginTop: '1.1rem', paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
                         <button
                             onClick={() => save(false)}
                             disabled={saving}

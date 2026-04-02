@@ -513,20 +513,20 @@ export default function UserProfilePage() {
 
                     {/* ── Username ── */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-                        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.8rem, 7vw, 2.5rem)' : '3rem', color: 'var(--parchment)', lineHeight: 1.1, textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
+                        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.3rem, 6vw, 2.2rem)' : '3rem', color: 'var(--parchment)', lineHeight: 1.1, textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
                             @{profileUser.username.toUpperCase()}
                         </h1>
-                        {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}><Star size={9} fill="currentColor" /> AUTEUR</span>}
+                        {profileUser?.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--ink)', background: 'var(--blood-reel)', padding: '0.2rem 0.5rem', borderRadius: '2px', display: 'inline-flex', alignItems: 'center', gap: '0.2rem', whiteSpace: 'nowrap' }}><Star size={9} fill="currentColor" /> AUTEUR</span>}
                     </div>
 
                     {/* ── Follow / Settings ── */}
                     <div style={{ marginBottom: '1rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                         {isOwnProfile ? (
                             <>
-                                <button onClick={() => navigate('/edit-profile')} className="btn btn-ghost" style={{ padding: '0.4rem 1rem', border: '1px solid rgba(139,105,20,0.25)', color: 'var(--sepia)', fontSize: '0.6rem', letterSpacing: '0.15em', gap: '0.4rem' }}>
+                                <button onClick={() => navigate('/edit-profile')} className="btn btn-ghost" style={{ padding: '0.4rem 1rem', border: '1px solid rgba(139,105,20,0.25)', background: 'rgba(15, 10, 5, 0.65)', backdropFilter: 'blur(12px)', color: 'var(--sepia)', fontSize: '0.6rem', letterSpacing: '0.15em', gap: '0.4rem' }}>
                                     EDIT PROFILE
                                 </button>
-                                <button onClick={() => navigate('/settings')} className="btn btn-ghost" style={{ padding: '0.4rem 0.6rem', border: '1px solid rgba(139,105,20,0.15)', color: 'var(--fog)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Settings">
+                                <button onClick={() => navigate('/settings')} className="btn btn-ghost" style={{ padding: '0.4rem 0.6rem', border: '1px solid rgba(139,105,20,0.15)', background: 'rgba(15, 10, 5, 0.65)', backdropFilter: 'blur(12px)', color: 'var(--fog)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-label="Settings">
                                     <Settings size={14} />
                                 </button>
                             </>

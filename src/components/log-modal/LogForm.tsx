@@ -202,8 +202,9 @@ export default function LogForm({ film }: { film: any }) {
                         <img
                             src={tmdb.poster(altPoster || film.poster_path, 'w342')}
                             alt={film.title}
+                            className="log-modal-poster"
                             style={{
-                                width: 140, height: 210, objectFit: 'cover',
+                                width: 140, height: 'auto', aspectRatio: '2/3', objectFit: 'cover',
                                 borderRadius: '6px', filter: 'sepia(0.15) contrast(1.05)',
                                 boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(139,105,20,0.12)',
                                 transition: 'opacity 0.3s',
@@ -229,7 +230,7 @@ export default function LogForm({ film }: { film: any }) {
                 <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'block', marginBottom: '0.5rem' }}>
                     STATUS
                 </label>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
                     {[
                         { val: 'watched', label: 'Watched', icon: <Eye size={12} /> },
                         { val: 'rewatched', label: 'Rewatched', icon: <History size={12} /> },
