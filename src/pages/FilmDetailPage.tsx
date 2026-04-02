@@ -8,7 +8,7 @@ import { ReelRating, ObscurityBadge, GenreTags, FilmCard, LoadingReel, SectionHe
 import { useSEOSync } from '../components/useSEOSync'
 import { useUIStore, useFilmStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import SectionErrorBoundary from '../components/SectionErrorBoundary'
 
 import { useViewport } from '../hooks/useViewport'
@@ -60,10 +60,10 @@ function FilmHero({ film, onPlayTrailer }: any) {
         : `${Math.round((film?.vote_count || 0) / 100) * 100}+ GLOBAL RATINGS`
 
     const toggleWatchlist = async () => {
-        if (isWatchlisted) { removeFromWatchlist(film.id); toast(`Removed from watchlist`) }
+        if (isWatchlisted) { removeFromWatchlist(film.id); reelToast(`Removed from watchlist`) }
         else {
-            try { await addToWatchlist(film); toast.success(`Added to watchlist!`) }
-            catch { toast.error('Failed to add to watchlist') }
+            try { await addToWatchlist(film); reelToast.success(`Added to watchlist!`) }
+            catch { reelToast.error('Failed to add to watchlist') }
         }
     }
 

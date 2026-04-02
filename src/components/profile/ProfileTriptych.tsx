@@ -5,7 +5,7 @@ import { supabase } from '../../supabaseClient'
 import { useAuthStore } from '../../store'
 import { tmdb } from '../../tmdb'
 import { Link } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 import { Portal } from '../UI'
 
 interface TriptychFilm {
@@ -77,9 +77,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
         try {
             const { error } = await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id)
             if (error) throw error
-            toast.success('Dossier updated.')
+            reelToast.success('Dossier updated.')
         } catch (error: any) {
-            toast.error('Failed to update favorites.')
+            reelToast.error('Failed to update favorites.')
         }
     }
 
@@ -96,7 +96,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
         try {
             await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id)
         } catch (error: any) {
-            toast.error('Failed to clear slot.')
+            reelToast.error('Failed to clear slot.')
         }
     }
 

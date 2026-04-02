@@ -7,7 +7,7 @@ import Poster from '../film/Poster'
 import { FilmCard } from '../UI'
 import { Link } from 'react-router-dom'
 import { useViewport } from '../../hooks/useViewport'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 import type { PhysicalArchiveItem } from '../../types'
 
 const FORMATS = [
@@ -96,35 +96,35 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId, user
 
     const handleAdd = async () => {
         if (!selectedFilm || selectedFormats.length === 0) {
-            toast.error('Select at least one format.')
+            reelToast.error('Select at least one format.')
             return
         }
         try {
             await addToPhysicalArchive(selectedFilm, selectedFormats, notes, condition)
-            toast.success(`"${selectedFilm.title || selectedFilm.name}" added to your archive ✦`)
+            reelToast.success(`"${selectedFilm.title || selectedFilm.name}" added to your archive ✦`)
             resetForm()
         } catch {
-            toast.error('Failed to add to archive')
+            reelToast.error('Failed to add to archive')
         }
     }
 
     const handleUpdate = async (filmId: number) => {
         try {
             await updatePhysicalArchiveItem(filmId, { formats: selectedFormats, notes, condition })
-            toast.success('Archive entry updated ✦')
+            reelToast.success('Archive entry updated ✦')
             setEditingId(null)
             resetForm()
         } catch {
-            toast.error('Failed to update archive entry')
+            reelToast.error('Failed to update archive entry')
         }
     }
 
     const handleRemove = async (filmId: number, title: string) => {
         try {
             await removeFromPhysicalArchive(filmId)
-            toast.success(`"${title}" removed from archive`)
+            reelToast.success(`"${title}" removed from archive`)
         } catch {
-            toast.error('Failed to remove from archive')
+            reelToast.error('Failed to remove from archive')
         }
     }
 

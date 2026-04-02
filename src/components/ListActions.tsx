@@ -3,7 +3,7 @@ import { Award, MessageCircle, Send } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useAuthStore, useUIStore, useFilmStore } from '../store'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 
 export default function ListActions({ listId, certifyCount: initialCertifyCount, isCertified: initialIsCertified, commentCount: initialCommentCount }: {
     listId: string; certifyCount: number; isCertified: boolean; commentCount: number
@@ -52,7 +52,7 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
         } else {
             setCertifyCount(c => c + 1)
             setIsCertified(true)
-            toast.success('Certified!')
+            reelToast.success('Certified!')
         }
         await toggleListEndorse(listId)
     }
@@ -66,11 +66,11 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
             await supabase.from('list_comments').insert([{
                 user_id: user!.id, list_id: listId, content: commentText.trim()
             }])
-            toast.success('Comment added!')
+            reelToast.success('Comment added!')
             setCommentText('')
             setLocalCommentCount(c => c + 1)
             queryClient.invalidateQueries({ queryKey: ['list-comments', listId] })
-        } catch { toast.error('Failed to comment') }
+        } catch { reelToast.error('Failed to comment') }
         setSubmittingComment(false)
     }
 

@@ -9,11 +9,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft, Upload, CheckCircle, AlertCircle, Crown } from 'lucide-react'
 import { subscribeToWebPush } from '../utils/push'
 import { importLetterboxdZip } from '../utils/letterboxdImport'
 import { useFilmStore } from '../store'
+import exportLogsCSV from '../components/profile/exportLogsCSV'
 import '../styles/settings.css'
 
 export default function SettingsPage() {
@@ -61,9 +62,9 @@ export default function SettingsPage() {
         const success = await subscribeToWebPush()
         if (success) {
             setPushEnabled(true)
-            toast.success('Mobile Push Notifications activated! ✦')
+            reelToast.success('Mobile Push Notifications activated! ✦')
         } else {
-            toast.error('Failed to enable push. Check browser permissions.')
+            reelToast.error('Failed to enable push. Check browser permissions.')
         }
     }
 
@@ -79,7 +80,7 @@ export default function SettingsPage() {
 
     const handleImportFile = async (file: File) => {
         if (!file.name.endsWith('.zip')) {
-            toast.error('Please upload a valid .zip archive file.')
+            reelToast.error('Please upload a valid .zip archive file.')
             return
         }
         setImporting(true)
@@ -93,9 +94,9 @@ export default function SettingsPage() {
             await useFilmStore.getState().fetchLogs()
             await useFilmStore.getState().fetchWatchlist()
             await useFilmStore.getState().fetchLists()
-            toast.success(`✦ Import complete — ${result.logs} logs, ${result.watchlist} watchlist, ${result.lists} stacks`)
+            reelToast.success(`✦ Import complete — ${result.logs} logs, ${result.watchlist} watchlist, ${result.lists} stacks`)
         } catch (e: any) {
-            toast.error(e.message || 'Import failed')
+            reelToast.error(e.message || 'Import failed')
         } finally {
             setImporting(false)
             setImportProgress(null)
@@ -146,9 +147,9 @@ export default function SettingsPage() {
                 is_social_private: socialVisibility === 'private',
             } as any)
 
-            toast.success('Settings archived successfully ✦')
+            reelToast.success('Settings archived successfully ✦')
         } catch (e: any) {
-            toast.error(e.message || 'Failed to save')
+            reelToast.error(e.message || 'Failed to save')
         } finally {
             setSaving(false)
         }
@@ -156,18 +157,18 @@ export default function SettingsPage() {
 
     // ── Password Change ──
     const handlePasswordChange = async () => {
-        if (newPassword.length < 8) { toast.error('Password must be at least 8 characters'); return }
-        if (newPassword !== confirmPassword) { toast.error('Passwords do not match'); return }
+        if (newPassword.length < 8) { reelToast.error('Password must be at least 8 characters'); return }
+        if (newPassword !== confirmPassword) { reelToast.error('Passwords do not match'); return }
         setChangingPassword(true)
         try {
             const { error } = await supabase.auth.updateUser({ password: newPassword })
             if (error) throw error
-            toast.success('Password updated successfully')
+            reelToast.success('Password updated successfully')
             setNewPassword('')
             setConfirmPassword('')
             setShowPasswordChange(false)
         } catch (e: any) {
-            toast.error(e.message || 'Password change failed')
+            reelToast.error(e.message || 'Password change failed')
         } finally {
             setChangingPassword(false)
         }
@@ -177,7 +178,7 @@ export default function SettingsPage() {
     const handleSignOut = async () => {
         await logout()
         navigate('/')
-        toast.success('Signed out of The Society')
+        reelToast.success('Signed out of The Society')
     }
 
     // ── Delete Account ──
@@ -186,7 +187,7 @@ export default function SettingsPage() {
             'This will permanently delete your account, all logs, lists, and reviews. This cannot be undone. Are you absolutely certain?'
         )
         if (!confirmed) return
-        toast.error('Account deletion requires admin intervention. Contact support@reelhouse.app')
+        reelToast.error('Account deletion requires admin intervention. Contact support@reelhouse.app')
     }
 
     if (!user) return null
@@ -627,7 +628,15 @@ export default function SettingsPage() {
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
                     EXPORT YOUR DATA
                 </div>
-                <button className="settings-action-btn" onClick={() => toast.success('CSV export available from your profile page')}>
+                <button className="settings-action-btn" onClick={() => {
+                    const logs = useFilmStore.getState().logs
+                    if (!logs || logs.length === 0) {
+                        reelToast('No logs to export yet. Start logging films first.', { icon: '✦' })
+                        return
+                    }
+                    exportLogsCSV(logs, user?.username || 'anonymous')
+                    reelToast.success('Archive exported as CSV.')
+                }}>
                     <Download size={12} /> EXPORT DATA (CSV)
                 </button>
             </div>

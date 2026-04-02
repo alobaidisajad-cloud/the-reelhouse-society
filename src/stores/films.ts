@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction, PhysicalArchiveItem } from '../types'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 
 // ── Undo Queue — replaces brittle window globals with a proper cancellation system ──
 const _undoTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -14,6 +14,25 @@ function cancelPendingDelete(id: string) {
 function scheduleDeletion(id: string, fn: () => Promise<void>, delayMs = 5200) {
     cancelPendingDelete(id)
     _undoTimers.set(id, setTimeout(async () => { _undoTimers.delete(id); await fn() }, delayMs))
+}
+
+// ── Undo Callback Registry — maps toast IDs to undo functions ──
+const _undoCallbacks = new Map<string, () => void>()
+if (typeof document !== 'undefined') {
+    document.addEventListener('click', (e) => {
+        // Walk up from click target to find a toast container with role="status"
+        const target = e.target as HTMLElement
+        const toastEl = target.closest('[role="status"]')
+        if (!toastEl) return
+        // Check all registered undo callbacks
+        for (const [toastId, callback] of _undoCallbacks) {
+            // Toast text content should include "undo" and the toast container should be visible
+            if (toastEl.textContent?.includes('undo')) {
+                callback()
+                return
+            }
+        }
+    })
 }
 
 /** Lightweight shape for TMDB film data passed into store methods */
@@ -111,7 +130,7 @@ export const useFilmStore = create<FilmState>()(
                     } else {
                         set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
                     }
-                    toast.error('Endorsement failed — please try again.')
+                    reelToast.error('Endorsement failed — please try again.')
                 }
             },
 
@@ -166,7 +185,7 @@ export const useFilmStore = create<FilmState>()(
                     } else {
                         set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list')) }))
                     }
-                    toast.error('Failed to certify list.')
+                    reelToast.error('Failed to certify list.')
                 }
             },
 
@@ -490,10 +509,23 @@ export const useFilmStore = create<FilmState>()(
 
                 // Optimistic remove with 5s undo window
                 set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
-                toast(`"${logToRemove.title}" removed. Tap to undo.`, {
-                    duration: 5000, id: `undo-${id}`,
-                    style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
+
+                const toastId = `undo-${id}`
+                // Register undo callback
+                _undoCallbacks.set(toastId, () => {
+                    cancelPendingDelete(`log-${id}`)
+                    set((state) => ({ logs: [logToRemove, ...state.logs] }))
+                    reelToast.dismiss(toastId)
+                    reelToast.success(`"${logToRemove.title}" restored.`)
+                    _undoCallbacks.delete(toastId)
                 })
+                reelToast(`"${logToRemove.title}" removed. Tap to undo.`, {
+                    duration: 5000, id: toastId,
+                    style: { cursor: 'pointer' },
+                })
+                // Auto-cleanup callback after toast expires
+                setTimeout(() => _undoCallbacks.delete(toastId), 5500)
+
                 // Schedule actual deletion — cancellable via undo
                 scheduleDeletion(`log-${id}`, async () => { await supabase.from('logs').delete().eq('id', id) })
             },
@@ -521,10 +553,21 @@ export const useFilmStore = create<FilmState>()(
 
                 // Optimistic remove with 5s undo window
                 set((state) => ({ watchlist: state.watchlist.filter((f) => f.id !== filmId) }))
-                toast(`"${itemToRemove?.title || 'Film'}" removed from watchlist. Tap to undo.`, {
-                    duration: 5000, id: `undo-wl-${filmId}`,
-                    style: { background: 'var(--soot)', color: 'var(--parchment)', border: '1px solid var(--sepia)', fontFamily: 'var(--font-sub)', cursor: 'pointer' },
+
+                const toastId = `undo-wl-${filmId}`
+                _undoCallbacks.set(toastId, () => {
+                    cancelPendingDelete(`wl-${filmId}`)
+                    if (itemToRemove) set((state) => ({ watchlist: [itemToRemove, ...state.watchlist] }))
+                    reelToast.dismiss(toastId)
+                    reelToast.success(`"${itemToRemove?.title || 'Film'}" restored to watchlist.`)
+                    _undoCallbacks.delete(toastId)
                 })
+                reelToast(`"${itemToRemove?.title || 'Film'}" removed from watchlist. Tap to undo.`, {
+                    duration: 5000, id: toastId,
+                    style: { cursor: 'pointer' },
+                })
+                setTimeout(() => _undoCallbacks.delete(toastId), 5500)
+
                 // Schedule actual deletion — cancellable via undo
                 const uid = user.id
                 scheduleDeletion(`wl-${filmId}`, async () => { await supabase.from('watchlists').delete().eq('user_id', uid).eq('film_id', filmId) })

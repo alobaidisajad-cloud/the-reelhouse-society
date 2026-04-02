@@ -1,7 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom'
-import { useAuthStore } from '../store'
+import { useAuthStore, useFilmStore } from '../store'
 import { SectionHeader, LoadingReel } from '../components/UI'
-import { ArrowLeft, Clock, Film, Edit3, Trash2, MessageCircle } from 'lucide-react'
+import { ArrowLeft, Clock, Film, Edit3, Trash2, MessageCircle, Check } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
@@ -11,7 +11,41 @@ import ReportButton from '../components/ReportButton'
 import ShareToLoungeModal from '../components/ShareToLoungeModal'
 import { useState } from 'react'
 
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
+
+function LoggedBadgeGrid({ films, isOwner, isArchivist, isAuteurRole }: { films: any[]; isOwner: boolean; isArchivist: boolean; isAuteurRole: boolean }) {
+    const logs = useFilmStore(s => s.logs)
+    const loggedIds = new Set(logs.map(l => l.filmId))
+    return (
+        <div className="list-film-grid">
+            {films.map((f: any, i: number) => {
+                const posterUrl = f.poster_path ? `https://image.tmdb.org/t/p/w342${f.poster_path}` : null
+                const isLogged = loggedIds.has(f.id)
+                return (
+                    <Link
+                        key={f.id ?? i}
+                        to={`/film/${f.id}`}
+                        className={`list-film-item fade-in-up${isOwner && isArchivist && !isAuteurRole ? ' archivist-card-glow' : isOwner && isAuteurRole ? ' auteur-card-glow' : ''}`}
+                        style={{ animationDelay: `${Math.min(i * 0.03, 0.5)}s` }}
+                    >
+                        <div className="list-film-number">{i + 1}</div>
+                        {posterUrl ? (
+                            <img src={posterUrl} alt={f.title || 'Film'} className="list-film-poster" loading="lazy" decoding="async" />
+                        ) : (
+                            <div className="list-film-fallback"><img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.3 }} /></div>
+                        )}
+                        <div className="list-film-title">{f.title}</div>
+                        {isLogged && (
+                            <div style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(10,7,3,0.9)', backdropFilter: 'blur(4px)', border: '1px solid rgba(139,105,20,0.5)', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                                <Check size={10} color="var(--sepia)" strokeWidth={3} />
+                            </div>
+                        )}
+                    </Link>
+                )
+            })}
+        </div>
+    )
+}
 
 export default function ListDetailPage() {
     const { id } = useParams()
@@ -315,38 +349,7 @@ export default function ListDetailPage() {
                                     justify-content: center;
                                 }
                             `}</style>
-                            <div className="list-film-grid">
-                                {films.map((f: any, i: number) => {
-                                    const posterUrl = f.poster_path
-                                        ? `https://image.tmdb.org/t/p/w342${f.poster_path}`
-                                        : null
-
-                                    return (
-                                        <Link
-                                            key={f.id ?? i}
-                                            to={`/film/${f.id}`}
-                                            className={`list-film-item fade-in-up${isOwner && isArchivist && !isAuteurRole ? ' archivist-card-glow' : isOwner && isAuteurRole ? ' auteur-card-glow' : ''}`}
-                                            style={{ animationDelay: `${Math.min(i * 0.03, 0.5)}s` }}
-                                        >
-                                            <div className="list-film-number">{i + 1}</div>
-                                            {posterUrl ? (
-                                                <img
-                                                    src={posterUrl}
-                                                    alt={f.title || 'Film'}
-                                                    className="list-film-poster"
-                                                    loading="lazy"
-                                                    decoding="async"
-                                                />
-                                            ) : (
-                                                <div className="list-film-fallback">
-                                                    <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.3 }} />
-                                                </div>
-                                            )}
-                                            <div className="list-film-title">{f.title}</div>
-                                        </Link>
-                                    )
-                                })}
-                            </div>
+                            <LoggedBadgeGrid films={films} isOwner={isOwner} isArchivist={!!isArchivist} isAuteurRole={!!isAuteurRole} />
                         </>
                     )}
                 </section>
@@ -394,13 +397,13 @@ export default function ListDetailPage() {
                                 }
                             }
 
-                            toast.success('Collection updated!')
+                            reelToast.success('Collection updated!')
                             // Refresh detail + stacks page
                             queryClient.invalidateQueries({ queryKey: ['list-detail', id] })
                             queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
                         } catch (e) {
                             console.error('Failed updating list', e)
-                            toast.error('Failed to update collection')
+                            reelToast.error('Failed to update collection')
                         }
                     }}
                 />
@@ -423,10 +426,10 @@ export default function ListDetailPage() {
                                     await supabase.from('list_items').delete().eq('list_id', list.id)
                                     const { error } = await supabase.from('lists').delete().eq('id', list.id).eq('user_id', currentUser!.id)
                                     if (error) throw error
-                                    toast.success('Archive destroyed.')
+                                    reelToast.success('Archive destroyed.')
                                     queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
                                     navigate('/stacks')
-                                } catch (e) { toast.error('Failed to destroy archive.') }
+                                } catch (e) { reelToast.error('Failed to destroy archive.') }
                             }}>CONFIRM</button>
                         </div>
                     </div>

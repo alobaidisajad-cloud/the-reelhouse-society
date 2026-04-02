@@ -133,6 +133,7 @@ export default function LogModal() {
                         )}
                         <button
                             onClick={closeLogModal}
+                            aria-label="Close log modal"
                             style={{ background: 'none', border: 'none', color: 'var(--fog)', padding: '0.35rem', cursor: 'pointer', borderRadius: '4px', transition: 'color 0.2s' }}
                             onMouseEnter={e => e.currentTarget.style.color = 'var(--parchment)'}
                             onMouseLeave={e => e.currentTarget.style.color = 'var(--fog)'}

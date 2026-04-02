@@ -5,7 +5,7 @@ import { ArrowLeft, Send, MoreVertical, Users, Copy, Check, LogOut, X, Trash2, S
 import { useLoungeStore, LoungeMessage } from '../stores/lounge'
 import { useAuthStore } from '../stores/auth'
 import { tmdb } from '../tmdb'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import FilmStripLoader from '../components/FilmStripLoader'
 import PageSEO from '../components/PageSEO'
 import { useViewport } from '../hooks/useViewport'
@@ -163,7 +163,7 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
                                 <Reply size={16} /> REPLY
                             </button>
                         )}
-                        <button className="lounge-action-sheet-item" onClick={() => { navigator.clipboard.writeText(msg.content); toast.success('Copied'); setActionSheet(false) }}>
+                        <button className="lounge-action-sheet-item" onClick={() => { navigator.clipboard.writeText(msg.content); reelToast.success('Copied'); setActionSheet(false) }}>
                             <Copy size={16} /> COPY TEXT
                         </button>
                         {isSelf && onDelete && (
@@ -203,7 +203,7 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
         
         if (Object.keys(updates).length > 0) {
             await updateLounge(lounge.id, updates)
-            toast.success('Lounge updated.')
+            reelToast.success('Lounge updated.')
         }
         setSaving(false)
     }
@@ -212,14 +212,14 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
         if (!confirm(`Remove @${username} from this lounge?`)) return
         await kickMember(lounge.id, userId)
         setMembers(m => m.filter(member => member.user_id !== userId))
-        toast.success(`@${username} removed.`)
+        reelToast.success(`@${username} removed.`)
     }
 
     const handleCopyCode = () => {
         if (lounge.invite_code) {
             navigator.clipboard.writeText(lounge.invite_code)
             setCopied(true)
-            toast.success('Invite code copied.')
+            reelToast.success('Invite code copied.')
             setTimeout(() => setCopied(false), 2000)
         }
     }
@@ -227,7 +227,7 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
     const handleLeave = async () => {
         if (!confirm('Leave this lounge?')) return
         await leaveLounge(lounge.id)
-        toast.success('You stepped out.')
+        reelToast.success('You stepped out.')
         navigate('/lounge')
     }
 
@@ -237,7 +237,7 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
             <div className="lounge-settings-panel">
                 <div className="lounge-settings-header">
                     <div className="lounge-settings-title">✦ LOUNGE SETTINGS</div>
-                    <button className="lounge-settings-close" onClick={onClose}>
+                    <button className="lounge-settings-close" onClick={onClose} aria-label="Close settings">
                         <X size={14} />
                     </button>
                 </div>
@@ -313,7 +313,7 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
                         </div>
                     )}
 
-                    {isCreator && (name.trim() !== lounge.name || isPrivate !== lounge.is_private) && (
+                    {isCreator && (name.trim() !== lounge.name || description.trim() !== (lounge.description || '') || isPrivate !== lounge.is_private) && (
                         <button
                             className="btn btn-primary"
                             onClick={handleSave}
@@ -476,7 +476,7 @@ export default function LoungeRoomPage() {
             <div className="lounge-room">
                 {/* ── Header ── */}
                 <div className="lounge-room-header">
-                    <button className="lounge-room-back" onClick={() => navigate('/lounge')}>
+                    <button className="lounge-room-back" onClick={() => navigate('/lounge')} aria-label="Back to lounges">
                         <ArrowLeft size={14} />
                     </button>
                     <div className="lounge-room-title">{activeLounge.name}</div>
@@ -487,7 +487,7 @@ export default function LoungeRoomPage() {
                     <button
                         className="lounge-room-back"
                         onClick={() => setSettingsOpen(true)}
-                        style={{ padding: '0.3em 0.5em' }}
+                        aria-label="Lounge settings"
                         title="Lounge Settings"
                     >
                         <Settings size={14} />
@@ -567,6 +567,7 @@ export default function LoungeRoomPage() {
                                     <button
                                         className="lounge-reply-bar-close"
                                         onClick={() => setReplyTo(null)}
+                                        aria-label="Cancel reply"
                                     >
                                         <X size={12} />
                                     </button>
@@ -588,7 +589,7 @@ export default function LoungeRoomPage() {
                                 className="lounge-send-btn"
                                 onClick={handleSend}
                                 disabled={!input.trim() || isSending}
-                                title="Send"
+                                aria-label="Send message"
                             >
                                 <Send size={16} />
                             </button>

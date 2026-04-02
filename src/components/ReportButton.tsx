@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Flag, X, AlertTriangle } from 'lucide-react'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 
 interface ReportButtonProps {
     contentType: 'log' | 'list' | 'list_comment' | 'user'
@@ -31,7 +31,7 @@ export default function ReportButton({ contentType, contentId, size = 14 }: Repo
 
     const handleSubmit = async () => {
         if (!reason) {
-            toast.error('Please select a reason.')
+            reelToast.error('Please select a reason.')
             return
         }
         setSubmitting(true)
@@ -44,19 +44,12 @@ export default function ReportButton({ contentType, contentId, size = 14 }: Repo
                 details: details.trim(),
             })
             if (error) throw error
-            toast.success('Report submitted. The Society will review it.', {
-                style: {
-                    background: 'var(--soot)',
-                    color: 'var(--parchment)',
-                    border: '1px solid var(--sepia)',
-                    fontFamily: 'var(--font-sub)',
-                },
-            })
+            reelToast.success('Report submitted. The Society will review it.')
             setShowModal(false)
             setReason('')
             setDetails('')
         } catch {
-            toast.error('Failed to submit report. Try again.')
+            reelToast.error('Failed to submit report. Try again.')
         } finally {
             setSubmitting(false)
         }

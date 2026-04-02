@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 
 interface LogActionRowProps {
     showDeleteConfirm: boolean
@@ -28,7 +28,7 @@ export default function LogActionRow({
                     <button className="btn btn-primary" style={{ flex: 1, justifyContent: 'center', background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)' }} onClick={() => {
                         if (logModalEditLogId) {
                             removeLog(logModalEditLogId)
-                            toast.success('Log deleted.')
+                            reelToast.success('Log deleted.')
                             closeLogModal()
                         }
                     }}>CONFIRM DELETE</button>
@@ -43,6 +43,7 @@ export default function LogActionRow({
             {logModalEditLogId && (
                 <button 
                     className="btn btn-ghost" 
+                    aria-label="Delete log"
                     title="Delete Log" 
                     style={{ color: 'var(--danger)', padding: '0 0.75rem', borderColor: 'var(--ash)' }} 
                     onClick={() => setShowDeleteConfirm(true)}

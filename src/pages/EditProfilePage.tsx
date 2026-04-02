@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import { ArrowLeft, Camera, Link2, Plus, X, GripVertical, Film } from 'lucide-react'
 import Buster from '../components/Buster'
 import AvatarCropModal from '../components/AvatarCropModal'
@@ -76,7 +76,7 @@ export default function EditProfilePage() {
     const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (!file) return
-        if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5MB'); return }
+        if (file.size > 5 * 1024 * 1024) { reelToast.error('Image must be under 5MB'); return }
         // Open crop modal with the raw image
         const objectUrl = URL.createObjectURL(file)
         setRawImageSrc(objectUrl)
@@ -114,7 +114,7 @@ export default function EditProfilePage() {
             const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
             return urlData.publicUrl + `?v=${Date.now()}`
         } catch (e: any) {
-            toast.error('Avatar upload failed: ' + (e.message || 'Unknown error'))
+            reelToast.error('Avatar upload failed: ' + (e.message || 'Unknown error'))
             return null
         } finally {
             setUploadingAvatar(false)
@@ -141,7 +141,7 @@ export default function EditProfilePage() {
 
     // ── Link Management ──
     const addLink = () => {
-        if (links.length >= 10) { toast.error('Maximum 10 links allowed'); return }
+        if (links.length >= 10) { reelToast.error('Maximum 10 links allowed'); return }
         setLinks(prev => [...prev, { id: generateId(), title: '', url: '' }])
     }
 
@@ -156,8 +156,8 @@ export default function EditProfilePage() {
     // ── Save ──
     const handleSave = async () => {
         if (!isSupabaseConfigured || !user) return
-        if (displayName.trim().length > 50) { toast.error('Display name must be 50 or fewer characters.'); return }
-        if (bio.trim().length > 500) { toast.error('Bio must be 500 or fewer characters.'); return }
+        if (displayName.trim().length > 50) { reelToast.error('Display name must be 50 or fewer characters.'); return }
+        if (bio.trim().length > 500) { reelToast.error('Bio must be 500 or fewer characters.'); return }
 
         if (username !== user.username) {
             const isValid = await validateUsername(username)
@@ -203,13 +203,13 @@ export default function EditProfilePage() {
             } as any)
 
             setAvatarFile(null)
-            toast.success('Profile updated ✦')
+            reelToast.success('Profile updated ✦')
 
             if (username !== user.username) {
                 navigate(`/user/${username}`, { replace: true })
             }
         } catch (e: any) {
-            toast.error(e.message || 'Failed to save profile')
+            reelToast.error(e.message || 'Failed to save profile')
         } finally {
             setSaving(false)
         }

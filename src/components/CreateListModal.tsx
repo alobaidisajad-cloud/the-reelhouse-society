@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react'
 import { Plus, Lock, Globe, Search as SearchIcon, X, Film } from 'lucide-react'
 import { tmdb } from '../tmdb'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import { Portal } from './UI'
 
 import { useViewport } from '../hooks/useViewport'
@@ -46,7 +46,7 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
     }
 
     const handleSave = async () => {
-        if (!title.trim()) { toast.error('Give your list a name'); return }
+        if (!title.trim()) { reelToast.error('Give your list a name'); return }
         if (submitting) return
         setSubmitting(true)
         try {
@@ -56,10 +56,10 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
                 isPrivate,
                 films // pass films up so the parent can sequence adding them
             })
-            toast.success(initialList ? 'List updated!' : `List "${title}" created!`)
+            reelToast.success(initialList ? 'List updated!' : `List "${title}" created!`)
             onClose()
         } catch (error) {
-            toast.error(initialList ? 'Failed to update list.' : 'Failed to create list.')
+            reelToast.error(initialList ? 'Failed to update list.' : 'Failed to create list.')
             setSubmitting(false)
         }
     }

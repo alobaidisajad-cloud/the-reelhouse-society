@@ -10,7 +10,7 @@ import MainSearchDropdown from './navbar/MainSearchDropdown'
 import MemberSearchDropdown from './navbar/MemberSearchDropdown'
 import MobileNavDrawer from './navbar/MobileNavDrawer'
 import NotificationBell from './NotificationBell'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 
 // Route prefetch map — loads chunks on hover for instant navigation
 const prefetchRoute = (path: string) => {

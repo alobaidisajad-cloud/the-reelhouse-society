@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Lock, X } from 'lucide-react'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 import { useFilmStore, useProgrammeStore } from '../../store'
 import { tmdb } from '../../tmdb'
 
@@ -36,11 +36,11 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
                     { id: f2.filmId || f2.id, title: f2.title || f2.name, poster_path: f2.poster || f2.poster_path }
                 ],
             })
-            toast.success("Double feature published perfectly.")
+            reelToast.success("Double feature published perfectly.")
             setIsCreating(false)
             setTitle(''); setPlaybill(''); setFilm1Id(''); setFilm2Id('')
         } catch (error: any) {
-            toast.error(error.message || "Failed to curate feature. The archives are stuttering.")
+            reelToast.error(error.message || "Failed to curate feature. The archives are stuttering.")
         } finally {
             setIsPublishing(false)
         }
@@ -107,9 +107,9 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
                                 <button className="btn btn-ghost" onClick={async () => {
                                     try {
                                         await removeProgramme(prog.id)
-                                        toast.success("Programme removed.")
+                                        reelToast.success("Programme removed.")
                                     } catch (e: any) {
-                                        toast.error(e.message || "Failed to remove programme.")
+                                        reelToast.error(e.message || "Failed to remove programme.")
                                     }
                                 }} style={{ position: 'absolute', top: '1rem', right: '1rem', padding: '0.3rem 0.6rem', fontSize: '0.5rem' }}>{<X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} />} REMOVE</button>
                             )}

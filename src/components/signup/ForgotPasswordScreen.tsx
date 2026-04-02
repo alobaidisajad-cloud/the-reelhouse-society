@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Lock } from 'lucide-react'
 import { supabase } from '../../supabaseClient'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 import { useState } from 'react'
 
 interface ForgotPasswordScreenProps {
@@ -94,7 +94,7 @@ export default function ForgotPasswordScreen({ onClose, onBackToLogin, focusTrap
                             </p>
                             <form onSubmit={async (e) => {
                                 e.preventDefault()
-                                if (!forgotEmail.trim()) { toast.error('Please enter your email.'); return }
+                                if (!forgotEmail.trim()) { reelToast.error('Please enter your email.'); return }
                                 setForgotLoading(true)
                                 try {
                                     const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
@@ -102,9 +102,9 @@ export default function ForgotPasswordScreen({ onClose, onBackToLogin, focusTrap
                                     })
                                     if (error) throw error
                                     setForgotSent(true)
-                                    toast.success('Reset link sent!')
+                                    reelToast.success('Reset link sent!')
                                 } catch (err: any) {
-                                    toast.error(err.message || 'Could not send reset link.')
+                                    reelToast.error(err.message || 'Could not send reset link.')
                                 } finally {
                                     setForgotLoading(false)
                                 }

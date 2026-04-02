@@ -6,7 +6,7 @@ import { MessageCircle, Plus, Lock, Users, Copy, Check, Search, Info, X } from '
 import { useLoungeStore } from '../stores/lounge'
 import { useAuthStore } from '../stores/auth'
 import { tmdb } from '../tmdb'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import PageSEO from '../components/PageSEO'
 import '../styles/lounge.css'
 
@@ -53,11 +53,11 @@ function CreateLoungeModal({ onClose }: { onClose: () => void }) {
         setCreating(true)
         const id = await createLounge({ name: name.trim(), description: description.trim(), isPrivate })
         if (id) {
-            toast.success(isPrivate ? 'Private screening room opened.' : 'Public salon opened.')
+            reelToast.success(isPrivate ? 'Private screening room opened.' : 'Public salon opened.')
             onClose()
             navigate(`/lounge/${id}`)
         } else {
-            toast.error('Failed to open lounge.')
+            reelToast.error('Failed to open lounge.')
         }
         setCreating(false)
     }
@@ -153,7 +153,7 @@ function JoinedLoungeCard({ lounge, unread }: { lounge: any; unread: number }) {
             >
                 {coverUrl && <img src={coverUrl} alt="" className="lounge-card-cover" loading="lazy" decoding="async" />}
 
-                <button className="lounge-info-btn-overlay" onClick={handleInfoClick}>
+                <button className="lounge-info-btn-overlay" onClick={handleInfoClick} aria-label="Lounge info">
                     <Info size={14} />
                 </button>
 
@@ -193,7 +193,7 @@ function LoungeInfoModal({ lounge, onClose }: { lounge: any; onClose: () => void
                 exit={{ opacity: 0, scale: 0.95, y: 20, filter: 'blur(10px)' }}
                 transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
             >
-                <button className="lounge-settings-close" onClick={onClose} style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 50 }}><X size={16} /></button>
+                <button className="lounge-settings-close" onClick={onClose} aria-label="Close info" style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 50 }}><X size={16} /></button>
                 
                 {coverUrl && (
                     <div className="lounge-info-premium-bg" style={{ backgroundImage: `url(${coverUrl})` }} />
@@ -250,7 +250,7 @@ function PublicLoungeCard({ lounge }: { lounge: any }) {
                     <div className="lounge-public-card-cover" style={{ background: 'linear-gradient(135deg, rgba(28,23,16,0.8), rgba(139,105,20,0.05))' }} />
                 )}
                 
-                <button className="lounge-info-btn-overlay" onClick={handleInfoClick}>
+                <button className="lounge-info-btn-overlay" onClick={handleInfoClick} aria-label="Lounge info">
                     <Info size={14} />
                 </button>
 
@@ -288,10 +288,10 @@ function InviteCodeInput() {
         setJoining(true)
         const loungeId = await joinByInviteCode(code.trim())
         if (loungeId) {
-            toast.success('You took a seat.')
+            reelToast.success('You took a seat.')
             navigate(`/lounge/${loungeId}`)
         } else {
-            toast.error('Invalid invite code.')
+            reelToast.error('Invalid invite code.')
         }
         setJoining(false)
         setCode('')

@@ -648,6 +648,16 @@
   text-shadow: 0 0 5px rgba(196, 184, 152, 0.5);
 }
 
+/* ── DISCOVER QUICK SAVE ── */
+.discover-quick-save {
+  opacity: 0;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+.discover-quick-save:hover { transform: scale(1.1); }
+.discover-poster-wrap:hover .discover-quick-save { opacity: 1; }
+/* On touch / when already saved — always visible */
+@media (any-pointer: coarse) { .discover-quick-save { opacity: 1 !important; } }
+
 /* ── MOBILE FAB ── */
 .mobile-fab {
   display: none;

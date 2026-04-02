@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useFilmStore, useAuthStore } from '../store'
 import { tmdb } from '../tmdb'
 import { Film, ArrowLeft, Share2 } from 'lucide-react'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import '../styles/year-in-cinema.css'
 import PageSEO from '../components/PageSEO'
 import { ReelRating } from '../components/UI'
@@ -176,7 +176,7 @@ export default function YearInCinemaPage() {
 
             try {
                 canvas.toBlob(async (blob: Blob | null) => {
-                    if (!blob) { toast.error('Could not generate image. Try again.'); return }
+                    if (!blob) { reelToast.error('Could not generate image. Try again.'); return }
                     const file = new File([blob], `reelhouse-${selectedYear}.png`, { type: 'image/png' })
                     if (navigator.share && navigator.canShare?.({ files: [file] })) {
                         await navigator.share({ files: [file], title: `My ${selectedYear} Year In Cinema` })
@@ -186,7 +186,7 @@ export default function YearInCinemaPage() {
                         a.download = `reelhouse-${selectedYear}.png`
                         a.click()
                         URL.revokeObjectURL(a.href)
-                        toast.success('Year In Cinema card saved!')
+                        reelToast.success('Year In Cinema card saved!')
                     }
                 }, 'image/png')
             } catch {
@@ -195,9 +195,9 @@ export default function YearInCinemaPage() {
                 a.href = canvas.toDataURL('image/png')
                 a.download = `reelhouse-${selectedYear}.png`
                 a.click()
-                toast.success('Year In Cinema card saved!')
+                reelToast.success('Year In Cinema card saved!')
             }
-        } catch { toast.error('Could not generate share card.') }
+        } catch { reelToast.error('Could not generate share card.') }
         finally { setSharing(false) }
     }
 

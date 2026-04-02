@@ -2,7 +2,7 @@ import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Lock } from 'lucide-react'
 import { useFilmStore, useUIStore } from '../../store'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 
 export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     const isMaster = stats.total_logs > 50
@@ -11,20 +11,19 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
     const downloadCsv = async () => {
         if (!isPremium) {
             useUIStore.getState().openSignupModal('archivist')
-            return toast("CSV Export is restricted to Archivists.", { icon: <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+            return reelToast("CSV Export is restricted to Archivists.", { icon: <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
         }
         
         // Fetch logs JUST-IN-TIME rather than keeping 100,000 in memory
-        const { default: toastLayer } = await import('react-hot-toast')
-        const loadingToast = toastLayer.loading('Compiling Archive...', { style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+        const loadingToast = reelToast.loading('Compiling Archive...')
         
         const { supabase } = await import('../../supabaseClient')
         const { data: fetchLogs } = await supabase
             .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100000)
             
-        toastLayer.dismiss(loadingToast)
+        reelToast.dismiss(loadingToast)
         
-        if (!fetchLogs || fetchLogs.length === 0) return toastLayer('No logs to export.')
+        if (!fetchLogs || fetchLogs.length === 0) return reelToast('No logs to export.')
 
         const headers = ['Title', 'Year', 'Rating', 'Status', 'Watched Date', 'Review', 'Private Notes', 'Watched With']
         const csvRows = [headers.join(',')]

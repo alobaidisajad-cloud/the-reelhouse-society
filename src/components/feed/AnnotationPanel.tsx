@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Send, ChevronDown } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import { useAuthStore } from '../../store'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 
 export default function AnnotationPanel({ logId, open, isExpandedView = false }: { logId: string, open: boolean, isExpandedView?: boolean }) {
     const { user: currentUser } = useAuthStore()
@@ -41,9 +41,9 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
         const { error } = await supabase.from('log_comments').delete().eq('id', id)
         if (!error) {
             setComments(prev => prev.filter(c => c.id !== id))
-            toast.success('Annotation deleted.')
+            reelToast.success('Annotation deleted.')
         } else {
-            toast.error('Could not delete annotation.')
+            reelToast.error('Could not delete annotation.')
         }
     }
 
@@ -54,9 +54,9 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
         if (!error) {
             setComments(prev => prev.map(c => c.id === id ? { ...c, body: editBody.trim() } : c))
             setEditingCommentId(null)
-            toast.success('Annotation updated.')
+            reelToast.success('Annotation updated.')
         } else {
-            toast.error('Could not update annotation.')
+            reelToast.error('Could not update annotation.')
         }
         setIsUpdating(false)
     }
@@ -84,9 +84,9 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
             setComments(prev => [...prev, { id: data.id, username: currentUser.username, body: annotateText.trim(), created_at: new Date().toISOString() }])
             setAnnotateText('')
             if (textareaRef.current) textareaRef.current.style.height = 'auto'
-            toast.success('Annotation filed.')
+            reelToast.success('Annotation filed.')
         } else {
-            toast.error('Could not save annotation.')
+            reelToast.error('Could not save annotation.')
         }
         setSubmittingComment(false)
     }

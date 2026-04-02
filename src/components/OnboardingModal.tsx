@@ -5,7 +5,7 @@ import { useAuthStore, useFilmStore, useUIStore } from '../store'
 import { tmdb } from '../tmdb'
 import { supabase } from '../supabaseClient'
 import Buster from './Buster'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import { useFocusTrap } from '../hooks/useFocusTrap'
 import { Portal } from './UI'
 
@@ -79,7 +79,7 @@ export default function OnboardingModal() {
             localStorage.setItem(`reelhouse_onboarded_${user.id || user.username}`, 'true')
         }
         setOpen(false)
-        toast.success('Welcome to The Society ✦', { icon: '🎬' })
+        reelToast.success('Welcome to The Society ✦', { icon: '🎬' })
     }
 
     const handleLogFirst = () => {

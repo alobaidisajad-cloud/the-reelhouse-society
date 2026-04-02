@@ -3,10 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
-import { Heart, MessageSquare, Download, Send, RefreshCw, Lock, Edit3, MessageCircle } from 'lucide-react'
+import { Heart, MessageSquare, Download, Send, RefreshCw, Lock, Edit3, MessageCircle, Bookmark } from 'lucide-react'
 import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 import { throttleAction } from '../../errorLogger'
 import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
@@ -34,7 +34,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     }, [storeEndorsed])
 
     const handleEndorse = () => {
-        if (!canEndorse) return toast.error('This dossier is locked to followers only ✦')
+        if (!canEndorse) return reelToast.error('This dossier is locked to followers only ✦')
         throttleAction(`endorse-${log.id}`, () => {
             // Optimistic update
             setOptimisticEndorsed(!optimisticEndorsed)
@@ -59,6 +59,12 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const [autopsyOpen, setAutopsyOpen] = useState(false)
     const showFullText = isExpandedView || isExpanded
 
+    // ── WATCHLIST QUICK SAVE ──
+    const watchlist = useFilmStore(state => state.watchlist)
+    const addToWatchlist = useFilmStore(state => state.addToWatchlist)
+    const removeFromWatchlist = useFilmStore(state => state.removeFromWatchlist)
+    const filmSaved = watchlist.some((w: any) => w.filmId === (log.film?.id || log.filmId))
+
     // ── PRIVACY ENFORCEMENT ──
     const privacyEndorsements = log.privacyEndorsements || 'everyone'
     const privacyAnnotations = log.privacyAnnotations || 'everyone'
@@ -69,7 +75,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const canAnnotate = isOwner || privacyAnnotations === 'everyone' || (privacyAnnotations === 'followers' && isFollowing) || log.user === 'anonymous'
 
     const handleAnnotateToggle = () => {
-        if (!canAnnotate) return toast.error('This dossier is locked to followers only ✦')
+        if (!canAnnotate) return reelToast.error('This dossier is locked to followers only ✦')
         if (!isExpandedView) {
             navigate(`/log/${log.id}`) // Take them to detail page instead of opening inline on feed
         } else {
@@ -81,12 +87,12 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const [retransmitted, setRetransmitted] = useState(false)
 
     const handleRetransmit = () => {
-        if (!currentUser) { toast.error('Sign in to retransmit.'); return }
+        if (!currentUser) { reelToast.error('Sign in to retransmit.'); return }
         if (retransmitted) return
         throttleAction(`retransmit-${log.id}`, async () => {
             // Optimistic update
             setRetransmitted(true)
-            toast.success('Signal retransmitted to your archive.')
+            reelToast.success('Signal retransmitted to your archive.')
 
             // Background sync — rollback on failure
             if (isSupabaseConfigured) {
@@ -99,7 +105,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     if (error && !error.message?.includes('duplicate')) throw error
                 } catch {
                     setRetransmitted(false)
-                    toast.error('Retransmit failed — please try again.')
+                    reelToast.error('Retransmit failed — please try again.')
                 }
             }
         })
@@ -643,6 +649,21 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         <button className="reel-action-btn" onClick={handleRetransmit} style={{ color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
                             <RefreshCw size={12} /> {retransmitted ? 'SENT ✦' : 'PUBLISH'}
                         </button>
+                        {!isOwner && currentUser && (log.film?.id || log.filmId) && (
+                            <button className="reel-action-btn" onClick={(e) => {
+                                e.stopPropagation()
+                                const filmId = log.film?.id || log.filmId
+                                if (filmSaved) {
+                                    removeFromWatchlist(filmId)
+                                    reelToast.success('Removed from watchlist')
+                                } else {
+                                    addToWatchlist({ id: filmId, title: log.film?.title || 'Film', poster_path: log.film?.poster, release_date: log.film?.year ? `${log.film.year}-01-01` : undefined })
+                                    reelToast.success('Saved to watchlist ✦')
+                                }
+                            }} style={{ color: filmSaved ? 'var(--sepia)' : 'var(--fog)' }}>
+                                <Bookmark size={12} fill={filmSaved ? 'var(--sepia)' : 'none'} /> {filmSaved ? 'SAVED ✦' : 'SAVE'}
+                            </button>
+                        )}
                         {isLoungeEligible && (
                             <button className="reel-action-btn" onClick={(e) => { e.stopPropagation(); setShowShareLounge(true) }} style={{ color: 'var(--fog)' }}>
                                 <MessageCircle size={12} /> LOUNGE

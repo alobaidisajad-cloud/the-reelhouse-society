@@ -1,5 +1,5 @@
 import { useAuthStore } from '../store'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 
 /**
  * Returns true if the current user is banned.
@@ -12,15 +12,7 @@ export function useBanCheck() {
 
     const checkBan = (): boolean => {
         if (isBanned) {
-            toast.error('Your account has been silenced by The Society.', {
-                duration: 4000,
-                style: {
-                    background: 'var(--soot)',
-                    color: 'var(--parchment)',
-                    border: '1px solid var(--danger, #c0392b)',
-                    fontFamily: 'var(--font-sub)',
-                },
-            })
+            reelToast.error('Your account has been silenced by The Society.', { duration: 4000 })
             return true
         }
         return false

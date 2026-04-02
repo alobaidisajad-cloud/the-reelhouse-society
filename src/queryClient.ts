@@ -1,5 +1,5 @@
 import { QueryClient } from '@tanstack/react-query'
-import { toast } from 'react-hot-toast'
+import reelToast from './utils/reelToast'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -11,7 +11,7 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       onError: () => {
-        toast.error('Something went wrong — please try again.')
+        reelToast.error('Something went wrong — please try again.')
       },
     },
   },

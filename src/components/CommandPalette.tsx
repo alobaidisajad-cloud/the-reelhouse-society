@@ -49,6 +49,11 @@ export default function CommandPalette() {
                 e.preventDefault()
                 setOpen(o => !o)
             }
+            // Ctrl+Shift+L / ⌘+Shift+L → open log modal
+            if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'l') {
+                e.preventDefault()
+                openLogModal()
+            }
         }
         window.addEventListener('keydown', handleKeyDown)
         return () => window.removeEventListener('keydown', handleKeyDown)

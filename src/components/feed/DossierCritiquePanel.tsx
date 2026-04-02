@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { Send, ChevronDown } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import { useAuthStore } from '../../store'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 
 /**
  * DossierCritiquePanel — mirrors AnnotationPanel but for dossier_comments table.
@@ -52,9 +52,9 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
             setComments(prev => [...prev, { id: data.id, username: currentUser.username, body: text.trim(), created_at: new Date().toISOString() }])
             setText('')
             if (textareaRef.current) textareaRef.current.style.height = 'auto'
-            toast.success('Critique filed.')
+            reelToast.success('Critique filed.')
         } else {
-            toast.error('Could not save critique.')
+            reelToast.error('Could not save critique.')
         }
         setSubmitting(false)
     }
@@ -64,8 +64,8 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
         const { error } = await supabase.from('dossier_comments').delete().eq('id', id)
         if (!error) {
             setComments(prev => prev.filter(c => c.id !== id))
-            toast.success('Critique deleted.')
-        } else toast.error('Could not delete critique.')
+            reelToast.success('Critique deleted.')
+        } else reelToast.error('Could not delete critique.')
     }
 
     const handleUpdate = async (id: string) => {
@@ -75,8 +75,8 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
         if (!error) {
             setComments(prev => prev.map(c => c.id === id ? { ...c, body: editBody.trim() } : c))
             setEditingId(null)
-            toast.success('Critique updated.')
-        } else toast.error('Could not update critique.')
+            reelToast.success('Critique updated.')
+        } else reelToast.error('Could not update critique.')
         setIsUpdating(false)
     }
 

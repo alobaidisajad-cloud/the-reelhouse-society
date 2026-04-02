@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Users, X, Loader, UserPlus, UserCheck } from 'lucide-react'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import { useAuthStore } from '../../store'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 import Buster from '../Buster'
 
 export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
@@ -127,14 +127,14 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
                                                     try {
                                                         if (alreadyFollowing) {
                                                             useAuthStore.getState().updateUser({ following: (user.following || []).filter((u: string) => u !== member.username) })
-                                                            toast.success(`Unfollowed @${member.username}`)
+                                                            reelToast.success(`Unfollowed @${member.username}`)
                                                             await supabase.from('interactions').delete()
                                                                 .eq('user_id', user.id)
                                                                 .eq('target_user_id', member.id)
                                                                 .eq('type', 'follow')
                                                         } else {
                                                             useAuthStore.getState().updateUser({ following: [...(user.following || []), member.username] })
-                                                            toast.success(`Now following @${member.username} ✦`)
+                                                            reelToast.success(`Now following @${member.username} ✦`)
                                                             await supabase.from('interactions').insert({
                                                                 user_id: user.id,
                                                                 target_user_id: member.id,
@@ -142,7 +142,7 @@ export default function MemberSearchDropdown({ isOpen, onClose }: { isOpen: bool
                                                             })
                                                             // DB Trigger dynamically creates notification
                                                         }
-                                                    } catch { toast.error('Something went wrong.') }
+                                                    } catch { reelToast.error('Something went wrong.') }
                                                     finally { setFollowingLoading(prev => ({ ...prev, [member.username]: false })) }
                                                 }}
                                                 style={{ flexShrink: 0, fontSize: '0.5rem', padding: '0.35rem 0.7rem', letterSpacing: '0.1em', display: 'flex', alignItems: 'center', gap: '0.3rem', minWidth: 'auto' }}

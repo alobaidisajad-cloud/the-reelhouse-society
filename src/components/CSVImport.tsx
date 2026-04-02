@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, X, Check, Film, AlertTriangle, RotateCcw } from 'lucide-react'
 import { useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 
 // Parse a standard film diary CSV export into our log format
 // Supports CSV with columns: Name, Year, Rating, WatchedDate (diary.csv or ratings.csv)
@@ -56,14 +56,14 @@ export default function CSVImport({ onClose }: { onClose: () => void }) {
 
     const handleFile = useCallback((file: any) => {
         if (!file || !file.name.endsWith('.csv')) {
-            toast.error('Please upload a valid CSV file.')
+            reelToast.error('Please upload a valid CSV file.')
             return
         }
         const reader = new FileReader()
         reader.onload = (e: any) => {
             const entries = parseCSVExport(e.target.result)
             if (entries.length === 0) {
-                toast.error('No films found. Make sure this is a diary or ratings CSV export.')
+                reelToast.error('No films found. Make sure this is a diary or ratings CSV export.')
                 return
             }
             setParsed({ entries, fileName: file.name })

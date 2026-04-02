@@ -10,7 +10,7 @@ import AuteurToolkit from './AuteurToolkit'
 import LogDateSelector from './LogDateSelector'
 import LogReviewEditor from './LogReviewEditor'
 import LogActionRow from './LogActionRow'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 import { useNavigate } from 'react-router-dom'
 
 const AUTOPSY_INIT = Object.freeze({ story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 })
@@ -123,7 +123,7 @@ export default function LogForm({ film }: { film: any }) {
                     setPrivateNotes(parsed.privateNotes || '')
                     if (parsed.autopsy) setAutopsy(parsed.autopsy)
                     if (parsed.autopsyOpen) { setAutopsyOpen(true); setIsAutopsied(true) }
-                    toast('DRAFT RESTORED', { icon: '✦', style: { background: 'var(--ink)', color: 'var(--parchment)', border: '1px solid var(--sepia)' } })
+                    reelToast('DRAFT RESTORED', { icon: '✦' })
                 } catch(e) {}
             }
         }
@@ -145,11 +145,11 @@ export default function LogForm({ film }: { film: any }) {
         if (!film) return
         if (!isAuthenticated) {
             closeLogModal()
-            toast('Sign in to log films.', { icon: '✦' })
+            reelToast('Sign in to log films.', { icon: '✦' })
             return
         }
         if (rating === 0 && !review.trim() && status !== 'abandoned') {
-            toast('Rate the film or write a review before logging.', { icon: '✦' })
+            reelToast('Rate the film or write a review before logging.', { icon: '✦' })
             return
         }
 
@@ -180,15 +180,15 @@ export default function LogForm({ film }: { film: any }) {
         try {
             if (logModalEditLogId) {
                 await updateLog(logModalEditLogId, logData as any)
-                toast.success('Log updated flawlessly.', { style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
+                reelToast.success('Log updated flawlessly.')
             } else {
                 await addLog(logData as any)
                 localStorage.removeItem(`reelhouse_draft_${film.id}`)
-                toast.success('Film logged to your archive.', { style: { background: 'var(--ink)', color: 'var(--parchment)', border: '1px solid var(--sepia)' } })
+                reelToast.success('Film logged to your archive.')
             }
             closeLogModal()
         } catch (err: any) {
-            toast.error(err.message || 'Failed to save log.')
+            reelToast.error(err.message || 'Failed to save log.')
         } finally {
             setSubmitting(false)
         }
@@ -200,14 +200,18 @@ export default function LogForm({ film }: { film: any }) {
                 {film.poster_path && (
                     <div style={{ display: 'inline-block', position: 'relative' }}>
                         <img
-                            src={tmdb.poster(film.poster_path, 'w342')}
+                            src={tmdb.poster(altPoster || film.poster_path, 'w342')}
                             alt={film.title}
                             style={{
                                 width: 140, height: 210, objectFit: 'cover',
                                 borderRadius: '6px', filter: 'sepia(0.15) contrast(1.05)',
                                 boxShadow: '0 12px 40px rgba(0,0,0,0.6), 0 0 20px rgba(139,105,20,0.12)',
+                                transition: 'opacity 0.3s',
                             }}
                         />
+                        {altPoster && (
+                            <div style={{ position: 'absolute', bottom: 4, right: 4, background: 'rgba(139,105,20,0.9)', color: 'var(--ink)', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', padding: '0.15rem 0.4rem', borderRadius: '2px' }}>ALT</div>
+                        )}
                     </div>
                 )}
                 <div style={{ marginTop: '0.75rem' }}>
@@ -297,6 +301,13 @@ export default function LogForm({ film }: { film: any }) {
                     <span style={{ flex: 1 }} />
                     <span style={{ fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>DATE · COMPANION · MEDIA · NOTES</span>
                 </button>
+
+                {/* Premium tier hint — always visible even when collapsed */}
+                {isPremium && !moreOpen && (
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.2em', color: 'var(--sepia)', opacity: 0.7, paddingTop: '0.35rem', textAlign: 'center' }}>
+                        ✦ {isAuteur ? 'AUTEUR TOOLKIT' : 'ARCHIVIST TOOLS'} AVAILABLE INSIDE
+                    </div>
+                )}
             </div>
 
             <AnimatePresence>
@@ -459,6 +470,11 @@ export default function LogForm({ film }: { film: any }) {
                         </button>
                     )}
                 </div>
+                {isPremium && (
+                    <div style={{ textAlign: 'right', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: privateNotes.length > 800 ? 'var(--flicker)' : 'var(--fog)', marginTop: '0.25rem', transition: 'color 0.3s' }}>
+                        {privateNotes.length}/1000
+                    </div>
+                )}
             </div>
                 </motion.div>
             )}
@@ -483,7 +499,7 @@ export default function LogForm({ film }: { film: any }) {
                                             if (isActive) await removeFilmFromList(list.id, film.id);
                                             else await addFilmToList(list.id, film);
                                         } catch {
-                                            toast.error('Failed to update list');
+                                            reelToast.error('Failed to update list');
                                         }
                                     }}
                                     style={{

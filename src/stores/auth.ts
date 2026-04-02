@@ -3,7 +3,7 @@ import { persist } from 'zustand/middleware'
 import { supabase } from '../supabaseClient'
 import { logError } from '../errorLogger'
 import { User } from '../types'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 
 // ── Username → ID cache: prevents redundant profile lookups on follow/unfollow ──
 const _usernameIdCache = new Map<string, string>()
@@ -237,7 +237,7 @@ export const useAuthStore = create<AuthState>()(
                     set((s) => ({
                         user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null,
                     }))
-                    toast.error('Follow failed — please try again.')
+                    reelToast.error('Follow failed — please try again.')
                 }
             },
 
@@ -273,7 +273,7 @@ export const useAuthStore = create<AuthState>()(
                     set((s) => ({
                         user: s.user ? { ...s.user, following: prevFollowing } : null,
                     }))
-                    toast.error('Unfollow failed — please try again.')
+                    reelToast.error('Unfollow failed — please try again.')
                 }
             },
         }),

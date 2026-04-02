@@ -8,7 +8,7 @@ import { useAuthStore, useFilmStore, useUIStore, useProgrammeStore } from '../st
 import { ReelRating, SectionHeader, FilmCard } from '../components/UI'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 
 import { ShareCardOverlay } from '../components/profile/ShareCardOverlay'
 import { CinemaDNACard } from '../components/profile/CinemaDNACard'
@@ -124,6 +124,9 @@ export default function UserProfilePage() {
 
     const activeTab = tab || null
     const [shareLog, setShareLog] = useState(null)
+
+    // Scroll to top when switching tabs — prevents landing mid-page
+    useEffect(() => { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }) }, [activeTab])
     const [showDNA, setShowDNA] = useState(false)
     const [sieve, setSieve] = useState('all')
     const [archiveSieve, setArchiveSieve] = useState('all')
@@ -301,7 +304,7 @@ export default function UserProfilePage() {
                 queryClient.setQueryData(['profile-by-username', routeUsername], (old: any) =>
                     old ? { ...old, followersCount: Math.max(0, (old.followersCount || 1) - 1) } : old
                 )
-                toast.success(`Unfollowed @${pUser.username}`)
+                reelToast.success(`Unfollowed @${pUser.username}`)
                 // DB: remove follow interaction (trigger handles count update)
                 await supabase.from('interactions').delete()
                     .eq('user_id', currentUser.id)
@@ -313,7 +316,7 @@ export default function UserProfilePage() {
                 queryClient.setQueryData(['profile-by-username', routeUsername], (old: any) =>
                     old ? { ...old, followersCount: (old.followersCount || 0) + 1 } : old
                 )
-                toast.success(`Now following @${pUser.username} ✦`)
+                reelToast.success(`Now following @${pUser.username} ✦`)
                 // DB: insert follow interaction (trigger handles count update)
                 await supabase.from('interactions').insert({
                     user_id: currentUser.id,
@@ -323,7 +326,7 @@ export default function UserProfilePage() {
                 // DB Trigger automatically dispatches the follow notification globally.
             }
         } catch {
-            toast.error('Something went wrong.')
+            reelToast.error('Something went wrong.')
         } finally {
             setFollowLoading(false)
         }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Eye, EyeOff, Check, Circle, ArrowLeft } from 'lucide-react'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import PageSEO from '../components/PageSEO'
 
 export default function ResetPasswordPage() {
@@ -28,8 +28,8 @@ export default function ResetPasswordPage() {
 
     const handleReset = async (e: any) => {
         e.preventDefault()
-        if (!strong) { toast.error('Password does not meet security requirements.'); return }
-        if (password !== confirm) { toast.error('Passwords do not match.'); return }
+        if (!strong) { reelToast.error('Password does not meet security requirements.'); return }
+        if (password !== confirm) { reelToast.error('Passwords do not match.'); return }
 
         setLoading(true)
         try {
@@ -38,7 +38,7 @@ export default function ResetPasswordPage() {
             setSuccess(true)
             // Clear recovery mode so the auth listener can properly sign the user in
             sessionStorage.removeItem('reelhouse_recovery')
-            toast.success('Password updated successfully!')
+            reelToast.success('Password updated successfully!')
             // Re-trigger auth so the user gets properly logged in with their new password
             const { data: { session } } = await supabase.auth.getSession()
             if (session) {
@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
             }
             setTimeout(() => navigate('/'), 2500)
         } catch (err: any) {
-            toast.error(err.message || 'Failed to reset password.')
+            reelToast.error(err.message || 'Failed to reset password.')
         } finally {
             setLoading(false)
         }

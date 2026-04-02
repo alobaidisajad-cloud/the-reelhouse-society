@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Film, Building, Lock, Terminal, Mail, RefreshCw, Check, AlertCircle, Circle } from 'lucide-react'
 import { useUIStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import { isDisposableEmail, isValidEmailFormat } from '../utils/disposableEmails'
 import VelvetRopeGate from './signup/VelvetRopeGate'
 import ForgotPasswordScreen from './signup/ForgotPasswordScreen'
@@ -134,7 +134,7 @@ export default function SignupModal() {
                         user: { ...data.session.user, ...profile, following: [] } as any,
                         isAuthenticated: true,
                     })
-                    toast.success(`Welcome to The ReelHouse Society! 🎬`)
+                    reelToast.success(`Welcome to The ReelHouse Society! 🎬`)
                     setAwaitingConfirmation(false)
                     closeSignupModal()
                     resetForm()
@@ -180,7 +180,7 @@ export default function SignupModal() {
 
     const handleSubmit = async () => {
         if (!emailOrUsername || !password || (!isLogin && !username)) {
-            toast.error('Please fill all fields')
+            reelToast.error('Please fill all fields')
             return
         }
         if (submitting) return
@@ -189,13 +189,13 @@ export default function SignupModal() {
         const now = Date.now()
         if (isLogin && now < lockoutUntil) {
             const remaining = Math.ceil((lockoutUntil - now) / 1000)
-            toast.error(`Too many attempts. Try again in ${remaining}s.`)
+            reelToast.error(`Too many attempts. Try again in ${remaining}s.`)
             return
         }
 
         // Username availability guard for signup
         if (!isLogin && usernameStatus === 'taken') {
-            toast.error('That username is already taken. Choose another.')
+            reelToast.error('That username is already taken. Choose another.')
             return
         }
 
@@ -211,45 +211,45 @@ export default function SignupModal() {
                     const { data: resolvedEmail, error: rpcError } = await supabase
                         .rpc('get_email_by_username', { lookup_username: lookupUsername })
                     if (rpcError || !resolvedEmail) {
-                        toast.error('No account found with that username.')
+                        reelToast.error('No account found with that username.')
                         setLoginAttempts(prev => prev + 1)
                         if (loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS) {
                             setLockoutUntil(Date.now() + LOCKOUT_DURATION_MS)
                             setLoginAttempts(0)
-                            toast.error('Account locked for 30 seconds due to too many failed attempts.')
+                            reelToast.error('Account locked for 30 seconds due to too many failed attempts.')
                         }
                         return
                     }
                     loginEmail = resolvedEmail
                 } else {
                     if (!isValidEmailFormat(loginEmail)) {
-                        toast.error('Please enter a valid email address.')
+                        reelToast.error('Please enter a valid email address.')
                         return
                     }
                 }
                 await login(loginEmail, password)
                 setLoginAttempts(0) // Reset on success
-                toast.success('Welcome back to the House.')
+                reelToast.success('Welcome back to the House.')
                 closeSignupModal()
                 resetForm()
             } else {
                 // ── SIGNUP: validate email, password, and username ──
                 const signupEmail = emailOrUsername.trim()
                 if (!isValidEmailFormat(signupEmail)) {
-                    toast.error('Please enter a valid email address.')
+                    reelToast.error('Please enter a valid email address.')
                     return
                 }
                 if (isDisposableEmail(signupEmail)) {
-                    toast.error('Disposable emails are not permitted. Use a permanent address to join the Society.')
+                    reelToast.error('Disposable emails are not permitted. Use a permanent address to join the Society.')
                     return
                 }
                 if (!passwordStrong) {
-                    toast.error('Password does not meet security requirements.')
+                    reelToast.error('Password does not meet security requirements.')
                     return
                 }
                 const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '_')
                 if (formattedUsername.length < 3) {
-                    toast.error('Username must be at least 3 characters.')
+                    reelToast.error('Username must be at least 3 characters.')
                     return
                 }
                 const result = await useAuthStore.getState().signup(signupEmail, password, formattedUsername, role, persona)
@@ -257,7 +257,7 @@ export default function SignupModal() {
                 if (result?.session) {
                     // Email confirmation disabled — user is logged in immediately
 
-                    toast.success(`Welcome to The ReelHouse Society, ${formattedUsername}! 🎬`)
+                    reelToast.success(`Welcome to The ReelHouse Society, ${formattedUsername}! 🎬`)
                     closeSignupModal()
                     resetForm()
                 } else {
@@ -279,7 +279,7 @@ export default function SignupModal() {
                     msg = 'Account locked for 30 seconds due to too many failed attempts.'
                 }
             }
-            toast.error(msg)
+            reelToast.error(msg)
         } finally {
             setSubmitting(false)
         }
@@ -297,9 +297,9 @@ export default function SignupModal() {
         setResending(true)
         try {
             await supabase.auth.resend({ type: 'signup', email: confirmedEmail })
-            toast.success('New verification link sent!')
+            reelToast.success('New verification link sent!')
         } catch {
-            toast.error('Could not resend. Please try again.')
+            reelToast.error('Could not resend. Please try again.')
         } finally {
             setResending(false)
         }

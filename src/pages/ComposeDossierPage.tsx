@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import { useAuthStore, useDispatchStore } from '../store'
 import { useViewport } from '../hooks/useViewport'
 import PageSEO from '../components/PageSEO'
@@ -86,7 +86,7 @@ export default function ComposeDossierPage() {
 
     useEffect(() => {
         if (!canWrite) {
-            toast.error('Auteur tier required to compose dossiers')
+            reelToast.error('Auteur tier required to compose dossiers')
             navigate('/dispatch', { replace: true })
         }
     }, [canWrite, navigate])
@@ -104,7 +104,7 @@ export default function ComposeDossierPage() {
                     setTitle(parsed.title || '')
                     setContent(parsed.content || '')
                     localStorage.removeItem(EDIT_DRAFT_KEY)
-                    toast('Editing dossier', { icon: '✏️', duration: 2000 })
+                    reelToast('Editing dossier', { icon: '✏️' })
                     return
                 }
             } catch { /* ignore corrupt data */ }
@@ -118,7 +118,7 @@ export default function ComposeDossierPage() {
                 if (draft.title || draft.content) {
                     setTitle(draft.title || '')
                     setContent(draft.content || '')
-                    toast('Draft restored', { icon: '📝', duration: 2000 })
+                    reelToast('Draft restored', { icon: '📝' })
                 }
             }
         } catch { /* ignore corrupt data */ }
@@ -202,7 +202,7 @@ export default function ComposeDossierPage() {
                     excerpt: content.trim().substring(0, 150) + (content.length > 150 ? '...' : ''),
                     fullContent: content.trim(),
                 })
-                toast.success('Dossier updated')
+                reelToast.success('Dossier updated')
             } else {
                 // Create new dossier
                 await addDossier({
@@ -211,12 +211,12 @@ export default function ComposeDossierPage() {
                     fullContent: content.trim(),
                 })
                 localStorage.removeItem(DRAFT_KEY)
-                toast.success('Dossier published to The Dispatch')
+                reelToast.success('Dossier published to The Dispatch')
             }
 
             navigate('/dispatch')
         } catch (err: any) {
-            toast.error(err.message || 'Failed to publish. Try again.')
+            reelToast.error(err.message || 'Failed to publish. Try again.')
         } finally {
             setIsPublishing(false)
         }

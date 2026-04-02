@@ -2,10 +2,11 @@ import { useEffect, useState, useCallback, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, X, SlidersHorizontal, ChevronDown } from 'lucide-react'
+import { Search, X, SlidersHorizontal, ChevronDown, Bookmark } from 'lucide-react'
+import reelToast from '../utils/reelToast'
 import { tmdb, obscurityScore } from '../tmdb'
 import { FilmCard, SectionHeader, LoadingReel, ObscurityBadge, PersonPlaceholder } from '../components/UI'
-import { useUIStore, useDiscoverStore } from '../store'
+import { useUIStore, useDiscoverStore, useFilmStore, useAuthStore } from '../store'
 import PageSEO from '../components/PageSEO'
 import Poster from '../components/film/Poster'
 
@@ -156,16 +157,26 @@ const desktopGridStyle = {
 
 const FilmGrid = ({ films }: { films: any[] }) => {
     const { isTouch: IS_TOUCH } = useViewport()
+    const { isAuthenticated } = useAuthStore()
+    const logs = useFilmStore(s => s.logs)
+    const watchlist = useFilmStore(s => s.watchlist)
+    const addToWatchlist = useFilmStore(s => s.addToWatchlist)
+    const removeFromWatchlist = useFilmStore(s => s.removeFromWatchlist)
+    const openSignupModal = useUIStore(s => s.openSignupModal)
+    const loggedFilmIds = new Set(logs.map((l: any) => l.filmId))
+    const watchlistIds = new Set(watchlist.map((w: any) => w.filmId))
     return (
     <div style={IS_TOUCH ? mobileGridStyle : desktopGridStyle}>
         {films.map((item: any, idx: number) => {
             const isPerson = item.media_type === 'person'
+            const isLogged = isAuthenticated && !isPerson && loggedFilmIds.has(item.id)
+            const isSaved = isAuthenticated && !isPerson && watchlistIds.has(item.id)
             return (
                 <Link
                     key={`${item.media_type || 'movie'}-${item.id}-${idx}`}
                     to={isPerson ? `/person/${item.id}` : `/film/${item.id}`}
-                    style={{ display: 'block', textDecoration: 'none' }}
-                    className={IS_TOUCH ? '' : 'fade-in-up'}
+                    style={{ display: 'block', textDecoration: 'none', position: 'relative' }}
+                    className={IS_TOUCH ? '' : 'fade-in-up discover-poster-wrap'}
                 >
                     {isPerson ? (
                         <div style={{ textAlign: 'center' }}>
@@ -179,6 +190,49 @@ const FilmGrid = ({ films }: { films: any[] }) => {
                     ) : (
                         <>
                             <FilmCard film={item} showRating />
+                            {isLogged && (
+                                <div style={{
+                                    position: 'absolute', top: 6, right: 6, zIndex: 5,
+                                    width: 20, height: 20, borderRadius: '50%',
+                                    background: 'rgba(139,105,20,0.9)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+                                    border: '1px solid rgba(242,232,160,0.3)',
+                                }} title="You've logged this film">
+                                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="var(--ink)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                                </div>
+                            )}
+                            {/* Quick Save to Watchlist */}
+                            {!isPerson && (
+                                <button
+                                    className="discover-quick-save"
+                                    onClick={(e) => {
+                                        e.preventDefault(); e.stopPropagation()
+                                        if (!isAuthenticated) { openSignupModal(); return }
+                                        if (isSaved) {
+                                            removeFromWatchlist(item.id)
+                                            reelToast.success('Removed from watchlist')
+                                        } else {
+                                            addToWatchlist({ id: item.id, title: item.title || item.name, poster_path: item.poster_path, release_date: item.release_date })
+                                            reelToast.success('Saved to watchlist ✦')
+                                        }
+                                    }}
+                                    title={isSaved ? 'Remove from watchlist' : 'Save to watchlist'}
+                                    style={{
+                                        position: 'absolute', top: 6, left: 6, zIndex: 6,
+                                        width: 26, height: 26, borderRadius: '4px',
+                                        background: isSaved ? 'rgba(139,105,20,0.95)' : 'rgba(10,7,3,0.85)',
+                                        backdropFilter: 'blur(4px)',
+                                        border: isSaved ? '1px solid rgba(242,232,160,0.4)' : '1px solid rgba(139,105,20,0.3)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        cursor: 'pointer', padding: 0,
+                                        transition: 'all 0.2s ease',
+                                        opacity: IS_TOUCH ? 1 : undefined,
+                                    }}
+                                >
+                                    <Bookmark size={12} fill={isSaved ? 'var(--ink)' : 'none'} color={isSaved ? 'var(--ink)' : 'var(--sepia)'} strokeWidth={2} />
+                                </button>
+                            )}
                             {!IS_TOUCH && <div style={{ marginTop: '0.4rem' }}><ObscurityBadge score={obscurityScore(item)} /></div>}
                         </>
                     )}

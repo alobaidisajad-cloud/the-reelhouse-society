@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from '../store'
 import { Shield, Trash2, Ban, CheckCircle, XCircle, AlertTriangle, Clock, Eye, ArrowLeft } from 'lucide-react'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import PageSEO from '../components/PageSEO'
 
 // ── Admin check — hardcoded for security ──
@@ -71,9 +71,9 @@ export default function TribunalPage() {
                 resolved_by: user!.id,
                 resolved_at: new Date().toISOString(),
             }).eq('id', reportId)
-            toast.success('Report dismissed.')
+            reelToast.success('Report dismissed.')
             queryClient.invalidateQueries({ queryKey: ['tribunal-reports'] })
-        } catch { toast.error('Failed to dismiss.') }
+        } catch { reelToast.error('Failed to dismiss.') }
         finally { setActionInProgress(null) }
     }
 
@@ -103,9 +103,9 @@ export default function TribunalPage() {
                 resolved_at: new Date().toISOString(),
             }).eq('id', report.id)
 
-            toast.success('Content destroyed and report resolved.')
+            reelToast.success('Content destroyed and report resolved.')
             queryClient.invalidateQueries({ queryKey: ['tribunal-reports'] })
-        } catch { toast.error('Failed to delete content.') }
+        } catch { reelToast.error('Failed to delete content.') }
         finally { setActionInProgress(null) }
     }
 
@@ -131,7 +131,7 @@ export default function TribunalPage() {
             }
 
             if (!targetUserId) {
-                toast.error('Could not identify the user to ban.')
+                reelToast.error('Could not identify the user to ban.')
                 return
             }
 
@@ -149,9 +149,9 @@ export default function TribunalPage() {
                 resolved_at: new Date().toISOString(),
             }).eq('id', report.id)
 
-            toast.success('User has been silenced from The Society.')
+            reelToast.success('User has been silenced from The Society.')
             queryClient.invalidateQueries({ queryKey: ['tribunal-reports'] })
-        } catch { toast.error('Failed to ban user.') }
+        } catch { reelToast.error('Failed to ban user.') }
         finally { setActionInProgress(null) }
     }
 

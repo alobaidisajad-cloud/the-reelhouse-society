@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { Lock } from 'lucide-react'
 import { tmdb } from '../../tmdb'
-import toast from 'react-hot-toast'
+import reelToast from '../../utils/reelToast'
 import { RadarChart } from '../UI'
 
 interface AuteurToolkitProps {
@@ -58,7 +58,7 @@ export default function AuteurToolkit({
                                 </div>
                                 <button onClick={(e) => {
                                     e.preventDefault()
-                                    toast("STORY: Narrative & Structure\nSCRIPT: Dialogue & Theme\nACTING: Micro-expressions & Presence\nCINEMATOGRAPHY: Light, Shadow & Framing\nEDITING: Rhythm & Pacing\nSOUND: Score & Silence", { duration: 8000, icon: '📖', style: { background: 'var(--ink)', border: '1px solid var(--sepia)', color: 'var(--parchment)', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', textAlign: 'left', minWidth: '300px' } })
+                                    reelToast("STORY: Narrative & Structure\nSCRIPT: Dialogue & Theme\nACTING: Micro-expressions & Presence\nCINEMATOGRAPHY: Light, Shadow & Framing\nEDITING: Rhythm & Pacing\nSOUND: Score & Silence", { duration: 8000, icon: '📖' })
                                 }} className="btn btn-ghost" style={{ fontSize: '0.45rem', padding: '0.2rem 0.4rem', color: 'var(--fog)' }}>
                                     ✦ FIELD MANUAL
                                 </button>

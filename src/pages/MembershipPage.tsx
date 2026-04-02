@@ -5,7 +5,7 @@ import { Crown, Star, Upload } from 'lucide-react'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import CSVImport from '../components/CSVImport'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import { supabase } from '../supabaseClient'
 import '../styles/membership.css'
 import PageSEO from '../components/PageSEO'
@@ -45,7 +45,7 @@ export default function MembershipPage() {
             if (error || !data?.redirect_url) throw error
             window.location.href = data.redirect_url
         } catch (err) {
-            toast.error('Checkout unavailable right now. Try again.')
+            reelToast.error('Checkout unavailable right now. Try again.')
             setIsRedirecting(false)
         }
     }
@@ -267,7 +267,7 @@ export default function MembershipPage() {
                                 if (error || !data?.redirect_url) throw error
                                 window.location.href = data.redirect_url
                             } catch (err) {
-                                toast.error('Checkout unavailable right now.')
+                                reelToast.error('Checkout unavailable right now.')
                                 setIsRedirecting(false)
                             }
                         }}

@@ -7,7 +7,7 @@ import { Plus, Search as SearchIcon, X, ChevronDown, Award, MessageCircle } from
 import CreateListModal from '../components/CreateListModal'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import PageSEO from '../components/PageSEO'
 import ListActions from '../components/ListActions'
 import { motion } from 'framer-motion'
@@ -196,7 +196,7 @@ export default function ListsPage() {
         }).select().single()
 
         if (error || !newList) {
-            toast.error('Failed to create collection')
+            reelToast.error('Failed to create collection')
             return
         }
 
@@ -211,7 +211,7 @@ export default function ListsPage() {
             await supabase.from('list_items').insert(filmRows)
         }
 
-        toast.success('Collection created!')
+        reelToast.success('Collection created!')
         // Refresh the list
         queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
     }

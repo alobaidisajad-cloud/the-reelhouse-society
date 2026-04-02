@@ -3,7 +3,7 @@ import { useEffect, useState, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useNavigate } from 'react-router-dom'
-import toast from 'react-hot-toast'
+import reelToast from '../utils/reelToast'
 import { tmdb } from '../tmdb'
 import { useAuthStore, useDispatchStore } from '../store'
 const EDIT_DRAFT_KEY = 'reelhouse_dossier_edit'
@@ -257,12 +257,12 @@ export default function DispatchPage() {
             const { data, error } = await supabase.rpc('toggle_dossier_certify', { dossier_uuid: selectedArticle.id })
             if (error) throw error
             setCertified(!!data)
-            toast(data ? 'Dossier Certified ✦' : 'Certification removed', { duration: 1500 })
+            reelToast(data ? 'Dossier Certified ✦' : 'Certification removed')
         } catch {
             // Rollback on failure
             setCertified(wasCertified)
             setLocalCertifyCount(prev => wasCertified ? prev + 1 : Math.max(0, prev - 1))
-            toast.error('Failed to certify')
+            reelToast.error('Failed to certify')
         }
         setCertifyLoading(false)
     }
@@ -274,7 +274,7 @@ export default function DispatchPage() {
             navigator.share({ title: selectedArticle?.title, text, url }).catch(() => {})
         } else {
             navigator.clipboard.writeText(`${text}\n${url}`)
-            toast.success('Link copied to clipboard')
+            reelToast.success('Link copied to clipboard')
         }
     }
     return (
@@ -480,7 +480,7 @@ export default function DispatchPage() {
                                 className="article-reader-paper"
                                 onClick={(e: React.MouseEvent) => e.stopPropagation()}
                             >
-                                <button onClick={closeArticle} className="btn-close-reader">
+                                <button onClick={closeArticle} className="btn-close-reader" aria-label="Close article">
                                     <IconClose />
                                 </button>
                                 <div className="reader-watermark">REELHOUSE DIGITAL DOSSIER</div>
@@ -586,9 +586,9 @@ export default function DispatchPage() {
                                                     const { deleteDossier } = useDispatchStore.getState()
                                                     await deleteDossier(selectedArticle.id)
                                                     closeArticle()
-                                                    toast.success('Dossier deleted')
+                                                    reelToast.success('Dossier deleted')
                                                 } catch {
-                                                    toast.error('Failed to delete dossier')
+                                                    reelToast.error('Failed to delete dossier')
                                                 }
                                             }}
                                             style={{ color: '#8b2020' }}
