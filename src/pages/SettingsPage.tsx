@@ -4,14 +4,16 @@
  * Profile editing lives at /edit-profile now.
  * Nitrate Noir elevated design.
  */
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import PageSEO from '../components/PageSEO'
 import toast from 'react-hot-toast'
-import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft } from 'lucide-react'
+import { Lock, Eye, Bell, LogOut, Download, Trash2, ChevronDown, ChevronUp, Smartphone, Shield, FileText, User, ArrowLeft, Upload, CheckCircle, AlertCircle } from 'lucide-react'
 import { subscribeToWebPush } from '../utils/push'
+import { importLetterboxdZip } from '../utils/letterboxdImport'
+import { useFilmStore } from '../store'
 import '../styles/settings.css'
 
 export default function SettingsPage() {
@@ -67,6 +69,38 @@ export default function SettingsPage() {
 
     // ── General ──
     const [saving, setSaving] = useState(false)
+
+    // ── Import ──
+    const [importing, setImporting] = useState(false)
+    const [importProgress, setImportProgress] = useState<{ phase: string; current: number; total: number; detail?: string } | null>(null)
+    const [importResult, setImportResult] = useState<{ logs: number; reviews: number; watchlist: number; lists: number; skipped: number; errors: string[] } | null>(null)
+    const [dragOver, setDragOver] = useState(false)
+    const importFileRef = useRef<HTMLInputElement>(null)
+
+    const handleImportFile = async (file: File) => {
+        if (!file.name.endsWith('.zip')) {
+            toast.error('Please upload a .zip file from Letterboxd.')
+            return
+        }
+        setImporting(true)
+        setImportResult(null)
+        try {
+            const result = await importLetterboxdZip(file, (progress) => {
+                setImportProgress(progress)
+            })
+            setImportResult(result)
+            // Refresh all stores
+            await useFilmStore.getState().fetchLogs()
+            await useFilmStore.getState().fetchWatchlist()
+            await useFilmStore.getState().fetchLists()
+            toast.success(`✦ Import complete — ${result.logs} logs, ${result.watchlist} watchlist, ${result.lists} stacks`)
+        } catch (e: any) {
+            toast.error(e.message || 'Import failed')
+        } finally {
+            setImporting(false)
+            setImportProgress(null)
+        }
+    }
 
     // ── Re-sync local state when the user object updates ──
     useEffect(() => {
@@ -378,7 +412,163 @@ export default function SettingsPage() {
             </div>
 
             {/* ═══════════════════════════════════════════ */}
-            {/*   SECTION 4 — LEGAL                        */}
+            {/*   SECTION 4 — IMPORT & EXPORT               */}
+            {/* ═══════════════════════════════════════════ */}
+            <div className="settings-section">
+                <div className="settings-section-header">
+                    <Download size={14} /> IMPORT & EXPORT
+                </div>
+
+                {/* ── Letterboxd Import ── */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
+                        IMPORT FROM LETTERBOXD
+                    </div>
+                    <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', marginBottom: '1rem', lineHeight: 1.6, fontStyle: 'italic' }}>
+                        Export your data from Letterboxd (Settings → Import & Export → Export Your Data), then upload the ZIP file here. Your diary, reviews, ratings, watchlist, and lists will be imported.
+                    </div>
+
+                    {/* Upload Zone */}
+                    {!importing && !importResult && (
+                        <div
+                            onClick={() => importFileRef.current?.click()}
+                            onDragOver={(e) => { e.preventDefault(); setDragOver(true) }}
+                            onDragLeave={() => setDragOver(false)}
+                            onDrop={(e) => {
+                                e.preventDefault()
+                                setDragOver(false)
+                                const file = e.dataTransfer.files[0]
+                                if (file) handleImportFile(file)
+                            }}
+                            style={{
+                                border: `2px dashed ${dragOver ? 'var(--sepia)' : 'rgba(139,105,20,0.25)'}`,
+                                borderRadius: '6px',
+                                padding: '2rem 1.5rem',
+                                textAlign: 'center',
+                                cursor: 'pointer',
+                                background: dragOver ? 'rgba(139,105,20,0.06)' : 'rgba(10,7,3,0.4)',
+                                transition: 'all 0.3s',
+                            }}
+                        >
+                            <Upload size={24} style={{ color: 'var(--sepia)', marginBottom: '0.75rem', opacity: 0.7 }} />
+                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.85rem', color: 'var(--parchment)', marginBottom: '0.4rem' }}>
+                                Drop your Letterboxd ZIP here
+                            </div>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.12em', color: 'var(--fog)' }}>
+                                or click to browse
+                            </div>
+                            <input
+                                ref={importFileRef}
+                                type="file"
+                                accept=".zip"
+                                style={{ display: 'none' }}
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) handleImportFile(file)
+                                    e.target.value = '' // allow re-upload
+                                }}
+                            />
+                        </div>
+                    )}
+
+                    {/* Progress Bar */}
+                    {importing && importProgress && (
+                        <div style={{
+                            border: '1px solid rgba(139,105,20,0.2)',
+                            borderRadius: '6px',
+                            padding: '1.25rem',
+                            background: 'rgba(10,7,3,0.6)',
+                        }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
+                                    {importProgress.phase}
+                                </span>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                                    {importProgress.current} / {importProgress.total}
+                                </span>
+                            </div>
+                            {/* Progress bar track */}
+                            <div style={{
+                                width: '100%', height: '4px', borderRadius: '2px',
+                                background: 'rgba(139,105,20,0.1)',
+                                overflow: 'hidden',
+                            }}>
+                                <div style={{
+                                    width: `${importProgress.total > 0 ? (importProgress.current / importProgress.total) * 100 : 0}%`,
+                                    height: '100%',
+                                    background: 'linear-gradient(90deg, var(--sepia), rgba(218,165,32,0.8))',
+                                    borderRadius: '2px',
+                                    transition: 'width 0.3s ease-out',
+                                }} />
+                            </div>
+                            {importProgress.detail && (
+                                <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--fog)', marginTop: '0.5rem', fontStyle: 'italic', opacity: 0.7 }}>
+                                    {importProgress.detail}
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Import Result */}
+                    {importResult && (
+                        <div style={{
+                            border: '1px solid rgba(139,105,20,0.3)',
+                            borderRadius: '6px',
+                            padding: '1.25rem',
+                            background: 'rgba(10,7,3,0.6)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                                <CheckCircle size={16} style={{ color: 'var(--sepia)' }} />
+                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.85rem', color: 'var(--parchment)' }}>
+                                    TRANSFER COMPLETE
+                                </span>
+                            </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
+                                {[
+                                    { label: 'FILM LOGS', value: importResult.logs },
+                                    { label: 'REVIEWS', value: importResult.reviews },
+                                    { label: 'WATCHLIST', value: importResult.watchlist },
+                                    { label: 'STACKS', value: importResult.lists },
+                                ].map(stat => (
+                                    <div key={stat.label} style={{ textAlign: 'center', padding: '0.5rem', background: 'rgba(139,105,20,0.05)', borderRadius: '4px' }}>
+                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--parchment)' }}>{stat.value}</div>
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>{stat.label}</div>
+                                    </div>
+                                ))}
+                            </div>
+                            {importResult.skipped > 0 && (
+                                <div style={{ marginTop: '0.75rem', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)', display: 'flex', alignItems: 'center', gap: '0.3rem' }}>
+                                    <AlertCircle size={10} /> {importResult.skipped} films could not be matched
+                                </div>
+                            )}
+                            {importResult.errors.length > 0 && (
+                                <div style={{ marginTop: '0.5rem', fontFamily: 'var(--font-body)', fontSize: '0.65rem', color: 'rgba(162,36,36,0.8)', fontStyle: 'italic' }}>
+                                    {importResult.errors.slice(0, 3).join(' · ')}
+                                </div>
+                            )}
+                            <button
+                                className="settings-action-btn"
+                                onClick={() => setImportResult(null)}
+                                style={{ marginTop: '1rem' }}
+                            >
+                                <Upload size={12} /> IMPORT ANOTHER FILE
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* ── Export ── */}
+                <div className="settings-divider" />
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem' }}>
+                    EXPORT YOUR DATA
+                </div>
+                <button className="settings-action-btn" onClick={() => toast.success('CSV export available from your profile page')}>
+                    <Download size={12} /> EXPORT DATA (CSV)
+                </button>
+            </div>
+
+            {/* ═══════════════════════════════════════════ */}
+            {/*   SECTION 5 — LEGAL                        */}
             {/* ═══════════════════════════════════════════ */}
             <div className="settings-section">
                 <div className="settings-section-header">
@@ -396,7 +586,7 @@ export default function SettingsPage() {
             </div>
 
             {/* ═══════════════════════════════════════════ */}
-            {/*   SECTION 5 — ACCOUNT ACTIONS              */}
+            {/*   SECTION 6 — ACCOUNT ACTIONS              */}
             {/* ═══════════════════════════════════════════ */}
             <div className="settings-section settings-section--danger">
                 <div className="settings-section-header" style={{ color: 'rgba(162,36,36,0.7)' }}>
@@ -406,9 +596,6 @@ export default function SettingsPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                     <button className="settings-action-btn" onClick={handleSignOut}>
                         <LogOut size={12} /> SIGN OUT
-                    </button>
-                    <button className="settings-action-btn" onClick={() => toast.success('CSV export available from your profile page')}>
-                        <Download size={12} /> EXPORT DATA (CSV)
                     </button>
                     <div className="settings-divider" />
                     <button className="settings-action-btn settings-action-btn--danger" onClick={handleDeleteAccount}>
