@@ -42,6 +42,7 @@ function mapLogsToFeed(data: any[]) {
             editorialHeader: l.editorial_header || null,
             autopsy: l.autopsy,
             isAutopsied: l.is_autopsied || false,
+            videoUrl: l.video_url || null,
             endorsementCount: 0,
             createdAt: l.created_at,
             watchedDate: l.watched_date,
@@ -85,7 +86,7 @@ export default function FeedPage() {
         let query = supabase
             .from('logs')
             .select(`
-                id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, created_at,
+                id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, pull_quote, drop_cap, alt_poster, editorial_header, is_autopsied, autopsy, video_url, created_at,
                 profiles ( id, username, role, preferences )
             `)
             .order('created_at', { ascending: false })

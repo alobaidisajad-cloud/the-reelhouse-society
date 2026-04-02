@@ -149,7 +149,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const isArchivistLog = log.userRole === 'archivist'
     const isProjectionistLog = log.userRole === 'projectionist'
     const hasEditorialFeatures = !!(log.editorialHeader || log.dropCap || log.pullQuote)
-    const hasVideoReview = !!(log as any).video_url || !!(log as any).videoUrl
+    const hasVideoReview = !!log.videoUrl
     const isPremiumLog = isArchivistLog || isAuteurLog || hasEditorialFeatures
 
     // ── EXPANDED FOCUS VIEW (CINEMATIC LAYOUT) ──
@@ -342,6 +342,41 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 {log.isAutopsied && log.autopsy && (
                     <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
                         <RadarChart autopsy={log.autopsy} size={180} />
+                    </div>
+                )}
+
+                {/* ── Screening Room Video — Cinematic Player ── */}
+                {hasVideoReview && (
+                    <div style={{ marginTop: '1.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <div style={{ width: 22, height: 22, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(196,135,42,0.15), rgba(162,36,36,0.15))', border: '1px solid rgba(196,135,42,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#c4872a" strokeWidth="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            </div>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.2em', color: '#c4872a' }}>THE SCREENING ROOM</span>
+                            <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(196,135,42,0.3), transparent)' }} />
+                        </div>
+                        <div style={{
+                            position: 'relative', borderRadius: '8px', overflow: 'hidden',
+                            border: '1px solid rgba(196,135,42,0.2)',
+                            boxShadow: '0 16px 48px rgba(0,0,0,0.6), 0 0 40px rgba(196,135,42,0.06)',
+                        }}>
+                            <video
+                                src={log.videoUrl}
+                                controls
+                                preload="metadata"
+                                playsInline
+                                style={{ width: '100%', maxHeight: '420px', display: 'block', background: '#000', borderRadius: '8px' }}
+                            />
+                            <div style={{
+                                position: 'absolute', top: 8, right: 8,
+                                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(196,135,42,0.3)',
+                                padding: '0.2rem 0.5rem', borderRadius: '3px',
+                                display: 'flex', alignItems: 'center', gap: '0.25rem', pointerEvents: 'none',
+                            }}>
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.12em', color: '#c4872a' }}>◎ VIDEO REVIEW</span>
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -591,6 +626,23 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     ) : (
                         <RadarChart autopsy={log.autopsy} size={130} />
                     )
+                )}
+
+                {/* ── Screening Room Video (Compact) ── */}
+                {hasVideoReview && (
+                    <div onClick={e => e.stopPropagation()} style={{ marginTop: '0.75rem', position: 'relative', borderRadius: '6px', overflow: 'hidden', border: '1px solid rgba(196,135,42,0.2)', boxShadow: '0 8px 24px rgba(0,0,0,0.4)' }}>
+                        <video
+                            src={log.videoUrl}
+                            controls
+                            preload="metadata"
+                            playsInline
+                            style={{ width: '100%', maxHeight: IS_TOUCH ? '200px' : '240px', display: 'block', background: '#000', borderRadius: '6px' }}
+                        />
+                        <div style={{ position: 'absolute', top: 6, right: 6, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', border: '1px solid rgba(196,135,42,0.3)', padding: '0.15rem 0.4rem', borderRadius: '2px', display: 'flex', alignItems: 'center', gap: '0.2rem', pointerEvents: 'none' }}>
+                            <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="#c4872a" strokeWidth="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.3rem', letterSpacing: '0.12em', color: '#c4872a' }}>VIDEO REVIEW</span>
+                        </div>
+                    </div>
                 )}
 
                 {/* Feed Action Bar */}
