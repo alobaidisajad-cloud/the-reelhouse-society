@@ -1,5 +1,5 @@
 /**
- * Letterboxd Import Engine — "THE TRANSFER PROTOCOL"
+ * Letterboxd Import Engine — "THE TRANSFER PROTOCOL" v3
  * 
  * Parses a Letterboxd ZIP export and imports all data into ReelHouse:
  * - diary.csv → Film Logs (with dates, ratings, rewatch status)
@@ -25,10 +25,10 @@ interface TMDBMatch {
 }
 
 interface ImportProgress {
-    phase: string          // e.g. "Matching films..." 
+    phase: string
     current: number
     total: number
-    detail?: string        // e.g. "There Will Be Blood (2007)"
+    detail?: string
 }
 
 interface ImportResult {
@@ -55,7 +55,7 @@ function parseCSV(text: string): Record<string, string>[] {
         if (char === '"') {
             if (inQuotes && normalized[i + 1] === '"') {
                 current += '"'
-                i++ // skip escaped quote
+                i++
             } else {
                 inQuotes = !inQuotes
             }
@@ -95,7 +95,7 @@ function parseCSVLine(line: string): string[] {
         if (char === '"') {
             if (inQuotes && line[i + 1] === '"') {
                 current += '"'
-                i++ // skip escaped quote
+                i++
             } else {
                 inQuotes = !inQuotes
             }
@@ -108,6 +108,14 @@ function parseCSVLine(line: string): string[] {
     }
     result.push(current)
     return result
+}
+
+// ── Helper: get film name from CSV row (handles both "Name" and "Title" columns) ──
+function getFilmName(row: Record<string, string>): string {
+    return row.Name || row.name || row.Title || row.title || ''
+}
+function getFilmYear(row: Record<string, string>): string {
+    return row.Year || row.year || ''
 }
 
 // ── TMDB FILM MATCHER (rate-limited, batched) ──
@@ -124,7 +132,6 @@ async function matchFilmToTMDB(title: string, year?: string): Promise<TMDBMatch 
         )
         
         if (res.status === 429) {
-            // Rate limited — wait and retry
             await sleep(2000)
             return matchFilmToTMDB(title, year)
         }
@@ -138,7 +145,6 @@ async function matchFilmToTMDB(title: string, year?: string): Promise<TMDBMatch 
         const results = data.results || []
         
         if (results.length === 0) {
-            // Try without year as fallback
             if (year) {
                 const fallback = await matchFilmToTMDB(title)
                 matchCache.set(cacheKey, fallback)
@@ -148,7 +154,6 @@ async function matchFilmToTMDB(title: string, year?: string): Promise<TMDBMatch 
             return null
         }
         
-        // Best match: exact title + closest year
         const match = results[0]
         const result: TMDBMatch = {
             id: match.id,
@@ -166,6 +171,15 @@ async function matchFilmToTMDB(title: string, year?: string): Promise<TMDBMatch 
 
 function sleep(ms: number) {
     return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+// ── Convert Letterboxd rating (0-5 with halves) to ReelHouse rating (0-5) ──
+function convertRating(lbRating: string): number {
+    if (!lbRating || lbRating.trim() === '') return 0
+    const val = parseFloat(lbRating)
+    if (isNaN(val)) return 0
+    // Letterboxd uses 0-5 scale, same as ReelHouse — NO multiplication needed
+    return Math.min(Math.max(val, 0), 5)
 }
 
 // ── MAIN IMPORT FUNCTION ──
@@ -202,8 +216,16 @@ export async function importLetterboxdZip(
         if (path.startsWith('lists/') && path.endsWith('.csv') && !entry.dir) {
             const text = await entry.async('text')
             const listName = path.replace('lists/', '').replace('.csv', '').replace(/-/g, ' ')
-            listFiles.push({ name: listName, data: parseCSV(text) })
+            const parsed = parseCSV(text)
+            listFiles.push({ name: listName, data: parsed })
         }
+    }
+    
+    // Log diagnostics
+    if (listFiles.length > 0 && listFiles[0].data.length > 0) {
+        const sampleHeaders = Object.keys(listFiles[0].data[0])
+        result.errors.push(`[DEBUG] List CSV headers: ${sampleHeaders.join(', ')}`)
+        result.errors.push(`[DEBUG] Sample row: ${JSON.stringify(listFiles[0].data[0]).slice(0, 200)}`)
     }
     
     // ── Step 3: Collect all unique films to match ──
@@ -215,19 +237,18 @@ export async function importLetterboxdZip(
         if (!allFilms.has(key)) allFilms.set(key, { title, year })
     }
     
-    diary.forEach(r => addFilm(r.Name, r.Year))
-    reviews.forEach(r => addFilm(r.Name, r.Year))
-    ratings.forEach(r => addFilm(r.Name, r.Year))
-    watched.forEach(r => addFilm(r.Name, r.Year))
-    watchlist.forEach(r => addFilm(r.Name, r.Year))
-    listFiles.forEach(list => list.data.forEach(r => addFilm(r.Name, r.Year)))
+    diary.forEach(r => addFilm(getFilmName(r), getFilmYear(r)))
+    reviews.forEach(r => addFilm(getFilmName(r), getFilmYear(r)))
+    ratings.forEach(r => addFilm(getFilmName(r), getFilmYear(r)))
+    watched.forEach(r => addFilm(getFilmName(r), getFilmYear(r)))
+    watchlist.forEach(r => addFilm(getFilmName(r), getFilmYear(r)))
+    listFiles.forEach(list => list.data.forEach(r => addFilm(getFilmName(r), getFilmYear(r))))
     
     // ── Step 4: Match all films to TMDB (batched) ──
     const filmMap = new Map<string, TMDBMatch>()
     const filmEntries = Array.from(allFilms.entries())
     const total = filmEntries.length
     
-    // Process in batches of 4 to respect TMDB rate limits (~40 req/10s)
     const BATCH_SIZE = 4
     for (let i = 0; i < filmEntries.length; i += BATCH_SIZE) {
         const batch = filmEntries.slice(i, i + BATCH_SIZE)
@@ -252,13 +273,12 @@ export async function importLetterboxdZip(
             detail: `${lastFilm[1].title} (${lastFilm[1].year || '?'})`,
         })
         
-        // Small delay between batches for rate limiting
         if (i + BATCH_SIZE < filmEntries.length) {
             await sleep(300)
         }
     }
     
-    // ── Step 5: Fetch existing logs to prevent duplicates (paginated for large collections) ──
+    // ── Step 5: Fetch existing logs to prevent duplicates (paginated) ──
     onProgress({ phase: 'Checking existing archive...', current: 0, total: 1 })
     const existingFilmIds = new Set<number>()
     let ePage = 0
@@ -280,51 +300,67 @@ export async function importLetterboxdZip(
     // ── Step 6: Build review map from reviews.csv ──
     const reviewMap = new Map<string, string>()
     reviews.forEach(r => {
-        const key = `${r.Name}::${r.Year || ''}`
-        if (r.Review) reviewMap.set(key, r.Review)
+        const name = getFilmName(r)
+        const year = getFilmYear(r)
+        const reviewText = r.Review || r.review || ''
+        if (name && reviewText) {
+            const key = `${name}::${year}`
+            reviewMap.set(key, reviewText)
+        }
     })
     
     // ── Step 6b: Update EXISTING logs with reviews they're missing ──
-    // This handles re-imports where films were imported before reviews were fixed
     onProgress({ phase: 'Applying reviews to existing logs...', current: 0, total: reviewMap.size })
     let reviewsApplied = 0
+    let reviewIdx = 0
     for (const [key, reviewText] of reviewMap.entries()) {
+        reviewIdx++
         const film = filmMap.get(key)
         if (!film) continue
-        if (!existingFilmIds.has(film.id)) continue // will be handled in new log insert
+        if (!existingFilmIds.has(film.id)) continue
         
-        // Update the existing log: only if it currently has no review
-        const { data: updated, error: updateErr } = await supabase
+        // First check if the log actually needs a review update
+        const { data: existingLog } = await supabase
             .from('logs')
-            .update({ review: reviewText })
+            .select('id, review')
             .eq('user_id', user.id)
             .eq('film_id', film.id)
-            .or('review.is.null,review.eq.')
-            .select('id')
+            .limit(1)
+            .maybeSingle()
         
-        if (!updateErr && updated && updated.length > 0) {
-            reviewsApplied++
+        if (existingLog && (!existingLog.review || existingLog.review.trim() === '')) {
+            const { error: updateErr } = await supabase
+                .from('logs')
+                .update({ review: reviewText })
+                .eq('id', existingLog.id)
+            
+            if (!updateErr) {
+                reviewsApplied++
+            }
         }
         
-        reviewsApplied % 10 === 0 && onProgress({
-            phase: 'Applying reviews to existing logs...',
-            current: reviewsApplied,
-            total: reviewMap.size,
-        })
+        if (reviewIdx % 10 === 0) {
+            onProgress({
+                phase: 'Applying reviews to existing logs...',
+                current: reviewIdx,
+                total: reviewMap.size,
+                detail: film.title,
+            })
+        }
     }
     result.reviews += reviewsApplied
     
     // ── Step 6c: Update EXISTING logs with ratings they're missing ──
     onProgress({ phase: 'Applying ratings to existing logs...', current: 0, total: ratings.length })
     for (const entry of ratings) {
-        const key = `${entry.Name}::${entry.Year || ''}`
-        const film = filmMap.get(key)
+        const name = getFilmName(entry)
+        const year = getFilmYear(entry)
+        const film = filmMap.get(`${name}::${year}`)
         if (!film || !existingFilmIds.has(film.id)) continue
         
-        const rating = entry.Rating ? Math.round(parseFloat(entry.Rating) * 2) : 0
+        const rating = convertRating(entry.Rating || entry.rating || '')
         if (rating === 0) continue
         
-        // Only update if existing rating is 0
         await supabase
             .from('logs')
             .update({ rating })
@@ -338,14 +374,16 @@ export async function importLetterboxdZip(
     const logsToInsert: any[] = []
     for (let i = 0; i < diary.length; i++) {
         const entry = diary[i]
-        const key = `${entry.Name}::${entry.Year || ''}`
+        const name = getFilmName(entry)
+        const year = getFilmYear(entry)
+        const key = `${name}::${year}`
         const film = filmMap.get(key)
         if (!film) continue
         if (existingFilmIds.has(film.id)) continue
         
-        const rating = entry.Rating ? Math.round(parseFloat(entry.Rating) * 2) : 0
+        const rating = convertRating(entry.Rating || entry.rating || '')
         const reviewText = reviewMap.get(key) || ''
-        const isRewatch = entry.Rewatch === 'Yes'
+        const isRewatch = (entry.Rewatch || entry.rewatch || '') === 'Yes'
         
         logsToInsert.push({
             user_id: user.id,
@@ -357,7 +395,7 @@ export async function importLetterboxdZip(
             review: reviewText,
             status: isRewatch ? 'rewatched' : 'watched',
             is_spoiler: false,
-            watched_date: entry['Watched Date'] || entry.Date || new Date().toISOString(),
+            watched_date: entry['Watched Date'] || entry.Date || entry.date || new Date().toISOString(),
             format: 'Digital',
         })
         existingFilmIds.add(film.id)
@@ -372,25 +410,26 @@ export async function importLetterboxdZip(
         })
     }
     
-    // Batch insert in chunks of 50
     for (let i = 0; i < logsToInsert.length; i += 50) {
         const chunk = logsToInsert.slice(i, i + 50)
         const { error } = await supabase.from('logs').insert(chunk)
         if (error) {
-            result.errors.push(`Diary batch ${i}: ${error.message}`)
+            result.errors.push(`Diary batch ${Math.floor(i/50)}: ${error.message}`)
         } else {
             result.logs += chunk.length
         }
     }
     
-    // ── Step 8: Gap-fill from Ratings (films rated but not in diary) ──
+    // ── Step 8: Gap-fill from Ratings ──
     const ratingsToInsert: any[] = []
     for (const entry of ratings) {
-        const key = `${entry.Name}::${entry.Year || ''}`
+        const name = getFilmName(entry)
+        const year = getFilmYear(entry)
+        const key = `${name}::${year}`
         const film = filmMap.get(key)
         if (!film || existingFilmIds.has(film.id)) continue
         
-        const rating = entry.Rating ? Math.round(parseFloat(entry.Rating) * 2) : 0
+        const rating = convertRating(entry.Rating || entry.rating || '')
         if (rating === 0) continue
         
         const reviewText = reviewMap.get(key) || ''
@@ -405,7 +444,7 @@ export async function importLetterboxdZip(
             review: reviewText,
             status: 'watched',
             is_spoiler: false,
-            watched_date: entry.Date || new Date().toISOString(),
+            watched_date: entry.Date || entry.date || new Date().toISOString(),
             format: 'Digital',
         })
         existingFilmIds.add(film.id)
@@ -417,13 +456,15 @@ export async function importLetterboxdZip(
         const chunk = ratingsToInsert.slice(i, i + 50)
         const { error } = await supabase.from('logs').insert(chunk)
         if (!error) result.logs += chunk.length
+        else result.errors.push(`Ratings batch: ${error.message}`)
     }
     
-    // ── Step 9: Gap-fill from Watched (marked watched but no rating/diary) ──
+    // ── Step 9: Gap-fill from Watched ──
     const watchedToInsert: any[] = []
     for (const entry of watched) {
-        const key = `${entry.Name}::${entry.Year || ''}`
-        const film = filmMap.get(key)
+        const name = getFilmName(entry)
+        const year = getFilmYear(entry)
+        const film = filmMap.get(`${name}::${year}`)
         if (!film || existingFilmIds.has(film.id)) continue
         
         watchedToInsert.push({
@@ -436,7 +477,7 @@ export async function importLetterboxdZip(
             review: '',
             status: 'watched',
             is_spoiler: false,
-            watched_date: entry.Date || new Date().toISOString(),
+            watched_date: entry.Date || entry.date || new Date().toISOString(),
             format: 'Digital',
         })
         existingFilmIds.add(film.id)
@@ -452,8 +493,9 @@ export async function importLetterboxdZip(
     // ── Step 10: Import Watchlist ──
     const watchlistToInsert: any[] = []
     for (const entry of watchlist) {
-        const key = `${entry.Name}::${entry.Year || ''}`
-        const film = filmMap.get(key)
+        const name = getFilmName(entry)
+        const year = getFilmYear(entry)
+        const film = filmMap.get(`${name}::${year}`)
         if (!film || existingWatchlistIds.has(film.id) || existingFilmIds.has(film.id)) continue
         
         watchlistToInsert.push({
@@ -484,8 +526,9 @@ export async function importLetterboxdZip(
         })
         
         try {
-            // Check if list already exists (re-import scenario)
             const listTitle = listFile.name.charAt(0).toUpperCase() + listFile.name.slice(1)
+            
+            // Check if list already exists
             const { data: existingList } = await supabase
                 .from('lists')
                 .select('id')
@@ -496,33 +539,35 @@ export async function importLetterboxdZip(
             let listId: string
             
             if (existingList) {
-                // Use existing list, just add missing films
                 listId = existingList.id
             } else {
-                // Create new list
                 const { data: listData, error: listError } = await supabase
                     .from('lists')
                     .insert([{
                         user_id: user.id,
                         title: listTitle,
-                        description: `Imported from Letterboxd`,
+                        description: 'Imported from Letterboxd',
                         is_private: false,
                     }])
                     .select()
                     .single()
                 
                 if (listError || !listData) {
-                    result.errors.push(`List "${listFile.name}": ${listError?.message || 'Failed to create'}`)
+                    result.errors.push(`List "${listFile.name}": ${listError?.message || 'create failed'}`)
                     continue
                 }
                 listId = listData.id
             }
             
-            // Collect films, deduplicate by film_id
+            // Collect films, deduplicate
             const seenFilmIds = new Set<number>()
-            const listItems: any[] = []
+            const listItems: { list_id: string; film_id: number; film_title: string; poster_path: string | null }[] = []
+            
             for (const entry of listFile.data) {
-                const key = `${entry.Name}::${entry.Year || ''}`
+                const name = getFilmName(entry)
+                const year = getFilmYear(entry)
+                if (!name) continue
+                const key = `${name}::${year}`
                 const film = filmMap.get(key)
                 if (!film) continue
                 if (seenFilmIds.has(film.id)) continue
@@ -536,23 +581,31 @@ export async function importLetterboxdZip(
                 })
             }
             
-            // Insert items ONE AT A TIME to handle unique constraint violations gracefully
-            if (listItems.length > 0) {
-                let itemsInserted = 0
-                for (const item of listItems) {
-                    const { error: itemError } = await supabase.from('list_items').insert([item])
-                    if (itemError) {
-                        // Skip duplicate/constraint errors silently, report others
-                        if (!itemError.message.includes('duplicate') && !itemError.message.includes('unique')) {
-                            result.errors.push(`List "${listFile.name}" item ${item.film_title}: ${itemError.message}`)
+            // Report if no films were collected
+            if (listItems.length === 0 && listFile.data.length > 0) {
+                const sampleRow = listFile.data[0]
+                result.errors.push(`List "${listFile.name}": ${listFile.data.length} rows but 0 films matched. Headers: ${Object.keys(sampleRow).join(',')}. Sample: ${getFilmName(sampleRow) || '(empty name)'}`)
+            }
+            
+            // Insert items one at a time
+            let itemsInserted = 0
+            for (const item of listItems) {
+                const { error: itemError } = await supabase.from('list_items').insert([item])
+                if (itemError) {
+                    if (!itemError.message.includes('duplicate') && !itemError.message.includes('unique') && !itemError.message.includes('already exists')) {
+                        if (itemsInserted === 0) {
+                            result.errors.push(`List "${listFile.name}" insert error: ${itemError.message}`)
                         }
-                    } else {
-                        itemsInserted++
                     }
+                } else {
+                    itemsInserted++
                 }
-                if (itemsInserted === 0 && listItems.length > 0) {
-                    result.errors.push(`List "${listFile.name}": 0/${listItems.length} films added — check database permissions`)
-                }
+            }
+            
+            if (itemsInserted > 0) {
+                result.errors.push(`[OK] List "${listFile.name}": ${itemsInserted}/${listItems.length} films added`)
+            } else if (listItems.length > 0) {
+                result.errors.push(`List "${listFile.name}": 0/${listItems.length} films added — DB insert rejected`)
             }
             
             result.lists++
@@ -561,7 +614,7 @@ export async function importLetterboxdZip(
         }
     }
     
-    // ── Final: Refresh stores ──
+    // ── Final ──
     onProgress({ phase: 'Synchronizing archive...', current: 1, total: 1 })
     
     return result
