@@ -16,7 +16,7 @@ import ShareToLoungeModal from '../ShareToLoungeModal'
 import { useViewport } from '../../hooks/useViewport'
 
 export default function ActivityCard({ log, isExpandedView = false }: { log: any, isExpandedView?: boolean }) {
-    const { isTouch: IS_TOUCH } = useViewport()
+    const { isTouch: IS_TOUCH, isMobile } = useViewport()
     const navigate = useNavigate()
     const { openLogModal } = useUIStore()
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
@@ -414,10 +414,14 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 <AnnotationPanel logId={log.id} open={annotateOpen} isExpandedView={true} />
 
                 {log.isAutopsied && log.autopsy && (
-                    <div style={{ padding: '0 0.5rem' }}>
-                        <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', opacity: isExporting ? 0.5 : 1 }}>
-                            <Download size={16} /> {isExporting ? 'ENCODING...' : 'TRANSMIT HYPER-DOSSIER'}
-                        </button>
+                    <div style={{ marginTop: '0.5rem' }}>
+                        <RadarChart autopsy={log.autopsy} size={260} />
+                        
+                        <div style={{ padding: '0 1rem 1rem', display: 'flex', justifyContent: 'flex-end' }}>
+                            <button onClick={exportDossier} disabled={isExporting} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.15em', color: 'var(--sepia)', cursor: 'pointer', opacity: isExporting ? 0.5 : 1 }}>
+                                <Download size={14} /> {isExporting ? 'ENCODING...' : 'TRANSMIT HYPER-DOSSIER'}
+                            </button>
+                        </div>
                     </div>
                 )}
                 
@@ -477,9 +481,9 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(196,150,26,0.2), transparent)' }} />
                 </div>
             ) : null}
-            <div style={{ padding: IS_TOUCH ? '1rem' : '1.25rem', display: 'flex', gap: IS_TOUCH ? '1rem' : '1.25rem' }}>
+            <div className="reel-feed-card-body" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'row', gap: '1.25rem', alignItems: 'flex-start' }}>
             {/* Poster with Ambient Echo */}
-            <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} className="reel-poster-wrap" style={{ width: IS_TOUCH ? 100 : 100, height: IS_TOUCH ? 150 : 150, display: 'block', textDecoration: 'none', cursor: 'pointer' }}>
+            <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} className="reel-poster-wrap reel-feed-poster" style={{ width: 100, height: 150, display: 'block', textDecoration: 'none', cursor: 'pointer', flexShrink: 0 }}>
                 {/* Ambient glow — blurred poster echo behind */}
                 {log.film?.poster && (
                     <img
@@ -517,7 +521,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             </Link>
 
             {/* Content Body */}
-            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', width: '100%' }}>
                 {/* User + timestamp row */}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', overflow: 'hidden' }}>
@@ -567,62 +571,6 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         )}
                     </div>
                 )}
-
-                {log.isAutopsied && log.autopsy && (
-                        <div style={{ marginTop: '0.6rem' }}>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setAutopsyOpen(!autopsyOpen) }}
-                                style={{
-                                    width: '100%', background: 'linear-gradient(135deg, rgba(11,10,8,0.95) 0%, rgba(25,20,12,0.95) 100%)',
-                                    border: '1px solid rgba(139,105,20,0.25)', borderRadius: '4px',
-                                    padding: '0.75rem 1rem', cursor: 'pointer',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                    transition: 'border-color 0.3s, background 0.3s',
-                                }}
-                            >
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                                    <span style={{
-                                        width: '6px', height: '6px', borderRadius: '50%',
-                                        background: 'var(--sepia)',
-                                        boxShadow: '0 0 8px rgba(139,105,20,0.6)',
-                                        animation: autopsyOpen ? 'none' : 'pulse 2s ease-in-out infinite',
-                                    }} />
-                                    <span style={{
-                                        fontFamily: 'var(--font-display)', fontSize: '0.75rem',
-                                        letterSpacing: '0.15em', color: 'var(--parchment)',
-                                    }}>
-                                        THE AUTOPSY
-                                    </span>
-                                    <span style={{
-                                        fontFamily: 'var(--font-ui)', fontSize: '0.45rem',
-                                        letterSpacing: '0.2em', color: 'var(--sepia)', opacity: 0.6,
-                                    }}>
-                                        CONFIDENTIAL
-                                    </span>
-                                </div>
-                                <span style={{
-                                    fontFamily: 'var(--font-ui)', fontSize: '0.5rem',
-                                    letterSpacing: '0.15em', color: 'var(--fog)',
-                                    transition: 'transform 0.3s',
-                                    transform: autopsyOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                }}>
-                                    ▼
-                                </span>
-                            </button>
-                            {autopsyOpen && (
-                                <div style={{
-                                    overflow: 'hidden',
-                                    animation: 'fadeSlideIn 0.3s ease-out',
-                                    marginTop: '0.5rem',
-                                }}>
-                                    <RadarChart autopsy={log.autopsy} size={130} />
-                                </div>
-                            )}
-                        </div>
-                )}
-
-
-
                 {/* Feed Action Bar */}
                 <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.75rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(139,105,20,0.1)', flexWrap: 'wrap', flexShrink: 0 }}>
                     <div style={{ position: 'relative' }}>
@@ -682,6 +630,60 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                   */}
             </div>
             </div>
+
+            {/* ── AUTOPSY — Full-width outside the poster+content row ── */}
+            {log.isAutopsied && log.autopsy && (
+                <div style={{ padding: IS_TOUCH ? '0 1rem 1rem' : '0 1.25rem 1.25rem' }}>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setAutopsyOpen(!autopsyOpen) }}
+                        style={{
+                            width: '100%', background: 'linear-gradient(135deg, rgba(11,10,8,0.95) 0%, rgba(25,20,12,0.95) 100%)',
+                            border: '1px solid rgba(139,105,20,0.25)', borderRadius: '4px',
+                            padding: '0.75rem 1rem', cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            transition: 'border-color 0.3s, background 0.3s',
+                        }}
+                    >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                            <span style={{
+                                width: '6px', height: '6px', borderRadius: '50%',
+                                background: 'var(--sepia)',
+                                boxShadow: '0 0 8px rgba(139,105,20,0.6)',
+                                animation: autopsyOpen ? 'none' : 'pulse 2s ease-in-out infinite',
+                            }} />
+                            <span style={{
+                                fontFamily: 'var(--font-display)', fontSize: '0.75rem',
+                                letterSpacing: '0.15em', color: 'var(--parchment)',
+                            }}>
+                                THE AUTOPSY
+                            </span>
+                            <span style={{
+                                fontFamily: 'var(--font-ui)', fontSize: '0.45rem',
+                                letterSpacing: '0.2em', color: 'var(--sepia)', opacity: 0.6,
+                            }}>
+                                CONFIDENTIAL
+                            </span>
+                        </div>
+                        <span style={{
+                            fontFamily: 'var(--font-ui)', fontSize: '0.5rem',
+                            letterSpacing: '0.15em', color: 'var(--fog)',
+                            transition: 'transform 0.3s',
+                            transform: autopsyOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                        }}>
+                            ▼
+                        </span>
+                    </button>
+                    {autopsyOpen && (
+                        <div style={{
+                            overflow: 'hidden',
+                            animation: 'fadeSlideIn 0.3s ease-out',
+                            marginTop: '0.5rem',
+                        }}>
+                            <RadarChart autopsy={log.autopsy} />
+                        </div>
+                    )}
+                </div>
+            )}
 
             {showShareLounge && (
                 <ShareToLoungeModal

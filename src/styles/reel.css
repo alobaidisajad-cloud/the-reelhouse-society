@@ -529,6 +529,17 @@
 
 /* ── MOBILE RESPONSIVE ── */
 @media (max-width: 768px) {
+  .reel-feed-card-body {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 1rem !important;
+    padding: 1rem !important;
+  }
+  .reel-feed-poster {
+    width: 120px !important;
+    height: 180px !important;
+  }
+
   .reel-dispatch {
     border-radius: 0;
     border-left-width: 2px;

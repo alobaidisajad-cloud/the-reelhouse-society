@@ -169,7 +169,7 @@ export default function TribunalPage() {
         <div style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)' }}>
             <PageSEO title="The Tribunal" description="Content moderation dashboard" />
 
-            <div style={{ maxWidth: 1100, margin: '0 auto', padding: '3rem 1.5rem' }}>
+            <div style={{ maxWidth: 900, margin: '0 auto', padding: '3rem 1.5rem' }}>
                 {/* Back Button */}
                 <button
                     onClick={() => navigate('/')}
@@ -213,7 +213,7 @@ export default function TribunalPage() {
                 {/* Filter Tabs */}
                 <div style={{
                     display: 'flex',
-                    gap: '0.5rem',
+                    gap: '1rem',
                     marginBottom: '2rem',
                     borderBottom: '1px solid rgba(139,105,20,0.2)',
                     paddingBottom: '1rem',

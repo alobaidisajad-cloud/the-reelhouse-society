@@ -509,7 +509,12 @@
 /* ── Responsive ── */
 @media (max-width: 600px) {
     .settings-page {
-        padding: 5rem 1rem 5rem;
+        padding: 4rem 1rem 5rem;
+    }
+
+    .settings-hero {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1.5rem;
     }
 
     .settings-section {

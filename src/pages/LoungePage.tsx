@@ -298,14 +298,14 @@ function InviteCodeInput() {
     }
 
     return (
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
             <input
                 className="lounge-create-input"
                 placeholder="INVITE CODE"
                 value={code}
                 onChange={e => setCode(e.target.value.toUpperCase())}
                 maxLength={8}
-                style={{ width: 140, textAlign: 'center', letterSpacing: '0.3em', fontFamily: 'var(--font-ui)', fontSize: '0.65rem' }}
+                style={{ flex: '1 1 120px', minWidth: 100, maxWidth: 200, textAlign: 'center', letterSpacing: '0.3em', fontFamily: 'var(--font-ui)', fontSize: '0.65rem' }}
                 onKeyDown={e => e.key === 'Enter' && handleJoin()}
             />
             <button className="lounge-join-btn" onClick={handleJoin} disabled={joining || !code.trim()}>

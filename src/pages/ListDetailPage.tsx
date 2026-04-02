@@ -12,6 +12,7 @@ import ShareToLoungeModal from '../components/ShareToLoungeModal'
 import { useState } from 'react'
 
 import reelToast from '../utils/reelToast'
+import { sanitizeDescription, sanitizeListTitle } from '../utils/sanitize'
 
 function LoggedBadgeGrid({ films, isOwner, isArchivist, isAuteurRole }: { films: any[]; isOwner: boolean; isArchivist: boolean; isAuteurRole: boolean }) {
     const logs = useFilmStore(s => s.logs)
@@ -146,9 +147,10 @@ export default function ListDetailPage() {
         )
     }
 
-    const { title, description, desc, user: listUser, userId: listUserId, films = [], createdAt, certifyCount = 0, isCertified = false, commentCount = 0 } = list as any
+    const { title: rawTitle, description, desc, user: listUser, userId: listUserId, films = [], createdAt, certifyCount = 0, isCertified = false, commentCount = 0 } = list as any
     const isOwner = currentUser?.id && listUserId && currentUser.id === listUserId
-    const displayDesc = description || desc
+    const title = sanitizeListTitle(rawTitle)
+    const displayDesc = sanitizeDescription(description || desc)
     const authorParam = listUser || 'YOU'
 
     // Format created date if real

@@ -18,7 +18,7 @@ const CHALLENGES = [
   { title: 'COMPANION REEL', desc: 'Watch a film with someone', check: (log: FilmLog) => !!log.watchedWith },
   { title: 'MIDNIGHT SCREENING', desc: 'Log a film after midnight', check: (_log: FilmLog) => true },
   { title: 'NEW CENTURY', desc: 'Watch a film released this year', check: (log: FilmLog) => log.year === new Date().getFullYear() },
-  { title: 'THE CLASSIC', desc: 'Watch a film rated 8+ on IMDB', check: (_log: FilmLog) => true },
+  { title: 'THE CLASSIC', desc: 'Watch a critically acclaimed classic', check: (_log: FilmLog) => true },
 ]
 
 function getWeekNumber() {

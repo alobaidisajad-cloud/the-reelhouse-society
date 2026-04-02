@@ -13,6 +13,7 @@ import ListActions from '../components/ListActions'
 import { motion } from 'framer-motion'
 
 import { useViewport } from '../hooks/useViewport'
+import { sanitizeDescription, sanitizeListTitle } from '../utils/sanitize'
 import { useBanCheck } from '../hooks/useBanCheck'
 import ReportButton from '../components/ReportButton'
 import '../styles/stacks.css'
@@ -101,12 +102,12 @@ function CommunityListCard({ list, index }: { list: any; index: number }) {
 
                     {/* Title */}
                     <h3 className="stack-card-title">
-                        {list.title.toUpperCase()}
+                        {sanitizeListTitle(list.title).toUpperCase()}
                     </h3>
 
                     {/* Description — desktop only */}
-                    {!IS_TOUCH && list.desc && (
-                        <p className="stack-card-desc">{list.desc}</p>
+                    {!IS_TOUCH && sanitizeDescription(list.desc) && (
+                        <p className="stack-card-desc">{sanitizeDescription(list.desc)}</p>
                     )}
 
                     {/* Curator */}
@@ -439,7 +440,8 @@ export default function ListsPage() {
                     </div>
 
                     {/* Filter Pills + Sort */}
-                    <div style={{ display: 'flex', gap: IS_TOUCH ? '0.35rem' : '0.5rem', alignItems: 'center', overflowX: IS_TOUCH ? 'auto' : 'visible', WebkitOverflowScrolling: 'touch' as any, paddingBottom: '2px', msOverflowStyle: 'none' as any }}>
+                    <div style={{ width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+                        <div style={{ display: 'flex', gap: IS_TOUCH ? '0.35rem' : '0.5rem', alignItems: 'center', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '2px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
                         <FilterPill label="ALL TIME" active={timeFilter === 'all'} onClick={() => setTimeFilter('all')} />
                         <FilterPill label="THIS WEEK" active={timeFilter === 'week'} onClick={() => setTimeFilter('week')} />
                         <FilterPill label="THIS MONTH" active={timeFilter === 'month'} onClick={() => setTimeFilter('month')} />
@@ -499,6 +501,7 @@ export default function ListsPage() {
                             )}
                         </div>
                     </div>
+                </div>
 
                     {/* Results count */}
                     {!IS_TOUCH && (

@@ -15,7 +15,7 @@ interface LogModalSearchProps {
 export default function LogModalSearch({ query, searching, results, searchType, searchContext, onSearch, onSelect }: LogModalSearchProps) {
     return (
         <div>
-            <div style={{ position: 'relative' }}>
+            <div style={{ position: 'relative', marginTop: '0.5rem' }}>
                 <Search
                     size={16}
                     style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--fog)' }}

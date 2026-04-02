@@ -281,7 +281,7 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                     zIndex: 10001,
                     background: 'rgba(5, 3, 1, 0.95)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    padding: '1rem',
+                    padding: '1.25rem',
                 }}
             >
                 <motion.div

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useAuthStore, useUIStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
@@ -74,6 +74,7 @@ export default function FeedPage() {
     // ── Feed Tab State ──
     type FeedTab = 'for-you' | 'following'
     const [feedTab, setFeedTab] = useState<FeedTab>('for-you')
+    const navigate = useNavigate()
 
     // ── Feed Data ──
     const [showLegend, setShowLegend] = useState(false)
@@ -354,46 +355,8 @@ export default function FeedPage() {
                 transform: `translateY(${isRefreshing ? 60 : pullDistance}px)`,
                 transition: isRefreshing || pullDistance === 0 ? 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
             }}>
-                <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'minmax(0, 1fr) 300px', gap: IS_TOUCH ? '2rem' : '3rem', alignItems: 'start' }}>
+                <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: '1fr', gap: IS_TOUCH ? '2rem' : '3rem', alignItems: 'start', maxWidth: IS_TOUCH ? undefined : 720 }}>
 
-                    {/* ── SIDEBAR ON MOBILE: Horizontal strip above feed ── */}
-                    {IS_TOUCH && (
-                        <SectionErrorBoundary label="SIDEBAR">
-                        <div className="reel-sidebar-strip">
-                            {/* Weekly Challenge — compact */}
-                            <div className="reel-bulletin" style={{ minWidth: 220 }}>
-                                <div className="reel-bulletin-label">SOCIETY DIRECTIVE</div>
-                                <WeeklyChallenge logs={communityFeed as any} />
-                            </div>
-                            
-                            {/* Currently Logged */}
-                            <div className="reel-bulletin" style={{ minWidth: 200, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                                <div className="reel-bulletin-label">THIS WEEK</div>
-                                <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.8rem', color: 'var(--parchment)', lineHeight: 1 }}>
-                                    {thisWeekCount}
-                                </div>
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--fog)', marginTop: '0.3rem' }}>
-                                    DISPATCHES FILED
-                                </div>
-                            </div>
-
-                            {/* Curated Lists — compact */}
-                            {recentLists.slice(0, 2).map((list: any) => (
-                                <Link key={list.id} to={`/lists/${list.id}`} style={{ textDecoration: 'none' }}>
-                                    <div className="reel-bulletin" style={{ minWidth: 200 }}>
-                                        <div className="reel-bulletin-label">MEMBERS' ARCHIVE</div>
-                                        <div style={{ fontFamily: 'var(--font-display)', fontSize: '1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.25rem' }}>
-                                            {list.title}
-                                        </div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
-                                            BY @{list.curator.toUpperCase()}
-                                        </div>
-                                    </div>
-                                </Link>
-                            ))}
-                        </div>
-                        </SectionErrorBoundary>
-                    )}
 
                     {/* ── MAIN FEED ── */}
                     <SectionErrorBoundary label="COMMUNITY FEED">
@@ -487,10 +450,10 @@ export default function FeedPage() {
                                 </p>
                                 <button
                                     className="btn btn-ghost"
-                                    onClick={() => setFeedTab('for-you')}
+                                    onClick={() => navigate('/discover')}
                                     style={{ padding: '0.65rem 1.8rem', letterSpacing: '0.15em', fontSize: '0.55rem' }}
                                 >
-                                    BROWSE MAIN REEL →
+                                    DISCOVER FILMS →
                                 </button>
                                 <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />
                             </div>
@@ -587,78 +550,7 @@ export default function FeedPage() {
                     </div>
                     </SectionErrorBoundary>
 
-                    {/* ── DESKTOP SIDEBAR — "The Society Bulletin Board" ── */}
-                    {!IS_TOUCH && (
-                    <SectionErrorBoundary label="SIDEBAR">
-                    <div className="reel-sidebar-strip">
 
-                        {/* Currently Logged — Live Counter */}
-                        <div className="reel-bulletin">
-                            <div className="reel-bulletin-label">UNDERGROUND ACTIVITY</div>
-                            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.25rem' }}>
-                                <span style={{ fontFamily: 'var(--font-display)', fontSize: '2.2rem', color: 'var(--parchment)', lineHeight: 1 }}>
-                                    {thisWeekCount}
-                                </span>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
-                                    THIS WEEK
-                                </span>
-                            </div>
-                            <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.7rem', color: 'var(--bone)', opacity: 0.5 }}>
-                                dispatches filed by the society
-                            </div>
-                        </div>
-
-                        {/* Weekly Challenge — Society Directive */}
-                        <div className="reel-bulletin">
-                            <div className="reel-bulletin-label">SOCIETY DIRECTIVE</div>
-                            <WeeklyChallenge logs={communityFeed as any} />
-                        </div>
-
-                        {/* Members' Archives */}
-                        <div>
-                            <div className="section-title" style={{ borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '0.5rem', fontSize: '0.5rem', letterSpacing: '0.25em' }}>
-                                MEMBERS' ARCHIVES
-                            </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
-                                {recentLists.length === 0 ? (
-                                    <>
-                                        {[
-                                            { title: 'Essential Noir', curator: 'THE ARCHIVIST' },
-                                            { title: 'Arthouse Manifesto', curator: 'THE ORACLE' },
-                                        ].map(ph => (
-                                            <Link key={ph.title} to="/lists" style={{ textDecoration: 'none' }}>
-                                                <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid var(--ash)', borderLeft: '3px solid rgba(139,105,20,0.15)', opacity: 0.5, cursor: 'pointer', transition: 'opacity 0.2s, border-left-color 0.2s' }} onMouseEnter={e => { e.currentTarget.style.opacity = '0.8'; e.currentTarget.style.borderLeftColor = 'var(--sepia)' }} onMouseLeave={e => { e.currentTarget.style.opacity = '0.5'; e.currentTarget.style.borderLeftColor = 'rgba(139,105,20,0.15)' }}>
-                                                    <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
-                                                        {ph.title}
-                                                    </div>
-                                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
-                                                        BY {ph.curator}
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        ))}
-                                    </>
-                                ) : recentLists.map((list: any) => (
-                                    <Link key={list.id} to={`/lists/${list.id}`} style={{ textDecoration: 'none' }}>
-                                        <div style={{ padding: '0.75rem', background: 'var(--ink)', border: '1px solid rgba(139,105,20,0.15)', borderLeft: '3px solid rgba(139,105,20,0.2)', cursor: 'pointer', transition: 'border-left-color 0.2s, border-color 0.2s' }} onMouseEnter={e => { e.currentTarget.style.borderLeftColor = 'var(--sepia)'; e.currentTarget.style.borderColor = 'rgba(139,105,20,0.3)' }} onMouseLeave={e => { e.currentTarget.style.borderLeftColor = 'rgba(139,105,20,0.2)'; e.currentTarget.style.borderColor = 'rgba(139,105,20,0.15)' }}>
-                                            <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '0.35rem' }}>
-                                                {list.title}
-                                            </div>
-                                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
-                                                BY @{list.curator.toUpperCase()}
-                                            </div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </div>
-                            <Link to="/lists" style={{ display: 'inline-block', marginTop: '1.25rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--sepia)', textDecoration: 'none', borderBottom: '1px dashed var(--sepia)' }}>
-                                BROWSE ALL LISTS
-                            </Link>
-                        </div>
-
-                    </div>
-                    </SectionErrorBoundary>
-                    )}
                 </div>
             </main>
         </div>

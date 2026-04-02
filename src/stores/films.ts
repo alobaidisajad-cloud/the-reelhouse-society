@@ -742,6 +742,8 @@ export const useFilmStore = create<FilmState>()(
                     id: l.id, filmId: l.filmId, title: l.title, poster: l.poster,
                     year: l.year, rating: l.rating, status: l.status,
                     watchedDate: l.watchedDate, createdAt: l.createdAt,
+                    isAutopsied: l.isAutopsied,
+                    autopsy: l.autopsy,
                     // review omitted from localStorage — saves space, rehydrated from Supabase
                     // privateNotes omitted — never in localStorage
                     // abandonedReason omitted — never in localStorage

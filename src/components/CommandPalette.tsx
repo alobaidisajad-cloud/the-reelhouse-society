@@ -191,8 +191,8 @@ export default function CommandPalette() {
                     backdropFilter: 'blur(16px)',
                     display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
                     paddingTop: '15vh',
-                    paddingLeft: '1rem',
-                    paddingRight: '1rem',
+                    paddingLeft: '1.25rem',
+                    paddingRight: '1.25rem',
                 }}
                 role="dialog"
                 aria-modal="true"
@@ -209,7 +209,7 @@ export default function CommandPalette() {
                         background: 'var(--ink)',
                         border: '1px solid var(--sepia)',
                         borderRadius: 'var(--radius-card)',
-                        width: 'calc(100% - 2rem)',
+                        width: 'calc(100% - 2.5rem)',
                         maxWidth: 600,
                         boxShadow: '0 30px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(139,105,20,0.2)',
                         overflow: 'hidden',

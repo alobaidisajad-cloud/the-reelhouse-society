@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../store'
 import { EmptyNotifications } from './EmptyStates'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
+import { useViewport } from '../hooks/useViewport'
 
 interface Notification {
   id: string
@@ -26,6 +27,7 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
   const [loading, setLoading] = useState(false)
   const { user } = useAuthStore()
   const navigate = useNavigate()
+  const { isTouch } = useViewport()
 
   useEffect(() => {
     if (!open || !user?.username || !isSupabaseConfigured) return
@@ -102,7 +104,7 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
             transition={{ type: 'tween', ease: 'easeInOut', duration: 0.25 }}
             style={{
               position: 'fixed', top: 0, right: 0, bottom: 0,
-              width: 380, maxWidth: '90vw', zIndex: 99999,
+              width: isTouch ? '100vw' : 380, maxWidth: isTouch ? '100vw' : '90vw', zIndex: 99999,
               background: 'var(--ink)', borderLeft: '1px solid rgba(139,105,20,0.15)',
               display: 'flex', flexDirection: 'column',
               boxShadow: '-10px 0 40px rgba(0,0,0,0.5)',

@@ -512,7 +512,7 @@ export default function UserProfilePage() {
                     </div>
 
                     {/* ── Username ── */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', justifyContent: 'center', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
                         <h1 style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? 'clamp(1.3rem, 6vw, 2.2rem)' : '3rem', color: 'var(--parchment)', lineHeight: 1.1, textShadow: '0 2px 20px rgba(0,0,0,0.5)' }}>
                             @{profileUser.username.toUpperCase()}
                         </h1>
