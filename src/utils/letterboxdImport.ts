@@ -320,40 +320,56 @@ export async function importLetterboxdZip(
     })
     
     // ── Step 6b: Update EXISTING logs with reviews they're missing ──
-    onProgress({ phase: 'Applying reviews to existing logs...', current: 0, total: reviewMap.size })
+    // First, fetch all existing logs with empty reviews in one query
+    onProgress({ phase: 'Checking existing reviews...', current: 0, total: 1 })
+    const logsNeedingReview: { id: string; film_id: number }[] = []
+    let rPage = 0
+    while (true) {
+        const { data } = await supabase
+            .from('logs')
+            .select('id, film_id, review')
+            .eq('user_id', user.id)
+            .range(rPage * 1000, (rPage + 1) * 1000 - 1)
+        if (!data || data.length === 0) break
+        data.forEach((log: any) => {
+            if (!log.review || log.review.trim() === '') {
+                logsNeedingReview.push({ id: log.id, film_id: log.film_id })
+            }
+        })
+        if (data.length < 1000) break
+        rPage++
+    }
+    
+    // Build a map of film_id → log_id for logs needing reviews
+    const filmIdToLogId = new Map<number, string>()
+    logsNeedingReview.forEach(l => filmIdToLogId.set(l.film_id, l.id))
+    
+    // Apply reviews only to logs that need them
     let reviewsApplied = 0
     let reviewIdx = 0
-    for (const [key, reviewText] of reviewMap.entries()) {
-        reviewIdx++
+    const reviewEntries = Array.from(reviewMap.entries())
+    const reviewsToApply = reviewEntries.filter(([key]) => {
         const film = filmMap.get(key)
-        if (!film) continue
-        if (!existingFilmIds.has(film.id)) continue
+        return film && existingFilmIds.has(film.id) && filmIdToLogId.has(film.id)
+    })
+    
+    for (const [key, reviewText] of reviewsToApply) {
+        reviewIdx++
+        const film = filmMap.get(key)!
+        const logId = filmIdToLogId.get(film.id)!
         
-        // First check if the log actually needs a review update
-        const { data: existingLog } = await supabase
+        const { error: updateErr } = await supabase
             .from('logs')
-            .select('id, review')
-            .eq('user_id', user.id)
-            .eq('film_id', film.id)
-            .limit(1)
-            .maybeSingle()
+            .update({ review: reviewText })
+            .eq('id', logId)
         
-        if (existingLog && (!existingLog.review || existingLog.review.trim() === '')) {
-            const { error: updateErr } = await supabase
-                .from('logs')
-                .update({ review: reviewText })
-                .eq('id', existingLog.id)
-            
-            if (!updateErr) {
-                reviewsApplied++
-            }
-        }
+        if (!updateErr) reviewsApplied++
         
-        if (reviewIdx % 10 === 0) {
+        if (reviewIdx % 5 === 0 || reviewIdx === reviewsToApply.length) {
             onProgress({
-                phase: 'Applying reviews to existing logs...',
+                phase: 'Applying reviews...',
                 current: reviewIdx,
-                total: reviewMap.size,
+                total: reviewsToApply.length,
                 detail: film.title,
             })
         }
@@ -361,22 +377,52 @@ export async function importLetterboxdZip(
     result.reviews += reviewsApplied
     
     // ── Step 6c: Update EXISTING logs with ratings they're missing ──
-    onProgress({ phase: 'Applying ratings to existing logs...', current: 0, total: ratings.length })
+    // Only update logs that currently have rating=0
+    const logsWithZeroRating = new Set<number>()
+    // Re-check: fetch logs with rating=0
+    let zPage = 0
+    while (true) {
+        const { data } = await supabase
+            .from('logs')
+            .select('film_id')
+            .eq('user_id', user.id)
+            .eq('rating', 0)
+            .range(zPage * 1000, (zPage + 1) * 1000 - 1)
+        if (!data || data.length === 0) break
+        data.forEach((l: any) => logsWithZeroRating.add(l.film_id))
+        if (data.length < 1000) break
+        zPage++
+    }
+    
+    const ratingsToUpdate: { film_id: number; rating: number }[] = []
     for (const entry of ratings) {
         const name = getFilmName(entry)
         const year = getFilmYear(entry)
         const film = filmMap.get(`${name}::${year}`)
         if (!film || !existingFilmIds.has(film.id)) continue
+        if (!logsWithZeroRating.has(film.id)) continue
         
         const rating = convertRating(entry.Rating || entry.rating || '')
         if (rating === 0) continue
-        
+        ratingsToUpdate.push({ film_id: film.id, rating })
+    }
+    
+    for (let i = 0; i < ratingsToUpdate.length; i++) {
+        const { film_id, rating } = ratingsToUpdate[i]
         await supabase
             .from('logs')
             .update({ rating })
             .eq('user_id', user.id)
-            .eq('film_id', film.id)
+            .eq('film_id', film_id)
             .eq('rating', 0)
+        
+        if (i % 5 === 0 || i === ratingsToUpdate.length - 1) {
+            onProgress({
+                phase: 'Applying ratings...',
+                current: i + 1,
+                total: ratingsToUpdate.length,
+            })
+        }
     }
     
     // ── Step 7: Import NEW Diary Logs ──
