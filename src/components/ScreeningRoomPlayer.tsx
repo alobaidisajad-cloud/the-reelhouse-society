@@ -6,193 +6,149 @@ interface ScreeningRoomPlayerProps {
     compact?: boolean
 }
 
-function formatTime(seconds: number): string {
-    const m = Math.floor(seconds / 60)
-    const s = Math.floor(seconds % 60)
-    return `${m}:${s.toString().padStart(2, '0')}`
+function fmt(s: number): string {
+    const m = Math.floor(s / 60)
+    const sec = Math.floor(s % 60)
+    return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
 export default function ScreeningRoomPlayer({ src, filmTitle, compact = false }: ScreeningRoomPlayerProps) {
-    const videoRef = useRef<HTMLVideoElement>(null)
-    const progressRef = useRef<HTMLDivElement>(null)
-    const containerRef = useRef<HTMLDivElement>(null)
-    const hideTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
+    const v = useRef<HTMLVideoElement>(null)
+    const bar = useRef<HTMLDivElement>(null)
+    const wrap = useRef<HTMLDivElement>(null)
+    const timer = useRef<ReturnType<typeof setTimeout>>(undefined)
 
-    const [playing, setPlaying] = useState(false)
-    const [currentTime, setCurrentTime] = useState(0)
-    const [duration, setDuration] = useState(0)
-    const [buffered, setBuffered] = useState(0)
-    const [volume, setVolume] = useState(1)
-    const [muted, setMuted] = useState(false)
-    const [showControls, setShowControls] = useState(true)
-    const [isFullscreen, setIsFullscreen] = useState(false)
-    const [started, setStarted] = useState(false)
+    const [on, setOn] = useState(false)
+    const [t, setT] = useState(0)
+    const [dur, setDur] = useState(0)
+    const [buf, setBuf] = useState(0)
+    const [mut, setMut] = useState(false)
+    const [ctrl, setCtrl] = useState(true)
+    const [fs, setFs] = useState(false)
+    const [begun, setBegun] = useState(false)
 
-    const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+    const pct = dur > 0 ? (t / dur) * 100 : 0
 
-    // ── Event Handlers ──
-    const togglePlay = useCallback(() => {
-        const v = videoRef.current
-        if (!v) return
-        if (v.paused) {
-            v.play()
-            setPlaying(true)
-            setStarted(true)
-        } else {
-            v.pause()
-            setPlaying(false)
-        }
-        resetHideTimer()
-    }, [])
-
-    const resetHideTimer = useCallback(() => {
-        setShowControls(true)
-        if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-        hideTimerRef.current = setTimeout(() => {
-            if (videoRef.current && !videoRef.current.paused) {
-                setShowControls(false)
-            }
+    const showCtrl = useCallback(() => {
+        setCtrl(true)
+        if (timer.current) clearTimeout(timer.current)
+        timer.current = setTimeout(() => {
+            if (v.current && !v.current.paused) setCtrl(false)
         }, 3000)
     }, [])
 
-    const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        const bar = progressRef.current
-        const v = videoRef.current
-        if (!bar || !v) return
-        const rect = bar.getBoundingClientRect()
-        const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width))
-        v.currentTime = pct * v.duration
-        resetHideTimer()
-    }, [resetHideTimer])
-
-    const toggleMute = useCallback(() => {
-        const v = videoRef.current
-        if (!v) return
-        v.muted = !v.muted
-        setMuted(v.muted)
-        resetHideTimer()
-    }, [resetHideTimer])
-
-    const toggleFullscreen = useCallback(() => {
-        const c = containerRef.current
-        if (!c) return
-        if (!document.fullscreenElement) {
-            c.requestFullscreen?.()
+    const play = useCallback(() => {
+        if (!v.current) return
+        if (v.current.paused) {
+            v.current.play(); setOn(true); setBegun(true)
         } else {
-            document.exitFullscreen?.()
+            v.current.pause(); setOn(false)
         }
-        resetHideTimer()
-    }, [resetHideTimer])
+        showCtrl()
+    }, [showCtrl])
 
-    // ── Sync State ──
+    const seek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+        if (!bar.current || !v.current) return
+        const r = bar.current.getBoundingClientRect()
+        v.current.currentTime = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * v.current.duration
+        showCtrl()
+    }, [showCtrl])
+
     useEffect(() => {
-        const v = videoRef.current
-        if (!v) return
-
-        const onTime = () => setCurrentTime(v.currentTime)
-        const onMeta = () => setDuration(v.duration)
-        const onEnd = () => { setPlaying(false); setStarted(false) }
-        const onProgress = () => {
-            if (v.buffered.length > 0) {
-                setBuffered((v.buffered.end(v.buffered.length - 1) / v.duration) * 100)
-            }
-        }
-
-        v.addEventListener('timeupdate', onTime)
-        v.addEventListener('loadedmetadata', onMeta)
-        v.addEventListener('ended', onEnd)
-        v.addEventListener('progress', onProgress)
-
-        const onFsChange = () => setIsFullscreen(!!document.fullscreenElement)
-        document.addEventListener('fullscreenchange', onFsChange)
-
+        const el = v.current
+        if (!el) return
+        const onT = () => setT(el.currentTime)
+        const onM = () => setDur(el.duration)
+        const onE = () => { setOn(false); setBegun(false) }
+        const onP = () => { if (el.buffered.length > 0) setBuf((el.buffered.end(el.buffered.length - 1) / el.duration) * 100) }
+        el.addEventListener('timeupdate', onT)
+        el.addEventListener('loadedmetadata', onM)
+        el.addEventListener('ended', onE)
+        el.addEventListener('progress', onP)
+        const onFs = () => setFs(!!document.fullscreenElement)
+        document.addEventListener('fullscreenchange', onFs)
         return () => {
-            v.removeEventListener('timeupdate', onTime)
-            v.removeEventListener('loadedmetadata', onMeta)
-            v.removeEventListener('ended', onEnd)
-            v.removeEventListener('progress', onProgress)
-            document.removeEventListener('fullscreenchange', onFsChange)
+            el.removeEventListener('timeupdate', onT)
+            el.removeEventListener('loadedmetadata', onM)
+            el.removeEventListener('ended', onE)
+            el.removeEventListener('progress', onP)
+            document.removeEventListener('fullscreenchange', onFs)
         }
     }, [])
 
-    useEffect(() => {
-        return () => {
-            if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
-        }
-    }, [])
+    useEffect(() => () => { if (timer.current) clearTimeout(timer.current) }, [])
 
-    const gold = '#c4872a'
-    const goldDim = 'rgba(196,135,42,0.35)'
+    const g = '#c4872a'
 
     return (
         <div
-            ref={containerRef}
-            onMouseMove={resetHideTimer}
-            onMouseEnter={() => setShowControls(true)}
-            onClick={(e) => {
-                // Only toggle play if clicking the video area, not controls
-                if ((e.target as HTMLElement).closest('[data-controls]')) return
-                togglePlay()
-            }}
+            ref={wrap}
+            onMouseMove={showCtrl}
+            onMouseEnter={() => setCtrl(true)}
+            onClick={e => { if (!(e.target as HTMLElement).closest('[data-c]')) play() }}
             style={{
                 position: 'relative',
-                borderRadius: compact ? '6px' : '8px',
+                borderRadius: fs ? 0 : (compact ? '6px' : '10px'),
                 overflow: 'hidden',
                 background: '#000',
-                border: `1px solid rgba(196,135,42,0.15)`,
-                boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
                 cursor: 'pointer',
-                ...(isFullscreen ? { borderRadius: 0, border: 'none' } : {}),
+                // Prominent gold accent top border
+                borderTop: `2px solid ${g}`,
+                borderLeft: '1px solid rgba(196,135,42,0.08)',
+                borderRight: '1px solid rgba(196,135,42,0.08)',
+                borderBottom: '1px solid rgba(196,135,42,0.08)',
+                boxShadow: compact
+                    ? '0 4px 20px rgba(0,0,0,0.4)'
+                    : '0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px rgba(196,135,42,0.04)',
             }}
         >
-            {/* ── Video ── */}
+            {/* Video element */}
             <video
-                ref={videoRef}
+                ref={v}
                 src={src}
                 preload="metadata"
                 playsInline
                 style={{
                     width: '100%',
-                    maxHeight: isFullscreen ? '100vh' : (compact ? 220 : 460),
+                    // BIGGER — this is the main event
+                    maxHeight: fs ? '100vh' : (compact ? 280 : 560),
+                    minHeight: compact ? 180 : 300,
                     display: 'block',
                     background: '#000',
+                    objectFit: 'contain',
                 }}
             />
 
-            {/* ── Pre-play Poster Overlay ── */}
-            {!started && (
+            {/* Pre-play overlay */}
+            {!begun && (
                 <div style={{
                     position: 'absolute', inset: 0,
-                    background: 'linear-gradient(180deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%)',
+                    background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.7) 100%)',
                     display: 'flex', flexDirection: 'column',
                     alignItems: 'center', justifyContent: 'center',
-                    gap: compact ? '0.5rem' : '0.75rem',
+                    gap: compact ? '0.4rem' : '0.6rem',
                     zIndex: 2,
                 }}>
-                    {/* Play circle */}
                     <div style={{
-                        width: compact ? 44 : 60,
-                        height: compact ? 44 : 60,
+                        width: compact ? 50 : 72,
+                        height: compact ? 50 : 72,
                         borderRadius: '50%',
-                        border: `2px solid ${gold}`,
-                        background: 'rgba(0,0,0,0.4)',
-                        backdropFilter: 'blur(4px)',
+                        border: `2px solid ${g}`,
+                        background: 'rgba(196,135,42,0.06)',
+                        backdropFilter: 'blur(6px)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transition: 'transform 0.2s, box-shadow 0.2s',
-                        boxShadow: `0 0 24px rgba(196,135,42,0.15)`,
+                        boxShadow: '0 0 40px rgba(196,135,42,0.12)',
                     }}>
-                        <svg width={compact ? 16 : 22} height={compact ? 16 : 22} viewBox="0 0 24 24" fill={gold}>
+                        <svg width={compact ? 20 : 28} height={compact ? 20 : 28} viewBox="0 0 24 24" fill={g}>
                             <polygon points="8 5 20 12 8 19" />
                         </svg>
                     </div>
                     {filmTitle && !compact && (
                         <div style={{
                             fontFamily: 'var(--font-display)',
-                            fontSize: '0.75rem',
+                            fontSize: '0.8rem',
                             color: 'var(--parchment, #e8dcc4)',
-                            opacity: 0.6,
-                            textAlign: 'center',
-                            padding: '0 1rem',
+                            opacity: 0.5,
                         }}>
                             {filmTitle}
                         </div>
@@ -200,75 +156,65 @@ export default function ScreeningRoomPlayer({ src, filmTitle, compact = false }:
                 </div>
             )}
 
-            {/* ── Custom Controls ── */}
+            {/* Controls */}
             <div
-                data-controls="true"
+                data-c="1"
+                onClick={e => e.stopPropagation()}
                 style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0,
-                    background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.85) 100%)',
-                    padding: compact ? '1.5rem 0.5rem 0.4rem' : '2rem 0.75rem 0.5rem',
-                    opacity: showControls || !playing ? 1 : 0,
+                    background: 'linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.9) 100%)',
+                    padding: compact ? '2rem 0.6rem 0.5rem' : '2.5rem 1rem 0.6rem',
+                    opacity: ctrl || !on ? 1 : 0,
                     transition: 'opacity 0.3s',
                     zIndex: 3,
                 }}
-                onClick={e => e.stopPropagation()}
             >
-                {/* Progress bar */}
+                {/* Seek bar */}
                 <div
-                    ref={progressRef}
-                    onClick={handleSeek}
+                    ref={bar}
+                    onClick={seek}
                     style={{
-                        width: '100%', height: compact ? 3 : 4,
-                        background: 'rgba(255,255,255,0.12)',
-                        borderRadius: '2px',
+                        width: '100%',
+                        height: compact ? 4 : 5,
+                        background: 'rgba(255,255,255,0.1)',
+                        borderRadius: '3px',
                         cursor: 'pointer',
                         position: 'relative',
-                        marginBottom: compact ? '0.35rem' : '0.5rem',
+                        marginBottom: compact ? '0.4rem' : '0.6rem',
                     }}
                 >
-                    {/* Buffered */}
+                    <div style={{ position: 'absolute', top: 0, left: 0, width: `${buf}%`, height: '100%', background: 'rgba(255,255,255,0.06)', borderRadius: '3px' }} />
                     <div style={{
                         position: 'absolute', top: 0, left: 0,
-                        width: `${buffered}%`, height: '100%',
-                        background: 'rgba(255,255,255,0.08)',
-                        borderRadius: '2px',
+                        width: `${pct}%`, height: '100%',
+                        background: g,
+                        borderRadius: '3px',
+                        boxShadow: `0 0 8px rgba(196,135,42,0.3)`,
                     }} />
-                    {/* Progress */}
                     <div style={{
-                        position: 'absolute', top: 0, left: 0,
-                        width: `${progress}%`, height: '100%',
-                        background: `linear-gradient(90deg, ${gold}, #daa520)`,
-                        borderRadius: '2px',
-                        transition: 'width 0.1s linear',
-                    }} />
-                    {/* Scrubber dot */}
-                    <div style={{
-                        position: 'absolute', top: '50%',
-                        left: `${progress}%`,
+                        position: 'absolute', top: '50%', left: `${pct}%`,
                         transform: 'translate(-50%, -50%)',
-                        width: compact ? 8 : 10,
-                        height: compact ? 8 : 10,
+                        width: compact ? 10 : 12,
+                        height: compact ? 10 : 12,
                         borderRadius: '50%',
-                        background: gold,
-                        boxShadow: `0 0 6px rgba(196,135,42,0.5)`,
-                        opacity: showControls ? 1 : 0,
+                        background: g,
+                        boxShadow: `0 0 8px rgba(196,135,42,0.5)`,
+                        opacity: ctrl ? 1 : 0,
                         transition: 'opacity 0.2s',
                     }} />
                 </div>
 
-                {/* Controls row */}
-                <div style={{
-                    display: 'flex', alignItems: 'center', gap: compact ? '0.5rem' : '0.75rem',
-                }}>
+                {/* Bottom row */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: compact ? '0.6rem' : '0.8rem' }}>
                     {/* Play/Pause */}
-                    <button onClick={togglePlay} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                        {playing ? (
-                            <svg width={compact ? 14 : 18} height={compact ? 14 : 18} viewBox="0 0 24 24" fill={gold}>
+                    <button onClick={play} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}>
+                        {on ? (
+                            <svg width={compact ? 16 : 20} height={compact ? 16 : 20} viewBox="0 0 24 24" fill={g}>
                                 <rect x="6" y="4" width="4" height="16" rx="1" />
                                 <rect x="14" y="4" width="4" height="16" rx="1" />
                             </svg>
                         ) : (
-                            <svg width={compact ? 14 : 18} height={compact ? 14 : 18} viewBox="0 0 24 24" fill={gold}>
+                            <svg width={compact ? 16 : 20} height={compact ? 16 : 20} viewBox="0 0 24 24" fill={g}>
                                 <polygon points="8 5 20 12 8 19" />
                             </svg>
                         )}
@@ -276,60 +222,56 @@ export default function ScreeningRoomPlayer({ src, filmTitle, compact = false }:
 
                     {/* Time */}
                     <span style={{
-                        fontFamily: 'var(--font-ui, monospace)',
-                        fontSize: compact ? '0.45rem' : '0.55rem',
-                        letterSpacing: '0.05em',
-                        color: 'rgba(255,255,255,0.7)',
-                        minWidth: compact ? 55 : 70,
-                        userSelect: 'none',
+                        fontFamily: 'var(--font-ui)',
+                        fontSize: compact ? '0.5rem' : '0.6rem',
+                        color: 'rgba(255,255,255,0.6)',
+                        letterSpacing: '0.06em',
+                        fontVariantNumeric: 'tabular-nums',
                     }}>
-                        {formatTime(currentTime)} / {formatTime(duration)}
+                        {fmt(t)}<span style={{ opacity: 0.4, margin: '0 0.15rem' }}>/</span>{fmt(dur)}
                     </span>
 
-                    {/* Spacer */}
                     <div style={{ flex: 1 }} />
 
-                    {/* Label */}
+                    {/* Screening Room label */}
                     {!compact && (
                         <span style={{
-                            fontFamily: 'var(--font-ui)',
-                            fontSize: '0.3rem',
-                            letterSpacing: '0.15em',
-                            color: goldDim,
-                            userSelect: 'none',
+                            fontFamily: 'var(--font-display)',
+                            fontSize: '0.5rem',
+                            color: g,
+                            opacity: 0.5,
+                            letterSpacing: '0.04em',
                         }}>
-                            THE SCREENING ROOM
+                            The Screening Room
                         </span>
                     )}
 
-                    {/* Volume */}
-                    <button onClick={toggleMute} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                        {muted || volume === 0 ? (
-                            <svg width={compact ? 14 : 16} height={compact ? 14 : 16} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="rgba(255,255,255,0.6)" />
-                                <line x1="23" y1="9" x2="17" y2="15" />
-                                <line x1="17" y1="9" x2="23" y2="15" />
-                            </svg>
-                        ) : (
-                            <svg width={compact ? 14 : 16} height={compact ? 14 : 16} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="rgba(255,255,255,0.6)" />
-                                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
-                                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-                            </svg>
-                        )}
+                    {/* Mute */}
+                    <button onClick={() => { if (v.current) { v.current.muted = !v.current.muted; setMut(v.current.muted) }; showCtrl() }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}>
+                        <svg width={compact ? 16 : 18} height={compact ? 16 : 18} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="rgba(255,255,255,0.5)" />
+                            {mut ? (
+                                <><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></>
+                            ) : (
+                                <><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></>
+                            )}
+                        </svg>
                     </button>
 
                     {/* Fullscreen */}
-                    <button onClick={toggleFullscreen} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-                        {isFullscreen ? (
-                            <svg width={compact ? 14 : 16} height={compact ? 14 : 16} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <button onClick={() => {
+                        if (!wrap.current) return
+                        if (!document.fullscreenElement) wrap.current.requestFullscreen?.()
+                        else document.exitFullscreen?.()
+                        showCtrl()
+                    }} style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', display: 'flex' }}>
+                        <svg width={compact ? 16 : 18} height={compact ? 16 : 18} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            {fs ? (
                                 <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-                            </svg>
-                        ) : (
-                            <svg width={compact ? 14 : 16} height={compact ? 14 : 16} viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            ) : (
                                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-                            </svg>
-                        )}
+                            )}
+                        </svg>
                     </button>
                 </div>
             </div>
