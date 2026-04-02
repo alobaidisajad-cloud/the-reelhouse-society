@@ -758,6 +758,8 @@
   overflow: auto;
   position: relative;
   box-shadow: 0 25px 60px rgba(0,0,0,0.8), 0 0 40px rgba(139,105,20,0.15);
+  /* Mobile padding to prevent Android logic/iOS Home Bar interference */
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 }
 
 /* ============================================================
@@ -930,6 +932,8 @@
   border: 1px solid rgba(139, 105, 20, 0.3);
   border-radius: 4px;
   padding: 3rem;
+  /* Mobile padding to prevent Android logic/iOS Home Bar interference */
+  padding-bottom: calc(3rem + env(safe-area-inset-bottom));
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
   max-height: 90vh;
