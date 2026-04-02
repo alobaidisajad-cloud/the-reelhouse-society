@@ -130,27 +130,32 @@ export default function UserProfilePage() {
     const [visibleLogCount, setVisibleLogCount] = useState(40)
     const [archiveVisibleCount, setArchiveVisibleCount] = useState(40)
 
-    // Fetch other user's public logs from Supabase with Server-Side Pagination & Filtering
+    // Fetch other user's public logs from Supabase — paginated to get ALL
     const { data: otherUserLogs = [] } = useQuery({
-        queryKey: ['user-profile-logs', routeUsername, activeTab, sieve, archiveSieve, visibleLogCount, archiveVisibleCount],
+        queryKey: ['user-profile-logs', routeUsername],
         queryFn: async () => {
             const { data: prof } = await supabase
                 .from('profiles').select('id').eq('username', routeUsername).single()
             if (!prof) return []
             
-            let q = supabase
-                .from('logs')
-                .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, watched_with, created_at, pull_quote, is_autopsied, autopsy, alt_poster, physical_media')
-                .eq('user_id', prof.id)
-                .order('created_at', { ascending: false })
-
-            if (activeTab === 'diary' && sieve !== 'all') q = q.gte('rating', Number(sieve) - 0.5).lte('rating', Number(sieve) + 0.49)
-            if (activeTab === 'archive' && archiveSieve !== 'all') q = q.eq('status', archiveSieve)
+            // Paginate to get ALL logs (Supabase default caps at 1000)
+            let allLogs: any[] = []
+            let page = 0
+            const PAGE_SIZE = 1000
+            while (true) {
+                const { data, error } = await supabase
+                    .from('logs')
+                    .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, watched_with, created_at, pull_quote, is_autopsied, autopsy, alt_poster, physical_media')
+                    .eq('user_id', prof.id)
+                    .order('created_at', { ascending: false })
+                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+                if (error || !data || data.length === 0) break
+                allLogs = allLogs.concat(data)
+                if (data.length < PAGE_SIZE) break
+                page++
+            }
             
-            q = q.limit(activeTab === 'archive' ? archiveVisibleCount : visibleLogCount)
-            
-            const { data } = await q
-            return (data || []).map((l: any) => ({
+            return allLogs.map((l: any) => ({
                 id: l.id,
                 filmId: l.film_id,
                 title: l.film_title,
@@ -172,7 +177,49 @@ export default function UserProfilePage() {
             }))
         },
         enabled: !isOwnProfile && !!routeUsername,
-        staleTime: 1000 * 60 * 5, // Keep cached so tabs switch instantly
+        staleTime: 1000 * 60 * 5,
+    })
+
+    // Fetch other user's lists (stacks)
+    const { data: otherUserLists = [] } = useQuery({
+        queryKey: ['user-profile-lists', routeUsername],
+        queryFn: async () => {
+            const { data: prof } = await supabase
+                .from('profiles').select('id').eq('username', routeUsername).single()
+            if (!prof) return []
+            const { data: lists } = await supabase
+                .from('lists').select('*').eq('user_id', prof.id).eq('is_private', false).order('created_at', { ascending: false })
+            if (!lists) return []
+            // Fetch list items for each list
+            const withFilms = await Promise.all(lists.map(async (list: any) => {
+                const { data: items } = await supabase
+                    .from('list_items').select('film_id, film_title, poster_path').eq('list_id', list.id)
+                return {
+                    id: list.id, title: list.title, description: list.description || '',
+                    isRanked: list.is_ranked || false, isPrivate: false,
+                    films: (items || []).map((item: any) => ({ id: item.film_id, title: item.film_title, poster_path: item.poster_path })),
+                    createdAt: list.created_at,
+                }
+            }))
+            return withFilms
+        },
+        enabled: !isOwnProfile && !!routeUsername,
+        staleTime: 1000 * 60 * 5,
+    })
+
+    // Fetch other user's watchlist
+    const { data: otherUserWatchlist = [] } = useQuery({
+        queryKey: ['user-profile-watchlist', routeUsername],
+        queryFn: async () => {
+            const { data: prof } = await supabase
+                .from('profiles').select('id').eq('username', routeUsername).single()
+            if (!prof) return []
+            const { data } = await supabase
+                .from('watchlists').select('*').eq('user_id', prof.id).order('created_at', { ascending: false })
+            return (data || []).map((w: any) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null }))
+        },
+        enabled: !isOwnProfile && !!routeUsername,
+        staleTime: 1000 * 60 * 5,
     })
 // REMOVED IN FAVOR OF LINE 121 REPLACEMENT
     const loadMoreRef = useRef(null)
@@ -292,8 +339,8 @@ export default function UserProfilePage() {
 
     const profileLogs = isOwnProfile ? currentLogs : otherUserLogs
     const profileStubs = isOwnProfile ? currentStubs : []
-    const profileLists = isOwnProfile ? currentLists : []
-    const profileWatchlist = isOwnProfile ? currentWatchlist : []
+    const profileLists = isOwnProfile ? currentLists : otherUserLists
+    const profileWatchlist = isOwnProfile ? currentWatchlist : otherUserWatchlist
     
     // Fallback if RPC hasn't loaded:
     const finalMetrics = profileMetrics || { total_logs: profileLogs.length, avg_rating: 0 }

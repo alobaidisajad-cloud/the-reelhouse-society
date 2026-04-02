@@ -40,19 +40,42 @@ interface ImportResult {
     errors: string[]
 }
 
-// ── CSV PARSER (no dependencies) ──
+// ── CSV PARSER (handles multiline quoted fields like Letterboxd reviews) ──
 function parseCSV(text: string): Record<string, string>[] {
-    const lines = text.split('\n')
-    if (lines.length < 2) return []
+    // Normalize line endings
+    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
     
-    // Parse header
-    const headers = parseCSVLine(lines[0])
+    // Split into records respecting quoted fields that span multiple lines
+    const records: string[] = []
+    let current = ''
+    let inQuotes = false
+    
+    for (let i = 0; i < normalized.length; i++) {
+        const char = normalized[i]
+        if (char === '"') {
+            if (inQuotes && normalized[i + 1] === '"') {
+                current += '"'
+                i++ // skip escaped quote
+            } else {
+                inQuotes = !inQuotes
+            }
+            current += char
+        } else if (char === '\n' && !inQuotes) {
+            if (current.trim()) records.push(current)
+            current = ''
+        } else {
+            current += char
+        }
+    }
+    if (current.trim()) records.push(current)
+    
+    if (records.length < 2) return []
+    
+    const headers = parseCSVLine(records[0])
     const rows: Record<string, string>[] = []
     
-    for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim()
-        if (!line) continue
-        const values = parseCSVLine(line)
+    for (let i = 1; i < records.length; i++) {
+        const values = parseCSVLine(records[i])
         const row: Record<string, string> = {}
         headers.forEach((h, idx) => {
             row[h.trim()] = (values[idx] || '').trim()
@@ -235,15 +258,24 @@ export async function importLetterboxdZip(
         }
     }
     
-    // ── Step 5: Fetch existing logs to prevent duplicates ──
+    // ── Step 5: Fetch existing logs to prevent duplicates (paginated for large collections) ──
     onProgress({ phase: 'Checking existing archive...', current: 0, total: 1 })
-    const { data: existingLogs } = await supabase
-        .from('logs').select('film_id').eq('user_id', user.id)
-    const existingFilmIds = new Set((existingLogs || []).map((l: any) => l.film_id))
+    const existingFilmIds = new Set<number>()
+    let ePage = 0
+    while (true) {
+        const { data } = await supabase
+            .from('logs').select('film_id').eq('user_id', user.id)
+            .range(ePage * 1000, (ePage + 1) * 1000 - 1)
+        if (!data || data.length === 0) break
+        data.forEach((l: any) => existingFilmIds.add(l.film_id))
+        if (data.length < 1000) break
+        ePage++
+    }
     
+    const existingWatchlistIds = new Set<number>()
     const { data: existingWatchlist } = await supabase
         .from('watchlists').select('film_id').eq('user_id', user.id)
-    const existingWatchlistIds = new Set((existingWatchlist || []).map((w: any) => w.film_id))
+    ;(existingWatchlist || []).forEach((w: any) => existingWatchlistIds.add(w.film_id))
     
     // ── Step 6: Import Diary Logs ──
     const diaryTotal = diary.length

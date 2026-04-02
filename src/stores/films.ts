@@ -198,45 +198,64 @@ export const useFilmStore = create<FilmState>()(
             fetchLogs: async () => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const { data, error } = await supabase
-                    .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(2000)
-                if (!error && data) {
-                    set({
-                        logs: (data || []).map((dbLog) => ({
-                            id: dbLog.id,
-                            filmId: dbLog.film_id,
-                            title: dbLog.film_title,
-                            poster: dbLog.poster_path || null,
-                            year: dbLog.year || null,
-                            rating: dbLog.rating,
-                            review: dbLog.review,
-                            status: dbLog.status || 'watched',
-                            isSpoiler: dbLog.is_spoiler || false,
-                            watchedDate: dbLog.watched_date,
-                            watchedWith: dbLog.watched_with || null,
-                            privateNotes: dbLog.private_notes || null,
-                            abandonedReason: dbLog.abandoned_reason || null,
-                            physicalMedia: dbLog.physical_media || null,
-                            isAutopsied: dbLog.is_autopsied || false,
-                            autopsy: dbLog.autopsy || null,
-                            altPoster: dbLog.alt_poster || null,
-                            editorialHeader: dbLog.editorial_header || null,
-                            dropCap: dbLog.drop_cap || false,
-                            pullQuote: dbLog.pull_quote || '',
-                            createdAt: dbLog.created_at,
-                        })),
-                    })
+                // Paginate to overcome Supabase's default 1000-row limit
+                let allLogs: any[] = []
+                let page = 0
+                const PAGE_SIZE = 1000
+                while (true) {
+                    const { data, error } = await supabase
+                        .from('logs').select('*').eq('user_id', user.id)
+                        .order('created_at', { ascending: false })
+                        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+                    if (error || !data || data.length === 0) break
+                    allLogs = allLogs.concat(data)
+                    if (data.length < PAGE_SIZE) break // last page
+                    page++
                 }
+                set({
+                    logs: allLogs.map((dbLog) => ({
+                        id: dbLog.id,
+                        filmId: dbLog.film_id,
+                        title: dbLog.film_title,
+                        poster: dbLog.poster_path || null,
+                        year: dbLog.year || null,
+                        rating: dbLog.rating,
+                        review: dbLog.review,
+                        status: dbLog.status || 'watched',
+                        isSpoiler: dbLog.is_spoiler || false,
+                        watchedDate: dbLog.watched_date,
+                        watchedWith: dbLog.watched_with || null,
+                        privateNotes: dbLog.private_notes || null,
+                        abandonedReason: dbLog.abandoned_reason || null,
+                        physicalMedia: dbLog.physical_media || null,
+                        isAutopsied: dbLog.is_autopsied || false,
+                        autopsy: dbLog.autopsy || null,
+                        altPoster: dbLog.alt_poster || null,
+                        editorialHeader: dbLog.editorial_header || null,
+                        dropCap: dbLog.drop_cap || false,
+                        pullQuote: dbLog.pull_quote || '',
+                        createdAt: dbLog.created_at,
+                    })),
+                })
             },
 
             fetchWatchlist: async () => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const { data, error } = await supabase
-                    .from('watchlists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(2000)
-                if (!error && data) {
-                    set({ watchlist: data.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null })) })
+                let allItems: any[] = []
+                let page = 0
+                const PAGE_SIZE = 1000
+                while (true) {
+                    const { data, error } = await supabase
+                        .from('watchlists').select('*').eq('user_id', user.id)
+                        .order('created_at', { ascending: false })
+                        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+                    if (error || !data || data.length === 0) break
+                    allItems = allItems.concat(data)
+                    if (data.length < PAGE_SIZE) break
+                    page++
                 }
+                set({ watchlist: allItems.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null })) })
             },
 
             fetchVault: async () => {
