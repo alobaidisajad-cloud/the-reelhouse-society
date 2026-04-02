@@ -603,32 +603,50 @@ export async function importLetterboxdZip(
             // Report if no films were collected
             if (listItems.length === 0 && listFile.data.length > 0) {
                 const sampleRow = listFile.data[0]
-                result.errors.push(`List "${listFile.name}": ${listFile.data.length} rows but 0 films matched. Headers: ${Object.keys(sampleRow).join(',')}. Sample: ${getFilmName(sampleRow) || '(empty name)'}`)
+                result.errors.push(`List "${listFile.name}": ${listFile.data.length} rows but 0 matched. Keys: ${Object.keys(sampleRow).join(',')}. Name="${getFilmName(sampleRow) || '?'}"`)
             }
             
-            // Insert items one at a time — log EVERY error for first list
+            // Try RPC batch insert first (bypasses RLS), fall back to direct insert
             let itemsInserted = 0
-            let firstError = ''
-            for (const item of listItems) {
-                const { error: itemError } = await supabase.from('list_items').insert([item])
-                if (itemError) {
-                    if (!firstError) firstError = itemError.message
-                    if (!itemError.message.includes('duplicate') && !itemError.message.includes('unique') && !itemError.message.includes('already exists')) {
-                        // Log first non-duplicate error for debugging
-                        if (itemsInserted === 0 && li === 0) {
-                            result.errors.push(`[DEBUG] List "${listFile.name}" FIRST item error: ${itemError.message}`)
-                            result.errors.push(`[DEBUG] Item data: list_id=${item.list_id}, film_id=${item.film_id}, title=${item.film_title}`)
+            if (listItems.length > 0) {
+                // Method 1: Server-side RPC (SECURITY DEFINER — most reliable)
+                const rpcPayload = listItems.map(i => ({
+                    film_id: i.film_id,
+                    film_title: i.film_title,
+                    poster_path: i.poster_path,
+                }))
+                
+                const { data: rpcResult, error: rpcError } = await supabase.rpc('batch_insert_list_items', {
+                    p_list_id: listId,
+                    p_owner_id: user.id,
+                    p_items: rpcPayload,
+                })
+                
+                if (!rpcError && typeof rpcResult === 'number') {
+                    itemsInserted = rpcResult
+                } else {
+                    // Method 2: Fallback to direct inserts one at a time
+                    if (rpcError && li === 0) {
+                        result.errors.push(`[DEBUG] RPC unavailable: ${rpcError.message} — falling back to direct insert`)
+                    }
+                    
+                    for (const item of listItems) {
+                        const { error: itemError } = await supabase.from('list_items').insert([item])
+                        if (itemError) {
+                            if (li === 0 && itemsInserted === 0) {
+                                result.errors.push(`[DEBUG] Direct insert error: ${itemError.message}`)
+                            }
+                        } else {
+                            itemsInserted++
                         }
                     }
-                } else {
-                    itemsInserted++
                 }
             }
             
             if (itemsInserted > 0) {
-                result.errors.push(`[OK] List "${listFile.name}": ${itemsInserted}/${listItems.length} films added`)
+                result.errors.push(`[OK] "${listFile.name}": ${itemsInserted} films`)
             } else if (listItems.length > 0) {
-                result.errors.push(`List "${listFile.name}": 0/${listItems.length} films — ${firstError || 'unknown error'}`)
+                result.errors.push(`"${listFile.name}": 0/${listItems.length} films failed`)
             }
             
             result.lists++
