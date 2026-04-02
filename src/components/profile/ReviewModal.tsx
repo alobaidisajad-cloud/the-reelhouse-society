@@ -3,6 +3,7 @@ import { ReelRating } from '../UI'
 import { tmdb } from '../../tmdb'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
 import { Link } from 'react-router-dom'
+import ScreeningRoomPlayer from '../ScreeningRoomPlayer'
 import { Portal } from '../UI'
 
 /**
@@ -270,54 +271,9 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                         </div>
                     )}
 
-                    {/* ── The Screening Room — Video Theater ── */}
+                    {/* ── The Screening Room ── */}
                     {viewLog.videoUrl && (
-                        <div style={{ position: 'relative' }}>
-                            {/* Warm ambient glow */}
-                            <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: '130%', height: '130%', background: 'radial-gradient(ellipse at center, rgba(196,135,42,0.05) 0%, transparent 55%)', pointerEvents: 'none' }} />
-
-                            {/* Ornamental header */}
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem', marginBottom: '1rem', position: 'relative', zIndex: 1 }}>
-                                <div style={{ flex: 1, maxWidth: 60, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(196,135,42,0.35))' }} />
-                                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
-                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.3rem', letterSpacing: '0.3em', color: 'rgba(196,135,42,0.45)' }}>◎ PROJECTIONIST EXCLUSIVE</span>
-                                    <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.95rem', letterSpacing: '0.06em', color: '#c4872a', textShadow: '0 0 16px rgba(196,135,42,0.2)' }}>The Screening Room</span>
-                                </div>
-                                <div style={{ flex: 1, maxWidth: 60, height: '1px', background: 'linear-gradient(90deg, rgba(196,135,42,0.35), transparent)' }} />
-                            </div>
-
-                            {/* Theater frame */}
-                            <div style={{ position: 'relative', zIndex: 1, borderRadius: '4px', overflow: 'hidden', background: '#000' }}>
-                                {/* Film perforations top */}
-                                <div style={{ height: 12, background: '#0a0806', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, borderBottom: '1px solid rgba(196,135,42,0.1)' }}>
-                                    {Array.from({ length: 24 }).map((_, i) => (
-                                        <div key={i} style={{ width: 5, height: 3, borderRadius: '1px', background: 'rgba(196,135,42,0.13)' }} />
-                                    ))}
-                                </div>
-                                <div style={{ position: 'relative' }}>
-                                    <video
-                                        src={viewLog.videoUrl}
-                                        controls
-                                        preload="metadata"
-                                        playsInline
-                                        style={{ width: '100%', maxHeight: '380px', display: 'block', background: '#000' }}
-                                    />
-                                    {/* Film grain + vignette */}
-                                    <div style={{ position: 'absolute', inset: 0, boxShadow: 'inset 0 0 60px rgba(0,0,0,0.35)', pointerEvents: 'none' }} />
-                                </div>
-                                {/* Film perforations bottom */}
-                                <div style={{ height: 12, background: '#0a0806', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, borderTop: '1px solid rgba(196,135,42,0.1)' }}>
-                                    {Array.from({ length: 24 }).map((_, i) => (
-                                        <div key={i} style={{ width: 5, height: 3, borderRadius: '1px', background: 'rgba(196,135,42,0.13)' }} />
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Footer credit */}
-                            <div style={{ textAlign: 'center', marginTop: '0.5rem', position: 'relative', zIndex: 1 }}>
-                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.28rem', letterSpacing: '0.25em', color: 'rgba(196,135,42,0.3)' }}>PRESENTED BY THE REELHOUSE SOCIETY</span>
-                            </div>
-                        </div>
+                        <ScreeningRoomPlayer src={viewLog.videoUrl} filmTitle={viewLog.filmTitle} />
                     )}
 
                     {/* ── Pull Quote ── */}
