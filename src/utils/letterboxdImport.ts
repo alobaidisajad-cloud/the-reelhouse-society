@@ -237,23 +237,98 @@ export async function importLetterboxdZip(
     result.errors.push(`[INFO] Found: ${diary.length} diary, ${ratings.length} ratings, ${watched.length} watched, ${reviews.length} reviews, ${watchlist.length} watchlist`)
     
     // ── Find list CSVs — handles nested folders ──
+    // Letterboxd list CSVs can have metadata rows at the top like:
+    //   Name,My List
+    //   Date,2024-01-15
+    //   URL,https://...
+    //   (blank line)
+    //   Position,Name,Year,URL
+    //   1,The Matrix,1999,...
+    // We need to find the REAL header row (contains Name + Year columns)
+    function parseListCSV(text: string): Record<string, string>[] {
+        const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+        const lines = normalized.split('\n').filter(l => l.trim())
+        
+        // Find the header row that contains both 'Name' and 'Year' as separate columns
+        let headerIdx = -1
+        for (let i = 0; i < Math.min(lines.length, 10); i++) {
+            const cols = parseCSVLine(lines[i]).map(c => c.trim())
+            // Check if this line has both Name and Year as separate column headers
+            if (cols.includes('Name') && cols.includes('Year')) {
+                headerIdx = i
+                break
+            }
+        }
+        
+        // If no proper header found, fall back to standard parseCSV
+        if (headerIdx === -1) {
+            return parseCSV(text)
+        }
+        
+        // Parse from the real header row
+        const headers = parseCSVLine(lines[headerIdx]).map(h => h.trim())
+        const rows: Record<string, string>[] = []
+        for (let i = headerIdx + 1; i < lines.length; i++) {
+            const values = parseCSVLine(lines[i])
+            const row: Record<string, string> = {}
+            headers.forEach((h, idx) => {
+                row[h] = (values[idx] || '').trim()
+            })
+            // Only include rows that actually have a Name value
+            if (row.Name || row.name) rows.push(row)
+        }
+        return rows
+    }
+    
     const listFiles: { name: string; data: Record<string, string>[]; rawPreview: string }[] = []
+    const allZipPaths: string[] = []
     for (const [path, entry] of Object.entries(zip.files)) {
+        allZipPaths.push(path)
         // Match any path that contains /lists/ and ends with .csv
         if ((path.includes('/lists/') || path.startsWith('lists/')) && path.endsWith('.csv') && !entry.dir) {
             const text = await entry.async('text')
-            // Extract list name from the LAST segment of the path
             const segments = path.split('/')
             const fileName = segments[segments.length - 1]
             const listName = fileName.replace('.csv', '').replace(/-/g, ' ')
-            const parsed = parseCSV(text)
-            listFiles.push({ name: listName, data: parsed, rawPreview: text.slice(0, 300) })
+            // Use special list CSV parser that handles metadata rows
+            const parsed = parseListCSV(text)
+            listFiles.push({ name: listName, data: parsed, rawPreview: text.slice(0, 500) })
         }
     }
     
+    // Store comprehensive diagnostics in a log entry for remote debugging
+    const diagParts: string[] = []
+    diagParts.push(`ZIP paths: ${allZipPaths.filter(p => p.includes('list')).join(' | ')}`)
+    diagParts.push(`Lists found: ${listFiles.length}`)
+    if (listFiles.length > 0) {
+        const lf = listFiles[0]
+        diagParts.push(`First list: "${lf.name}" (${lf.data.length} rows)`)
+        if (lf.data.length > 0) {
+            diagParts.push(`Cols: ${Object.keys(lf.data[0]).join(', ')}`)
+            diagParts.push(`Row0 Name="${getFilmName(lf.data[0])}" Year="${getFilmYear(lf.data[0])}"`)
+        }
+        diagParts.push(`Raw: ${lf.rawPreview.slice(0, 200)}`)
+    }
     result.errors.push(`[INFO] Found ${listFiles.length} list CSVs`)
     
-    // Log diagnostics for first list
+    // Write diagnostics to DB so we can query remotely
+    try {
+        await supabase.from('logs').insert([{
+            user_id: user.id,
+            film_id: 0,
+            film_title: '__import_debug',
+            poster_path: null,
+            year: null,
+            rating: 0,
+            review: diagParts.join('\n'),
+            status: 'watched',
+            is_spoiler: false,
+            watched_date: '2000-01-01',
+            format: 'Debug',
+        }])
+    } catch { /* ignore debug insert errors */ }
+    
+    // Log diagnostics to errors array too
     if (listFiles.length > 0) {
         const lf = listFiles[0]
         if (lf.data.length > 0) {
