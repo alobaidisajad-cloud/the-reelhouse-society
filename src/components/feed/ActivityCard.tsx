@@ -56,7 +56,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     // ── SPOILER GUARD & EXPANSION ──
     const [spoilersRevealed, setSpoilersRevealed] = useState(false)
     const [isExpanded, setIsExpanded] = useState(false)
-    const [autopsyOpen, setAutopsyOpen] = useState(!IS_TOUCH)
+    const [autopsyOpen, setAutopsyOpen] = useState(false)
     const showFullText = isExpandedView || isExpanded
 
     // ── PRIVACY ENFORCEMENT ──
