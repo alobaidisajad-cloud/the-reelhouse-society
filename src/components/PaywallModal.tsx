@@ -2,10 +2,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X, Lock } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useAndroidHardwareBack } from '../hooks/useAndroidHardwareBack'
 import { Portal } from './UI'
 
 export default function PaywallModal({ featureName, onClose }: any) {
     const focusTrapRef = useFocusTrap(true, onClose)
+    useAndroidHardwareBack(true, onClose)
     const navigate = useNavigate()
 
     const handleAscend = () => {

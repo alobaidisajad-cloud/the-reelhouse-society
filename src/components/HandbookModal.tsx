@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUIStore } from '../store'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useAndroidHardwareBack } from '../hooks/useAndroidHardwareBack'
 import { Portal } from './UI'
 
 const IconClose = () => (
@@ -13,6 +14,7 @@ const IconClose = () => (
 export default function HandbookModal() {
     const { handbookOpen, closeHandbook } = useUIStore()
     const focusTrapRef = useFocusTrap(handbookOpen, closeHandbook)
+    useAndroidHardwareBack(handbookOpen, closeHandbook)
 
     return (
         <Portal>

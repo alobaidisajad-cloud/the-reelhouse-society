@@ -7,6 +7,7 @@ import { useUIStore, useFilmStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { PersonPlaceholder } from './UI'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useAndroidHardwareBack } from '../hooks/useAndroidHardwareBack'
 
 interface SearchResult {
     id: string | number
@@ -42,6 +43,7 @@ export default function CommandPalette() {
     const logs = useFilmStore(state => state.logs)
     const lists = useFilmStore(state => state.lists)
     const focusTrapRef = useFocusTrap(open, () => setOpen(false))
+    useAndroidHardwareBack(open, () => setOpen(false))
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

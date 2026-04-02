@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useAndroidHardwareBack } from '../hooks/useAndroidHardwareBack'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Film, Building, Lock, Terminal, Mail, RefreshCw, Check, AlertCircle, Circle } from 'lucide-react'
 import { useUIStore, useAuthStore } from '../store'
@@ -313,6 +314,7 @@ export default function SignupModal() {
     }
 
     const focusTrapRef = useFocusTrap(signupModalOpen, closeSignupModal)
+    useAndroidHardwareBack(signupModalOpen, closeSignupModal)
 
     if (!signupModalOpen || isAuthenticated) return null
 

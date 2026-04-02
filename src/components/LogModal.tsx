@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useAndroidHardwareBack } from '../hooks/useAndroidHardwareBack'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { useUIStore, useFilmStore } from '../store'
@@ -91,6 +92,7 @@ export default function LogModal() {
     }
 
     const focusTrapRef = useFocusTrap(logModalOpen, closeLogModal)
+    useAndroidHardwareBack(logModalOpen, closeLogModal)
 
     return (
         <Portal>

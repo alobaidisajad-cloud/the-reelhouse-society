@@ -7,6 +7,7 @@ import { supabase } from '../supabaseClient'
 import Buster from './Buster'
 import reelToast from '../utils/reelToast'
 import { useFocusTrap } from '../hooks/useFocusTrap'
+import { useAndroidHardwareBack } from '../hooks/useAndroidHardwareBack'
 import { Portal } from './UI'
 
 interface OnboardFilm {
@@ -106,6 +107,7 @@ export default function OnboardingModal() {
     }
 
     const focusTrapRef = useFocusTrap(open, handleDismiss)
+    useAndroidHardwareBack(open, handleDismiss)
 
     if (!open) return null
 
