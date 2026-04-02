@@ -162,82 +162,32 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         return (
             <div className="fade-in-up" onClick={e => e.stopPropagation()} style={{ padding: '0.5rem 0 3rem 0', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
 
-                {/* ── CINEMATIC HERO (Archivist Editorial) ── */}
-                {log.editorialHeader ? (
-                    <div style={{ position: 'relative', marginBottom: '1rem' }}>
-                        {/* Full-bleed editorial backdrop */}
-                        <div style={{ position: 'relative', width: '100%', overflow: 'hidden' }}>
-                            <div style={{ position: 'relative', width: '100%', paddingBottom: '50%', minHeight: 280 }}>
-                                <img
-                                    src={tmdb.backdrop(log.editorialHeader, 'w1280')}
-                                    alt=""
-                                    loading="lazy"
-                                    decoding="async"
-                                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', filter: 'sepia(0.08) contrast(1.1) brightness(0.55)' }}
-                                />
-                                {/* Deep cinematic vignette — fades seamlessly into page background */}
-                                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(11,10,8,0.2) 0%, transparent 20%, transparent 40%, rgba(11,10,8,0.95) 85%, rgba(11,10,8,1) 100%)' }} />
-                                <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center 30%, transparent 30%, rgba(11,10,8,0.55) 100%)' }} />
-                                {/* Film grain */}
-                                <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)', pointerEvents: 'none' }} />
+                {/* ── CINEMATIC HERO (Archivist Editorial Backdrop) ── */}
+                {log.editorialHeader && (
+                    <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: -1 }}>
+                        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '80vh', minHeight: 450 }}>
+                            <img
+                                src={tmdb.backdrop(log.editorialHeader, 'w1280')}
+                                alt=""
+                                loading="lazy"
+                                decoding="async"
+                                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center 20%', filter: 'sepia(0.12) contrast(1.1) brightness(0.35)' }}
+                            />
+                            {/* Seamless vignette fading into the rest of the page */}
+                            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(10,7,3,0) 0%, rgba(10,7,3,0.3) 30%, rgba(10,7,3,0.85) 75%, var(--ink) 100%)' }} />
+                            <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center 30%, transparent 20%, rgba(10,7,3,0.65) 100%)' }} />
+                            {/* Film grain layer */}
+                            <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)' }} />
 
-                                {/* Editorial badge — floats in the header */}
-                                <div style={{ position: 'absolute', top: '1rem', left: '1rem', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.3em', color: 'rgba(218,165,32,0.85)', background: 'rgba(11,10,8,0.5)', backdropFilter: 'blur(8px)', padding: '0.35rem 0.7rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.2)' }}>
-                                    ✦ EDITORIAL
-                                </div>
-
-                                {/* User identity — sits inside the header at the bottom */}
-                                <div style={{ position: 'absolute', bottom: '4.5rem', left: '1rem', right: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 2 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                        <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'rgba(232,223,200,0.9)', textDecoration: 'none', textTransform: 'uppercase', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-                                            @{log.user || 'anonymous'}
-                                        </Link>
-                                        {log.userRole === 'archivist' && <span className="reel-archivist-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>✦ ARCHIVIST</span>}
-                                        {log.userRole === 'auteur' && <span className="reel-auteur-badge" style={{ fontSize: '0.4rem', padding: '0.1rem 0.5rem' }}>★ AUTEUR</span>}
-
-                                    </div>
-                                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.2em', color: 'rgba(232,223,200,0.5)', textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}>
-                                        {log.timestamp || 'RECENT'}
-                                    </div>
-                                </div>
+                            {/* Editorial Badge — floats in the top left over the backdrop */}
+                            <div style={{ position: 'absolute', top: '2rem', left: '2rem', fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: 'rgba(218,165,32,0.85)', background: 'rgba(11,10,8,0.5)', backdropFilter: 'blur(8px)', padding: '0.4rem 0.85rem', borderRadius: '2px', border: '1px solid rgba(196,150,26,0.2)' }}>
+                                ✦ EDITORIAL
                             </div>
                         </div>
-
-                        {/* Poster emerging from the darkness — overlaps the header bottom */}
-                        <div style={{ position: 'relative', display: 'flex', justifyContent: 'center', marginTop: '-3.5rem', zIndex: 3 }}>
-                            {/* Warm projector light behind the poster */}
-                            {log.film?.poster && (
-                                <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 220, height: 300, background: 'radial-gradient(ellipse, rgba(139,105,20,0.15) 0%, rgba(139,105,20,0.05) 40%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
-                            )}
-                            <Link to={`/film/${log.film?.id}`} onClick={e => e.stopPropagation()} style={{ display: 'block', width: 140, height: 210, borderRadius: '3px', overflow: 'hidden', border: '1px solid rgba(196,150,26,0.3)', position: 'relative', boxShadow: '0 24px 60px rgba(0,0,0,0.9), 0 0 40px rgba(139,105,20,0.08), 0 0 0 1px rgba(196,150,26,0.1)', cursor: 'pointer', transition: 'transform 0.3s, box-shadow 0.3s', zIndex: 1 }} onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.04)'; e.currentTarget.style.boxShadow = '0 28px 70px rgba(0,0,0,0.95), 0 0 50px rgba(139,105,20,0.12)' }} onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = '0 24px 60px rgba(0,0,0,0.9), 0 0 40px rgba(139,105,20,0.08), 0 0 0 1px rgba(196,150,26,0.1)' }}>
-                                {log.film?.poster ? (
-                                    <img src={tmdb.poster(log.film.poster, 'w342')} alt={log.film.title} loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : (
-                                    <div style={{ width: '100%', height: '100%', background: '#0d0b09', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ width: '60%', opacity: 0.8 }} /></div>
-                                )}
-                            </Link>
-
-                            {/* Watermark Stamp */}
-                            {endorsed && (
-                                <div className="society-stamp" style={{ '--stamp-rotation': stampRotation, position: 'absolute', bottom: '-20px', right: '50%', transform: 'translateX(90px)', zIndex: 10, pointerEvents: 'none' } as React.CSSProperties}>
-                                    <svg className="stamp-svg" viewBox="0 0 300 120" xmlns="http://www.w3.org/2000/svg" style={{ width: '140px', opacity: 0.15, mixBlendMode: 'screen', filter: 'none' }}>
-                                        <g transform="rotate(-2 150 60)">
-                                            <rect x="5" y="5" width="290" height="110" rx="4" fill="none" stroke="currentColor" strokeWidth="6" strokeDasharray="30 4 12 3 50 6" opacity="0.8" />
-                                            <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
-                                            <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
-                                            <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
-                                            <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
-                                            <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
-                                            <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
-                                        </g>
-                                    </svg>
-                                </div>
-                            )}
-                        </div>
                     </div>
-                ) : (
-                    <>
-                    {/* Non-editorial: standard user row + poster */}
+                )}
+
+                {/* ── STANDARD UNIFIED POSTER & USER ROW ── */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 0.5rem', borderBottom: '1px solid rgba(139,105,20,0.1)', paddingBottom: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <Link to={`/user/${log.user}`} style={{ fontFamily: 'var(--font-ui)', fontSize: '0.75rem', letterSpacing: '0.15em', color: 'var(--sepia)', textDecoration: 'none', textTransform: 'uppercase' }}>
@@ -272,7 +222,6 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                                         <rect x="12" y="12" width="276" height="96" rx="2" fill="none" stroke="currentColor" strokeWidth="2" strokeDasharray="10 2 20 4" opacity="0.6" />
                                         <text x="150" y="55" fontFamily="var(--font-display-alt), 'Bungee Shade', sans-serif" fontSize="38" textAnchor="middle" fill="currentColor" letterSpacing="2" opacity="0.9" style={{ textTransform: 'uppercase' }}>REVIEWED</text>
                                         <text x="150" y="90" fontFamily="var(--font-ui), monospace" fontSize="16" textAnchor="middle" fill="currentColor" letterSpacing="4" opacity="0.7">THE SOCIETY</text>
-                                        <path d="M20 20 Q50 30 40 50 M260 90 Q240 80 270 60" stroke="currentColor" strokeWidth="2" fill="none" opacity="0.4" />
                                         <circle cx="270" cy="30" r="3" fill="currentColor" opacity="0.5" />
                                         <circle cx="40" cy="90" r="2" fill="currentColor" opacity="0.3" />
                                     </g>
@@ -280,8 +229,6 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                             </div>
                         )}
                     </div>
-                    </>
-                )}
 
                 {/* Focus Title & Rating */}
                 <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem' }}>
@@ -333,12 +280,20 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         ) : log.dropCap ? (
                             <>
                                 <span style={{ float: 'left', fontSize: '4rem', lineHeight: '3.5rem', padding: '0.4rem 0.6rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)' }}>
-                                    {log.review.charAt(0)}
+                                    {log.review.replace(/<[^>]+>/g, '').trim().charAt(0)}
                                 </span>
-                                <span>{log.review.slice(1)}</span>
+                                {/<[a-z][\s\S]*>/i.test(log.review) ? (
+                                    <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote><\/blockquote>/g, '').replace(/^<[^>]+>/, (match: string) => match + log.review.replace(/<[^>]+>/g, '').trim().slice(1)) }} />
+                                ) : (
+                                    <span>{log.review.slice(1)}</span>
+                                )}
                             </>
                         ) : (
-                            <span>{log.review}</span>
+                            /<[a-z][\s\S]*>/i.test(log.review) ? (
+                                <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} />
+                            ) : (
+                                <span>{log.review}</span>
+                            )
                         )}
                     </div>
                 )}
@@ -565,9 +520,9 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic' }}>Tap to decode spoilers.</span>
                             </div>
                         ) : log.dropCap ? (
-                            <><span style={{ float: 'left', fontSize: IS_TOUCH ? '2rem' : '2.5rem', lineHeight: IS_TOUCH ? '1.8rem' : '2.2rem', padding: '0.15rem 0.4rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)', textShadow: '0 2px 8px rgba(139,105,20,0.2)' }}>{log.review.charAt(0)}</span><span>{showFullText ? log.review.slice(1) : (log.review.length > 300 ? log.review.slice(1, 300) : log.review.slice(1))}</span>{!showFullText && log.review.length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
+                            <><span style={{ float: 'left', fontSize: IS_TOUCH ? '2rem' : '2.5rem', lineHeight: IS_TOUCH ? '1.8rem' : '2.2rem', padding: '0.15rem 0.4rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)', textShadow: '0 2px 8px rgba(139,105,20,0.2)' }}>{log.review.replace(/<[^>]+>/g, '').trim().charAt(0)}</span><span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} /> : log.review.slice(1)) : ((log.review.replace(/<[^>]+>/g, '').length > 300) ? log.review.replace(/<[^>]+>/g, '').slice(1, 300) : log.review.replace(/<[^>]+>/g, '').slice(1))}</span>{!showFullText && log.review.replace(/<[^>]+>/g, '').length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
                         ) : (
-                            <><span>{showFullText ? log.review : (log.review.length > 300 ? log.review.slice(0, 300) : log.review)}</span>{!showFullText && log.review.length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
+                            <><span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} /> : log.review) : (log.review.replace(/<[^>]+>/g, '').length > 300 ? log.review.replace(/<[^>]+>/g, '').slice(0, 300) : log.review.replace(/<[^>]+>/g, ''))}</span>{!showFullText && log.review.replace(/<[^>]+>/g, '').length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
                         )}
                     </div>
                 )}

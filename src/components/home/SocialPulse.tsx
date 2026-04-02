@@ -186,7 +186,7 @@ const SocialPulse = memo(function SocialPulse() {
                                                 « {act.pullQuote} »
                                             </div>
                                         )}
-                                        {act.text && <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', fontStyle: 'italic', lineHeight: 1.5, opacity: 0.9, marginTop: '0.2rem' }}>"{act.text.length > 150 ? act.text.slice(0, 150) + '…' : act.text}"</p>}
+                                        {act.text && <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)', fontStyle: 'italic', lineHeight: 1.5, opacity: 0.9, marginTop: '0.2rem' }}>"{act.text.replace(/<[^>]+>/g, '').length > 150 ? act.text.replace(/<[^>]+>/g, '').slice(0, 150) + '…' : act.text.replace(/<[^>]+>/g, '')}"</p>}
                                         {act.watchedWith && (
                                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: 'auto', paddingTop: '0.75rem' }}>
                                                 ♡ WITH <span style={{ color: 'var(--bone)' }}>{act.watchedWith.toUpperCase()}</span>

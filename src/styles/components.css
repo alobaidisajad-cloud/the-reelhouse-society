@@ -777,6 +777,23 @@
 .section-title-sm    { font-family: var(--font-ui); font-size: var(--text-micro); letter-spacing: 0.18em; color: var(--sepia); margin-bottom: 0.4rem; }
 .section-title-lg    { font-family: var(--font-ui); font-size: calc(var(--text-sm) * 1.1); letter-spacing: 0.4em; color: var(--sepia); margin-bottom: 1rem; }
 
+/* ── Rich Text Blocks ── */
+.feed-review-body blockquote {
+  border-left: 3px solid var(--sepia);
+  padding: 0.75rem 1.25rem;
+  margin: 1.5rem 0;
+  background: rgba(139, 105, 20, 0.04);
+  font-style: italic;
+  color: var(--bone);
+  opacity: 0.85;
+}
+.feed-review-body p {
+  margin-bottom: 1rem;
+}
+.feed-review-body p:last-child {
+  margin-bottom: 0;
+}
+
 /* ── Empty State Panels ── */
 .empty-state {
   text-align: center;

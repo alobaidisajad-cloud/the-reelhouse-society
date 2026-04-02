@@ -236,7 +236,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                         cursor: displayReview.logId ? 'pointer' : 'default',
                         transition: 'color 0.2s',
                     }}>
-                        {displayReview.text.length > 280 ? displayReview.text.slice(0, 280) + '…' : displayReview.text}
+                        {displayReview.text.replace(/<[^>]+>/g, '').length > 280 ? displayReview.text.replace(/<[^>]+>/g, '').slice(0, 280) + '…' : displayReview.text.replace(/<[^>]+>/g, '')}
                     </p>
 
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)' }}>
