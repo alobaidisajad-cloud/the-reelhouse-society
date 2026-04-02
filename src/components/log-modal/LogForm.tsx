@@ -56,8 +56,8 @@ export default function LogForm({ film }: { film: any }) {
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
     const [submitting, setSubmitting] = useState(false)
 
-    const isPremium = user?.role === 'archivist' || user?.role === 'auteur'
-    const isAuteur = user?.role === 'auteur'
+    const isPremium = user?.role === 'archivist' || user?.role === 'auteur' || user?.role === 'projectionist'
+    const isAuteur = user?.role === 'auteur' || user?.role === 'projectionist'
 
     useEffect(() => {
         if (film && isPremium) {
