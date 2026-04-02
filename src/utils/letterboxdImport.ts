@@ -201,7 +201,7 @@ export async function importLetterboxdZip(
     const result: ImportResult = { logs: 0, reviews: 0, watchlist: 0, lists: 0, skipped: 0, errors: [] }
     
     // ── Step 1: Extract ZIP ──
-    onProgress({ phase: 'Extracting archive...', current: 0, total: 1 })
+    onProgress({ phase: '[v5] Extracting archive...', current: 0, total: 1 })
     const zip = await JSZip.loadAsync(file)
     
     // ── Step 2: Smart CSV reader — handles nested folders ──

@@ -520,7 +520,7 @@ export default function SettingsPage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
                                 <CheckCircle size={16} style={{ color: 'var(--sepia)' }} />
                                 <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.85rem', color: 'var(--parchment)' }}>
-                                    TRANSFER COMPLETE
+                                    TRANSFER COMPLETE (v5)
                                 </span>
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.75rem' }}>
