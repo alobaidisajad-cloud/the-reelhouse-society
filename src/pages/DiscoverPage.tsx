@@ -151,7 +151,7 @@ const mobileGridStyle = {
 }
 const desktopGridStyle = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))',
     gap: '1.25rem',
 }
 
@@ -440,14 +440,15 @@ export default function DiscoverPage() {
                                     {MOODS.map((m: any) => {
                                         const active = mood?.label === m.label
                                         return (
-                                            <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: active ? m.color : 'var(--soot)', border: `1px solid ${active ? m.accent : 'rgba(139,105,20,0.2)'}`, color: active ? 'var(--flicker)' : 'var(--bone)', borderRadius: '2px', cursor: 'pointer', whiteSpace: 'nowrap', fontFamily: 'var(--font-ui)', fontSize: '0.58rem', letterSpacing: '0.1em', transition: 'all 0.2s', boxShadow: active ? `0 0 10px ${m.accent}55` : 'none' }}>
-                                                <span>{m.glyph}</span> {m.label}
+                                            <button key={m.label} onClick={() => selectMood(active ? null : m)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.5rem 1rem', background: active ? m.color : 'var(--soot)', border: `1px solid ${active ? m.accent : 'rgba(139,105,20,0.2)'}`, color: active ? 'var(--flicker)' : 'var(--bone)', borderRadius: '2px', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: 'clamp(0.55rem, 3vw, 0.65rem)', letterSpacing: '0.1em', transition: 'all 0.2s', boxShadow: active ? `0 0 10px ${m.accent}55` : 'none', maxWidth: '160px' }}>
+                                                <span>{m.glyph}</span> 
+                                                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.label}</span>
                                             </button>
                                         )
                                     })}
                                 </div>
                             ) : (
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '0.75rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '0.75rem' }}>
                                     {MOODS.map((m: any) => {
                                         const active = mood?.label === m.label
                                         return (

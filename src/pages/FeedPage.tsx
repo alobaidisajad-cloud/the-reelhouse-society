@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useAuthStore, useUIStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
-import { Info } from 'lucide-react'
+import { Eye, Clock, MessageSquare, Info, Shield, RefreshCcw } from 'lucide-react'
 
 // ── Extracted Components ──
 import ActivityCard from '../components/feed/ActivityCard'
@@ -78,6 +78,41 @@ export default function FeedPage() {
     // ── Feed Data ──
     const [showLegend, setShowLegend] = useState(false)
 
+    // ── Pull-to-Refresh State ──
+    const [pullDistance, setPullDistance] = useState(0)
+    const [isRefreshing, setIsRefreshing] = useState(false)
+    const pullStartY = useRef(0)
+
+    const handleTouchStart = (e: React.TouchEvent) => {
+        if (!IS_TOUCH) return
+        if (window.scrollY <= 0) pullStartY.current = e.touches[0].clientY
+        else pullStartY.current = 0
+    }
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (!IS_TOUCH || pullStartY.current <= 0 || window.scrollY > 0) return
+        const y = e.touches[0].clientY
+        const distance = y - pullStartY.current
+        if (distance > 0) {
+            setPullDistance(Math.min(distance * 0.4, 80))
+            if (distance > 10 && e.cancelable) e.preventDefault()
+        } else {
+            setPullDistance(0)
+        }
+    }
+
+    const handleTouchEnd = async () => {
+        if (!IS_TOUCH) return
+        if (pullDistance > 60 && !isRefreshing) {
+            setIsRefreshing(true)
+            if (feedTab === 'following') await refetchFollowing()
+            else await refetchCommunity()
+            setIsRefreshing(false)
+        }
+        setPullDistance(0)
+        pullStartY.current = 0
+    }
+
     // ── Fetch Helper ──
     const fetchFeed = async ({ pageParam = 0 }, mode: 'for-you' | 'following') => {
         if (!isSupabaseConfigured) return { items: [], hasNextPage: false }
@@ -113,7 +148,8 @@ export default function FeedPage() {
         fetchNextPage: fetchNextCommunity,
         hasNextPage: hasNextCommunity,
         isFetchingNextPage: isFetchingNextCommunity,
-        isLoading: feedLoading
+        isLoading: feedLoading,
+        refetch: refetchCommunity
     } = useInfiniteQuery({
         queryKey: ['feed', 'for-you'],
         queryFn: (params) => fetchFeed(params, 'for-you'),
@@ -126,7 +162,8 @@ export default function FeedPage() {
         fetchNextPage: fetchNextFollowing,
         hasNextPage: hasNextFollowing,
         isFetchingNextPage: isFetchingNextFollowing,
-        isLoading: followingLoading
+        isLoading: followingLoading,
+        refetch: refetchFollowing
     } = useInfiniteQuery({
         queryKey: ['feed', 'following', user?.following?.length],
         queryFn: (params) => fetchFeed(params, 'following'),
@@ -213,7 +250,7 @@ export default function FeedPage() {
     }, [communityFeed])
 
     return (
-        <div ref={feedContainerRef} className="reel-lounge" style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)', position: 'relative', zIndex: 1 }}>
+        <div ref={feedContainerRef} className="reel-lounge" style={{ paddingTop: 70, minHeight: '100dvh', background: 'var(--ink)', position: 'relative', zIndex: 1 }} onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
             <PageSEO title="The Reel" description="Classified transmissions from The Underground — The ReelHouse Society." />
             
             {/* ── THE UNDERGROUND HEADER ── */}
@@ -223,12 +260,36 @@ export default function FeedPage() {
                 padding: IS_TOUCH ? '1.5rem 0 0' : '3rem 0 0',
                 position: 'relative',
                 overflow: 'hidden',
-                flexShrink: 0
+                flexShrink: 0,
+                transform: `translateY(${isRefreshing ? 60 : pullDistance}px)`,
+                transition: isRefreshing || pullDistance === 0 ? 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
             }}>
+                {/* Visual Pull Indicator (behind header, revealed as we drag it down) */}
+                {IS_TOUCH && (pullDistance > 0 || isRefreshing) && (
+                    <div style={{
+                        position: 'absolute', top: -40, left: 0, right: 0, height: 40,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 0
+                    }}>
+                        <div style={{
+                            transform: `rotate(${(isRefreshing ? 100 : pullDistance) * 5}deg)`,
+                            color: pullDistance > 60 || isRefreshing ? 'var(--sepia)' : 'var(--fog)',
+                            animation: isRefreshing ? 'pullSpin 1s linear infinite' : 'none',
+                            opacity: isRefreshing ? 1 : Math.min(pullDistance / 60, 1),
+                            transition: 'color 0.2s',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        }}>
+                            <RefreshCcw size={20} strokeWidth={1.5} />
+                        </div>
+                    </div>
+                )}
+                <style>{`
+                    @keyframes pullSpin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+                `}</style>
+
                 {/* Ambient radial glow behind title */}
-                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.13) 0%, transparent 60%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: '100%', height: '100%', background: 'radial-gradient(ellipse at top, rgba(139,105,20,0.13) 0%, transparent 60%)', pointerEvents: 'none', zIndex: 1 }} />
                 
-                <div className="container" style={{ position: 'relative', zIndex: 1, maxWidth: 800, textAlign: 'center' }}>
+                <div className="container" style={{ position: 'relative', zIndex: 2, maxWidth: 800, textAlign: 'center' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '0.75rem', opacity: 0.8 }}>
                         ✦ THE REELHOUSE SOCIETY ✦
                     </div>
@@ -259,6 +320,8 @@ export default function FeedPage() {
                         position: 'sticky',
                         top: IS_TOUCH ? 56 : 64,
                         zIndex: 100,
+                        transform: `translateY(${isRefreshing ? 60 : pullDistance}px)`,
+                        transition: isRefreshing || pullDistance === 0 ? 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
                     }}
                 >
                     <button
@@ -281,9 +344,16 @@ export default function FeedPage() {
             </div>
 
             {/* ── PERFORATION BAR ── */}
-            <div className="reel-perf-bar" />
+            <div className="reel-perf-bar" style={{
+                transform: `translateY(${isRefreshing ? 60 : pullDistance}px)`,
+                transition: isRefreshing || pullDistance === 0 ? 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
+            }} />
 
-            <main id="feed-scroller" className="page-top" style={{ paddingBottom: IS_TOUCH ? 'calc(5rem + env(safe-area-inset-bottom))' : '3rem', paddingTop: IS_TOUCH ? '1rem' : '2rem' }}>
+            <main id="feed-scroller" className="page-top" style={{
+                paddingBottom: IS_TOUCH ? 'calc(5rem + env(safe-area-inset-bottom))' : '3rem', paddingTop: IS_TOUCH ? '1rem' : '2rem',
+                transform: `translateY(${isRefreshing ? 60 : pullDistance}px)`,
+                transition: isRefreshing || pullDistance === 0 ? 'transform 0.3s cubic-bezier(0.16, 1, 0.3, 1)' : 'none'
+            }}>
                 <div className="container feed-grid" style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'minmax(0, 1fr) 300px', gap: IS_TOUCH ? '2rem' : '3rem', alignItems: 'start' }}>
 
                     {/* ── SIDEBAR ON MOBILE: Horizontal strip above feed ── */}
@@ -395,7 +465,7 @@ export default function FeedPage() {
 
                         {/* Following tab — empty state */}
                         {feedTab === 'following' && isAuthenticated && !isLoading && activeFeed.length === 0 && (
-                            <div style={{
+                            <div className="bg-wireframe" style={{
                                 border: '1px solid rgba(139,105,20,0.15)',
                                 padding: IS_TOUCH ? '2.5rem 1.5rem' : '3rem 2rem',
                                 textAlign: 'center',
@@ -436,7 +506,7 @@ export default function FeedPage() {
                         ) : activeFeed.length === 0 && feedTab === 'for-you' ? (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                                 {/* Premium empty state */}
-                                <div style={{
+                                <div className="bg-wireframe" style={{
                                     border: '1px solid rgba(139,105,20,0.15)',
                                     padding: IS_TOUCH ? '2.5rem 1.5rem' : '3rem 2rem',
                                     textAlign: 'center',

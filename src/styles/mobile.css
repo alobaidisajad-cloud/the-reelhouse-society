@@ -9,6 +9,12 @@
   * {
     cursor: auto !important;
   }
+  
+  body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
 
   button, a, [role="button"], input, select, textarea {
     cursor: pointer !important;
@@ -104,9 +110,10 @@
   .hide-mobile { display: none !important; }
   .mobile-only { display: block !important; }
   .mobile-fab { display: none !important; }
-  .bottom-nav { display: flex !important; }
+  .bottom-nav { display: grid !important; }
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
-  .nav-actions { gap: 0.75rem !important; }
+  .nav-actions { gap: 1rem !important; }
+  .nav-actions button, .nav-actions a { padding: 0.25rem !important; }
   main, [data-page-content] { padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important; }
 
   /* === TYPOGRAPHY === */

@@ -97,9 +97,10 @@ if (rootElement) {
             <App />
           </ErrorBoundary>
           <Toaster
-            position="top-center"
+            position="bottom-center"
             gutter={8}
-            containerStyle={{ zIndex: 99999, top: 80 }}
+            containerClassName="reel-toast-container"
+            containerStyle={{ zIndex: 99999, bottom: 20 }}
             toastOptions={{
               duration: 3000,
               style: {

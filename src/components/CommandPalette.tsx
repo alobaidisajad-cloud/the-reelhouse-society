@@ -187,7 +187,8 @@ export default function CommandPalette() {
                 onClick={() => setOpen(false)}
                 style={{
                     position: 'fixed', inset: 0, zIndex: 99999,
-                    background: 'rgba(5,3,1,0.92)',
+                    background: 'rgba(5,3,1,0.98)',
+                    backdropFilter: 'blur(16px)',
                     display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
                     paddingTop: '15vh',
                     paddingLeft: '1rem',

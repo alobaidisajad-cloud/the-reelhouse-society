@@ -1,5 +1,5 @@
 import { useParams, Link, useNavigate, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Clock, Star, Globe, Bookmark, Plus, ArrowLeft, X, Film, Play, Tv, Camera, ArrowUpRight, Check, RotateCcw, Eye, EyeOff, MessageCircle } from 'lucide-react'
@@ -55,6 +55,23 @@ function FilmHero({ film, onPlayTrailer }: any) {
         enabled: !!film?.id
     })
     
+    // ── Parallax Backdrop ──
+    const backdropRef = useRef<HTMLDivElement>(null)
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!backdropRef.current) return
+            const sy = window.scrollY
+            if (sy > 800) return // optimize
+            requestAnimationFrame(() => {
+                if (backdropRef.current) {
+                    backdropRef.current.style.transform = `translateY(${sy * 0.4}px)`
+                }
+            })
+        }
+        window.addEventListener('scroll', handleScroll, { passive: true })
+        return () => window.removeEventListener('scroll', handleScroll)
+    }, [])
+
     const reviewText = localCount > 0 
         ? `${localCount} SOCIETY REVIEW${localCount === 1 ? '' : 'S'}`
         : `${Math.round((film?.vote_count || 0) / 100) * 100}+ GLOBAL RATINGS`
@@ -75,7 +92,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 {/* Full-bleed backdrop */}
                 <div style={{ position: 'relative', width: '100%', height: '55vw', minHeight: 220, maxHeight: 320, overflow: 'hidden' }}>
                     {film.backdrop_path ? (
-                        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
+                        <div ref={IS_TOUCH ? backdropRef : null} style={{ position: 'absolute', inset: -50, top: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
                     ) : (
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
                     )}
@@ -212,7 +229,9 @@ function FilmHero({ film, onPlayTrailer }: any) {
         <div style={{ position: 'relative', minHeight: '88vh', display: 'flex', alignItems: 'flex-end', paddingBottom: '3.5rem', paddingTop: 0, flexShrink: 0 }}>
             {/* Backdrop */}
             {film.backdrop_path && (
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.3) brightness(0.40) contrast(1.1)', zIndex: 0 }} />
+                <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+                    <div ref={!IS_TOUCH ? backdropRef : null} style={{ position: 'absolute', inset: -100, top: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.3) brightness(0.40) contrast(1.1)', zIndex: 0 }} />
+                </div>
             )}
             {/* Gradient overlay */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--ink) 15%, rgba(10,7,3,0.85) 45%, rgba(10,7,3,0.2) 80%, transparent)', zIndex: 1 }} />
