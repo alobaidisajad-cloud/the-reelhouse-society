@@ -572,7 +572,6 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                 )}
 
                 {log.isAutopsied && log.autopsy && (
-                    IS_TOUCH ? (
                         <div style={{ marginTop: '0.6rem' }}>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setAutopsyOpen(!autopsyOpen) }}
@@ -623,9 +622,6 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                                 </div>
                             )}
                         </div>
-                    ) : (
-                        <RadarChart autopsy={log.autopsy} size={130} />
-                    )
                 )}
 
                 {/* ── Screening Room Video (Compact) ── */}
