@@ -68,7 +68,7 @@ export default function CustomCursor() {
     // Only hide cursor AFTER custom cursor elements exist in the DOM
     const cursorStyle = document.createElement('style')
     cursorStyle.id = 'custom-cursor-hide'
-    cursorStyle.textContent = '* { cursor: none !important; }'
+    cursorStyle.textContent = '* { cursor: none !important; } :fullscreen, :fullscreen * { cursor: default !important; } :-webkit-full-screen, :-webkit-full-screen * { cursor: default !important; }'
     document.head.appendChild(cursorStyle)
 
     let raf: number
