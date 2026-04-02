@@ -79,7 +79,7 @@ export default function SettingsPage() {
 
     const handleImportFile = async (file: File) => {
         if (!file.name.endsWith('.zip')) {
-            toast.error('Please upload a .zip file from Letterboxd.')
+            toast.error('Please upload a valid .zip archive file.')
             return
         }
         setImporting(true)
@@ -419,13 +419,13 @@ export default function SettingsPage() {
                     <Download size={14} /> IMPORT & EXPORT
                 </div>
 
-                {/* ── Letterboxd Import ── */}
+                {/* ── Data Import ── */}
                 <div style={{ marginBottom: '1.5rem' }}>
                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.75rem' }}>
-                        IMPORT FROM LETTERBOXD
+                        IMPORT YOUR DATA
                     </div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', marginBottom: '1rem', lineHeight: 1.6, fontStyle: 'italic' }}>
-                        Export your data from Letterboxd (Settings → Import & Export → Export Your Data), then upload the ZIP file here. Your diary, reviews, ratings, watchlist, and lists will be imported.
+                        Upload your exported film data archive (.zip) to transfer your complete viewing history, reviews, ratings, watchlist, and lists into The ReelHouse.
                     </div>
 
                     {/* Upload Zone */}
@@ -452,7 +452,7 @@ export default function SettingsPage() {
                         >
                             <Upload size={24} style={{ color: 'var(--sepia)', marginBottom: '0.75rem', opacity: 0.7 }} />
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '0.85rem', color: 'var(--parchment)', marginBottom: '0.4rem' }}>
-                                Drop your Letterboxd ZIP here
+                                Drop your archive ZIP here
                             </div>
                             <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.12em', color: 'var(--fog)' }}>
                                 or click to browse

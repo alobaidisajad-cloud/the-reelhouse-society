@@ -608,7 +608,7 @@ export async function importLetterboxdZip(
             } else {
                 const { data: listData, error: listError } = await supabase
                     .from('lists')
-                    .insert([{ user_id: user.id, title: listTitle, description: 'Imported from Letterboxd', is_private: false }])
+                    .insert([{ user_id: user.id, title: listTitle, description: '', is_private: false }])
                     .select().single()
                 
                 if (listError || !listData) {
