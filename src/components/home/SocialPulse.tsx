@@ -78,7 +78,21 @@ const SocialPulse = memo(function SocialPulse() {
                     <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.15), transparent)', margin: '1.5rem auto 0', maxWidth: 200 }} />
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: IS_TOUCH ? '1fr' : 'repeat(auto-fill, minmax(340px, 1fr))', gap: IS_TOUCH ? '1rem' : '2rem' }}>
+                <div style={
+                    IS_TOUCH ? {
+                        display: 'flex',
+                        overflowX: 'auto',
+                        gap: '1rem',
+                        paddingBottom: '1.5rem',
+                        scrollSnapType: 'x mandatory',
+                        margin: '0 -1.5rem',
+                        padding: '0 1.5rem 1.5rem 1.5rem',
+                        WebkitOverflowScrolling: 'touch',
+                        scrollbarWidth: 'none',
+                    } : {
+                        display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: '2rem'
+                    }
+                } className={IS_TOUCH ? 'hide-scrollbar native-horizontal-scroll' : ''}>
                     {activities.map((act: any, i: number) => {
                         const isArchivist = act.userRole === 'archivist'
                         const isAuteur = act.userRole === 'auteur'
@@ -101,6 +115,9 @@ const SocialPulse = memo(function SocialPulse() {
                             flexDirection: 'column',
                             transition: 'border-color 0.3s ease, box-shadow 0.3s ease',
                             overflow: 'hidden',
+                            flexShrink: 0,
+                            width: IS_TOUCH ? '85vw' : 'auto',
+                            scrollSnapAlign: 'center',
                         }
 
                         const cardContent = (

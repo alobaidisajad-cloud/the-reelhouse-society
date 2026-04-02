@@ -118,28 +118,27 @@ const FeaturedReview = memo(function FeaturedReview() {
     const isPremiumCritique = isArchivistCritique || isAuteurCritique
 
     return (
-        <div className="layout-sidebar" style={{ alignItems: 'flex-start' }}>
+        <div className="layout-sidebar" style={{ alignItems: IS_TOUCH ? 'center' : 'flex-start' }}>
             {/* ── Poster column — display case lighting ── */}
-            {!IS_TOUCH && (
-                <div style={{ maxWidth: 220, margin: '0 auto', flexShrink: 0 }}>
-                    <div
-                        className="poster-display-case"
-                        style={{
-                            position: 'relative',
-                            padding: '0.5rem',
-                            background: 'var(--soot)',
-                            borderRadius: '4px',
-                            border: isPremiumCritique ? (isAuteurCritique ? '1px solid rgba(180,45,45,0.25)' : '1px solid rgba(196,150,26,0.25)') : '1px solid rgba(139,105,20,0.15)',
-                            boxShadow: isPremiumCritique
-                                ? (isAuteurCritique ? '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(180,45,45,0.1), 0 0 25px rgba(125,31,31,0.06)' : '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(196,150,26,0.1), 0 0 25px rgba(139,105,20,0.06)')
-                                : '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,105,20,0.08)',
-                            cursor: film ? 'pointer' : 'default',
-                        }}
-                        onClick={() => film && navigate(`/film/${film.id}`)}
-                    >
-                        {film?.poster_path ? (
-                            <img
-                                src={tmdb.poster(film.poster_path, 'w342')}
+            <div style={{ maxWidth: IS_TOUCH ? 160 : 220, margin: '0 auto', flexShrink: 0, width: '100%', marginBottom: IS_TOUCH ? '1.5rem' : 0 }}>
+                <div
+                    className="poster-display-case"
+                    style={{
+                        position: 'relative',
+                        padding: '0.5rem',
+                        background: 'var(--soot)',
+                        borderRadius: '4px',
+                        border: isPremiumCritique ? (isAuteurCritique ? '1px solid rgba(180,45,45,0.25)' : '1px solid rgba(196,150,26,0.25)') : '1px solid rgba(139,105,20,0.15)',
+                        boxShadow: isPremiumCritique
+                            ? (isAuteurCritique ? '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(180,45,45,0.1), 0 0 25px rgba(125,31,31,0.06)' : '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(196,150,26,0.1), 0 0 25px rgba(139,105,20,0.06)')
+                            : '0 15px 35px rgba(0,0,0,0.6), 0 0 0 1px rgba(139,105,20,0.08)',
+                        cursor: film ? 'pointer' : 'default',
+                    }}
+                    onClick={() => film && navigate(`/film/${film.id}`)}
+                >
+                    {film?.poster_path ? (
+                        <img
+                            src={tmdb.poster(film.poster_path, 'w342')}
                                 alt={film.title}
                                 loading="lazy"
                                 style={{
@@ -189,10 +188,9 @@ const FeaturedReview = memo(function FeaturedReview() {
                         </div>
                     )}
                 </div>
-            )}
 
             {/* ── Critique column ── */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', width: '100%' }}>
                 <div style={{
                     position: 'relative',
                     padding: IS_TOUCH ? '1.5rem 1.25rem' : '2rem 2.5rem',
@@ -221,19 +219,7 @@ const FeaturedReview = memo(function FeaturedReview() {
                         textShadow: '0 0 15px rgba(139,105,20,0.3)',
                     }}>"</div>
 
-                    {/* Mobile: show film title above review */}
-                    {IS_TOUCH && film && (
-                        <div style={{
-                            fontFamily: 'var(--font-ui)',
-                            fontSize: '0.5rem',
-                            letterSpacing: '0.2em',
-                            color: 'var(--sepia)',
-                            opacity: 0.75,
-                            marginBottom: '0.75rem',
-                        }}>
-                            {film.title?.toUpperCase()}
-                        </div>
-                    )}
+                    {/* Mobile: hide title since it is now below the poster */}
 
                     <p
                         onClick={() => displayReview.logId && navigate(`/log/${displayReview.logId}`)}
@@ -270,23 +256,25 @@ const FeaturedReview = memo(function FeaturedReview() {
 
                 {/* Action buttons */}
                 {film && (
-                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: '2rem', paddingLeft: IS_TOUCH ? '0' : '0.5rem', alignItems: 'center' }}>
+                    <div style={{ marginTop: '1.5rem', display: 'flex', gap: IS_TOUCH ? '1rem' : '2rem', flexDirection: IS_TOUCH ? 'column' : 'row', paddingLeft: IS_TOUCH ? '0' : '0.5rem', alignItems: IS_TOUCH ? 'stretch' : 'center' }}>
                         <button
                             className="btn btn-ghost"
                             style={{
                                 fontSize: '0.75rem',
-                                padding: '0.5em 0',
+                                padding: IS_TOUCH ? '0.8em 0' : '0.5em 0',
                                 whiteSpace: 'nowrap',
                                 border: 'none',
-                                background: 'transparent',
+                                background: IS_TOUCH ? 'rgba(139,105,20,0.05)' : 'transparent',
+                                borderRadius: IS_TOUCH ? '4px' : '0',
                                 boxShadow: 'none',
                                 color: 'var(--parchment)',
                                 letterSpacing: '0.2em',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: IS_TOUCH ? 'center' : 'flex-start',
                                 textDecoration: 'none',
                                 transition: 'all 0.3s ease',
-                                borderBottom: '1px solid var(--sepia)'
+                                borderBottom: IS_TOUCH ? '1px solid rgba(139,105,20,0.1)' : '1px solid var(--sepia)'
                             }}
                             onMouseEnter={(e: any) => {
                                 e.currentTarget.style.color = 'var(--flicker)'
@@ -304,15 +292,17 @@ const FeaturedReview = memo(function FeaturedReview() {
                             className="btn btn-ghost"
                             style={{
                                 fontSize: '0.75rem',
-                                padding: '0.5em 0',
+                                padding: IS_TOUCH ? '0.8em 0' : '0.5em 0',
                                 whiteSpace: 'nowrap',
                                 border: 'none',
-                                background: 'transparent',
+                                background: IS_TOUCH ? 'rgba(139,105,20,0.1)' : 'transparent',
+                                borderRadius: IS_TOUCH ? '4px' : '0',
                                 boxShadow: 'none',
-                                color: 'var(--fog)',
+                                color: IS_TOUCH ? 'var(--bone)' : 'var(--fog)',
                                 letterSpacing: '0.2em',
                                 display: 'flex',
                                 alignItems: 'center',
+                                justifyContent: IS_TOUCH ? 'center' : 'flex-start',
                                 gap: '0.5rem',
                                 transition: 'all 0.3s ease'
                             }}
