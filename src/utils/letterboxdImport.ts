@@ -110,12 +110,16 @@ function parseCSVLine(line: string): string[] {
     return result
 }
 
-// ── Helper: get film name from CSV row (handles both "Name" and "Title" columns) ──
+// ── Helpers: get film data from CSV row (handles column name variations) ──
 function getFilmName(row: Record<string, string>): string {
     return row.Name || row.name || row.Title || row.title || ''
 }
 function getFilmYear(row: Record<string, string>): string {
     return row.Year || row.year || ''
+}
+function getWatchedDate(row: Record<string, string>): string {
+    // Letterboxd uses 'Watched Date' OR 'WatchedDate' depending on version
+    return row['Watched Date'] || row.WatchedDate || row.Date || row.date || ''
 }
 
 // ── TMDB FILM MATCHER (rate-limited, batched) ──
@@ -211,21 +215,27 @@ export async function importLetterboxdZip(
     const watchlist = await readCSV('watchlist.csv')
     
     // Find list CSVs in lists/ folder
-    const listFiles: { name: string; data: Record<string, string>[] }[] = []
+    const listFiles: { name: string; data: Record<string, string>[]; rawPreview: string }[] = []
     for (const [path, entry] of Object.entries(zip.files)) {
         if (path.startsWith('lists/') && path.endsWith('.csv') && !entry.dir) {
             const text = await entry.async('text')
             const listName = path.replace('lists/', '').replace('.csv', '').replace(/-/g, ' ')
             const parsed = parseCSV(text)
-            listFiles.push({ name: listName, data: parsed })
+            listFiles.push({ name: listName, data: parsed, rawPreview: text.slice(0, 300) })
         }
     }
     
-    // Log diagnostics
-    if (listFiles.length > 0 && listFiles[0].data.length > 0) {
-        const sampleHeaders = Object.keys(listFiles[0].data[0])
-        result.errors.push(`[DEBUG] List CSV headers: ${sampleHeaders.join(', ')}`)
-        result.errors.push(`[DEBUG] Sample row: ${JSON.stringify(listFiles[0].data[0]).slice(0, 200)}`)
+    // Log diagnostics for list debugging
+    if (listFiles.length > 0) {
+        const lf = listFiles[0]
+        if (lf.data.length > 0) {
+            result.errors.push(`[DEBUG] List "${lf.name}" headers: ${Object.keys(lf.data[0]).join(', ')}`)
+            result.errors.push(`[DEBUG] List "${lf.name}" sample: ${JSON.stringify(lf.data[0]).slice(0, 300)}`)
+            result.errors.push(`[DEBUG] List "${lf.name}" Name check: "${getFilmName(lf.data[0])}", Year: "${getFilmYear(lf.data[0])}"`)
+        } else {
+            result.errors.push(`[DEBUG] List "${lf.name}" parsed 0 rows. Raw preview: ${lf.rawPreview.slice(0, 200)}`)
+        }
+        result.errors.push(`[DEBUG] Total lists found: ${listFiles.length}`)
     }
     
     // ── Step 3: Collect all unique films to match ──
@@ -385,6 +395,8 @@ export async function importLetterboxdZip(
         const reviewText = reviewMap.get(key) || ''
         const isRewatch = (entry.Rewatch || entry.rewatch || '') === 'Yes'
         
+        const watchedDate = getWatchedDate(entry) || new Date().toISOString().split('T')[0]
+        
         logsToInsert.push({
             user_id: user.id,
             film_id: film.id,
@@ -395,7 +407,8 @@ export async function importLetterboxdZip(
             review: reviewText,
             status: isRewatch ? 'rewatched' : 'watched',
             is_spoiler: false,
-            watched_date: entry['Watched Date'] || entry.Date || entry.date || new Date().toISOString(),
+            watched_date: watchedDate,
+            created_at: new Date(watchedDate + 'T12:00:00Z').toISOString(),
             format: 'Digital',
         })
         existingFilmIds.add(film.id)
@@ -434,6 +447,8 @@ export async function importLetterboxdZip(
         
         const reviewText = reviewMap.get(key) || ''
         
+        const ratingDate = entry.Date || entry.date || new Date().toISOString().split('T')[0]
+        
         ratingsToInsert.push({
             user_id: user.id,
             film_id: film.id,
@@ -444,7 +459,8 @@ export async function importLetterboxdZip(
             review: reviewText,
             status: 'watched',
             is_spoiler: false,
-            watched_date: entry.Date || entry.date || new Date().toISOString(),
+            watched_date: ratingDate,
+            created_at: new Date(ratingDate + 'T12:00:00Z').toISOString(),
             format: 'Digital',
         })
         existingFilmIds.add(film.id)
@@ -467,6 +483,8 @@ export async function importLetterboxdZip(
         const film = filmMap.get(`${name}::${year}`)
         if (!film || existingFilmIds.has(film.id)) continue
         
+        const watchedFilmDate = entry.Date || entry.date || new Date().toISOString().split('T')[0]
+        
         watchedToInsert.push({
             user_id: user.id,
             film_id: film.id,
@@ -477,7 +495,8 @@ export async function importLetterboxdZip(
             review: '',
             status: 'watched',
             is_spoiler: false,
-            watched_date: entry.Date || entry.date || new Date().toISOString(),
+            watched_date: watchedFilmDate,
+            created_at: new Date(watchedFilmDate + 'T12:00:00Z').toISOString(),
             format: 'Digital',
         })
         existingFilmIds.add(film.id)
@@ -587,14 +606,18 @@ export async function importLetterboxdZip(
                 result.errors.push(`List "${listFile.name}": ${listFile.data.length} rows but 0 films matched. Headers: ${Object.keys(sampleRow).join(',')}. Sample: ${getFilmName(sampleRow) || '(empty name)'}`)
             }
             
-            // Insert items one at a time
+            // Insert items one at a time — log EVERY error for first list
             let itemsInserted = 0
+            let firstError = ''
             for (const item of listItems) {
                 const { error: itemError } = await supabase.from('list_items').insert([item])
                 if (itemError) {
+                    if (!firstError) firstError = itemError.message
                     if (!itemError.message.includes('duplicate') && !itemError.message.includes('unique') && !itemError.message.includes('already exists')) {
-                        if (itemsInserted === 0) {
-                            result.errors.push(`List "${listFile.name}" insert error: ${itemError.message}`)
+                        // Log first non-duplicate error for debugging
+                        if (itemsInserted === 0 && li === 0) {
+                            result.errors.push(`[DEBUG] List "${listFile.name}" FIRST item error: ${itemError.message}`)
+                            result.errors.push(`[DEBUG] Item data: list_id=${item.list_id}, film_id=${item.film_id}, title=${item.film_title}`)
                         }
                     }
                 } else {
@@ -605,7 +628,7 @@ export async function importLetterboxdZip(
             if (itemsInserted > 0) {
                 result.errors.push(`[OK] List "${listFile.name}": ${itemsInserted}/${listItems.length} films added`)
             } else if (listItems.length > 0) {
-                result.errors.push(`List "${listFile.name}": 0/${listItems.length} films added — DB insert rejected`)
+                result.errors.push(`List "${listFile.name}": 0/${listItems.length} films — ${firstError || 'unknown error'}`)
             }
             
             result.lists++
