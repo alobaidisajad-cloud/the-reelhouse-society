@@ -234,7 +234,6 @@ export const VaultSection = memo(function VaultSection({ vault }: any) {
 // ── LISTS SECTION — Premium Stack Cards (matching community page) ──
 export function ListsSection({ lists, user }: any) {
     const { isAuthenticated } = useAuthStore()
-    if (!isAuthenticated) return <div style={{ textAlign: 'center', padding: '2rem', border: '1px dashed var(--ash)', borderRadius: 'var(--radius-card)' }}><p style={{ fontFamily: 'var(--font-sub)', color: 'var(--fog)', fontSize: '0.85rem' }}>Sign in to create and manage your lists</p></div>
 
     const gradients = [
         'linear-gradient(135deg, #1a0e05 0%, #3a2010 40%, #0a0703 100%)',

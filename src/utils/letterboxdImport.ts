@@ -42,8 +42,8 @@ interface ImportResult {
 
 // ── CSV PARSER (handles multiline quoted fields like Letterboxd reviews) ──
 function parseCSV(text: string): Record<string, string>[] {
-    // Normalize line endings
-    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
+    // Strip BOM and normalize line endings
+    const normalized = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n')
     
     // Split into records respecting quoted fields that span multiple lines
     const records: string[] = []
@@ -465,8 +465,18 @@ export async function importLetterboxdZip(
             }
             
             if (listItems.length > 0) {
+                let itemsInserted = 0
                 for (let i = 0; i < listItems.length; i += 50) {
-                    await supabase.from('list_items').insert(listItems.slice(i, i + 50))
+                    const chunk = listItems.slice(i, i + 50)
+                    const { error: itemError } = await supabase.from('list_items').insert(chunk)
+                    if (itemError) {
+                        result.errors.push(`List "${listFile.name}" items: ${itemError.message}`)
+                    } else {
+                        itemsInserted += chunk.length
+                    }
+                }
+                if (itemsInserted === 0 && listItems.length > 0) {
+                    result.errors.push(`List "${listFile.name}": 0/${listItems.length} films added (possible permissions issue)`)
                 }
             }
             
