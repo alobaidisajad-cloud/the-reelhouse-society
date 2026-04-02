@@ -107,6 +107,9 @@
 html {
   background: var(--ink);
   overscroll-behavior: none;
+  /* Lock base font size against extreme OS accessibility inflation to preserve Nitrate Noir ratios */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 @media (prefers-reduced-motion: no-preference) {
