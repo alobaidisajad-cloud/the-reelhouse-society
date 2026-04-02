@@ -1062,3 +1062,26 @@
     height: 44px;
   }
 }
+
+/* ── SCREENING ROOM VOLUME SLIDER ── */
+input[type="range"][aria-label="Volume"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #c4872a;
+  border: 2px solid #e8dcc4;
+  box-shadow: 0 0 6px rgba(196, 135, 42, 0.4);
+  cursor: pointer;
+}
+
+input[type="range"][aria-label="Volume"]::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #c4872a;
+  border: 2px solid #e8dcc4;
+  box-shadow: 0 0 6px rgba(196, 135, 42, 0.4);
+  cursor: pointer;
+}

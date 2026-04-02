@@ -21,6 +21,7 @@ export default function ScreeningRoomPlayer({ src, filmTitle, compact = false }:
     const [dur, setDur] = useState(0)
     const [buf, setBuf] = useState(0)
     const [muted, setMuted] = useState(false)
+    const [vol, setVol] = useState(1)
     const [fs, setFs] = useState(false)
     const [ready, setReady] = useState(false)
     const [dragging, setDragging] = useState(false)
@@ -111,6 +112,14 @@ export default function ScreeningRoomPlayer({ src, filmTitle, compact = false }:
         if (!vid.current) return
         vid.current.muted = !vid.current.muted
         setMuted(vid.current.muted)
+    }
+
+    const changeVol = (newVol: number) => {
+        if (!vid.current) return
+        vid.current.volume = newVol
+        vid.current.muted = newVol === 0
+        setVol(newVol)
+        setMuted(newVol === 0)
     }
 
     // ── SIZES ──
@@ -296,17 +305,38 @@ export default function ScreeningRoomPlayer({ src, filmTitle, compact = false }:
                         )}
                     </div>
 
-                    {/* Volume */}
-                    <button onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', display: 'flex', lineHeight: 0 }}>
-                        <svg width={iconSz} height={iconSz} viewBox="0 0 24 24" fill="none" stroke="var(--parchment, #e8dcc4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.55">
-                            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="var(--parchment, #e8dcc4)" fillOpacity="0.55" stroke="none" />
-                            {muted ? (
-                                <><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></>
-                            ) : (
-                                <><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></>
-                            )}
-                        </svg>
-                    </button>
+                    {/* Volume group */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: compact ? '0.3rem' : '0.4rem' }}>
+                        <button onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', display: 'flex', lineHeight: 0 }}>
+                            <svg width={iconSz} height={iconSz} viewBox="0 0 24 24" fill="none" stroke="var(--parchment, #e8dcc4)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" opacity="0.55">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="var(--parchment, #e8dcc4)" fillOpacity="0.55" stroke="none" />
+                                {muted || vol === 0 ? (
+                                    <><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></>
+                                ) : vol < 0.5 ? (
+                                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                                ) : (
+                                    <><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /></>
+                                )}
+                            </svg>
+                        </button>
+                        <input
+                            type="range"
+                            min="0" max="1" step="0.01"
+                            value={muted ? 0 : vol}
+                            onChange={e => changeVol(parseFloat(e.target.value))}
+                            aria-label="Volume"
+                            style={{
+                                width: compact ? 50 : 70,
+                                height: 4,
+                                appearance: 'none',
+                                WebkitAppearance: 'none',
+                                background: `linear-gradient(90deg, ${g} ${(muted ? 0 : vol) * 100}%, rgba(255,255,255,0.1) ${(muted ? 0 : vol) * 100}%)`,
+                                borderRadius: 2,
+                                outline: 'none',
+                                cursor: 'pointer',
+                            }}
+                        />
+                    </div>
 
                     {/* Fullscreen */}
                     <button onClick={toggleFs} aria-label="Fullscreen" style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', display: 'flex', lineHeight: 0 }}>
