@@ -40,7 +40,8 @@
   align-items: center;
   gap: 0.6rem;
   text-decoration: none;
-  flex-shrink: 0;
+  flex-shrink: 1; /* Allow logo to shrink if actions need space */
+  min-width: 0;
 }
 
 .nav-logo-text {
@@ -49,6 +50,8 @@
   color: var(--parchment);
   letter-spacing: 0.04em;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   animation: flicker-text 8s ease-in-out infinite;
 }
 

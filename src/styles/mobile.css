@@ -156,8 +156,8 @@
   .mobile-fab { display: none !important; }
   .bottom-nav { display: grid !important; }
   body { padding-bottom: calc(64px + env(safe-area-inset-bottom)) !important; }
-  .nav-actions { gap: 1rem !important; }
-  .nav-actions button, .nav-actions a { padding: 0.25rem !important; }
+  .nav-actions { gap: 0.4rem !important; }
+  .nav-actions button, .nav-actions a { padding: 0.2rem !important; min-width: 32px !important; }
   main, [data-page-content] { padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important; }
 
   /* === TYPOGRAPHY === */
