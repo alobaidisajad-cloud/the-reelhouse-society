@@ -205,7 +205,7 @@ export const useFilmStore = create<FilmState>()(
                 while (true) {
                     const { data, error } = await supabase
                         .from('logs').select('*').eq('user_id', user.id)
-                        .order('created_at', { ascending: false })
+                        .order('watched_date', { ascending: false })
                         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
                     if (error || !data || data.length === 0) break
                     allLogs = allLogs.concat(data)

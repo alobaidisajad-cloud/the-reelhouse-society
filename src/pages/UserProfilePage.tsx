@@ -147,7 +147,7 @@ export default function UserProfilePage() {
                     .from('logs')
                     .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, watched_with, created_at, pull_quote, is_autopsied, autopsy, alt_poster, physical_media')
                     .eq('user_id', prof.id)
-                    .order('created_at', { ascending: false })
+                    .order('watched_date', { ascending: false })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
                 if (error || !data || data.length === 0) break
                 allLogs = allLogs.concat(data)
