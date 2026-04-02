@@ -74,7 +74,7 @@ export default defineConfig({
     // Strip console.log/warn from production — keeps dev output clean
     minify: true,
     esbuild: {
-      drop: ['console'],
+      drop: ['console', 'debugger'],
     },
   },
 

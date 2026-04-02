@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { Lock, X } from 'lucide-react'
 import reelToast from '../../utils/reelToast'
 import { useFilmStore, useProgrammeStore } from '../../store'
@@ -14,13 +14,26 @@ export function ProgrammesSection({ programmes, user, isOwnProfile }: { programm
     const [film1Id, setFilm1Id] = useState('')
     const [film2Id, setFilm2Id] = useState('')
 
-    const allFilms: any[] = [...logs, ...vault, ...watchlist]
-    const uniqueFilmsMap = new Map()
-    allFilms.forEach(f => {
-        const id = (f as any).filmId || f.id
-        if (!uniqueFilmsMap.has(id)) uniqueFilmsMap.set(id, f)
-    })
-    const uniqueFilms = Array.from(uniqueFilmsMap.values())
+    const uniqueFilms = React.useMemo(() => {
+        if (!isCreating) return [] // Zero-cost execution when modal is closed
+        const map = new Map()
+        
+        // Manual iteration avoids O(N) array-spread allocation
+        for (const f of logs) {
+            const id = (f as any).filmId || f.id
+            if (!map.has(id)) map.set(id, f)
+        }
+        for (const f of vault) {
+            const id = (f as any).filmId || f.id
+            if (!map.has(id)) map.set(id, f)
+        }
+        for (const f of watchlist) {
+            const id = (f as any).filmId || f.id
+            if (!map.has(id)) map.set(id, f)
+        }
+        
+        return Array.from(map.values())
+    }, [logs, vault, watchlist, isCreating])
 
     const handleCreate = async () => {
         if (!title || !playbill || !film1Id || !film2Id) return

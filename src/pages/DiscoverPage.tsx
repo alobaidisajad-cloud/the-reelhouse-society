@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -163,8 +163,8 @@ const FilmGrid = ({ films }: { films: any[] }) => {
     const addToWatchlist = useFilmStore(s => s.addToWatchlist)
     const removeFromWatchlist = useFilmStore(s => s.removeFromWatchlist)
     const openSignupModal = useUIStore(s => s.openSignupModal)
-    const loggedFilmIds = new Set(logs.map((l: any) => l.filmId))
-    const watchlistIds = new Set(watchlist.map((w: any) => w.filmId))
+    const loggedFilmIds = useMemo(() => new Set(logs.map((l: any) => l.filmId)), [logs])
+    const watchlistIds = useMemo(() => new Set(watchlist.map((w: any) => w.filmId)), [watchlist])
     return (
     <div style={IS_TOUCH ? mobileGridStyle : desktopGridStyle}>
         {films.map((item: any, idx: number) => {
@@ -341,7 +341,9 @@ export default function DiscoverPage() {
             } else {
                 setAccumulatedFilms((prev: any[]) => {
                     const keys = new Set(prev.map((f: any) => `${f.media_type || 'movie'}-${f.id}`))
-                    return [...prev, ...withPosters.filter((f: any) => !keys.has(`${f.media_type || 'movie'}-${f.id}`))]
+                    const merged = [...prev, ...withPosters.filter((f: any) => !keys.has(`${f.media_type || 'movie'}-${f.id}`))]
+                    // Cap at 500 to prevent unbounded memory growth from infinite scroll
+                    return merged.slice(0, 500)
                 })
             }
         }

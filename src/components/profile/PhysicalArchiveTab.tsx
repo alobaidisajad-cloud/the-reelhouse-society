@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, X, Disc, Disc2, Disc3, Film, Archive, Trash2, CircleDot, Clapperboard, Box, Award, Check } from 'lucide-react'
 import { useFilmStore } from '../../stores/films'
@@ -407,13 +407,15 @@ export default function PhysicalArchiveTab({ isOwnProfile, archive, userId, user
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                     {(() => {
-                        const grouped = filteredArchive.reduce((acc: any, item: any) => {
-                            const d = item.created_at || item.createdAt ? new Date(item.created_at || item.createdAt) : null
-                            const title = d ? d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'UNDATED ARCHIVE'
-                            if (!acc[title]) acc[title] = []
-                            acc[title].push(item)
-                            return acc
-                        }, {})
+                        const grouped = useMemo(() => {
+                            return filteredArchive.reduce((acc: any, item: any) => {
+                                const d = item.created_at || item.createdAt ? new Date(item.created_at || item.createdAt) : null
+                                const title = d ? d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'UNDATED ARCHIVE'
+                                if (!acc[title]) acc[title] = []
+                                acc[title].push(item)
+                                return acc
+                            }, {})
+                        }, [filteredArchive])
 
                         return Object.keys(grouped).map(month => (
                             <div key={month}>

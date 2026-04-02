@@ -55,7 +55,6 @@ export default function Navbar() {
     const [peopleSearchOpen, setPeopleSearchOpen] = useState(false)
     const [notificationsOpen, setNotificationsOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false);
-    const [hidden, setHidden] = useState(false);
 
     const lastScrollY = useRef(0)
 
@@ -98,8 +97,7 @@ export default function Navbar() {
             </a>
             {/* Navbar styles are defined in index.css — .navbar, .navbar-inner, .nav-link, etc. */}
             <nav className={`navbar ${scrolled ? 'scrolled' : ''}`} style={{
-                transform: hidden ? 'translateY(-100%)' : 'translateY(0)',
-                transition: 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.3s ease, padding 0.3s ease',
+                transition: 'background-color 0.3s ease, padding 0.3s ease',
             }}>
                 <div className="navbar-inner" style={{ position: 'relative' }}>
                     {/* Logo */}

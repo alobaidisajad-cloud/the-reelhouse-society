@@ -31,7 +31,7 @@ export const useNotificationStore = create<NotificationState>()(
                 ].slice(0, 50), // Cap at 50 — prevents unbounded localStorage growth
             })),
 
-            setNotifications: (notifs) => set({ notifications: notifs }),
+            setNotifications: (notifs) => set({ notifications: notifs.slice(0, 50) }),
 
             markRead: (id) => set((state) => ({
                 notifications: state.notifications.map((n) =>

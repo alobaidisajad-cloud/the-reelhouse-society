@@ -326,17 +326,10 @@ export default function LoungePage() {
 
     const isArchivist = user?.role === 'archivist' || user?.role === 'auteur'
 
-    // Gate for non-archivists
-    if (!isAuthenticated || !isArchivist) {
-        return (
-            <>
-                <PageSEO title="The Lounge — The ReelHouse Society" description="Exclusive cinema chat rooms for Archivist members." />
-                <LoungeGate />
-            </>
-        )
-    }
-
+    // Hooks must ALWAYS run in the same order — gate check lives inside the effect
     useEffect(() => {
+        if (!isAuthenticated || !isArchivist) return
+
         fetchMyLounges()
         fetchPublicLounges()
         fetchUnreadCounts()
@@ -351,7 +344,17 @@ export default function LoungePage() {
             clearInterval(interval)
             unsubscribe()
         }
-    }, [])
+    }, [isAuthenticated, isArchivist])
+
+    // Gate for non-archivists
+    if (!isAuthenticated || !isArchivist) {
+        return (
+            <>
+                <PageSEO title="The Lounge — The ReelHouse Society" description="Exclusive cinema chat rooms for Archivist members." />
+                <LoungeGate />
+            </>
+        )
+    }
 
     const query = searchQuery.toLowerCase().trim()
     const filteredMyLounges = myLounges.filter(l => 

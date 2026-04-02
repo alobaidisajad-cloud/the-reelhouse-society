@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
 
+let _modalLocks = 0
+
 /**
  * useFocusTrap — traps keyboard focus within a container.
  * When the modal opens, focus moves to the container.
@@ -60,13 +62,20 @@ export function useFocusTrap(isOpen: boolean, onClose?: () => void) {
         }
 
         document.addEventListener('keydown', handleKeyDown, true)
-        // Prevent body scroll while modal is open
-        document.body.style.overflow = 'hidden'
+        
+        _modalLocks++
+        if (_modalLocks === 1) {
+            document.body.style.overflow = 'hidden'
+        }
 
         return () => {
             clearTimeout(focusTimer)
             document.removeEventListener('keydown', handleKeyDown, true)
-            document.body.style.overflow = ''
+            
+            _modalLocks--
+            if (_modalLocks === 0) {
+                document.body.style.overflow = ''
+            }
             // Restore focus to the previously focused element
             if (previousFocusRef.current && typeof (previousFocusRef.current as HTMLElement).focus === 'function') {
                 (previousFocusRef.current as HTMLElement).focus()

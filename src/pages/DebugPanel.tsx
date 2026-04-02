@@ -35,13 +35,13 @@ export default function DebugPanel() {
             .then(({ data }) => setProfileData(data))
     }, [user?.id])
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || (user as any)?.role !== 'auteur') {
         return (
             <div className="page-top" style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <div style={{ textAlign: 'center', padding: '3rem', border: '1px solid var(--ash)', background: 'var(--soot)', maxWidth: 400 }}>
                     <Buster mood="neutral" size={64} />
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: '1.2rem', color: 'var(--parchment)', margin: '1rem 0 0.5rem' }}>Restricted Access</div>
-                    <p style={{ fontFamily: 'var(--font-body)', color: 'var(--fog)', fontSize: '0.85rem' }}>Sign in to access the debug panel.</p>
+                    <p style={{ fontFamily: 'var(--font-body)', color: 'var(--fog)', fontSize: '0.85rem' }}>This panel requires Auteur-level clearance.</p>
                 </div>
             </div>
         )

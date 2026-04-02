@@ -90,10 +90,12 @@ export default function SettingsPage() {
                 setImportProgress(progress)
             })
             setImportResult(result)
-            // Refresh all stores
-            await useFilmStore.getState().fetchLogs()
-            await useFilmStore.getState().fetchWatchlist()
-            await useFilmStore.getState().fetchLists()
+            // Refresh all stores in parallel — no dependency between them
+            await Promise.all([
+                useFilmStore.getState().fetchLogs(),
+                useFilmStore.getState().fetchWatchlist(),
+                useFilmStore.getState().fetchLists(),
+            ])
             reelToast.success(`✦ Import complete — ${result.logs} logs, ${result.watchlist} watchlist, ${result.lists} stacks`)
         } catch (e: any) {
             reelToast.error(e.message || 'Import failed')

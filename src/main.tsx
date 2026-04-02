@@ -72,11 +72,13 @@ function NoirToast({ t, message, icon }: any) {
   )
 }
 
-// Expose custom toast helpers globally
-(window as any).__rh_toast = {
-  log: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="✦" />),
-  err: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="†" />),
-  info: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="◈" />),
+// Expose custom toast helpers globally (dev only — tree-shaken in production)
+if (!import.meta.env.PROD) {
+  (window as any).__rh_toast = {
+    log: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="✦" />),
+    err: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="†" />),
+    info: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="◈" />),
+  }
 }
 
 let root = (window as any)._reactRoot

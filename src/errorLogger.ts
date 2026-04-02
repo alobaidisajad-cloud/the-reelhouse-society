@@ -21,12 +21,9 @@ export async function logError({ type = 'runtime', message, stack, component, us
     if (Date.now() - lastLogged < ERROR_DEDUP_WINDOW) return
     _recentErrors.set(errorKey, Date.now())
 
-    // Cleanup old entries periodically (prevent memory leak)
+    // O(1) Absolute eviction boundary (prevent unbounded RAM ballooning under DDoS context)
     if (_recentErrors.size > 100) {
-        const now = Date.now()
-        for (const [key, ts] of _recentErrors) {
-            if (now - ts > ERROR_DEDUP_WINDOW * 2) _recentErrors.delete(key)
-        }
+        _recentErrors.clear()
     }
 
     try {
@@ -73,17 +70,24 @@ export function initGlobalErrorLogging() {
  * 
  * Usage: const throttledFollow = createThrottle(followUser, 2000)
  */
-const _throttleMap = new Map()
+const _throttleMap = new Map<string, number>()
+const THROTTLE_MAP_MAX = 500
 
 export function throttleAction(key: string, fn: () => void, cooldownMs = 2000) {
-    const lastCall = _throttleMap.get(key) || 0
     const now = Date.now()
+    const lastCall = _throttleMap.get(key) || 0
 
     if (now - lastCall < cooldownMs) {
         return false // Too fast, skip
     }
 
     _throttleMap.set(key, now)
+
+    // O(1) absolute structural limit to prevent JS heap exhaustion during extreme spam 
+    if (_throttleMap.size > THROTTLE_MAP_MAX) {
+        _throttleMap.clear()
+    }
+
     fn()
     return true
 }

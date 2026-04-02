@@ -71,6 +71,7 @@ export interface LoungeStoreState {
 
 // ── Realtime channel reference ──
 let _activeChannel: any = null
+const _messageThrottles = new Map<string, number>()
 const PAGE_SIZE = 50
 
 function generateInviteCode(): string {
@@ -384,7 +385,9 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 // Don't duplicate messages we sent ourselves (optimistic)
                 set(s => {
                     if (s.messages.some(m => m.id === newMsg.id)) return s
-                    return { messages: [...s.messages, newMsg] }
+                    const next = [...s.messages, newMsg]
+                    // Cap in-memory messages to prevent unbounded growth (older msgs can be paged-in)
+                    return { messages: next.length > 500 ? next.slice(-500) : next }
                 })
 
                 // Auto mark as read since we're in the lounge
@@ -417,6 +420,17 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const user = useAuthStore.getState().user
         const loungeId = get().activeLounge?.id
         if (!user || !loungeId || !content.trim()) return
+
+        // ── Security: Chat Throttle to prevent Webhook/Realtime DoS ──
+        const throttleKey = `lounge_send_${user.id}`
+        const now = Date.now()
+        const lastCall = _messageThrottles.get(throttleKey) || 0
+        if (now - lastCall < 800) {
+            return // Silently drop spam without triggering UI toast loops
+        }
+        _messageThrottles.set(throttleKey, now)
+        // Occasional prune to prevent _messageThrottles map bloat over days of uptime
+        if (_messageThrottles.size > 200) _messageThrottles.clear()
 
         set({ isSending: true })
 

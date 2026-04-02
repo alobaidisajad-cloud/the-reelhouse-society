@@ -125,6 +125,7 @@ export default function ComposeDossierPage() {
     }, [])
 
     // ── Autosave every 3 seconds (debounced) — only for new dossiers ──
+    const innerDraftTimerRef = useRef<NodeJS.Timeout | null>(null)
     useEffect(() => {
         if (!title && !content) return
         if (editId) return // Don't autosave edits to the draft key
@@ -133,11 +134,15 @@ export default function ComposeDossierPage() {
             try {
                 localStorage.setItem(DRAFT_KEY, JSON.stringify({ title, content }))
                 setDraftSaved(true)
-                setTimeout(() => setDraftSaved(false), 2500)
+                if (innerDraftTimerRef.current) clearTimeout(innerDraftTimerRef.current)
+                innerDraftTimerRef.current = setTimeout(() => setDraftSaved(false), 2500)
             } catch { /* storage full, ignore */ }
         }, 3000)
 
-        return () => clearTimeout(timeout)
+        return () => {
+            clearTimeout(timeout)
+            if (innerDraftTimerRef.current) clearTimeout(innerDraftTimerRef.current)
+        }
     }, [title, content, editId])
 
     // ── Word count & read time ──

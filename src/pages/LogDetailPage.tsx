@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabaseClient'
 import ActivityCard from '../components/feed/ActivityCard'
+import SectionErrorBoundary from '../components/SectionErrorBoundary'
 import { ArrowLeft } from 'lucide-react'
 import PageSEO from '../components/PageSEO'
 
@@ -125,7 +126,9 @@ export default function LogDetailPage() {
             </div>
 
             <div style={{ maxWidth: '800px', width: '100%', margin: '0 auto', padding: log.editorialHeader ? '0 0 1rem 0' : '1rem' }}>
-                <ActivityCard log={log} isExpandedView={true} />
+                <SectionErrorBoundary>
+                    <ActivityCard log={log} isExpandedView={true} />
+                </SectionErrorBoundary>
             </div>
         </div>
     )

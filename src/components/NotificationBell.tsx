@@ -49,6 +49,7 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
     const dismiss = useNotificationStore(s => s.dismiss)
     const markRead = useNotificationStore(s => s.markRead)
     const unreadCount = notifications.filter(n => !n.read).length
+    const channelRef = useRef<any>(null)
 
     // Fetch notifications from Supabase on mount
     useEffect(() => {
@@ -78,6 +79,12 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
 
         fetchNotifs()
 
+        // Singleton guard — prevent duplicate channels on fast re-mounts
+        if (channelRef.current) {
+            supabase.removeChannel(channelRef.current)
+            channelRef.current = null
+        }
+
         // Realtime subscription for new notifications
         const channel = supabase
             .channel(`notifications_${user.id}`)
@@ -95,10 +102,14 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
                 }
             )
             .subscribe()
+        channelRef.current = channel
 
         return () => {
             cancelled = true
-            supabase.removeChannel(channel)
+            if (channelRef.current) {
+                supabase.removeChannel(channelRef.current)
+                channelRef.current = null
+            }
         }
     }, [user?.id])
 

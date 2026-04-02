@@ -9,8 +9,9 @@ const PROJECT_URL = Deno.env.get('SUPABASE_URL') || 'https://your-supabase-proje
 const REGION_URL = 'https://secure.paytabs.com/payment/request' // Change if using a different regional endpoint
 
 // CORS Headers for frontend requests - tight security
+const ALLOWED_ORIGIN = Deno.env.get('NODE_ENV') === 'development' ? '*' : 'https://thereelhouse.com'
 const corsHeaders = {
-    'Access-Control-Allow-Origin': '*', // Optionally bind to 'https://thereelhouse.com' in prod
+    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
@@ -147,7 +148,7 @@ serve(async (req) => {
                 if (type === 'MEMBERSHIP') {
                     const userId = parts[1]
                     const tier = parts[2]
-                    const newRole = tier === 'founding' ? 'archivist' : (amount >= 4.99 ? 'auteur' : 'archivist')
+                    const newRole = tier === 'founding' ? 'auteur' : (amount >= 4.99 ? 'auteur' : 'archivist')
                     
                     const { error } = await supabaseAdmin.from('profiles').update({ role: newRole }).eq('id', userId)
                     if (error) console.error('Error auto-upgrading user role:', error)

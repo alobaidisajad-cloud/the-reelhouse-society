@@ -66,6 +66,11 @@ export default function CommandPalette() {
             setSelectedIndex(0)
             setTimeout(() => inputRef.current?.focus(), 100)
         }
+        // Cleanup: cancel pending search on close/unmount
+        return () => {
+            if (searchTimeout.current) clearTimeout(searchTimeout.current)
+            abortRef.current?.abort()
+        }
     }, [open])
 
     const handleSearch = (q: string) => {

@@ -25,7 +25,7 @@ const PERSONAS = [
 // No fallback codes shipped in the bundle — prevents view-source discovery.
 const VALID_CODES = import.meta.env.VITE_INVITE_CODES
     ? import.meta.env.VITE_INVITE_CODES.split(',').map((c: string) => c.trim().toUpperCase())
-    : ['NITRATE']
+    : []  // No fallback — signup blocked if env var is missing
 
 export default function SignupModal() {
     const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
@@ -81,6 +81,13 @@ export default function SignupModal() {
             closeSignupModal()
         }
     }, [signupModalOpen, isAuthenticated])
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current)
+        }
+    }, [])
 
     // ── DEBOUNCED USERNAME AVAILABILITY CHECK ──
     const checkUsernameAvailability = (value: string) => {

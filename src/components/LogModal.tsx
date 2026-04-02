@@ -48,8 +48,16 @@ export default function LogModal() {
     useEffect(() => {
         if (!logModalOpen) {
             setQuery(''); setResults([])
+            if (searchTimeout.current) clearTimeout(searchTimeout.current)
         }
     }, [logModalOpen])
+
+    useEffect(() => {
+        return () => {
+            if (searchTimeout.current) clearTimeout(searchTimeout.current)
+            abortRef.current?.abort()
+        }
+    }, [])
 
     const handleSearch = (q: string) => {
         setQuery(q)

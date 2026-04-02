@@ -224,6 +224,26 @@ export default function UserProfilePage() {
         enabled: !isOwnProfile && !!routeUsername,
         staleTime: 1000 * 60 * 5,
     })
+
+    // Fetch other user's programmes
+    const { data: otherUserProgrammes = [] } = useQuery({
+        queryKey: ['user-profile-programmes', routeUsername],
+        queryFn: async () => {
+            const { data: prof } = await supabase
+                .from('profiles').select('id').eq('username', routeUsername).single()
+            if (!prof) return []
+            const { data } = await supabase
+                .from('programmes').select('*').eq('user_id', prof.id).eq('is_public', true).order('created_at', { ascending: false }).limit(20)
+            if (!data) return []
+            return data.map((p) => ({
+                id: p.id, title: p.title, description: p.description,
+                films: p.films || [], isPublic: p.is_public, createdAt: p.created_at,
+            }))
+        },
+        enabled: !isOwnProfile && !!routeUsername,
+        staleTime: 1000 * 60 * 5,
+    })
+
 // REMOVED IN FAVOR OF LINE 121 REPLACEMENT
     const loadMoreRef = useRef(null)
     const [viewLog, setViewLog] = useState<any>(null)
@@ -244,7 +264,7 @@ export default function UserProfilePage() {
         }, { rootMargin: '400px' })
         obs.observe(el)
         return () => obs.disconnect()
-    }, [visibleLogCount])
+    }, [])
 
     const openSocialModal = async (type: string) => {
         setSocialLoading(true)
@@ -344,7 +364,7 @@ export default function UserProfilePage() {
     const profileStubs = isOwnProfile ? currentStubs : []
     const profileLists = isOwnProfile ? currentLists : otherUserLists
     const profileWatchlist = isOwnProfile ? currentWatchlist : otherUserWatchlist
-    
+    const profileProgrammes = isOwnProfile ? currentProgrammes : otherUserProgrammes
     // Fallback if RPC hasn't loaded:
     const finalMetrics = profileMetrics || { total_logs: profileLogs.length, avg_rating: 0 }
     const cineStats = {
@@ -883,12 +903,12 @@ export default function UserProfilePage() {
                                     <AUTEURCalendar {...{ logs: profileLogs, isPremium } as any} />
                                 </div>
 
-                                {isOwnProfile && currentProgrammes?.length > 0 && (
+                                {((isOwnProfile && currentProgrammes?.length > 0) || (!isOwnProfile && (profileUser as any)?.role === 'auteur')) && (
                                     <>
                                         <div style={{ height: '1px', background: 'linear-gradient(90deg, transparent, var(--ash), transparent)' }} />
                                         <div>
                                             <SectionHeader label="CURATED FILM PAIRINGS" title="Nightly Programmes" />
-                                            <ProgrammesSection {...{ programmes: currentProgrammes, user: profileUser } as any} />
+                                            <ProgrammesSection programmes={profileProgrammes} user={profileUser} isOwnProfile={isOwnProfile} />
                                         </div>
                                     </>
                                 )}

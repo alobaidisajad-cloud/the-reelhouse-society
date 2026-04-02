@@ -895,3 +895,25 @@
   color: rgba(180,45,45,1);
   text-shadow: 0 1px 8px rgba(125,31,31,0.8), 0 0 20px rgba(180,45,45,0.5);
 }
+/* ── ANAMORPHIC FOCUS PULL ── */
+@keyframes anamorphicFocusPull {
+  0% { 
+      transform: scale(1.05); 
+      filter: blur(8px) contrast(1.1) sepia(0.2) drop-shadow(-6px 0 4px rgba(255,0,0,0.5)) drop-shadow(6px 0 4px rgba(0,150,255,0.5)); 
+      opacity: 0; 
+  }
+  60% {
+      filter: blur(2px) contrast(1.05) sepia(0.22) drop-shadow(-2px 0 2px rgba(255,0,0,0.3)) drop-shadow(2px 0 2px rgba(0,150,255,0.3));
+      opacity: 0.8;
+  }
+  100% { 
+      transform: scale(1); 
+      filter: blur(0px) contrast(1) sepia(0.25); 
+      opacity: 1; 
+  }
+}
+
+.anamorphic-focus-pull {
+  animation: anamorphicFocusPull 0.8s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  will-change: transform, filter, opacity;
+}

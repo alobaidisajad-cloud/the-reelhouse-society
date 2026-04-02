@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import Poster from '../film/Poster'
@@ -10,6 +10,14 @@ export function WatchlistRoulette({ watchlist }: { watchlist: WatchlistItem[] })
     const [result, setResult] = useState<WatchlistItem | null>(null)
     const [reason, setReason] = useState('')
     const [flickerTarget, setFlickerTarget] = useState<WatchlistItem | null>(null)
+    const intervalRef = useRef<NodeJS.Timeout | null>(null)
+
+    // Clean up interval if component unmounts mid-spin
+    useEffect(() => {
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current)
+        }
+    }, [])
 
     const spin = () => {
         if (watchlist.length < 2) return
@@ -27,7 +35,8 @@ export function WatchlistRoulette({ watchlist }: { watchlist: WatchlistItem[] })
         ]
 
         let ticks = 0
-        const interval = setInterval(() => {
+        if (intervalRef.current) clearInterval(intervalRef.current)
+        intervalRef.current = setInterval(() => {
             ticks++
             setFlickerTarget(watchlist[Math.floor(Math.random() * watchlist.length)])
             
@@ -35,7 +44,7 @@ export function WatchlistRoulette({ watchlist }: { watchlist: WatchlistItem[] })
             if (navigator.vibrate && ticks % 2 === 0) navigator.vibrate(10)
 
             if (ticks > 30) {
-                clearInterval(interval)
+                if (intervalRef.current) clearInterval(intervalRef.current)
                 setResult(target)
                 setReason(reasons[Math.floor(Math.random() * reasons.length)])
                 setPicking(false)

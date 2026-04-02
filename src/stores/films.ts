@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { get, set, del } from 'idb-keyval'
 import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction, PhysicalArchiveItem } from '../types'
@@ -85,6 +86,14 @@ export interface FilmState {
     addToPhysicalArchive: (film: TMDBFilmInput, formats: string[], notes?: string, condition?: string) => Promise<void>
     removeFromPhysicalArchive: (filmId: number) => Promise<void>
     updatePhysicalArchiveItem: (filmId: number, updates: Partial<PhysicalArchiveItem>) => Promise<void>
+    /** O(1) endorsement lookup index — rebuilt on every interactions mutation */
+    _endorsedIndex: Record<string, true>
+    /** O(1) list endorsement lookup index */
+    _listEndorsedIndex: Record<string, true>
+    /** O(1) watchlist lookup index */
+    _watchlistIndex: Record<number, true>
+    /** O(1) logged film lookup index (maps filmId to the full log) */
+    _loggedIndex: Record<number, FilmLog>
 }
 
 export const useFilmStore = create<FilmState>()(
@@ -97,6 +106,10 @@ export const useFilmStore = create<FilmState>()(
             stubs: [],           // Supabase-backed digital tickets — fetched on login
             interactions: [],    // { type: 'endorse', targetId, timestamp }
             physicalArchive: [], // Physical media collection — 4K, Blu-ray, DVD, VHS, etc.
+            _endorsedIndex: {} as Record<string, true>,  // O(1) lookup — rebuilt on mutations
+            _listEndorsedIndex: {} as Record<string, true>,
+            _watchlistIndex: {} as Record<number, true>,
+            _loggedIndex: {} as Record<number, FilmLog>,
 
             toggleEndorse: async (targetId) => {
                 const user = useAuthStore.getState().user
@@ -106,9 +119,15 @@ export const useFilmStore = create<FilmState>()(
 
                 // Optimistic update — UI responds instantly
                 if (exists) {
-                    set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
+                    const current = get().interactions
+                    const next = current.filter((i: Interaction) => !(i.targetId === targetId && i.type === 'endorse'))
+                    const idx: Record<string, true> = {}
+                    next.forEach((i: Interaction) => { if (i.type === 'endorse') idx[i.targetId] = true })
+                    set({ interactions: next, _endorsedIndex: idx })
                 } else {
-                    set((state) => ({ interactions: [...state.interactions, { type: 'endorse', targetId, timestamp: new Date().toISOString() }] }))
+                    const current = get().interactions
+                    const next: Interaction[] = [...current, { type: 'endorse' as const, targetId, timestamp: new Date().toISOString() }]
+                    set({ interactions: next, _endorsedIndex: { ...get()._endorsedIndex, [targetId]: true as const } })
                 }
 
                 // Background sync — rollback on failure
@@ -134,7 +153,7 @@ export const useFilmStore = create<FilmState>()(
                 }
             },
 
-            hasEndorsed: (targetId) => get().interactions.some((i) => i.targetId === targetId && i.type === 'endorse'),
+            hasEndorsed: (targetId) => !!get()._endorsedIndex[targetId],
 
             fetchEndorsements: async () => {
                 const user = useAuthStore.getState().user
@@ -146,13 +165,14 @@ export const useFilmStore = create<FilmState>()(
                     .eq('type', 'endorse_log')
                     .limit(2000)
                 if (!error && data) {
-                    set({
-                        interactions: (data || []).map(r => ({
-                            type: 'endorse',
-                            targetId: r.target_log_id,
-                            timestamp: r.created_at,
-                        }))
-                    })
+                    const mapped: Interaction[] = (data || []).map(r => ({
+                        type: 'endorse' as const,
+                        targetId: r.target_log_id,
+                        timestamp: r.created_at,
+                    }))
+                    const idx: Record<string, true> = {}
+                    mapped.forEach(i => { if (i.type === 'endorse') idx[i.targetId] = true })
+                    set({ interactions: mapped, _endorsedIndex: idx })
                 }
             },
 
@@ -163,9 +183,13 @@ export const useFilmStore = create<FilmState>()(
                 const exists = prev.find((i) => i.targetId === listId && i.type === 'endorse_list')
 
                 if (exists) {
-                    set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list')) }))
+                    const next = prev.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'))
+                    const idx: Record<string, true> = {}
+                    next.forEach((i) => { if (i.type === 'endorse_list') idx[i.targetId] = true })
+                    set({ interactions: next, _listEndorsedIndex: idx })
                 } else {
-                    set((state) => ({ interactions: [...state.interactions, { type: 'endorse_list', targetId: listId, timestamp: new Date().toISOString() }] }))
+                    const next = [...prev, { type: 'endorse_list', targetId: listId, timestamp: new Date().toISOString() }]
+                    set({ interactions: next as Interaction[], _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: true } })
                 }
 
                 try {
@@ -181,15 +205,19 @@ export const useFilmStore = create<FilmState>()(
                     }
                 } catch {
                     if (exists) {
-                        set((state) => ({ interactions: [...state.interactions, exists] }))
+                        const next = [...get().interactions, exists]
+                        set({ interactions: next, _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: true } })
                     } else {
-                        set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list')) }))
+                        const next = get().interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'))
+                        const idx: Record<string, true> = {}
+                        next.forEach((i) => { if (i.type === 'endorse_list') idx[i.targetId] = true })
+                        set({ interactions: next, _listEndorsedIndex: idx })
                     }
                     reelToast.error('Failed to certify list.')
                 }
             },
 
-            hasListEndorsed: (listId) => get().interactions.some((i) => i.targetId === listId && i.type === 'endorse_list'),
+            hasListEndorsed: (listId) => !!get()._listEndorsedIndex[listId],
 
             fetchListEndorsements: async () => {
                 const user = useAuthStore.getState().user
@@ -201,15 +229,21 @@ export const useFilmStore = create<FilmState>()(
                     .eq('type', 'endorse_list')
                     .limit(2000)
                 if (!error && data) {
+                    const newListEndorsements = (data || []).map(r => ({
+                        type: 'endorse_list' as const,
+                        targetId: r.target_list_id,
+                        timestamp: r.created_at,
+                    }))
+                    
+                    const idx: Record<string, true> = {}
+                    newListEndorsements.forEach(i => { idx[i.targetId] = true })
+
                     set((state) => ({
                         interactions: [
                             ...state.interactions.filter(i => i.type !== 'endorse_list'), 
-                            ...(data || []).map(r => ({
-                                type: 'endorse_list' as const,
-                                targetId: r.target_list_id,
-                                timestamp: r.created_at,
-                            }))
-                        ]
+                            ...newListEndorsements
+                        ],
+                        _listEndorsedIndex: idx
                     }))
                 }
             },
@@ -231,8 +265,7 @@ export const useFilmStore = create<FilmState>()(
                     if (data.length < PAGE_SIZE) break // last page
                     page++
                 }
-                set({
-                    logs: allLogs.map((dbLog) => ({
+                const newLogs = allLogs.map((dbLog) => ({
                         id: dbLog.id,
                         filmId: dbLog.film_id,
                         title: dbLog.film_title,
@@ -255,8 +288,12 @@ export const useFilmStore = create<FilmState>()(
                         pullQuote: dbLog.pull_quote || '',
                         videoUrl: dbLog.video_url || null,
                         createdAt: dbLog.created_at,
-                    })),
-                })
+                }))
+
+                const idx: Record<number, FilmLog> = {}
+                newLogs.forEach(l => { if (l.filmId) idx[l.filmId] = l })
+
+                set({ logs: newLogs as FilmLog[], _loggedIndex: idx })
             },
 
             fetchWatchlist: async () => {
@@ -275,7 +312,10 @@ export const useFilmStore = create<FilmState>()(
                     if (data.length < PAGE_SIZE) break
                     page++
                 }
-                set({ watchlist: allItems.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null })) })
+                const newWatchlist = allItems.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null }))
+                const idx: Record<number, true> = {}
+                newWatchlist.forEach(w => { idx[w.id] = true })
+                set({ watchlist: newWatchlist, _watchlistIndex: idx })
             },
 
             fetchVault: async () => {
@@ -390,8 +430,10 @@ export const useFilmStore = create<FilmState>()(
 
                 if (error) return // Fail gracefully — error handled upstream by LogModal toast
 
+                const fullLog = { ...log, id: data.id, createdAt: data.created_at } as FilmLog
                 set((state) => ({
-                    logs: [{ ...log, id: data.id, createdAt: data.created_at } as FilmLog, ...state.logs],
+                    logs: [fullLog, ...state.logs],
+                    _loggedIndex: log.filmId ? { ...state._loggedIndex, [log.filmId]: fullLog } : state._loggedIndex
                 }))
 
                 // Auto-sync into Physical Archive if they claimed ownership
@@ -440,7 +482,10 @@ export const useFilmStore = create<FilmState>()(
                     createdAt: data.created_at,
                     watchedDate: new Date().toISOString(),
                 }
-                set(state => ({ logs: [newLog, ...state.logs] }))
+                set(state => ({ 
+                    logs: [newLog, ...state.logs],
+                    _loggedIndex: { ...state._loggedIndex, [film.id]: newLog }
+                }))
                 // Auto-remove from watchlist if present
                 const inWatchlist = get().watchlist.some(w => w.id === film.id)
                 if (inWatchlist) get().removeFromWatchlist(film.id)
@@ -485,7 +530,21 @@ export const useFilmStore = create<FilmState>()(
                 if (updates.videoUrl !== undefined) dbUpdates.video_url = updates.videoUrl
                 const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id)
                 if (!error) {
-                    set((state) => ({ logs: state.logs.map((l) => l.id === id ? { ...l, ...updates } : l) }))
+                    set((state) => {
+                        let filmIdToUpdate: number | undefined
+                        const nextLogs = state.logs.map((l) => {
+                            if (l.id === id) {
+                                filmIdToUpdate = l.filmId
+                                return { ...l, ...updates } as FilmLog
+                            }
+                            return l
+                        })
+                        const nextIdx = { ...state._loggedIndex }
+                        if (filmIdToUpdate) {
+                            nextIdx[filmIdToUpdate] = nextLogs.find(l => l.id === id) as FilmLog
+                        }
+                        return { logs: nextLogs, _loggedIndex: nextIdx }
+                    })
                     
                     // Auto-sync into Physical Archive if they updated a log to physical media
                     const syncFormatMap: Record<string, string> = { 'DVD': 'dvd', 'Blu-Ray': 'bluray', '4K UHD': '4k', 'VHS': 'vhs' }
@@ -508,13 +567,20 @@ export const useFilmStore = create<FilmState>()(
                 if (!logToRemove) return
 
                 // Optimistic remove with 5s undo window
-                set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
+                set((state) => {
+                    const nextIdx = { ...state._loggedIndex }
+                    if (logToRemove.filmId) delete nextIdx[logToRemove.filmId]
+                    return { logs: state.logs.filter((l) => l.id !== id), _loggedIndex: nextIdx }
+                })
 
                 const toastId = `undo-${id}`
                 // Register undo callback
                 _undoCallbacks.set(toastId, () => {
                     cancelPendingDelete(`log-${id}`)
-                    set((state) => ({ logs: [logToRemove, ...state.logs] }))
+                    set((state) => ({ 
+                        logs: [logToRemove, ...state.logs],
+                        _loggedIndex: logToRemove.filmId ? { ...state._loggedIndex, [logToRemove.filmId]: logToRemove } : state._loggedIndex
+                    }))
                     reelToast.dismiss(toastId)
                     reelToast.success(`"${logToRemove.title}" restored.`)
                     _undoCallbacks.delete(toastId)
@@ -540,10 +606,14 @@ export const useFilmStore = create<FilmState>()(
                     year: film.release_date ? new Date(film.release_date).getFullYear() : null,
                 }])
                 if (error) throw error
-                set((state) => ({
-                    watchlist: state.watchlist.find((f) => f.id === film.id) ? state.watchlist
-                        : [...state.watchlist, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }],
-                }))
+                set((state) => {
+                    const exists = state.watchlist.find((f) => f.id === film.id)
+                    const nextWatchlist = exists ? state.watchlist : [...state.watchlist, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }]
+                    return {
+                        watchlist: nextWatchlist,
+                        _watchlistIndex: { ...state._watchlistIndex, [film.id]: true }
+                    }
+                })
             },
 
             removeFromWatchlist: async (filmId) => {
@@ -552,12 +622,24 @@ export const useFilmStore = create<FilmState>()(
                 const itemToRemove = get().watchlist.find((f) => f.id === filmId)
 
                 // Optimistic remove with 5s undo window
-                set((state) => ({ watchlist: state.watchlist.filter((f) => f.id !== filmId) }))
+                set((state) => {
+                    const nextIndex = { ...state._watchlistIndex }
+                    delete nextIndex[filmId]
+                    return { 
+                        watchlist: state.watchlist.filter((f) => f.id !== filmId),
+                        _watchlistIndex: nextIndex 
+                    }
+                })
 
                 const toastId = `undo-wl-${filmId}`
                 _undoCallbacks.set(toastId, () => {
                     cancelPendingDelete(`wl-${filmId}`)
-                    if (itemToRemove) set((state) => ({ watchlist: [itemToRemove, ...state.watchlist] }))
+                    if (itemToRemove) {
+                        set((state) => ({ 
+                            watchlist: [itemToRemove, ...state.watchlist],
+                            _watchlistIndex: { ...state._watchlistIndex, [filmId]: true }
+                        }))
+                    }
                     reelToast.dismiss(toastId)
                     reelToast.success(`"${itemToRemove?.title || 'Film'}" restored to watchlist.`)
                     _undoCallbacks.delete(toastId)
@@ -735,23 +817,29 @@ export const useFilmStore = create<FilmState>()(
         }),
         {
             name: 'reelhouse-films',
-            // Stubs are decorative and regenerated on next addLog — no need to persist
-            // ── SCALABILITY: Cap logs to 100 most recent to prevent localStorage bloat ──
+            storage: createJSONStorage(() => ({
+                getItem: async (name: string): Promise<string | null> => {
+                    return (await get(name)) || null
+                },
+                setItem: async (name: string, value: string): Promise<void> => {
+                    await set(name, value)
+                },
+                removeItem: async (name: string): Promise<void> => {
+                    await del(name)
+                },
+            })),
             partialize: (state) => ({
-                logs: state.logs.slice(0, 100).map((l) => ({
-                    id: l.id, filmId: l.filmId, title: l.title, poster: l.poster,
-                    year: l.year, rating: l.rating, status: l.status,
-                    watchedDate: l.watchedDate, createdAt: l.createdAt,
-                    isAutopsied: l.isAutopsied,
-                    autopsy: l.autopsy,
-                    // review omitted from localStorage — saves space, rehydrated from Supabase
-                    // privateNotes omitted — never in localStorage
-                    // abandonedReason omitted — never in localStorage
-                })),
-                watchlist: state.watchlist.slice(0, 200).map((f) => ({ id: f.id, title: f.title, poster_path: f.poster_path, year: f.year })),
-                vault: state.vault.slice(0, 200).map((f) => ({ id: f.id, title: f.title, poster_path: f.poster_path, year: f.year, format: f.format })),
-                lists: state.lists.slice(0, 50).map((l) => ({ id: l.id, title: l.title, description: l.description, films: l.films.slice(0, 20).map((f) => ({ id: f.id, title: f.title })) })),
-                // stubs NOT persisted — decorative, always regenerated
+                // IndexedDB has virtually unlimited space, so we persist the full dataset and indexes
+                logs: state.logs,
+                watchlist: state.watchlist,
+                vault: state.vault,
+                lists: state.lists,
+                interactions: state.interactions,
+                physicalArchive: state.physicalArchive,
+                _endorsedIndex: state._endorsedIndex,
+                _listEndorsedIndex: state._listEndorsedIndex,
+                _watchlistIndex: state._watchlistIndex,
+                _loggedIndex: state._loggedIndex,
             }),
         }
     )

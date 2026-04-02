@@ -53,14 +53,17 @@ export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archive
                     )}
                 </div>
             ) : (() => {
-                const shown = archiveFilteredLogs.slice(0, archiveVisibleCount)
-                const grouped = shown.reduce((acc: Record<string, FilmLog[]>, log) => {
-                    const d = new Date(log.watchedDate || log.createdAt || new Date().toISOString())
-                    const title = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
-                    if (!acc[title]) acc[title] = []
-                    acc[title].push(log)
-                    return acc
-                }, {})
+                const grouped = useMemo(() => {
+                    const shown = archiveFilteredLogs.slice(0, archiveVisibleCount)
+                    return shown.reduce((acc: Record<string, FilmLog[]>, log) => {
+                        const d = new Date(log.watchedDate || log.createdAt || new Date().toISOString())
+                        const title = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+                        if (!acc[title]) acc[title] = []
+                        acc[title].push(log)
+                        return acc
+                    }, {} as Record<string, FilmLog[]>)
+                }, [archiveFilteredLogs, archiveVisibleCount])
+                
                 return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
                         {Object.keys(grouped).map(month => (

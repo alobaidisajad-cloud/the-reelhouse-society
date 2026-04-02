@@ -77,6 +77,8 @@ export default function EditProfilePage() {
         const file = e.target.files?.[0]
         if (!file) return
         if (file.size > 5 * 1024 * 1024) { reelToast.error('Image must be under 5MB'); return }
+        // Revoke previous raw URL to prevent memory leaks
+        if (rawImageSrc) URL.revokeObjectURL(rawImageSrc)
         // Open crop modal with the raw image
         const objectUrl = URL.createObjectURL(file)
         setRawImageSrc(objectUrl)
@@ -88,13 +90,19 @@ export default function EditProfilePage() {
     const handleCropConfirm = (croppedBlob: Blob) => {
         const croppedFile = new File([croppedBlob], 'avatar.png', { type: 'image/png' })
         setAvatarFile(croppedFile)
+        // Revoke previous preview URL before creating new one
+        if (avatarPreview && avatarPreview.startsWith('blob:')) URL.revokeObjectURL(avatarPreview)
         setAvatarPreview(URL.createObjectURL(croppedBlob))
         setShowCropModal(false)
+        // Revoke raw image URL — no longer needed
+        if (rawImageSrc) URL.revokeObjectURL(rawImageSrc)
         setRawImageSrc(null)
     }
 
     const handleCropCancel = () => {
         setShowCropModal(false)
+        // Revoke raw image URL — user cancelled
+        if (rawImageSrc) URL.revokeObjectURL(rawImageSrc)
         setRawImageSrc(null)
     }
 

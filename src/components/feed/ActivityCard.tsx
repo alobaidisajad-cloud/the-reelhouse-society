@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
@@ -22,7 +22,9 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const toggleEndorse = useFilmStore(state => state.toggleEndorse)
     // Memoize stamp rotation so Math.random() doesn't fire on every re-render
     const stampRotation = React.useMemo(() => `${(Math.random() * 8 - 4).toFixed(2)}deg`, [])
-    const storeEndorsed = useFilmStore(state => state.interactions.some(i => i.targetId === log.id && i.type === 'endorse'))
+    // O(1) endorsement check — avoids full O(n) scan on every store tick
+    const endorsedIndex = useFilmStore(state => state._endorsedIndex)
+    const storeEndorsed = endorsedIndex ? !!endorsedIndex[log.id] : useFilmStore(state => state.interactions.some(i => i.targetId === log.id && i.type === 'endorse'))
 
     // Optimistic local state for immediate UI feedback without waiting on DB/Store tick
     const [optimisticEndorsed, setOptimisticEndorsed] = useState(storeEndorsed)
@@ -60,10 +62,10 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     const showFullText = isExpandedView || isExpanded
 
     // ── WATCHLIST QUICK SAVE ──
-    const watchlist = useFilmStore(state => state.watchlist)
+    const watchlistIndex = useFilmStore(state => state._watchlistIndex)
     const addToWatchlist = useFilmStore(state => state.addToWatchlist)
     const removeFromWatchlist = useFilmStore(state => state.removeFromWatchlist)
-    const filmSaved = watchlist.some((w: any) => w.filmId === (log.film?.id || log.filmId))
+    const filmSaved = !!watchlistIndex[log.film?.id || log.filmId]
 
     // ── PRIVACY ENFORCEMENT ──
     const privacyEndorsements = log.privacyEndorsements || 'everyone'
@@ -151,11 +153,17 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         }
     }
 
-    // ── Premium Tier Detection (shared by both views) ──
+    // ── Premium Tier Detection (memoized — stable across re-renders) ──
     const isAuteurLog = log.userRole === 'auteur'
     const isArchivistLog = log.userRole === 'archivist'
     const hasEditorialFeatures = !!(log.editorialHeader || log.dropCap || log.pullQuote)
     const isPremiumLog = isArchivistLog || isAuteurLog || hasEditorialFeatures
+
+    // ── Memoized stripped-HTML review text — prevents 6x regex per render ──
+    const strippedReview = useMemo(() => {
+        if (!log.review) return ''
+        return log.review.replace(/<[^>]+>/g, '').trim()
+    }, [log.review])
 
     // ── EXPANDED FOCUS VIEW (CINEMATIC LAYOUT) ──
     if (isExpandedView) {
@@ -520,9 +528,9 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic' }}>Tap to decode spoilers.</span>
                             </div>
                         ) : log.dropCap ? (
-                            <><span style={{ float: 'left', fontSize: IS_TOUCH ? '2rem' : '2.5rem', lineHeight: IS_TOUCH ? '1.8rem' : '2.2rem', padding: '0.15rem 0.4rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)', textShadow: '0 2px 8px rgba(139,105,20,0.2)' }}>{log.review.replace(/<[^>]+>/g, '').trim().charAt(0)}</span><span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} /> : log.review.slice(1)) : ((log.review.replace(/<[^>]+>/g, '').length > 300) ? log.review.replace(/<[^>]+>/g, '').slice(1, 300) : log.review.replace(/<[^>]+>/g, '').slice(1))}</span>{!showFullText && log.review.replace(/<[^>]+>/g, '').length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
+                            <><span style={{ float: 'left', fontSize: IS_TOUCH ? '2rem' : '2.5rem', lineHeight: IS_TOUCH ? '1.8rem' : '2.2rem', padding: '0.15rem 0.4rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)', textShadow: '0 2px 8px rgba(139,105,20,0.2)' }}>{strippedReview.charAt(0)}</span><span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} /> : log.review.slice(1)) : (strippedReview.length > 300 ? strippedReview.slice(1, 300) : strippedReview.slice(1))}</span>{!showFullText && strippedReview.length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
                         ) : (
-                            <><span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} /> : log.review) : (log.review.replace(/<[^>]+>/g, '').length > 300 ? log.review.replace(/<[^>]+>/g, '').slice(0, 300) : log.review.replace(/<[^>]+>/g, ''))}</span>{!showFullText && log.review.replace(/<[^>]+>/g, '').length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
+                            <><span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} /> : log.review) : (strippedReview.length > 300 ? strippedReview.slice(0, 300) : strippedReview)}</span>{!showFullText && strippedReview.length > 300 && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginLeft: '0.3rem', opacity: 0.7 }}>… DECODE FULL DISPATCH →</span>}</>
                         )}
                     </div>
                 )}

@@ -233,8 +233,8 @@ export default function FeedPage() {
 
 
     // Active feed based on tab
-    const communityFeed = communityData?.pages.flatMap(p => p.items) || []
-    const followingFeed = followingData?.pages.flatMap(p => p.items) || []
+    const communityFeed = useMemo(() => communityData?.pages.flatMap(p => p.items) || [], [communityData])
+    const followingFeed = useMemo(() => followingData?.pages.flatMap(p => p.items) || [], [followingData])
     const activeFeed = feedTab === 'following' ? followingFeed : communityFeed
     const isLoading = feedTab === 'following' ? followingLoading : feedLoading
 

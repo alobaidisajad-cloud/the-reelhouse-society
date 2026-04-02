@@ -169,6 +169,23 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onShare }: any) {
     )
 })
 
+// ── SINGLETON OBSERVER ENGINE ──
+const _observerCallbacks = new WeakMap<Element, (entry: IntersectionObserverEntry) => void>()
+let _sharedObserver: IntersectionObserver | null = null
+
+function getSharedObserver() {
+    if (typeof window === 'undefined') return null
+    if (!_sharedObserver) {
+        _sharedObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const cb = _observerCallbacks.get(entry.target)
+                if (cb) cb(entry)
+            })
+        }, { rootMargin: '600px 0px' })
+    }
+    return _sharedObserver
+}
+
 // ── LAZY LOG ROW (Intersection Observer virtualization with Perfect Height Cache) ──
 export function LazyLogRow({ log, onShare }: any) {
     const ref = useRef<HTMLDivElement>(null)
@@ -177,22 +194,24 @@ export function LazyLogRow({ log, onShare }: any) {
 
     useEffect(() => {
         const el = ref.current
-        if (!el) return
-        const observer = new IntersectionObserver(([entry]) => { 
+        const observer = getSharedObserver()
+        if (!el || !observer) return
+        
+        _observerCallbacks.set(el, (entry) => { 
             if (entry.isIntersecting) { 
                 setVisible(true)
             } else {
                 // If it leaves viewport, capture exact height before unmounting
                 if (el.offsetHeight > 50) setCachedHeight(el.offsetHeight)
-                // Comment out setVisible(false) if we don't want aggressive unmounting,
-                // but for total DOM vaporization, we unmount and use the exact cached height placeholder.
-                // We keep a massive root margin so it doesn't flicker while scrolling.
                 setVisible(false)
             }
-        }, { rootMargin: '600px 0px' })
+        })
         observer.observe(el)
 
-        return () => observer.disconnect()
+        return () => {
+            _observerCallbacks.delete(el)
+            observer.unobserve(el)
+        }
     }, [])
 
     useEffect(() => {

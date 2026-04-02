@@ -51,6 +51,13 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
         }, 400)
     }, [searchQuery])
 
+    // Cleanup search timeout on unmount
+    useEffect(() => {
+        return () => {
+            if (searchRef.current) clearTimeout(searchRef.current)
+        }
+    }, [])
+
     const handleSelectSlot = (index: number) => {
         if (!isOwnProfile) return
         setEditingSlotIndex(index)

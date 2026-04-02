@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import { get, set, del } from 'idb-keyval'
 import { supabase } from '../supabaseClient'
 import { logError } from '../errorLogger'
 import { User } from '../types'
@@ -7,11 +8,17 @@ import reelToast from '../utils/reelToast'
 
 // ── Username → ID cache: prevents redundant profile lookups on follow/unfollow ──
 const _usernameIdCache = new Map<string, string>()
+const _USERNAME_CACHE_MAX = 200
 async function resolveUsernameToId(username: string): Promise<string | null> {
     const cached = _usernameIdCache.get(username)
     if (cached) return cached
     const { data } = await supabase.from('profiles').select('id').eq('username', username).single()
     if (data?.id) {
+        // Evict oldest if at capacity
+        if (_usernameIdCache.size >= _USERNAME_CACHE_MAX) {
+            const oldest = _usernameIdCache.keys().next().value
+            if (oldest !== undefined) _usernameIdCache.delete(oldest)
+        }
         _usernameIdCache.set(username, data.id)
         return data.id
     }
@@ -20,6 +27,20 @@ async function resolveUsernameToId(username: string): Promise<string | null> {
 
 // ── Action throttle: prevents spam-clicking social buttons ──
 const _actionThrottles = new Map<string, number>()
+const _THROTTLE_MAX = 200
+const _THROTTLE_TTL = 30_000 // 30s — entries older than this are stale
+function pruneThrottles() {
+    if (_actionThrottles.size < _THROTTLE_MAX) return
+    const now = Date.now()
+    for (const [key, ts] of _actionThrottles) {
+        if (now - ts > _THROTTLE_TTL) _actionThrottles.delete(key)
+    }
+    // If still over limit after TTL prune, drop oldest
+    if (_actionThrottles.size >= _THROTTLE_MAX) {
+        const oldest = _actionThrottles.keys().next().value
+        if (oldest !== undefined) _actionThrottles.delete(oldest)
+    }
+}
 
 export interface AuthState {
     user: User | null
@@ -125,12 +146,10 @@ export const useAuthStore = create<AuthState>()(
                 // The user must click the link in their email first.
                 // If confirmation is disabled (dev mode), session is returned immediately.
                 if (data?.session) {
-                    // Save role, persona, and tier to profiles
+                    // Save persona to profiles. Role and tier are securely handled by Postgres triggers.
                     await supabase.from('profiles').update({
                         username,
-                        role,
-                        persona: persona || (role === 'cinephile' ? 'The Cinephile' : 'The Society'),
-                        tier: 'free',
+                        persona: persona || 'The Cinephile',
                     }).eq('id', data.user!.id)
                     const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user!.id).single()
                     set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true })
@@ -159,8 +178,10 @@ export const useAuthStore = create<AuthState>()(
                 localStorage.removeItem('reelhouse-films')
                 localStorage.removeItem('reelhouse-ui')
                 localStorage.removeItem('reelhouse-social')
-
                 localStorage.removeItem('reelhouse-content')
+                
+                // Clear all session storage tokens holding recovery flags
+                sessionStorage.clear()
 
                 // 4. Force full page reload to clear any in-memory state
                 window.location.href = '/'
@@ -169,6 +190,17 @@ export const useAuthStore = create<AuthState>()(
             updateUser: async (updates) => {
                 const user = get().user
                 if (!user) return
+
+                // ── Throttle: prevent update spam (1.5s cooldown) ──
+                const throttleKey = `update:${user.id}`
+                const lastCall = _actionThrottles.get(throttleKey) || 0
+                if (Date.now() - lastCall < 1500) {
+                    reelToast.error('Saving too frequently. Slow down.')
+                    return
+                }
+                pruneThrottles()
+                _actionThrottles.set(throttleKey, Date.now())
+
                 const dbUpdates: Record<string, unknown> = {}
                 if (updates.bio !== undefined) dbUpdates.bio = updates.bio
                 if (updates.username !== undefined) dbUpdates.username = updates.username
@@ -192,6 +224,14 @@ export const useAuthStore = create<AuthState>()(
                 if (!user) return
                 const prefs = { ...(user.preferences || {}), [key]: value }
                 set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }))
+
+                // ── Throttle network sync to prevent DB spam during UI sliders ──
+                const throttleKey = `pref:${user.id}`
+                const lastCall = _actionThrottles.get(throttleKey) || 0
+                if (Date.now() - lastCall < 1500) return // Skip network hit if too fast, UI is already updated
+                pruneThrottles()
+                _actionThrottles.set(throttleKey, Date.now())
+
                 try { await supabase.from('profiles').update({ preferences: prefs }).eq('id', user.id) } catch { /* ignore */ }
             },
 
@@ -210,6 +250,7 @@ export const useAuthStore = create<AuthState>()(
                 const throttleKey = `follow:${targetUsername}`
                 const lastCall = _actionThrottles.get(throttleKey) || 0
                 if (Date.now() - lastCall < 2000) return
+                pruneThrottles()
                 _actionThrottles.set(throttleKey, Date.now())
 
                 const fromUsername = state.user?.username || 'someone'
@@ -246,6 +287,7 @@ export const useAuthStore = create<AuthState>()(
                 const throttleKey = `unfollow:${targetUsername}`
                 const lastCall = _actionThrottles.get(throttleKey) || 0
                 if (Date.now() - lastCall < 2000) return
+                pruneThrottles()
                 _actionThrottles.set(throttleKey, Date.now())
 
                 const prevFollowing = get().user?.following || []
@@ -279,6 +321,17 @@ export const useAuthStore = create<AuthState>()(
         }),
         {
             name: 'reelhouse-auth',
+            storage: createJSONStorage(() => ({
+                getItem: async (name: string): Promise<string | null> => {
+                    return (await get(name)) || null
+                },
+                setItem: async (name: string, value: string): Promise<void> => {
+                    await set(name, value)
+                },
+                removeItem: async (name: string): Promise<void> => {
+                    await del(name)
+                },
+            })),
             // Only persist the minimum needed to restore session UI — no action functions
             partialize: (state) => ({
                 user: state.user ? {

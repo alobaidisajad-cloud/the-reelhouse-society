@@ -1,5 +1,5 @@
 import { X, Check } from 'lucide-react'
-import { useState, memo, useCallback, useRef, ReactNode, CSSProperties } from 'react'
+import { useState, memo, useCallback, useRef, useEffect, ReactNode, CSSProperties } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { tmdb } from '../tmdb'
 import type { TMDBMovie } from '../types'
@@ -112,12 +112,6 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
 })
 
 function ReelSegmentSVG({ size, filled }: { size: number; filled: 'full' | 'half' | 'empty' }) {
-    const emptyStyle: React.CSSProperties = {
-        width: size, height: size, objectFit: 'contain', 
-        filter: 'grayscale(100%) brightness(0.25) opacity(0.5)',
-        position: 'absolute', top: 0, left: 0,
-        pointerEvents: 'none'
-    }
     const srcPath = filled === 'full' ? '/rating-full.png' 
                   : filled === 'half' ? '/rating-half.png' 
                   : '/rating-empty.png';
@@ -173,6 +167,12 @@ export const FilmCard = memo(function FilmCard({ film, onClick, size = 'md', sho
 
     const handleMouseLeave = useCallback(() => {
         if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+    }, [])
+
+    useEffect(() => {
+        return () => {
+            if (hoverTimeout.current) clearTimeout(hoverTimeout.current)
+        }
     }, [])
 
     return (

@@ -49,6 +49,12 @@ export default function OnboardingModal() {
         }
     }, [isAuthenticated, user, logs.length])
 
+    useEffect(() => {
+        return () => {
+            if (searchTimeout.current) clearTimeout(searchTimeout.current)
+        }
+    }, [])
+
     const handleSearch = (q: string) => {
         setQuery(q)
         if (searchTimeout.current) clearTimeout(searchTimeout.current)

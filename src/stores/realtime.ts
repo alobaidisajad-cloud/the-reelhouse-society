@@ -85,51 +85,41 @@ export const initAuthSync = () => {
 }
 
 
+let _realtimeConnecting = false
 export const initRealtime = () => {
     if (!isSupabaseConfigured) return
+    // Semaphore: prevent concurrent initRealtime calls during rapid auth events
+    if (_realtimeConnecting) return
+    _realtimeConnecting = true
 
-    // 1. Live global feed — singleton guard
-    if (supabase.getChannels().some(c => c.topic === 'realtime:global_logs_feed')) {
-        // Already listening, skip to prevent multi-instance socket floods
-    } else {
-        const channel = supabase
-            .channel('global_logs_feed')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'logs' }, (payload) => {
-            const currentUserId = useAuthStore.getState().user?.id
-            if (payload.new.user_id === currentUserId) return
-            queryClient.invalidateQueries({ queryKey: ['feed'] })
-        })
-        .subscribe((status) => {
-            // ── RECONNECTION: Auto-reconnect on channel drop ──
-            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                setTimeout(() => {
-                    channel.unsubscribe()
-                    initRealtime() // Re-initialize with fresh channels
-                }, 5000)
-            }
-        })
-    }
+    try {
+        // 1. Live global feed sync has been intentionally disabled for scalability
+        // At 10M scale, global WebSocket invalidations generate an infrastructure-killing DDoS.
+        // Feed synchronization is now strictly isolated to localized pull-to-refresh and tab-focus mechanics.
 
-    // 2. Personal notifications — real-time delivery to logged-in user
-    const userId = useAuthStore.getState().user?.id
-    if (userId) {
-        const userTopic = `realtime:user_notifications_${userId}`
-        if (!supabase.getChannels().some(c => c.topic === userTopic)) {
-            supabase
-                .channel(`user_notifications_${userId}`)
-            .on('postgres_changes', {
-                event: 'INSERT', schema: 'public',
-                table: 'notifications', filter: `user_id=eq.${userId}`,
-            }, (payload) => {
-                useNotificationStore.getState().push({
-                    id: payload.new.id,
-                    type: payload.new.type,
-                    from_user: payload.new.from_username,
-                    message: payload.new.message,
-                    timestamp: payload.new.created_at,
+        // 2. Personal notifications — real-time delivery to logged-in user
+        const userId = useAuthStore.getState().user?.id
+        if (userId) {
+            const userTopic = `realtime:user_notifications_${userId}`
+            if (!supabase.getChannels().some(c => c.topic === userTopic)) {
+                supabase
+                    .channel(`user_notifications_${userId}`)
+                .on('postgres_changes', {
+                    event: 'INSERT', schema: 'public',
+                    table: 'notifications', filter: `user_id=eq.${userId}`,
+                }, (payload) => {
+                    useNotificationStore.getState().push({
+                        id: payload.new.id,
+                        type: payload.new.type,
+                        from_user: payload.new.from_username,
+                        message: payload.new.message,
+                        timestamp: payload.new.created_at,
+                    })
                 })
-            })
-            .subscribe()
+                .subscribe()
+            }
         }
+    } finally {
+        _realtimeConnecting = false
     }
 }

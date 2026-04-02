@@ -1,1 +1,0 @@
-﻿src/components/UI.tsx(268,46): error TS2322: Type 'Element' is not assignable to type 'string'.

@@ -31,17 +31,17 @@ import type { SharePayload } from '../components/ShareToLoungeModal'
 function FilmHero({ film, onPlayTrailer }: any) {
     const { isTouch: IS_TOUCH } = useViewport()
     const { openLogModal } = useUIStore()
-    const { watchlist, addToWatchlist, removeFromWatchlist, logs, markAsWatched, unmarkWatched } = useFilmStore()
+    const { watchlist, _watchlistIndex, addToWatchlist, removeFromWatchlist, logs, _loggedIndex, markAsWatched, unmarkWatched } = useFilmStore()
     const [showExport, setShowExport] = useState(false)
     const [showShareLounge, setShowShareLounge] = useState(false)
     const user = useAuthStore((s: any) => s.user)
     const isArchivist = user && ['archivist', 'auteur'].includes(user.role)
-    const isWatchlisted = watchlist.some((f: any) => f.id === film.id)
+    const isWatchlisted = !!_watchlistIndex[film.id]
     const score = obscurityScore(film)
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
     const trailer = film.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
         || film.videos?.results?.find((v: any) => v.site === 'YouTube')
-    const existingLog = logs.find((l: any) => l.filmId === film.id || String(l.filmId) === String(film.id))
+    const existingLog = _loggedIndex[film.id]
     const statusLabel: any = { watched: <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> WATCHED</>, rewatched: <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> REWATCHED</>, abandoned: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> ABANDONED</> }
 
     // --- Smart Review Count Fallback ---
@@ -58,18 +58,24 @@ function FilmHero({ film, onPlayTrailer }: any) {
     // ── Parallax Backdrop ──
     const backdropRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
+        let pendingRaf = 0
         const handleScroll = () => {
             if (!backdropRef.current) return
             const sy = window.scrollY
             if (sy > 800) return // optimize
-            requestAnimationFrame(() => {
+            if (pendingRaf) return // dedup — only 1 RAF queued at a time
+            pendingRaf = requestAnimationFrame(() => {
+                pendingRaf = 0
                 if (backdropRef.current) {
                     backdropRef.current.style.transform = `translateY(${sy * 0.4}px)`
                 }
             })
         }
         window.addEventListener('scroll', handleScroll, { passive: true })
-        return () => window.removeEventListener('scroll', handleScroll)
+        return () => {
+            window.removeEventListener('scroll', handleScroll)
+            if (pendingRaf) cancelAnimationFrame(pendingRaf)
+        }
     }, [])
 
     const reviewText = localCount > 0 
@@ -92,9 +98,9 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 {/* Full-bleed backdrop */}
                 <div style={{ position: 'relative', width: '100%', height: '55vw', minHeight: 220, maxHeight: 320, overflow: 'hidden' }}>
                     {film.backdrop_path ? (
-                        <div ref={IS_TOUCH ? backdropRef : null} style={{ position: 'absolute', inset: -50, top: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
+                        <div ref={IS_TOUCH ? backdropRef : null} className="anamorphic-focus-pull" style={{ position: 'absolute', inset: -50, top: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
                     ) : (
-                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
+                        <div className="anamorphic-focus-pull" style={{ position: 'absolute', inset: -50, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
                     )}
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,7,3,0.05) 0%, rgba(10,7,3,0.40) 65%, var(--ink) 100%)' }} />
                 </div>
@@ -230,7 +236,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
             {/* Backdrop */}
             {film.backdrop_path && (
                 <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-                    <div ref={!IS_TOUCH ? backdropRef : null} style={{ position: 'absolute', inset: -100, top: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.3) brightness(0.40) contrast(1.1)', zIndex: 0 }} />
+                    <div ref={!IS_TOUCH ? backdropRef : null} className="anamorphic-focus-pull" style={{ position: 'absolute', inset: -100, top: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.3) brightness(0.40) contrast(1.1)', zIndex: 0 }} />
                 </div>
             )}
             {/* Gradient overlay */}

@@ -88,6 +88,11 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
     const [actionSheet, setActionSheet] = useState(false)
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+    // Clean up long press timer on unmount
+    useEffect(() => {
+        return () => { if (longPressTimer.current) clearTimeout(longPressTimer.current) }
+    }, [])
+
     const handleTouchStart = () => {
         if (!isTouch) return
         longPressTimer.current = setTimeout(() => {
@@ -418,11 +423,13 @@ export default function LoungeRoomPage() {
     }, [messages.length])
 
     // Infinite scroll up for history
+    const loadingMore = useRef(false)
     const handleScroll = useCallback(() => {
         const container = messagesContainerRef.current
-        if (!container || !hasMoreMessages) return
+        if (!container || !hasMoreMessages || loadingMore.current) return
         if (container.scrollTop < 100) {
-            loadMoreMessages()
+            loadingMore.current = true
+            loadMoreMessages().finally(() => { loadingMore.current = false })
         }
     }, [hasMoreMessages, loadMoreMessages])
 

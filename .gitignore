@@ -10,18 +10,58 @@ lerna-debug.log*
 # Build & audit artifacts (generated files — never commit)
 build*.log
 build_out.txt
+build_err.txt
 lint_output.txt
+eslint_fresh.txt
 lighthouse-report.json
+lighthouse-report-v2.json
+lighthouse-live.json
 .lighthouserc.json
+.ts_errors.log
+ts-errors.txt
+ts_error.txt
+ts_errors.txt
+git-status.txt
+deploy_debug.txt
 
 # One-off debug scripts
 check_profiles.js
 check_tables.js
+check_migration.js
+check_migration_rest.js
 run_sql.js
 testAuth.js
 test_signup.js
+test_tmdb.js
+test_tmdb.mjs
+test_lounge.js
 generate_icons.js
 deploy.ps1
+
+# One-off utility scripts (asset generation, cleanup)
+extract-*.mjs
+extract-*.js
+render-*.mjs
+generate-*.mjs
+*-clean.js
+replace_emojis.js
+clean-logo.js
+micro-clean.js
+smart-clean.js
+perfect-clean.js
+
+# SQL migration / debug scripts (keep in supabase/ or scripts/ directory)
+*.sql
+!supabase/**/*.sql
+
+# Scraped / cached production files
+live.js
+live_index.html
+
+# Sensitive / ephemeral
+vapid.txt
+run_migration_*.mjs
+run_lounge_migration.js
 
 node_modules
 dist
@@ -41,6 +81,4 @@ dist-ssr
 
 .vercel
 .env.staging
-
-.vercel
 .env*.local

@@ -18,8 +18,25 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
         const loadingToast = reelToast.loading('Compiling Archive...')
         
         const { supabase } = await import('../../supabaseClient')
-        const { data: fetchLogs } = await supabase
-            .from('logs').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(100000)
+        
+        let allLogs: any[] = []
+        let page = 0
+        const PAGE_SIZE = 1000
+        while (true) {
+            const { data, error } = await supabase
+                .from('logs')
+                .select('*')
+                .eq('user_id', user.id)
+                .order('created_at', { ascending: false })
+                .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+            
+            if (error || !data || data.length === 0) break
+            allLogs = allLogs.concat(data)
+            if (data.length < PAGE_SIZE) break
+            page++
+        }
+        
+        const fetchLogs = allLogs
             
         reelToast.dismiss(loadingToast)
         
