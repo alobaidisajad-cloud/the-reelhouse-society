@@ -105,7 +105,7 @@ export default function HomePage() {
     return (
         <>
             <PageSEO
-                title="The ReelHouse Society — The Lobby"
+                title="The Lobby"
                 description="Log every film you watch. Discover cinema you've never heard of. Join the society."
             />
 
