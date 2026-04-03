@@ -139,8 +139,11 @@ export default function FeedPage() {
         const { data, error } = await query
         if (error || !data?.length) return { items: [], hasNextPage: false }
         
-        // Filter out simple "watched" logs—only broadcast actual written reviews to the feed
-        const publicData = data.filter((l: any) => l.review && l.review.trim() !== '')
+        // Main Reel: only show written reviews (strangers' watch-only logs aren't interesting)
+        // Following: show ALL activity from people you follow (watches, ratings, and reviews)
+        const publicData = mode === 'for-you'
+            ? data.filter((l: any) => l.review && l.review.trim() !== '')
+            : data
         return { items: mapLogsToFeed(publicData), hasNextPage: data.length === 20 }
     }
 
