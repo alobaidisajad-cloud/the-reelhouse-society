@@ -386,7 +386,7 @@ export default function LogForm({ film }: { film: any }) {
 
             {/* Physical Media */}
             <div>
-                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <Archive size={10} style={{ display: 'inline' }} />
                         THE PHYSICAL ARCHIVE
@@ -435,7 +435,7 @@ export default function LogForm({ film }: { film: any }) {
 
             {/* Private Notes — Archivist+ (The Vault) */}
             <div style={{ position: 'relative' }}>
-                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', justifyContent: 'space-between' }}>
+                <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', marginBottom: '0.5rem', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                         <Lock size={10} style={{ display: 'inline' }} />
                         PRIVATE NOTES (THE CUTTING ROOM FLOOR)
