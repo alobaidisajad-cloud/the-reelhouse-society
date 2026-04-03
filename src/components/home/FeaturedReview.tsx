@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../../supabaseClient'
 import { tmdb } from '../../tmdb'
-import { ReelRating } from '../UI'
+import { ReelRating, RadarChart } from '../UI'
 import Buster from '../Buster'
 import { useViewport } from '../../hooks/useViewport'
 import { useUIStore } from '../../store'
@@ -28,7 +28,7 @@ const FeaturedReview = memo(function FeaturedReview() {
             const { data: hotLogs } = await supabase
                 .from('logs')
                 .select(`
-                    id, film_id, film_title, poster_path, rating, review, created_at, user_id,
+                    id, film_id, film_title, poster_path, rating, review, created_at, user_id, autopsy, is_autopsied,
                     profiles!logs_user_id_fkey ( username, role )
                 `)
                 .not('review', 'is', null)
@@ -74,6 +74,8 @@ const FeaturedReview = memo(function FeaturedReview() {
                     author: ((winner as any).profiles?.username || 'ANONYMOUS').toUpperCase(),
                     authorRole: (winner as any).profiles?.role || 'cinephile',
                     rating: winner.rating || 0,
+                    isAutopsied: winner.is_autopsied || false,
+                    autopsy: winner.autopsy || null,
                     film: { id: winner.film_id, title: winner.film_title, poster_path: winner.poster_path },
                     endorsements: engagement[winner.id] || 0,
                 }
@@ -83,7 +85,7 @@ const FeaturedReview = memo(function FeaturedReview() {
             const { data: fallback } = await supabase
                 .from('logs')
                 .select(`
-                    id, film_id, film_title, poster_path, rating, review, created_at, user_id,
+                    id, film_id, film_title, poster_path, rating, review, created_at, user_id, autopsy, is_autopsied,
                     profiles!logs_user_id_fkey ( username, role )
                 `)
                 .not('review', 'is', null)
@@ -101,6 +103,8 @@ const FeaturedReview = memo(function FeaturedReview() {
                 author: ((fallback as any).profiles?.username || 'ANONYMOUS').toUpperCase(),
                 authorRole: (fallback as any).profiles?.role || 'cinephile',
                 rating: fallback.rating || 0,
+                isAutopsied: fallback.is_autopsied || false,
+                autopsy: fallback.autopsy || null,
                 film: { id: fallback.film_id, title: fallback.film_title, poster_path: fallback.poster_path },
                 endorsements: 0,
             }
@@ -109,8 +113,8 @@ const FeaturedReview = memo(function FeaturedReview() {
     })
 
     const displayReview = featuredCritique
-        ? { logId: featuredCritique.logId, text: featuredCritique.text, author: featuredCritique.author, rating: featuredCritique.rating, film: featuredCritique.film }
-        : { logId: null as string | null, text: 'The projection box awaits. Be the first to file a dispatch on any title and claim this space in the archive.', author: 'THE SOCIETY', rating: 0, film: null }
+        ? { logId: featuredCritique.logId, text: featuredCritique.text, author: featuredCritique.author, rating: featuredCritique.rating, film: featuredCritique.film, autopsy: featuredCritique.autopsy, isAutopsied: featuredCritique.isAutopsied }
+        : { logId: null as string | null, text: 'The projection box awaits. Be the first to file a dispatch on any title and claim this space in the archive.', author: 'THE SOCIETY', rating: 0, film: null, autopsy: null, isAutopsied: false }
 
     const film = displayReview.film
     const isArchivistCritique = featuredCritique?.authorRole === 'archivist'
@@ -238,6 +242,12 @@ const FeaturedReview = memo(function FeaturedReview() {
                     }}>
                         {displayReview.text.replace(/<[^>]+>/g, '').length > 280 ? displayReview.text.replace(/<[^>]+>/g, '').slice(0, 280) + '…' : displayReview.text.replace(/<[^>]+>/g, '')}
                     </p>
+
+                    {displayReview.isAutopsied && displayReview.autopsy && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.5rem' }}>
+                            <RadarChart autopsy={displayReview.autopsy} size={160} />
+                        </div>
+                    )}
 
                     <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '0.75rem', alignItems: 'center', paddingTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)' }}>
                         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '0.75rem' }}>

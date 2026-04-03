@@ -75,7 +75,6 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
       case 'follow': return '◆'
       case 'endorse': return '✦'
       case 'annotate': return '§'
-      case 'retransmit': return '⟐'
       case 'achievement': return '◈'
       default: return '✧'
     }

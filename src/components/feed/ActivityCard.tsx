@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { ReelRating, RadarChart } from '../UI'
 import { tmdb } from '../../tmdb'
-import { Heart, MessageSquare, Download, Send, RefreshCw, Lock, Edit3, MessageCircle, Bookmark } from 'lucide-react'
+import { Heart, MessageSquare, Download, Send, Lock, Edit3, MessageCircle, Bookmark } from 'lucide-react'
 import ReactionBar from '../ReactionBar'
 import { supabase, isSupabaseConfigured } from '../../supabaseClient'
 import reelToast from '../../utils/reelToast'
@@ -83,34 +83,6 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         } else {
             setAnnotateOpen(!annotateOpen)
         }
-    }
-
-    // ── RE-TRANSMIT ──
-    const [retransmitted, setRetransmitted] = useState(false)
-
-    const handleRetransmit = () => {
-        if (!currentUser) { reelToast.error('Sign in to retransmit.'); return }
-        if (retransmitted) return
-        throttleAction(`retransmit-${log.id}`, async () => {
-            // Optimistic update
-            setRetransmitted(true)
-            reelToast.success('Signal retransmitted to your archive.')
-
-            // Background sync — rollback on failure
-            if (isSupabaseConfigured) {
-                try {
-                    const { error } = await supabase.from('interactions').insert({
-                        user_id: currentUser.id,
-                        target_log_id: log.id,
-                        type: 'retransmit',
-                    })
-                    if (error && !error.message?.includes('duplicate')) throw error
-                } catch {
-                    setRetransmitted(false)
-                    reelToast.error('Retransmit failed — please try again.')
-                }
-            }
-        })
     }
 
     const endorsed = optimisticEndorsed
@@ -340,38 +312,45 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
 
 
 
-                {/* Focus Action Bar */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(139,105,20,0.15)', borderBottom: '1px solid rgba(139,105,20,0.15)', padding: '1.25rem 0.5rem', marginTop: '1rem' }}>
-                    <div style={{ display: 'flex', gap: '1.5rem' }}>
-                        <button onClick={handleEndorse} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
-                            {canEndorse ? <Heart size={16} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
-                            {endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'RESTRICTED'} ({endorsementCount})
+                {/* Focus Action Deck (Premium Grid) */}
+                <div onClick={e => e.stopPropagation()} style={{ 
+                    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', 
+                    background: 'rgba(139,105,20,0.15)', borderRadius: '6px', overflow: 'hidden', 
+                    marginTop: '1.25rem', border: '1px solid rgba(139,105,20,0.2)' 
+                }}>
+                    <button onClick={handleEndorse} style={{ background: 'var(--ink)', border: 'none', padding: '1rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                        {canEndorse ? <Heart size={16} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <Lock size={16} />}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>{endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'LOCKED'}</span>
+                    </button>
+                    <button onClick={handleAnnotateToggle} style={{ background: 'var(--ink)', border: 'none', padding: '1rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: canAnnotate ? (annotateOpen ? 'var(--parchment)' : 'var(--fog)') : 'var(--ash)', cursor: canAnnotate ? 'pointer' : 'not-allowed', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                        {canAnnotate ? <MessageSquare size={16} /> : <Lock size={16} />}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>CRITIQUE</span>
+                    </button>
+                    {isOwner ? (
+                        <button onClick={(e) => { e.stopPropagation(); openLogModal({ id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }, log.id) }} style={{ background: 'var(--ink)', border: 'none', padding: '1rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: 'var(--fog)', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                            <Edit3 size={16} />
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>EDIT</span>
                         </button>
-                        {canAnnotate ? (
-                            <button onClick={handleAnnotateToggle} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: annotateOpen ? 'var(--parchment)' : 'var(--fog)', cursor: 'pointer' }}>
-                                <MessageSquare size={16} /> CRITIQUE
-                            </button>
-                        ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--ash)', cursor: 'not-allowed' }}>
-                                <span><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></span> RESTRICTED
-                            </div>
-                        )}
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        {isOwner && (
-                            <button onClick={(e) => { e.stopPropagation(); openLogModal({ id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }, log.id) }} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'pointer' }}>
-                                <Edit3 size={14} /> EDIT
-                            </button>
-                        )}
-                        <button onClick={handleRetransmit} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
-                            <RefreshCw size={16} /> {retransmitted ? 'PUBLISHED ✦' : 'PUBLISH'}
+                    ) : (
+                        <button onClick={(e) => {
+                                e.stopPropagation()
+                                const filmId = log.film?.id || log.filmId
+                                if (filmSaved) {
+                                    removeFromWatchlist(filmId)
+                                    reelToast.success('Removed from watchlist')
+                                } else {
+                                    addToWatchlist({ id: filmId, title: log.film?.title || 'Film', poster_path: log.film?.poster, release_date: log.film?.year ? `${log.film.year}-01-01` : undefined })
+                                    reelToast.success('Saved to watchlist ✦')
+                                }
+                            }} style={{ background: 'var(--ink)', border: 'none', padding: '1rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: filmSaved ? 'var(--sepia)' : 'var(--fog)', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                            <Bookmark size={16} fill={filmSaved ? 'var(--sepia)' : 'none'} color={filmSaved ? 'var(--sepia)' : 'currentColor'} />
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>{filmSaved ? 'SAVED ✦' : 'SAVE'}</span>
                         </button>
-                        {isLoungeEligible && (
-                            <button onClick={(e) => { e.stopPropagation(); setShowShareLounge(true) }} style={{ background: 'none', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-ui)', fontSize: '0.7rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'pointer' }}>
-                                <MessageCircle size={16} /> LOUNGE
-                            </button>
-                        )}
-                    </div>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); if (isLoungeEligible) setShowShareLounge(true); else reelToast.error('Patron upgrade required to share directly to The Lounge.') }} style={{ background: 'var(--ink)', border: 'none', padding: '1rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', color: isLoungeEligible ? 'var(--fog)' : 'var(--ash)', cursor: isLoungeEligible ? 'pointer' : 'not-allowed', transition: 'background 0.2s' }} onMouseEnter={e => { if(isLoungeEligible) e.currentTarget.style.background = 'rgba(139,105,20,0.05)' }} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                        {isLoungeEligible ? <MessageCircle size={16} /> : <span style={{ position: 'relative' }}><MessageCircle size={16} opacity={0.5} /><Lock size={8} style={{ position: 'absolute', bottom: -2, right: -2 }} /></span>}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.15em' }}>LOUNGE</span>
+                    </button>
                 </div>
 
                 <AnnotationPanel logId={log.id} open={annotateOpen} isExpandedView={true} />
@@ -534,34 +513,27 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                         )}
                     </div>
                 )}
-                {/* Feed Action Bar */}
-                <div onClick={e => e.stopPropagation()} style={{ display: 'flex', gap: '1rem', width: '100%', marginTop: '0.75rem', paddingTop: '0.6rem', borderTop: '1px solid rgba(139,105,20,0.1)', flexWrap: 'wrap', flexShrink: 0 }}>
-                    <div style={{ position: 'relative' }}>
-                        <button className="reel-action-btn" onClick={handleEndorse} style={{ color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed' }}>
-                            {canEndorse ? <Heart size={12} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <span style={{ fontSize: '10px' }}><Lock size={9} style={{ display: "inline-block", verticalAlign: "middle" }} /></span>}
-                            {endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'LOCKED'} ({endorsementCount})
-                        </button>
-                    </div>
-                    {canAnnotate ? (
-                        <button className="reel-action-btn" onClick={handleAnnotateToggle} style={{ color: annotateOpen ? 'var(--parchment)' : 'var(--fog)' }}>
-                            <MessageSquare size={12} /> CRITIQUE
+                {/* Feed Action Deck (Premium Grid) */}
+                <div onClick={e => e.stopPropagation()} style={{ 
+                    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1px', 
+                    background: 'rgba(139,105,20,0.15)', borderRadius: '6px', overflow: 'hidden', 
+                    marginTop: '1.25rem', border: '1px solid rgba(139,105,20,0.2)' 
+                }}>
+                    <button onClick={handleEndorse} style={{ background: 'var(--ink)', border: 'none', padding: '0.8rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', color: canEndorse ? (endorsed ? 'var(--sepia)' : 'var(--fog)') : 'var(--ash)', cursor: canEndorse ? 'pointer' : 'not-allowed', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                        {canEndorse ? <Heart size={14} fill={endorsed ? 'var(--sepia)' : 'none'} color={endorsed ? 'var(--sepia)' : 'currentColor'} /> : <Lock size={14} />}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em' }}>{endorsed ? 'CERTIFIED' : canEndorse ? 'CERTIFY' : 'LOCKED'}</span>
+                    </button>
+                    <button onClick={handleAnnotateToggle} style={{ background: 'var(--ink)', border: 'none', padding: '0.8rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', color: canAnnotate ? (annotateOpen ? 'var(--parchment)' : 'var(--fog)') : 'var(--ash)', cursor: canAnnotate ? 'pointer' : 'not-allowed', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                        {canAnnotate ? <MessageSquare size={14} /> : <Lock size={14} />}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em' }}>CRITIQUE</span>
+                    </button>
+                    {isOwner ? (
+                        <button onClick={(e) => { e.stopPropagation(); openLogModal({ id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }, log.id) }} style={{ background: 'var(--ink)', border: 'none', padding: '0.8rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', color: 'var(--fog)', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                            <Edit3 size={14} />
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em' }}>EDIT</span>
                         </button>
                     ) : (
-                        <div className="reel-action-btn" style={{ color: 'var(--ash)', cursor: 'not-allowed' }}>
-                            <span style={{ fontSize: '9px' }}><Lock size={9} style={{ display: "inline-block", verticalAlign: "middle" }} /></span> LOCKED
-                        </div>
-                    )}
-                    <div style={{ marginLeft: 'auto', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        {isOwner && (
-                            <button className="reel-action-btn" onClick={(e) => { e.stopPropagation(); openLogModal({ id: log.film?.id || log.filmId, title: log.film?.title, poster_path: log.film?.poster, release_date: log.film?.year + '-01-01' }, log.id) }} style={{ color: 'var(--fog)' }}>
-                                <Edit3 size={12} /> EDIT
-                            </button>
-                        )}
-                        <button className="reel-action-btn" onClick={handleRetransmit} style={{ color: retransmitted ? 'var(--sepia)' : 'var(--fog)', cursor: retransmitted ? 'default' : 'pointer' }}>
-                            <RefreshCw size={12} /> {retransmitted ? 'SENT ✦' : 'PUBLISH'}
-                        </button>
-                        {!isOwner && currentUser && (log.film?.id || log.filmId) && (
-                            <button className="reel-action-btn" onClick={(e) => {
+                        <button onClick={(e) => {
                                 e.stopPropagation()
                                 const filmId = log.film?.id || log.filmId
                                 if (filmSaved) {
@@ -571,16 +543,15 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
                                     addToWatchlist({ id: filmId, title: log.film?.title || 'Film', poster_path: log.film?.poster, release_date: log.film?.year ? `${log.film.year}-01-01` : undefined })
                                     reelToast.success('Saved to watchlist ✦')
                                 }
-                            }} style={{ color: filmSaved ? 'var(--sepia)' : 'var(--fog)' }}>
-                                <Bookmark size={12} fill={filmSaved ? 'var(--sepia)' : 'none'} /> {filmSaved ? 'SAVED ✦' : 'SAVE'}
-                            </button>
-                        )}
-                        {isLoungeEligible && (
-                            <button className="reel-action-btn" onClick={(e) => { e.stopPropagation(); setShowShareLounge(true) }} style={{ color: 'var(--fog)' }}>
-                                <MessageCircle size={12} /> LOUNGE
-                            </button>
-                        )}
-                    </div>
+                            }} style={{ background: 'var(--ink)', border: 'none', padding: '0.8rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', color: filmSaved ? 'var(--sepia)' : 'var(--fog)', cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.05)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                            <Bookmark size={14} fill={filmSaved ? 'var(--sepia)' : 'none'} color={filmSaved ? 'var(--sepia)' : 'currentColor'} />
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em' }}>{filmSaved ? 'SAVED ✦' : 'SAVE'}</span>
+                        </button>
+                    )}
+                    <button onClick={(e) => { e.stopPropagation(); if (isLoungeEligible) setShowShareLounge(true); else reelToast.error('Patron upgrade required to share directly to The Lounge.') }} style={{ background: 'var(--ink)', border: 'none', padding: '0.8rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem', color: isLoungeEligible ? 'var(--fog)' : 'var(--ash)', cursor: isLoungeEligible ? 'pointer' : 'not-allowed', transition: 'background 0.2s' }} onMouseEnter={e => { if(isLoungeEligible) e.currentTarget.style.background = 'rgba(139,105,20,0.05)' }} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                        {isLoungeEligible ? <MessageCircle size={14} /> : <span style={{ position: 'relative' }}><MessageCircle size={14} opacity={0.5} /><Lock size={8} style={{ position: 'absolute', bottom: -2, right: -2 }} /></span>}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em' }}>LOUNGE</span>
+                    </button>
                 </div>
 
                 {annotateOpen && <AnnotationPanel logId={log.id} open={annotateOpen} />}

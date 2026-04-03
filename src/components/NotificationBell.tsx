@@ -11,7 +11,6 @@ const NOTIF_ICONS = {
     endorse: '✦',
     system: '§',
     annotate: '¶',
-    retransmit: '⟐',
     achievement: '◈',
 }
 
