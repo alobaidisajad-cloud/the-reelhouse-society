@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useMemo } from 'react'
+import { Virtuoso } from 'react-virtuoso'
 import { Link, useNavigate } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useAuthStore, useUIStore } from '../store'
@@ -192,18 +193,7 @@ export default function FeedPage() {
         }
     })
 
-    const observer = useRef<IntersectionObserver | null>(null)
-    const lastFeedElementRef = useCallback((node: any) => {
-        if (feedTab === 'for-you' ? isFetchingNextCommunity : isFetchingNextFollowing) return
-        if (observer.current) observer.current.disconnect()
-        observer.current = new IntersectionObserver(entries => {
-            if (entries[0].isIntersecting) {
-                if (feedTab === 'for-you' && hasNextCommunity) fetchNextCommunity()
-                else if (feedTab === 'following' && hasNextFollowing) fetchNextFollowing()
-            }
-        })
-        if (node) observer.current.observe(node)
-    }, [feedTab, isFetchingNextCommunity, isFetchingNextFollowing, hasNextCommunity, hasNextFollowing, fetchNextCommunity, fetchNextFollowing])
+    // Virtuoso handles infinite scroll natively via endReached — no manual IntersectionObserver needed
 
     // ── Sidebar Data (TanStack cached — no redundant fetches on navigation) ──
     const { data: recentLists = [] } = useQuery({
@@ -528,24 +518,29 @@ export default function FeedPage() {
                             </div>
 
                         ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                {activeFeed.map((log: any, i: number) => {
-                                    const isLast = i === activeFeed.length - 1
-                                    return (
-                                        <div
-                                            key={log.id + i}
-                                            ref={isLast ? lastFeedElementRef : null}
-                                            className="fade-in-up"
-                                            style={{ animationDelay: `${Math.min(i * 0.04, 0.4)}s`, '--i': i } as any}
-                                        >
-                                            <ActivityCard log={log} />
-                                        </div>
-                                    )
-                                })}
-                                {(feedTab === 'for-you' ? isFetchingNextCommunity : isFetchingNextFollowing) && (
-                                    <div className="skeleton" style={{ height: 140, borderRadius: '4px', opacity: 0.5, marginTop: '0.5rem' }} />
+                            <Virtuoso
+                                useWindowScroll
+                                data={activeFeed}
+                                overscan={600}
+                                endReached={() => {
+                                    if (feedTab === 'for-you' && hasNextCommunity && !isFetchingNextCommunity) fetchNextCommunity()
+                                    else if (feedTab === 'following' && hasNextFollowing && !isFetchingNextFollowing) fetchNextFollowing()
+                                }}
+                                itemContent={(index, log: any) => (
+                                    <div
+                                        key={log.id + index}
+                                        className="fade-in-up"
+                                        style={{ animationDelay: `${Math.min(index * 0.04, 0.4)}s`, marginBottom: '0.5rem' } as any}
+                                    >
+                                        <ActivityCard log={log} />
+                                    </div>
                                 )}
-                            </div>
+                                components={{
+                                    Footer: () => (feedTab === 'for-you' ? isFetchingNextCommunity : isFetchingNextFollowing) ? (
+                                        <div className="skeleton" style={{ height: 140, borderRadius: '4px', opacity: 0.5, marginTop: '0.5rem' }} />
+                                    ) : null,
+                                }}
+                            />
                         )}
                     </div>
                     </SectionErrorBoundary>
