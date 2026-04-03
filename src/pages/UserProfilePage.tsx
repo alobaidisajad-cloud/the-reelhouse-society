@@ -604,7 +604,7 @@ export default function UserProfilePage() {
                     {/* ── Stats as museum placards ── */}
                     <div style={{ 
                         display: 'grid', 
-                        gridTemplateColumns: IS_TOUCH ? 'repeat(4, 1fr)' : 'repeat(4, auto)',
+                        gridTemplateColumns: IS_TOUCH ? 'repeat(auto-fit, minmax(75px, 1fr))' : 'repeat(4, auto)',
                         justifyContent: IS_TOUCH ? 'stretch' : 'center',
                         gap: IS_TOUCH ? '0.5rem' : '3.5rem', 
                         marginBottom: IS_TOUCH ? '2rem' : '3rem',
