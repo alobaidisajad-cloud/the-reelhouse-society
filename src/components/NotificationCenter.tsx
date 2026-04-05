@@ -44,7 +44,7 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
           type: n.type || 'system',
           from: n.from_username || '',
           message: n.message || '',
-          read: n.is_read || false,
+          read: n.read || false,
           created_at: n.created_at,
           target_url: n.target_url,
         }))
@@ -57,9 +57,9 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
     if (!user?.id || !isSupabaseConfigured) return
     await supabase
       .from('notifications')
-      .update({ is_read: true })
+      .update({ read: true })
       .eq('user_id', user.id)
-      .eq('is_read', false)
+      .eq('read', false)
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }
 
