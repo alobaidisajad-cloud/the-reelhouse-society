@@ -39,24 +39,37 @@ export default function LogActionRow({
     }
 
     return (
-        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            {/* Primary actions row */}
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                <button className="btn btn-primary" style={{ flex: '1 1 auto', justifyContent: 'center' }} onClick={handleLog} disabled={submitting}>
+                    {submitting ? 'SAVING...' : (logModalEditLogId ? 'Save Changes' : 'Log This Film')}
+                </button>
+                <button className="btn btn-ghost" style={{ flex: '0 1 auto' }} onClick={closeLogModal}>
+                    Cancel
+                </button>
+            </div>
+            {/* Delete button — full width, clearly visible on all devices */}
             {logModalEditLogId && (
                 <button 
                     className="btn btn-ghost" 
                     aria-label="Delete log"
-                    title="Delete Log" 
-                    style={{ color: 'var(--danger)', padding: '0 0.75rem', borderColor: 'var(--ash)' }} 
+                    style={{
+                        width: '100%',
+                        justifyContent: 'center',
+                        gap: '0.4rem',
+                        color: 'var(--fog)',
+                        borderColor: 'rgba(255,255,255,0.06)',
+                        fontSize: '0.55rem',
+                        letterSpacing: '0.12em',
+                        padding: '0.6rem',
+                    }}
                     onClick={() => setShowDeleteConfirm(true)}
                 >
-                    <Trash2 size={16} />
+                    <Trash2 size={12} />
+                    DELETE THIS LOG
                 </button>
             )}
-            <button className="btn btn-primary" style={{ flex: '1 1 auto', justifyContent: 'center' }} onClick={handleLog} disabled={submitting}>
-                {submitting ? 'SAVING...' : (logModalEditLogId ? 'Save Changes' : 'Log This Film')}
-            </button>
-            <button className="btn btn-ghost" style={{ flex: '0 1 auto' }} onClick={closeLogModal}>
-                Cancel
-            </button>
         </div>
     )
 }
