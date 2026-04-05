@@ -102,8 +102,12 @@ export default function Navbar() {
                 <div className="navbar-inner" style={{ position: 'relative' }}>
                     {/* Logo */}
                     <Link to="/" className="nav-logo">
-                        <img src="/reelhouse-logo.svg" alt="ReelHouse Logo" style={{ height: '38px', width: 'auto', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }} />
-                        <span className="nav-logo-text">The ReelHouse Society</span>
+                        <img src="/reelhouse-logo.svg" alt="The ReelHouse Society Logo" style={{ height: '38px', width: 'auto', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.8))' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }} className="nav-logo-text-stack hide-mobile-sm">
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.45rem', color: 'var(--sepia)', letterSpacing: '0.4em', lineHeight: 1, opacity: 0.9, marginRight: '-0.4em' }}>THE</span>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: 'var(--parchment)', lineHeight: 1, letterSpacing: '0.02em', textShadow: '0 0 10px rgba(139,105,20,0.15)' }}>ReelHouse</span>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.45rem', color: 'var(--sepia)', letterSpacing: '0.4em', lineHeight: 1, opacity: 0.9, marginRight: '-0.4em' }}>SOCIETY</span>
+                        </div>
                         <div className="nav-logo-buster">
                             <Buster size={40} mood="peeking" />
                         </div>

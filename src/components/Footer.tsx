@@ -31,10 +31,12 @@ export default function Footer() {
                 {/* Brand */}
                 <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
-                        <img src="/reelhouse-logo.svg" alt="ReelHouse" style={{ height: '40px', width: 'auto', opacity: 0.9 }} />
-                        <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.85rem', color: 'var(--parchment)' }}>
-                            ReelHouse
-                        </span>
+                        <img src="/reelhouse-logo.svg" alt="The ReelHouse Society Logo" style={{ height: '48px', width: 'auto', opacity: 0.95 }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.5rem', color: 'var(--sepia)', letterSpacing: '0.4em', lineHeight: 1, opacity: 0.8, marginRight: '-0.4em' }}>THE</span>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', color: 'var(--parchment)', lineHeight: 1, letterSpacing: '0.02em', textShadow: '0 0 10px rgba(139,105,20,0.1)' }}>ReelHouse</span>
+                            <span style={{ fontFamily: 'var(--font-display)', fontSize: '0.5rem', color: 'var(--sepia)', letterSpacing: '0.4em', lineHeight: 1, opacity: 0.8, marginRight: '-0.4em' }}>SOCIETY</span>
+                        </div>
                     </div>
                     <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', lineHeight: 1.6, maxWidth: '220px' }}>
                         A society for those who live and breathe cinema.
