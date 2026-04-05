@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, History, Lock, Archive, Check, Trash2 } from 'lucide-react'
+import { X, Eye, History, Lock, Archive, Check, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { tmdb } from '../../tmdb'
 import { ReelRating } from '../UI'
@@ -38,6 +38,7 @@ export default function LogForm({ film }: { film: any }) {
     const [rating, setRating] = useState(0)
     const [review, setReview] = useState('')
     const [isSpoiler, setIsSpoiler] = useState(false)
+    const stackScrollRef = useRef<HTMLDivElement>(null)
     const [abandoned, setAbandoned] = useState('')
     const [date, setDate] = useState(new Date().toISOString().slice(0, 10))
     const [watchedWith, setWatchedWith] = useState('')
@@ -523,38 +524,52 @@ export default function LogForm({ film }: { film: any }) {
                     <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'block', marginBottom: '0.75rem' }}>
                         ✛ ADD TO STACK
                     </label>
-                    <div className="horizontal-scroll" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', WebkitOverflowScrolling: 'touch' }}>
-                        {lists.map(list => {
-                            const isActive = list.films.some((f: any) => f.id === film.id);
-                            return (
-                                <button
-                                    key={list.id}
-                                    type="button"
-                                    onClick={async (e) => {
-                                        e.preventDefault();
-                                        try {
-                                            if (isActive) await removeFilmFromList(list.id, film.id);
-                                            else await addFilmToList(list.id, film);
-                                        } catch {
-                                            reelToast.error('Failed to update list');
-                                        }
-                                    }}
-                                    style={{
-                                        flexShrink: 0,
-                                        padding: '0.5rem 1rem',
-                                        fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em',
-                                        borderRadius: '2px', cursor: 'pointer', transition: 'all 0.2s',
-                                        background: isActive ? 'var(--sepia)' : 'var(--ink)',
-                                        color: isActive ? 'var(--ink)' : 'var(--bone)',
-                                        border: `1px solid ${isActive ? 'var(--sepia)' : 'var(--ash)'}`,
-                                        fontWeight: isActive ? 'bold' : 'normal',
-                                        boxShadow: isActive ? '0 4px 10px rgba(139,105,20,0.2)' : 'none',
-                                    }}
-                                >
-                                    {isActive ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> </> : '+ '}{list.title.toUpperCase()}
-                                </button>
-                            )
-                        })}
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                        <button onClick={(e) => {
+                            e.preventDefault()
+                            stackScrollRef.current?.scrollBy({ left: -200, behavior: 'smooth' })
+                        }} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)', cursor: 'pointer', flexShrink: 0, padding: 0 }}>
+                            <ChevronLeft size={14} />
+                        </button>
+                        <div ref={stackScrollRef} className="horizontal-scroll" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', WebkitOverflowScrolling: 'touch', flex: 1, scrollbarWidth: 'none' }}>
+                            {lists.map(list => {
+                                const isActive = list.films.some((f: any) => f.id === film.id);
+                                return (
+                                    <button
+                                        key={list.id}
+                                        type="button"
+                                        onClick={async (e) => {
+                                            e.preventDefault();
+                                            try {
+                                                if (isActive) await removeFilmFromList(list.id, film.id);
+                                                else await addFilmToList(list.id, film);
+                                            } catch {
+                                                reelToast.error('Failed to update list');
+                                            }
+                                        }}
+                                        style={{
+                                            flexShrink: 0,
+                                            padding: '0.5rem 1rem',
+                                            fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em',
+                                            borderRadius: '2px', cursor: 'pointer', transition: 'all 0.2s',
+                                            background: isActive ? 'var(--sepia)' : 'var(--ink)',
+                                            color: isActive ? 'var(--ink)' : 'var(--bone)',
+                                            border: `1px solid ${isActive ? 'var(--sepia)' : 'var(--ash)'}`,
+                                            fontWeight: isActive ? 'bold' : 'normal',
+                                            boxShadow: isActive ? '0 4px 10px rgba(139,105,20,0.2)' : 'none',
+                                        }}
+                                    >
+                                        {isActive ? <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> </> : '+ '}{list.title.toUpperCase()}
+                                    </button>
+                                )
+                            })}
+                        </div>
+                        <button onClick={(e) => {
+                            e.preventDefault()
+                            stackScrollRef.current?.scrollBy({ left: 200, behavior: 'smooth' })
+                        }} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)', cursor: 'pointer', flexShrink: 0, padding: 0 }}>
+                            <ChevronRight size={14} />
+                        </button>
                     </div>
                 </div>
             )}

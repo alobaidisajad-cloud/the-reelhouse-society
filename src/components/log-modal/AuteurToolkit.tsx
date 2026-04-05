@@ -1,5 +1,6 @@
+import { useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Lock } from 'lucide-react'
+import { Lock, ChevronLeft, ChevronRight } from 'lucide-react'
 import { tmdb } from '../../tmdb'
 import reelToast from '../../utils/reelToast'
 import { RadarChart } from '../UI'
@@ -27,6 +28,8 @@ export default function AuteurToolkit({
     isAuteur, autopsyOpen, setAutopsyOpen, isAutopsied, setIsAutopsied,
     autopsy, setAutopsy, altPoster, setAltPoster, availablePosters, onUpgrade,
 }: AuteurToolkitProps) {
+    const posterScrollRef = useRef<HTMLDivElement>(null)
+
     return (
         <div style={{ padding: '1rem', border: '1px solid var(--blood-reel)', borderRadius: 'var(--radius-card)', background: 'rgba(162,36,36,0.05)', display: 'flex', flexDirection: 'column', gap: '1.5rem', opacity: isAuteur ? 1 : 0.6 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => { setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); }}>
@@ -100,25 +103,41 @@ export default function AuteurToolkit({
                                 CURATORIAL CONTROL (ALT POSTER)
                             </label>
                             {availablePosters.length > 0 ? (
-                                <div style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none' }}>
-                                    <button
-                                        onClick={() => setAltPoster(null)}
-                                        style={{ flexShrink: 0, width: 44, height: 66, background: altPoster === null ? 'var(--sepia)' : 'var(--ink)', border: altPoster === null ? '2px solid var(--sepia)' : '1px solid var(--ash)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: altPoster === null ? 'var(--ink)' : 'var(--fog)' }}
-                                    >
-                                        DEFAULT
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                    <button onClick={(e) => {
+                                        e.preventDefault()
+                                        posterScrollRef.current?.scrollBy({ left: -160, behavior: 'smooth' })
+                                    }} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)', cursor: 'pointer', flexShrink: 0, padding: 0 }}>
+                                        <ChevronLeft size={14} />
                                     </button>
-                                    {availablePosters.map(p => (
-                                        <img
-                                            key={p.file_path}
-                                            src={tmdb.poster(p.file_path, 'w92')}
-                                            onClick={() => setAltPoster(p.file_path)}
-                                            style={{
-                                                flexShrink: 0, width: 44, height: 66, objectFit: 'cover', borderRadius: '2px', cursor: 'pointer',
-                                                border: altPoster === p.file_path ? '2px solid var(--blood-reel)' : '1px solid transparent',
-                                                opacity: altPoster && altPoster !== p.file_path ? 0.4 : 1
-                                            }}
-                                        />
-                                    ))}
+                                    
+                                    <div ref={posterScrollRef} style={{ display: 'flex', gap: '0.5rem', overflowX: 'auto', paddingBottom: '0.5rem', scrollbarWidth: 'none', flex: 1 }}>
+                                        <button
+                                            onClick={(e) => { e.preventDefault(); setAltPoster(null); }}
+                                            style={{ flexShrink: 0, width: 44, height: 66, background: altPoster === null ? 'var(--sepia)' : 'var(--ink)', border: altPoster === null ? '2px solid var(--sepia)' : '1px solid var(--ash)', borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: altPoster === null ? 'var(--ink)' : 'var(--fog)' }}
+                                        >
+                                            DEFAULT
+                                        </button>
+                                        {availablePosters.map(p => (
+                                            <img
+                                                key={p.file_path}
+                                                src={tmdb.poster(p.file_path, 'w92')}
+                                                onClick={(e) => { e.preventDefault(); setAltPoster(p.file_path); }}
+                                                style={{
+                                                    flexShrink: 0, width: 44, height: 66, objectFit: 'cover', borderRadius: '2px', cursor: 'pointer',
+                                                    border: altPoster === p.file_path ? '2px solid var(--blood-reel)' : '1px solid transparent',
+                                                    opacity: altPoster && altPoster !== p.file_path ? 0.4 : 1
+                                                }}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <button onClick={(e) => {
+                                        e.preventDefault()
+                                        posterScrollRef.current?.scrollBy({ left: 160, behavior: 'smooth' })
+                                    }} style={{ background: 'var(--soot)', border: '1px solid var(--ash)', borderRadius: '50%', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)', cursor: 'pointer', flexShrink: 0, padding: 0 }}>
+                                        <ChevronRight size={14} />
+                                    </button>
                                 </div>
                             ) : (
                                 <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)' }}>
