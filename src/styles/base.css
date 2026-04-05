@@ -21,7 +21,7 @@
   --font-display: 'Rye', serif;
   --font-sub: 'Special Elite', cursive;
   --font-body: 'Courier Prime', monospace;
-  --font-ui: 'Bungee', sans-serif;
+  --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
   --font-display-alt: 'Bungee Shade', sans-serif;
 
   /* ── FLUID TYPOGRAPHY ENGINE (The Print Grid) ── */

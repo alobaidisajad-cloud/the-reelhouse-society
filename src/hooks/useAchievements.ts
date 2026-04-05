@@ -79,11 +79,20 @@ export function useAchievements(userId: string | undefined, logs: FilmLog[]) {
     if (!loaded || logs.length === 0) return
 
     const earned = BADGE_DEFS.filter(b => b.check(logs)).map(b => b.key)
-    const fresh = earned.filter(k => !storedBadgesRef.current.includes(k))
+    
+    // Check locally dismissed badges so we never pop up a toast twice on this device
+    let locallyDismissed: string[] = []
+    try {
+        locallyDismissed = JSON.parse(localStorage.getItem('reelhouse-badges-dismissed') || '[]')
+    } catch {}
 
-    if (fresh.length > 0) {
-      const newBadgeObjects = BADGE_DEFS.filter(b => fresh.includes(b.key))
-      setNewBadges(newBadgeObjects)
+    // Only badges that are NOT in the database AND NOT locally dismissed trigger the toast
+    const fresh = earned.filter(k => !storedBadgesRef.current.includes(k) && !locallyDismissed.includes(k))
+
+    // Compare earned vs stored just to see if we need to sync to state/database
+    const hasUnsavedEarned = earned.some(k => !storedBadgesRef.current.includes(k))
+
+    if (hasUnsavedEarned) {
       storedBadgesRef.current = earned
       setStoredBadges(earned)
 
@@ -92,10 +101,24 @@ export function useAchievements(userId: string | undefined, logs: FilmLog[]) {
         supabase.from('profiles').update({ badges: earned }).eq('id', userId).then(() => {})
       }
     }
+
+    if (fresh.length > 0) {
+      const newBadgeObjects = BADGE_DEFS.filter(b => fresh.includes(b.key))
+      setNewBadges(newBadgeObjects)
+    }
   }, [loaded, logs, userId]) // Removed storedBadges — use ref instead
 
   const dismissNewBadge = useCallback((key: string) => {
     setNewBadges(prev => prev.filter(b => b.key !== key))
+
+    // Permanently mask this badge on this device so it never pops up again
+    try {
+        const dismissed = JSON.parse(localStorage.getItem('reelhouse-badges-dismissed') || '[]')
+        if (!dismissed.includes(key)) {
+            dismissed.push(key)
+            localStorage.setItem('reelhouse-badges-dismissed', JSON.stringify(dismissed))
+        }
+    } catch {}
   }, [])
 
   const allEarned = BADGE_DEFS.filter(b => storedBadges.includes(b.key))

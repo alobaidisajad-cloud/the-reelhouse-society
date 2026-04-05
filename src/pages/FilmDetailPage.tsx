@@ -200,18 +200,18 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.72rem', padding: '0.85rem' }} onClick={() => openLogModal(film, existingLog?.id)}>
                             <Plus size={15} /> {existingLog ? 'Edit Log' : 'Log This Film'}
                         </button>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
                             {existingLog && (
-                                <button className="btn btn-ghost" style={{ justifyContent: 'center', fontSize: '0.65rem', borderColor: 'rgba(139,105,20,0.5)', color: 'var(--sepia)' }} onClick={() => setShowExport(true)}>
+                                <button className="btn btn-ghost" style={{ flex: '1 1 auto', justifyContent: 'center', fontSize: '0.65rem', borderColor: 'rgba(139,105,20,0.5)', color: 'var(--sepia)' }} onClick={() => setShowExport(true)}>
                                     <Camera size={13} /> Dossier
                                 </button>
                             )}
-                            <button className={`btn ${isWatchlisted ? 'btn-danger' : 'btn-ghost'}`} style={{ justifyContent: 'center', fontSize: '0.65rem', gridColumn: existingLog ? 'auto' : '1 / -1' }} onClick={toggleWatchlist}>
+                            <button className={`btn ${isWatchlisted ? 'btn-danger' : 'btn-ghost'}`} style={{ flex: '1 1 auto', justifyContent: 'center', fontSize: '0.65rem' }} onClick={toggleWatchlist}>
                                 <Bookmark size={13} fill={isWatchlisted ? 'currentColor' : 'none'} />
                                 {isWatchlisted ? 'Saved' : 'Watchlist'}
                             </button>
                             {!existingLog && (
-                                <button className="btn btn-ghost" style={{ justifyContent: 'center', fontSize: '0.65rem' }}
+                                <button className="btn btn-ghost" style={{ flex: '1 1 auto', justifyContent: 'center', fontSize: '0.65rem' }}
                                     onClick={async () => {
                                         try {
                                             await markAsWatched(film)
@@ -224,12 +224,12 @@ function FilmHero({ film, onPlayTrailer }: any) {
                                 </button>
                             )}
                             {trailer && (
-                                <button className="btn btn-ghost" style={{ justifyContent: 'center', fontSize: '0.65rem' }} onClick={() => onPlayTrailer(trailer.key)}>
+                                <button className="btn btn-ghost" style={{ flex: '1 1 auto', justifyContent: 'center', fontSize: '0.65rem' }} onClick={() => onPlayTrailer(trailer.key)}>
                                     <Play size={13} /> Trailer
                                 </button>
                             )}
                             {isArchivist && (
-                                <button className="btn btn-ghost" style={{ justifyContent: 'center', fontSize: '0.65rem', borderColor: 'rgba(139,105,20,0.4)', color: 'var(--sepia)' }} onClick={() => setShowShareLounge(true)}>
+                                <button className="btn btn-ghost" style={{ flex: '1 1 auto', justifyContent: 'center', fontSize: '0.65rem', borderColor: 'rgba(139,105,20,0.4)', color: 'var(--sepia)' }} onClick={() => setShowShareLounge(true)}>
                                     <MessageCircle size={13} /> Lounge
                                 </button>
                             )}
