@@ -1,7 +1,17 @@
 /**
- * Sanitize user-facing text to remove competitor branding
- * and clean up broken import artifacts.
+ * Sanitize user-facing text to remove competitor branding,
+ * clean up broken import artifacts, and prevent XSS from user-generated HTML.
  */
+import DOMPurify from 'dompurify'
+
+/** Sanitize user-generated HTML, allowing only safe formatting tags. Prevents XSS. */
+export function sanitizeHTML(dirty: string): string {
+    return DOMPurify.sanitize(dirty, {
+        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'a', 'p', 'br', 'ul', 'ol', 'li', 'blockquote', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'div', 'img', 'figure', 'figcaption', 'hr'],
+        ALLOWED_ATTR: ['href', 'target', 'rel', 'class', 'style', 'src', 'alt', 'width', 'height'],
+        ALLOW_DATA_ATTR: false,
+    })
+}
 
 const COMPETITOR_NAMES = [
     'Letterboxd', 'letterboxd',

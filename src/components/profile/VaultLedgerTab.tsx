@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { Search, X } from 'lucide-react'
 import { SectionHeader, FilmCard, ReelRating } from '../UI'
 import Buster from '../Buster'
 import { useMemo } from 'react'
@@ -12,6 +13,7 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole
     const isAuteur = userRole === 'auteur' || userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
     const [sieve, setSieve] = useState<number | 'all'>('all')
+    const [searchQuery, setSearchQuery] = useState('')
     const [visibleLogCount, setVisibleLogCount] = useState(40)
     const loadMoreRef = useRef(null)
 
@@ -32,7 +34,7 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole
         return result
     }, [profileLogs])
 
-    useEffect(() => { setVisibleLogCount(40) }, [sieve])
+    useEffect(() => { setVisibleLogCount(40) }, [sieve, searchQuery])
 
     useEffect(() => {
         const el = loadMoreRef.current
@@ -49,15 +51,44 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole
         const hasPoster = (typeof log.poster === 'string' && log.poster.length > 5) || (typeof log.altPoster === 'string' && log.altPoster?.length > 5)
         if (!hasPoster) return false
         if (!log.rating && !log.review) return false // Ledger only shows rated/reviewed logs
-        if (sieve === 'all') return true
-        return log.rating === sieve // exact float match — supports halves like 4.5
+        if (sieve !== 'all' && log.rating !== sieve) return false
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase()
+            const title = (log.title || '').toLowerCase()
+            if (!title.includes(q)) return false
+        }
+        return true
     })
 
     return (
         <div>
             <SectionHeader label="CHRONOLOGICAL" title="The Ledger" />
             {profileLogs.length > 0 && (
-                <div className="profile-sieve-strip" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--ash)', flexWrap: 'wrap' }}>
+                <div className="profile-sieve-strip" style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1.5rem', paddingBottom: '0.75rem', borderBottom: '1px solid var(--ash)' }}>
+                    {/* Search Input */}
+                    <div style={{ position: 'relative' }}>
+                        <Search size={14} style={{ position: 'absolute', left: '0.65rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--sepia)', opacity: 0.5 }} />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            placeholder="Search your archive…"
+                            className="input"
+                            style={{
+                                width: '100%', padding: '0.5rem 2rem 0.5rem 2.2rem', boxSizing: 'border-box',
+                                fontSize: '0.8rem', fontFamily: 'var(--font-sub)',
+                                background: 'var(--ink)', borderColor: 'var(--ash)',
+                                color: 'var(--parchment)', borderRadius: '3px',
+                            }}
+                        />
+                        {searchQuery && (
+                            <button onClick={() => setSearchQuery('')} style={{ position: 'absolute', right: '0.5rem', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer', padding: 0 }}>
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                    {/* Rating Filter */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setSieve('all')}
                         className={`btn ${sieve === 'all' ? 'btn-primary' : 'btn-ghost'}`}
@@ -75,6 +106,7 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole
                                 {sieve} REELS
                             </span>
                         )}
+                    </div>
                     </div>
                 </div>
             )}

@@ -30,27 +30,36 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
   const { isTouch } = useViewport()
 
   useEffect(() => {
-    if (!open || !user?.username || !isSupabaseConfigured) return
+    if (!open || !user?.id || !isSupabaseConfigured) return
     setLoading(true)
     supabase
       .from('notifications')
       .select('*')
-      .eq('to', user.username)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50)
       .then(({ data }) => {
-        setNotifications((data || []) as Notification[])
+        const formatted = (data || []).map((n: any) => ({
+          id: n.id,
+          type: n.type || 'system',
+          from: n.from_username || '',
+          message: n.message || '',
+          read: n.is_read || false,
+          created_at: n.created_at,
+          target_url: n.target_url,
+        }))
+        setNotifications(formatted)
         setLoading(false)
       })
-  }, [open, user?.username])
+  }, [open, user?.id])
 
   const markAllRead = async () => {
-    if (!user?.username || !isSupabaseConfigured) return
+    if (!user?.id || !isSupabaseConfigured) return
     await supabase
       .from('notifications')
-      .update({ read: true })
-      .eq('to', user.username)
-      .eq('read', false)
+      .update({ is_read: true })
+      .eq('user_id', user.id)
+      .eq('is_read', false)
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }
 

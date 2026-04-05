@@ -20,7 +20,8 @@
         { "key": "Cross-Origin-Opener-Policy", "value": "same-origin-allow-popups" },
         { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" }
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://vercel.live https://va.vercel-scripts.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://image.tmdb.org https://wihyqkpoymwcvbprslyz.supabase.co https://avatars.githubusercontent.com https://lh3.googleusercontent.com; connect-src 'self' https://api.themoviedb.org https://wihyqkpoymwcvbprslyz.supabase.co wss://wihyqkpoymwcvbprslyz.supabase.co https://vitals.vercel-insights.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self';" }
       ]
     },
     {
@@ -34,9 +35,41 @@
       "headers": [
         { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
+    },
+    {
+      "source": "/(.*)\\.png",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.svg",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
+    },
+    {
+      "source": "/(.*)\\.webp",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }
+      ]
     }
   ],
   "rewrites": [
+    {
+      "source": "/film/:id",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(?i).*(bot|facebook|twitter|discord|slack|whatsapp|telegram|preview).*" }
+      ],
+      "destination": "/api/og?type=film&id=:id"
+    },
+    {
+      "source": "/user/:id",
+      "has": [
+        { "type": "header", "key": "user-agent", "value": "(?i).*(bot|facebook|twitter|discord|slack|whatsapp|telegram|preview).*" }
+      ],
+      "destination": "/api/og?type=person&id=:id"
+    },
     { "source": "/((?!api/|sitemap\\.xml|robots\\.txt).*)", "destination": "/index.html" }
   ]
 }

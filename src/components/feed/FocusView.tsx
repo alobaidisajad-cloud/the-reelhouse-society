@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import { ReelRating } from '../UI'
 import { tmdb } from '../../tmdb'
 import { Heart, MessageSquare, Download, Send, Lock, Edit3, MessageCircle, Bookmark } from 'lucide-react'
+import { sanitizeHTML } from '../../utils/sanitize'
 import ReactionBar from '../ReactionBar'
 import AnnotationPanel from './AnnotationPanel'
 import { DossierExportHTML } from './DossierExportHTML'
@@ -148,10 +149,10 @@ export default function FocusView({
                         ) : log.dropCap ? (
                             <>{/* Drop cap rendering */}
                                 <span style={{ float: 'left', fontSize: IS_TOUCH ? '2.5rem' : '3rem', lineHeight: IS_TOUCH ? '2.2rem' : '2.6rem', padding: '0.2rem 0.5rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)', textShadow: '0 2px 8px rgba(139,105,20,0.2)' }}>{strippedReview.charAt(0)}</span>
-                                <span>{/\<[a-z][\s\S]*\>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} /> : log.review.slice(1)}</span>
+                                <span>{/\<[a-z][\s\S]*\>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '')) }} /> : log.review.slice(1)}</span>
                             </>
                         ) : (
-                            <span>{/\<[a-z][\s\S]*\>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '') }} /> : log.review}</span>
+                            <span>{/\<[a-z][\s\S]*\>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '')) }} /> : log.review}</span>
                         )}
                     </div>
                 </div>

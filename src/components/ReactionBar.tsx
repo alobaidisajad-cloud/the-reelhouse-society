@@ -12,16 +12,32 @@ const REACTIONS = [
     { emoji: '⌀', label: 'Void' },
 ]
 
-export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: string; logAuthor?: string; filmTitle?: string }) {
+export default function ReactionBar({ logId, logAuthor, filmTitle, cachedReactions, onReactionChange }: {
+    logId: string;
+    logAuthor?: string;
+    filmTitle?: string;
+    /** Pre-fetched reactions from useBatchReactions — if provided, skips independent fetch */
+    cachedReactions?: Record<string, string[]>;
+    /** Callback when a reaction changes — parent can refresh batch data */
+    onReactionChange?: () => void;
+}) {
     const [hoveredEmoji, setHoveredEmoji] = useState<string | null>(null)
     const [reactions, setReactions] = useState<Record<string, string[]>>({})  // { emoji: [username, ...] }
     const [loading, setLoading] = useState(false)
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
 
-    // Fetch existing reactions for this log from Supabase
+    // If parent provides cached data, use it; otherwise fetch independently
     useEffect(() => {
-        if (!logId || !isSupabaseConfigured) return
+        if (cachedReactions) {
+            setReactions(cachedReactions)
+            return
+        }
+    }, [cachedReactions])
+
+    // Independent fetch — only runs if no cached data provided
+    useEffect(() => {
+        if (cachedReactions || !logId || !isSupabaseConfigured) return
         let cancelled = false
 
         const fetchReactions = async () => {
@@ -50,12 +66,12 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: st
                 if (!grouped[emoji]) grouped[emoji] = []
                 grouped[emoji].push(username)
             }
-            setReactions(grouped)
+            if (!cancelled) setReactions(grouped)
         }
 
         fetchReactions()
         return () => { cancelled = true }
-    }, [logId])
+    }, [logId, cachedReactions])
 
     const handleReact = async (emoji: string) => {
         if (!isAuthenticated || !user || loading) return
@@ -66,58 +82,67 @@ export default function ReactionBar({ logId, logAuthor, filmTitle }: { logId: st
         const usersForEmoji = reactions[emoji] || []
         const alreadyReacted = usersForEmoji.includes(username)
 
+        // Save snapshot for rollback
+        const snapshot = { ...reactions }
+
         try {
             if (alreadyReacted) {
-                // Remove reaction from Supabase
-                await supabase
-                    .from('interactions')
-                    .delete()
-                    .eq('user_id', user.id)
-                    .eq('target_log_id', logId)
-                    .eq('type', reactionType)
-
-                // Optimistic update
+                // Optimistic update FIRST
                 setReactions((prev: Record<string, string[]>) => {
                     const updated = { ...prev }
                     updated[emoji] = (updated[emoji] || []).filter((u: string) => u !== username)
                     if (updated[emoji].length === 0) delete updated[emoji]
                     return updated
                 })
-            } else {
-                // Insert reaction into Supabase
-                await supabase
-                    .from('interactions')
-                    .insert([{ user_id: user.id, target_log_id: logId, type: reactionType }])
 
-                // Optimistic update
+                // Then persist to Supabase
+                const { error } = await supabase
+                    .from('interactions')
+                    .delete()
+                    .eq('user_id', user.id)
+                    .eq('target_log_id', logId)
+                    .eq('type', reactionType)
+
+                if (error) throw error
+            } else {
+                // Optimistic update FIRST
                 setReactions(prev => ({
                     ...prev,
                     [emoji]: [...(prev[emoji] || []), username]
                 }))
 
-                // Push notification to log author (via Supabase notifications table)
+                // Then persist to Supabase
+                const { error } = await supabase
+                    .from('interactions')
+                    .insert([{ user_id: user.id, target_log_id: logId, type: reactionType }])
+
+                if (error) throw error
+
+                // Push notification to log author (background — non-blocking)
                 if (logAuthor && logAuthor !== username) {
-                    // Insert notification into Supabase for the log author
-                    const { data: authorProfile } = await supabase
+                    supabase
                         .from('profiles')
                         .select('id')
                         .eq('username', logAuthor)
                         .single()
-
-                    if (authorProfile) {
-                        // Insert a notification for the log OWNER (not the reactor)
-                        await supabase.from('notifications').insert({
-                            user_id: authorProfile.id,
-                            type: 'reaction',
-                            from_user: username,
-                            message: `${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
-                            read: false,
+                        .then(({ data: authorProfile }) => {
+                            if (authorProfile) {
+                                supabase.from('notifications').insert({
+                                    user_id: authorProfile.id,
+                                    type: 'reaction',
+                                    from_username: username,
+                                    message: `@${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
+                                    is_read: false,
+                                })
+                            }
                         })
-                    }
                 }
             }
+            // Notify parent to refresh batch data if available
+            onReactionChange?.()
         } catch {
-            // Reaction write failed — optimistic state already applied, fail silently
+            // Rollback to snapshot on failure
+            setReactions(snapshot)
         } finally {
             setLoading(false)
         }

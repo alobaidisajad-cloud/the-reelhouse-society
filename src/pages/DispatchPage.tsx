@@ -14,6 +14,7 @@ import ShareToLoungeModal from '../components/ShareToLoungeModal'
 import '../styles/dispatch.css'
 import PageSEO from '../components/PageSEO'
 import { parseMarkdown } from '../utils/markdownParser'
+import { sanitizeHTML } from '../utils/sanitize'
 
 /* ── REFINED NOIR ICONS ── */
 const IconFeather = () => (
@@ -521,7 +522,7 @@ export default function DispatchPage() {
                                     </div>
                                 </header>
 
-                                <div className="reader-body" dangerouslySetInnerHTML={{ __html: parseMarkdown(selectedArticle.fullContent || selectedArticle.excerpt || '') }} />
+                                <div className="reader-body" dangerouslySetInnerHTML={{ __html: sanitizeHTML(parseMarkdown(selectedArticle.fullContent || selectedArticle.excerpt || '')) }} />
 
                                 {/* ── Action Bar (mirrors feed cards) ── */}
                                 <div style={{ borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '0.75rem', marginTop: '2rem', display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'center' }}>

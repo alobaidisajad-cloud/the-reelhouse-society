@@ -82,3 +82,10 @@ dist-ssr
 .vercel
 .env.staging
 .env*.local
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+/playwright/.auth/

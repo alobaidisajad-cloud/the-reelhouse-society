@@ -137,8 +137,12 @@ export default function App() {
   // Granular selector — only re-renders App when logs.length changes, not on every store write
   const logCount = useFilmStore(state => state.logs.length)
   const logs = useFilmStore(state => state.logs)
-  const { openLogModal, showPaywall, paywallFeature, closePaywall, openHandbook } = useUIStore()
-  const { user } = useAuthStore()
+  const openLogModal = useUIStore(s => s.openLogModal)
+  const showPaywall = useUIStore(s => s.showPaywall)
+  const paywallFeature = useUIStore(s => s.paywallFeature)
+  const closePaywall = useUIStore(s => s.closePaywall)
+  const openHandbook = useUIStore(s => s.openHandbook)
+  const user = useAuthStore(s => s.user)
   const [csvImportOpen, setCsvImportOpen] = useState(false)
 
   // ── Enhanced Keyboard Shortcuts (G+key navigation) ──

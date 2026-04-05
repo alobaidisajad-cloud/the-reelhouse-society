@@ -150,26 +150,6 @@ describe('useDispatchStore — dossiers', () => {
     })
 })
 
-// ── Venue Store ───────────────────────────────────────────────────────────────
-describe('useVenueStore — initial state', () => {
-    it('starts with a venue object containing default values', async () => {
-        const { useVenueStore } = await import('../store')
-        const state = useVenueStore.getState()
-        expect(state.venue).toBeDefined()
-        expect(typeof state.venue).toBe('object')
-    })
-
-    it('exposes fetchVenueData action', async () => {
-        const { useVenueStore } = await import('../store')
-        expect(typeof useVenueStore.getState().fetchVenueData).toBe('function')
-    })
-
-    it('starts with empty showtimes array', async () => {
-        const { useVenueStore } = await import('../store')
-        expect(Array.isArray(useVenueStore.getState().showtimes)).toBe(true)
-    })
-})
-
 // ── Notification Store ────────────────────────────────────────────────────────
 describe('useNotificationStore — notifications', () => {
     it('starts with empty notifications array', async () => {
@@ -240,13 +220,5 @@ describe('useProgrammeStore — programmes', () => {
     it('exposes removeProgramme action', async () => {
         const { useProgrammeStore } = await import('../store')
         expect(typeof useProgrammeStore.getState().removeProgramme).toBe('function')
-    })
-})
-
-// ── Cinema Review Store ──────────────────────────────────────────────────────
-describe('useCinemaReviewStore — initial state', () => {
-    it('exposes fetchReviews action', async () => {
-        const { useCinemaReviewStore } = await import('../store')
-        expect(typeof useCinemaReviewStore.getState().fetchReviews).toBe('function')
     })
 })

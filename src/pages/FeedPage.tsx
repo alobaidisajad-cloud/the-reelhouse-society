@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useAuthStore, useUIStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
-import { Eye, Clock, MessageSquare, Info, Shield, RefreshCcw } from 'lucide-react'
+import { Eye, Clock, MessageSquare, Info, Shield, RefreshCcw, UserPlus } from 'lucide-react'
 
 // ── Extracted Components ──
 import ActivityCard from '../components/feed/ActivityCard'
@@ -68,7 +68,9 @@ export default function FeedPage() {
     const { isTouch: IS_TOUCH } = useViewport()
     const feedContainerRef = useRef<HTMLDivElement>(null)
     useScrollRevealAll(feedContainerRef)
-    const { isAuthenticated, user } = useAuthStore()
+    const isAuthenticated = useAuthStore(s => s.isAuthenticated)
+    const user = useAuthStore(s => s.user)
+    const followUser = useAuthStore(s => s.followUser)
     const openSignupModal = useUIStore(state => state.openSignupModal)
     const openLogModal = useUIStore(state => state.openLogModal)
 
@@ -116,9 +118,9 @@ export default function FeedPage() {
     }
 
     // ── Fetch Helper ──
-    const fetchFeed = async ({ pageParam = 0 }, mode: 'for-you' | 'following') => {
-        if (!isSupabaseConfigured) return { items: [], hasNextPage: false }
-        if (mode === 'following' && (!user || !user.following?.length)) return { items: [], hasNextPage: false }
+    const fetchFeed = async ({ pageParam = null as string | null }, mode: 'for-you' | 'following') => {
+        if (!isSupabaseConfigured) return { items: [], nextCursor: null }
+        if (mode === 'following' && (!user || !user.following?.length)) return { items: [], nextCursor: null }
 
         let query = supabase
             .from('logs')
@@ -127,24 +129,31 @@ export default function FeedPage() {
                 profiles ( id, username, role, preferences )
             `)
             .order('created_at', { ascending: false })
-            .range(pageParam * 20, (pageParam + 1) * 20 - 1)
+            .limit(20)
+
+        // Enterprise Cursor Pagination via B-Tree Index
+        if (pageParam) {
+            query = query.lt('created_at', pageParam)
+        }
 
         if (mode === 'following') {
             const followingArr = user?.following || []
             const { data: followedProfiles } = await supabase.from('profiles').select('id').in('username', followingArr)
-            if (!followedProfiles?.length) return { items: [], hasNextPage: false }
+            if (!followedProfiles?.length) return { items: [], nextCursor: null }
             query = query.in('user_id', followedProfiles.map((p: any) => p.id))
         }
 
         const { data, error } = await query
-        if (error || !data?.length) return { items: [], hasNextPage: false }
+        if (error || !data?.length) return { items: [], nextCursor: null }
         
+        const nextCursor = data.length === 20 ? data[19].created_at : null
+
         // Main Reel: only show written reviews (strangers' watch-only logs aren't interesting)
         // Following: show ALL activity from people you follow (watches, ratings, and reviews)
         const publicData = mode === 'for-you'
             ? data.filter((l: any) => l.review && l.review.trim() !== '')
             : data
-        return { items: mapLogsToFeed(publicData), hasNextPage: data.length === 20 }
+        return { items: mapLogsToFeed(publicData), nextCursor }
     }
 
     // ── Infinite Queries ──
@@ -157,9 +166,9 @@ export default function FeedPage() {
         refetch: refetchCommunity
     } = useInfiniteQuery({
         queryKey: ['feed', 'for-you'],
-        queryFn: (params) => fetchFeed(params, 'for-you'),
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, pages) => lastPage.hasNextPage ? pages.length : undefined
+        queryFn: (params) => fetchFeed(params as any, 'for-you'),
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) => lastPage.nextCursor || undefined
     })
 
     const {
@@ -171,10 +180,10 @@ export default function FeedPage() {
         refetch: refetchFollowing
     } = useInfiniteQuery({
         queryKey: ['feed', 'following', user?.following?.length],
-        queryFn: (params) => fetchFeed(params, 'following'),
+        queryFn: (params) => fetchFeed(params as any, 'following'),
         enabled: isAuthenticated && !!user?.following?.length,
-        initialPageParam: 0,
-        getNextPageParam: (lastPage, pages) => lastPage.hasNextPage ? pages.length : undefined
+        initialPageParam: null as string | null,
+        getNextPageParam: (lastPage) => lastPage.nextCursor || undefined
     })
 
     const { data: societyPicks = [] } = useQuery({
@@ -222,6 +231,23 @@ export default function FeedPage() {
             }))
         },
         staleTime: 5 * 60 * 1000, // 5 minutes
+    })
+
+    // ── Active Members Discovery for Empty State ──
+    const { data: activeMembers = [] } = useQuery({
+        queryKey: ['active_members'],
+        queryFn: async () => {
+            if (!isSupabaseConfigured) return []
+            const { data } = await supabase
+                .from('profiles')
+                .select('id, username, avatar_url, role, bio')
+                .in('role', ['archivist', 'auteur'])
+                .order('followers_count', { ascending: false })
+                .limit(10)
+            return data || []
+        },
+        enabled: feedTab === 'following' && isAuthenticated && !feedLoading,
+        staleTime: 5 * 60 * 1000,
     })
 
 
@@ -441,6 +467,52 @@ export default function FeedPage() {
                                         ? 'Follow other members of The Society to see their dispatches here.'
                                         : 'The people you follow haven\'t logged anything yet. Check the Main Reel for community transmissions.'}
                                 </p>
+
+                                {/* ── ACTIVE MEMBERS DISCOVERY WIDGET ── */}
+                                {activeMembers.length > 0 && (
+                                    <div style={{ marginTop: '2rem', textAlign: 'left', background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(139,105,20,0.2)', padding: '1.5rem', borderRadius: '4px', position: 'relative' }}>
+                                        {/* Corner marks */}
+                                        <div style={{ position: 'absolute', top: '-1px', left: '-1px', width: '6px', height: '6px', borderTop: '1px solid var(--sepia)', borderLeft: '1px solid var(--sepia)' }} />
+                                        <div style={{ position: 'absolute', top: '-1px', right: '-1px', width: '6px', height: '6px', borderTop: '1px solid var(--sepia)', borderRight: '1px solid var(--sepia)' }} />
+                                        
+                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                            <UserPlus size={12} /> SUGGESTED CURATORS TO FOLLOW
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                            {activeMembers
+                                                .filter((m: any) => m.username !== user?.username && !user?.following?.includes(m.username))
+                                                .slice(0, 3)
+                                                .map((member: any) => (
+                                                <div key={member.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--ink)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '3px', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.08)'} onMouseLeave={e => e.currentTarget.style.background = 'var(--ink)'}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                                                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--soot)', border: '1px solid var(--ash)', overflow: 'hidden', flexShrink: 0 }}>
+                                                            {member.avatar_url ? <img src={member.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--fog)', fontFamily: 'var(--font-ui)', fontSize: '0.65rem' }}>{member.username.charAt(0).toUpperCase()}</div>}
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                            <Link to={`/user/${member.username}`} onClick={e => e.stopPropagation()} style={{ fontFamily: 'var(--font-display)', fontSize: '1.05rem', color: 'var(--parchment)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                                {member.username} 
+                                                                {member.role === 'archivist' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: 'var(--soot)', background: 'var(--sepia)', padding: '0.1rem 0.3rem', borderRadius: '2px', letterSpacing: '0.1em', fontWeight: 'bold' }}>ARCHIVIST</span>}
+                                                                {member.role === 'auteur' && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', color: '#fff', background: '#8b2020', padding: '0.1rem 0.3rem', borderRadius: '2px', letterSpacing: '0.1em', fontWeight: 'bold' }}>AUTEUR</span>}
+                                                            </Link>
+                                                            {member.bio && <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.75rem', color: 'var(--fog)', marginTop: '0.15rem', maxWidth: IS_TOUCH ? 160 : 300, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{member.bio}</div>}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => {
+                                                            followUser(member.username)
+                                                            // Optimistic update handled by auth store, the widget will re-render naturally
+                                                        }}
+                                                        className="btn btn-ghost"
+                                                        style={{ color: 'var(--sepia)', borderColor: 'rgba(139,105,20,0.3)', padding: '0.4rem 0.8rem', fontSize: '0.55rem' }}
+                                                    >
+                                                        FOLLOW
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
+
                                 <button
                                     className="btn btn-ghost"
                                     onClick={() => navigate('/discover')}

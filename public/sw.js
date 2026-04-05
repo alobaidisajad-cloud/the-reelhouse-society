@@ -5,11 +5,28 @@
 // ============================================================
 
 // BUILD_HASH changes every deploy, forcing SW update + cache bust
-const BUILD_HASH = '20260402playerv2';
+const BUILD_HASH = '20260405optv1';
 const CACHE_VERSION = `v-${BUILD_HASH}`;
 const IMAGE_CACHE = `reelhouse-tmdb-images-${CACHE_VERSION}`;
 const API_CACHE = `reelhouse-tmdb-api-${CACHE_VERSION}`;
 const OFFLINE_CACHE = `reelhouse-offline-${CACHE_VERSION}`;
+const ASSET_CACHE = `reelhouse-assets-${CACHE_VERSION}`;
+
+// Cache size limits — prevent unbounded storage growth
+const MAX_IMAGE_CACHE = 500;
+const MAX_API_CACHE = 200;
+const MAX_ASSET_CACHE = 100;
+
+// Trim cache to max size — evicts oldest entries first
+async function trimCache(cacheName, maxItems) {
+    const cache = await caches.open(cacheName);
+    const keys = await cache.keys();
+    if (keys.length > maxItems) {
+        for (let i = 0; i < keys.length - maxItems; i++) {
+            await cache.delete(keys[i]);
+        }
+    }
+}
 
 // Install — skip waiting to activate immediately
 self.addEventListener('install', (event) => {
@@ -43,16 +60,19 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
 
-    // 1. TMDB Image CDN — Cache First (images are immutable by URL)
+    // 1. TMDB Image CDN — Stale-While-Revalidate (images rarely change)
     if (url.hostname === 'image.tmdb.org') {
         event.respondWith(
             caches.open(IMAGE_CACHE).then((cache) => {
                 return cache.match(request).then((cached) => {
-                    if (cached) return cached;
-                    return fetch(request).then((response) => {
-                        if (response.ok) cache.put(request, response.clone());
+                    const fetchPromise = fetch(request).then((response) => {
+                        if (response.ok) {
+                            cache.put(request, response.clone());
+                            trimCache(IMAGE_CACHE, MAX_IMAGE_CACHE);
+                        }
                         return response;
-                    }).catch(() => new Response('', { status: 404 }));
+                    }).catch(() => cached || new Response('', { status: 404 }));
+                    return cached || fetchPromise;
                 });
             })
         );
@@ -64,8 +84,11 @@ self.addEventListener('fetch', (event) => {
         event.respondWith(
             caches.open(API_CACHE).then((cache) => {
                 return cache.match(request).then((cached) => {
-                    const fetchPromise = fetch(request).then((response) => {
-                        if (response.ok) cache.put(request, response.clone());
+            const fetchPromise = fetch(request).then((response) => {
+                        if (response.ok) {
+                            cache.put(request, response.clone());
+                            trimCache(API_CACHE, MAX_API_CACHE);
+                        }
                         return response;
                     }).catch(() => cached);
                     return cached || fetchPromise;
@@ -83,13 +106,21 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 4. JS/CSS Assets (hashed by Vite)
+    // 4. JS/CSS Assets (hashed by Vite) — Cache First for hashed assets
     if (url.pathname.startsWith('/assets/')) {
         event.respondWith(
-            fetch(request).then((response) => {
-                if (response.ok) return response;
-                return new Response('', { status: 200, headers: { 'content-type': 'text/javascript' } });
-            }).catch(() => new Response('', { status: 200, headers: { 'content-type': 'text/javascript' } }))
+            caches.open(ASSET_CACHE).then((cache) => {
+                return cache.match(request).then((cached) => {
+                    if (cached) return cached;
+                    return fetch(request).then((response) => {
+                        if (response.ok) {
+                            cache.put(request, response.clone());
+                            trimCache(ASSET_CACHE, MAX_ASSET_CACHE);
+                        }
+                        return response;
+                    });
+                });
+            })
         );
         return;
     }

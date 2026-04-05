@@ -6,6 +6,7 @@ import { useAuthStore, useDispatchStore } from '../store'
 import { useViewport } from '../hooks/useViewport'
 import PageSEO from '../components/PageSEO'
 import '../styles/compose.css'
+import { sanitizeHTML } from '../utils/sanitize'
 
 /* ══════════════════════════════════════════════════════
    LIGHTWEIGHT MARKDOWN → HTML PARSER
@@ -350,7 +351,7 @@ export default function ComposeDossierPage() {
                                 {content.trim() && (
                                     <div
                                         className="preview-body"
-                                        dangerouslySetInnerHTML={{ __html: previewHTML }}
+                                        dangerouslySetInnerHTML={{ __html: sanitizeHTML(previewHTML) }}
                                     />
                                 )}
                             </>

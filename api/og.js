@@ -100,8 +100,8 @@ export default async function handler(req, res) {
 
     // Emit Header Directives
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    // Cache the dynamic HTML at the Vercel CDN Edge for 24 hours to eliminate repeating TMDB RTTs
-    res.setHeader('Cache-Control', 'public, s-maxage=86400, stale-while-revalidate=43200'); 
+    // Cache the dynamic HTML at the Vercel CDN Edge for 7 DAYS to protect against viral social scrapers/DDoS
+    res.setHeader('Cache-Control', 'public, s-maxage=604800, stale-while-revalidate=86400'); 
     
     res.status(200).send(html);
 }

@@ -30,11 +30,18 @@ import type { SharePayload } from '../components/ShareToLoungeModal'
 // ── FILM HERO ──
 function FilmHero({ film, onPlayTrailer }: any) {
     const { isTouch: IS_TOUCH } = useViewport()
-    const { openLogModal } = useUIStore()
-    const { watchlist, _watchlistIndex, addToWatchlist, removeFromWatchlist, logs, _loggedIndex, markAsWatched, unmarkWatched } = useFilmStore()
+    const openLogModal = useUIStore(s => s.openLogModal)
+    const watchlist = useFilmStore(s => s.watchlist)
+    const _watchlistIndex = useFilmStore(s => s._watchlistIndex)
+    const addToWatchlist = useFilmStore(s => s.addToWatchlist)
+    const removeFromWatchlist = useFilmStore(s => s.removeFromWatchlist)
+    const logs = useFilmStore(s => s.logs)
+    const _loggedIndex = useFilmStore(s => s._loggedIndex)
+    const markAsWatched = useFilmStore(s => s.markAsWatched)
+    const unmarkWatched = useFilmStore(s => s.unmarkWatched)
     const [showExport, setShowExport] = useState(false)
     const [showShareLounge, setShowShareLounge] = useState(false)
-    const user = useAuthStore((s: any) => s.user)
+    const user = useAuthStore(s => s.user)
     const isArchivist = user && ['archivist', 'auteur'].includes(user.role)
     const isWatchlisted = !!_watchlistIndex[film.id]
     const score = obscurityScore(film)

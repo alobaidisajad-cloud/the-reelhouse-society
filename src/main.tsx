@@ -5,6 +5,8 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { HelmetProvider } from 'react-helmet-async'
 import { Toaster, toast } from 'react-hot-toast'
 import * as Sentry from '@sentry/react'
+import posthog from 'posthog-js'
+import { PostHogProvider } from 'posthog-js/react'
 import ErrorBoundary from './components/ErrorBoundary.jsx'
 import App from './App.jsx'
 import { queryClient } from './queryClient'
@@ -22,6 +24,43 @@ if (import.meta.env.PROD) {
     integrations: [],
   })
 }
+
+// ── PostHog Telemetry (Analytics, Session Replays, Funnels) ──
+// Auto-captures everything for CTO-level business metric visibility.
+if (import.meta.env.VITE_POSTHOG_KEY) {
+  posthog.init(import.meta.env.VITE_POSTHOG_KEY, {
+    api_host: import.meta.env.VITE_POSTHOG_HOST || 'https://us.i.posthog.com',
+    person_profiles: 'identified_only',
+    capture_pageview: false, // React Router dictates dynamic captures inside the app
+  })
+} else {
+  console.warn('PostHog Telemetry is not initialized. Missing VITE_POSTHOG_KEY.');
+}
+
+
+// ── Core Web Vitals — zero dependency, native PerformanceObserver ──
+// Lazy-loaded to avoid blocking initial render
+setTimeout(() => {
+  import('./utils/webVitals').then(({ reportWebVitals }) => {
+    reportWebVitals((metric) => {
+      // In production: add as Sentry breadcrumb for correlation with errors
+      if (import.meta.env.PROD) {
+        Sentry.addBreadcrumb({
+          category: 'web-vital',
+          message: `${metric.name}: ${Math.round(metric.value)}ms [${metric.rating}]`,
+          level: metric.rating === 'poor' ? 'warning' : 'info',
+        })
+      } else {
+        // In dev: log to console with color coding
+        const colors = { good: '#22c55e', 'needs-improvement': '#f59e0b', poor: '#ef4444' }
+        console.log(
+          `%c[WebVital] ${metric.name}: ${Math.round(metric.value)}${metric.name === 'CLS' ? '' : 'ms'} (${metric.rating})`,
+          `color: ${colors[metric.rating]}; font-weight: bold;`
+        )
+      }
+    })
+  })
+}, 3000) // Wait 3s after page load to start measuring
 
 // ── Global Broken Image Fallback Interceptor ──
 // Prevents the UI from shattering when TMDB lacks a poster or the connection drops.
@@ -96,7 +135,9 @@ if (rootElement) {
       <QueryClientProvider client={queryClient}>
         <BrowserRouter>
           <ErrorBoundary>
-            <App />
+            <PostHogProvider client={posthog}>
+              <App />
+            </PostHogProvider>
           </ErrorBoundary>
           <Toaster
             position="bottom-center"

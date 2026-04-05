@@ -1,28 +1,47 @@
 import '@testing-library/jest-dom'
 import { vi } from 'vitest'
 
+// ── Mock idb-keyval (IndexedDB) — jsdom doesn't support IndexedDB ──
+vi.mock('idb-keyval', () => ({
+    get: vi.fn().mockResolvedValue(undefined),
+    set: vi.fn().mockResolvedValue(undefined),
+    del: vi.fn().mockResolvedValue(undefined),
+    keys: vi.fn().mockResolvedValue([]),
+    clear: vi.fn().mockResolvedValue(undefined),
+}))
+
 // ── Mock Supabase so tests never make real network calls ──
+// Every method returns a chainable object that resolves to { data, error: null }
+const chainable = () => {
+    const obj = { data: [], error: null, count: null }
+    const methods = ['select', 'insert', 'update', 'delete', 'upsert', 'eq', 'neq',
+        'gt', 'lt', 'gte', 'lte', 'in', 'is', 'order', 'limit', 'range',
+        'single', 'maybeSingle', 'filter', 'match', 'not', 'or', 'contains',
+        'textSearch', 'ilike', 'like']
+    methods.forEach(m => { obj[m] = (..._args) => obj })
+    // Make it thenable so await works
+    obj.then = (resolve) => resolve({ data: [], error: null })
+    return obj
+}
+
 vi.mock('../supabaseClient', () => ({
     supabase: {
-        from: () => ({
-            select: () => ({ data: [], error: null }),
-            insert: () => ({ data: [], error: null }),
-            update: () => ({ data: [], error: null }),
-            delete: () => ({ data: [], error: null }),
-            upsert: () => ({ data: [], error: null }),
-            eq: () => ({ data: [], error: null }),
-        }),
+        from: () => chainable(),
         auth: {
-            getSession: () => ({ data: { session: null }, error: null }),
+            getSession: () => Promise.resolve({ data: { session: null }, error: null }),
             onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
-            signOut: vi.fn(),
+            signOut: vi.fn().mockResolvedValue({ error: null }),
         },
         channel: () => ({
-            on: () => ({ subscribe: vi.fn() }),
+            on: () => ({ on: () => ({ subscribe: vi.fn() }), subscribe: vi.fn() }),
+            subscribe: vi.fn(),
         }),
+        removeChannel: vi.fn(),
+        rpc: () => Promise.resolve({ data: null, error: null }),
     },
     isSupabaseConfigured: true,
 }))
+
 
 Object.defineProperty(window, 'matchMedia', {
     writable: true,

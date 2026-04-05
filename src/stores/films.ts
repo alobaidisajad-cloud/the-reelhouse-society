@@ -141,6 +141,20 @@ export const useFilmStore = create<FilmState>()(
                             { user_id: user.id, target_log_id: targetId, type: 'endorse_log' }
                         ])
                         if (error && !error.message?.includes('duplicate')) throw error
+                        
+                        if (!error) {
+                            // Find the log owner to notify
+                            const { data: logInfo } = await supabase.from('logs').select('user_id, film_title').eq('id', targetId).single()
+                            if (logInfo && String(logInfo.user_id) !== String(user.id)) {
+                                await supabase.from('notifications').insert({
+                                    user_id: logInfo.user_id,
+                                    type: 'endorse',
+                                    from_user: user.username,
+                                    message: `@${user.username} endorsed your review of ${logInfo.film_title || 'a film'}`,
+                                    read: false
+                                })
+                            }
+                        }
                     }
                 } catch {
                     // Functional Rollback to prevent race condition erasure
@@ -202,6 +216,20 @@ export const useFilmStore = create<FilmState>()(
                             { user_id: user.id, target_list_id: listId, type: 'endorse_list' }
                         ])
                         if (error && !error.message?.includes('duplicate')) throw error
+                        
+                        if (!error) {
+                            // Notify list owner
+                            const { data: listInfo } = await supabase.from('lists').select('user_id, title').eq('id', listId).single()
+                            if (listInfo && String(listInfo.user_id) !== String(user.id)) {
+                                await supabase.from('notifications').insert({
+                                    user_id: listInfo.user_id,
+                                    type: 'endorse',
+                                    from_user: user.username,
+                                    message: `@${user.username} certified your list "${listInfo.title || 'Untitled'}"`,
+                                    read: false
+                                })
+                            }
+                        }
                     }
                 } catch {
                     if (exists) {
