@@ -159,7 +159,9 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
         // Mark single as read in zustand + DB
         if (!n.read) {
             markRead(n.id)
-            supabase.from('notifications').update({ read: true }).eq('id', n.id)
+            supabase.from('notifications').update({ read: true }).eq('id', n.id).then(({ error }) => {
+                if (error) console.error('Failed to mark read in DB:', error)
+            })
         }
         // Navigate based on type
         if (n.type === 'follow' && n.from) {
@@ -172,7 +174,9 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
 
     const handleDismiss = useCallback(async (id: string) => {
         dismiss(id)
-        supabase.from('notifications').delete().eq('id', id)
+        supabase.from('notifications').delete().eq('id', id).then(({ error }) => {
+            if (error) console.error('Failed to dismiss in DB:', error)
+        })
     }, [dismiss])
 
     // ══════════════════════════════════════
