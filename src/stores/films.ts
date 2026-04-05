@@ -149,7 +149,7 @@ export const useFilmStore = create<FilmState>()(
                                 await supabase.from('notifications').insert({
                                     user_id: logInfo.user_id,
                                     type: 'endorse',
-                                    from_user: user.username,
+                                    from_username: user.username,
                                     message: `@${user.username} endorsed your review of ${logInfo.film_title || 'a film'}`,
                                     read: false
                                 })
@@ -224,7 +224,7 @@ export const useFilmStore = create<FilmState>()(
                                 await supabase.from('notifications').insert({
                                     user_id: listInfo.user_id,
                                     type: 'endorse',
-                                    from_user: user.username,
+                                    from_username: user.username,
                                     message: `@${user.username} certified your list "${listInfo.title || 'Untitled'}"`,
                                     read: false
                                 })

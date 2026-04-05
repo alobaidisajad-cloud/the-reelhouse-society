@@ -132,7 +132,7 @@ export default function ReactionBar({ logId, logAuthor, filmTitle, cachedReactio
                                     type: 'reaction',
                                     from_username: username,
                                     message: `@${username} reacted ${emoji} to your log of ${filmTitle || 'a film'}`,
-                                    is_read: false,
+                                    read: false,
                                 })
                             }
                         })

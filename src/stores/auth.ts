@@ -277,7 +277,7 @@ export const useAuthStore = create<AuthState>()(
                             await supabase.from('notifications').insert({
                                 user_id: targetId,
                                 type: 'follow',
-                                from_user: fromUsername,
+                                from_username: fromUsername,
                                 message: `@${fromUsername} pulled you into their orbit`,
                                 read: false
                             })

@@ -969,6 +969,10 @@ export default function UserProfilePage() {
                     setViewLog(null)
                     openLogModal({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year + '-01-01' }, log.id)
                 }}
+                onDelete={(logId: string) => {
+                    setViewLog(null)
+                    useFilmStore.getState().removeLog(logId)
+                }}
             />
         </div>
     )

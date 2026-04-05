@@ -1,4 +1,5 @@
-import { X, Edit3, Calendar, User } from 'lucide-react'
+import { useState } from 'react'
+import { X, Edit3, Calendar, User, Trash2 } from 'lucide-react'
 import { ReelRating } from '../UI'
 import { tmdb } from '../../tmdb'
 import { useFocusTrap } from '../../hooks/useFocusTrap'
@@ -11,14 +12,16 @@ import { Portal } from '../UI'
  * Close: click backdrop OR the single X button. No duplicate controls.
  * Visible to any user with access (edit button shown only to profile owner).
  */
-export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeUsername, onClose, onEdit }: {
+export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeUsername, onClose, onEdit, onDelete }: {
     viewLog: any
     profileUser: any
     isOwnProfile: boolean
     routeUsername: string
     onClose: () => void
     onEdit: (log: any) => void
+    onDelete?: (logId: string) => void
 }) {
+    const [confirmDelete, setConfirmDelete] = useState(false)
     const focusTrapRef = useFocusTrap(!!viewLog, onClose)
     if (!viewLog) return null
 
@@ -363,9 +366,9 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                         </div>
                     )}
 
-                    {/* ── Edit action (owner only) ── */}
+                    {/* ── Edit / Delete actions (owner only) ── */}
                     {isOwnProfile && (
-                        <div style={{ borderTop: '1px solid rgba(196,150,26,0.1)', paddingTop: '1rem' }}>
+                        <div style={{ borderTop: '1px solid rgba(196,150,26,0.1)', paddingTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                             <button
                                 className="btn btn-primary"
                                 style={{ width: '100%', justifyContent: 'center', gap: '0.45rem', padding: '0.75rem', fontSize: '0.58rem', letterSpacing: '0.2em' }}
@@ -374,6 +377,56 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
                                 <Edit3 size={12} />
                                 EDIT THIS LOG
                             </button>
+                            {onDelete && !confirmDelete && (
+                                <button
+                                    className="btn btn-ghost"
+                                    style={{
+                                        width: '100%', justifyContent: 'center', gap: '0.45rem',
+                                        padding: '0.6rem', fontSize: '0.5rem', letterSpacing: '0.15em',
+                                        color: 'var(--fog)', borderColor: 'rgba(255,255,255,0.06)',
+                                    }}
+                                    onClick={() => setConfirmDelete(true)}
+                                >
+                                    <Trash2 size={11} />
+                                    DELETE LOG
+                                </button>
+                            )}
+                            {onDelete && confirmDelete && (
+                                <div style={{
+                                    background: 'rgba(162,36,36,0.08)', border: '1px solid rgba(162,36,36,0.3)',
+                                    borderRadius: '4px', padding: '0.75rem', textAlign: 'center',
+                                }}>
+                                    <div style={{
+                                        fontFamily: 'var(--font-ui)', fontSize: '0.5rem',
+                                        letterSpacing: '0.15em', color: 'var(--blood-reel)',
+                                        marginBottom: '0.65rem',
+                                    }}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</div>
+                                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                        <button
+                                            className="btn btn-primary"
+                                            style={{
+                                                flex: 1, justifyContent: 'center',
+                                                background: 'var(--blood-reel)', borderColor: 'var(--blood-reel)',
+                                                color: '#fff', fontSize: '0.5rem', letterSpacing: '0.15em',
+                                            }}
+                                            onClick={() => {
+                                                onDelete(viewLog.id)
+                                                setConfirmDelete(false)
+                                                onClose()
+                                            }}
+                                        >
+                                            CONFIRM DELETE
+                                        </button>
+                                        <button
+                                            className="btn btn-ghost"
+                                            style={{ flex: 1, justifyContent: 'center', fontSize: '0.5rem', letterSpacing: '0.15em' }}
+                                            onClick={() => setConfirmDelete(false)}
+                                        >
+                                            CANCEL
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>

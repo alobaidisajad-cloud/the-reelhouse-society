@@ -196,8 +196,8 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
                                     onClick={async () => {
                                         markAllRead()
                                         if (user?.id) {
-                                            const { error } = await supabase.from('notifications').update({ is_read: true })
-                                                .eq('user_id', user.id).eq('is_read', false)
+                                            const { error } = await supabase.from('notifications').update({ read: true })
+                                                .eq('user_id', user.id).eq('read', false)
                                             // mark-all is a background op — fail silently
                                         }
                                     }}
@@ -221,7 +221,7 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
                                     onClick={async () => {
                                         markRead(n.id)
                                         // Sync read status to DB
-                                        const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', n.id)
+                                        const { error } = await supabase.from('notifications').update({ read: true }).eq('id', n.id)
                                         // mark-read is a background op — fail silently
                                         if (n.type === 'follow' && n.from) {
                                             navigate(`/user/${n.from}`)

@@ -19,17 +19,24 @@ export const useNotificationStore = create<NotificationState>()(
         (set, get) => ({
             notifications: [],
 
-            push: (notif) => set((state) => ({
-                notifications: [
-                    {
-                        id: notif.id || ('n-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6)),
-                        read: false,
-                        timestamp: new Date().toISOString(),
-                        ...notif,
-                    } as unknown as Notification,
-                    ...state.notifications,
-                ].slice(0, 50), // Cap at 50 — prevents unbounded localStorage growth
-            })),
+            push: (notif) => set((state) => {
+                const newId = notif.id || ('n-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6))
+                // Dedup guard — prevent realtime INSERT from re-adding an already-fetched notification
+                if (notif.id && state.notifications.some(n => n.id === notif.id)) {
+                    return state
+                }
+                return {
+                    notifications: [
+                        {
+                            id: newId,
+                            read: false,
+                            timestamp: new Date().toISOString(),
+                            ...notif,
+                        } as unknown as Notification,
+                        ...state.notifications,
+                    ].slice(0, 50), // Cap at 50 — prevents unbounded localStorage growth
+                }
+            }),
 
             setNotifications: (notifs) => set({ notifications: notifs.slice(0, 50) }),
 

@@ -163,7 +163,7 @@ export async function fetchNotifications(userId: string, limit = 50) {
 
 export async function markNotificationsRead(userId: string) {
   return query<null>(() =>
-    supabase.from('notifications').update({ is_read: true }).eq('user_id', userId).eq('is_read', false)
+    supabase.from('notifications').update({ read: true }).eq('user_id', userId).eq('read', false)
   )
 }
 
