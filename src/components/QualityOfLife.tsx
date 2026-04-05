@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowUp, WifiOff } from 'lucide-react'
 import { useUIStore } from '../store'
+import { useOfflineSync } from '../hooks/useOfflineSync'
 
 export default function QualityOfLife() {
     const [showBackToTop, setShowBackToTop] = useState(false)
     const [isOffline, setIsOffline] = useState(false)
     const openLogModal = useUIStore(state => state.openLogModal)
+    useOfflineSync()
 
     useEffect(() => {
         // 1. Back to Top Visibility Tracker

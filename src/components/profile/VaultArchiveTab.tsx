@@ -20,9 +20,11 @@ interface VaultArchiveTabProps {
     setArchiveVisibleCount: (updater: number | ((prev: number) => number)) => void;
     archiveFilteredLogs: FilmLog[];
     userRole?: string;
+    hasMoreLogs?: boolean;
+    onLoadMoreLogs?: () => void;
 }
 
-export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archiveSieve, setArchiveSieve, archiveVisibleCount, setArchiveVisibleCount, archiveFilteredLogs, userRole }: VaultArchiveTabProps) {
+export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archiveSieve, setArchiveSieve, archiveVisibleCount, setArchiveVisibleCount, archiveFilteredLogs, userRole, hasMoreLogs, onLoadMoreLogs }: VaultArchiveTabProps) {
     const isArchivist = userRole === 'archivist'
     const isAuteur = userRole === 'auteur' || userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
@@ -93,6 +95,17 @@ export function VaultArchiveTab({ profileLogs, isOwnProfile, setViewLog, archive
                         {archiveVisibleCount < archiveFilteredLogs.length && (
                             <div style={{ textAlign: 'center', padding: '2rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)', cursor: 'pointer' }} onClick={() => setArchiveVisibleCount((c: number) => c + 40)}>
                                 LOAD MORE REELS...
+                            </div>
+                        )}
+                        {archiveVisibleCount >= archiveFilteredLogs.length && hasMoreLogs && onLoadMoreLogs && (
+                            <div style={{ textAlign: 'center', paddingTop: '2rem' }}>
+                                <button
+                                    onClick={onLoadMoreLogs}
+                                    className="btn btn-primary"
+                                    style={{ fontSize: '0.7rem', letterSpacing: '0.2em', padding: '0.75rem 2rem' }}
+                                >
+                                    RETRIEVE DEEPER ARCHIVE
+                                </button>
                             </div>
                         )}
                     </div>

@@ -8,7 +8,7 @@ import { useViewport } from '../../hooks/useViewport'
 
 import { FilmLog } from '../../types'
 
-export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole }: { profileLogs: FilmLog[], isOwnProfile: boolean, setViewLog: (log: FilmLog) => void, userRole?: string }) {
+export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole, hasMoreLogs, onLoadMoreLogs }: { profileLogs: FilmLog[], isOwnProfile: boolean, setViewLog: (log: FilmLog) => void, userRole?: string, hasMoreLogs?: boolean, onLoadMoreLogs?: () => void }) {
     const isArchivist = userRole === 'archivist'
     const isAuteur = userRole === 'auteur' || userRole === 'auteur'
     const { isTouch: IS_TOUCH } = useViewport()
@@ -174,6 +174,17 @@ export function VaultLedgerTab({ profileLogs, isOwnProfile, setViewLog, userRole
                         {visibleLogCount < filteredLogs.length && (
                             <div ref={loadMoreRef} style={{ textAlign: 'center', padding: '2rem', fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--fog)' }}>
                                 LOADING MORE REELS...
+                            </div>
+                        )}
+                        {visibleLogCount >= filteredLogs.length && hasMoreLogs && onLoadMoreLogs && (
+                            <div style={{ textAlign: 'center', paddingTop: '2rem' }}>
+                                <button
+                                    onClick={onLoadMoreLogs}
+                                    className="btn btn-primary"
+                                    style={{ fontSize: '0.7rem', letterSpacing: '0.2em', padding: '0.75rem 2rem' }}
+                                >
+                                    RETRIEVE DEEPER ARCHIVE
+                                </button>
                             </div>
                         )}
                     </div>

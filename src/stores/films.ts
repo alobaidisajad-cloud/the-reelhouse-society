@@ -5,6 +5,7 @@ import { supabase } from '../supabaseClient'
 import { useAuthStore } from './auth'
 import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction, PhysicalArchiveItem } from '../types'
 import reelToast from '../utils/reelToast'
+import { enqueueMutation } from '../utils/offlineQueue'
 
 // ── Undo Queue — replaces brittle window globals with a proper cancellation system ──
 const _undoTimers = new Map<string, ReturnType<typeof setTimeout>>()
@@ -61,10 +62,19 @@ export interface FilmState {
     toggleListEndorse: (listId: string) => Promise<void>
     hasListEndorsed: (listId: string) => boolean
     fetchListEndorsements: () => Promise<void>
-    fetchLogs: () => Promise<void>
+    
+    // Pagination state
+    logsHasMore: boolean
+    logsPage: number
+    vaultHasMore: boolean
+    vaultPage: number
+    listsHasMore: boolean
+    listsPage: number
+
+    fetchLogs: (loadMore?: boolean) => Promise<void>
     fetchWatchlist: () => Promise<void>
-    fetchVault: () => Promise<void>
-    fetchLists: () => Promise<void>
+    fetchVault: (loadMore?: boolean) => Promise<void>
+    fetchLists: (loadMore?: boolean) => Promise<void>
     fetchStubs: () => Promise<void>
     saveStub: (stub: Partial<TicketStub> & { showtimeId?: string, slotId?: string }) => Promise<string | null>
     addLog: (log: Partial<FilmLog>) => Promise<void>
@@ -106,6 +116,12 @@ export const useFilmStore = create<FilmState>()(
             stubs: [],           // Supabase-backed digital tickets — fetched on login
             interactions: [],    // { type: 'endorse', targetId, timestamp }
             physicalArchive: [], // Physical media collection — 4K, Blu-ray, DVD, VHS, etc.
+            logsHasMore: true,
+            logsPage: 0,
+            vaultHasMore: true,
+            vaultPage: 0,
+            listsHasMore: true,
+            listsPage: 0,
             _endorsedIndex: {} as Record<string, true>,  // O(1) lookup — rebuilt on mutations
             _listEndorsedIndex: {} as Record<string, true>,
             _watchlistIndex: {} as Record<number, true>,
@@ -156,14 +172,21 @@ export const useFilmStore = create<FilmState>()(
                             }
                         }
                     }
-                } catch {
-                    // Functional Rollback to prevent race condition erasure
-                    if (exists) {
-                        set((state) => ({ interactions: [...state.interactions, exists] }))
+                } catch (e: any) {
+                    if (e?.message?.toLowerCase().includes('fetch') || e?.message?.toLowerCase().includes('network')) {
+                        // Offline Background Queue — Keep the optimistic UI, sync later
+                        if (!exists) {
+                            enqueueMutation({ type: 'endorse_log', payload: { user_id: user.id, target_log_id: targetId } }).catch(() => {})
+                        }
                     } else {
-                        set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
+                        // Functional Rollback to prevent race condition erasure
+                        if (exists) {
+                            set((state) => ({ interactions: [...state.interactions, exists] }))
+                        } else {
+                            set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
+                        }
+                        reelToast.error('Endorsement failed — please try again.')
                     }
-                    reelToast.error('Endorsement failed — please try again.')
                 }
             },
 
@@ -231,17 +254,24 @@ export const useFilmStore = create<FilmState>()(
                             }
                         }
                     }
-                } catch {
-                    if (exists) {
-                        const next = [...get().interactions, exists]
-                        set({ interactions: next, _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: true } })
+                } catch (e: any) {
+                    if (e?.message?.toLowerCase().includes('fetch') || e?.message?.toLowerCase().includes('network')) {
+                        // Offline queueing
+                        if (!exists) {
+                            enqueueMutation({ type: 'endorse_list', payload: { user_id: user.id, target_list_id: listId } }).catch(() => {})
+                        }
                     } else {
-                        const next = get().interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'))
-                        const idx: Record<string, true> = {}
-                        next.forEach((i) => { if (i.type === 'endorse_list') idx[i.targetId] = true })
-                        set({ interactions: next, _listEndorsedIndex: idx })
+                        if (exists) {
+                            const next = [...get().interactions, exists]
+                            set({ interactions: next, _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: true } })
+                        } else {
+                            const next = get().interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'))
+                            const idx: Record<string, true> = {}
+                            next.forEach((i) => { if (i.type === 'endorse_list') idx[i.targetId] = true })
+                            set({ interactions: next, _listEndorsedIndex: idx })
+                        }
+                        reelToast.error('Failed to certify list.')
                     }
-                    reelToast.error('Failed to certify list.')
                 }
             },
 
@@ -276,24 +306,25 @@ export const useFilmStore = create<FilmState>()(
                 }
             },
 
-            fetchLogs: async () => {
+            fetchLogs: async (loadMore = false) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                // Paginate to overcome Supabase's default 1000-row limit
-                let allLogs: any[] = []
-                let page = 0
-                const PAGE_SIZE = 1000
-                while (true) {
-                    const { data, error } = await supabase
-                        .from('logs').select('*').eq('user_id', user.id)
-                        .order('watched_date', { ascending: false })
-                        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
-                    if (error || !data || data.length === 0) break
-                    allLogs = allLogs.concat(data)
-                    if (data.length < PAGE_SIZE) break // last page
-                    page++
-                }
-                const newLogs = allLogs.map((dbLog) => ({
+                const state = get()
+                if (loadMore && !state.logsHasMore) return
+
+                const PAGE_SIZE = 50
+                const page = loadMore ? state.logsPage : 0
+
+                const { data, error } = await supabase
+                    .from('logs').select('*').eq('user_id', user.id)
+                    .order('watched_date', { ascending: false })
+                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+                
+                if (error || !data) return
+                
+                const hasMore = data.length === PAGE_SIZE
+
+                const newLogs = data.map((dbLog) => ({
                         id: dbLog.id,
                         filmId: dbLog.film_id,
                         title: dbLog.film_title,
@@ -318,10 +349,16 @@ export const useFilmStore = create<FilmState>()(
                         createdAt: dbLog.created_at,
                 }))
 
+                const nextLogs = loadMore ? [...state.logs, ...newLogs] : newLogs
                 const idx: Record<number, FilmLog> = {}
-                newLogs.forEach(l => { if (l.filmId) idx[l.filmId] = l })
+                nextLogs.forEach(l => { if (l.filmId) idx[l.filmId] = l })
 
-                set({ logs: newLogs as FilmLog[], _loggedIndex: idx })
+                set({ 
+                    logs: nextLogs as FilmLog[], 
+                    _loggedIndex: idx,
+                    logsPage: page + 1,
+                    logsHasMore: hasMore
+                })
             },
 
             fetchWatchlist: async () => {
@@ -346,28 +383,55 @@ export const useFilmStore = create<FilmState>()(
                 set({ watchlist: newWatchlist, _watchlistIndex: idx })
             },
 
-            fetchVault: async () => {
+            fetchVault: async (loadMore = false) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
+                const state = get()
+                if (loadMore && !state.vaultHasMore) return
+
+                const PAGE_SIZE = 50
+                const page = loadMore ? state.vaultPage : 0
+
                 const { data, error } = await supabase
-                    .from('vaults').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(2000)
+                    .from('vaults').select('*').eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+
                 if (!error && data) {
-                    set({ vault: data.map((v) => ({ id: v.film_id, title: v.film_title, poster_path: v.poster_path || null, year: v.year || null, format: v.format || 'Digital' })) })
+                    const hasMore = data.length === PAGE_SIZE
+                    const newVault = data.map((v) => ({ id: v.film_id, title: v.film_title, poster_path: v.poster_path || null, year: v.year || null, format: v.format || 'Digital' }))
+                    
+                    set({ 
+                        vault: loadMore ? [...state.vault, ...newVault] : newVault,
+                        vaultPage: page + 1,
+                        vaultHasMore: hasMore
+                    })
                 }
             },
 
-            fetchLists: async () => {
+            fetchLists: async (loadMore = false) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
+                const state = get()
+                if (loadMore && !state.listsHasMore) return
+
+                const PAGE_SIZE = 20
+                const page = loadMore ? state.listsPage : 0
+
                 const { data: lists, error } = await supabase
-                    .from('lists').select('*').eq('user_id', user.id).order('created_at', { ascending: false }).limit(500)
+                    .from('lists').select('*').eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+                
                 if (!error && lists) {
+                    const hasMore = lists.length === PAGE_SIZE
+
                     // ── Batched fetch: single query for ALL list items instead of N+1 ──
                     const listIds = lists.map(l => l.id)
                     let allItems: any[] = []
                     if (listIds.length > 0) {
                         const { data: items } = await supabase
-                            .from('list_items').select('*').in('list_id', listIds).limit(5000)
+                            .from('list_items').select('*').in('list_id', listIds).limit(1000)
                         allItems = items || []
                     }
                     // Group items by list_id client-side
@@ -382,7 +446,12 @@ export const useFilmStore = create<FilmState>()(
                         isRanked: list.is_ranked, isPrivate: list.is_private || false, createdAt: list.created_at,
                         films: (itemsByList.get(list.id) || []).map((i: any) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path || null })),
                     }))
-                    set({ lists: fullLists })
+                    
+                    set({ 
+                        lists: loadMore ? [...state.lists, ...fullLists] : fullLists,
+                        listsPage: page + 1,
+                        listsHasMore: hasMore
+                    })
                 }
             },
 

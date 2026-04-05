@@ -408,6 +408,37 @@ export default function LoungeRoomPage() {
         return () => closeLounge()
     }, [loungeId])
 
+    // Ghost-Town Auto-Disconnect (Visibility Monitor)
+    useEffect(() => {
+        if (!loungeId) return
+
+        let visibilityTimeout: NodeJS.Timeout | null = null
+        
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                // If user hides tab, wait 30 seconds before disconnecting to allow brief app switches
+                visibilityTimeout = setTimeout(() => {
+                    useLoungeStore.getState().pauseRealtime()
+                }, 30000)
+            } else {
+                // When they return
+                if (visibilityTimeout) {
+                    clearTimeout(visibilityTimeout)
+                    visibilityTimeout = null
+                }
+                
+                // Resume realtime (which fetches missed messages and re-subscribes)
+                useLoungeStore.getState().resumeRealtime()
+            }
+        }
+        
+        document.addEventListener('visibilitychange', handleVisibilityChange)
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange)
+            if (visibilityTimeout) clearTimeout(visibilityTimeout)
+        }
+    }, [loungeId])
+
     // Auto-scroll on new messages
     useEffect(() => {
         if (messages.length > prevMessagesLength.current) {

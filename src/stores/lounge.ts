@@ -58,6 +58,9 @@ export interface LoungeStoreState {
     leaveLounge: (loungeId: string) => Promise<void>
     openLounge: (loungeId: string) => Promise<void>
     closeLounge: () => void
+    _subscribeToLounge: (loungeId: string) => void
+    pauseRealtime: () => void
+    resumeRealtime: () => Promise<void>
     sendMessage: (content: string, type?: LoungeMessage['type'], metadata?: Record<string, any>, replyTo?: { id: string; content: string; username: string } | null) => Promise<void>
     deleteMessage: (messageId: string) => Promise<void>
     markAsRead: (loungeId: string) => Promise<void>
@@ -345,7 +348,10 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         // Mark as read
         get().markAsRead(loungeId)
 
-        // ── Subscribe to Realtime ──
+        get()._subscribeToLounge(loungeId)
+    },
+
+    _subscribeToLounge: (loungeId) => {
         if (_activeChannel) {
             supabase.removeChannel(_activeChannel)
             _activeChannel = null
@@ -414,6 +420,57 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             _activeChannel = null
         }
         set({ activeLounge: null, messages: [] })
+    },
+
+    pauseRealtime: () => {
+        if (_activeChannel) {
+            supabase.removeChannel(_activeChannel)
+            _activeChannel = null
+            console.log('[Lounge] Realtime paused to conserve bandwidth.')
+        }
+    },
+
+    resumeRealtime: async () => {
+        const { activeLounge, messages } = get()
+        if (!activeLounge) return
+
+        console.log('[Lounge] Resuming Realtime...')
+        
+        // Fetch any messages we missed while asleep
+        const lastKnownMessageDate = messages.length > 0 ? messages[messages.length - 1].created_at : new Date(0).toISOString()
+        
+        const { data: missedMsgs } = await supabase
+            .from('lounge_messages')
+            .select('*, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
+            .eq('lounge_id', activeLounge.id)
+            .gt('created_at', lastKnownMessageDate)
+            .order('created_at', { ascending: true })
+
+        if (missedMsgs && missedMsgs.length > 0) {
+            const mappedMissed: LoungeMessage[] = missedMsgs.map((m: any) => ({
+                id: m.id,
+                lounge_id: m.lounge_id,
+                user_id: m.user_id,
+                username: m.profiles?.username || 'Unknown',
+                avatar_url: m.profiles?.avatar_url,
+                content: m.content,
+                type: m.type || 'text',
+                metadata: m.metadata || {},
+                created_at: m.created_at,
+                reply_to_id: m.reply_to_id || null,
+                reply_to_content: m.reply_to_content || null,
+                reply_to_username: m.reply_to_username || null,
+            }))
+            
+            // Append and cap to 500
+            set(s => {
+                const next = [...s.messages, ...mappedMissed]
+                return { messages: next.length > 500 ? next.slice(-500) : next }
+            })
+        }
+
+        // Re-subscribe
+        get()._subscribeToLounge(activeLounge.id)
     },
 
     sendMessage: async (content, type = 'text', metadata = {}, replyTo = null) => {

@@ -141,23 +141,15 @@ export default function UserProfilePage() {
                 .from('profiles').select('id').eq('username', routeUsername).single()
             if (!prof) return []
             
-            // Paginate to get ALL logs (Supabase default caps at 1000)
-            let allLogs: any[] = []
-            let page = 0
-            const PAGE_SIZE = 1000
-            while (true) {
-                const { data, error } = await supabase
-                    .from('logs')
-                    .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, watched_with, created_at, pull_quote, is_autopsied, autopsy, alt_poster, physical_media')
-                    .eq('user_id', prof.id)
-                    .order('watched_date', { ascending: false })
-                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
-                if (error || !data || data.length === 0) break
-                allLogs = allLogs.concat(data)
-                if (data.length < PAGE_SIZE) break
-                page++
-            }
-            
+            // Cap at 2000 to prevent infinite loops and massive bandwidth dumping on page load
+            const { data: allLogs, error } = await supabase
+                .from('logs')
+                .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, watched_with, created_at, pull_quote, is_autopsied, autopsy, alt_poster, physical_media')
+                .eq('user_id', prof.id)
+                .order('watched_date', { ascending: false })
+                .limit(2000)
+                
+            if (error || !allLogs) return []
             return allLogs.map((l: any) => ({
                 id: l.id,
                 filmId: l.film_id,
@@ -247,6 +239,12 @@ export default function UserProfilePage() {
 // REMOVED IN FAVOR OF LINE 121 REPLACEMENT
     const loadMoreRef = useRef(null)
     const [viewLog, setViewLog] = useState<any>(null)
+
+    // Pull pagination tools from store
+    const logsHasMore = useFilmStore(state => state.logsHasMore)
+    const fetchLogs = useFilmStore(state => state.fetchLogs)
+    const listsHasMore = useFilmStore(state => state.listsHasMore)
+    const fetchLists = useFilmStore(state => state.fetchLists)
 
     const isFollowing = currentUser?.following?.includes(profileUser?.username)
     const [followLoading, setFollowLoading] = useState(false)
@@ -815,7 +813,14 @@ export default function UserProfilePage() {
                 <div className="container layout-sidebar reversed">
                     <div>
                         {activeTab === 'diary' && (
-                            <VaultLedgerTab profileLogs={profileLogs} isOwnProfile={isOwnProfile} setViewLog={setViewLog} userRole={profileUser?.role} />
+                            <VaultLedgerTab 
+                                profileLogs={profileLogs} 
+                                isOwnProfile={isOwnProfile} 
+                                setViewLog={setViewLog} 
+                                userRole={profileUser?.role}
+                                hasMoreLogs={isOwnProfile ? logsHasMore : false}
+                                onLoadMoreLogs={() => isOwnProfile && fetchLogs(true)}
+                            />
                         )}
 
                         {activeTab === 'physical' && (
@@ -916,7 +921,15 @@ export default function UserProfilePage() {
                         )}
 
                         {activeTab === 'lists' && (
-                            <div><SectionHeader label="YOUR COLLECTIONS" title="The Stacks" /><ListsSection lists={profileLists} user={profileUser} /></div>
+                            <div>
+                                <SectionHeader label="YOUR COLLECTIONS" title="The Stacks" />
+                                <ListsSection 
+                                    lists={profileLists} 
+                                    user={profileUser} 
+                                    hasMoreLists={isOwnProfile ? listsHasMore : false}
+                                    onLoadMoreLists={() => isOwnProfile && fetchLists(true)}
+                                />
+                            </div>
                         )}
 
                         {activeTab === 'watchlist' && (
@@ -934,6 +947,8 @@ export default function UserProfilePage() {
                                 setArchiveVisibleCount={setArchiveVisibleCount} 
                                 archiveFilteredLogs={archiveFilteredLogs}
                                 userRole={profileUser?.role}
+                                hasMoreLogs={isOwnProfile ? logsHasMore : false}
+                                onLoadMoreLogs={() => isOwnProfile && fetchLogs(true)}
                             />
                         )}
                     </div>

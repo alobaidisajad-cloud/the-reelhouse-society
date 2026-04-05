@@ -251,8 +251,7 @@ export const VaultSection = memo(function VaultSection({ vault }: any) {
     )
 })
 
-// ── LISTS SECTION — Premium Stack Cards (matching community page) ──
-export function ListsSection({ lists, user }: any) {
+export function ListsSection({ lists, user, hasMoreLists, onLoadMoreLists }: { lists: any[], user: any, hasMoreLists?: boolean, onLoadMoreLists?: () => void }) {
     const { isAuthenticated } = useAuthStore()
 
     const gradients = [
@@ -340,6 +339,17 @@ export function ListsSection({ lists, user }: any) {
                             </Link>
                         )
                     })}
+                </div>
+            )}
+            {hasMoreLists && onLoadMoreLists && (
+                <div style={{ textAlign: 'center', paddingTop: '2rem' }}>
+                    <button
+                        onClick={onLoadMoreLists}
+                        className="btn btn-primary"
+                        style={{ fontSize: '0.7rem', letterSpacing: '0.2em', padding: '0.75rem 2rem' }}
+                    >
+                        RETRIEVE DEEPER STACKS
+                    </button>
                 </div>
             )}
         </>
