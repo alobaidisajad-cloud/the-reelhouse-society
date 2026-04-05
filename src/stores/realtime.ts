@@ -2,7 +2,6 @@ import { supabase, isSupabaseConfigured } from '../supabaseClient'
 import { queryClient } from '../queryClient'
 import { useAuthStore, hydrateFollowing } from './auth'
 import { useFilmStore } from './films'
-import { useNotificationStore } from './social'
 import { useProgrammeStore } from './content'
 
 // ── REALTIME + AUTH SYNC ──
@@ -97,28 +96,8 @@ export const initRealtime = () => {
         // At 10M scale, global WebSocket invalidations generate an infrastructure-killing DDoS.
         // Feed synchronization is now strictly isolated to localized pull-to-refresh and tab-focus mechanics.
 
-        // 2. Personal notifications — real-time delivery to logged-in user
-        const userId = useAuthStore.getState().user?.id
-        if (userId) {
-            const userTopic = `realtime:user_notifications_${userId}`
-            if (!supabase.getChannels().some(c => c.topic === userTopic)) {
-                supabase
-                    .channel(`user_notifications_${userId}`)
-                .on('postgres_changes', {
-                    event: 'INSERT', schema: 'public',
-                    table: 'notifications', filter: `user_id=eq.${userId}`,
-                }, (payload) => {
-                    useNotificationStore.getState().push({
-                        id: payload.new.id,
-                        type: payload.new.type,
-                        from_user: payload.new.from_username,
-                        message: payload.new.message,
-                        timestamp: payload.new.created_at,
-                    })
-                })
-                .subscribe()
-            }
-        }
+        // 2. Notification realtime is now exclusively managed by NotificationBell's singleton channel.
+        // This prevents duplicate subscriptions that were causing notifications to appear 2-3x.
     } finally {
         _realtimeConnecting = false
     }

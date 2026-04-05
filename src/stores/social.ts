@@ -58,6 +58,11 @@ export const useNotificationStore = create<NotificationState>()(
 
             unreadCount: () => get().notifications.filter((n) => !n.read).length,
         }),
-        { name: 'reelhouse-notifications' }
+        { 
+            name: 'reelhouse-notifications',
+            version: 2,
+            // v2: flush stale localStorage after column-name fixes — DB is now source of truth
+            migrate: () => ({ notifications: [] }),
+        }
     )
 )

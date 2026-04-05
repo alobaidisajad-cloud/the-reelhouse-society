@@ -245,18 +245,6 @@ export default function Navbar() {
                 isOpen={mobileOpen}
                 onClose={() => setMobileOpen(false)}
                 onOpenNotifications={() => setNotificationsOpen(true)}
-            />
-
-            {/* Mobile Notifications Panel — renders outside the desktop span when triggered from mobile menu */}
-            {notificationsOpen && mobileOpen === false && typeof window !== 'undefined' && window.innerWidth <= 1024 && (
-                <div className="mobile-only-notifications">
-                    <NotificationBell
-                        isOpen={notificationsOpen}
-                        onOpenChange={setNotificationsOpen}
-                        forceMount={true}
-                    />
-                </div>
-            )}
-        </>
+            />        </>
     )
 }

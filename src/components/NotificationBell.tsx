@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bell, X, Check } from 'lucide-react'
+import { Bell, X, Check, Trash2 } from 'lucide-react'
 import { useNotificationStore, useAuthStore } from '../store'
 import { supabase, isSupabaseConfigured } from '../supabaseClient'
+import { Portal } from './UI'
+import { useViewport } from '../hooks/useViewport'
 
-const NOTIF_ICONS = {
+const NOTIF_ICONS: Record<string, string> = {
     follow: '◆',
     reaction: '✧',
     endorse: '✦',
@@ -21,24 +23,29 @@ const timeAgo = (ts: string) => {
     if (mins < 60) return `${mins}m`
     const hrs = Math.floor(mins / 60)
     if (hrs < 24) return `${hrs}h`
-    return `${Math.floor(hrs / 24)}d`
+    const days = Math.floor(hrs / 24)
+    if (days < 30) return `${days}d`
+    return `${Math.floor(days / 30)}mo`
 }
 
 interface NotificationBellProps {
     isOpen?: boolean
     onOpenChange?: (open: boolean) => void
-    forceMount?: boolean
 }
 
-export default function NotificationBell({ isOpen, onOpenChange, forceMount }: NotificationBellProps = {}) {
+// ─── Singleton guard: only one realtime channel across all mounts ───
+let _globalChannel: any = null
+let _globalUserId: string | null = null
+
+export default function NotificationBell({ isOpen, onOpenChange }: NotificationBellProps = {}) {
     const [internalOpen, setInternalOpen] = useState(false)
     const open = isOpen !== undefined ? isOpen : internalOpen
-    const setOpen = (val: boolean | ((prev: boolean) => boolean)) => {
-        const next = typeof val === 'function' ? val(open) : val
-        if (onOpenChange) onOpenChange(next)
-        else setInternalOpen(next)
-    }
-    
+    const setOpen = useCallback((val: boolean | ((prev: boolean) => boolean)) => {
+        const resolve = (prev: boolean) => typeof val === 'function' ? val(prev) : val
+        if (onOpenChange) onOpenChange(resolve(open))
+        else setInternalOpen(val)
+    }, [onOpenChange, open])
+
     const ref = useRef<HTMLDivElement>(null)
     const navigate = useNavigate()
     const user = useAuthStore(s => s.user)
@@ -48,13 +55,16 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
     const dismiss = useNotificationStore(s => s.dismiss)
     const markRead = useNotificationStore(s => s.markRead)
     const unreadCount = notifications.filter(n => !n.read).length
-    const channelRef = useRef<any>(null)
+    const { isTouch } = useViewport()
 
-    // Fetch notifications from Supabase on mount
+    // ══════════════════════════════════════
+    //  FETCH + REALTIME (singleton channel)
+    // ══════════════════════════════════════
     useEffect(() => {
         if (!user?.id || !isSupabaseConfigured) return
         let cancelled = false
 
+        // Fetch existing notifications from DB
         const fetchNotifs = async () => {
             const { data, error } = await supabase
                 .from('notifications')
@@ -64,12 +74,12 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
                 .limit(50)
 
             if (!error && data && !cancelled) {
-                const formatted = data.map(n => ({
+                const formatted = data.map((n: any) => ({
                     id: n.id,
                     type: n.type || 'system',
                     from: n.from_username || '',
                     message: n.message || '',
-                    read: n.read || false,
+                    read: !!n.read,
                     timestamp: n.created_at,
                 }))
                 setNotifications(formatted)
@@ -78,74 +88,221 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
 
         fetchNotifs()
 
-        // Singleton guard — prevent duplicate channels on fast re-mounts
-        if (channelRef.current) {
-            supabase.removeChannel(channelRef.current)
-            channelRef.current = null
-        }
-
-        // Realtime subscription for new notifications
-        const channel = supabase
-            .channel(`notifications_${user.id}`)
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
-                (payload) => {
-                    const n = payload.new
-                    useNotificationStore.getState().push({
-                        id: n.id,
-                        type: n.type || 'system',
-                        from: n.from_username || '',
-                        message: n.message || '',
-                    })
-                }
-            )
-            .subscribe()
-        channelRef.current = channel
-
-        return () => {
-            cancelled = true
-            if (channelRef.current) {
-                supabase.removeChannel(channelRef.current)
-                channelRef.current = null
+        // Only create ONE global channel — tear down if userId changed
+        if (_globalUserId !== user.id) {
+            if (_globalChannel) {
+                supabase.removeChannel(_globalChannel)
+                _globalChannel = null
             }
+            _globalUserId = user.id
+
+            _globalChannel = supabase
+                .channel(`notif_bell_${user.id}`)
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+                    (payload: any) => {
+                        const n = payload.new
+                        useNotificationStore.getState().push({
+                            id: n.id,
+                            type: n.type || 'system',
+                            from: n.from_username || '',
+                            message: n.message || '',
+                            read: false,
+                            timestamp: n.created_at,
+                        })
+                    }
+                )
+                .subscribe()
         }
+
+        return () => { cancelled = true }
     }, [user?.id])
 
-    // Close on outside click
+    // Close on outside click (desktop only)
     useEffect(() => {
-        const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+        if (isTouch) return
+        const handler = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+        }
         document.addEventListener('mousedown', handler)
         return () => document.removeEventListener('mousedown', handler)
-    }, [])
+    }, [isTouch, setOpen])
 
-    // Mark as read in Supabase when panel opens
-    const handleOpen = async () => {
-        setOpen(v => !v)
-        if (!open && unreadCount > 0 && user?.id) {
-            markAllRead()
-            // Batch update in Supabase — column is `read`
-            const { error } = await supabase
+    // ══════════════════════════════════════
+    //  MARK ALL READ — zustand + Supabase
+    // ══════════════════════════════════════
+    const handleMarkAllRead = useCallback(async () => {
+        markAllRead()
+        if (user?.id) {
+            await supabase
                 .from('notifications')
                 .update({ read: true })
                 .eq('user_id', user.id)
                 .eq('read', false)
-            // mark-read is a background op — fail silently if Supabase is unreachable
         }
+    }, [user?.id, markAllRead])
+
+    // Mark as read when panel opens (if there are unread)
+    const handleOpen = useCallback(async () => {
+        setOpen(v => !v)
+        // If we're opening and there are unreads, mark them read
+        if (!open && unreadCount > 0) {
+            handleMarkAllRead()
+        }
+    }, [open, unreadCount, handleMarkAllRead, setOpen])
+
+    // ══════════════════════════════════════
+    //  INDIVIDUAL ACTIONS
+    // ══════════════════════════════════════
+    const handleNotifClick = useCallback(async (n: any) => {
+        // Mark single as read in zustand + DB
+        if (!n.read) {
+            markRead(n.id)
+            supabase.from('notifications').update({ read: true }).eq('id', n.id)
+        }
+        // Navigate based on type
+        if (n.type === 'follow' && n.from) {
+            navigate(`/user/${n.from}`)
+        } else if (n.type === 'reaction' || n.type === 'endorse') {
+            navigate('/feed')
+        }
+        setOpen(false)
+    }, [navigate, markRead, setOpen])
+
+    const handleDismiss = useCallback(async (id: string) => {
+        dismiss(id)
+        supabase.from('notifications').delete().eq('id', id)
+    }, [dismiss])
+
+    // ══════════════════════════════════════
+    //  NOTIFICATION LIST (shared between layouts)
+    // ══════════════════════════════════════
+    const renderNotifList = () => {
+        if (notifications.length === 0) {
+            return (
+                <div style={{ padding: '2.5rem 1rem', textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.8rem', marginBottom: '0.75rem', opacity: 0.3 }}>◬</div>
+                    <div style={{ color: 'var(--fog)', fontFamily: 'var(--font-sub)', fontSize: '0.85rem' }}>
+                        No transmissions yet.
+                    </div>
+                    <div style={{ fontSize: '0.7rem', marginTop: '0.4rem', color: 'var(--ash)', fontFamily: 'var(--font-ui)', letterSpacing: '0.1em' }}>
+                        The projector booth is quiet.
+                    </div>
+                </div>
+            )
+        }
+
+        return notifications.slice(0, 30).map(n => (
+            <div
+                key={n.id}
+                onClick={() => handleNotifClick(n)}
+                style={{
+                    display: 'flex', gap: '0.75rem', padding: '0.85rem 1rem',
+                    borderBottom: '1px solid rgba(139,105,20,0.06)',
+                    background: n.read ? 'transparent' : 'rgba(139,105,20,0.04)',
+                    borderLeft: n.read ? '2px solid transparent' : '2px solid var(--sepia)',
+                    cursor: 'pointer',
+                    transition: 'background 0.2s',
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(139,105,20,0.04)'}
+            >
+                <span style={{ fontSize: '1.1rem', lineHeight: 1, minWidth: 20, textAlign: 'center', color: 'var(--sepia)' }}>
+                    {NOTIF_ICONS[n.type] || '✦'}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{
+                        fontFamily: 'var(--font-sub)', fontSize: '0.8rem',
+                        color: n.read ? 'var(--fog)' : 'var(--parchment)',
+                        lineHeight: 1.4,
+                    }}>
+                        {n.message}
+                    </div>
+                    <div style={{
+                        fontFamily: 'var(--font-ui)', fontSize: '0.5rem',
+                        color: 'var(--ash)', marginTop: '0.25rem', letterSpacing: '0.08em',
+                    }}>
+                        {timeAgo(n.timestamp)}
+                    </div>
+                </div>
+                <button
+                    onClick={(e) => { e.stopPropagation(); handleDismiss(n.id) }}
+                    aria-label="Dismiss notification"
+                    style={{ background: 'none', border: 'none', color: 'var(--ash)', cursor: 'pointer', padding: '0.25rem', flexShrink: 0, borderRadius: '3px', transition: 'color 0.2s' }}
+                    onMouseEnter={e => (e.currentTarget.style.color = 'var(--blood-reel)')}
+                    onMouseLeave={e => (e.currentTarget.style.color = 'var(--ash)')}
+                >
+                    <X size={12} />
+                </button>
+            </div>
+        ))
     }
 
-    const handleDismiss = async (id: string) => {
-        dismiss(id)
-        const { error } = await supabase.from('notifications').delete().eq('id', id)
-        // dismiss is a background op — fail silently
-    }
+    // ══════════════════════════════════════
+    //  RENDER — Desktop dropdown vs Mobile full-screen
+    // ══════════════════════════════════════
+
+    // Header bar (shared)
+    const renderHeader = (showClose?: boolean) => (
+        <div style={{
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            padding: isTouch ? '1.25rem 1.25rem' : '0.75rem 1rem',
+            borderBottom: '1px solid rgba(139,105,20,0.1)',
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                <Bell size={isTouch ? 16 : 14} style={{ color: 'var(--sepia)' }} />
+                <span style={{
+                    fontFamily: 'var(--font-ui)',
+                    fontSize: isTouch ? '0.55rem' : '0.6rem',
+                    letterSpacing: '0.2em', color: 'var(--parchment)',
+                }}>
+                    TRANSMISSIONS
+                </span>
+                {unreadCount > 0 && (
+                    <span style={{
+                        fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.1em',
+                        background: 'var(--sepia)', color: 'var(--ink)',
+                        padding: '0.1rem 0.4rem', borderRadius: '1px',
+                    }}>
+                        {unreadCount}
+                    </span>
+                )}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                {notifications.some(n => !n.read) && (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); handleMarkAllRead() }}
+                        style={{
+                            background: 'none', border: 'none', cursor: 'pointer',
+                            color: 'var(--sepia)', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                            fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em',
+                        }}
+                    >
+                        <Check size={11} /> MARK ALL
+                    </button>
+                )}
+                {showClose && (
+                    <button
+                        onClick={() => setOpen(false)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fog)', padding: '0.25rem' }}
+                        aria-label="Close notifications"
+                    >
+                        <X size={16} />
+                    </button>
+                )}
+            </div>
+        </div>
+    )
 
     return (
         <div ref={ref} style={{ position: 'relative' }}>
+            {/* Bell icon */}
             <button
                 className="nav-icon-btn"
                 onClick={handleOpen}
                 title="Notifications"
+                aria-label={`Notifications${unreadCount > 0 ? ` (${unreadCount} unread)` : ''}`}
                 style={{ position: 'relative', color: unreadCount > 0 ? 'var(--flicker)' : 'var(--fog)' }}
             >
                 <Bell size={17} />
@@ -158,112 +315,73 @@ export default function NotificationBell({ isOpen, onOpenChange, forceMount }: N
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontFamily: 'var(--font-ui)', fontWeight: 'bold',
                         boxShadow: '0 2px 8px rgba(162,36,36,0.6)',
-                        animation: 'nav-log-pulse 2s ease-in-out infinite'
+                        animation: 'nav-log-pulse 2s ease-in-out infinite',
                     }}>
                         {unreadCount > 9 ? '9+' : unreadCount}
                     </span>
                 )}
             </button>
 
+            {/* ── PANEL ── */}
             <AnimatePresence>
                 {open && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 8, scale: 0.95 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
-                        style={{
-                            position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-                            width: 320, maxHeight: 400, overflow: 'auto',
-                            background: 'rgba(18,14,9,0.98)',
-                            border: '1px solid var(--ash)',
-                            borderRadius: 'var(--radius-card)',
-                            boxShadow: '0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(139,105,20,0.1)',
-                            zIndex: 9999,
-                        }}
-                    >
-                        {/* Header */}
-                        <div style={{
-                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            padding: '0.75rem 1rem',
-                            borderBottom: '1px solid var(--ash)',
-                        }}>
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>
-                                NOTIFICATIONS
-                            </span>
-                            {notifications.length > 0 && (
-                                <button
-                                    onClick={async () => {
-                                        markAllRead()
-                                        if (user?.id) {
-                                            const { error } = await supabase.from('notifications').update({ read: true })
-                                                .eq('user_id', user.id).eq('read', false)
-                                            // mark-all is a background op — fail silently
-                                        }
-                                    }}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--fog)', fontSize: '0.55rem', fontFamily: 'var(--font-ui)', letterSpacing: '0.1em' }}
-                                >
-                                    <Check size={12} /> MARK ALL
-                                </button>
-                            )}
-                        </div>
-
-                        {/* List */}
-                        {notifications.length === 0 ? (
-                            <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--fog)', fontFamily: 'var(--font-sub)', fontSize: '0.85rem' }}>
-                                No notifications yet.
-                                <div style={{ fontSize: '0.7rem', marginTop: '0.5rem', opacity: 0.5 }}>The projector booth is quiet.</div>
-                            </div>
-                        ) : (
-                            notifications.slice(0, 20).map(n => (
-                                <div
-                                    key={n.id}
-                                    onClick={async () => {
-                                        markRead(n.id)
-                                        // Sync read status to DB
-                                        const { error } = await supabase.from('notifications').update({ read: true }).eq('id', n.id)
-                                        // mark-read is a background op — fail silently
-                                        if (n.type === 'follow' && n.from) {
-                                            navigate(`/user/${n.from}`)
-                                            setOpen(false)
-                                        } else if (n.type === 'reaction') {
-                                            navigate('/feed')
-                                            setOpen(false)
-                                        }
-                                    }}
-                                    style={{
-                                        display: 'flex', gap: '0.75rem', padding: '0.75rem 1rem',
-                                        borderBottom: '1px solid rgba(139,105,20,0.06)',
-                                        background: n.read ? 'transparent' : 'rgba(139,105,20,0.04)',
-                                        cursor: 'pointer',
-                                        transition: 'background 0.2s',
-                                    }}
-                                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(139,105,20,0.08)'}
-                                    onMouseLeave={e => e.currentTarget.style.background = n.read ? 'transparent' : 'rgba(139,105,20,0.04)'}
-                                >
-                                    <span style={{ fontSize: '1.1rem', lineHeight: 1 }}>{(NOTIF_ICONS as Record<string, string>)[n.type] || '✦'}</span>
-                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                        <div style={{
-                                            fontFamily: 'var(--font-sub)', fontSize: '0.8rem',
-                                            color: n.read ? 'var(--bone)' : 'var(--parchment)',
-                                            lineHeight: 1.4,
-                                        }}>
-                                            {n.message}
-                                        </div>
-                                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', color: 'var(--fog)', marginTop: '0.25rem', letterSpacing: '0.08em' }}>
-                                            {timeAgo(n.timestamp)}
-                                        </div>
-                                    </div>
-                                    <button
-                                        onClick={(e) => { e.stopPropagation(); handleDismiss(n.id) }}
-                                        style={{ background: 'none', border: 'none', color: 'var(--ash)', cursor: 'pointer', padding: 0, flexShrink: 0 }}
-                                    >
-                                        <X size={12} />
-                                    </button>
+                    isTouch ? (
+                        /* ═══ MOBILE: Full-screen slide-in panel ═══ */
+                        <Portal>
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                onClick={() => setOpen(false)}
+                                style={{
+                                    position: 'fixed', inset: 0, zIndex: 99998,
+                                    background: 'rgba(5,3,1,0.7)',
+                                }}
+                            />
+                            <motion.div
+                                initial={{ x: '100%' }}
+                                animate={{ x: 0 }}
+                                exit={{ x: '100%' }}
+                                transition={{ type: 'tween', ease: 'easeInOut', duration: 0.25 }}
+                                style={{
+                                    position: 'fixed', top: 0, right: 0, bottom: 0,
+                                    width: '100vw', zIndex: 99999,
+                                    background: 'var(--ink)',
+                                    borderLeft: '1px solid rgba(139,105,20,0.15)',
+                                    display: 'flex', flexDirection: 'column',
+                                    boxShadow: '-10px 0 40px rgba(0,0,0,0.5)',
+                                }}
+                            >
+                                {renderHeader(true)}
+                                <div style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                                    {renderNotifList()}
                                 </div>
-                            ))
-                        )}
-                    </motion.div>
+                            </motion.div>
+                        </Portal>
+                    ) : (
+                        /* ═══ DESKTOP: Dropdown panel ═══ */
+                        <motion.div
+                            initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                            transition={{ duration: 0.2 }}
+                            style={{
+                                position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+                                width: 340, maxHeight: 440, overflow: 'hidden',
+                                background: 'rgba(18,14,9,0.98)',
+                                border: '1px solid var(--ash)',
+                                borderRadius: 'var(--radius-card)',
+                                boxShadow: '0 20px 60px rgba(0,0,0,0.8), inset 0 1px 0 rgba(139,105,20,0.1)',
+                                zIndex: 9999,
+                                display: 'flex', flexDirection: 'column',
+                            }}
+                        >
+                            {renderHeader(false)}
+                            <div style={{ flex: 1, overflowY: 'auto', maxHeight: 380 }}>
+                                {renderNotifList()}
+                            </div>
+                        </motion.div>
+                    )
                 )}
             </AnimatePresence>
         </div>
