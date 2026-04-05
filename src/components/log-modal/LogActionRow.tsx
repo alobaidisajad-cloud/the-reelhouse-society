@@ -49,27 +49,6 @@ export default function LogActionRow({
                     Cancel
                 </button>
             </div>
-            {/* Delete button — full width, clearly visible on all devices */}
-            {logModalEditLogId && (
-                <button 
-                    className="btn btn-ghost" 
-                    aria-label="Delete log"
-                    style={{
-                        width: '100%',
-                        justifyContent: 'center',
-                        gap: '0.4rem',
-                        color: 'var(--fog)',
-                        borderColor: 'rgba(255,255,255,0.06)',
-                        fontSize: '0.55rem',
-                        letterSpacing: '0.12em',
-                        padding: '0.6rem',
-                    }}
-                    onClick={() => setShowDeleteConfirm(true)}
-                >
-                    <Trash2 size={12} />
-                    DELETE THIS LOG
-                </button>
-            )}
         </div>
     )
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, History, Lock, Archive, Check } from 'lucide-react'
+import { X, Eye, History, Lock, Archive, Check, Trash2 } from 'lucide-react'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { tmdb } from '../../tmdb'
 import { ReelRating } from '../UI'
@@ -196,6 +196,42 @@ export default function LogForm({ film }: { film: any }) {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            {/* ── DANGER ZONE (Top Placement for Mobile Visibility) ── */}
+            {logModalEditLogId && (
+                <div style={{ paddingBottom: '1rem', borderBottom: '1px solid rgba(162,36,36,0.3)', marginBottom: '-0.5rem' }}>
+                    {!showDeleteConfirm ? (
+                        <button
+                            type="button"
+                            className="btn btn-ghost"
+                            style={{
+                                width: '100%', justifyContent: 'center', gap: '0.45rem',
+                                padding: '0.8rem', fontSize: '0.6rem', letterSpacing: '0.2em',
+                                color: 'var(--danger)', borderColor: 'rgba(162,36,36,0.4)',
+                                background: 'rgba(162,36,36,0.05)', borderRadius: '4px'
+                            }}
+                            onClick={() => setShowDeleteConfirm(true)}
+                        >
+                            <Trash2 size={14} />
+                            DELETE THIS ENTIRE LOG
+                        </button>
+                    ) : (
+                        <div style={{ background: 'rgba(162,36,36,0.1)', border: '1px solid rgba(162,36,36,0.5)', borderRadius: '4px', padding: '1rem', textAlign: 'center' }}>
+                            <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', color: 'var(--danger)', letterSpacing: '0.1em', marginBottom: '1rem' }}>THIS CANNOT BE UNDONE.</div>
+                            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                                <button type="button" className="btn btn-primary" style={{ flex: '1 1 auto', justifyContent: 'center', background: 'var(--danger)', color: 'white', borderColor: 'var(--danger)' }} onClick={async () => {
+                                    if (logModalEditLogId) {
+                                        removeLog(logModalEditLogId)
+                                        reelToast.success('Log wiped.')
+                                        closeLogModal()
+                                    }
+                                }}>CONFIRM DELETION</button>
+                                <button type="button" className="btn btn-ghost" style={{ flex: '1 1 auto', justifyContent: 'center' }} onClick={() => setShowDeleteConfirm(false)}>CANCEL</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
             <div style={{ textAlign: 'center', paddingBottom: '1rem', borderBottom: '1px solid rgba(139,105,20,0.15)' }}>
                 {film.poster_path && (
                     <div style={{ display: 'inline-block', position: 'relative' }}>
