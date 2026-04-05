@@ -11,6 +11,7 @@ export interface NotificationState {
     dismiss: (id: string) => void
     clearAll: () => void
     unreadCount: () => number
+    deletedIds: string[]
 }
 
 // ── NOTIFICATION STORE — in-app notifications ──
@@ -18,6 +19,7 @@ export const useNotificationStore = create<NotificationState>()(
     persist(
         (set, get) => ({
             notifications: [],
+            deletedIds: [],
 
             push: (notif) => set((state) => {
                 const newId = notif.id || ('n-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6))
@@ -52,9 +54,10 @@ export const useNotificationStore = create<NotificationState>()(
 
             dismiss: (id) => set((state) => ({
                 notifications: state.notifications.filter((n) => n.id !== id),
+                deletedIds: [...state.deletedIds, id].slice(-100), // Keep list bounded
             })),
 
-            clearAll: () => set({ notifications: [] }),
+            clearAll: () => set({ notifications: [], deletedIds: [] }),
 
             unreadCount: () => get().notifications.filter((n) => !n.read).length,
         }),

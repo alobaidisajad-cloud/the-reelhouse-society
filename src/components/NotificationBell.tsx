@@ -74,14 +74,22 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
                 .limit(50)
 
             if (!error && data && !cancelled) {
-                const formatted = data.map((n: any) => ({
-                    id: n.id,
-                    type: n.type || 'system',
-                    from: n.from_username || '',
-                    message: n.message || '',
-                    read: !!n.read,
-                    timestamp: n.created_at,
-                }))
+                const currentLocalStore = useNotificationStore.getState().notifications
+                const deletedIds = (useNotificationStore.getState() as any).deletedIds || []
+                
+                const formatted = data.map((n: any) => {
+                    const localVersion = currentLocalStore.find(x => x.id === n.id)
+                    return {
+                        id: n.id,
+                        type: n.type || 'system',
+                        from: n.from_username || '',
+                        message: n.message || '',
+                        // Prioritize local read state to mask database constraint update failures
+                        read: (localVersion && localVersion.read) ? true : !!n.read,
+                        timestamp: n.created_at,
+                    }
+                }).filter((n: any) => !deletedIds.includes(n.id))
+                
                 setNotifications(formatted)
             }
         }
