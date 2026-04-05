@@ -250,7 +250,7 @@ export default function ListDetailPage() {
                             <div style={{ fontFamily: 'var(--font-display)', fontSize: '2rem', color: 'var(--sepia)', marginBottom: '0.5rem' }}>Empty Archive</div>
                             <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--fog)', lineHeight: 1.5, maxWidth: 400, margin: '0 auto' }}>
                                 {isOwner
-                                    ? "To populate this anthology, search for a film, click 'LOG', and toggle it in the 'Add to Anthology' drawer."
+                                    ? "To populate this stack, search for a film, click 'LOG', and toggle it in the 'Add to Stack' drawer."
                                     : "No films have been added to this collection yet."}
                             </div>
                         </div>

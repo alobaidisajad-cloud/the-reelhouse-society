@@ -137,7 +137,7 @@ export function EmptyStacks() {
             <Ornament />
             <p style={emptyStateStyles.title}>THE SHELVES ARE BARE</p>
             <p style={emptyStateStyles.subtitle}>
-                No collections found. Create your first stack — a curated anthology of cinema worth preserving.
+                No collections found. Create your first stack — a curated collection of cinema worth preserving.
             </p>
         </div>
     )

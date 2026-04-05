@@ -372,7 +372,7 @@ export default function ListsPage() {
         <div className="stacks-page">
             <PageSEO
                 title="The Stacks — The ReelHouse Society"
-                description="Curated anthologies and film collections forged by the Society's devoted members. Discover, certify, and build your own cinema archive."
+                description="Curated stacks and film collections forged by the Society's devoted members. Discover, certify, and build your own cinema archive."
             />
 
             {/* ══════════════════════════════════════════
@@ -392,7 +392,7 @@ export default function ListsPage() {
                     <h1 className="stacks-title">The Stacks</h1>
 
                     <p className="stacks-subtitle">
-                        Behind these doors lies the permanent collection — curated anthologies forged by the Society's most devoted members.
+                        Behind these doors lies the permanent collection — curated stacks forged by the Society's most devoted members.
                     </p>
 
                     {/* Ornamental Divider */}
@@ -551,7 +551,7 @@ export default function ListsPage() {
                                 </div>
                                 {!debouncedQuery && (
                                     <div className="stacks-empty-desc">
-                                        Every great library began with a single volume. Be the one to forge a permanent anthology for the Society.
+                                        Every great library began with a single volume. Be the one to forge a permanent stack for the Society.
                                     </div>
                                 )}
                                 {debouncedQuery && (

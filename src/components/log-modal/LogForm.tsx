@@ -517,11 +517,11 @@ export default function LogForm({ film }: { film: any }) {
             )}
             </AnimatePresence>
 
-            {/* Add to Anthology */}
+            {/* Add to Stack */}
             {lists.length > 0 && status !== 'abandoned' && (
                 <div style={{ marginTop: '0.5rem', marginBottom: '0.5rem' }}>
                     <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'block', marginBottom: '0.75rem' }}>
-                        ✛ ADD TO ANTHOLOGY
+                        ✛ ADD TO STACK
                     </label>
                     <div className="horizontal-scroll" style={{ display: 'flex', gap: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem', WebkitOverflowScrolling: 'touch' }}>
                         {lists.map(list => {
