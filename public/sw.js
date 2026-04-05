@@ -5,7 +5,7 @@
 // ============================================================
 
 // BUILD_HASH changes every deploy, forcing SW update + cache bust
-const BUILD_HASH = '20260405optv3';
+const BUILD_HASH = '20260405optv4';
 const CACHE_VERSION = `v-${BUILD_HASH}`;
 const IMAGE_CACHE = `reelhouse-tmdb-images-${CACHE_VERSION}`;
 const API_CACHE = `reelhouse-tmdb-api-${CACHE_VERSION}`;

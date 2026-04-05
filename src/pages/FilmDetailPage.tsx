@@ -197,7 +197,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
 
                     {/* CTA Buttons */}
                     <div className="hero-cta-row" style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingBottom: '1rem' }}>
-                        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.72rem', padding: '0.85rem' }} onClick={() => openLogModal(film)}>
+                        <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.72rem', padding: '0.85rem' }} onClick={() => openLogModal(film, existingLog?.id)}>
                             <Plus size={15} /> {existingLog ? 'Edit Log' : 'Log This Film'}
                         </button>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
@@ -344,7 +344,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                     )}
 
                     <div className="hero-cta-row" style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
-                        <button className="btn btn-primary" style={{ fontSize: '0.75rem' }} onClick={() => openLogModal(film)}>
+                        <button className="btn btn-primary" style={{ fontSize: '0.75rem' }} onClick={() => openLogModal(film, existingLog?.id)}>
                             <Plus size={14} /> {existingLog ? 'Edit Log' : 'Log This Film'}
                         </button>
                         {existingLog && (
