@@ -373,6 +373,7 @@
   -webkit-backdrop-filter: blur(8px);
   display: flex; justify-content: center; padding: 2rem 1rem;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .article-reader-paper {
   background: #18140f; max-width: 720px; width: 100%;
@@ -442,6 +443,7 @@
 .writer-panel-overlay {
   position: fixed; inset: 0; z-index: var(--z-modal);
   background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   display: flex; justify-content: flex-end;
 }
 .writer-panel {

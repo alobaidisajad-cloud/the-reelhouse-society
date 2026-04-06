@@ -675,7 +675,7 @@
   z-index: var(--z-nav);
   background: #0A0703;
   border-top: 1px solid rgba(139, 105, 20, 0.2);
-  padding: 0.35rem 0 calc(0.35rem + env(safe-area-inset-bottom));
+  padding: 0.35rem 0 max(8px, calc(0.35rem + env(safe-area-inset-bottom)));
   display: grid;
   grid-template-columns: 1fr 1fr auto 1fr 1fr;
   align-items: center;
@@ -747,6 +747,7 @@
   background: rgba(10,7,3,0.75);
   backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   display: flex; align-items: center; justify-content: center;
+  overscroll-behavior: contain;
 }
 
 .modal-card {

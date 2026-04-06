@@ -176,7 +176,7 @@ self.addEventListener('notificationclick', (event) => {
             const urlToOpen = event.notification.data.url;
             // If reelhouse is already open, focus it and navigate
             for (let client of windowClients) {
-                if (client.url.includes('thereelhouse.io') && 'focus' in client) {
+                if (client.url.includes('thereelhousesociety.com') && 'focus' in client) {
                     client.focus();
                     if (urlToOpen && urlToOpen !== '/') client.navigate(urlToOpen);
                     return;
