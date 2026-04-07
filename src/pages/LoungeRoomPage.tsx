@@ -622,6 +622,7 @@ export default function LoungeRoomPage() {
                                 onChange={e => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
                                 rows={1}
+                                maxLength={2000}
                             />
                             <button
                                 className="lounge-send-btn"
