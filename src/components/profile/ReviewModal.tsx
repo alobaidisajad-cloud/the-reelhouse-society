@@ -37,8 +37,8 @@ export default function ReviewModal({ viewLog, profileUser, isOwnProfile, routeU
         <Portal>
         <div
             ref={focusTrapRef}
-            onMouseDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.down = '1' }}
-            onMouseUp={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.down === '1') onClose(); (e.currentTarget as HTMLElement).dataset.down = '0' }}
+            onPointerDown={(e) => { if (e.target === e.currentTarget) (e.currentTarget as HTMLElement).dataset.down = '1' }}
+            onPointerUp={(e) => { if (e.target === e.currentTarget && (e.currentTarget as HTMLElement).dataset.down === '1') onClose(); (e.currentTarget as HTMLElement).dataset.down = '0' }}
             className="modal-overlay"
             role="dialog"
             aria-modal="true"

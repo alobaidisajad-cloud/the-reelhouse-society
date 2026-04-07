@@ -8,9 +8,18 @@ import { useEffect, useState } from 'react'
 /** Bulletproof desktop-only detection.
  *  Many Android devices (Samsung S-Pen, etc.) report BOTH fine AND coarse pointers.
  *  We require: fine pointer + NO coarse pointer + NO touch support + wide viewport.
+ *  HARD BLOCK: Any device whose user-agent contains Android, iPhone, iPad, iPod,
+ *  or any mobile identifier is immediately rejected — no false positives.
  */
 function isDesktopPointerDevice(): boolean {
   if (typeof window === 'undefined') return false
+
+  // ── HARD BLOCK: Mobile UA strings always mean "no custom cursor" ──
+  const ua = navigator.userAgent || ''
+  if (/Android|iPhone|iPad|iPod|Mobile|Tablet|Touch|CrOS|Opera Mini|Opera Mobi|webOS|BlackBerry|IEMobile/i.test(ua)) {
+    return false
+  }
+
   const hasFinePointer = window.matchMedia('(pointer: fine)').matches
   const hasCoarsePointer = window.matchMedia('(any-pointer: coarse)').matches
   const hasTouchPoints = navigator.maxTouchPoints > 0
@@ -25,6 +34,18 @@ export default function CustomCursor() {
 
   useEffect(() => {
     if (!isDesktop) return
+
+    // ── RUNTIME SAFETY NET ──
+    // If a touch event EVER fires, immediately tear down the custom cursor.
+    // This catches edge cases where the media query detection was wrong
+    // (e.g., Chrome DevTools device emulation, Samsung DeX, fold devices).
+    let tornDown = false
+    const teardownOnTouch = () => {
+      if (tornDown) return
+      tornDown = true
+      cleanup()
+    }
+    window.addEventListener('touchstart', teardownOnTouch, { once: true, passive: true })
 
     const outer = document.createElement('div')
     const dot = document.createElement('div')
@@ -126,7 +147,7 @@ export default function CustomCursor() {
 
     animate()
 
-    return () => {
+    const cleanup = () => {
       window.removeEventListener('mousemove', onMove)
       window.removeEventListener('mousedown', onDown)
       window.removeEventListener('mouseup', onUp)
@@ -137,11 +158,14 @@ export default function CustomCursor() {
       window.removeEventListener('blur', onLeave)
       window.removeEventListener('focus', onEnter)
       document.removeEventListener('visibilitychange', onVisibilityChange)
+      window.removeEventListener('touchstart', teardownOnTouch)
       cancelAnimationFrame(raf)
       outer.remove()
       dot.remove()
       cursorStyle.remove()
     }
+
+    return cleanup
   }, [isDesktop])
 
   // On touch/mobile devices, render NOTHING — no styles, no DOM, no interference

@@ -75,8 +75,8 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
 
     return (
         <div
-            style={{ display: 'flex', gap: 3, alignItems: 'center', userSelect: 'none' }}
-            onMouseLeave={() => setHovered(null)}
+            style={{ display: 'flex', gap: 3, alignItems: 'center', userSelect: 'none', touchAction: onChange ? 'none' : 'auto' }}
+            onPointerLeave={() => setHovered(null)}
             role="slider"
             aria-label={`Rating: ${value} out of 5 reels`}
             aria-valuemin={0}
@@ -91,7 +91,7 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
                     <div
                         key={reel}
                         style={{ position: 'relative', width: s, height: s, cursor: onChange ? 'pointer' : 'default' }}
-                        onMouseMove={onChange ? (e) => {
+                        onPointerMove={onChange ? (e) => {
                             const rect = e.currentTarget.getBoundingClientRect()
                             const x = e.clientX - rect.left
                             setHovered(x < rect.width / 2 ? reel - 0.5 : reel)
@@ -101,6 +101,12 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
                             // Haptic feedback on touch devices — feels like a mechanical reel click
                             if (navigator.vibrate) navigator.vibrate(10)
                             onChange(v)
+                        } : undefined}
+                        onTouchStart={onChange ? (e) => {
+                            // On touch: calculate half-reel from touch position immediately
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            const x = e.touches[0].clientX - rect.left
+                            setHovered(x < rect.width / 2 ? reel - 0.5 : reel)
                         } : undefined}
                     >
                         <ReelSegmentSVG size={s} filled={full ? 'full' : half ? 'half' : 'empty'} />

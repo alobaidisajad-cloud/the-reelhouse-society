@@ -58,13 +58,13 @@ export default function ReportButton({ contentType, contentId, size = 14 }: Repo
     // Close on outside click
     useEffect(() => {
         if (!showModal) return
-        const handleClick = (e: MouseEvent) => {
+        const handleClick = (e: PointerEvent) => {
             if (modalRef.current && !modalRef.current.contains(e.target as Node)) {
                 setShowModal(false)
             }
         }
-        document.addEventListener('mousedown', handleClick)
-        return () => document.removeEventListener('mousedown', handleClick)
+        document.addEventListener('pointerdown', handleClick)
+        return () => document.removeEventListener('pointerdown', handleClick)
     }, [showModal])
 
     return (

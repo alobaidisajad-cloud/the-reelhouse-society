@@ -108,8 +108,8 @@ export default function LogModal() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onMouseDown={(e) => { if (e.target === e.currentTarget) e.currentTarget.dataset.backdropMouseDown = 'true' }}
-                onMouseUp={(e) => { if (e.target === e.currentTarget && e.currentTarget.dataset.backdropMouseDown === 'true') closeLogModal(); e.currentTarget.dataset.backdropMouseDown = 'false' }}
+                onPointerDown={(e) => { if (e.target === e.currentTarget) e.currentTarget.dataset.backdropDown = 'true' }}
+                onPointerUp={(e) => { if (e.target === e.currentTarget && e.currentTarget.dataset.backdropDown === 'true') closeLogModal(); e.currentTarget.dataset.backdropDown = 'false' }}
                 className="modal-overlay"
             >
                 <motion.div

@@ -73,6 +73,17 @@
   .card-film img, .hero-grid, .nav-logo {
     -webkit-touch-callout: none !important;
   }
+
+  /* 4. Kill the Custom Cursor — Nuclear Override
+     Even if CustomCursor.tsx somehow activates, this CSS ensures native cursor is restored. */
+  .cursor-outer, .cursor-dot { display: none !important; }
+  #custom-cursor-hide { display: none !important; }
+
+  /* 5. Prevent Sticky Hover States
+     On touch devices, :hover states "stick" after a tap. This resets them. */
+  button:hover, a:hover, [role="button"]:hover {
+    transform: none !important;
+  }
 }
 
 /* ── Touch interaction improvements ── */

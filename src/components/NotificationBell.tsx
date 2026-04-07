@@ -130,11 +130,11 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
     // Close on outside click (desktop only)
     useEffect(() => {
         if (isTouch) return
-        const handler = (e: MouseEvent) => {
+        const handler = (e: PointerEvent) => {
             if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
         }
-        document.addEventListener('mousedown', handler)
-        return () => document.removeEventListener('mousedown', handler)
+        document.addEventListener('pointerdown', handler)
+        return () => document.removeEventListener('pointerdown', handler)
     }, [isTouch, setOpen])
 
     // ══════════════════════════════════════

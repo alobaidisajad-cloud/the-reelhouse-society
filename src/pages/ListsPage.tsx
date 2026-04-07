@@ -236,13 +236,13 @@ export default function ListsPage() {
 
     // Close sort menu on outside click
     useEffect(() => {
-        const handleClick = (e: MouseEvent) => {
+        const handleClick = (e: PointerEvent) => {
             if (sortMenuRef.current && !sortMenuRef.current.contains(e.target as Node)) {
                 setShowSortMenu(false)
             }
         }
-        if (showSortMenu) document.addEventListener('mousedown', handleClick)
-        return () => document.removeEventListener('mousedown', handleClick)
+        if (showSortMenu) document.addEventListener('pointerdown', handleClick)
+        return () => document.removeEventListener('pointerdown', handleClick)
     }, [showSortMenu])
 
     // Fetch public community lists from Supabase
