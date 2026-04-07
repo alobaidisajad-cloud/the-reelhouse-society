@@ -18,7 +18,7 @@ const chainable = () => {
         'gt', 'lt', 'gte', 'lte', 'in', 'is', 'order', 'limit', 'range',
         'single', 'maybeSingle', 'filter', 'match', 'not', 'or', 'contains',
         'textSearch', 'ilike', 'like']
-    methods.forEach(m => { obj[m] = (..._args) => obj })
+    methods.forEach(m => { obj[m] = () => obj })
     // Make it thenable so await works
     obj.then = (resolve) => resolve({ data: [], error: null })
     return obj

@@ -80,6 +80,7 @@ dist-ssr
 *.sw?
 
 .vercel
+.env
 .env.staging
 .env*.local
 
