@@ -7,7 +7,6 @@ import { useUIStore, useAuthStore } from '../store'
 import { supabase } from '../supabaseClient'
 import reelToast from '../utils/reelToast'
 import { isDisposableEmail, isValidEmailFormat } from '../utils/disposableEmails'
-import VelvetRopeGate from './signup/VelvetRopeGate'
 import ForgotPasswordScreen from './signup/ForgotPasswordScreen'
 import EmailConfirmationScreen from './signup/EmailConfirmationScreen'
 import { Portal } from './UI'
@@ -21,12 +20,6 @@ const PERSONAS = [
     { id: 'The Completionist', desc: 'A director\'s filmography is a mission, not a suggestion.', color: '#1C5C1A' },
 ]
 
-
-// Invite codes — MUST be set via VITE_INVITE_CODES in Vercel (comma-separated).
-// No fallback codes shipped in the bundle — prevents view-source discovery.
-const VALID_CODES = import.meta.env.VITE_INVITE_CODES
-    ? import.meta.env.VITE_INVITE_CODES.split(',').map((c: string) => c.trim().toUpperCase())
-    : []  // No fallback — signup blocked if env var is missing
 
 export default function SignupModal() {
     const { signupModalOpen, signupRole, closeSignupModal } = useUIStore()
@@ -54,11 +47,6 @@ export default function SignupModal() {
     const MAX_LOGIN_ATTEMPTS = 5
     const LOCKOUT_DURATION_MS = 30_000
 
-    // Velvet Rope State
-    const [hasClearance, setHasClearance] = useState(false)
-    const [clearanceCode, setClearanceCode] = useState('')
-    const [clearanceStatus, setClearanceStatus] = useState('idle') // idle, checking, granted, denied
-
     // Email confirmation state
     const [awaitingConfirmation, setAwaitingConfirmation] = useState(false)
     const [confirmedEmail, setConfirmedEmail] = useState('')
@@ -66,15 +54,6 @@ export default function SignupModal() {
 
     // Forgot password state
     const [forgotMode, setForgotMode] = useState(false)
-
-    useEffect(() => {
-        // Reset state when modal opens
-        if (signupModalOpen) {
-            setHasClearance(false)
-            setClearanceCode('')
-            setClearanceStatus('idle')
-        }
-    }, [signupModalOpen])
 
     // Close the modal if the user is already logged in
     useEffect(() => {
@@ -169,22 +148,6 @@ export default function SignupModal() {
     const passwordStrong = passedChecks === 5
     const strengthLabel = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'][passedChecks]
     const strengthColor = ['', 'var(--blood-reel)', '#c4a000', '#c4a000', 'var(--sepia)', '#4caf50'][passedChecks]
-
-    const handleClearanceSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        if (!clearanceCode.trim() || clearanceStatus === 'checking') return
-
-        setClearanceStatus('checking')
-        setTimeout(() => {
-            if (VALID_CODES.includes(clearanceCode.toUpperCase().trim())) {
-                setClearanceStatus('granted')
-                setTimeout(() => setHasClearance(true), 1500)
-            } else {
-                setClearanceStatus('denied')
-                setTimeout(() => setClearanceStatus('idle'), 2000)
-            }
-        }, 1200)
-    }
 
     const handleSubmit = async () => {
         if (!emailOrUsername || !password || (!isLogin && !username)) {
@@ -296,7 +259,6 @@ export default function SignupModal() {
     const resetForm = () => {
         setStep(0); setEmailOrUsername(''); setPassword(''); setUsername('')
         setPersona('')
-        setHasClearance(false); setClearanceCode(''); setClearanceStatus('idle')
         setAwaitingConfirmation(false); setConfirmedEmail('')
         setForgotMode(false); setUsernameStatus('idle')
     }
@@ -344,20 +306,7 @@ export default function SignupModal() {
         )
     }
 
-    if (!isLogin && !hasClearance) {
-        return (
-            <Portal>
-            <VelvetRopeGate
-                clearanceCode={clearanceCode}
-                setClearanceCode={setClearanceCode}
-                clearanceStatus={clearanceStatus}
-                onSubmit={handleClearanceSubmit}
-                onSwitchToLogin={() => setIsLogin(true)}
-                onClose={closeSignupModal}
-            />
-            </Portal>
-        )
-    }
+
 
     // NORMAL SIGNUP / LOGIN FORM
     return (
@@ -594,7 +543,7 @@ export default function SignupModal() {
                             onClick={() => setIsLogin((v) => !v)}
                             style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.1em', color: 'var(--fog)', background: 'none', border: 'none', textDecoration: 'underline', textAlign: 'center', cursor: 'pointer' }}
                         >
-                            {isLogin ? "Don't have an account? Enter Clearance Code" : 'Already a member? Sign in'}
+                            {isLogin ? "Don't have an account? Sign up" : 'Already a member? Sign in'}
                         </button>
                         {isLogin && (
                             <button
