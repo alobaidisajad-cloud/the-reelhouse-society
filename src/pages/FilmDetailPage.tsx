@@ -103,11 +103,11 @@ function FilmHero({ film, onPlayTrailer }: any) {
         {IS_TOUCH ? (
             <div style={{ position: 'relative', width: '100%' }}>
                 {/* Full-bleed backdrop */}
-                <div style={{ position: 'relative', width: '100%', height: '55vw', minHeight: 220, maxHeight: 320, overflow: 'hidden' }}>
+            <div style={{ position: 'relative', width: '100vw', marginLeft: 'calc(-50vw + 50%)', height: '55vw', minHeight: 220, maxHeight: 320, overflow: 'hidden' }}>
                     {film.backdrop_path ? (
-                        <div ref={IS_TOUCH ? backdropRef : null} className="anamorphic-focus-pull" style={{ position: 'absolute', top: 0, left: -50, right: -50, bottom: -50, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
+                        <div ref={IS_TOUCH ? backdropRef : null} className="anamorphic-focus-pull" style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: -50, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
                     ) : (
-                        <div className="anamorphic-focus-pull" style={{ position: 'absolute', inset: -50, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
+                        <div className="anamorphic-focus-pull" style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
                     )}
                     <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(10,7,3,0.05) 0%, rgba(10,7,3,0.40) 65%, var(--ink) 100%)' }} />
                 </div>
