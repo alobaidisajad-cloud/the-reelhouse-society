@@ -76,7 +76,7 @@ export default function MainSearchDropdown({ isOpen, onClose }: { isOpen: boolea
                             onChange={(e) => setQuery(e.target.value)}
                             autoFocus
                         />
-                        <button className="btn btn-primary" type="submit">Search</button>
+                        <button className="btn btn-primary" type="submit" style={{ whiteSpace: 'nowrap', flexShrink: 0 }}>Search</button>
                         <button type="button" className="nav-icon-btn" onClick={onClose}>
                             <X size={16} />
                         </button>

@@ -105,7 +105,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                 {/* Full-bleed backdrop */}
                 <div style={{ position: 'relative', width: '100%', height: '55vw', minHeight: 220, maxHeight: 320, overflow: 'hidden' }}>
                     {film.backdrop_path ? (
-                        <div ref={IS_TOUCH ? backdropRef : null} className="anamorphic-focus-pull" style={{ position: 'absolute', inset: -50, top: 0, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
+                        <div ref={IS_TOUCH ? backdropRef : null} className="anamorphic-focus-pull" style={{ position: 'absolute', top: 0, left: -50, right: -50, bottom: -50, backgroundImage: `url(${tmdb.backdrop(film.backdrop_path)})`, backgroundSize: 'cover', backgroundPosition: 'center 20%', filter: 'sepia(0.25) brightness(0.50) contrast(1.1)' }} />
                     ) : (
                         <div className="anamorphic-focus-pull" style={{ position: 'absolute', inset: -50, background: 'linear-gradient(135deg, var(--soot), var(--ink))' }} />
                     )}
