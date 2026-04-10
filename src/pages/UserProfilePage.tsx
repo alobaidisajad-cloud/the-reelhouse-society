@@ -114,9 +114,18 @@ export default function UserProfilePage() {
     const { data: profileMetrics } = useQuery({
         queryKey: ['profile-metrics', profileUser?.id],
         queryFn: async () => {
-             const { data, error } = await supabase.rpc('get_profile_metrics', { uid: profileUser?.id })
+             // Direct query instead of RPC — get_profile_metrics function doesn't exist
+             const { data, error } = await supabase
+                 .from('logs')
+                 .select('rating')
+                 .eq('user_id', profileUser?.id)
              if (error) throw error
-             return data
+             const total_logs = data?.length || 0
+             const rated = (data || []).filter((l: any) => l.rating > 0)
+             const avg_rating = rated.length > 0
+                 ? rated.reduce((sum: number, l: any) => sum + l.rating, 0) / rated.length
+                 : 0
+             return { total_logs, avg_rating }
         },
         enabled: !!profileUser?.id,
         staleTime: 1000 * 60 * 5,
