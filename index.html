@@ -99,12 +99,18 @@
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
         try {
-          // Register SW — browser auto-detects byte changes and triggers update
           const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-          // Check for updates on every page load
           reg.update();
         } catch (e) {
-          // SW registration can fail in incognito/restricted contexts — non-fatal
+          // InvalidStateError = corrupted SW — nuke it and reload once
+          if (e && e.name === 'InvalidStateError' && !sessionStorage.getItem('sw_recovery')) {
+            sessionStorage.setItem('sw_recovery', '1');
+            const regs = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(regs.map(r => r.unregister()));
+            const cacheKeys = await caches.keys();
+            await Promise.all(cacheKeys.map(k => caches.delete(k)));
+            location.reload();
+          }
         }
       });
     }
