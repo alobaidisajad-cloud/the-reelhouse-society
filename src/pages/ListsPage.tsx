@@ -287,7 +287,8 @@ export default function ListsPage() {
             if (listIds.length > 0) {
                 const [endorsementsResp, commentsResp] = await Promise.all([
                     supabase.from('interactions').select('target_list_id, user_id, type').in('target_list_id', listIds).eq('type', 'endorse_list'),
-                    supabase.from('list_comments').select('list_id').in('list_id', listIds)
+                    // list_comments table doesn't exist — use interactions table instead
+                    supabase.from('interactions').select('target_list_id').in('target_list_id', listIds).eq('type', 'comment_list')
                 ])
 
                 if (endorsementsResp.data) {
@@ -299,7 +300,7 @@ export default function ListsPage() {
 
                 if (commentsResp.data) {
                     commentsResp.data.forEach((c: any) => {
-                        commentCountMap[c.list_id] = (commentCountMap[c.list_id] || 0) + 1
+                        commentCountMap[c.target_list_id] = (commentCountMap[c.target_list_id] || 0) + 1
                     })
                 }
             }
