@@ -431,7 +431,7 @@ export const useFilmStore = create<FilmState>()(
                     let allItems: any[] = []
                     if (listIds.length > 0) {
                         const { data: items } = await supabase
-                            .from('list_items').select('id, list_id, film_id, film_title, poster_path, position, created_at').in('list_id', listIds).limit(1000)
+                            .from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).limit(1000)
                         allItems = items || []
                     }
                     // Group items by list_id client-side
