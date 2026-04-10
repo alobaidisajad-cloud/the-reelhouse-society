@@ -70,12 +70,12 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
     const [hovered, setHovered] = useState<number | null>(null)
     const display = hovered !== null ? hovered : value
 
-    const sizes = { sm: 18, md: 24, lg: 32 }
+    const sizes = { sm: 18, md: 24, lg: 40 }
     const s = sizes[size] || 24
 
     return (
         <div
-            style={{ display: 'flex', gap: 3, alignItems: 'center', userSelect: 'none', touchAction: onChange ? 'none' : 'auto' }}
+            style={{ display: 'flex', gap: size === 'lg' ? 6 : 3, alignItems: 'center', userSelect: 'none', touchAction: onChange ? 'none' : 'auto' }}
             onPointerLeave={() => setHovered(null)}
             role="slider"
             aria-label={`Rating: ${value} out of 5 reels`}

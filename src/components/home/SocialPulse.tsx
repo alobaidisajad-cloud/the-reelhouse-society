@@ -8,6 +8,7 @@ import { tmdb } from '../../tmdb'
 import { SectionHeader, ReelRating } from '../UI'
 import Buster from '../Buster'
 import { useViewport } from '../../hooks/useViewport'
+import { useAuthStore } from '../../store'
 
 const SocialPulse = memo(function SocialPulse() {
     const { isTouch: IS_TOUCH } = useViewport()
@@ -44,12 +45,26 @@ const SocialPulse = memo(function SocialPulse() {
         staleTime: 1000 * 60 * 2, // Cache 2 minutes
     })
 
+    const { user: currentUser } = useAuthStore()
+    const isCurrentUserAuteur = currentUser?.role === 'auteur' || (currentUser as any)?.role === 'god';
+    
+    // Define the pulse glow based on the user's tier
+    const pulseGradient = isCurrentUserAuteur 
+        ? 'linear-gradient(to bottom, rgba(180,45,45,1), rgba(125,31,31,0.6))' 
+        : 'linear-gradient(to bottom, var(--sepia), var(--flicker))';
+    const pulseShadow = isCurrentUserAuteur 
+        ? '0 0 10px rgba(180,45,45,0.5)' 
+        : '0 0 10px rgba(139,105,20,0.4)';
+    const emptyGlyphColor = isCurrentUserAuteur ? 'rgba(180,45,45,0.7)' : 'var(--sepia)';
+    const emptyBorderTop = isCurrentUserAuteur ? 'rgba(180,45,45,0.2)' : 'rgba(139,105,20,0.08)';
+    const emptyBorderSubtle = isCurrentUserAuteur ? 'rgba(180,45,45,0.08)' : 'rgba(139,105,20,0.04)';
+
     const activities = communityLogs
 
     return (
         <section style={{ position: 'relative', margin: '4rem 0 2rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                <div style={{ width: '3px', height: '1.8rem', background: 'linear-gradient(to bottom, var(--sepia), var(--flicker))', borderRadius: '2px', boxShadow: '0 0 10px rgba(139,105,20,0.4)' }} />
+                <div className="breathe-glow" style={{ width: '3px', height: '1.8rem', background: pulseGradient, borderRadius: '2px', boxShadow: pulseShadow }} />
                 <SectionHeader label="LIVE FROM THE FOYER" title="The Pulse" style={{ marginBottom: 0, paddingBottom: 0, borderBottom: 'none' }} />
             </div>
 
@@ -61,18 +76,18 @@ const SocialPulse = memo(function SocialPulse() {
                 /* ── Dark Screening Room — single atmospheric empty state ── */
                 <div style={{
                     padding: IS_TOUCH ? '2.5rem 1.5rem' : '3.5rem 2.5rem',
-                    background: 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.7)',
-                    borderLeft: '2px solid rgba(139,105,20,0.2)',
-                    borderTop: '1px solid rgba(139,105,20,0.08)',
-                    borderBottom: '1px solid rgba(139,105,20,0.04)',
-                    borderRight: '1px solid rgba(139,105,20,0.04)',
+                    background: isCurrentUserAuteur ? 'linear-gradient(180deg, rgba(125,31,31,0.06) 0%, transparent 30%), rgba(18,14,9,0.7)' : 'linear-gradient(180deg, rgba(139,105,20,0.04) 0%, transparent 30%), rgba(18,14,9,0.7)',
+                    borderLeft: `2px solid ${emptyGlyphColor}`,
+                    borderTop: `1px solid ${emptyBorderTop}`,
+                    borderBottom: `1px solid ${emptyBorderSubtle}`,
+                    borderRight: `1px solid ${emptyBorderSubtle}`,
                     borderRadius: '0 8px 8px 0',
                     textAlign: 'center',
                     position: 'relative',
                     overflow: 'hidden',
                 }}>
-                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(139,105,20,0.2), transparent)' }} />
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: 'var(--sepia)', opacity: 0.6, marginBottom: '1rem' }}>SIGNAL QUIET</div>
+                    <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: `linear-gradient(90deg, transparent, ${emptyGlyphColor}, transparent)` }} />
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.3em', color: emptyGlyphColor, opacity: 0.6, marginBottom: '1rem' }}>SIGNAL QUIET</div>
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: IS_TOUCH ? '1.3rem' : '1.5rem', color: 'var(--parchment)', opacity: 0.70, marginBottom: '0.75rem' }}>The screening room is dark.</div>
                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', opacity: 0.50, lineHeight: 1.6, fontStyle: 'italic', maxWidth: 400, margin: '0 auto' }}>When a member logs their first film, it will appear here.</div>
                     <div style={{ height: '1px', background: 'linear-gradient(to right, transparent, rgba(139,105,20,0.15), transparent)', margin: '1.5rem auto 0', maxWidth: 200 }} />

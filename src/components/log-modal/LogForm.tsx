@@ -309,15 +309,25 @@ export default function LogForm({ film }: { film: any }) {
             {/* Rating */}
             {status !== 'abandoned' && (
                 <div>
-                    <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'block', marginBottom: '0.5rem' }}>
+                    <label style={{ fontFamily: 'var(--font-ui)', fontSize: '0.6rem', letterSpacing: '0.15em', color: 'var(--sepia)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                         YOUR RATING
+                        {rating > 0 && (
+                            <span style={{ color: 'var(--flicker)', fontFamily: 'var(--font-display-alt)', fontSize: '0.85rem', letterSpacing: '0.05em' }}>
+                                {rating % 1 === 0 ? rating : rating.toFixed(1)}<span style={{ color: 'var(--fog)', fontSize: '0.55rem', fontFamily: 'var(--font-ui)' }}>/5</span>
+                            </span>
+                        )}
                     </label>
                     <ReelRating value={rating} onChange={setRating} size="lg" />
-                    {rating > 0 && (
-                        <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', marginTop: '0.3rem' }}>
-                            {['', 'Unwatchable', 'Not Great', 'Fine', 'Really Good', 'Masterpiece'][Math.ceil(rating)]}
-                        </div>
-                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '0.3rem' }}>
+                        {rating > 0 ? (
+                            <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)' }}>
+                                {({ 0.5: 'Unwatchable', 1: 'Unwatchable', 1.5: 'Not Great', 2: 'Not Great', 2.5: 'Fine', 3: 'Fine', 3.5: 'Really Good', 4: 'Really Good', 4.5: 'Masterpiece', 5: 'Masterpiece' } as Record<number, string>)[rating] || ''}
+                            </span>
+                        ) : <span />}
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.12em', color: 'var(--fog)', opacity: 0.5 }}>
+                            TAP LEFT HALF FOR ½ STARS
+                        </span>
+                    </div>
                 </div>
             )}
 

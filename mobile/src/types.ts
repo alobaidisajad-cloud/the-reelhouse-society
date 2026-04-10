@@ -1,0 +1,233 @@
+// ============================================================
+// REELHOUSE — SHARED TYPE DEFINITIONS
+// ============================================================
+
+// ── Auth ──
+export interface User {
+    id: string
+    username: string
+    email?: string
+    bio?: string
+    avatar?: string
+    avatar_url?: string
+    role: 'free' | 'cinephile' | 'archivist' | 'auteur'
+    tier?: 'free' | 'cinephile' | 'archivist' | 'auteur'
+    displayName?: string
+    display_name?: string
+    persona?: string
+    socialVisibility?: 'public' | 'members' | 'private'
+    social_visibility?: string
+    following?: string[]
+    followers_count?: number
+    following_count?: number
+    isSocialPrivate?: boolean
+    is_social_private?: boolean
+    created_at?: string
+    preferences?: Record<string, unknown>
+    is_banned?: boolean
+    ban_reason?: string
+    social_links?: Record<string, string>
+}
+
+// ── Film Log ──
+export interface FilmLog {
+    id: string
+    filmId: number
+    title: string
+    poster?: string | null
+    altPoster?: string | null
+    year?: number
+    rating: number
+    status: 'watched' | 'rewatched' | 'abandoned'
+    review?: string
+    pullQuote?: string
+    tags?: string[]
+    director?: string
+    directors?: string[]
+    genres?: Array<{ id: number; name: string }> | number[]
+    runtime?: number
+    popularity?: number
+    release_date?: string
+    loggedAt?: string
+    created_at?: string
+    createdAt?: string
+    user_id?: string
+    // Half-life tracking
+    genre_ids?: number[]
+    
+    // UI mapping properties
+    isSpoiler?: boolean
+    watchedDate?: string
+    watchedWith?: string | null
+    privateNotes?: string | null
+    abandonedReason?: string | null
+    physicalMedia?: string | null
+    isAutopsied?: boolean
+    autopsy?: string | null
+    editorialHeader?: string | null
+    dropCap?: boolean
+    videoUrl?: string | null
+}
+
+// ── Watchlist ──
+export interface WatchlistItem {
+    id: number
+    title: string
+    poster_path?: string | null
+    year?: number
+}
+
+// ── Vault ──
+export interface VaultItem {
+    id: number
+    title: string
+    poster_path?: string | null
+    year?: number
+    format: string
+}
+
+// ── Physical Archive ──
+export interface PhysicalArchiveItem {
+    id: string
+    filmId: number
+    title: string
+    poster_path?: string | null
+    year?: number
+    formats: string[]
+    notes?: string
+    condition?: string
+    createdAt?: string
+}
+
+// ── List ──
+export interface FilmList {
+    id: string
+    title: string
+    name?: string
+    description?: string
+    films: Array<{ id: number; title: string; poster_path?: string | null }>
+    user_id?: string
+    created_at?: string
+    isPrivate?: boolean
+    isRanked?: boolean
+}
+
+// ── Interaction ──
+export interface Interaction {
+    type: 'endorse' | 'endorse_list'
+    targetId: string
+    timestamp: string
+}
+
+// ── Ticket Stub ──
+export interface TicketStub {
+    id: string
+    filmTitle?: string
+    film_title?: string
+    venue_name?: string  // Legacy — kept for existing ticket stubs in DB
+    showtime_date?: string
+    date?: string
+    seat_label?: string
+    seat?: string
+    ticketType?: string
+    amount?: number
+    qrCode?: string | null
+    screenName?: string | null
+    poster_path?: string | null
+    createdAt?: string
+    created_at?: string
+}
+
+// ── Dispatch (Dossier) ──
+export interface Dossier {
+    id: string
+    title: string
+    content: string
+    excerpt?: string
+    author_id?: string
+    author_name?: string
+    author_avatar?: string
+    film_id?: number
+    film_title?: string
+    film_poster?: string | null
+    type: 'essay' | 'review' | 'list' | 'letter'
+    published: boolean
+    endorsements?: number
+    created_at?: string
+}
+
+// ── Programme (Nightly Programme) ──
+export interface Programme {
+    id: string
+    title: string
+    description?: string
+    films: Array<{ id: number; title?: string; poster_path?: string | null }>
+    date?: string
+    user_id?: string
+    created_at?: string
+}
+
+// ── Notification ──
+export interface Notification {
+    id: string
+    type: 'endorse' | 'follow' | 'annotate' | 'retransmit' | 'system' | 'reaction'
+    message?: string
+    from?: string
+    from_user?: string
+    from_avatar?: string
+    target_id?: string
+    read: boolean
+    created_at?: string
+    timestamp: string
+}
+
+// ── Legacy venue/cinema types removed — replaced by The Lounge ──
+// DB tables preserved for safe rollback; frontend no longer references them.
+
+// ── TMDB API Types ──
+export interface TMDBMovie {
+    id: number
+    title?: string
+    name?: string
+    poster_path: string | null
+    backdrop_path: string | null
+    release_date?: string
+    overview?: string
+    vote_average?: number
+    vote_count?: number
+    popularity?: number
+    genre_ids?: number[]
+    media_type?: 'movie' | 'person' | 'tv'
+    runtime?: number
+}
+
+export interface TMDBPerson {
+    id: number
+    name: string
+    profile_path: string | null
+    popularity?: number
+    known_for?: TMDBMovie[]
+    media_type?: 'person'
+}
+
+export interface TMDBSearchResult {
+    results: Array<TMDBMovie | TMDBPerson>
+    total_pages: number
+    total_results: number
+    page: number
+    searchType?: 'exact' | 'typo' | 'semantic' | 'person' | 'failed'
+    matchedContext?: string
+}
+
+// ── UI State ──
+export interface UIState {
+    logModalOpen: boolean
+    signupModalOpen: boolean
+    paywallOpen: boolean
+    paywallFeature: string
+    handbookOpen: boolean
+    handbookSection: string | null
+    onboardingOpen: boolean
+    theme: string
+}
+

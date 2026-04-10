@@ -322,7 +322,7 @@ export default function FeedPage() {
                     
                     {/* LIVE Indicator */}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginBottom: IS_TOUCH ? '0.5rem' : '0' }}>
-                        <span className="reel-live-dot" />
+                        <span className={user?.role === 'auteur' || (user as any)?.role === 'god' ? 'reel-live-dot-auteur' : 'reel-live-dot'} />
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.25em', color: 'var(--fog)', opacity: 0.7 }}>
                             LIVE · {communityFeed.length > 0 ? `${communityFeed.length} DISPATCH${communityFeed.length === 1 ? '' : 'ES'}` : 'AWAITING SIGNAL'}
                         </span>

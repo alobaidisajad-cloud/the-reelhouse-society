@@ -1,0 +1,152 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring, withSequence } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { Heart, MessageSquare, Share2, Award } from 'lucide-react-native';
+
+import { supabase } from '@/src/lib/supabase';
+import { useAuthStore } from '@/src/stores/auth';
+import { colors, fonts } from '@/src/theme/theme';
+
+interface Props {
+  targetId: string;
+  targetType: 'film' | 'list' | 'review';
+  initialCount?: number;
+  initialEnorsed?: boolean;
+  onCommentPress?: () => void;
+  onSharePress?: () => void;
+  style?: ViewStyle;
+}
+
+export default function ReactionBar({ targetId, targetType, initialCount = 0, initialEnorsed = false, onCommentPress, onSharePress, style }: Props) {
+  const { user, isAuthenticated } = useAuthStore();
+  const [endorsed, setEndorsed] = useState(initialEnorsed);
+  const [count, setCount] = useState(initialCount);
+  const [processing, setProcessing] = useState(false);
+
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    // If not provided init value, fetch from Supabase
+    if (!isAuthenticated) return;
+    
+    // In a full implementation, you'd fetch the exact interaction count and user state here
+    // For now, we rely on props or optimistically update.
+  }, [targetId, isAuthenticated]);
+
+  const handleEndorse = async () => {
+    if (!isAuthenticated || processing) {
+      if (!isAuthenticated) { /* Prompt login */ }
+      return;
+    }
+
+    Haptics.impactAsync(endorsed ? Haptics.ImpactFeedbackStyle.Light : Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Animation
+    scale.value = withSequence(
+      withSpring(0.8, { damping: 10, stiffness: 200 }),
+      withSpring(1.2, { damping: 10, stiffness: 200 }),
+      withSpring(1, { damping: 10, stiffness: 200 })
+    );
+
+    const prevEndorsed = endorsed;
+    const typeKey = `endorse_${targetType}`;
+
+    setEndorsed(!endorsed);
+    setCount(prev => prev + (endorsed ? -1 : 1));
+    setProcessing(true);
+
+    try {
+      if (prevEndorsed) {
+        // Remove
+        await supabase.from('interactions')
+          .delete()
+          .eq('user_id', user!.id)
+          .eq(targetType === 'list' ? 'target_list_id' : targetType === 'review' ? 'target_review_id' : 'target_film_id', targetId)
+          .eq('type', typeKey);
+      } else {
+        // Add
+        const payload: any = { user_id: user!.id, type: typeKey };
+        if (targetType === 'list') payload.target_list_id = targetId;
+        else if (targetType === 'review') payload.target_review_id = targetId;
+        else payload.target_film_id = targetId;
+        
+        await supabase.from('interactions').insert(payload);
+      }
+    } catch (err) {
+      // Revert on error
+      setEndorsed(prevEndorsed);
+      setCount(prev => prev + (prevEndorsed ? 1 : -1));
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const animatedIconStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: scale.value }]
+    };
+  });
+
+  return (
+    <View style={[s.container, style]}>
+      <TouchableOpacity 
+        style={s.actionBtn} 
+        onPress={handleEndorse}
+        activeOpacity={0.7}
+      >
+        <Animated.View style={animatedIconStyle}>
+          {targetType === 'list' || targetType === 'review' ? (
+            <Award size={20} color={endorsed ? colors.flicker : colors.fog} fill={endorsed ? colors.flicker : 'transparent'} />
+          ) : (
+            <Heart size={20} color={endorsed ? colors.danger : colors.fog} fill={endorsed ? colors.danger : 'transparent'} />
+          )}
+        </Animated.View>
+        <Text style={[s.countText, endorsed && { color: targetType === 'list' ? colors.flicker : colors.danger }]}>
+          {count > 0 ? count : 'Endorse'}
+        </Text>
+      </TouchableOpacity>
+
+      <View style={s.divider} />
+
+      <TouchableOpacity 
+        style={s.actionBtn} 
+        onPress={() => {
+          Haptics.selectionAsync();
+          onCommentPress && onCommentPress();
+        }}
+        activeOpacity={0.7}
+      >
+        <MessageSquare size={18} color={colors.bone} />
+        <Text style={s.btnText}>Discuss</Text>
+      </TouchableOpacity>
+
+      <View style={s.divider} />
+
+      <TouchableOpacity 
+        style={s.actionBtn} 
+        onPress={() => {
+          Haptics.selectionAsync();
+          onSharePress && onSharePress();
+        }}
+        activeOpacity={0.7}
+      >
+        <Share2 size={18} color={colors.bone} />
+        <Text style={s.btnText}>Share</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
+
+const s = StyleSheet.create({
+  container: {
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.soot,
+    borderWidth: 1, borderColor: colors.ash, borderRadius: 8,
+    paddingVertical: 12, paddingHorizontal: 16,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 6,
+  },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'center', gap: 8 },
+  divider: { width: 1, height: 20, backgroundColor: colors.ash, marginHorizontal: 12 },
+  btnText: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone },
+  countText: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog },
+});

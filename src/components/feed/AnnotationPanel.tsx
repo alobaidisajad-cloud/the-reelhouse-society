@@ -37,13 +37,13 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
     }
 
     const handleDelete = async (id: string) => {
-        if (!window.confirm("Are you sure you want to delete this annotation?")) return
+        if (!window.confirm("Are you sure you want to delete this critique?")) return
         const { error } = await supabase.from('log_comments').delete().eq('id', id)
         if (!error) {
             setComments(prev => prev.filter(c => c.id !== id))
-            reelToast.success('Annotation deleted.')
+            reelToast.success('Critique deleted.')
         } else {
-            reelToast.error('Could not delete annotation.')
+            reelToast.error('Could not delete critique.')
         }
     }
 
@@ -54,9 +54,9 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
         if (!error) {
             setComments(prev => prev.map(c => c.id === id ? { ...c, body: editBody.trim() } : c))
             setEditingCommentId(null)
-            reelToast.success('Annotation updated.')
+            reelToast.success('Critique updated.')
         } else {
-            reelToast.error('Could not update annotation.')
+            reelToast.error('Could not update critique.')
         }
         setIsUpdating(false)
     }
@@ -84,9 +84,9 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
             setComments(prev => [...prev, { id: data.id, username: currentUser.username, body: annotateText.trim(), created_at: new Date().toISOString() }])
             setAnnotateText('')
             if (textareaRef.current) textareaRef.current.style.height = 'auto'
-            reelToast.success('Annotation filed.')
+            reelToast.success('Critique filed.')
         } else {
-            reelToast.error('Could not save annotation.')
+            reelToast.error('Could not save critique.')
         }
         setSubmittingComment(false)
     }
@@ -97,14 +97,14 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
 
     return (
         <div style={{ marginTop: '1rem', borderTop: '1px dashed rgba(139,105,20,0.2)', paddingTop: '1rem' }}>
-            {commentsLoading && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>RETRIEVING ANNOTATIONS...</div>}
+            {commentsLoading && <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', marginBottom: '0.75rem' }}>RETRIEVING CRITIQUES...</div>}
             
             {comments.length > 1 && !showAllComments && (
                 <button 
                     onClick={() => setShowAllComments(true)}
                     style={{ background: 'none', border: 'none', padding: 0, fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.15em', cursor: 'pointer', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.3rem' }}
                 >
-                    <ChevronDown size={10} /> VIEW PREVIOUS ANNOTATIONS ({comments.length - 1})
+                    <ChevronDown size={10} /> VIEW PREVIOUS CRITIQUES ({comments.length - 1})
                 </button>
             )}
 
@@ -213,7 +213,7 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
                     )}
                 </div>
             ) : (
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>SIGN IN TO ANNOTATE</div>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', letterSpacing: '0.1em' }}>SIGN IN TO CRITIQUE</div>
             )}
         </div>
     )

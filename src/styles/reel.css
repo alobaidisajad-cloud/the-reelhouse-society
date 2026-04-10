@@ -42,10 +42,24 @@
 
 .reel-live-dot {
   width: 6px; height: 6px;
-  background: #c0392b;
+  background: var(--sepia);
   border-radius: 50%;
   display: inline-block;
   animation: livePulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes livePulseAuteur {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(180,45,45,0.6); }
+  50%      { opacity: 0.7; box-shadow: 0 0 0 4px rgba(180,45,45,0); }
+}
+
+.reel-live-dot-auteur {
+  width: 6px; height: 6px;
+  background: #DC5050;
+  border-radius: 50%;
+  display: inline-block;
+  animation: livePulseAuteur 2s ease-in-out infinite;
   flex-shrink: 0;
 }
 
