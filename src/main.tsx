@@ -33,8 +33,6 @@ if (import.meta.env.VITE_POSTHOG_KEY) {
     person_profiles: 'identified_only',
     capture_pageview: false, // React Router dictates dynamic captures inside the app
   })
-} else {
-  console.warn('PostHog Telemetry is not initialized. Missing VITE_POSTHOG_KEY.');
 }
 
 
