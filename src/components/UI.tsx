@@ -69,7 +69,7 @@ interface RadarChartProps {
 export const ReelRating = memo(function ReelRating({ value = 0, onChange = null, size = 'md' }: ReelRatingProps) {
     const [hovered, setHovered] = useState<number | null>(null)
     const display = hovered !== null ? hovered : value
-    const touchedRef = React.useRef(false)
+    const touchedRef = useRef(false)
 
     const sizes = { sm: 18, md: 24, lg: 40 }
     const s = sizes[size] || 24
