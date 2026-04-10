@@ -98,21 +98,13 @@
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', async () => {
-        // 1. Unregister ALL existing service workers first
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        for (const reg of registrations) {
-          await reg.unregister();
-        }
-        // 2. Clear ALL caches to purge stale CSS/JS
-        const cacheKeys = await caches.keys();
-        await Promise.all(cacheKeys.map(k => caches.delete(k)));
-        // 3. Register fresh SW with no cache
         try {
+          // Register SW — browser auto-detects byte changes and triggers update
           const reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
-          // Force an update check every time
+          // Check for updates on every page load
           reg.update();
         } catch (e) {
-          console.error('SW registration failed:', e);
+          // SW registration can fail in incognito/restricted contexts — non-fatal
         }
       });
     }
