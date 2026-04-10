@@ -21,7 +21,7 @@ export const useDispatchStore = create<DispatchState>((set) => ({
         set({ loading: true })
         const { data, error } = await supabase
             .from('dispatch_dossiers')
-            .select('*')
+            .select('id, user_id, author_username, title, excerpt, full_content, is_published, views, certify_count, created_at')
             .eq('is_published', true)
             .order('created_at', { ascending: false })
             .limit(20)
@@ -159,7 +159,7 @@ export const useProgrammeStore = create<ProgrammeState>((set) => ({
         set({ loading: true })
         const { data, error } = await supabase
             .from('programmes')
-            .select('*')
+            .select('id, user_id, title, description, films, is_public, created_at')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(100)

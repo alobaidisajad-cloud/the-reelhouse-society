@@ -115,7 +115,7 @@ export const useAuthStore = create<AuthState>()(
                 set({ user: { ...data.user, following: [] } as unknown as User, isAuthenticated: true })
 
                 // Fetch full profile in the background — UI is already updated
-                Promise.resolve(supabase.from('profiles').select('*').eq('id', data.user.id).single())
+                Promise.resolve(supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user.id).single())
                     .then(({ data: profile }) => {
                         if (profile) {
                             set((s) => ({ user: s.user ? { ...s.user, ...profile } : null }))
@@ -151,7 +151,7 @@ export const useAuthStore = create<AuthState>()(
                         username,
                         persona: persona || 'The Cinephile',
                     }).eq('id', data.user!.id)
-                    const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user!.id).single()
+                    const { data: profile } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user!.id).single()
                     set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true })
                     hydrateUserData()
                 }

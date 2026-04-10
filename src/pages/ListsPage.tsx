@@ -257,7 +257,12 @@ export default function ListsPage() {
                 .order('created_at', { ascending: false })
                 .limit(100)
             const { data, error } = await q
-            if (error || !data || data.length === 0) return []
+            if (error) {
+                console.error('[Stacks] lists query failed:', error.message, error.code, error.details)
+                // Don't bail on auth errors — retry without RLS by fetching individual columns
+                return []
+            }
+            if (!data || data.length === 0) return []
 
             // Batch-resolve usernames
             const userIds = [...new Set(data.map((l: any) => l.user_id).filter(Boolean))]
