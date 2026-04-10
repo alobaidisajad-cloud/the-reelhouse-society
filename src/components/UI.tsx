@@ -69,6 +69,7 @@ interface RadarChartProps {
 export const ReelRating = memo(function ReelRating({ value = 0, onChange = null, size = 'md' }: ReelRatingProps) {
     const [hovered, setHovered] = useState<number | null>(null)
     const display = hovered !== null ? hovered : value
+    const touchedRef = React.useRef(false)
 
     const sizes = { sm: 18, md: 24, lg: 40 }
     const s = sizes[size] || 24
@@ -96,14 +97,29 @@ export const ReelRating = memo(function ReelRating({ value = 0, onChange = null,
                             const x = e.clientX - rect.left
                             setHovered(x < rect.width / 2 ? reel - 0.5 : reel)
                         } : undefined}
-                        onClick={onChange ? () => {
-                            const v = hovered !== null ? hovered : reel
-                            // Haptic feedback on touch devices — feels like a mechanical reel click
+                        onClick={onChange ? (e) => {
+                            // Skip if touch already handled it
+                            if (touchedRef.current) { touchedRef.current = false; return }
+                            // Calculate half directly from click position (don't rely on hovered state)
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            const x = e.clientX - rect.left
+                            const v = x < rect.width / 2 ? reel - 0.5 : reel
+                            if (navigator.vibrate) navigator.vibrate(10)
+                            onChange(v)
+                        } : undefined}
+                        onTouchEnd={onChange ? (e) => {
+                            // On touch: calculate half-reel from the last touch position and fire immediately
+                            touchedRef.current = true
+                            const touch = e.changedTouches[0]
+                            if (!touch) return
+                            const rect = e.currentTarget.getBoundingClientRect()
+                            const x = touch.clientX - rect.left
+                            const v = x < rect.width / 2 ? reel - 0.5 : reel
                             if (navigator.vibrate) navigator.vibrate(10)
                             onChange(v)
                         } : undefined}
                         onTouchStart={onChange ? (e) => {
-                            // On touch: calculate half-reel from touch position immediately
+                            // Preview the half-reel on touch start
                             const rect = e.currentTarget.getBoundingClientRect()
                             const x = e.touches[0].clientX - rect.left
                             setHovered(x < rect.width / 2 ? reel - 0.5 : reel)
