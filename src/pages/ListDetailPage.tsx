@@ -84,7 +84,8 @@ export default function ListDetailPage() {
             // Fetch counts
             const [endorsementsResp, commentsResp] = await Promise.all([
                 supabase.from('interactions').select('user_id', { count: 'exact', head: false }).eq('target_list_id', id).eq('type', 'endorse_list'),
-                supabase.from('list_comments').select('id', { count: 'exact', head: true }).eq('list_id', id)
+                // list_comments table may not exist yet — gracefully fallback to 0
+                supabase.from('interactions').select('id', { count: 'exact', head: true }).eq('target_list_id', id).eq('type', 'comment_list').then(r => r, () => ({ count: 0, data: null }))
             ])
             const classify = (endorsementsResp.data || []).find((e: any) => e.user_id === currentUser?.id)
 

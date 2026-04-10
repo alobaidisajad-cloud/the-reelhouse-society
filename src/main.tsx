@@ -76,6 +76,20 @@ window.addEventListener('error', (e: any) => {
   }
 }, true) // Capture phase is required because 'error' events do not bubble
 
+// ── Stale Chunk Recovery — auto-reload when deploy invalidates cached JS chunks ──
+// After a new deploy, old chunk filenames become 404s. React lazy() throws a
+// TypeError we can intercept. One forced reload loads the fresh bundle.
+window.addEventListener('unhandledrejection', (e) => {
+  if (e.reason?.message?.includes?.('Failed to fetch dynamically imported module') ||
+      e.reason?.message?.includes?.('Failed to load module script')) {
+    // Only reload once per session to prevent infinite loops
+    const reloaded = sessionStorage.getItem('rh_chunk_reload')
+    if (!reloaded) {
+      sessionStorage.setItem('rh_chunk_reload', '1')
+      window.location.reload()
+    }
+  }
+})
 
 
 // ── Custom Nitrate Noir Toast Renderer ──

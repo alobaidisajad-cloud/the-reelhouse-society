@@ -5,7 +5,7 @@
 // ============================================================
 
 // BUILD_HASH changes every deploy, forcing SW update + cache bust
-const BUILD_HASH = '20260407v1';
+const BUILD_HASH = '20260410v1';
 const CACHE_VERSION = `v-${BUILD_HASH}`;
 const IMAGE_CACHE = `reelhouse-tmdb-images-${CACHE_VERSION}`;
 const API_CACHE = `reelhouse-tmdb-api-${CACHE_VERSION}`;
@@ -118,6 +118,10 @@ self.addEventListener('fetch', (event) => {
                             trimCache(ASSET_CACHE, MAX_ASSET_CACHE);
                         }
                         return response;
+                    }).catch(() => {
+                        // Asset not found (stale chunk from old deploy) — return network error
+                        // The app's error boundary will trigger a page reload
+                        return new Response('', { status: 404, statusText: 'Asset not found' });
                     });
                 });
             })
