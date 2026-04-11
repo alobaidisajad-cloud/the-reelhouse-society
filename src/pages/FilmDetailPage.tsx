@@ -197,21 +197,27 @@ function FilmHero({ film, onPlayTrailer }: any) {
                                     {(existingLog.viewCount || 1) > 1 && <span> · <RotateCcw size={8} style={{ display: 'inline-block', verticalAlign: 'middle' }} /> {existingLog.viewCount} viewings</span>}
                                 </div>
                             </div>
-                            {/* Review text */}
-                            {existingLog.review && (
-                                <p style={{
-                                    fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--bone)',
-                                    lineHeight: 1.65, margin: '0.3rem 0 0', opacity: 0.9, whiteSpace: 'pre-wrap',
-                                }}>
-                                    {existingLog.review.replace(/<[^>]+>/g, '').trim()}
-                                </p>
-                            )}
-                            {/* Inline Viewing Chronicle */}
-                            {existingLog.viewingHistory && existingLog.viewingHistory.length > 0 && (
-                                <div style={{ marginTop: '0.4rem' }}>
-                                    <ViewingChronicle log={existingLog} />
-                                </div>
-                            )}
+                            {/* Review preview — truncated, tap to read full log */}
+                            {existingLog.review && (() => {
+                                const stripped = existingLog.review.replace(/<[^>]+>/g, '').trim()
+                                const isLong = stripped.length > 120
+                                return (
+                                    <Link to={`/log/${existingLog.id}`} style={{ textDecoration: 'none' }}>
+                                        <p style={{
+                                            fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--bone)',
+                                            lineHeight: 1.65, margin: '0.3rem 0 0', opacity: 0.8,
+                                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                                        }}>
+                                            {stripped}
+                                        </p>
+                                        {isLong && (
+                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginTop: '0.25rem', display: 'inline-block' }}>
+                                                READ FULL CRITIQUE →
+                                            </span>
+                                        )}
+                                    </Link>
+                                )
+                            })()}
                         </div>
                     )}
 
@@ -424,19 +430,26 @@ function FilmHero({ film, onPlayTrailer }: any) {
                                     {(existingLog.viewCount || 1) > 1 && <span> · <RotateCcw size={8} style={{ display: 'inline-block', verticalAlign: 'middle' }} /> {existingLog.viewCount} viewings</span>}
                                 </div>
                             </div>
-                            {existingLog.review && (
-                                <p style={{
-                                    fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)',
-                                    lineHeight: 1.65, margin: '0.3rem 0 0', opacity: 0.9, whiteSpace: 'pre-wrap',
-                                }}>
-                                    {existingLog.review.replace(/<[^>]+>/g, '').trim()}
-                                </p>
-                            )}
-                            {existingLog.viewingHistory && existingLog.viewingHistory.length > 0 && (
-                                <div style={{ marginTop: '0.4rem' }}>
-                                    <ViewingChronicle log={existingLog} />
-                                </div>
-                            )}
+                            {existingLog.review && (() => {
+                                const stripped = existingLog.review.replace(/<[^>]+>/g, '').trim()
+                                const isLong = stripped.length > 120
+                                return (
+                                    <Link to={`/log/${existingLog.id}`} style={{ textDecoration: 'none' }}>
+                                        <p style={{
+                                            fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)',
+                                            lineHeight: 1.65, margin: '0.3rem 0 0', opacity: 0.8,
+                                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                                        }}>
+                                            {stripped}
+                                        </p>
+                                        {isLong && (
+                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.1em', color: 'var(--sepia)', marginTop: '0.25rem', display: 'inline-block' }}>
+                                                READ FULL CRITIQUE →
+                                            </span>
+                                        )}
+                                    </Link>
+                                )
+                            })()}
                         </div>
                     )}
                 </div>
