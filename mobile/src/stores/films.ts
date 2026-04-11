@@ -547,7 +547,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     const nextIdx = { ...state._loggedIndex }
                     nextIdx[film.id] = [newLog, ...(nextIdx[film.id] || [])]
                     return { logs: [newLog, ...state.logs], _loggedIndex: nextIdx }
-                }))
+                })
                 // Auto-remove from watchlist if present
                 const inWatchlist = get().watchlist.some(w => w.id === film.id)
                 if (inWatchlist) get().removeFromWatchlist(film.id)
@@ -556,7 +556,6 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
             unmarkWatched: async (filmId) => {
                 const existingLog = get().logs.find(l => l.filmId === filmId)
                 if (!existingLog) return
-                // Only remove if it's a quick-watch (no rating, no review)
                 if (existingLog.rating > 0 || (existingLog.review && existingLog.review.length > 0)) return
                 await get().removeLog(existingLog.id)
             },
@@ -627,8 +626,6 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
             removeLog: async (id) => {
                 const logToRemove = get().logs.find((l) => l.id === id)
                 if (!logToRemove) return
-
-                // Optimistic remove with 5s undo window
                 set((state) => {
                     const nextIdx = { ...state._loggedIndex }
                     if (logToRemove.filmId) {
@@ -638,7 +635,6 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     }
                     return { logs: state.logs.filter((l) => l.id !== id), _loggedIndex: nextIdx }
                 })
-
                 await supabase.from('logs').delete().eq('id', id); reelToast(`"${logToRemove.title}" removed.`);
             },
 
@@ -666,8 +662,6 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const itemToRemove = get().watchlist.find((f) => f.id === filmId)
-
-                // Optimistic remove with 5s undo window
                 set((state) => {
                     const nextIndex = { ...state._watchlistIndex }
                     delete nextIndex[filmId]
@@ -676,7 +670,6 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                         _watchlistIndex: nextIndex 
                     }
                 })
-
                 await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId); reelToast(`"${itemToRemove?.title || 'Film'}" removed from watchlist.`);
             },
 
