@@ -44,6 +44,7 @@ export default function LogDetailScreen() {
   const [newComment, setNewComment] = useState('');
   const [posting, setPosting] = useState(false);
   const [sharing, setSharing] = useState(false);
+  const [chronicleActiveIdx, setChronicleActiveIdx] = useState(0);
   const viewShotRef = useRef<View>(null);
 
   const fetchData = useCallback(async () => {
@@ -359,7 +360,6 @@ export default function LogDetailScreen() {
               })),
             ];
 
-            const [activeIdx, setActiveIdx] = useState(0);
             const cardWidth = SCREEN_WIDTH - 32;
 
             return (
@@ -379,7 +379,7 @@ export default function LogDetailScreen() {
                   showsHorizontalScrollIndicator={false}
                   onMomentumScrollEnd={(e) => {
                     const page = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
-                    setActiveIdx(page);
+                    setChronicleActiveIdx(page);
                   }}
                   style={{ flexGrow: 0 }}
                 >
@@ -438,7 +438,7 @@ export default function LogDetailScreen() {
                     {allViewings.map((_, idx) => (
                       <View key={idx} style={{
                         width: 5, height: 5, borderRadius: 2.5,
-                        backgroundColor: idx === activeIdx ? colors.sepia : 'rgba(139,105,20,0.25)',
+                        backgroundColor: idx === chronicleActiveIdx ? colors.sepia : 'rgba(139,105,20,0.25)',
                       }} />
                     ))}
                   </View>
