@@ -405,9 +405,9 @@ export default function LogDetailScreen() {
                       </View>
                       {/* Rating */}
                       {entry.rating > 0 && (
-                        <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 13, color: colors.flicker || colors.sepia, marginBottom: 6 }}>
-                          {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
-                        </Text>
+                        <View style={{ marginBottom: 6 }}>
+                          <ReelRating rating={entry.rating} size={12} />
+                        </View>
                       )}
                       {/* Review */}
                       {entry.review ? (

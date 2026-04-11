@@ -189,7 +189,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                             {/* Rating + meta row */}
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 {(existingLog.rating ?? 0) > 0 && (
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--flicker)', letterSpacing: '0.05em' }}>{'★'.repeat(Math.floor(existingLog.rating ?? 0))}{(existingLog.rating ?? 0) % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(existingLog.rating ?? 0))}</div>
+                                    <ReelRating value={existingLog.rating} size="sm" />
                                 )}
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)', textAlign: 'right' }}>
                                     {existingLog.watchedDate && new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -422,7 +422,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         <div style={{ background: 'linear-gradient(135deg, rgba(139,105,20,0.08), rgba(10,7,3,0.5))', border: '1px solid rgba(139,105,20,0.2)', borderRadius: 8, padding: '0.85rem 1.1rem', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: 520 }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                                 {(existingLog.rating ?? 0) > 0 && (
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--flicker)', letterSpacing: '0.05em' }}>{'★'.repeat(Math.floor(existingLog.rating ?? 0))}{(existingLog.rating ?? 0) % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(existingLog.rating ?? 0))}</div>
+                                    <ReelRating value={existingLog.rating} size="sm" />
                                 )}
                                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)', textAlign: 'right' }}>
                                     {existingLog.watchedDate && new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}

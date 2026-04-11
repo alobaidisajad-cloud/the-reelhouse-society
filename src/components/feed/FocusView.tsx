@@ -285,8 +285,8 @@ export default function FocusView({
                                         </div>
                                         {/* Rating */}
                                         {entry.rating > 0 && (
-                                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--flicker)', marginBottom: '0.3rem' }}>
-                                                {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
+                                            <div style={{ marginBottom: '0.3rem' }}>
+                                                <ReelRating value={entry.rating} size="sm" />
                                             </div>
                                         )}
                                         {/* Review text */}

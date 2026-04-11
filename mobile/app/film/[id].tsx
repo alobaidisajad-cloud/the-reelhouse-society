@@ -595,9 +595,7 @@ export default function FilmDetailScreen() {
             {/* Rating + meta row */}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
               {(existingLog.rating ?? 0) > 0 && (
-                <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 16, color: colors.flicker }}>
-                  {'★'.repeat(Math.floor(existingLog.rating ?? 0))}{(existingLog.rating ?? 0) % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(existingLog.rating ?? 0))}
-                </Text>
+                <ReelRating rating={existingLog.rating ?? 0} size={14} />
               )}
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                 {existingLog.watchedDate && (

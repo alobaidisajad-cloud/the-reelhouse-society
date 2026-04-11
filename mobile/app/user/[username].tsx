@@ -426,9 +426,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           <View style={s.posterBottomGrad}>
             {showRating && log.rating > 0 && (
               <View style={s.posterRatingRow}>
-                {Array.from({ length: Math.round(log.rating) }, (_, i) => (
-                  <Sparkles key={i} size={7} color={colors.sepia} strokeWidth={1.5} />
-                ))}
+                <ReelRating rating={log.rating} size={10} />
               </View>
             )}
             {showTimeAgo && (
@@ -509,7 +507,11 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                     {(['all', 1, 2, 3, 4, 5] as const).map(r => (
                       <TouchableOpacity key={String(r)} style={[s.filterChip, ledgerRatingFilter === r && s.filterChipActive]} onPress={() => setLedgerRatingFilter(r)}>
-                        <Text style={[s.filterChipText, ledgerRatingFilter === r && s.filterChipTextActive]}>{r === 'all' ? 'ALL' : `${r}★`}</Text>
+                        {r === 'all' ? (
+                          <Text style={[s.filterChipText, ledgerRatingFilter === r && s.filterChipTextActive]}>ALL</Text>
+                        ) : (
+                          <ReelRating rating={r} size={8} />
+                        )}
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -726,9 +728,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                             <View style={s.favTextWrap}>
                               <Text style={s.favTitle} numberOfLines={1}>{log.title}</Text>
                               <View style={s.favRatingRow}>
-                                {Array.from({ length: Math.round(log.rating) }, (_, i) => (
-                                  <Sparkles key={i} size={7} color={colors.sepia} strokeWidth={1.5} />
-                                ))}
+                                <ReelRating rating={log.rating} size={10} />
                               </View>
                             </View>
                           </TouchableOpacity>
