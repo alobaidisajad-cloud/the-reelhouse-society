@@ -613,57 +613,26 @@ export default function FilmDetailScreen() {
                 )}
               </View>
             </View>
-            {/* Review text */}
+            {/* Review preview — truncated, tap to read full log */}
             {existingLog.review ? (
-              <Text style={{
-                fontFamily: fonts.body, fontSize: 13.5, color: colors.bone,
-                lineHeight: 21, opacity: 0.9,
-              }}>
-                {(existingLog.review || '').replace(/<[^>]+>/g, '').trim()}
-              </Text>
-            ) : null}
-            {/* Viewing History — past reviews */}
-            {(() => {
-              const history = Array.isArray(existingLog.viewingHistory)
-                ? existingLog.viewingHistory
-                : (typeof existingLog.viewingHistory === 'string'
-                  ? (() => { try { return JSON.parse(existingLog.viewingHistory); } catch { return []; } })()
-                  : []);
-              if (!history.length) return null;
-              return (
-              <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)', paddingTop: 10 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 }}>
-                  <History size={10} color={colors.sepia} />
-                  <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia }}>
-                    VIEWING CHRONICLE — {history.length + 1} viewings
+              <TouchableOpacity onPress={() => router.push(`/log/${existingLog.id}`)} activeOpacity={0.7}>
+                <Text
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                  style={{
+                    fontFamily: fonts.body, fontSize: 13.5, color: colors.bone,
+                    lineHeight: 21, opacity: 0.8,
+                  }}
+                >
+                  {(existingLog.review || '').replace(/<[^>]+>/g, '').trim()}
+                </Text>
+                {(existingLog.review || '').replace(/<[^>]+>/g, '').trim().length > 100 && (
+                  <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia, marginTop: 4 }}>
+                    READ FULL CRITIQUE →
                   </Text>
-                </View>
-                {history.map((entry: any, idx: number) => (
-                  <View key={idx} style={{
-                    paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(139,105,20,0.2)',
-                    marginBottom: idx < (existingLog.viewingHistory?.length || 0) - 1 ? 10 : 0,
-                  }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.soot, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', position: 'absolute', left: -17, top: 2 }} />
-                      <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>
-                        {entry.date ? new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
-                      </Text>
-                      {entry.rating > 0 && (
-                        <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 12, color: colors.bone }}>
-                          {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
-                        </Text>
-                      )}
-                    </View>
-                    {entry.review ? (
-                      <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: colors.bone, lineHeight: 19, opacity: 0.7, fontStyle: 'italic' }}>
-                        "{entry.review.replace(/<[^>]+>/g, '').trim()}"
-                      </Text>
-                    ) : null}
-                  </View>
-                ))}
-              </View>
-              );
-            })()}
+                )}
+              </TouchableOpacity>
+            ) : null}
           </AnimatedView>
         )}
 
