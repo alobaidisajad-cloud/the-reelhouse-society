@@ -327,6 +327,63 @@ export default function LogDetailScreen() {
             ) : null}
           </View>
 
+          {/* ═══ VIEWING HISTORY — Past reviews from rewatches ═══ */}
+          {(() => {
+            const rawHist = log.viewing_history;
+            const history: any[] = Array.isArray(rawHist)
+              ? rawHist
+              : (typeof rawHist === 'string'
+                ? (() => { try { return JSON.parse(rawHist); } catch { return []; } })()
+                : []);
+            if (!history.length) return null;
+            return (
+              <View style={{ marginHorizontal: 16, marginTop: 8, marginBottom: 16, backgroundColor: 'rgba(139,105,20,0.05)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.18)', borderRadius: 6, padding: 14 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                  <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia }} />
+                  <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia }}>
+                    VIEWING CHRONICLE — {history.length + 1} viewings
+                  </Text>
+                </View>
+                {history.map((entry: any, idx: number) => (
+                  <View key={idx} style={{
+                    paddingLeft: 14, borderLeftWidth: 2, borderLeftColor: 'rgba(139,105,20,0.2)',
+                    marginBottom: idx < history.length - 1 ? 14 : 0, paddingBottom: idx < history.length - 1 ? 14 : 0,
+                    borderBottomWidth: idx < history.length - 1 ? 1 : 0, borderBottomColor: 'rgba(139,105,20,0.08)',
+                  }}>
+                    {/* Timeline dot */}
+                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.soot, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', position: 'absolute', left: -5, top: 2 }} />
+                    {/* Date + rating */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog }}>
+                        {idx === history.length - 1 ? '◆ FIRST WATCH' : `VIEWING ${history.length - idx}`}
+                      </Text>
+                      {entry.date && (
+                        <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>
+                          · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </Text>
+                      )}
+                    </View>
+                    {entry.rating > 0 && (
+                      <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 13, color: colors.flicker || colors.sepia, marginBottom: 4 }}>
+                        {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
+                      </Text>
+                    )}
+                    {entry.review ? (
+                      <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.75, fontStyle: 'italic' }}>
+                        "{(entry.review || '').replace(/<[^>]+>/g, '').trim()}"
+                      </Text>
+                    ) : null}
+                    {entry.watchedWith ? (
+                      <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 4 }}>
+                        ♡ {entry.watchedWith}
+                      </Text>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            );
+          })()}
+
           {/* Autopsy Celluloid Gauge */}
           {(log.is_autopsied || log.isAutopsied) && log.autopsy && (
             <View style={s.autopsyWrap}>
