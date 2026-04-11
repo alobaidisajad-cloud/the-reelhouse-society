@@ -623,15 +623,22 @@ export default function FilmDetailScreen() {
               </Text>
             ) : null}
             {/* Viewing History — past reviews */}
-            {existingLog.viewingHistory && existingLog.viewingHistory.length > 0 && (
+            {(() => {
+              const history = Array.isArray(existingLog.viewingHistory)
+                ? existingLog.viewingHistory
+                : (typeof existingLog.viewingHistory === 'string'
+                  ? (() => { try { return JSON.parse(existingLog.viewingHistory); } catch { return []; } })()
+                  : []);
+              if (!history.length) return null;
+              return (
               <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)', paddingTop: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 }}>
                   <History size={10} color={colors.sepia} />
                   <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia }}>
-                    VIEWING CHRONICLE — {existingLog.viewingHistory.length + 1} viewings
+                    VIEWING CHRONICLE — {history.length + 1} viewings
                   </Text>
                 </View>
-                {existingLog.viewingHistory.map((entry: any, idx: number) => (
+                {history.map((entry: any, idx: number) => (
                   <View key={idx} style={{
                     paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(139,105,20,0.2)',
                     marginBottom: idx < (existingLog.viewingHistory?.length || 0) - 1 ? 10 : 0,
@@ -655,7 +662,8 @@ export default function FilmDetailScreen() {
                   </View>
                 ))}
               </View>
-            )}
+              );
+            })()}
           </AnimatedView>
         )}
 

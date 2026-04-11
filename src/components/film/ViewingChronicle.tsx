@@ -31,7 +31,12 @@ interface ViewingChronicleProps {
 export default function ViewingChronicle({ log }: ViewingChronicleProps) {
     const [expanded, setExpanded] = useState(false)
     
-    const history = log.viewingHistory || []
+    const rawHistory = log.viewingHistory
+    const history: ViewingEntry[] = Array.isArray(rawHistory)
+        ? rawHistory
+        : (typeof rawHistory === 'string'
+            ? (() => { try { return JSON.parse(rawHistory); } catch { return []; } })()
+            : [])
     if (history.length === 0) return null
 
     // Build timeline: current viewing (latest) + all past viewings from history
