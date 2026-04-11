@@ -53,7 +53,7 @@ export default function LogModalScreen() {
         filmId?: string; editLogId?: string; filmTitle?: string; filmPoster?: string; filmYear?: string;
     }>();
     const { user, isAuthenticated } = useAuthStore();
-    const { logs, lists, addLog, updateLog, removeLog, addFilmToList, removeFilmFromList } = useFilmStore();
+    const { logs, lists, addLog, updateLog, removeLog, addFilmToList, removeFilmFromList, _loggedIndex } = useFilmStore();
 
     // ── Tier gating ──
     const isPremium = user?.role === 'archivist' || user?.role === 'auteur';
@@ -76,8 +76,15 @@ export default function LogModalScreen() {
         poster_path: params.filmPoster || null, release_date: params.filmYear || '',
     } : null);
 
+    // ── Detect rewatch mode: film already logged and NOT editing ──
+    const previousLog = useMemo(() => {
+        if (params.editLogId || !film?.id) return null;
+        return _loggedIndex[film.id] || null;
+    }, [film?.id, params.editLogId, _loggedIndex]);
+    const isRewatchMode = !!previousLog;
+
     // ── Form state (matches web LogForm.tsx L37-60) ──
-    const [status, setStatus] = useState<'watched' | 'rewatched' | 'abandoned'>('watched');
+    const [status, setStatus] = useState<'watched' | 'rewatched' | 'abandoned'>(isRewatchMode ? 'rewatched' : 'watched');
     const [rating, setRating] = useState(0);
     const [review, setReview] = useState('');
     const [isSpoiler, setIsSpoiler] = useState(false);
@@ -367,6 +374,45 @@ export default function LogModalScreen() {
                                 <Text style={st.filmYear}>{film.release_date?.slice(0, 4) || '—'}</Text>
                             </View>
                         </View>
+
+                        {/* ── YOUR PREVIOUS TAKE — Rewatch context panel ── */}
+                        {isRewatchMode && previousLog && (
+                            <Animated.View entering={FadeInDown.delay(100).duration(400)} style={{
+                                backgroundColor: 'rgba(139,105,20,0.06)',
+                                borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)',
+                                borderRadius: 8, padding: 14, marginBottom: -4,
+                            }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                                    <History size={11} color={colors.sepia} />
+                                    <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia }}>YOUR PREVIOUS TAKE</Text>
+                                    {(previousLog.viewCount || 1) > 1 && (
+                                        <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 }}>
+                                            <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>VIEWING {previousLog.viewCount || 1}</Text>
+                                        </View>
+                                    )}
+                                </View>
+                                {previousLog.rating > 0 && (
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                                        <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 16, color: colors.flicker }}>
+                                            {'★'.repeat(Math.floor(previousLog.rating))}{previousLog.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(previousLog.rating))}
+                                        </Text>
+                                        <Text style={{ fontFamily: fonts.ui, fontSize: 9, color: colors.fog }}>
+                                            {previousLog.rating % 1 === 0 ? previousLog.rating : previousLog.rating.toFixed(1)}/5
+                                        </Text>
+                                    </View>
+                                )}
+                                {previousLog.review ? (
+                                    <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.8, fontStyle: 'italic' }} numberOfLines={6}>
+                                        "{(previousLog.review || '').replace(/<[^>]+>/g, '').trim()}"
+                                    </Text>
+                                ) : null}
+                                {previousLog.watchedDate ? (
+                                    <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 6 }}>
+                                        LOGGED {new Date(previousLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    </Text>
+                                ) : null}
+                            </Animated.View>
+                        )}
 
                         {/* STATUS */}
                         <View style={st.sec}>

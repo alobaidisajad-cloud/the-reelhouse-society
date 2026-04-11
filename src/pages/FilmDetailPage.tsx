@@ -183,14 +183,33 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         </Link>
                     )}
 
-                    {/* Existing log details */}
-                    {existingLog && (existingLog.rating ?? 0) > 0 && (
-                        <div style={{ background: 'linear-gradient(135deg, rgba(139,105,20,0.08), rgba(10,7,3,0.5))', border: '1px solid rgba(139,105,20,0.2)', borderRadius: 8, padding: '0.75rem 1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem' }}>
-                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--flicker)', letterSpacing: '0.05em' }}>{'★'.repeat(Math.round(existingLog.rating ?? 0))}{'☆'.repeat(5 - Math.round(existingLog.rating ?? 0))}</div>
-                            {existingLog.watchedDate && (
-                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
-                                    {new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    {/* Existing log details + review + viewing chronicle */}
+                    {existingLog && (
+                        <div style={{ background: 'linear-gradient(135deg, rgba(139,105,20,0.08), rgba(10,7,3,0.5))', border: '1px solid rgba(139,105,20,0.2)', borderRadius: 8, padding: '0.85rem 1.1rem', marginBottom: '1rem', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            {/* Rating + meta row */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                {(existingLog.rating ?? 0) > 0 && (
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--flicker)', letterSpacing: '0.05em' }}>{'★'.repeat(Math.floor(existingLog.rating ?? 0))}{(existingLog.rating ?? 0) % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(existingLog.rating ?? 0))}</div>
+                                )}
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)', textAlign: 'right' }}>
+                                    {existingLog.watchedDate && new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     {existingLog.watchedWith && <span> · ♡ {existingLog.watchedWith}</span>}
+                                    {(existingLog.viewCount || 1) > 1 && <span> · <RotateCcw size={8} style={{ display: 'inline-block', verticalAlign: 'middle' }} /> {existingLog.viewCount} viewings</span>}
+                                </div>
+                            </div>
+                            {/* Review text */}
+                            {existingLog.review && (
+                                <p style={{
+                                    fontFamily: 'var(--font-body)', fontSize: '0.82rem', color: 'var(--bone)',
+                                    lineHeight: 1.65, margin: '0.3rem 0 0', opacity: 0.9, whiteSpace: 'pre-wrap',
+                                }}>
+                                    {existingLog.review.replace(/<[^>]+>/g, '').trim()}
+                                </p>
+                            )}
+                            {/* Inline Viewing Chronicle */}
+                            {existingLog.viewingHistory && existingLog.viewingHistory.length > 0 && (
+                                <div style={{ marginTop: '0.4rem' }}>
+                                    <ViewingChronicle log={existingLog} />
                                 </div>
                             )}
                         </div>
@@ -391,6 +410,35 @@ function FilmHero({ film, onPlayTrailer }: any) {
                             </button>
                         )}
                     </div>
+
+                    {/* Existing log details + review + viewing chronicle (desktop) */}
+                    {existingLog && (
+                        <div style={{ background: 'linear-gradient(135deg, rgba(139,105,20,0.08), rgba(10,7,3,0.5))', border: '1px solid rgba(139,105,20,0.2)', borderRadius: 8, padding: '0.85rem 1.1rem', marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.4rem', maxWidth: 520 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                {(existingLog.rating ?? 0) > 0 && (
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.85rem', color: 'var(--flicker)', letterSpacing: '0.05em' }}>{'★'.repeat(Math.floor(existingLog.rating ?? 0))}{(existingLog.rating ?? 0) % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(existingLog.rating ?? 0))}</div>
+                                )}
+                                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)', textAlign: 'right' }}>
+                                    {existingLog.watchedDate && new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    {existingLog.watchedWith && <span> · ♡ {existingLog.watchedWith}</span>}
+                                    {(existingLog.viewCount || 1) > 1 && <span> · <RotateCcw size={8} style={{ display: 'inline-block', verticalAlign: 'middle' }} /> {existingLog.viewCount} viewings</span>}
+                                </div>
+                            </div>
+                            {existingLog.review && (
+                                <p style={{
+                                    fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)',
+                                    lineHeight: 1.65, margin: '0.3rem 0 0', opacity: 0.9, whiteSpace: 'pre-wrap',
+                                }}>
+                                    {existingLog.review.replace(/<[^>]+>/g, '').trim()}
+                                </p>
+                            )}
+                            {existingLog.viewingHistory && existingLog.viewingHistory.length > 0 && (
+                                <div style={{ marginTop: '0.4rem' }}>
+                                    <ViewingChronicle log={existingLog} />
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
