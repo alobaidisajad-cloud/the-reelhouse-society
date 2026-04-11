@@ -25,8 +25,11 @@ import { TasteDNA } from '@/src/components/profile/TasteDNA';
 import { Achievements } from '@/src/components/profile/Achievements';
 import {
   Archive, BookOpen, Bookmark, LayoutList, Disc, LineChart,
-  Star, Lock, Settings, ChevronLeft, Globe,
+  Star, Lock, Settings, ChevronLeft, Globe, Sparkles, Film as FilmIcon,
+  ArrowLeft, LogIn, Search, X, TrendingUp, TrendingDown, Minus,
+  Flame, Crown, Dna, Dice5, CalendarDays,
 } from 'lucide-react-native';
+import { ReelRating } from '@/src/components/Decorative';
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
 const SCREEN_W = Dimensions.get('window').width;
@@ -39,19 +42,24 @@ type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'p
 // HELPER COMPONENTS
 // ════════════════════════════════════════════════════════════
 
-function StatCard({ label, value, onPress }: { label: string; value: string | number; onPress?: () => void }) {
+function StatCard({ label, value, onPress, isLast }: { label: string; value: string | number; onPress?: () => void; isLast?: boolean }) {
   return (
-    <TouchableOpacity style={s.statCard} activeOpacity={onPress ? 0.7 : 1} onPress={onPress} disabled={!onPress}>
-      <Text style={s.statValue}>{value}</Text>
-      <Text style={s.statLabel}>{label}</Text>
-    </TouchableOpacity>
+    <>
+      <TouchableOpacity style={s.statCard} activeOpacity={onPress ? 0.7 : 1} onPress={onPress} disabled={!onPress}>
+        <Text style={s.statValue}>{value}</Text>
+        <Text style={s.statLabel}>{label}</Text>
+      </TouchableOpacity>
+      {!isLast && <View style={s.statDivider} />}
+    </>
   );
 }
 
 function SectionLabel({ text }: { text: string }) {
   return (
-    <View style={{ alignItems: 'center', marginBottom: 12 }}>
-      <Text style={s.sectionLabelText}>{'\u2726'} {text} {'\u2726'}</Text>
+    <View style={s.sectionLabelWrap}>
+      <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
+      <Text style={s.sectionLabelText}>{text}</Text>
+      <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
     </View>
   );
 }
@@ -347,28 +355,35 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   // EARLY RETURNS
   // ════════════════════════════════════════════════════════════
   if (loading) return (
-    <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
-      <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.sepia }}>{'\u2726'} RETRIEVING DOSSIER {'\u2726'}</Text>
+    <View style={[s.container, s.centeredFull]}>
+      <View style={s.loadingRow}>
+        <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
+        <Text style={s.loadingText}>RETRIEVING DOSSIER</Text>
+        <Sparkles size={9} color={colors.sepia} strokeWidth={1.5} />
+      </View>
     </View>
   );
 
   if (!targetUser) return (
-    <View style={[s.container, { justifyContent: 'center', alignItems: 'center', padding: 40 }]}>
-      <Text style={{ fontSize: 48, marginBottom: 16, opacity: 0.4 }}>{'\u2726'}</Text>
-      <Text style={{ fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8 }}>Member Not Found</Text>
-      <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', textAlign: 'center', marginBottom: 24 }}>This member doesn't exist yet, or has been removed.</Text>
+    <View style={[s.container, s.centeredPadded]}>
+      <FilmIcon size={48} color={colors.sepia} strokeWidth={1} style={s.notFoundIcon} />
+      <Text style={s.notFoundTitle}>Member Not Found</Text>
+      <Text style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>
       <TouchableOpacity style={s.ghostBtn} onPress={() => router.back()}>
-        <Text style={s.ghostBtnText}>{'\u2190'} GO BACK</Text>
+        <View style={s.ghostBtnRow}>
+          <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
+          <Text style={s.ghostBtnText}>GO BACK</Text>
+        </View>
       </TouchableOpacity>
     </View>
   );
 
   // Privacy gate
   if (isPrivate) return (
-    <View style={[s.container, { justifyContent: 'center', alignItems: 'center', padding: 40 }]}>
-      <Lock size={48} color={colors.sepia} style={{ marginBottom: 16, opacity: 0.6 }} />
-      <Text style={{ fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8 }}>@{targetUser.username?.toUpperCase()}</Text>
-      <Text style={{ fontFamily: fonts.body, fontSize: 14, color: colors.bone, opacity: 0.7, textAlign: 'center', lineHeight: 22, marginBottom: 24 }}>
+    <View style={[s.container, s.centeredPadded]}>
+      <Lock size={48} color={colors.sepia} strokeWidth={1} style={s.notFoundIcon} />
+      <Text style={s.notFoundTitle}>@{targetUser.username?.toUpperCase()}</Text>
+      <Text style={s.privateBody}>
         This profile is private. Only the owner can view their activity.
       </Text>
       {isAuthenticated && (
@@ -382,7 +397,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   // ════════════════════════════════════════════════════════════
   // POSTER CARD — Reusable log poster with tier glow
   // ════════════════════════════════════════════════════════════
-  const renderPosterCard = (log: any, width: number, showRating = false, showTimeAgo = false) => {
+  const renderPosterCard = (log: any, width: number, showRating = false, showTimeAgo = false, navigateToLog = false) => {
     const posterUri = tmdb.poster(log.altPoster || log.poster || log.poster_path, 'w185');
     const glowStyle = tier === 'auteur' ? s.auteurGlow : tier === 'archivist' ? s.archivistGlow : {};
     return (
@@ -390,23 +405,31 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
         key={log.id || log.filmId || log.film_id}
         style={[{ aspectRatio: 2 / 3, position: 'relative' }, width > 0 ? { width } : { flex: 1 }, isArchivistPlus ? glowStyle : {}]}
         onPress={() => {
-          const fid = log.filmId || log.film_id;
-          if (fid) router.push(`/film/${fid}`);
+          if (navigateToLog && log.id) {
+            router.push(`/log/${log.id}`);
+          } else {
+            const fid = log.filmId || log.film_id;
+            if (fid) router.push(`/film/${fid}`);
+          }
         }}
         activeOpacity={0.7}
       >
         {posterUri ? (
           <Image source={{ uri: posterUri }} style={s.posterImg} />
         ) : (
-          <View style={[s.posterImg, { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' }]}>
-            <Text style={{ color: colors.sepia, fontSize: 18 }}>{'\u2726'}</Text>
+          <View style={[s.posterImg, s.posterPlaceholder]}>
+            <FilmIcon size={18} color={colors.sepia} strokeWidth={1} />
           </View>
         )}
         {/* Bottom gradient overlay */}
         {(showRating || showTimeAgo) && (
           <View style={s.posterBottomGrad}>
             {showRating && log.rating > 0 && (
-              <Text style={s.posterRating}>{'\u2726'.repeat(Math.round(log.rating))}</Text>
+              <View style={s.posterRatingRow}>
+                {Array.from({ length: Math.round(log.rating) }, (_, i) => (
+                  <Sparkles key={i} size={7} color={colors.sepia} strokeWidth={1.5} />
+                ))}
+              </View>
             )}
             {showTimeAgo && (
               <Text style={s.posterTimeAgo}>{timeAgo(log.watchedDate || log.createdAt)}</Text>
@@ -414,8 +437,8 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           </View>
         )}
         {/* Status badges */}
-        {log.status === 'rewatched' && <View style={s.statusBadge}><Text style={{ fontSize: 8, color: colors.sepia }}>{'\u21BA'}</Text></View>}
-        {log.status === 'abandoned' && <View style={[s.statusBadge, { borderColor: 'rgba(139,30,30,0.4)' }]}><Text style={{ fontSize: 8, color: colors.bloodReel }}>{'\u2715'}</Text></View>}
+        {log.status === 'rewatched' && <View style={s.statusBadge}><Sparkles size={7} color={colors.sepia} strokeWidth={1.5} /></View>}
+        {log.status === 'abandoned' && <View style={[s.statusBadge, s.statusBadgeAbandoned]}><X size={7} color={colors.bloodReel} strokeWidth={2} /></View>}
       </TouchableOpacity>
     );
   };
@@ -431,18 +454,18 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           <TouchableOpacity onPress={() => router.push(`/user/${username}`)} style={s.topNavBtn} activeOpacity={0.7}>
             <ChevronLeft size={22} color={colors.sepia} />
           </TouchableOpacity>
-          <View style={{ flex: 1 }}>
-            <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.fog }}>@{username}</Text>
-            <Text style={{ fontFamily: fonts.display, fontSize: 20, color: colors.parchment, lineHeight: 24 }}>{tabTitles[activeTab] || activeTab}</Text>
+          <View style={s.tabHeaderTextWrap}>
+            <Text style={s.tabHeaderUsername}>@{username}</Text>
+            <Text style={s.tabHeaderTitle}>{tabTitles[activeTab] || activeTab}</Text>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={{ paddingBottom: 80, paddingTop: 8 }} showsVerticalScrollIndicator={false}
+        <ScrollView contentContainerStyle={s.tabScrollContent} showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}>
 
           {/* ═══ ARCHIVE TAB ═══ */}
           {activeTab === 'archive' && (
-            <View style={{ paddingHorizontal: 16 }}>
+            <View style={s.tabContentPad}>
               {logs.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ gap: 8 }}>
                   {[{ id: 'all', label: 'All' }, { id: 'watched', label: 'Watched' }, { id: 'rewatched', label: 'Rewatched' }, { id: 'abandoned', label: 'Abandoned' }].map(sv => (
@@ -454,12 +477,12 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
               )}
               {archiveFiltered.length === 0 ? (
                 <View style={s.emptyState}>
-                  <Text style={s.emptyIcon}>{'\u2726'}</Text>
+                  <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
                   <Text style={s.emptyTitle}>The Archive is Empty</Text>
                   <Text style={s.emptyDesc}>{logs.length === 0 ? (isSelf ? 'No films watched yet.' : "This member hasn't watched any films yet.") : 'No films match this filter.'}</Text>
                 </View>
               ) : (
-                <View style={{ gap: 28 }}>
+                <View style={s.tabGap}>
                   {Object.entries(groupByMonth(archiveFiltered)).map(([month, items]) => (
                     <View key={month}>
                       <Text style={s.monthHeader}>{month}</Text>
@@ -475,18 +498,18 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
 
           {/* ═══ LEDGER TAB ═══ */}
           {activeTab === 'ledger' && (
-            <View style={{ paddingHorizontal: 16 }}>
+            <View style={s.tabContentPad}>
               {logs.length > 0 && (
-                <View style={{ marginBottom: 16, gap: 10 }}>
+                <View style={s.filterGroupCol}>
                   <View style={s.searchWrap}>
-                    <Text style={s.searchIcon}>{'\u2315'}</Text>
+                    <Search size={12} color={colors.fog} strokeWidth={1.5} style={s.searchIconStyle} />
                     <TextInput style={s.searchInput} value={ledgerSearch} onChangeText={setLedgerSearch} placeholder="Search your archive..." placeholderTextColor={colors.fog} />
-                    {ledgerSearch.length > 0 && <TouchableOpacity onPress={() => setLedgerSearch('')} style={s.searchClear}><Text style={{ color: colors.fog, fontSize: 14 }}>{'\u2715'}</Text></TouchableOpacity>}
+                    {ledgerSearch.length > 0 && <TouchableOpacity onPress={() => setLedgerSearch('')} style={s.searchClear}><X size={14} color={colors.fog} strokeWidth={1.5} /></TouchableOpacity>}
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
                     {(['all', 1, 2, 3, 4, 5] as const).map(r => (
                       <TouchableOpacity key={String(r)} style={[s.filterChip, ledgerRatingFilter === r && s.filterChipActive]} onPress={() => setLedgerRatingFilter(r)}>
-                        <Text style={[s.filterChipText, ledgerRatingFilter === r && s.filterChipTextActive]}>{r === 'all' ? 'ALL' : `${r}\u2726`}</Text>
+                        <Text style={[s.filterChipText, ledgerRatingFilter === r && s.filterChipTextActive]}>{r === 'all' ? 'ALL' : `${r}★`}</Text>
                       </TouchableOpacity>
                     ))}
                   </ScrollView>
@@ -494,12 +517,12 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
               )}
               {ledgerFiltered.length === 0 ? (
                 <View style={s.emptyState}>
-                  <Text style={s.emptyIcon}>{'\u2726'}</Text>
+                  <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
                   <Text style={s.emptyTitle}>{ledgerSearch ? 'No Results' : 'The Ledger is Empty'}</Text>
                   <Text style={s.emptyDesc}>{ledgerSearch ? `No entries match "${ledgerSearch}"` : 'No rated or reviewed films yet.'}</Text>
                 </View>
               ) : (
-                <View style={{ gap: 28 }}>
+                <View style={s.tabGap}>
                   {Object.entries(groupByMonth(ledgerFiltered)).map(([month, items]) => (
                     <View key={month}>
                       <Text style={s.monthHeader}>{month}</Text>
@@ -507,13 +530,14 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                         {(items as any[]).map((log: any) => {
                           const hl = halfLifeMap[log.filmId];
                           return (
-                            <View key={log.id} style={{ width: POSTER_COL_4, aspectRatio: 2 / 3, position: 'relative' }}>
-                              {renderPosterCard(log, POSTER_COL_4)}
+                            <View key={log.id} style={s.posterCardWrap}>
+                              {renderPosterCard(log, POSTER_COL_4, false, false, true)}
                               {hl && (
                                 <View style={s.halfLifeBadge}>
-                                  <Text style={{ fontSize: 7, fontFamily: fonts.ui, color: hl.trajectory === 'ASCENDING' ? '#22c55e' : hl.trajectory === 'DECAYING' ? '#ef4444' : colors.sepia }}>
-                                    {hl.trajectory === 'ASCENDING' ? '\u2191' : hl.trajectory === 'DECAYING' ? '\u2193' : '\u2014'} x{hl.count}
-                                  </Text>
+                                  <View style={s.halfLifeContent}>
+                                    {hl.trajectory === 'ASCENDING' ? <TrendingUp size={7} color="#22c55e" strokeWidth={2} /> : hl.trajectory === 'DECAYING' ? <TrendingDown size={7} color="#ef4444" strokeWidth={2} /> : <Minus size={7} color={colors.sepia} strokeWidth={2} />}
+                                    <Text style={[s.halfLifeText, { color: hl.trajectory === 'ASCENDING' ? '#22c55e' : hl.trajectory === 'DECAYING' ? '#ef4444' : colors.sepia }]}>x{hl.count}</Text>
+                                  </View>
                                 </View>
                               )}
                             </View>
@@ -529,27 +553,30 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
 
           {/* ═══ WATCHLIST TAB ═══ */}
           {activeTab === 'watchlist' && (
-            <View style={{ paddingHorizontal: 16 }}>
+            <View style={s.tabContentPad}>
               {watchlist.length === 0 ? (
                 <View style={s.emptyState}>
-                  <Text style={s.emptyIcon}>{'\u2726'}</Text>
+                  <Bookmark size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
                   <Text style={s.emptyTitle}>The Queue is Empty</Text>
                   <Text style={s.emptyDesc}>{isSelf ? 'No films saved yet.' : "This member hasn't saved any films yet."}</Text>
                 </View>
               ) : (<>
                 {isSelf && watchlist.length > 1 && (
                   <TouchableOpacity style={s.ctaBtn} onPress={() => setRouletteOpen(true)} activeOpacity={0.7}>
-                    <Text style={s.ctaBtnText}>{'\u2726'} SPIN WATCHLIST ROULETTE</Text>
+                    <View style={s.ctaBtnRow}>
+                      <Dice5 size={12} color={colors.sepia} strokeWidth={1.5} />
+                      <Text style={s.ctaBtnText}>SPIN WATCHLIST ROULETTE</Text>
+                    </View>
                   </TouchableOpacity>
                 )}
                 {watchlist.length > 5 && (
-                  <View style={{ flexDirection: 'row', gap: 8, marginBottom: 16, alignItems: 'center' }}>
-                    <View style={[s.searchWrap, { flex: 1 }]}>
-                      <Text style={s.searchIcon}>{'\u2315'}</Text>
+                  <View style={s.watchlistControlRow}>
+                    <View style={[s.searchWrap, s.searchWrapFlex]}>
+                      <Search size={12} color={colors.fog} strokeWidth={1.5} style={s.searchIconStyle} />
                       <TextInput style={s.searchInput} value={watchlistSearch} onChangeText={setWatchlistSearch} placeholder="Search watchlist..." placeholderTextColor={colors.fog} />
-                      {watchlistSearch.length > 0 && <TouchableOpacity onPress={() => setWatchlistSearch('')} style={s.searchClear}><Text style={{ color: colors.fog, fontSize: 14 }}>{'\u2715'}</Text></TouchableOpacity>}
+                      {watchlistSearch.length > 0 && <TouchableOpacity onPress={() => setWatchlistSearch('')} style={s.searchClear}><X size={14} color={colors.fog} strokeWidth={1.5} /></TouchableOpacity>}
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 4 }}>
+                    <View style={s.sortRow}>
                       {([{ id: 'default' as const, label: 'RECENT' }, { id: 'az' as const, label: 'A-Z' }, { id: 'za' as const, label: 'Z-A' }]).map(sv => (
                         <TouchableOpacity key={sv.id} style={[s.filterChip, watchlistSort === sv.id && s.filterChipActive]} onPress={() => setWatchlistSort(sv.id)}>
                           <Text style={[s.filterChipText, watchlistSort === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
@@ -559,7 +586,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                   </View>
                 )}
                 {watchlistFiltered.length === 0 && watchlistSearch ? (
-                  <Text style={{ textAlign: 'center', padding: 24, color: colors.fog, fontFamily: fonts.body, fontSize: 13 }}>No films match "{watchlistSearch}"</Text>
+                  <Text style={s.searchNoResults}>No films match "{watchlistSearch}"</Text>
                 ) : (
                   <View style={s.grid3}>
                     {watchlistFiltered.map((film: any) => renderPosterCard(film, POSTER_COL_3))}
@@ -571,9 +598,9 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
 
           {/* ═══ STACKS/LISTS TAB ═══ */}
           {activeTab === 'lists' && (
-            <View style={{ paddingHorizontal: 16 }}>
+            <View style={s.tabContentPad}>
               {lists.length === 0 ? (
-                <View style={s.emptyState}><Text style={s.emptyIcon}>{'\u2726'}</Text><Text style={s.emptyTitle}>The Stacks are Empty</Text><Text style={s.emptyDesc}>No lists yet.</Text></View>
+                <View style={s.emptyState}><LayoutList size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} /><Text style={s.emptyTitle}>The Stacks are Empty</Text><Text style={s.emptyDesc}>No lists yet.</Text></View>
               ) : (
                 <View style={s.stacksGrid}>
                   {lists.map((list: any) => {
@@ -581,7 +608,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                     return (
                       <TouchableOpacity key={list.id} style={s.stackCard} activeOpacity={0.7} onPress={() => router.push({ pathname: '/list-modal' as any, params: { listId: list.id } })}>
                         <View style={s.stackPosterWrap}>
-                          {posters.length > 0 ? posters.map((uri: string, i: number) => <Image key={i} source={{ uri }} style={[s.stackPosterPanel, { left: `${(i * 100) / posters.length}%` as any, width: `${100 / posters.length}%` as any }]} />) : <View style={{ flex: 1, backgroundColor: colors.soot }} />}
+                          {posters.length > 0 ? posters.map((uri: string, i: number) => <Image key={i} source={{ uri }} style={[s.stackPosterPanel, { left: `${(i * 100) / posters.length}%` as any, width: `${100 / posters.length}%` as any }]} />) : <View style={s.stackEmptyBg} />}
                           <View style={s.stackOverlay} />
                         </View>
                         <View style={s.stackContent}>
@@ -599,7 +626,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
 
           {/* ═══ PHYSICAL ARCHIVE TAB ═══ */}
           {activeTab === 'physical' && (
-            <View style={{ paddingHorizontal: 16 }}>
+            <View style={s.tabContentPad}>
               {physicalFormatCounts.length > 0 && (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ gap: 6 }}>
                   <TouchableOpacity style={[s.filterChip, !physicalFilter && s.filterChipActive]} onPress={() => setPhysicalFilter(null)}>
@@ -613,10 +640,10 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 </ScrollView>
               )}
               {physicalFiltered.length === 0 ? (
-                <View style={s.emptyState}><Text style={s.emptyIcon}>{'\u2726'}</Text><Text style={s.emptyTitle}>Physical Archive is Empty</Text>
+                <View style={s.emptyState}><Disc size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} /><Text style={s.emptyTitle}>Physical Archive is Empty</Text>
                   <Text style={s.emptyDesc}>{isSelf ? 'No physical media catalogued yet.' : 'No physical media.'}</Text></View>
               ) : (
-                <View style={{ gap: 28 }}>
+                <View style={s.tabGap}>
                   {Object.entries(groupByMonth(physicalFiltered, 'created_at')).map(([month, items]) => (
                     <View key={month}>
                       <Text style={s.monthHeader}>{month}</Text>
@@ -627,9 +654,9 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                           const FC: Record<string, string> = { '4k': '#a855f7', bluray: '#3b82f6', dvd: '#f59e0b', vhs: '#ef4444', laserdisc: '#10b981', steelbook: '#6366f1', criterion: colors.sepia };
                           const FL: Record<string, string> = { '4k': '4K', bluray: 'BD', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LD', steelbook: 'SB', criterion: 'CC' };
                           return (
-                            <TouchableOpacity key={item.id} style={{ width: POSTER_COL_4, aspectRatio: 2 / 3, position: 'relative' }} activeOpacity={0.7} onPress={() => item.film_id && router.push(`/film/${item.film_id}`)}>
-                              {posterUri ? <Image source={{ uri: posterUri }} style={s.posterImg} /> : <View style={[s.posterImg, { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' }]}><Text style={{ color: colors.sepia }}>{'\u2726'}</Text></View>}
-                              {fmt && <View style={[s.formatBadge, { borderColor: FC[fmt] || colors.sepia }]}><Text style={{ fontSize: 7, fontFamily: fonts.uiBold, color: FC[fmt] || colors.sepia, letterSpacing: 1 }}>{FL[fmt] || fmt.toUpperCase()}</Text></View>}
+                            <TouchableOpacity key={item.id} style={s.posterCardWrap} activeOpacity={0.7} onPress={() => item.film_id && router.push(`/film/${item.film_id}`)}>
+                              {posterUri ? <Image source={{ uri: posterUri }} style={s.posterImg} /> : <View style={[s.posterImg, s.posterPlaceholder]}><FilmIcon size={14} color={colors.sepia} strokeWidth={1} /></View>}
+                              {fmt && <View style={[s.formatBadge, { borderColor: FC[fmt] || colors.sepia }]}><Text style={[s.formatBadgeText, { color: FC[fmt] || colors.sepia }]}>{FL[fmt] || fmt.toUpperCase()}</Text></View>}
                             </TouchableOpacity>
                           );
                         })}
@@ -642,29 +669,32 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           )}
 
           {/* ═══ PASSPORT TAB ═══ */}
-          {activeTab === 'passport' && <View style={{ paddingHorizontal: 16 }}><NoirPassport user={targetUser} logs={logs} /></View>}
+          {activeTab === 'passport' && <View style={s.tabContentPad}><NoirPassport user={targetUser} logs={logs} /></View>}
 
           {/* ═══ PROJECTOR / ANALYTICS TAB ═══ */}
           {activeTab === 'projector' && (
-            <View style={{ gap: 32 }}>
+            <View style={s.projectorGap}>
               {/* Header */}
-              <View style={{ alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 }}>
-                <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2.5, color: colors.sepia, marginBottom: 6 }}>GLOBAL ANALYTICS</Text>
-                <Text style={{ fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 32, textAlign: 'center' }}>The Projector Room</Text>
-                <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', marginTop: 6 }}>Lifetime cinematic data & achievements.</Text>
+              <View style={s.projectorHeader}>
+                <Text style={s.projectorSuper}>GLOBAL ANALYTICS</Text>
+                <Text style={s.projectorTitle}>The Projector Room</Text>
+                <Text style={s.projectorSub}>Lifetime cinematic data & achievements.</Text>
               </View>
 
               {/* Cinema DNA CTA */}
-              <View style={{ paddingHorizontal: 16 }}>
+              <View style={s.tabContentPad}>
                 <TouchableOpacity style={s.ctaBtn} onPress={() => setDnaCardOpen(true)} activeOpacity={0.7}>
-                  <Text style={s.ctaBtnText}>{'\u2726'} VIEW CINEMA DNA</Text>
+                  <View style={s.ctaBtnRow}>
+                    <Dna size={12} color={colors.sepia} strokeWidth={1.5} />
+                    <Text style={s.ctaBtnText}>VIEW CINEMA DNA</Text>
+                  </View>
                 </TouchableOpacity>
               </View>
 
               {/* Projector Room */}
               <ProjectorRoom stats={{ count: logs.length, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} />
 
-              <View style={{ paddingHorizontal: 16, gap: 32 }}>
+              <View style={s.projectorSectionsWrap}>
                 {/* Taste DNA */}
                 <View>
                   <SectionLabel text="TASTE FINGERPRINT" />
@@ -692,10 +722,14 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                         const posterUri = tmdb.poster(log.poster, 'w185');
                         return (
                           <TouchableOpacity key={log.id} style={s.favouriteRow} onPress={() => log.filmId && router.push(`/film/${log.filmId}`)} activeOpacity={0.7}>
-                            {posterUri && <Image source={{ uri: posterUri }} style={{ width: 28, height: 42, borderRadius: 2 }} />}
-                            <View style={{ flex: 1 }}>
-                              <Text style={{ fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 16 }} numberOfLines={1}>{log.title}</Text>
-                              <Text style={{ fontFamily: fonts.uiBold, fontSize: 9, color: colors.sepia, marginTop: 2 }}>{'\u2726'.repeat(Math.round(log.rating))}</Text>
+                            {posterUri && <Image source={{ uri: posterUri }} style={s.favPosterThumb} />}
+                            <View style={s.favTextWrap}>
+                              <Text style={s.favTitle} numberOfLines={1}>{log.title}</Text>
+                              <View style={s.favRatingRow}>
+                                {Array.from({ length: Math.round(log.rating) }, (_, i) => (
+                                  <Sparkles key={i} size={7} color={colors.sepia} strokeWidth={1.5} />
+                                ))}
+                              </View>
                             </View>
                           </TouchableOpacity>
                         );
@@ -723,15 +757,15 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
 
           {/* ═══ CALENDAR TAB ═══ */}
           {activeTab === 'calendar' && (
-            <View style={{ paddingHorizontal: 16 }}>
+            <View style={s.tabContentPad}>
               {isArchivistPlus ? (
                 <View>
                   <SectionLabel text="VIEWING HISTORY" />
-                  <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center', fontStyle: 'italic' }}>Activity calendar coming soon.</Text>
+                  <Text style={s.comingSoonText}>Activity calendar coming soon.</Text>
                 </View>
               ) : (
                 <View style={s.emptyState}>
-                  <Lock size={32} color={colors.sepia} style={{ marginBottom: 12, opacity: 0.5 }} />
+                  <Lock size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
                   <Text style={s.emptyTitle}>Archivist+ Feature</Text>
                   <Text style={s.emptyDesc}>Upgrade to Archivist or Auteur to unlock the viewing calendar.</Text>
                 </View>
@@ -755,12 +789,12 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
       {!usernameOverride && (
         <View style={s.topNav}>
           <TouchableOpacity onPress={() => router.back()} style={s.topNavBtn} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-            <Text style={s.topNavBtnText}>{'\u2190'}</Text>
+            <ChevronLeft size={24} color={colors.parchment} strokeWidth={1.5} />
           </TouchableOpacity>
         </View>
       )}
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}
+      <ScrollView contentContainerStyle={s.mainScrollContent} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}>
 
         {/* ═══ ATMOSPHERIC HEADER ═══ */}
@@ -796,20 +830,23 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 {targetUser.avatar_url ? (
                   <Image source={{ uri: targetUser.avatar_url }} style={s.avatar} />
                 ) : (
-                  <View style={[s.avatar, { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' }]}>
-                    <Text style={{ fontFamily: fonts.display, fontSize: 36, color: colors.sepia }}>{(targetUser.username || '?')[0].toUpperCase()}</Text>
+                  <View style={[s.avatar, s.avatarPlaceholder]}>
+                    <Text style={s.avatarInitial}>{(targetUser.username || '?')[0].toUpperCase()}</Text>
                   </View>
                 )}
               </RNAnimated.View>
 
               {/* Level badge */}
               <View style={[s.levelBadge, { borderColor: statsColor }]}>
-                <Text style={[s.levelBadgeText, { color: statsColor }]}>{'\u2726'} {statsLevel}</Text>
+                <View style={s.levelBadgeRow}>
+                  <Sparkles size={7} color={statsColor} strokeWidth={1.5} />
+                  <Text style={[s.levelBadgeText, { color: statsColor }]}>{statsLevel}</Text>
+                </View>
               </View>
             </View>
 
             {/* ── Username + Tier Badge ── */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <View style={s.usernameRow}>
               <Text style={s.displayName}>@{targetUser.username.toUpperCase()}</Text>
               {tier === 'auteur' && (
                 <View style={s.auteurBadge}>
@@ -819,10 +856,25 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
               )}
               {tier === 'archivist' && (
                 <View style={s.archivistBadge}>
-                  <Text style={s.archivistBadgeText}>{'\u2726'} ARCHIVIST</Text>
+                  <Archive size={8} color={colors.sepia} strokeWidth={1.5} />
+                  <Text style={s.archivistBadgeText}>ARCHIVIST</Text>
                 </View>
               )}
             </View>
+
+            {/* ── Society Founder's Mark ── */}
+            <View style={s.founderMark}>
+              <View style={s.founderLine} />
+              <Text style={s.founderText}>EST. 1924</Text>
+              <View style={s.founderLine} />
+            </View>
+
+            {/* ── Member Since ── */}
+            {targetUser.created_at && (
+              <Text style={s.memberSince}>
+                MEMBER SINCE {new Date(targetUser.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()}
+              </Text>
+            )}
 
             {/* ── Bio ── */}
             <Text style={s.bio}>
@@ -843,7 +895,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
 
             {/* ── Follow / Edit Buttons ── */}
             {isSelf ? (
-              <View style={{ flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 14 }}>
+              <View style={s.editRow}>
                 <TouchableOpacity style={s.editBtn} onPress={() => router.push('/settings')} activeOpacity={0.7}>
                   <Text style={s.editBtnText}>EDIT PROFILE</Text>
                 </TouchableOpacity>
@@ -862,18 +914,19 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
               <StatCard label="FILMS" value={totalFilms} />
               <StatCard label="FOLLOWERS" value={targetUser.followers_count || 0} onPress={() => router.push({ pathname: '/social-modal', params: { userId: targetUser.id, type: 'followers' } })} />
               <StatCard label="FOLLOWING" value={targetUser.following_count || 0} onPress={() => router.push({ pathname: '/social-modal', params: { userId: targetUser.id, type: 'following' } })} />
-              <StatCard label="WATCHLIST" value={watchlist.length} />
+              <StatCard label="WATCHLIST" value={watchlist.length} isLast />
             </AnimatedView>
 
             {/* ── Streak ── */}
             {streak > 1 && (
               <View style={s.streakBadge}>
-                <Text style={s.streakText}>{'\uD83D\uDD25'} {streak}-DAY STREAK</Text>
+                <Flame size={10} color={colors.sepia} strokeWidth={1.5} />
+                <Text style={s.streakText}>{streak}-DAY STREAK</Text>
               </View>
             )}
 
             {/* ── Favorite Films Triptych ── */}
-            <View style={{ width: '100%', maxWidth: 380, alignSelf: 'center', marginTop: 16 }}>
+            <View style={s.triptychWrap}>
               <SectionLabel text="FAVORITE FILMS" />
               <ProfileTriptych user={targetUser} isOwnProfile={isSelf} userRole={tier} />
             </View>
@@ -883,12 +936,12 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
               const recentLogs = logs.filter((l: any) => l.poster && l.poster.length > 5).slice(0, 3);
               if (recentLogs.length === 0) return null;
               return (
-                <View style={{ width: '100%', maxWidth: 380, alignSelf: 'center', marginTop: 20 }}>
+                <View style={s.triptychWrapRecent}>
                   <GoldDivider />
                   <SectionLabel text="RECENTLY WATCHED" />
-                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <View style={s.recentRow}>
                     {recentLogs.map((log: any) => (
-                      <View key={log.id} style={{ flex: 1 }}>
+                      <View key={log.id} style={s.recentItem}>
                         {renderPosterCard(log, 0, true, true)}
                       </View>
                     ))}
@@ -900,18 +953,31 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
         </View>
 
         {/* ═══ OPAQUE CONTENT AREA ═══ */}
-        <View style={{ backgroundColor: colors.ink }}>
+        <View style={s.contentArea}>
+
+          {/* ── Society Seal ── */}
+          <View style={s.societySealWrap}>
+            <View style={s.sealLine} />
+            <View style={s.sealCenter}>
+              <FilmIcon size={14} color={colors.sepia} strokeWidth={1} />
+              <Text style={s.sealText}>THE REELHOUSE SOCIETY</Text>
+            </View>
+            <View style={s.sealLine} />
+          </View>
 
           <SectionDivider label="COLLECTION" />
 
           {/* ── Collection Grid ── */}
-          <AnimatedView entering={FadeInDown.duration(500).delay(200)} style={{ paddingHorizontal: 16, marginTop: 8, paddingBottom: 24 }}>
+          <AnimatedView entering={FadeInDown.duration(500).delay(200)} style={s.collectionSection}>
             <SectionLabel text="THE COLLECTION" />
             <View style={s.collectionGrid}>
-              {COLLECTION_CARDS.map(item => (
-                <TouchableOpacity
+              {COLLECTION_CARDS.map((item, idx) => (
+                <AnimatedView
                   key={item.id}
-                  style={[s.collectionCard, item.disabled && { opacity: 0.3 }, item.highlight && { borderColor: 'rgba(139,105,20,0.25)' }]}
+                  entering={FadeInDown.duration(400).delay(300 + idx * 60)}
+                >
+                <TouchableOpacity
+                  style={[s.collectionCard, item.disabled && s.collectionCardDisabled, item.highlight && s.collectionCardHighlight]}
                   activeOpacity={0.7}
                   disabled={item.disabled}
                   onPress={() => {
@@ -920,25 +986,26 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                   }}
                 >
                   {/* Icon circle */}
-                  <View style={[s.collectionIconCircle, item.highlight && { backgroundColor: 'rgba(139,105,20,0.1)' }]}>
+                  <View style={[s.collectionIconCircle, item.highlight && s.collectionIconHighlight]}>
                     <item.Icon size={16} strokeWidth={1.5} color={item.highlight ? colors.sepia : colors.bone} />
                   </View>
                   {/* Label */}
-                  <Text style={[s.collectionCardLabel, item.highlight && { color: colors.sepia }]} numberOfLines={1}>{item.label}</Text>
+                  <Text style={[s.collectionCardLabel, item.highlight && s.collectionHighlightText]} numberOfLines={1}>{item.label}</Text>
                   {/* Description */}
                   <Text style={s.collectionCardDesc}>{item.desc}</Text>
                   {/* Count */}
-                  <Text style={[s.collectionCardCount, item.highlight && { color: colors.sepia }]} numberOfLines={1} adjustsFontSizeToFit>{item.count}</Text>
+                  <Text style={[s.collectionCardCount, item.highlight && s.collectionHighlightText]} numberOfLines={1} adjustsFontSizeToFit>{item.count}</Text>
                 </TouchableOpacity>
+                </AnimatedView>
               ))}
             </View>
           </AnimatedView>
 
           {/* Calendar card for Archivist+ */}
           {isSelf && (
-            <View style={{ paddingHorizontal: 16, marginBottom: 24 }}>
+            <View style={s.calendarCtaWrap}>
               <TouchableOpacity
-                style={[s.collectionCardWide, !isArchivistPlus && { opacity: 0.35 }]}
+                style={[s.collectionCardWide, !isArchivistPlus && s.collectionCardDisabled]}
                 activeOpacity={0.7}
                 disabled={!isArchivistPlus}
                 onPress={() => {
@@ -946,24 +1013,23 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                   router.push({ pathname: `/user/${username}` as any, params: { tab: 'calendar' } });
                 }}
               >
-                {!isArchivistPlus && <Lock size={12} color={colors.fog} style={{ marginRight: 6 }} />}
-                <Text style={{ fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 2, color: isArchivistPlus ? colors.sepia : colors.fog }}>
-                  {isArchivistPlus ? '\u2726 ' : ''}THE AUTEUR'S CALENDAR
-                </Text>
+                {!isArchivistPlus && <Lock size={12} color={colors.fog} strokeWidth={1.5} style={s.lockIconMr} />}
+                {isArchivistPlus && <CalendarDays size={12} color={colors.sepia} strokeWidth={1.5} style={s.lockIconMr} />}
+                <Text style={[s.calendarCtaText, isArchivistPlus && s.collectionHighlightText]}>THE AUTEUR'S CALENDAR</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {/* ── Account & Settings (self only) ── */}
           {isSelf && (
-            <View style={{ paddingHorizontal: 16, paddingBottom: 40 }}>
+            <View style={s.accountSection}>
               <SectionDivider label="ACCOUNT & SETTINGS" />
               <TouchableOpacity style={s.accountRow} onPress={() => router.push('/membership')} activeOpacity={0.7}>
-                <Text style={{ fontSize: 13, color: colors.sepia }}>{'\u265A'}</Text>
+                <Crown size={13} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={s.accountRowText}>THE SOCIETY RANKS</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[s.accountRow, { borderBottomWidth: 0 }]} onPress={() => router.push('/settings')} activeOpacity={0.7}>
-                <Text style={{ fontSize: 13, color: colors.sepia }}>{'\u2699'}</Text>
+              <TouchableOpacity style={[s.accountRow, s.accountRowLast]} onPress={() => router.push('/settings')} activeOpacity={0.7}>
+                <Settings size={13} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={s.accountRowText}>SETTINGS & PROFILE</Text>
               </TouchableOpacity>
             </View>
@@ -1044,8 +1110,9 @@ const s = StyleSheet.create({
 
   // ── Display Name ──
   displayName: {
-    fontFamily: fonts.display, fontSize: 24, color: colors.parchment, textAlign: 'center',
-    textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 10,
+    fontFamily: fonts.display, fontSize: 26, color: colors.parchment, textAlign: 'center',
+    letterSpacing: 0.5,
+    textShadowColor: 'rgba(196,150,26,0.25)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 16,
   },
 
   // ── Tier Badges ──
@@ -1055,6 +1122,7 @@ const s = StyleSheet.create({
   },
   auteurBadgeText: { fontFamily: fonts.uiBold, fontSize: 7, letterSpacing: 2, color: colors.ink },
   archivistBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 3,
     backgroundColor: 'rgba(196,150,26,0.15)', borderWidth: 1, borderColor: colors.sepia,
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2,
   },
@@ -1097,13 +1165,15 @@ const s = StyleSheet.create({
   ctaBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.sepia },
 
   // ── Stats ──
-  statsGrid: { flexDirection: 'row', width: '100%', marginTop: 20, justifyContent: 'center' },
+  statsGrid: { flexDirection: 'row', width: '100%', marginTop: 20, justifyContent: 'center', alignItems: 'center' },
   statCard: { flex: 1, paddingVertical: 12, alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)' },
   statValue: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, lineHeight: 26, ...effects.textGlowSepia },
   statLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, marginTop: 4, opacity: 0.7 },
+  statDivider: { width: StyleSheet.hairlineWidth, height: 24, backgroundColor: 'rgba(139,105,20,0.2)' },
 
   // ── Streak ──
   streakBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
     marginTop: 12, backgroundColor: 'rgba(196,150,26,0.08)', borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)',
     borderRadius: 2, paddingHorizontal: 12, paddingVertical: 5, alignSelf: 'center',
   },
@@ -1212,4 +1282,143 @@ const s = StyleSheet.create({
 
   // ── Private Profile ──
   privateSection: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+
+  // ── NEW: Early Return States ──
+  centeredFull: { justifyContent: 'center', alignItems: 'center' },
+  centeredPadded: { justifyContent: 'center', alignItems: 'center', padding: 40 },
+  loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  loadingText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.sepia },
+  notFoundIcon: { marginBottom: 16, opacity: 0.4 },
+  notFoundTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8 },
+  notFoundBody: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', textAlign: 'center', marginBottom: 24 },
+  privateBody: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, opacity: 0.7, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  ghostBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+
+  // ── NEW: SectionLabel ──
+  sectionLabelWrap: { alignItems: 'center', flexDirection: 'row', justifyContent: 'center', gap: 6, marginBottom: 12 },
+
+  // ── NEW: Tab Header ──
+  tabHeaderTextWrap: { flex: 1 },
+  tabHeaderUsername: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.fog },
+  tabHeaderTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, lineHeight: 24 },
+  tabScrollContent: { paddingBottom: 80, paddingTop: 8 },
+  tabContentPad: { paddingHorizontal: 16 },
+  tabGap: { gap: 28 },
+  filterGroupCol: { marginBottom: 16, gap: 10 },
+  searchIconStyle: { opacity: 0.5, marginRight: 6 },
+  searchWrapFlex: { flex: 1 },
+  searchNoResults: { textAlign: 'center', padding: 24, color: colors.fog, fontFamily: fonts.body, fontSize: 13 },
+
+  // ── NEW: Poster Cards ──
+  posterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  posterRatingRow: { flexDirection: 'row', gap: 2 },
+  posterCardWrap: { width: POSTER_COL_4, aspectRatio: 2 / 3, position: 'relative' },
+  statusBadgeAbandoned: { borderColor: 'rgba(139,30,30,0.4)' },
+  formatBadgeText: { fontSize: 7, fontFamily: fonts.uiBold, letterSpacing: 1 },
+
+  // ── NEW: Half-Life ──
+  halfLifeContent: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  halfLifeText: { fontSize: 7, fontFamily: fonts.ui },
+
+  // ── NEW: Watchlist ──
+  watchlistControlRow: { flexDirection: 'row', gap: 8, marginBottom: 16, alignItems: 'center' },
+  sortRow: { flexDirection: 'row', gap: 4 },
+  ctaBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+
+  // ── NEW: Stacks ──
+  stackEmptyBg: { flex: 1, backgroundColor: colors.soot },
+
+  // ── NEW: Projector Tab ──
+  projectorGap: { gap: 32 },
+  projectorHeader: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
+  projectorSuper: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2.5, color: colors.sepia, marginBottom: 6 },
+  projectorTitle: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 32, textAlign: 'center' },
+  projectorSub: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', marginTop: 6 },
+  projectorSectionsWrap: { paddingHorizontal: 16, gap: 32 },
+
+  // ── NEW: Favourites ──
+  favPosterThumb: { width: 28, height: 42, borderRadius: 2 },
+  favTextWrap: { flex: 1 },
+  favTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 16 },
+  favRatingRow: { flexDirection: 'row', gap: 2, marginTop: 2 },
+
+  // ── NEW: Calendar ──
+  comingSoonText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center', fontStyle: 'italic' },
+  emptyLockIcon: { marginBottom: 12, opacity: 0.5 },
+
+  // ── NEW: Avatar ──
+  avatarPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  avatarInitial: { fontFamily: fonts.display, fontSize: 36, color: colors.sepia },
+
+  // ── NEW: Level Badge ──
+  levelBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+
+  // ── NEW: Username Row ──
+  usernameRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8, flexWrap: 'wrap', justifyContent: 'center' },
+
+  // ── NEW: Edit Row ──
+  editRow: { flexDirection: 'row', gap: 8, justifyContent: 'center', marginTop: 14 },
+
+  // ── NEW: Triptych ──
+  triptychWrap: { width: '100%', maxWidth: 380, alignSelf: 'center', marginTop: 16 },
+  triptychWrapRecent: { width: '100%', maxWidth: 380, alignSelf: 'center', marginTop: 20 },
+  recentRow: { flexDirection: 'row', gap: 8 },
+  recentItem: { flex: 1 },
+
+  // ── NEW: Content Area ──
+  contentArea: { backgroundColor: colors.ink },
+  collectionSection: { paddingHorizontal: 16, marginTop: 8, paddingBottom: 24 },
+  collectionCardDisabled: { opacity: 0.3 },
+  collectionCardHighlight: { borderColor: 'rgba(139,105,20,0.25)' },
+  collectionIconHighlight: { backgroundColor: 'rgba(139,105,20,0.1)' },
+  collectionHighlightText: { color: colors.sepia },
+
+  // ── NEW: Calendar CTA ──
+  calendarCtaWrap: { paddingHorizontal: 16, marginBottom: 24 },
+  calendarCtaText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 2, color: colors.fog },
+  lockIconMr: { marginRight: 6 },
+
+  // ── NEW: Account ──
+  accountSection: { paddingHorizontal: 16, paddingBottom: 40 },
+  accountRowLast: { borderBottomWidth: 0 },
+
+  // ── Main Scroll ──
+  mainScrollContent: { paddingBottom: 60 },
+
+  // ── Founder's Mark ──
+  founderMark: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginTop: 6, marginBottom: 2,
+  },
+  founderLine: {
+    flex: 1, height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(139,105,20,0.25)',
+  },
+  founderText: {
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
+    color: 'rgba(196,150,26,0.5)', textAlign: 'center',
+  },
+
+  // ── Member Since ──
+  memberSince: {
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5,
+    color: colors.fog, opacity: 0.5, marginBottom: 4,
+  },
+
+  // ── Society Seal ──
+  societySealWrap: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    paddingHorizontal: 32, paddingVertical: 20,
+  },
+  sealLine: {
+    flex: 1, height: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(139,105,20,0.2)',
+  },
+  sealCenter: {
+    flexDirection: 'row', alignItems: 'center', gap: 6,
+  },
+  sealText: {
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3,
+    color: 'rgba(196,150,26,0.4)',
+  },
 });

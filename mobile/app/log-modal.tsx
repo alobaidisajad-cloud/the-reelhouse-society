@@ -30,7 +30,7 @@ import NitrateCalendar from '@/src/components/NitrateCalendar';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
 import {
     Search, X, Clock, Eye, History, Lock, Archive,
-    ChevronDown, ChevronUp, Trash2, Check,
+    ChevronDown, ChevronUp, Trash2, Check, Sparkles, Star,
 } from 'lucide-react-native';
 
 const DRAFT_KEY = 'reelhouse_log_draft';
@@ -253,7 +253,7 @@ export default function LogModalScreen() {
             <View style={[st.root, { justifyContent: 'center', alignItems: 'center' }]}>
                 <Text style={{ fontFamily: fonts.display, fontSize: 20, color: colors.parchment }}>Sign in to log films</Text>
                 <TouchableOpacity style={st.signInBtn} onPress={() => { router.back(); router.push('/login' as any); }}>
-                    <Text style={st.signInBtnText}>✦ SIGN IN</Text>
+                    <Text style={st.signInBtnText}>SIGN IN</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -279,9 +279,9 @@ export default function LogModalScreen() {
 
                 {/* ════ STEP 0: SEARCH ════ */}
                 {step === 0 && (
-                    <Animated.View entering={FadeIn.duration(200)} style={{ flex: 1, paddingHorizontal: 20 }}>
+                    <Animated.View entering={FadeIn.duration(200)} style={st.searchStep}>
                         <View style={st.searchWrap}>
-                            <Search size={16} color={colors.fog} style={{ position: 'absolute', left: 12, top: 14, zIndex: 1 }} />
+                            <Search size={16} color={colors.fog} style={st.searchIcon} />
                             <TextInput
                                 style={st.searchInput}
                                 placeholder="Search for a film..."
@@ -296,29 +296,38 @@ export default function LogModalScreen() {
                             <View style={st.searchingWrap}><Text style={st.searchingText}>TRANSMITTING QUERY...</Text></View>
                         )}
                         {results.length > 0 && searchType === 'person' && (
-                            <Text style={[st.searchBadge, { color: colors.sepia }]}>✦ ACTOR/DIRECTOR MATCH: {searchContext.toUpperCase()}</Text>
+                            <View style={st.searchBadgeRow}>
+                                <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
+                                <Text style={[st.searchBadge, { color: colors.sepia }]}>ACTOR/DIRECTOR MATCH: {searchContext.toUpperCase()}</Text>
+                            </View>
                         )}
                         {results.length > 0 && searchType === 'typo' && (
-                            <Text style={[st.searchBadge, { color: colors.flicker }]}>✦ FUZZY RESCUE: {searchContext.toUpperCase()}</Text>
+                            <View style={st.searchBadgeRow}>
+                                <Sparkles size={8} color={colors.flicker} strokeWidth={1.5} />
+                                <Text style={[st.searchBadge, { color: colors.flicker }]}>FUZZY RESCUE: {searchContext.toUpperCase()}</Text>
+                            </View>
                         )}
                         <FlatList
                             data={results}
                             keyExtractor={r => String(r.id)}
-                            style={{ marginTop: 8 }}
-                            contentContainerStyle={{ gap: 8, paddingBottom: 40 }}
+                            style={st.searchResults}
+                            contentContainerStyle={st.searchResultsContent}
                             renderItem={({ item: r }) => (
                                 <TouchableOpacity style={st.resultRow} onPress={() => selectFilm(r)} activeOpacity={0.7}>
                                     {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} />}
-                                    <View style={{ flex: 1 }}>
+                                    <View style={st.resultFlex}>
                                         <Text style={st.resultTitle}>{r.title || r.name}</Text>
-                                        <Text style={st.resultMeta}>{r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)} ✦</Text>
+                                        <View style={st.resultMetaRow}>
+                                            <Text style={st.resultMeta}>{r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)}</Text>
+                                            <Star size={8} color={colors.sepia} fill={colors.sepia} />
+                                        </View>
                                     </View>
                                 </TouchableOpacity>
                             )}
                         />
                         {!searching && query.length > 0 && results.length === 0 && (
-                            <View style={{ alignItems: 'center', paddingVertical: 40 }}>
-                                <Text style={{ fontFamily: fonts.sub, fontSize: 13, color: colors.fog }}>No films found for "{query}"</Text>
+                            <View style={st.noResultsWrap}>
+                                <Text style={st.noResultsText}>No films found for "{query}"</Text>
                             </View>
                         )}
                     </Animated.View>
@@ -326,7 +335,7 @@ export default function LogModalScreen() {
 
                 {/* ════ STEP 1: LOG FORM ════ */}
                 {step === 1 && film && (
-                    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 16, paddingBottom: 80 }} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                    <ScrollView style={st.formScroll} contentContainerStyle={st.formContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
                         {/* DELETE ZONE */}
                         {isEditing && !showDeleteConfirm && (
@@ -338,7 +347,7 @@ export default function LogModalScreen() {
                         {showDeleteConfirm && (
                             <View style={st.deleteConfirm}>
                                 <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
-                                <View style={{ flexDirection: 'row', gap: 12 }}>
+                                <View style={st.deleteConfirmRow}>
                                     <TouchableOpacity style={st.deleteYes} onPress={handleDelete}><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></TouchableOpacity>
                                     <TouchableOpacity style={st.deleteNo} onPress={() => setShowDeleteConfirm(false)}><Text style={[st.deleteBtnLabel, { color: colors.bone }]}>CANCEL</Text></TouchableOpacity>
                                 </View>
@@ -353,7 +362,7 @@ export default function LogModalScreen() {
                                     {altPoster && <View style={st.altBadge}><Text style={st.altBadgeText}>ALT</Text></View>}
                                 </View>
                             )}
-                            <View style={{ flex: 1 }}>
+                            <View style={st.filmInfoCol}>
                                 <Text style={st.filmTitle}>{film.title || film.name}</Text>
                                 <Text style={st.filmYear}>{film.release_date?.slice(0, 4) || '—'}</Text>
                             </View>
@@ -391,17 +400,17 @@ export default function LogModalScreen() {
                         {/* RATING */}
                         {status !== 'abandoned' && (
                             <View style={st.sec}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                                <View style={st.ratingHeader}>
                                     <Text style={st.secLabel}>YOUR RATING</Text>
                                     {rating > 0 && (
-                                        <Text style={{ fontFamily: fonts.display, fontSize: 18, color: colors.flicker }}>{rating % 1 === 0 ? rating : rating.toFixed(1)}<Text style={{ fontSize: 10, color: colors.fog }}>/5</Text></Text>
+                                        <Text style={st.ratingValue}>{rating % 1 === 0 ? rating : rating.toFixed(1)}<Text style={st.ratingMax}>/5</Text></Text>
                                     )}
                                 </View>
-                                <View style={{ alignItems: 'center', gap: 8 }}>
+                                <View style={st.ratingBody}>
                                     <ReelRating rating={rating} size={44} onChange={(v: number) => { setRating(v === rating ? 0 : v); Haptics.impactAsync(Number.isInteger(v) ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light); }} />
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                    <View style={st.ratingFooter}>
                                         {rating > 0 ? <Text style={st.ratingLabel}>{RATING_LABELS[rating] || ''}</Text> : <View />}
-                                        <Text style={{ fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog, opacity: 0.5 }}>TAP LEFT HALF FOR ½ STARS</Text>
+                                        <Text style={st.ratingHint}>TAP LEFT HALF FOR ½ STARS</Text>
                                     </View>
                                 </View>
                             </View>
@@ -409,7 +418,7 @@ export default function LogModalScreen() {
 
                         {/* MORE DETAILS Toggle */}
                         <TouchableOpacity style={st.moreToggle} onPress={() => setMoreOpen(!moreOpen)} activeOpacity={0.7}>
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                            <View style={st.moreToggleInner}>
                                 {moreOpen ? <ChevronUp size={14} color={colors.sepia} /> : <ChevronDown size={14} color={colors.sepia} />}
                                 <Text style={st.moreText}>{moreOpen ? 'COLLAPSE DETAILS' : 'MORE DETAILS'}</Text>
                             </View>
@@ -422,11 +431,11 @@ export default function LogModalScreen() {
 
                                 {/* Date Watched */}
                                 <View style={st.sec}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                                    <View style={st.secLabelRow}>
                                         <Clock size={10} color={colors.sepia} />
                                         <Text style={st.secLabel}>DATE WATCHED</Text>
                                     </View>
-                                    <View style={{ flexDirection: 'row', gap: 6, marginBottom: 8 }}>
+                                    <View style={st.quickDateRow}>
                                         <TouchableOpacity style={[st.qDateBtn, date === todayStr && st.qDateActive]} onPress={() => { setDate(todayStr); setCalendarOpen(false); }}>
                                             <Text style={[st.qDateText, date === todayStr && { color: colors.ink }]}>TODAY</Text>
                                         </TouchableOpacity>
@@ -438,7 +447,7 @@ export default function LogModalScreen() {
                                         <Text style={st.dateText}>{new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
                                         <Text style={[st.dateToggle, calendarOpen && { color: colors.sepia }]}>{calendarOpen ? '▲ CLOSE' : '▼ CHANGE'}</Text>
                                     </TouchableOpacity>
-                                    {calendarOpen && <View style={{ marginTop: 8 }}><NitrateCalendar value={date} onChange={(v) => { setDate(v); setCalendarOpen(false); }} /></View>}
+                                    {calendarOpen && <View style={st.calendarWrap}><NitrateCalendar value={date} onChange={(v) => { setDate(v); setCalendarOpen(false); }} /></View>}
                                 </View>
 
                                 {/* Watched With */}
@@ -463,7 +472,8 @@ export default function LogModalScreen() {
                                 {/* Editorial Desk (Archivist+) */}
                                 {isPremium && review.length > 0 && (
                                     <View style={st.editDesk}>
-                                        <Text style={st.editDeskTitle}>✦ The Editorial Desk</Text>
+                                        <Sparkles size={10} color={colors.sepia} strokeWidth={1.5} />
+                                        <Text style={st.editDeskTitle}>The Editorial Desk</Text>
                                         <View style={st.editRow}>
                                             <Text style={st.editLabel}>STYLIZED DROP CAP</Text>
                                             <TouchableOpacity style={st.spoilerRow} onPress={() => setDropCap(!dropCap)}>
@@ -473,7 +483,7 @@ export default function LogModalScreen() {
                                         </View>
                                         <View>
                                             <Text style={st.editLabel}>PULL QUOTE</Text>
-                                            <TextInput style={[st.input, { borderStyle: 'dashed', borderColor: colors.sepia, fontFamily: fonts.sub, fontStyle: 'italic' }]} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={120} />
+                                            <TextInput style={st.pullQuoteInput} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={120} />
                                         </View>
                                         <View>
                                             <Text style={st.editLabel}>ARTICLE HEADER (STILL)</Text>
@@ -495,13 +505,13 @@ export default function LogModalScreen() {
                                 )}
 
                                 {/* Auteur Toolkit */}
-                                <View style={[st.auteurBox, !isAuteur && { opacity: 0.5 }]}>
+                                <View style={[st.auteurBox, !isAuteur && st.auteurLocked]} pointerEvents={isAuteur ? 'auto' : 'box-none'}>
                                     <TouchableOpacity style={st.auteurHead} onPress={() => { if (!isAuteur) { router.push('/membership' as any); return; } setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); }} activeOpacity={0.7}>
                                         <Text style={st.auteurHeadText}>{autopsyOpen ? '[-] HIDE DEEP AUTOPSY' : '[+] PERFORM DEEP AUTOPSY'}</Text>
-                                        {!isAuteur && <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}><Lock size={10} color={colors.bloodReel} /><Text style={st.upgradeLink}>UPGRADE</Text></View>}
+                                        {!isAuteur && <View style={st.upgradeLockRow}><Lock size={10} color={colors.bloodReel} /><Text style={st.upgradeLink}>UPGRADE</Text></View>}
                                     </TouchableOpacity>
                                     {autopsyOpen && isAuteur && (
-                                        <Animated.View entering={FadeInDown.duration(200)} style={{ gap: 20, marginTop: 16 }}>
+                                        <Animated.View entering={FadeInDown.duration(200)} style={st.autopContent}>
                                             <View>
                                                 <Text style={st.editLabel}>THE AUTOPSY ENGINE (1-10)</Text>
                                                 {Object.keys(autopsy).map(axis => (
@@ -539,11 +549,11 @@ export default function LogModalScreen() {
 
                                 {/* Physical Media */}
                                 <View style={st.sec}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                                    <View style={st.secLabelRow}>
                                         <Archive size={10} color={colors.sepia} />
                                         <Text style={st.secLabel}>THE PHYSICAL ARCHIVE</Text>
                                     </View>
-                                    <View style={[st.tagRow, !isPremium && { opacity: 0.4 }]} pointerEvents={isPremium ? 'auto' : 'none'}>
+                                    <View style={[st.tagRow, !isPremium && st.premiumLocked]} pointerEvents={isPremium ? 'auto' : 'none'}>
                                         {PHYSICAL_OPTIONS.map(opt => (
                                             <TouchableOpacity key={opt} style={[st.tag, physicalMedia === opt && st.tagActive]} onPress={() => setPhysicalMedia(opt)} activeOpacity={0.7}>
                                                 <Text style={[st.tagText, physicalMedia === opt && { color: colors.ink }]}>{opt}</Text>
@@ -559,7 +569,7 @@ export default function LogModalScreen() {
 
                                 {/* Private Notes */}
                                 <View style={st.sec}>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 }}>
+                                    <View style={st.secLabelRow}>
                                         <Lock size={10} color={colors.sepia} />
                                         <Text style={st.secLabel}>PRIVATE NOTES (THE CUTTING ROOM FLOOR)</Text>
                                     </View>
@@ -624,21 +634,34 @@ const st = StyleSheet.create({
     signInBtnText: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 2, color: colors.ink },
 
     // Search
+    searchStep: { flex: 1, paddingHorizontal: 20 },
     searchWrap: { marginTop: 12, position: 'relative' },
+    searchIcon: { position: 'absolute', left: 12, top: 14, zIndex: 1 },
     searchInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.sub, fontSize: 14, color: colors.parchment },
     searchingWrap: { alignItems: 'center', paddingVertical: 20 },
     searchingText: { fontFamily: fonts.ui, fontSize: 10, color: colors.sepia, letterSpacing: 3 },
-    searchBadge: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, marginTop: 8 },
+    searchBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
+    searchBadge: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5 },
+    searchResults: { marginTop: 8 },
+    searchResultsContent: { gap: 8, paddingBottom: 40 },
     resultRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 10 },
     resultPoster: { width: 36, height: 54, borderRadius: 2 },
+    resultFlex: { flex: 1 },
     resultTitle: { fontFamily: fonts.sub, fontSize: 14, color: colors.parchment },
-    resultMeta: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1.5, marginTop: 2 },
+    resultMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
+    resultMeta: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1.5 },
+    noResultsWrap: { alignItems: 'center', paddingVertical: 40 },
+    noResultsText: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog },
 
     // Form
+    formScroll: { flex: 1 },
+    formContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 80 },
     sec: { marginBottom: 20 },
     secLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginBottom: 8 },
+    secLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
     input: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 13, color: colors.parchment },
     filmHeader: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+    filmInfoCol: { flex: 1 },
     poster: { width: 100, height: 150, borderRadius: 3 },
     altBadge: { position: 'absolute', top: 4, right: 4, backgroundColor: colors.sepia, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 },
     altBadgeText: { fontFamily: fonts.ui, fontSize: 7, color: colors.ink, letterSpacing: 1 },
@@ -652,16 +675,33 @@ const st = StyleSheet.create({
     tag: { paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     tagActive: { backgroundColor: colors.flicker, borderColor: colors.flicker },
     tagText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
+
+    // Rating
+    ratingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+    ratingValue: { fontFamily: fonts.display, fontSize: 18, color: colors.flicker },
+    ratingMax: { fontSize: 10, color: colors.fog },
+    ratingBody: { alignItems: 'center', gap: 8 },
+    ratingFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
     ratingLabel: { fontFamily: fonts.ui, fontSize: 9, color: colors.sepia, letterSpacing: 2 },
+    ratingHint: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog, opacity: 0.5 },
+
+    // More Toggle
     moreToggle: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.ash, borderBottomWidth: 1, borderBottomColor: colors.ash, marginBottom: 16 },
+    moreToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     moreText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.sepia },
     moreHint: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, letterSpacing: 1, marginTop: 4 },
+
+    // Date
+    quickDateRow: { flexDirection: 'row', gap: 6, marginBottom: 8 },
     qDateBtn: { paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     qDateActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     qDateText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
     dateDisplay: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 10 },
     dateText: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment },
     dateToggle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog },
+    calendarWrap: { marginTop: 8 },
+
+    // Review
     reviewInput: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment, minHeight: 120, lineHeight: 22, letterSpacing: 0.2 },
     reviewFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 6 },
     spoilerRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
@@ -677,6 +717,7 @@ const st = StyleSheet.create({
     editRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     editLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.bone, marginBottom: 8 },
     editToggleText: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog },
+    pullQuoteInput: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderStyle: 'dashed', borderColor: colors.sepia, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 13, fontStyle: 'italic', color: colors.parchment },
     stillThumb: { width: 80, height: 45, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, alignItems: 'center', justifyContent: 'center' },
     stillActive: { backgroundColor: colors.sepia, borderColor: colors.sepia, borderWidth: 2 },
     stillNone: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog },
@@ -686,9 +727,12 @@ const st = StyleSheet.create({
 
     // Auteur
     auteurBox: { padding: 16, borderWidth: 1, borderColor: colors.bloodReel, borderRadius: 6, backgroundColor: 'rgba(107,26,10,0.05)', marginBottom: 20 },
+    auteurLocked: { opacity: 0.5 },
     auteurHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
     auteurHeadText: { fontFamily: fonts.display, fontSize: 12, color: colors.bloodReel },
+    upgradeLockRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
     upgradeLink: { fontFamily: fonts.ui, fontSize: 9, color: colors.bloodReel, textDecorationLine: 'underline' },
+    autopContent: { gap: 20, marginTop: 16 },
     sliderRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
     sliderLabel: { width: 90, fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.5, color: colors.fog },
     sliderTrack: { flex: 1, flexDirection: 'row', gap: 2, height: 20 },
@@ -702,6 +746,7 @@ const st = StyleSheet.create({
     pImgActive: { borderWidth: 2, borderColor: colors.bloodReel },
 
     // Physical / Locked
+    premiumLocked: { opacity: 0.4 },
     upgradeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
     upgradeRowText: { fontFamily: fonts.ui, fontSize: 9, color: colors.sepia, letterSpacing: 1, textDecorationLine: 'underline' },
     lockedBox: { height: 80, backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, alignItems: 'center', justifyContent: 'center', gap: 8 },
@@ -717,6 +762,7 @@ const st = StyleSheet.create({
     deleteBtnText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.danger },
     deleteConfirm: { backgroundColor: 'rgba(255,50,50,0.1)', borderWidth: 1, borderColor: colors.danger, borderRadius: 4, padding: 16, alignItems: 'center', marginBottom: 16 },
     deleteConfirmText: { fontFamily: fonts.ui, fontSize: 10, color: colors.danger, letterSpacing: 1, marginBottom: 12 },
+    deleteConfirmRow: { flexDirection: 'row', gap: 12 },
     deleteYes: { flex: 1, backgroundColor: colors.danger, paddingVertical: 10, borderRadius: 4, alignItems: 'center' },
     deleteNo: { flex: 1, borderWidth: 1, borderColor: colors.ash, paddingVertical: 10, borderRadius: 4, alignItems: 'center' },
     deleteBtnLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: '#fff' },

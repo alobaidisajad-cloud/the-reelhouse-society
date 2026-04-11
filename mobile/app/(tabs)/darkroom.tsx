@@ -6,7 +6,7 @@ import {
 import Animated, { FadeInDown, FadeInUp, Layout, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, X, SlidersHorizontal, ChevronDown, Bookmark } from 'lucide-react-native';
+import { Search, X, SlidersHorizontal, ChevronDown, Bookmark, Heart, Skull, Sparkles, Sun, Flame, Laugh } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -39,14 +39,34 @@ const DECADES = [
   { label: '70s/Older', from: '1900-01-01', to: '1979-12-31' },
 ];
 
-const MOODS = [
-  { label: 'Emotional', sub: 'Heavy, profound stories.', glyph: '†', genre: 18, sort: 'vote_average.desc', color: '#4A1A3A', accent: '#C06080' },
-  { label: 'Terrifying', sub: 'Dark nightmares.', glyph: '◉', genre: 27, sort: 'vote_average.desc', color: '#1A1A0A', accent: '#8B3A1A' },
-  { label: 'Awe-Inspiring', sub: 'Epic magical worlds.', glyph: '✦', genre: 14, sort: 'vote_average.desc', color: '#0A1A2A', accent: '#3A7A8B' },
-  { label: 'Heartwarming', sub: 'Love & connection.', glyph: '▣', genre: 10749, sort: 'release_date.asc', voteGte: 500, color: '#1C1208', accent: '#8B6914' },
-  { label: 'Thrilling', sub: 'High-octane cinema.', glyph: '✕', genre: 28, sort: 'popularity.desc', color: '#2A0A0A', accent: '#8B1A1A' },
-  { label: 'Hilarious', sub: 'Pure joy & laughter.', glyph: '◎', genre: 35, sort: 'vote_average.desc', voteGte: 200, color: '#0A1A0A', accent: '#4A8B3A' },
+const LANGUAGES = [
+  { iso: 'en', name: 'English' }, { iso: 'fr', name: 'French' }, { iso: 'es', name: 'Spanish' },
+  { iso: 'ja', name: 'Japanese' }, { iso: 'ko', name: 'Korean' }, { iso: 'it', name: 'Italian' },
+  { iso: 'de', name: 'German' }, { iso: 'zh', name: 'Chinese' }, { iso: 'ar', name: 'Arabic' },
+  { iso: 'hi', name: 'Hindi' },
 ];
+
+const SORT_OPTIONS = [
+  { value: 'popularity.desc', label: 'Most Popular' },
+  { value: 'vote_average.desc', label: 'Highest Rated' },
+  { value: 'release_date.desc', label: 'Newest First' },
+  { value: 'release_date.asc', label: 'Oldest First' },
+  { value: 'revenue.desc', label: 'Box Office' },
+  { value: 'vote_count.desc', label: 'Most Voted' },
+];
+
+const MIN_RATINGS = [0, 6, 7, 7.5, 8, 8.5];
+
+const MOODS = [
+  { label: 'Emotional', sub: 'Heavy, profound stories.', icon: 'Heart', genre: 18, sort: 'vote_average.desc', color: '#4A1A3A', accent: '#C06080' },
+  { label: 'Terrifying', sub: 'Dark nightmares.', icon: 'Skull', genre: 27, sort: 'vote_average.desc', color: '#1A1A0A', accent: '#8B3A1A' },
+  { label: 'Awe-Inspiring', sub: 'Epic magical worlds.', icon: 'Sparkles', genre: 14, sort: 'vote_average.desc', color: '#0A1A2A', accent: '#3A7A8B' },
+  { label: 'Heartwarming', sub: 'Love & connection.', icon: 'Sun', genre: 10749, sort: 'release_date.asc', voteGte: 500, color: '#1C1208', accent: '#8B6914' },
+  { label: 'Thrilling', sub: 'High-octane cinema.', icon: 'Flame', genre: 28, sort: 'popularity.desc', color: '#2A0A0A', accent: '#8B1A1A' },
+  { label: 'Hilarious', sub: 'Pure joy & laughter.', icon: 'Laugh', genre: 35, sort: 'vote_average.desc', voteGte: 200, color: '#0A1A0A', accent: '#4A8B3A' },
+];
+
+const MOOD_ICONS: Record<string, any> = { Heart, Skull, Sparkles, Sun, Flame, Laugh };
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
@@ -76,11 +96,11 @@ function Chip({ active, onPress, children, color }: any) {
 function FilmGridCard({ item }: { item: any }) {
   const router = useRouter();
   const { isAuthenticated } = useAuthStore();
-  const { logs, watchlist, addToWatchlist, removeFromWatchlist } = useFilmStore();
+  const { _loggedIndex, _watchlistIndex, addToWatchlist, removeFromWatchlist } = useFilmStore();
   
   const isPerson = item.media_type === 'person';
-  const isLogged = isAuthenticated && !isPerson && logs.some((l:any) => l.filmId === item.id);
-  const isSaved = isAuthenticated && !isPerson && watchlist.some((w:any) => w.filmId === item.id);
+  const isLogged = isAuthenticated && !isPerson && !!_loggedIndex[item.id];
+  const isSaved = isAuthenticated && !isPerson && !!_watchlistIndex[item.id];
 
   const posterPath = isPerson ? item.profile_path : item.poster_path;
   const posterUri = posterPath ? (isPerson ? tmdb.profile(posterPath, 'w185') : tmdb.poster(posterPath)) : null;
@@ -106,11 +126,11 @@ function FilmGridCard({ item }: { item: any }) {
       activeOpacity={0.8}
       entering={FadeInDown.duration(400)}
     >
-      <View style={[s.posterImg, !posterUri && { backgroundColor: colors.ash, justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={[s.posterImg, !posterUri && s.posterPlaceholder]}>
         {posterUri ? (
           <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} />
         ) : (
-          <Text style={{ fontFamily: fonts.display, color: colors.fog, fontSize: 18 }}>✦</Text>
+          <Text style={s.posterPlaceholderGlyph}>✦</Text>
         )}
       </View>
 
@@ -150,7 +170,11 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [isFocused, setIsFocused] = useState(false);
   const isSearching = !!query;
-  const activeFilterCount = [filters.genreId, filters.decade, filters.language, filters.minRating > 0 ? 1 : null].filter(Boolean).length;
+  const activeFilterCount = [
+    filters.genreId, filters.decade, filters.language,
+    filters.minRating > 0 ? 1 : null,
+    filters.yearFrom ? 1 : null,
+  ].filter(Boolean).length;
 
   // -- Debounced Autocomplete (Suggestions) --
   useEffect(() => {
@@ -216,12 +240,28 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
     <View style={s.headerContainer}>
       <View style={s.heroContainer}>
         <LinearGradient
-          colors={['rgba(139,105,20,0.15)', 'transparent']}
+          colors={['rgba(139,105,20,0.12)', 'rgba(139,105,20,0.03)', 'transparent']}
+          locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFillObject}
         />
         <View style={s.heroContent}>
-          <Text style={s.heroEyebrow}>THE DARKROOM</Text>
-          <Text style={s.heroTitle}>Search the Archive</Text>
+          <Text style={s.heroEyebrow}>THE REELHOUSE SOCIETY</Text>
+          <Text style={s.heroTitle}>The Darkroom</Text>
+
+          {/* ── Est. 1924 with gradient rules ── */}
+          <View style={s.estRow}>
+            <LinearGradient
+              colors={['transparent', 'rgba(139,105,20,0.35)']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={s.estRule}
+            />
+            <Text style={s.heroEst}>Est. 1924</Text>
+            <LinearGradient
+              colors={['rgba(139,105,20,0.35)', 'transparent']}
+              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+              style={s.estRule}
+            />
+          </View>
 
           <View style={s.searchWrap}>
             <Search size={16} style={s.searchIcon} />
@@ -267,7 +307,7 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
                           <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFillObject} />
                         </View>
                       ) : (
-                        <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, { backgroundColor: colors.ash }]} />
+                        <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, s.suggestionImgPlaceholder]} />
                       )}
                       
                       <View style={s.suggestionInfo}>
@@ -301,16 +341,17 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
                   onPress={() => handleSelectMood(item)}
                   style={[
                     s.moodCard,
-                    { 
-                      backgroundColor: active ? item.color : colors.soot,
-                      borderColor: active ? item.accent : 'rgba(139,105,20,0.1)'
-                    }
+                    active && { backgroundColor: item.color, borderColor: item.accent }
                   ]}
                 >
-                  <Text style={[s.moodGlyph, active && { color: item.accent, textShadowColor: item.accent, textShadowRadius: 8 }]}>
-                    {item.glyph}
-                  </Text>
-                  <Text style={[s.moodLabel, active && { color: colors.flicker }]}>{item.label}</Text>
+                  {(() => {
+                    const IconComp = MOOD_ICONS[item.icon];
+                    return IconComp ? <IconComp size={16} color={active ? item.accent : colors.bone} strokeWidth={1.5} /> : null;
+                  })()}
+                  <View>
+                    <Text style={[s.moodLabel, active && s.moodLabelActive]}>{item.label}</Text>
+                    <Text style={[s.moodSub, active && s.moodSubActive]}>{item.sub}</Text>
+                  </View>
                 </TouchableOpacity>
               );
             }}
@@ -321,15 +362,15 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
       {/* Filter Toggle */}
       <View style={s.filterHeader}>
         <TouchableOpacity 
-          style={[s.filterToggle, filtersVisible && { backgroundColor: 'rgba(139,105,20,0.15)', borderColor: colors.sepia }]}
+          style={[s.filterToggle, filtersVisible && s.filterToggleActive]}
           onPress={() => {
             Haptics.selectionAsync();
             setFiltersVisible(!filtersVisible);
           }}
         >
           <SlidersHorizontal size={14} color={filtersVisible ? colors.sepia : colors.fog} />
-          <Text style={[s.filterToggleText, filtersVisible && { color: colors.sepia }]}>
-            {filtersVisible ? '[-] HIDE FILTERS' : '[+] EXPAND FILTERS'}
+          <Text style={[s.filterToggleText, filtersVisible && s.filterToggleTextActive]}>
+            {filtersVisible ? 'HIDE FILTERS' : 'EXPAND FILTERS'}
           </Text>
           {activeFilterCount > 0 && (
             <View style={s.filterBadge}><Text style={s.filterBadgeText}>{activeFilterCount}</Text></View>
@@ -354,16 +395,90 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
               </Chip>
             ))}
           </View>
-          <Text style={[s.filterSectionTitle, { marginTop: spacing.md }]}>DECADE</Text>
+
+          <Text style={[s.filterSectionTitle, s.filterSectionTitleSpaced]}>DECADE</Text>
           <View style={s.chipRow}>
             {DECADES.map(d => (
-              <Chip key={d.label} active={filters.decade?.label === d.label} onPress={() => { updateFilter({ decade: filters.decade?.label === d.label ? null : d }); setPage(1); }}>
+              <Chip key={d.label} active={filters.decade?.label === d.label} onPress={() => { updateFilter({ decade: filters.decade?.label === d.label ? null : d, yearFrom: null, yearTo: null }); setPage(1); }}>
                 {d.label}
+              </Chip>
+            ))}
+          </View>
+
+          {/* ── CUSTOM YEAR RANGE (Native Exclusive) ── */}
+          <Text style={[s.filterSectionTitle, s.filterSectionTitleSpaced]}>CUSTOM YEAR RANGE</Text>
+          <View style={s.yearRangeRow}>
+            <TextInput
+              style={s.yearInput}
+              placeholder="FROM"
+              placeholderTextColor={colors.fog}
+              keyboardType="number-pad"
+              maxLength={4}
+              value={filters.yearFrom ? String(filters.yearFrom) : ''}
+              onChangeText={(v) => {
+                const num = parseInt(v, 10);
+                updateFilter({ yearFrom: isNaN(num) ? null : num, decade: null });
+              }}
+              onEndEditing={() => setPage(1)}
+              returnKeyType="done"
+            />
+            <Text style={s.yearRangeDash}>—</Text>
+            <TextInput
+              style={s.yearInput}
+              placeholder="TO"
+              placeholderTextColor={colors.fog}
+              keyboardType="number-pad"
+              maxLength={4}
+              value={filters.yearTo ? String(filters.yearTo) : ''}
+              onChangeText={(v) => {
+                const num = parseInt(v, 10);
+                updateFilter({ yearTo: isNaN(num) ? null : num, decade: null });
+              }}
+              onEndEditing={() => setPage(1)}
+              returnKeyType="done"
+            />
+            {(filters.yearFrom || filters.yearTo) && (
+              <TouchableOpacity onPress={() => { updateFilter({ yearFrom: null, yearTo: null }); setPage(1); }} style={s.yearClearBtn}>
+                <X size={12} color={colors.fog} />
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <Text style={[s.filterSectionTitle, s.filterSectionTitleSpaced]}>LANGUAGE</Text>
+          <View style={s.chipRow}>
+            {LANGUAGES.map(l => (
+              <Chip key={l.iso} active={filters.language === l.iso} onPress={() => { updateFilter({ language: filters.language === l.iso ? null : l.iso }); setPage(1); }}>
+                {l.name}
+              </Chip>
+            ))}
+          </View>
+
+          <Text style={[s.filterSectionTitle, s.filterSectionTitleSpaced]}>SORT BY</Text>
+          <View style={s.chipRow}>
+            {SORT_OPTIONS.map(o => (
+              <Chip key={o.value} active={filters.sortBy === o.value} onPress={() => { updateFilter({ sortBy: o.value }); setPage(1); }}>
+                {o.label}
+              </Chip>
+            ))}
+          </View>
+
+          <Text style={[s.filterSectionTitle, s.filterSectionTitleSpaced]}>MIN RATING{filters.minRating > 0 ? `: ${filters.minRating}+` : ''}</Text>
+          <View style={s.chipRow}>
+            {MIN_RATINGS.map(r => (
+              <Chip key={r} active={filters.minRating === r} onPress={() => { updateFilter({ minRating: filters.minRating === r ? 0 : r }); setPage(1); }}>
+                {r === 0 ? 'Any' : `${r}+`}
               </Chip>
             ))}
           </View>
         </AnimatedView>
       )}
+
+      {/* ── Section Divider ── */}
+      <LinearGradient
+        colors={['transparent', 'rgba(139,105,20,0.25)', 'transparent']}
+        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+        style={s.sectionDividerLine}
+      />
 
       <View style={s.sectionHeaderWrap}>
         <Text style={s.sectionLabel}>
@@ -413,11 +528,16 @@ export default function DarkRoomScreen() {
           if (filters.genreId) params.with_genres = filters.genreId;
           else if (mood) params.with_genres = mood.genre;
           
-          if (filters.decade) {
+          // Custom year range takes priority over decade presets
+          if (filters.yearFrom || filters.yearTo) {
+            if (filters.yearFrom) params['primary_release_date.gte'] = `${filters.yearFrom}-01-01`;
+            if (filters.yearTo) params['primary_release_date.lte'] = `${filters.yearTo}-12-31`;
+          } else if (filters.decade) {
             params['primary_release_date.gte'] = filters.decade.from;
             params['primary_release_date.lte'] = filters.decade.to;
           }
-          if (filters.minRating > 0) Object.assign(params, { 'vote_average.gte': filters.minRating });
+          if (filters.language) params.with_original_language = filters.language;
+          if (filters.minRating > 0) params['vote_average.gte'] = filters.minRating;
           
           // tmdb.ts lacks direct discover mapping, so we manual fetch
           const qs = Object.entries(params).map(([k,v]) => `${k}=${v}`).join('&');
@@ -456,7 +576,7 @@ export default function DarkRoomScreen() {
         </View>
       );
     }
-    return <View style={{ height: 100 }} />;
+    return <View style={s.footerSpacer} />;
   };
 
   return (
@@ -517,19 +637,51 @@ const s = StyleSheet.create({
   // Web: heroEyebrow fontSize 0.65rem=10.4px, ls 0.4em=4.16px, color var(--sepia)
   heroEyebrow: {
     fontFamily: fonts.ui,
-    fontSize: 10,
-    letterSpacing: 4,
+    fontSize: 9,
+    letterSpacing: 5,
     color: colors.sepia,
     marginBottom: spacing.sm,
+    opacity: 0.7,
   },
   // Web mobile: clamp(1.8rem,7vw,2.5rem) ≈ 28px on 390px, lineHeight 1
   heroTitle: {
     fontFamily: fonts.display,
-    fontSize: 28,
+    fontSize: 34,
     color: colors.parchment,
-    marginBottom: 20,
+    marginBottom: 12,
     textAlign: 'center',
-    lineHeight: 28,
+    lineHeight: 36,
+    letterSpacing: 1,
+    textShadowColor: 'rgba(0,0,0,0.5)',
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
+  },
+  estRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 14,
+  },
+  estRule: {
+    flex: 1,
+    height: 1,
+  },
+  heroEst: {
+    fontFamily: fonts.ui,
+    fontSize: 8,
+    letterSpacing: 5,
+    color: colors.fog,
+    opacity: 0.5,
+  },
+  heroSub: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    color: colors.fog,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 20,
+    opacity: 0.6,
+    paddingHorizontal: 20,
   },
   searchWrap: {
     width: '100%',
@@ -547,16 +699,17 @@ const s = StyleSheet.create({
   // Web mobile search: fontSize 1rem=16px, padding 0.9rem 2.5rem 0.9rem 3rem = 14.4px 40px 14.4px 48px
   searchInput: {
     width: '100%',
-    backgroundColor: colors.soot,
+    backgroundColor: 'rgba(14,11,8,0.95)',
     borderWidth: 1,
-    borderColor: colors.ash,
+    borderColor: 'rgba(139,105,20,0.12)',
     borderRadius: 4,
     paddingVertical: 14,
     paddingLeft: 46,
     paddingRight: 40,
     color: colors.parchment,
     fontFamily: fonts.sub,
-    fontSize: 16,
+    fontSize: 15,
+    letterSpacing: 0.3,
   },
   searchInputActive: {
     borderColor: colors.sepia,
@@ -606,6 +759,9 @@ const s = StyleSheet.create({
     height: 32,
     borderRadius: 16,
   },
+  suggestionImgPlaceholder: {
+    backgroundColor: colors.ash,
+  },
   suggestionInfo: {
     flex: 1,
     justifyContent: 'center',
@@ -641,24 +797,40 @@ const s = StyleSheet.create({
   // Web mobile mood button: padding 0.5rem 1rem = 8px 16px, borderRadius 2px, fontSize 0.55rem=8.8px ls 0.1em
   moodCard: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingVertical: 10,
     borderWidth: 1,
-    borderRadius: 2,
+    borderRadius: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 8,
+    backgroundColor: colors.soot,
+    borderColor: 'rgba(139,105,20,0.1)',
+    minWidth: 130,
   },
   moodGlyph: {
     fontFamily: fonts.display,
-    fontSize: 16,
+    fontSize: 18,
     color: colors.bone,
   },
   moodLabel: {
     fontFamily: fonts.ui,
     fontSize: 9,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
     color: colors.bone,
     textTransform: 'uppercase',
+  },
+  moodLabelActive: {
+    color: colors.flicker,
+  },
+  moodSub: {
+    fontFamily: fonts.body,
+    fontSize: 8,
+    color: colors.fog,
+    marginTop: 2,
+    opacity: 0.5,
+  },
+  moodSubActive: {
+    opacity: 0.8,
   },
   filterHeader: {
     flexDirection: 'row',
@@ -676,13 +848,20 @@ const s = StyleSheet.create({
     backgroundColor: colors.soot,
     borderWidth: 1,
     borderColor: colors.ash,
-    borderRadius: 2,
+    borderRadius: 4,
+  },
+  filterToggleActive: {
+    backgroundColor: 'rgba(139,105,20,0.15)',
+    borderColor: colors.sepia,
   },
   filterToggleText: {
     fontFamily: fonts.ui,
     fontSize: 10,
-    letterSpacing: 1.2,
+    letterSpacing: 1.5,
     color: colors.fog,
+  },
+  filterToggleTextActive: {
+    color: colors.sepia,
   },
   filterBadge: {
     backgroundColor: colors.sepia,
@@ -717,10 +896,46 @@ const s = StyleSheet.create({
     color: colors.sepia,
     marginBottom: spacing.sm,
   },
+  filterSectionTitleSpaced: {
+    marginTop: spacing.md,
+  },
   chipRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
+  },
+  yearRangeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  yearInput: {
+    flex: 1,
+    backgroundColor: 'rgba(14,11,8,0.95)',
+    borderWidth: 1,
+    borderColor: 'rgba(139,105,20,0.15)',
+    borderRadius: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    color: colors.parchment,
+    fontFamily: fonts.ui,
+    fontSize: 13,
+    letterSpacing: 2,
+    textAlign: 'center',
+  },
+  yearRangeDash: {
+    fontFamily: fonts.display,
+    fontSize: 16,
+    color: colors.fog,
+    opacity: 0.4,
+  },
+  yearClearBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(139,105,20,0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   // Web chip: padding 0.35rem 0.75rem = 5.6px 12px, fontSize 0.55rem=8.8px ls 0.1em, borderRadius 2px
   chip: {
@@ -735,10 +950,15 @@ const s = StyleSheet.create({
     letterSpacing: 1,
     textTransform: 'uppercase',
   },
+  sectionDividerLine: {
+    height: 1,
+    marginVertical: spacing.md,
+    marginHorizontal: -spacing.md,
+  },
   sectionHeaderWrap: {
     marginBottom: spacing.lg,
     alignItems: 'center',
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
   },
   sectionLabel: {
     fontFamily: fonts.ui,
@@ -766,6 +986,16 @@ const s = StyleSheet.create({
   posterImg: {
     width: '100%',
     height: '100%',
+  },
+  posterPlaceholder: {
+    backgroundColor: colors.ash,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  posterPlaceholderGlyph: {
+    fontFamily: fonts.display,
+    color: colors.fog,
+    fontSize: 18,
   },
   quickSaveIcon: {
     position: 'absolute',
@@ -809,5 +1039,8 @@ const s = StyleSheet.create({
   footerLoading: {
     paddingVertical: spacing.xl,
     alignItems: 'center',
+  },
+  footerSpacer: {
+    height: 100,
   },
 });

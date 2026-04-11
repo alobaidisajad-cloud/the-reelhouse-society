@@ -82,7 +82,7 @@ export default function StacksScreen() {
               <AnimatedView entering={FadeInUp.duration(350).delay(Math.min(index * 40, 300))}>
                 <TouchableOpacity
                   style={s.logRow}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/film/${item.filmId}`); }}
+                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/log/${item.id}`); }}
                   activeOpacity={0.7}
                 >
                   {posterUri ? <Image source={{ uri: posterUri }} style={s.logPoster} /> : <View style={[s.logPoster, s.noPoster]} />}

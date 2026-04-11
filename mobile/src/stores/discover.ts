@@ -12,6 +12,8 @@ export interface DiscoverState {
     sortBy: string;
     language: string | null;
     minRating: number;
+    yearFrom: number | null;
+    yearTo: number | null;
   };
   setPage: (v: number) => void;
   setMood: (m: any | null) => void;
@@ -30,6 +32,8 @@ const defaultFilters = {
   sortBy: 'popularity.desc',
   language: null,
   minRating: 0,
+  yearFrom: null,
+  yearTo: null,
 };
 
 export const useDiscoverStore = create<DiscoverState>((set) => ({

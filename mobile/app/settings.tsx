@@ -9,21 +9,32 @@ import {
   View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
   Switch, Alert, ActivityIndicator, Platform, Linking,
 } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
   ChevronLeft, Lock, Eye, Bell, Download, Trash2,
   Shield, FileText, User, Crown, LogOut, ChevronDown, ChevronUp,
-  Smartphone,
+  Smartphone, Sparkles, Star,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/lib/supabase';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import DataVault from '@/src/components/settings/DataVault';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
+
+// ── Ornamental Divider ──◇── ──
+function OrnamentalRule() {
+  return (
+    <View style={st.ornRule}>
+      <View style={st.ornLine} />
+      <View style={st.ornDiamond} />
+      <View style={st.ornLine} />
+    </View>
+  );
+}
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -178,8 +189,8 @@ export default function SettingsScreen() {
   const SectionHead = ({ icon: Icon, label, danger }: { icon: any; label: string; danger?: boolean }) => (
     <View style={[st.sectionHeaderWrap]}>
       <View style={st.sectionHeaderRow}>
-        <Icon size={14} color={danger ? 'rgba(162,36,36,0.7)' : colors.sepia} style={{ opacity: 0.7 }} />
-        <Text style={[st.sectionHeaderText, danger && { color: 'rgba(162,36,36,0.7)' }]}>{label}</Text>
+        <Icon size={14} color={danger ? 'rgba(162,36,36,0.7)' : colors.sepia} style={st.sectionHeaderIcon} />
+        <Text style={[st.sectionHeaderText, danger && st.sectionHeaderTextDanger]}>{label}</Text>
       </View>
     </View>
   );
@@ -214,12 +225,30 @@ export default function SettingsScreen() {
       activeOpacity={0.7}
     >
       <Icon size={12} color={danger ? 'rgba(162,36,36,0.7)' : colors.fog} />
-      <Text style={[st.actionBtnText, danger && { color: 'rgba(162,36,36,0.7)' }]}>{label}</Text>
+      <Text style={[st.actionBtnText, danger && st.actionBtnTextDanger]}>{label}</Text>
     </TouchableOpacity>
   );
 
+  // ── Breathing ambient glow ──
+  const glowOpacity = useSharedValue(0.04);
+  useEffect(() => {
+    glowOpacity.value = withRepeat(
+      withTiming(0.08, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      -1, true
+    );
+  }, []);
+  const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
+
   return (
     <View style={st.container}>
+      {/* Ambient background atmosphere */}
+      <Animated.View style={[st.ambientGlow, glowStyle]}>
+        <LinearGradient
+          colors={['rgba(139,105,20,0.15)', 'transparent', 'transparent']}
+          locations={[0, 0.4, 1]}
+          style={StyleSheet.absoluteFillObject}
+        />
+      </Animated.View>
       {/* ── Nav Bar ── */}
       <View style={st.navBar}>
         <TouchableOpacity onPress={() => router.back()} style={st.navBackBtn} activeOpacity={0.7}>
@@ -232,21 +261,30 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={st.scrollContent} showsVerticalScrollIndicator={false}>
 
         {/* ══════════════════════════════════════════
             HERO HEADER — matches .settings-hero
            ══════════════════════════════════════════ */}
-        <AnimatedView entering={FadeInDown.duration(500)} style={st.hero}>
-          <Text style={st.heroEyebrow}>{'\u2726'} THE DOSSIER BUREAU {'\u2726'}</Text>
+        <AnimatedView entering={FadeInDown.duration(600)} style={st.hero}>
+          {/* Top ornamental double rule */}
+          <View style={st.heroRuleTop} />
+
+          <View style={st.heroEyebrowRow}>
+            <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
+            <Text style={st.heroEyebrow}>THE DOSSIER BUREAU</Text>
+            <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
+          </View>
+
           <Text style={st.heroTitle}>Settings</Text>
+
+          {/* EST badge */}
+          <Text style={st.heroEst}>EST. 1924</Text>
+
           <Text style={st.heroDesc}>Configure your presence within The Society.</Text>
-          {/* Bottom gradient line (::after equivalent) */}
-          <LinearGradient
-            colors={['transparent', 'rgba(139,105,20,0.3)', 'transparent']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={st.heroBorderLine}
-          />
+
+          {/* Bottom ornamental double rule */}
+          <View style={st.heroRuleBottom} />
         </AnimatedView>
 
         {/* ══════════════════════════════════════════
@@ -270,13 +308,15 @@ export default function SettingsScreen() {
 
             <View style={st.fieldWrap}>
               <Text style={st.fieldLabel}>BIO</Text>
-              <TextInput style={[st.fieldInput, { height: 90, textAlignVertical: 'top', lineHeight: 20 }]}
+              <TextInput style={st.bioInput}
                 value={bio} onChangeText={setBio} multiline maxLength={160}
                 placeholderTextColor={colors.ash} placeholder="Write a brief transmission..." />
               <Text style={st.charCount}>{bio.length}/160</Text>
             </View>
           </SectionCard>
         </AnimatedView>
+
+        <OrnamentalRule />
 
         {/* ══════════════════════════════════════════
             PATRONAGE & BILLING — matches web exactly
@@ -288,12 +328,21 @@ export default function SettingsScreen() {
             {/* Current Tier */}
             <View style={st.fieldWrap}>
               <Text style={st.fieldLabel}>YOUR RANK</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={[st.rankDisplay, {
-                  color: userRole === 'auteur' ? '#7d1f1f' : userRole === 'archivist' ? colors.sepia : colors.fog,
-                }]}>
-                  {userRole === 'auteur' ? '\u2605 Auteur' : userRole === 'archivist' ? '\u2726 Archivist' : 'Cinephile'}
+              <View style={st.rankRow}>
+                <Text style={[
+                  st.rankDisplay,
+                  userRole === 'auteur' && st.rankAuteur,
+                  userRole === 'archivist' && st.rankArchivist,
+                  userRole !== 'auteur' && userRole !== 'archivist' && st.rankCinephile,
+                ]}>
+                  {userRole === 'auteur'
+                    ? 'Auteur'
+                    : userRole === 'archivist'
+                      ? 'Archivist'
+                      : 'Cinephile'}
                 </Text>
+                {userRole === 'auteur' && <Star size={12} color='#7d1f1f' strokeWidth={1.5} fill='#7d1f1f' />}
+                {userRole === 'archivist' && <Sparkles size={12} color={colors.sepia} strokeWidth={1.5} />}
                 {(userRole === 'auteur' || userRole === 'archivist') && (
                   <View style={st.activeBadge}><Text style={st.activeBadgeText}>ACTIVE</Text></View>
                 )}
@@ -301,7 +350,7 @@ export default function SettingsScreen() {
             </View>
 
             {/* Divider + Upgrade/Manage */}
-            <View style={[st.divider, { marginTop: 4 }]} />
+            <View style={st.dividerSpaced} />
 
             {(!userRole || userRole === 'cinephile' || userRole === 'free') ? (
               <View>
@@ -325,6 +374,8 @@ export default function SettingsScreen() {
           </SectionCard>
         </AnimatedView>
 
+        <OrnamentalRule />
+
         {/* ══════════════════════════════════════════
             ACCOUNT — matches web: username, email, password change
            ══════════════════════════════════════════ */}
@@ -344,12 +395,12 @@ export default function SettingsScreen() {
 
             {/* Password Change Toggle */}
             <TouchableOpacity
-              style={[st.actionBtn, { marginTop: 4 }]}
+              style={st.actionBtnSpaced}
               onPress={() => setShowPasswordChange(!showPasswordChange)}
               activeOpacity={0.7}
             >
               <Lock size={12} color={colors.fog} />
-              <Text style={[st.actionBtnText, { flex: 1 }]}>CHANGE PASSWORD</Text>
+              <Text style={st.actionBtnTextFlex}>CHANGE PASSWORD</Text>
               {showPasswordChange ? <ChevronUp size={12} color={colors.fog} /> : <ChevronDown size={12} color={colors.fog} />}
             </TouchableOpacity>
 
@@ -366,7 +417,7 @@ export default function SettingsScreen() {
                     secureTextEntry placeholder="Repeat password" placeholderTextColor={colors.ash} />
                 </View>
                 <TouchableOpacity
-                  style={[st.saveFieldBtn, (!newPassword || !confirmPassword) && { opacity: 0.5 }]}
+                  style={[st.saveFieldBtn, (!newPassword || !confirmPassword) && st.disabledBtn]}
                   onPress={handlePasswordChange}
                   disabled={changingPassword || !newPassword || !confirmPassword}
                   activeOpacity={0.7}
@@ -377,6 +428,8 @@ export default function SettingsScreen() {
             )}
           </SectionCard>
         </AnimatedView>
+
+        <OrnamentalRule />
 
         {/* ══════════════════════════════════════════
             PRIVACY — matches web: 3 radio groups
@@ -426,6 +479,8 @@ export default function SettingsScreen() {
           </SectionCard>
         </AnimatedView>
 
+        <OrnamentalRule />
+
         {/* ══════════════════════════════════════════
             NOTIFICATIONS — matches web: 4 toggles + push section
            ══════════════════════════════════════════ */}
@@ -439,8 +494,8 @@ export default function SettingsScreen() {
               { label: 'Annotations', desc: 'When someone comments on your log', value: notifComments, setter: setNotifComments },
               { label: 'System Alerts', desc: 'Society announcements and updates', value: notifSystem, setter: setNotifSystem },
             ].map((item, idx, arr) => (
-              <View key={item.label} style={[st.notifRow, idx === arr.length - 1 && { borderBottomWidth: 0 }]}>
-                <View style={{ flex: 1, paddingRight: 12 }}>
+              <View key={item.label} style={[st.notifRow, idx === arr.length - 1 && st.notifRowLast]}>
+                <View style={st.notifTextWrap}>
                   <Text style={st.notifLabel}>{item.label}</Text>
                   <Text style={st.notifDesc}>{item.desc}</Text>
                 </View>
@@ -450,7 +505,7 @@ export default function SettingsScreen() {
 
             {/* Mobile Integration — matches web's push section */}
             <View style={st.pushSection}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10 }}>
+              <View style={st.pushTitleRow}>
                 <Smartphone size={10} color={colors.sepia} />
                 <Text style={st.pushTitle}>MOBILE INTEGRATION</Text>
               </View>
@@ -471,13 +526,15 @@ export default function SettingsScreen() {
           </SectionCard>
         </AnimatedView>
 
+        <OrnamentalRule />
+
         {/* ══════════════════════════════════════════
             LEGAL — matches web section 5
            ══════════════════════════════════════════ */}
         <AnimatedView entering={FadeInDown.duration(500).delay(350)}>
           <SectionCard>
             <SectionHead icon={FileText} label="LEGAL" />
-            <View style={{ gap: 8 }}>
+            <View style={st.legalActions}>
               <ActionBtn icon={Shield} label="PRIVACY POLICY"
                 onPress={() => Linking.openURL('https://www.thereelhousesociety.com/privacy')} />
               <ActionBtn icon={FileText} label="TERMS OF SERVICE"
@@ -492,7 +549,7 @@ export default function SettingsScreen() {
         <AnimatedView entering={FadeInDown.duration(500).delay(400)}>
           <SectionCard danger>
             <SectionHead icon={Shield} label="ACCOUNT ACTIONS" danger />
-            <View style={{ gap: 8 }}>
+            <View style={st.legalActions}>
               <ActionBtn icon={LogOut} label="SIGN OUT" onPress={handleSignOut} />
               <View style={st.divider} />
               <ActionBtn icon={Trash2} label="DELETE ACCOUNT" onPress={handleDeleteAccount} danger />
@@ -500,12 +557,13 @@ export default function SettingsScreen() {
           </SectionCard>
         </AnimatedView>
 
-        {/* ══════════════════════════════════════════
-            SAVE BUTTON — matches web .settings-save-btn
-           ══════════════════════════════════════════ */}
-        <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 8 }}>
+        {/* ── Heritage Footer ── */}
+        <AnimatedView entering={FadeInDown.duration(500).delay(450)} style={st.heritageFooter}>
+          <OrnamentalRule />
+
+          {/* Save button */}
           <TouchableOpacity
-            style={[st.globalSaveBtn, saving && { opacity: 0.5 }]}
+            style={[st.globalSaveBtn, saving && st.disabledBtn]}
             onPress={handleSave} disabled={saving} activeOpacity={0.7}
           >
             <LinearGradient
@@ -513,26 +571,40 @@ export default function SettingsScreen() {
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
               style={StyleSheet.absoluteFillObject}
             />
-            <Text style={st.globalSaveBtnText}>
-              {saving ? 'ARCHIVING SETTINGS\u2026' : '\u2726 SAVE SETTINGS \u2726'}
-            </Text>
+            <View style={st.saveBtnContent}>
+              {!saving && <Sparkles size={10} color={colors.sepia} strokeWidth={2} />}
+              <Text style={st.globalSaveBtnText}>
+                {saving ? 'ARCHIVING SETTINGS\u2026' : 'SAVE SETTINGS'}
+              </Text>
+              {!saving && <Sparkles size={10} color={colors.sepia} strokeWidth={2} />}
+            </View>
           </TouchableOpacity>
-        </View>
 
-        {/* ── Legal Footer Links — matches web .settings-legal ── */}
-        <View style={st.legalFooter}>
-          <TouchableOpacity onPress={() => Linking.openURL('https://www.thereelhousesociety.com/privacy')}>
-            <Text style={st.legalFooterLink}>PRIVACY POLICY</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => Linking.openURL('https://www.thereelhousesociety.com/terms')}>
-            <Text style={st.legalFooterLink}>TERMS OF SERVICE</Text>
-          </TouchableOpacity>
-        </View>
+          {/* Legal links */}
+          <View style={st.legalFooter}>
+            <TouchableOpacity onPress={() => Linking.openURL('https://www.thereelhousesociety.com/privacy')}>
+              <Text style={st.legalFooterLink}>PRIVACY POLICY</Text>
+            </TouchableOpacity>
+            <View style={st.footerDot} />
+            <TouchableOpacity onPress={() => Linking.openURL('https://www.thereelhousesociety.com/terms')}>
+              <Text style={st.legalFooterLink}>TERMS OF SERVICE</Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* ── Member Since — matches web .settings-member-badge ── */}
-        <Text style={st.memberSince}>
-          MEMBER SINCE {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'THE BEGINNING'}
-        </Text>
+          {/* Member since */}
+          <Text style={st.memberSince}>
+            MEMBER SINCE {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'THE BEGINNING'}
+          </Text>
+
+          {/* End mark */}
+          <View style={st.endMarkRow}>
+            <View style={st.endMarkLine} />
+            <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
+            <View style={st.endMarkLine} />
+          </View>
+          <Text style={st.heritageMark}>EST. 1924 · THE REELHOUSE SOCIETY</Text>
+          <Text style={st.heritageCopyright}>© 1924–2026 The ReelHouse Society. All dossiers are classified.</Text>
+        </AnimatedView>
 
       </ScrollView>
     </View>
@@ -544,6 +616,21 @@ export default function SettingsScreen() {
 // ═══════════════════════════════════════════════════════
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  scrollContent: { paddingBottom: 100 },
+  ambientGlow: {
+    position: 'absolute', top: 0, left: 0, right: 0, height: 350, zIndex: 0,
+  },
+
+  // ── Ornamental Rule ──
+  ornRule: {
+    flexDirection: 'row', alignItems: 'center', gap: 10,
+    marginVertical: 8, marginHorizontal: 24, opacity: 0.4,
+  },
+  ornLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.sepia },
+  ornDiamond: {
+    width: 5, height: 5, backgroundColor: colors.sepia,
+    transform: [{ rotate: '45deg' }],
+  },
 
   // ── Nav ──
   navBar: {
@@ -559,24 +646,42 @@ const st = StyleSheet.create({
   // ── Hero — matches .settings-hero ──
   hero: {
     alignItems: 'center', paddingHorizontal: 24,
-    marginTop: 20, marginBottom: 24,
-    paddingBottom: 24,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.12)',
+    marginTop: 20, marginBottom: 12,
+    paddingBottom: 20,
+  },
+  heroRuleTop: {
+    width: '80%', height: 6, marginBottom: 16,
+    borderTopWidth: 3, borderTopColor: colors.sepia,
+    borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.25)',
+    opacity: 0.5,
+  },
+  heroEyebrowRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8,
   },
   heroEyebrow: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4,
-    color: colors.sepia, marginBottom: 10, opacity: 0.7,
+    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 5,
+    color: colors.sepia, opacity: 0.7,
   },
   heroTitle: {
-    fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
-    lineHeight: 32, marginBottom: 10,
+    fontFamily: fonts.display, fontSize: 32, color: colors.parchment,
+    lineHeight: 36, marginBottom: 6,
+    ...effects.textGlowSepia,
+    textShadowRadius: 25,
+  },
+  heroEst: {
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
+    color: colors.sepia, opacity: 0.4, marginBottom: 10,
   },
   heroDesc: {
-    fontFamily: fonts.sub, fontSize: 14, color: colors.fog,
-    textAlign: 'center', lineHeight: 21,
+    fontFamily: fonts.body, fontSize: 13, color: colors.bone,
+    opacity: 0.5, fontStyle: 'italic', textAlign: 'center', lineHeight: 20,
+    letterSpacing: 0.5, marginBottom: 16,
   },
-  heroBorderLine: {
-    position: 'absolute', bottom: -1, left: '20%' as any, right: '20%' as any, height: 1,
+  heroRuleBottom: {
+    width: '80%', height: 6,
+    borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.25)',
+    borderBottomWidth: 3, borderBottomColor: colors.sepia,
+    opacity: 0.5,
   },
 
   // ── Section Card — matches .settings-section ──
@@ -599,9 +704,11 @@ const st = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.08)',
   },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionHeaderIcon: { opacity: 0.7 },
   sectionHeaderText: {
     fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2.5, color: colors.sepia,
   },
+  sectionHeaderTextDanger: { color: 'rgba(162,36,36,0.7)' },
 
   // ── Field — matches .settings-field + .settings-label + .settings-input ──
   fieldWrap: { marginBottom: 16 },
@@ -616,6 +723,15 @@ const st = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(139,105,20,0.1)',
     borderRadius: 3,
     color: colors.parchment, fontFamily: fonts.body, fontSize: 14,
+  },
+  bioInput: {
+    width: '100%',
+    paddingHorizontal: 14, paddingVertical: 11,
+    backgroundColor: 'rgba(10,7,3,0.6)',
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.1)',
+    borderRadius: 3,
+    color: colors.parchment, fontFamily: fonts.body, fontSize: 14,
+    height: 90, textAlignVertical: 'top', lineHeight: 20,
   },
   charCount: {
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1,
@@ -636,7 +752,11 @@ const st = StyleSheet.create({
   readonlyText: { fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
 
   // ── Rank Display ──
+  rankRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   rankDisplay: { fontFamily: fonts.display, fontSize: 16, textTransform: 'uppercase' },
+  rankAuteur: { color: '#7d1f1f' },
+  rankArchivist: { color: colors.sepia },
+  rankCinephile: { color: colors.fog },
   activeBadge: {
     backgroundColor: 'rgba(196,150,26,0.08)',
     borderWidth: 1, borderColor: 'rgba(196,150,26,0.3)',
@@ -659,9 +779,20 @@ const st = StyleSheet.create({
     borderRadius: 3,
   },
   actionBtnDanger: { borderColor: 'rgba(162,36,36,0.15)' },
+  actionBtnSpaced: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
+    paddingVertical: 10, paddingHorizontal: 14,
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.08)',
+    borderRadius: 3, marginTop: 4,
+  },
   actionBtnText: {
     fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.2, color: colors.fog,
   },
+  actionBtnTextDanger: { color: 'rgba(162,36,36,0.7)' },
+  actionBtnTextFlex: {
+    fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.2, color: colors.fog, flex: 1,
+  },
+  disabledBtn: { opacity: 0.5 },
 
   // ── Password Panel — matches .settings-password-panel ──
   passwordPanel: {
@@ -703,6 +834,8 @@ const st = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.06)',
   },
+  notifRowLast: { borderBottomWidth: 0 },
+  notifTextWrap: { flex: 1, paddingRight: 12 },
   notifLabel: { fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
   notifDesc: {
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1,
@@ -713,6 +846,9 @@ const st = StyleSheet.create({
   pushSection: {
     marginTop: 10, paddingTop: 14,
     borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.06)',
+  },
+  pushTitleRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10,
   },
   pushTitle: {
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.sepia,
@@ -727,6 +863,10 @@ const st = StyleSheet.create({
     height: 1, marginVertical: 10,
     backgroundColor: 'rgba(139,105,20,0.15)',
   },
+  dividerSpaced: {
+    height: 1, marginTop: 14, marginBottom: 10,
+    backgroundColor: 'rgba(139,105,20,0.15)',
+  },
 
   // ── Micro Note ──
   microNote: {
@@ -734,32 +874,60 @@ const st = StyleSheet.create({
     color: colors.fog, marginTop: 10, opacity: 0.5,
   },
 
-  // ── Global Save — matches .settings-save-btn ──
+  // ── Legal Actions ──
+  legalActions: { gap: 8 },
+
+  // ── Heritage Footer ──
+  heritageFooter: {
+    paddingHorizontal: 16, paddingTop: 8, paddingBottom: 40,
+  },
   globalSaveBtn: {
     borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
-    borderRadius: 3, paddingVertical: 14,
+    borderRadius: 3, paddingVertical: 16,
     alignItems: 'center', overflow: 'hidden',
+    ...effects.glowSepia,
+    shadowRadius: 15, shadowOpacity: 0.15,
   },
   globalSaveBtnText: {
-    fontFamily: fonts.ui, fontSize: 11, letterSpacing: 2, color: colors.sepia,
+    fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 2.5, color: colors.sepia,
   },
-
-  // ── Legal Footer — matches .settings-legal ──
+  saveBtnContent: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, justifyContent: 'center',
+  },
   legalFooter: {
-    flexDirection: 'row', justifyContent: 'center', gap: 24,
-    marginTop: 20, paddingTop: 18,
-    borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.08)',
-    marginHorizontal: 16,
+    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 16,
+    marginTop: 24, paddingTop: 20,
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,105,20,0.12)',
+  },
+  footerDot: {
+    width: 3, height: 3, borderRadius: 1.5,
+    backgroundColor: colors.sepia, opacity: 0.3,
   },
   legalFooterLink: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5,
-    color: colors.fog, opacity: 0.6,
+    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2,
+    color: colors.fog, opacity: 0.5,
   },
-
-  // ── Member Since — matches .settings-member-badge ──
   memberSince: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5,
-    color: colors.fog, textAlign: 'center',
-    marginTop: 16, opacity: 0.4,
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2,
+    color: colors.sepia, textAlign: 'center',
+    marginTop: 20, opacity: 0.35,
+  },
+  endMarkRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    justifyContent: 'center', marginTop: 24,
+  },
+  endMarkLine: {
+    width: 36, height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.sepia, opacity: 0.3,
+  },
+  heritageMark: {
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3,
+    color: colors.sepia, textAlign: 'center', opacity: 0.3,
+    marginTop: 12,
+  },
+  heritageCopyright: {
+    fontFamily: fonts.body, fontSize: 9, color: colors.bone,
+    opacity: 0.2, textAlign: 'center', marginTop: 6,
+    fontStyle: 'italic',
   },
 });

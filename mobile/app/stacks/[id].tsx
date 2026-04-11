@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator, Platform, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions, ActivityIndicator, Platform, FlatList, Alert } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeInDown, FadeInUp, interpolate, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
@@ -98,6 +98,30 @@ export default function StackDetailScreen() {
   const isOwner = user?.id === list?.userId;
   const loggedIds = new Set(logs.map(l => l.filmId));
 
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Stack',
+      'This will permanently remove this collection. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await supabase.from('list_items').delete().eq('list_id', id);
+              await supabase.from('lists').delete().eq('id', id);
+              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+              router.back();
+            } catch {
+              Alert.alert('Error', 'Failed to delete this stack.');
+            }
+          },
+        },
+      ]
+    );
+  };
+
   if (loading || !list) {
     return (
       <View style={s.container}>
@@ -162,10 +186,10 @@ export default function StackDetailScreen() {
           </TouchableOpacity>
           {isOwner && (
             <View style={s.headerActions}>
-              <TouchableOpacity style={s.actionBtn}>
+              <TouchableOpacity style={s.actionBtn} onPress={() => router.push({ pathname: '/list-modal', params: { editId: id } } as any)}>
                 <Edit3 size={18} color={colors.fog} />
               </TouchableOpacity>
-              <TouchableOpacity style={s.actionBtn}>
+              <TouchableOpacity style={s.actionBtn} onPress={handleDelete}>
                 <Trash2 size={18} color="rgba(231,76,60,0.8)" />
               </TouchableOpacity>
             </View>

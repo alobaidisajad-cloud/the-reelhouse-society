@@ -70,7 +70,9 @@ export interface FilmState {
     /** O(1) watchlist lookup index */
     _watchlistIndex: Record<number, true>
     /** O(1) logged film lookup index (maps filmId to the full log) */
-    _loggedIndex: Record<number, FilmLog>
+    _loggedIndex: Record<number, FilmLog[]>
+    getLatestLog: (filmId: number) => FilmLog | undefined
+    getAllLogsForFilm: (filmId: number) => FilmLog[]
 }
 
 export const useFilmStore = create<FilmState>()((set, get) => ({
@@ -90,7 +92,9 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
             _endorsedIndex: {} as Record<string, true>,  // O(1) lookup — rebuilt on mutations
             _listEndorsedIndex: {} as Record<string, true>,
             _watchlistIndex: {} as Record<number, true>,
-            _loggedIndex: {} as Record<number, FilmLog>,
+            _loggedIndex: {} as Record<number, FilmLog[]>,
+            getLatestLog: (filmId) => get()._loggedIndex[filmId]?.[0],
+            getAllLogsForFilm: (filmId) => get()._loggedIndex[filmId] || [],
 
             toggleEndorse: async (targetId) => {
                 const user = useAuthStore.getState().user
@@ -311,8 +315,8 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 }))
 
                 const nextLogs = loadMore ? [...state.logs, ...newLogs] : newLogs
-                const idx: Record<number, FilmLog> = {}
-                nextLogs.forEach(l => { if (l.filmId) idx[l.filmId] = l })
+                const idx: Record<number, FilmLog[]> = {}
+                nextLogs.forEach(l => { if (l.filmId) { if (!idx[l.filmId]) idx[l.filmId] = []; idx[l.filmId].push(l as FilmLog) } })
 
                 set({ 
                     logs: nextLogs as FilmLog[], 
@@ -491,7 +495,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const fullLog = { ...log, id: data.id, createdAt: data.created_at } as FilmLog
                 set((state) => ({
                     logs: [fullLog, ...state.logs],
-                    _loggedIndex: log.filmId ? { ...state._loggedIndex, [log.filmId]: fullLog } : state._loggedIndex
+                    _loggedIndex: (() => { const n = { ...state._loggedIndex }; if (log.filmId) n[log.filmId] = [fullLog, ...(n[log.filmId] || [])]; return n })()
                 }))
 
                 // Auto-sync into Physical Archive if they claimed ownership
@@ -509,13 +513,12 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
             markAsWatched: async (film, status = 'watched') => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const existingLog = get().logs.find(l => l.filmId === film.id)
-                if (existingLog) {
-                    // Update existing log's status
-                    await get().updateLog(existingLog.id, { status } as Partial<FilmLog>)
+                const existingLogs = get()._loggedIndex[film.id]
+                if (existingLogs?.length && status === 'watched') {
+                    await get().updateLog(existingLogs[0].id, { status } as Partial<FilmLog>)
                     return
                 }
-                // Create lightweight log — no rating, no review
+                const effectiveStatus = existingLogs?.length ? 'rewatched' : status
                 const { data, error } = await supabase.from('logs').insert([{
                     user_id: user.id,
                     film_id: film.id,
@@ -524,7 +527,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : null,
                     rating: 0,
                     review: '',
-                    status,
+                    status: effectiveStatus,
                     watched_date: new Date().toISOString(),
                     is_spoiler: false,
                 }]).select().single()
@@ -536,13 +539,14 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     poster: film.poster_path,
                     year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
                     rating: 0,
-                    status,
+                    status: effectiveStatus,
                     createdAt: data.created_at,
                     watchedDate: new Date().toISOString(),
                 }
-                set(state => ({ 
-                    logs: [newLog, ...state.logs],
-                    _loggedIndex: { ...state._loggedIndex, [film.id]: newLog }
+                set(state => {
+                    const nextIdx = { ...state._loggedIndex }
+                    nextIdx[film.id] = [newLog, ...(nextIdx[film.id] || [])]
+                    return { logs: [newLog, ...state.logs], _loggedIndex: nextIdx }
                 }))
                 // Auto-remove from watchlist if present
                 const inWatchlist = get().watchlist.some(w => w.id === film.id)
@@ -599,7 +603,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                         })
                         const nextIdx = { ...state._loggedIndex }
                         if (filmIdToUpdate) {
-                            nextIdx[filmIdToUpdate] = nextLogs.find(l => l.id === id) as FilmLog
+                            nextIdx[filmIdToUpdate] = nextLogs.filter(l => l.filmId === filmIdToUpdate) as FilmLog[]
                         }
                         return { logs: nextLogs, _loggedIndex: nextIdx }
                     })
@@ -627,7 +631,11 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 // Optimistic remove with 5s undo window
                 set((state) => {
                     const nextIdx = { ...state._loggedIndex }
-                    if (logToRemove.filmId) delete nextIdx[logToRemove.filmId]
+                    if (logToRemove.filmId) {
+                        const remaining = (nextIdx[logToRemove.filmId] || []).filter(l => l.id !== id)
+                        if (remaining.length) nextIdx[logToRemove.filmId] = remaining
+                        else delete nextIdx[logToRemove.filmId]
+                    }
                     return { logs: state.logs.filter((l) => l.id !== id), _loggedIndex: nextIdx }
                 })
 

@@ -24,6 +24,8 @@ import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import Buster from '@/src/components/Buster';
 import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
 
+const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
+
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
@@ -137,7 +139,7 @@ function MarqueeBoard({ film }: { film: any }) {
 
   useEffect(() => {
     if (!film?.id) return;
-    supabase.from('logs').select('*', { count: 'exact', head: true }).eq('film_id', film.id)
+    supabase.from('logs').select('id', { count: 'exact', head: true }).eq('film_id', film.id)
       .then(({ count }) => setLocalCount(count || 0));
   }, [film?.id]);
 
@@ -288,7 +290,7 @@ const FilmStripRow = memo(function FilmStripRow({ title, label, films }: { title
 // ══════════════════════════════════════════════════════════════
 //  FEATURED CRITIQUE — Hottest dispatch from the last 24h
 // ══════════════════════════════════════════════════════════════
-function FeaturedCritique() {
+function FeaturedCritiqueInner() {
   const router = useRouter();
   const [featured, setFeatured] = useState<any>(null);
 
@@ -355,7 +357,7 @@ function FeaturedCritique() {
     <Animated.View entering={FadeInDown.duration(700).delay(300)} style={s.critiqueSection}>
       <SectionDivider label="PICK OF THE WEEK" />
 
-      <View style={[s.critiqueHeaderRow, { paddingHorizontal: 16 }]}>
+      <View style={s.critiqueHeaderRow}>
         <LinearGradient colors={[colors.sepia, colors.flicker]} style={s.sectionAccentBar} />
         <View>
           <Text style={s.sectionEyebrow}>PICK OF THE WEEK</Text>
@@ -363,23 +365,22 @@ function FeaturedCritique() {
         </View>
       </View>
 
-      <View style={{ marginHorizontal: -12 }}>
+      <View style={s.critiqueCardWrap}>
          <ActivityCard item={activityItem} index={0} />
       </View>
 
-      <TouchableOpacity style={[s.critiqueActionBtn, { backgroundColor: 'rgba(14,11,8,0.95)', marginHorizontal: 16, marginTop: 4, borderRadius: 8, borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', ...effects.shadowSurface, alignItems: 'center' }]} onPress={() => router.push('/log-modal')}>
-        <Text style={[s.critiqueActionText, { color: colors.sepia }]}>
-          SUBMIT A CRITIQUE
-        </Text>
+      <TouchableOpacity style={s.critiqueSubmitBtn} onPress={() => router.push('/log-modal')}>
+        <Text style={s.critiqueSubmitText}>SUBMIT A CRITIQUE</Text>
       </TouchableOpacity>
     </Animated.View>
   );
 }
+const FeaturedCritique = memo(FeaturedCritiqueInner);
 
 // ══════════════════════════════════════════════════════════════
 //  SOCIAL PULSE — Live dispatches from the Society
 // ══════════════════════════════════════════════════════════════
-function SocialPulseSection() {
+function SocialPulseSectionInner() {
   const router = useRouter();
   const { user } = useAuthStore();
   const [activities, setActivities] = useState<any[]>([]);
@@ -462,6 +463,7 @@ function SocialPulseSection() {
     </Animated.View>
   );
 }
+const SocialPulseSection = memo(SocialPulseSectionInner);
 
 // ── Utility ──
 function timeAgo(dateStr: string | null): string {
@@ -523,14 +525,14 @@ function PulseCardItem({ act }: { act: any }) {
     return { transform: [{ translateX: shimmerProgress.value * 400 - 200 }] };
   });
 
-  const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
+  // AnimatedTouchable is hoisted to module scope for performance
 
   return (
-    <View style={{ width: SCREEN_W * 0.82, marginRight: 14 }}>
-      <AnimatedTouchableOpacity
+    <View style={s.pulseCardOuter}>
+      <AnimatedTouchable
         activeOpacity={0.85}
         onPress={() => router.push(`/film/${act.film?.id}`)}
-        style={[s.pulseCard, { borderLeftColor: accentColor, width: '100%', marginRight: 0 }, isAuteur && { backgroundColor: 'rgba(25,10,10,0.98)' }, animatedBorderStyle]}
+        style={[s.pulseCard, { borderLeftColor: accentColor }, isAuteur && s.pulseCardAuteur, animatedBorderStyle]}
       >
         {isAuteur && (
           <LinearGradient colors={['rgba(125,31,31,0.08)', 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
@@ -538,8 +540,8 @@ function PulseCardItem({ act }: { act: any }) {
         
         {/* Animated Shimmer Line */}
         {isPremium && (
-          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, overflow: 'hidden', zIndex: 5 }}>
-            <Animated.View style={[{ width: '200%', height: '100%', flexDirection: 'row' }, animatedShimmerStyle]}>
+          <View style={s.shimmerTrack}>
+            <Animated.View style={[s.shimmerSlider, animatedShimmerStyle]}>
               <LinearGradient
                 colors={
                   isAuteur 
@@ -547,7 +549,7 @@ function PulseCardItem({ act }: { act: any }) {
                   : ['transparent', 'rgba(196,150,26,0.8)', 'rgba(218,165,32,1)', 'rgba(196,150,26,0.8)', 'transparent']
                 }
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ width: '100%', height: '100%' }}
+                style={s.shimmerGradient}
               />
             </Animated.View>
           </View>
@@ -555,23 +557,23 @@ function PulseCardItem({ act }: { act: any }) {
 
         {/* ── PREMIUM EDITORIAL / ATMOSPHERIC HEADER ── */}
         {act.editorialHeader ? (
-          <View style={{ width: '100%', height: 80, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.15)' }}>
-            <Image source={{ uri: `${TMDB_IMG_W780}${act.editorialHeader}` }} style={{ width: '100%', height: '100%', opacity: 0.55 }} blurRadius={2} />
+          <View style={s.editorialBanner}>
+            <Image source={{ uri: `${TMDB_IMG_W780}${act.editorialHeader}` }} style={s.editorialBannerImg} blurRadius={2} />
             <LinearGradient colors={['rgba(11,10,8,0.2)', 'transparent', 'rgba(18,14,9,0.9)']} locations={[0, 0.3, 1]} style={StyleSheet.absoluteFillObject} />
-            <View style={{ position: 'absolute', top: 8, right: 8, backgroundColor: 'rgba(11,10,8,0.55)', paddingHorizontal: 6, paddingVertical: 4, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)' }}>
-              <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: 'rgba(218,165,32,0.85)' }}>✦ EDITORIAL</Text>
+            <View style={s.editorialBadge}>
+              <Text style={s.editorialBadgeText}>✦ EDITORIAL</Text>
             </View>
           </View>
         ) : isPremium && posterUri ? (
-          <View style={{ width: '100%', height: 50, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)' }}>
-            <Image source={{ uri: posterUri }} style={{ width: '100%', height: '150%', top: '-25%', opacity: 0.4 }} blurRadius={10} />
+          <View style={s.premiumBanner}>
+            <Image source={{ uri: posterUri }} style={s.premiumBannerImg} blurRadius={10} />
             <LinearGradient colors={['rgba(11,10,8,0.3)', 'rgba(18,14,9,0.95)']} style={StyleSheet.absoluteFillObject} />
           </View>
         ) : null}
 
         <View style={s.pulseCardHeader}>
           <View style={s.pulseUserRow}>
-            <View style={[s.pulseAvatar, { borderColor: accentColor, backgroundColor: colors.ash, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }]}>
+            <View style={[s.pulseAvatar, { borderColor: accentColor }]}>
               <Buster size={14} mood={act.rating >= 4 ? 'smiling' : 'neutral'} />
             </View>
             <View>
@@ -589,10 +591,10 @@ function PulseCardItem({ act }: { act: any }) {
               <Image source={{ uri: posterUri }} style={s.pulsePoster} />
             </View>
           )}
-          <View style={{ flex: 1 }}>
+          <View style={s.pulseContentFlex}>
             <Text style={s.pulseFilmTitle} numberOfLines={1}>{act.film?.title}</Text>
             {act.rating > 0 && (
-              <View style={{ marginBottom: 6 }}>
+              <View style={s.pulseRatingWrap}>
                 <ReelRating rating={act.rating} size={10} />
               </View>
             )}
@@ -601,11 +603,11 @@ function PulseCardItem({ act }: { act: any }) {
                 <Text style={s.pullQuoteText} numberOfLines={2}>« {act.pullQuote} »</Text>
               </View>
             ) : act.dropCap && truncReview ? (
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <Text style={{ fontFamily: fonts.display, fontSize: 32, color: colors.sepia, lineHeight: 32, marginRight: 6, marginTop: -2, textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: {width:0, height:2}, textShadowRadius: 4 }}>
+              <View style={s.dropCapRow}>
+                <Text style={s.dropCapLetter}>
                   {reviewStripped.charAt(0)}
                 </Text>
-                <Text style={[s.pulseReview, { flex: 1, paddingTop: 2 }]} numberOfLines={3}>
+                <Text style={[s.pulseReview, s.dropCapBody]} numberOfLines={3}>
                   {truncReview.slice(1)}
                 </Text>
               </View>
@@ -613,11 +615,11 @@ function PulseCardItem({ act }: { act: any }) {
               <Text style={s.pulseReview} numberOfLines={3}>"{truncReview}"</Text>
             ) : null}
             {act.watchedWith && (
-              <Text style={s.pulseWatchedWith}>♡ WITH <Text style={{ color: colors.bone }}>{act.watchedWith.toUpperCase()}</Text></Text>
+              <Text style={s.pulseWatchedWith}>♡ WITH <Text style={s.pulseWatchedWithName}>{act.watchedWith.toUpperCase()}</Text></Text>
             )}
           </View>
         </View>
-      </AnimatedTouchableOpacity>
+      </AnimatedTouchable>
     </View>
   );
 }
@@ -681,30 +683,51 @@ export default function LobbyScreen() {
           locations={[0, 0.4, 1]}
           style={StyleSheet.absoluteFillObject}
         />
+        {/* Cinematic projector beam from above */}
+        <LinearGradient
+          colors={['rgba(196,150,26,0.04)', 'transparent']}
+          locations={[0, 1]}
+          style={s.welcomeSpotlight}
+        />
         <View style={[s.welcomeWrap, { paddingTop: topPad }]}>
-          <Animated.View entering={FadeInDown.duration(1000)} style={s.welcomeHeader}>
+          <Animated.View entering={FadeInDown.duration(1200)} style={s.welcomeHeader}>
+
+            {/* Society crest */}
+            <View style={s.welcomeLogoWrap}>
+              <Image
+                source={require('../../assets/images/reelhouse-logo.png')}
+                style={s.welcomeLogo}
+                resizeMode="contain"
+              />
+            </View>
 
             <Text style={s.welcomeEyebrow}>WELCOME TO</Text>
             <Text style={s.welcomeTitle}>{'THE\nREELHOUSE\nSOCIETY'}</Text>
-            <View style={s.welcomeRule} />
-            <Text style={s.welcomeTagline}>{'Track every film you watch.\nDiscover cinema you\'ve never heard of.'}</Text>
+
+            <View style={s.welcomeEstRow}>
+              <View style={s.welcomeEstLine} />
+              <Text style={s.welcomeEstText}>EST. 1924</Text>
+              <View style={s.welcomeEstLine} />
+            </View>
+
+            <Text style={s.welcomeTagline}>{'A private fellowship for the\ndevoted cinephile. Track every screening.\nDiscover films the world forgot.'}</Text>
 
             <View style={s.societyRuleRow}>
               <LinearGradient colors={['transparent', colors.sepia]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.societyRuleLine} />
-              <Text style={s.societyRuleText}>✦ THE SOCIETY ✦</Text>
+              <Text style={s.societyRuleText}>✦ MEMBERS ONLY ✦</Text>
               <LinearGradient colors={[colors.sepia, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.societyRuleLine} />
             </View>
 
-            <Text style={s.welcomeClimax}>Join the Society.</Text>
+            <Text style={s.welcomeClimax}>Enter the Society.</Text>
 
           </Animated.View>
 
-          <Animated.View entering={FadeInUp.duration(800).delay(400)}>
+          <Animated.View entering={FadeInUp.duration(800).delay(500)} style={s.welcomeCtaWrap}>
             <TouchableOpacity style={s.ctaPrimary} onPress={() => router.push('/login')}>
-              <Text style={s.ctaPrimaryText}>✦ JOIN THE SOCIETY</Text>
+              <Text style={s.ctaPrimaryText}>✦ REQUEST MEMBERSHIP</Text>
             </TouchableOpacity>
             <TouchableOpacity style={s.ctaSecondary} onPress={() => router.push('/login')}>
-              <Text style={s.ctaSecondaryText}>ENTER</Text>
+              <Text style={s.ctaSecondaryText}>ALREADY A MEMBER</Text>
             </TouchableOpacity>
           </Animated.View>
         </View>
@@ -763,10 +786,11 @@ export default function LobbyScreen() {
           <Text style={s.heroEyebrow}>NOW ENTERING</Text>
           <Text style={s.heroWelcome}>The Lobby</Text>
           <View style={s.heroRuleRow}>
-            <View style={s.heroRuleLine} />
+            <LinearGradient colors={['transparent', colors.sepia]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.heroRuleGradient} />
             <Text style={s.heroRuleDot}>✦</Text>
-            <View style={s.heroRuleLine} />
+            <LinearGradient colors={[colors.sepia, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.heroRuleGradient} />
           </View>
+          <Text style={s.heroSubtitle}>Est. 1924 · Members Only</Text>
         </Animated.View>
 
         {/* The Marquee Board */}
@@ -794,8 +818,18 @@ export default function LobbyScreen() {
           films={topRated}
         />
 
-        {/* Bottom breathing room */}
-        <View style={{ height: 80 }} />
+        {/* Society Footer */}
+        <View style={s.lobbyFooter}>
+          <View style={s.lobbyFooterRule} />
+          <Image
+            source={require('../../assets/images/reelhouse-logo.png')}
+            style={s.lobbyFooterLogo}
+            resizeMode="contain"
+          />
+          <Text style={s.lobbyFooterText}>THE REELHOUSE SOCIETY</Text>
+          <Text style={s.lobbyFooterSub}>Est. 1924 · The Society is watching.</Text>
+          <View style={s.lobbyFooterRule} />
+        </View>
       </ScrollView>
 
       <QuickActionsFAB />
@@ -824,36 +858,73 @@ const s = StyleSheet.create({
   tickerEdge: { position: 'absolute', top: 0, bottom: 0, width: 40, zIndex: 2 },
 
   // ── Welcome (Unauthenticated) ──
-  welcomeWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
-  welcomeHeader: { alignItems: 'center', marginBottom: 40 },
-  welcomeEyebrow: { fontFamily: fonts.body, fontSize: 10, letterSpacing: 6, color: colors.sepia, marginBottom: 8, opacity: 0.6 },
-  welcomeTitle: { fontFamily: fonts.display, fontSize: 36, color: colors.parchment, textAlign: 'center', lineHeight: 46 },
-  welcomeRule: { width: 60, height: 1, backgroundColor: colors.sepia, marginVertical: 16, opacity: 0.4 },
-  welcomeTagline: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 22, fontStyle: 'italic' },
-  welcomeClimax: { fontFamily: fonts.display, fontSize: 26, color: colors.sepia, marginTop: 12, ...effects.textGlowSepia },
-  societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 16, opacity: 0.35 },
+  welcomeWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 36 },
+  welcomeHeader: { alignItems: 'center', marginBottom: 44 },
+  welcomeSpotlight: {
+    position: 'absolute', top: 0, left: '10%', right: '10%', height: '50%',
+  },
+  welcomeLogoWrap: {
+    width: 72, height: 72, borderRadius: 36,
+    borderWidth: 1, borderColor: 'rgba(196,150,26,0.25)',
+    backgroundColor: 'rgba(196,150,26,0.04)',
+    alignItems: 'center', justifyContent: 'center',
+    marginBottom: 24, ...effects.glowSepia,
+  },
+  welcomeLogo: { width: 48, height: 48 },
+  welcomeEyebrow: {
+    fontFamily: fonts.ui, fontSize: 9, letterSpacing: 7,
+    color: colors.sepia, marginBottom: 10, opacity: 0.55,
+  },
+  welcomeTitle: {
+    fontFamily: fonts.display, fontSize: 34, color: colors.parchment,
+    textAlign: 'center', lineHeight: 44, ...effects.textGlowSepia,
+  },
+  welcomeEstRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 14, marginBottom: 6,
+  },
+  welcomeEstLine: {
+    width: 28, height: StyleSheet.hairlineWidth, backgroundColor: colors.sepia, opacity: 0.35,
+  },
+  welcomeEstText: {
+    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 5, color: colors.sepia, opacity: 0.5,
+  },
+  welcomeTagline: {
+    fontFamily: fonts.sub, fontSize: 12, color: colors.bone, textAlign: 'center',
+    lineHeight: 21, fontStyle: 'italic', opacity: 0.8, marginTop: 8,
+  },
+  welcomeClimax: {
+    fontFamily: fonts.display, fontSize: 24, color: colors.sepia,
+    marginTop: 8, ...effects.textGlowSepia,
+  },
+  welcomeCtaWrap: { alignItems: 'center', width: '100%' },
+  societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 18, opacity: 0.3, paddingHorizontal: 8 },
   societyRuleLine: { flex: 1, height: 1 },
-  societyRuleText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepia },
+  societyRuleText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4, color: colors.sepia },
   ctaPrimary: {
-    backgroundColor: 'rgba(139, 105, 20, 0.95)', borderRadius: 3, paddingVertical: 16, paddingHorizontal: 40,
-    alignItems: 'center', marginBottom: 12, borderWidth: 1, borderColor: 'rgba(242, 232, 160, 0.35)',
+    backgroundColor: 'rgba(139, 105, 20, 0.95)', borderRadius: 3,
+    paddingVertical: 16, paddingHorizontal: 36, width: '100%',
+    alignItems: 'center', marginBottom: 12, borderWidth: 1,
+    borderColor: 'rgba(242, 232, 160, 0.35)',
     ...effects.shadowSurface, ...effects.glowSepia,
   },
-  ctaPrimaryText: { fontFamily: fonts.uiMedium, fontSize: 12, letterSpacing: 2.5, color: colors.ink, fontWeight: '700' },
+  ctaPrimaryText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 3, color: colors.ink, fontWeight: '700' },
   ctaSecondary: {
     backgroundColor: 'rgba(10, 7, 3, 0.4)',
-    borderWidth: 1, borderColor: 'rgba(139, 105, 20, 0.25)', borderRadius: 3, paddingVertical: 14, paddingHorizontal: 36,
+    borderWidth: 1, borderColor: 'rgba(139, 105, 20, 0.2)', borderRadius: 3,
+    paddingVertical: 14, paddingHorizontal: 36, width: '100%',
     alignItems: 'center', ...effects.shadowPrimary,
   },
   ctaSecondaryText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 4, color: colors.bone, ...effects.textGlowSepia },
 
   // ── Hero Section ──
-  heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 16 },
-  heroEyebrow: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 5, color: colors.sepia, opacity: 0.5, marginBottom: 4 },
-  heroWelcome: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, ...effects.textGlowSepia },
-  heroRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
+  heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 20 },
+  heroEyebrow: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 6, color: colors.sepia, opacity: 0.45, marginBottom: 6 },
+  heroWelcome: { fontFamily: fonts.display, fontSize: 30, color: colors.parchment, ...effects.textGlowSepia },
+  heroRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 },
+  heroRuleGradient: { width: 36, height: 1 },
   heroRuleLine: { width: 30, height: StyleSheet.hairlineWidth, backgroundColor: colors.sepia, opacity: 0.4 },
-  heroRuleDot: { fontSize: 8, color: colors.sepia, opacity: 0.4 },
+  heroRuleDot: { fontSize: 8, color: colors.sepia, opacity: 0.35 },
+  heroSubtitle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.fog, marginTop: 8, opacity: 0.5 },
 
   heroBackdropWrap: {
     position: 'absolute', left: 0, right: 0, height: 380, zIndex: 0,
@@ -996,8 +1067,8 @@ const s = StyleSheet.create({
   },
   pulseUserRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   pulseAvatar: {
-    width: 26, height: 26, borderRadius: 13, backgroundColor: 'rgba(42,33,24,0.5)', borderWidth: 1,
-    alignItems: 'center', justifyContent: 'center',
+    width: 26, height: 26, borderRadius: 13, backgroundColor: colors.ash, borderWidth: 1,
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
   },
   pulseAvatarText: { fontFamily: fonts.uiBold, fontSize: 10, color: colors.sepia },
   pulseUsername: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 1, color: colors.parchment },
@@ -1014,4 +1085,73 @@ const s = StyleSheet.create({
   pulseWatchedWith: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog, marginTop: 6 },
   pullQuoteWrap: { paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: 'rgba(218,165,32,0.6)', marginBottom: 4 },
   pullQuoteText: { fontFamily: fonts.display, fontSize: 11, fontStyle: 'italic', color: '#DAA520', lineHeight: 16, ...effects.textGlowSepia },
+
+  // ── Extracted Inline Styles ──
+  pulseCardAuteur: { backgroundColor: 'rgba(25,10,10,0.98)' },
+  pulseContentFlex: { flex: 1 },
+  pulseRatingWrap: { marginBottom: 6 },
+  dropCapRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  dropCapLetter: {
+    fontFamily: fonts.display, fontSize: 32, color: colors.sepia,
+    lineHeight: 32, marginRight: 6, marginTop: -2,
+    textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4,
+  },
+  dropCapBody: { flex: 1, paddingTop: 2 },
+
+  // ── Shimmer ──
+  shimmerTrack: {
+    position: 'absolute', top: 0, left: 0, right: 0, height: 2,
+    overflow: 'hidden', zIndex: 5,
+  },
+  shimmerSlider: { width: '200%', height: '100%', flexDirection: 'row' },
+  shimmerGradient: { width: '100%', height: '100%' },
+
+  // ── Editorial / Premium Banners ──
+  editorialBanner: {
+    width: '100%', height: 80, overflow: 'hidden',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.15)',
+  },
+  editorialBannerImg: { width: '100%', height: '100%', opacity: 0.55 },
+  editorialBadge: {
+    position: 'absolute', top: 8, right: 8,
+    backgroundColor: 'rgba(11,10,8,0.55)', paddingHorizontal: 6, paddingVertical: 4,
+    borderRadius: 2, borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)',
+  },
+  editorialBadgeText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: 'rgba(218,165,32,0.85)' },
+  premiumBanner: {
+    width: '100%', height: 50, overflow: 'hidden',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)',
+  },
+  premiumBannerImg: { width: '100%', height: '150%', top: '-25%', opacity: 0.4 },
+
+  // ── Critique Section Extracted ──
+  critiqueCardWrap: { marginHorizontal: -12 },
+  critiqueSubmitBtn: {
+    backgroundColor: 'rgba(14,11,8,0.95)', marginTop: 4, borderRadius: 8,
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
+    alignItems: 'center', paddingVertical: 8, paddingHorizontal: 4,
+    ...effects.shadowSurface,
+  },
+  critiqueSubmitText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2, color: colors.sepia },
+  pulseCardOuter: { width: SCREEN_W * 0.82, marginRight: 14 },
+  pulseWatchedWithName: { color: colors.bone },
+
+  // ── Lobby Footer ──
+  lobbyFooter: {
+    alignItems: 'center', paddingTop: 32, paddingBottom: 96,
+    paddingHorizontal: 40,
+  },
+  lobbyFooterRule: {
+    width: 40, height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.sepia, opacity: 0.2,
+  },
+  lobbyFooterLogo: { width: 28, height: 28, opacity: 0.25, marginVertical: 14 },
+  lobbyFooterText: {
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5,
+    color: colors.sepia, opacity: 0.25, marginBottom: 4,
+  },
+  lobbyFooterSub: {
+    fontFamily: fonts.sub, fontSize: 9, color: colors.fog,
+    opacity: 0.3, fontStyle: 'italic', marginBottom: 14,
+  },
 });

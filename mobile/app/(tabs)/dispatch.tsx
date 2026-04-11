@@ -1,30 +1,30 @@
 /**
  * THE DISPATCH — "The Gazette of 1924"
  * A journal of cinema — for those who see in the dark.
- *
- * Native port of web DispatchPage.tsx
- * Features: Masthead, Auteur Dossiers, Nightly Transmission,
- *           Daily Frame, Global Wire, Buster Note, Article Reader
  */
-import { useEffect, useCallback, useState, useMemo, memo } from 'react';
+import { useEffect, useCallback, useState, memo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
-  Image, Platform, Dimensions, Modal, Linking,
+  Image, Platform, Dimensions, Modal, Linking, ActivityIndicator,
 } from 'react-native';
 import Animated, {
-  FadeIn, FadeInDown, FadeInUp,
+  FadeIn, FadeInDown,
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import {
+  Eye, Pen, Heart, Share2, ChevronRight, X as XIcon,
+  Radio, Star, BookOpen, Sparkles, ExternalLink, FileText,
+} from 'lucide-react-native';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatchStore, Dossier } from '@/src/stores/content';
 import { tmdb } from '@/src/lib/tmdb';
 import { supabase } from '@/src/lib/supabase';
-import { colors, fonts, effects, typography } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import Buster from '@/src/components/Buster';
 
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
@@ -96,16 +96,22 @@ const NightlyTransmission = memo(function NightlyTransmission({ films }: { films
       </View>
 
       <View style={st.transmissionContent}>
-        <Text style={st.transmissionSignal}>◉ TRANSMISSION INCOMING</Text>
+        <View style={st.transmissionSignalRow}>
+          <Radio size={8} color={colors.bloodReel} strokeWidth={2} />
+          <Text style={st.transmissionSignal}>TRANSMISSION INCOMING</Text>
+        </View>
         <Text style={st.transmissionLabel}>TONIGHT'S SCREENING — TRANSMISSION №{txNum}</Text>
 
         <Text style={st.transmissionTitle} numberOfLines={2}>
           {(film.title || '').toUpperCase()}
         </Text>
 
-        <Text style={st.transmissionMeta}>
-          {film.release_date?.slice(0, 4)} · {film.vote_average?.toFixed(1)} ★
-        </Text>
+        <View style={st.transmissionMetaRow}>
+          <Text style={st.transmissionMeta}>
+            {film.release_date?.slice(0, 4)} · {film.vote_average?.toFixed(1)}
+          </Text>
+          <Star size={9} color={colors.sepia} strokeWidth={2} fill={colors.sepia} />
+        </View>
 
         <Text style={st.transmissionExcerpt} numberOfLines={3}>
           "{film.overview?.slice(0, 150)}..."
@@ -156,9 +162,12 @@ const DailyFrame = memo(function DailyFrame({ films }: { films: any[] }) {
         />
         <View style={st.dailyFrameCaption}>
           <Text style={st.dailyFrameTitle} numberOfLines={1}>{film.title || film.name}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={st.dailyFrameMetaRow}>
             <Text style={st.dailyFrameMeta}>{(film.release_date || '')?.slice(0, 4)}</Text>
-            <Text style={st.dailyFrameMeta}>VIEW THIS FILM →</Text>
+            <View style={st.dailyFrameViewRow}>
+              <Text style={st.dailyFrameMeta}>VIEW THIS FILM</Text>
+              <ChevronRight size={10} color={colors.sepia} strokeWidth={2} />
+            </View>
           </View>
         </View>
       </TouchableOpacity>
@@ -169,21 +178,23 @@ const DailyFrame = memo(function DailyFrame({ films }: { films: any[] }) {
 // ════════════════════════════════════════════════════════════════
 //  DOSSIER CARD — Single Auteur essay in list
 // ════════════════════════════════════════════════════════════════
-function DossierCard({ dossier, onPress }: { dossier: Dossier; onPress: () => void }) {
+const DossierCard = memo(function DossierCard({ dossier, onPress }: { dossier: Dossier; onPress: () => void }) {
   return (
     <TouchableOpacity style={st.dossierCard} onPress={onPress} activeOpacity={0.85}>
-      {/* Left accent bar */}
       <View style={st.dossierAccentBar} />
 
       <View style={st.dossierMeta}>
-        <Text style={st.dmAuthor}>✦ BY {dossier.author}</Text>
+        <View style={st.dmAuthorRow}>
+          <Sparkles size={8} color={colors.sepia} strokeWidth={2} />
+          <Text style={st.dmAuthor}>BY {dossier.author}</Text>
+        </View>
         <Text style={st.dmDate}>FILED {dossier.date}</Text>
       </View>
 
       <Text style={st.dossierTitle} numberOfLines={2}>{dossier.title}</Text>
 
       {dossier.excerpt ? (
-        <View style={{ flexDirection: 'row' }}>
+        <View style={st.dossierExcerptRow}>
           <Text style={st.dossierDropCap}>{dossier.excerpt.charAt(0)}</Text>
           <Text style={st.dossierExcerpt} numberOfLines={4}>{dossier.excerpt.slice(1)}</Text>
         </View>
@@ -191,16 +202,16 @@ function DossierCard({ dossier, onPress }: { dossier: Dossier; onPress: () => vo
 
       <View style={st.dossierReadMore}>
         <Text style={st.dossierReadMoreText}>READ DOSSIER</Text>
-        <Text style={st.dossierArrow}>→</Text>
+        <ChevronRight size={12} color={colors.sepia} strokeWidth={2} />
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 // ════════════════════════════════════════════════════════════════
 //  WIRE ITEM — Single news story in telegram format
 // ════════════════════════════════════════════════════════════════
-function WireItem({ item, isLead, onPress }: { item: any; isLead?: boolean; onPress: () => void }) {
+const WireItem = memo(function WireItem({ item, isLead, onPress }: { item: any; isLead?: boolean; onPress: () => void }) {
   if (isLead) {
     return (
       <TouchableOpacity style={st.wireLead} onPress={onPress} activeOpacity={0.85}>
@@ -228,7 +239,7 @@ function WireItem({ item, isLead, onPress }: { item: any; isLead?: boolean; onPr
 
   return (
     <TouchableOpacity style={st.wireItem} onPress={onPress} activeOpacity={0.85}>
-      <View style={{ flex: 1 }}>
+      <View style={st.wireItemInner}>
         <Text style={st.wireCategory}>[{item.category || 'WIRE'}]</Text>
         <Text style={st.wireTitle} numberOfLines={2}>{item.title}</Text>
         <Text style={st.wireExcerpt} numberOfLines={2}>{item.excerpt}</Text>
@@ -238,7 +249,7 @@ function WireItem({ item, isLead, onPress }: { item: any; isLead?: boolean; onPr
       </View>
     </TouchableOpacity>
   );
-}
+});
 
 // ════════════════════════════════════════════════════════════════
 //  ARTICLE READER MODAL — Full dossier / wire story
@@ -319,7 +330,7 @@ function ArticleReaderModal({
         >
           {/* Close button */}
           <TouchableOpacity style={st.readerClose} onPress={onClose} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
-            <Text style={st.readerCloseText}>✕</Text>
+            <XIcon size={20} color={colors.sepia} strokeWidth={1.5} />
           </TouchableOpacity>
 
           {/* Watermark */}
@@ -331,7 +342,7 @@ function ArticleReaderModal({
           {/* Byline */}
           {article.author && (
             <Text style={st.readerByline}>
-              FILED BY <Text style={{ color: colors.sepia, fontWeight: '700' }}>
+              FILED BY <Text style={st.readerBylineAuthor}>
                 {article.authorUsername ? `@${article.authorUsername}` : article.author}
               </Text>
               {article.date ? `  ·  ${article.date}` : ''}
@@ -341,10 +352,16 @@ function ArticleReaderModal({
           {/* Engagement stats */}
           {isDossier && (
             <View style={st.readerStats}>
-              <Text style={st.readerStatText}>👁 {localViews} VIEWS</Text>
-              <Text style={[st.readerStatText, certified && { color: colors.sepia }]}>
-                ✦ {certifyCount} CERTIFIED
-              </Text>
+              <View style={st.readerStatRow}>
+                <Eye size={10} color={colors.fog} strokeWidth={1.5} />
+                <Text style={st.readerStatText}>{localViews} VIEWS</Text>
+              </View>
+              <View style={st.readerStatRow}>
+                <Sparkles size={10} color={certified ? colors.sepia : colors.fog} strokeWidth={1.5} />
+                <Text style={[st.readerStatText, certified && st.readerStatCertified]}>
+                  {certifyCount} CERTIFIED
+                </Text>
+              </View>
             </View>
           )}
 
@@ -363,13 +380,15 @@ function ArticleReaderModal({
           {isDossier && (
             <View style={st.readerActions}>
               <TouchableOpacity style={st.readerActionBtn} onPress={handleCertify}>
-                <Text style={[st.readerActionText, certified && { color: colors.sepia }]}>
-                  {certified ? '♥ CERTIFIED' : '♡ CERTIFY'} ({certifyCount})
+                <Heart size={14} color={certified ? colors.sepia : colors.fog} strokeWidth={1.5} fill={certified ? colors.sepia : 'transparent'} />
+                <Text style={[st.readerActionText, certified && st.readerActionCertified]}>
+                  {certified ? 'CERTIFIED' : 'CERTIFY'} ({certifyCount})
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={st.readerActionBtn} onPress={handleShare}>
-                <Text style={st.readerActionText}>↗ SHARE</Text>
+                <Share2 size={14} color={colors.fog} strokeWidth={1.5} />
+                <Text style={st.readerActionText}>SHARE</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -380,12 +399,19 @@ function ArticleReaderModal({
               style={st.wireReadFullBtn}
               onPress={() => { Linking.openURL(article.link); }}
             >
-              <Text style={st.wireReadFullText}>READ FULL ARTICLE →</Text>
+              <View style={st.wireReadFullRow}>
+                <ExternalLink size={12} color={colors.sepia} strokeWidth={1.5} />
+                <Text style={st.wireReadFullText}>READ FULL ARTICLE</Text>
+              </View>
             </TouchableOpacity>
           )}
 
           {/* End mark */}
-          <Text style={st.readerEndmark}>— ✦ —</Text>
+          <View style={st.readerEndmarkRow}>
+            <View style={st.readerEndmarkLine} />
+            <Sparkles size={10} color={colors.sepia} strokeWidth={1.5} />
+            <View style={st.readerEndmarkLine} />
+          </View>
         </ScrollView>
       </View>
     </Modal>
@@ -455,8 +481,8 @@ export default function DispatchScreen() {
 
       {/* Ambient warm glow at top */}
       <LinearGradient
-        colors={['rgba(139,105,20,0.08)', 'transparent']}
-        style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 300 }}
+        colors={['rgba(139,105,20,0.06)', 'transparent']}
+        style={st.ambientGlow}
       />
 
       <ScrollView
@@ -476,7 +502,11 @@ export default function DispatchScreen() {
 
           {/* ── MASTHEAD ── */}
           <Animated.View entering={FadeIn.duration(800)} style={st.masthead}>
-            <Text style={st.mastheadPublisher}>✦ THE REELHOUSE SOCIETY ✦</Text>
+            <View style={st.mastheadPublisherRow}>
+              <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
+              <Text style={st.mastheadPublisher}>THE REELHOUSE SOCIETY</Text>
+              <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
+            </View>
 
             {/* Double rule top */}
             <View style={st.mastheadRuleTop} />
@@ -510,7 +540,10 @@ export default function DispatchScreen() {
                 style={st.writerBarBtn}
                 onPress={() => router.push('/dispatch/compose')}
               >
-                <Text style={st.writerBarBtnText}>✎ FILE DOSSIER</Text>
+                <View style={st.writerBarBtnInner}>
+                  <Pen size={10} color={colors.parchment} strokeWidth={1.5} />
+                  <Text style={st.writerBarBtnText}>FILE DOSSIER</Text>
+                </View>
               </TouchableOpacity>
             ) : (
               <Text style={st.writerBarLocked}>UPGRADE TO AUTEUR TO PUBLISH</Text>
@@ -525,17 +558,18 @@ export default function DispatchScreen() {
             />
 
             {loading && dossiers.length === 0 ? (
-              <View style={{ gap: 16, marginBottom: 32 }}>
+              /* Skeleton shimmer */
+              <View style={st.skeletonGroup}>
                 {Array.from({ length: 3 }).map((_, i) => (
                   <View key={i} style={st.skeleton}>
-                    <View style={[st.shimmer, { width: '35%', height: 8 }]} />
-                    <View style={[st.shimmer, { width: '80%', height: 20, marginTop: 10 }]} />
-                    <View style={[st.shimmer, { width: '60%', height: 12, marginTop: 10 }]} />
+                    <View style={[st.shimmer, st.shimmerSm]} />
+                    <View style={[st.shimmer, st.shimmerLg]} />
+                    <View style={[st.shimmer, st.shimmerMd]} />
                   </View>
                 ))}
               </View>
             ) : (
-              <View style={{ gap: 24, marginBottom: 16 }}>
+              <View style={st.dossierList}>
                 {dossiers.map((d) => (
                   <DossierCard
                     key={d.id}
@@ -551,7 +585,7 @@ export default function DispatchScreen() {
 
             {dossiers.length === 0 && !loading && (
               <View style={st.emptyState}>
-                <Text style={st.emptyGlyph}>✎</Text>
+                <FileText size={28} color={colors.sepia} strokeWidth={1} />
                 <Text style={st.emptyTitle}>The press room awaits its first dossier.</Text>
                 <Text style={st.emptySub}>
                   Auteur members can file original essays and cinematic critiques.
@@ -586,7 +620,7 @@ export default function DispatchScreen() {
             {newsLoading ? (
               <Text style={st.wireLoader}>Decrypting incoming signals...</Text>
             ) : (
-              <View style={{ gap: 0 }}>
+              <View style={st.wireList}>
                 {news[0] && (
                   <WireItem
                     item={news[0]}
@@ -609,10 +643,10 @@ export default function DispatchScreen() {
           <Animated.View entering={FadeInDown.duration(600).delay(700)} style={st.busterNote}>
             <View style={st.busterRuleTop} />
             <View style={st.busterContent}>
-              <View style={{ opacity: 0.8 }}>
+              <View style={st.busterAvatar}>
                 <Buster size={60} mood="peeking" />
               </View>
-              <View style={{ flex: 1 }}>
+              <View style={st.busterTextWrap}>
                 <Text style={st.busterLabel}>FROM THE EDITOR'S DESK</Text>
                 <Text style={st.busterQuote}>
                   "I know you're looking for the romantic comedies, but I hid them. We are only projecting German Expressionism tonight until morale improves."
@@ -641,7 +675,10 @@ export default function DispatchScreen() {
           onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/dispatch/compose'); }}
           activeOpacity={0.85}
         >
-          <Text style={st.fabText}>✎ FILE DOSSIER</Text>
+          <View style={st.fabInner}>
+            <Pen size={12} color={colors.ink} strokeWidth={2} />
+            <Text style={st.fabText}>FILE DOSSIER</Text>
+          </View>
         </TouchableOpacity>
       )}
 
@@ -661,6 +698,7 @@ export default function DispatchScreen() {
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   scrollContent: { paddingBottom: 0 },
+  ambientGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 300 },
 
   // ── Document ──
   document: {
@@ -676,9 +714,12 @@ const st = StyleSheet.create({
 
   // ── Masthead ──
   masthead: { alignItems: 'center', marginBottom: 24 },
+  mastheadPublisherRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12,
+  },
   mastheadPublisher: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5,
-    color: colors.sepia, opacity: 0.7, marginBottom: 12,
+    color: colors.sepia, opacity: 0.7,
   },
   mastheadRuleTop: {
     width: '100%', height: 6, marginBottom: 16,
@@ -733,6 +774,7 @@ const st = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepia, borderRadius: 2,
   },
   writerBarBtnText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.parchment },
+  writerBarBtnInner: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   writerBarLocked: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia, opacity: 0.6 },
 
   // ── Dossier Card ──
@@ -750,12 +792,15 @@ const st = StyleSheet.create({
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     marginBottom: 12,
   },
+  dmAuthorRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 5,
+  },
   dmAuthor: {
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.sepia,
-    borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.25)', paddingBottom: 2,
   },
   dmDate: { fontFamily: fonts.body, fontSize: 9, letterSpacing: 1, color: colors.fog, opacity: 0.7 },
   dossierTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, lineHeight: 24, marginBottom: 10 },
+  dossierExcerptRow: { flexDirection: 'row' },
   dossierDropCap: {
     fontFamily: fonts.display, fontSize: 36, color: colors.sepia,
     lineHeight: 36, paddingRight: 6, opacity: 0.9,
@@ -763,7 +808,6 @@ const st = StyleSheet.create({
   dossierExcerpt: { fontFamily: fonts.body, fontSize: 14, lineHeight: 22, color: colors.bone, opacity: 0.7, flex: 1, paddingTop: 4 },
   dossierReadMore: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 16 },
   dossierReadMoreText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 1, color: colors.parchment },
-  dossierArrow: { fontFamily: fonts.ui, fontSize: 14, color: colors.sepia },
 
   // ── Nightly Transmission ──
   transmissionWrap: {
@@ -776,13 +820,15 @@ const st = StyleSheet.create({
     opacity: 0.15,
   },
   transmissionContent: { alignItems: 'center', position: 'relative' },
-  transmissionSignal: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.bloodReel, opacity: 0.8, marginBottom: 4 },
+  transmissionSignalRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  transmissionSignal: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.bloodReel, opacity: 0.8 },
   transmissionLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepia, marginBottom: 16 },
   transmissionTitle: {
     fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
     textAlign: 'center', lineHeight: 32, marginBottom: 8,
     ...effects.textGlowSepia,
   },
+  transmissionMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   transmissionMeta: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, marginBottom: 12 },
   transmissionExcerpt: {
     fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: colors.bone,
@@ -809,6 +855,8 @@ const st = StyleSheet.create({
   dailyFrameImg: { width: '100%', height: '100%', resizeMode: 'cover' },
   dailyFrameCaption: { position: 'absolute', bottom: 12, left: 14, right: 14 },
   dailyFrameTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, lineHeight: 22, marginBottom: 4 },
+  dailyFrameMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  dailyFrameViewRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   dailyFrameMeta: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
 
   // ── Wire ──
@@ -830,6 +878,7 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(139,105,20,0.08)',
   },
+  wireItemInner: { flex: 1 },
   wireLoader: {
     textAlign: 'center', fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2,
     color: colors.sepia, opacity: 0.5, paddingVertical: 24,
@@ -839,6 +888,8 @@ const st = StyleSheet.create({
   busterNote: { marginTop: 32 },
   busterRuleTop: { borderTopWidth: 3, borderTopColor: 'rgba(139,105,20,0.2)', borderStyle: 'solid', marginBottom: 20 },
   busterContent: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  busterAvatar: { opacity: 0.8 },
+  busterTextWrap: { flex: 1 },
   busterLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, marginBottom: 8 },
   busterQuote: {
     fontFamily: fonts.body, fontSize: 13, lineHeight: 20,
@@ -852,9 +903,8 @@ const st = StyleSheet.create({
   footerCopyright: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, opacity: 0.3, textAlign: 'center' },
 
   // ── Empty ──
-  emptyState: { alignItems: 'center', paddingVertical: 32 },
-  emptyGlyph: { fontSize: 28, color: colors.sepia, opacity: 0.2, marginBottom: 12 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, opacity: 0.6, textAlign: 'center', marginBottom: 8 },
+  emptyState: { alignItems: 'center', paddingVertical: 32, gap: 12 },
+  emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, opacity: 0.6, textAlign: 'center', marginBottom: 4 },
   emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.4, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, maxWidth: 260 },
 
   // ── Skeleton ──
@@ -864,6 +914,12 @@ const st = StyleSheet.create({
     borderColor: 'rgba(139,105,20,0.06)',
   },
   shimmer: { backgroundColor: 'rgba(139,105,20,0.06)', borderRadius: 2 },
+  shimmerSm: { width: '35%', height: 8 },
+  shimmerLg: { width: '80%', height: 20, marginTop: 10 },
+  shimmerMd: { width: '60%', height: 12, marginTop: 10 },
+  skeletonGroup: { gap: 16, marginBottom: 32 },
+  dossierList: { gap: 24, marginBottom: 16 },
+  wireList: { gap: 0 },
 
   // ── FAB ──
   fab: {
@@ -873,6 +929,9 @@ const st = StyleSheet.create({
     ...effects.glowSepia,
     shadowRadius: 30,
     elevation: 12,
+  },
+  fabInner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8,
   },
   fabText: {
     fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1.5,
@@ -891,7 +950,6 @@ const st = StyleSheet.create({
     position: 'absolute', top: 16, right: 0, zIndex: 10,
     padding: 8,
   },
-  readerCloseText: { fontFamily: fonts.ui, fontSize: 20, color: colors.sepia, opacity: 0.6 },
   readerWatermark: {
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4,
     color: colors.sepia, opacity: 0.4, textAlign: 'center', marginBottom: 28,
@@ -904,12 +962,15 @@ const st = StyleSheet.create({
     fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2,
     color: colors.bone, opacity: 0.6, textAlign: 'center', marginBottom: 12,
   },
+  readerBylineAuthor: { color: colors.sepia, fontWeight: '700' },
   readerStats: {
     flexDirection: 'row', justifyContent: 'center', gap: 20,
     paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)',
     borderStyle: 'dashed',
   },
+  readerStatRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   readerStatText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog },
+  readerStatCertified: { color: colors.sepia },
   readerSep: {
     height: 1, backgroundColor: 'rgba(139,105,20,0.2)',
     marginVertical: 24, width: 60, alignSelf: 'center',
@@ -923,17 +984,22 @@ const st = StyleSheet.create({
     borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.1)',
     marginTop: 20,
   },
-  readerActionBtn: { paddingVertical: 8, paddingHorizontal: 12 },
+  readerActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12 },
   readerActionText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+  readerActionCertified: { color: colors.sepia },
   wireReadFullBtn: {
     marginTop: 20, paddingVertical: 14,
     borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)',
     borderRadius: 2, alignItems: 'center',
   },
+  wireReadFullRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   wireReadFullText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2, color: colors.sepia },
-  readerEndmark: {
-    textAlign: 'center', fontFamily: fonts.body, fontSize: 12,
-    color: colors.sepia, opacity: 0.3, letterSpacing: 5,
-    marginTop: 32,
+  readerEndmarkRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 12,
+    justifyContent: 'center', marginTop: 32,
+  },
+  readerEndmarkLine: {
+    width: 32, height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.sepia, opacity: 0.3,
   },
 });

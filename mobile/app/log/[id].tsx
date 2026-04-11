@@ -11,7 +11,7 @@ import { SectionDivider, ReelRating } from '@/src/components/Decorative';
 import { tmdb } from '@/src/lib/tmdb';
 import { captureRef } from 'react-native-view-shot';
 import LogShareCard from '@/src/components/film/LogShareCard';
-import { Heart, MessageSquare, Edit3, MessageCircle } from 'lucide-react-native';
+import { Heart, MessageSquare, Edit3, MessageCircle, ChevronLeft, ChevronDown, Sparkles, Film as FilmIcon, Star, Archive, Share2 } from 'lucide-react-native';
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -149,10 +149,12 @@ export default function LogDetailScreen() {
 
   if (!log) {
     return (
-      <View style={[s.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Text style={{ color: colors.fog, fontFamily: fonts.body }}>Log not found.</Text>
+      <View style={[s.container, s.centerFull]}>
+        <FilmIcon size={40} color={colors.sepia} strokeWidth={1} />
+        <Text style={s.notFoundText}>Log not found.</Text>
         <TouchableOpacity style={s.backBtnRow} onPress={() => router.back()}>
-            <Text style={s.backBtnText}>← GO BACK</Text>
+            <ChevronLeft size={12} color={colors.bone} strokeWidth={1.5} />
+            <Text style={s.backBtnText}>GO BACK</Text>
         </TouchableOpacity>
       </View>
     );
@@ -183,8 +185,9 @@ export default function LogDetailScreen() {
                 <View style={[StyleSheet.absoluteFillObject, { backgroundColor: 'rgba(0,0,0,0.03)' }]} />
                 
                 {log.editorial_header && (
-                  <View style={[s.editorialBadge, { top: 90, left: 16 }]}>
-                    <Text style={s.editorialBadgeText}>✦ EDITORIAL</Text>
+                  <View style={s.editorialBadge}>
+                    <Sparkles size={7} color={'rgba(218,165,32,0.85)'} strokeWidth={1.5} />
+                    <Text style={s.editorialBadgeText}>EDITORIAL</Text>
                   </View>
                 )}
              </ImageBackground>
@@ -193,10 +196,11 @@ export default function LogDetailScreen() {
 
       <View style={s.header}>
         <TouchableOpacity style={s.backBtn} onPress={() => router.back()} activeOpacity={0.7} hitSlop={{top:10,bottom:10,left:10,right:10}}>
-          <Text style={s.backIcon}>←</Text>
+          <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
         </TouchableOpacity>
         <Text style={s.headerTitle} />
         <TouchableOpacity style={s.shareBtn} onPress={handleShare} activeOpacity={0.7}>
+           <Share2 size={14} color={colors.sepia} strokeWidth={1.5} />
            <Text style={s.shareBtnText}>{sharing ? '...' : 'SHARE'}</Text>
         </TouchableOpacity>
       </View>
@@ -225,28 +229,30 @@ export default function LogDetailScreen() {
         <View style={{ height: 80, width: '100%' }} />
 
         {/* Overlapping Content Card — Web: bg rgba(10,7,3,0.85), backdropFilter blur(16px), borderRadius 12px 12px 0 0, boxShadow 0 -20px 40px rgba(0,0,0,0.8) */}
-        <View style={{ backgroundColor: isAuteur ? 'rgba(25,10,10,0.92)' : 'rgba(10,7,3,0.92)', minHeight: 800, borderTopWidth: 1, borderColor: isAuteur ? 'rgba(180,45,45,0.25)' : 'rgba(139,105,20,0.15)', borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 24 }}>
+        <View style={[s.contentCard, isAuteur && s.contentCardAuteur]}>
           {isAuteur && (
             <LinearGradient colors={['rgba(125,31,31,0.08)', 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
           )}
         
-        <AnimatedView entering={FadeInDown.duration(600)} style={[s.logCard, { marginTop: 0, paddingTop: 24 }]}>
+        <AnimatedView entering={FadeInDown.duration(600)} style={s.logCardInner}>
           
-          <View style={{ alignItems: 'center' }}>
+          <View style={s.logCenter}>
             {/* TOP: User Info — Web: fontSize 0.75rem=12px, ls 0.15em=1.8px, color var(--sepia) */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 24, width: '100%' }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 }}>
+            <View style={s.userRow}>
+              <View style={s.userRowLeft}>
                 <TouchableOpacity onPress={() => isPoster ? router.push(`/user/${profile?.username}`) : null} activeOpacity={0.7}>
                   <Text style={s.userRefText} numberOfLines={1}>@{(profile?.username || 'unknown').toUpperCase()}</Text>
                 </TouchableOpacity>
                 {isArchivist && (
                   <View style={s.archivistBadge}>
-                    <Text style={s.archivistBadgeText}>✦ ARCHIVIST</Text>
+                    <Archive size={7} color={colors.sepia} strokeWidth={1.5} />
+                    <Text style={s.archivistBadgeText}>ARCHIVIST</Text>
                   </View>
                 )}
                 {isAuteur && (
                   <View style={s.auteurBadge}>
-                    <Text style={{ fontFamily: fonts.ui, fontSize: 6.5, letterSpacing: 1, color: colors.ink }}>★ AUTEUR</Text>
+                    <Star size={7} color={colors.ink} fill={colors.ink} />
+                    <Text style={s.auteurBadgeLabel}>AUTEUR</Text>
                   </View>
                 )}
               </View>
@@ -254,63 +260,63 @@ export default function LogDetailScreen() {
             </View>
 
             {/* CENTER: Poster Component — Web: 140x210, radial glow behind for premium */}
-            <View style={{ width: '100%', alignItems: 'center', marginBottom: 24, zIndex: 10 }}>
+            <View style={s.posterSection}>
               {/* Premium radial glow behind poster */}
               {(isAuteur || isArchivist) && posterUri && (
-                <View style={{ position: 'absolute', top: '50%', left: '50%', width: 180, height: 250, marginLeft: -90, marginTop: -125, backgroundColor: isAuteur ? 'rgba(125,31,31,0.12)' : 'rgba(139,105,20,0.12)', borderRadius: 125, zIndex: 0 }} />
+                <View style={[s.posterGlow, isAuteur ? s.posterGlowAuteur : s.posterGlowArchivist]} />
               )}
               <TouchableOpacity onPress={() => router.push(`/film/${log.film_id}`)} activeOpacity={0.8} style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]}>
                 {posterUri ? (
                   <Image source={{ uri: posterUri }} style={s.posterCentered} />
                 ) : (
-                  <View style={[s.posterCentered, { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' }]}>
-                    <Text style={{ color: colors.sepia }}>?</Text>
+                  <View style={[s.posterCentered, s.posterPlaceholder]}>
+                    <FilmIcon size={20} color={colors.sepia} strokeWidth={1} />
                   </View>
                 )}
               </TouchableOpacity>
             </View>
 
             {/* BOTTOM: Title & Meta — Web: clamp(2rem,8vw,2.75rem), lineHeight 1.1, textShadow 0 4px 12px */}
-            <View style={{ alignItems: 'center', marginBottom: 12 }}>
+            <View style={s.titleSection}>
               <TouchableOpacity onPress={() => router.push(`/film/${log.film_id}`)} activeOpacity={0.8}>
-                 <Text style={{ fontFamily: fonts.display, fontSize: 32, lineHeight: 35, color: colors.parchment, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width:0,height:4}, textShadowRadius: 12 }}>{log.film_title}</Text>
+                 <Text style={s.logFilmTitle}>{log.film_title}</Text>
               </TouchableOpacity>
-              {log.year && <Text style={{ fontFamily: fonts.ui, fontSize: 12, letterSpacing: 3.6, color: colors.fog, marginTop: 8 }}>{log.year}</Text>}
+              {log.year && <Text style={s.logFilmYear}>{log.year}</Text>}
             </View>
 
             {log.rating > 0 && (
-              <View style={{ marginTop: 12 }}>
+              <View style={s.ratingWrap}>
                 <ReelRating rating={log.rating} size={18} />
               </View>
             )}
           </View>
 
           {/* Full Width Review / Pull Quote — Web: padding 1.5rem 1.5rem, textAlign center */}
-          <View style={{ marginTop: 24, marginBottom: 16, paddingHorizontal: 24 }}>
+          <View style={s.reviewSection}>
             {log.pull_quote ? (
               <View style={s.featuredQuoteWrap}>
                  {/* Ornamental divider */}
-                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 16 }}>
-                   <View style={{ flex: 1, maxWidth: 80, height: 1, backgroundColor: 'rgba(139,105,20,0.4)' }} />
-                   <Text style={{ fontFamily: fonts.ui, fontSize: 6.5, letterSpacing: 4.8, color: colors.sepia, opacity: 0.7 }}>✦</Text>
-                   <View style={{ flex: 1, maxWidth: 80, height: 1, backgroundColor: 'rgba(139,105,20,0.4)' }} />
+                 <View style={s.ornamentalRow}>
+                   <View style={s.ornamentalLine} />
+                   <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} style={s.ornamentalStar} />
+                   <View style={s.ornamentalLine} />
                  </View>
                  <Text style={[s.featuredQuote, isAuteur && { color: 'rgba(180,45,45,0.9)', textShadowColor: 'rgba(125,31,31,0.15)' }]}>« {log.pull_quote} »</Text>
                  {/* Ornamental divider bottom */}
-                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginTop: 16 }}>
-                   <View style={{ flex: 1, maxWidth: 80, height: 1, backgroundColor: 'rgba(139,105,20,0.4)' }} />
-                   <Text style={{ fontFamily: fonts.ui, fontSize: 6.5, letterSpacing: 4.8, color: colors.sepia, opacity: 0.7 }}>✦</Text>
-                   <View style={{ flex: 1, maxWidth: 80, height: 1, backgroundColor: 'rgba(139,105,20,0.4)' }} />
+                 <View style={s.ornamentalRow}>
+                   <View style={s.ornamentalLine} />
+                   <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} style={s.ornamentalStar} />
+                   <View style={s.ornamentalLine} />
                  </View>
               </View>
             ) : log.review ? (
               <View style={s.reviewBodyWrap}>
                  {log.drop_cap ? (
-                   <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                     <Text style={[s.review, { fontFamily: fonts.display, fontSize: 40, color: colors.sepia, lineHeight: 35, marginRight: 8, marginTop: -3, textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: {width:0, height:2}, textShadowRadius: 8 }]}>
+                   <View style={s.dropCapRow}>
+                     <Text style={s.dropCapLetter}>
                        {log.review.replace(/<[^>]+>/g, '').trim().charAt(0)}
                      </Text>
-                     <Text style={[s.review, { flex: 1, paddingTop: 3 }]}>
+                     <Text style={s.dropCapBody}>
                        {log.review.replace(/<[^>]+>/g, '').trim().slice(1)}
                      </Text>
                    </View>
@@ -323,23 +329,23 @@ export default function LogDetailScreen() {
 
           {/* Autopsy Celluloid Gauge */}
           {(log.is_autopsied || log.isAutopsied) && log.autopsy && (
-            <View style={{ paddingHorizontal: 16 }}>
+            <View style={s.autopsyWrap}>
                <TouchableOpacity 
                   onPress={() => { Haptics.selectionAsync(); setAutopsyOpen(!autopsyOpen); }} 
                   activeOpacity={0.7} 
-                  style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'rgba(11,10,8,0.95)', borderRadius: 4, borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: -1, zIndex: 2 }}
+                  style={s.autopsyToggle}
                 >
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    <AnimatedView style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia, shadowColor: 'rgba(139,105,20,0.6)', shadowOffset: {width:0, height:0}, shadowRadius: 8, shadowOpacity: 1 }} />
-                    <Text style={{ fontFamily: fonts.display, fontSize: 12, letterSpacing: 2.5, color: colors.parchment }}>THE AUTOPSY</Text>
-                    <Text style={{ fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepia, opacity: 0.6 }}>CONFIDENTIAL</Text>
-                  </View>
-                  <Text style={{ fontFamily: fonts.ui, fontSize: 8, color: colors.fog, transform: [{ rotate: autopsyOpen ? '180deg' : '0deg' }] }}>▼</Text>
+                  <View style={s.autopsyToggleInner}>
+                     <View style={s.autopsyPulse} />
+                     <Text style={s.autopsyToggleTitle}>THE AUTOPSY</Text>
+                     <Text style={s.autopsyToggleConf}>CONFIDENTIAL</Text>
+                   </View>
+                   <ChevronDown size={12} color={colors.fog} style={autopsyOpen ? s.rotated : undefined} />
                </TouchableOpacity>
 
                {autopsyOpen && (
                  <AnimatedView entering={FadeInDown.duration(400)} style={s.autopsyCard}>
-                   <View style={{ gap: 24 }}>
+                   <View style={s.autopsyContent}>
                      {[
                         { key: 'story', label: 'STORY', value: log.autopsy.story !== undefined ? log.autopsy.story : log.autopsy.screenplay || 0 },
                         { key: 'script', label: 'SCRIPT / DIALOGUE', value: log.autopsy.script !== undefined ? log.autopsy.script : log.autopsy.screenplay || 0 },
@@ -365,9 +371,9 @@ export default function LogDetailScreen() {
           )}
 
           {/* Action Deck — Web: grid 4×1fr, gap 1px, bg rgba(139,105,20,0.15), border 1px rgba(139,105,20,0.2), borderRadius 6px */}
-          <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
-            <View style={{ flexDirection: 'row', backgroundColor: 'rgba(139,105,20,0.15)', borderRadius: 6, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', marginBottom: 16, overflow: 'hidden', padding: 1, gap: 1, zIndex: 1 }}>
-               <TouchableOpacity style={s.deckBtn} onPress={isPoster ? undefined : () => Alert.alert("Certified", "Coming Soon")}>
+          <View style={s.actionDeckWrap}>
+            <View style={s.actionDeck}>
+               <TouchableOpacity style={s.deckBtn} onPress={() => Alert.alert("Certified", "Coming Soon")}>
                   <Heart size={16} strokeWidth={2} color={isPoster ? colors.sepia : colors.fog} fill={isPoster ? colors.sepia : 'transparent'} />
                   <Text style={[s.deckLabel, isPoster && { color: colors.sepia }]}>{isPoster ? 'CERTIFIED' : 'CERT'}</Text>
                </TouchableOpacity>
@@ -377,12 +383,16 @@ export default function LogDetailScreen() {
                   <Text style={s.deckLabel}>CRITIQUE</Text>
                </TouchableOpacity>
 
-               <TouchableOpacity style={s.deckBtn} onPress={() => Alert.alert("Edit", "Coming Soon")}>
-                  <Edit3 size={16} strokeWidth={2} color={colors.fog} />
-                  <Text style={s.deckLabel}>EDIT</Text>
+               <TouchableOpacity style={s.deckBtn} onPress={() => {
+                 if (log.film_id) {
+                   router.push({ pathname: '/log-modal', params: { editLogId: id, filmId: String(log.film_id), filmTitle: log.film_title, filmPoster: log.poster_path } } as any);
+                 }
+               }}>
+                  <Edit3 size={16} strokeWidth={2} color={colors.sepia} />
+                  <Text style={[s.deckLabel, s.deckLabelActive]}>EDIT</Text>
                </TouchableOpacity>
 
-               <TouchableOpacity style={s.deckBtn} onPress={() => Alert.alert("Lounge", "Coming Soon")}>
+               <TouchableOpacity style={s.deckBtn} onPress={() => router.push('/lounge' as any)}>
                   <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
                   <Text style={s.deckLabel}>LOUNGE</Text>
                </TouchableOpacity>
@@ -398,7 +408,7 @@ export default function LogDetailScreen() {
           
           {comments.map((c: any) => (
              <View key={c.id} style={s.commentItem}>
-               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+               <View style={s.userInfoRow}>
                  <TouchableOpacity onPress={() => router.push(`/user/${c.username}`)} activeOpacity={0.7}>
                    <Text style={s.commUsername}>@{c.username}</Text>
                  </TouchableOpacity>
@@ -406,7 +416,7 @@ export default function LogDetailScreen() {
                </View>
                <Text style={s.commBody}>{c.body}</Text>
                {user?.id === c.user_id && (
-                 <TouchableOpacity onPress={() => handleDeleteComment(c.id)} style={{ marginTop: 8, alignSelf: 'flex-end' }}>
+                 <TouchableOpacity onPress={() => handleDeleteComment(c.id)} style={s.commDeleteBtn}>
                    <Text style={s.commDelete}>DELETE</Text>
                  </TouchableOpacity>
                )}
@@ -436,7 +446,7 @@ export default function LogDetailScreen() {
               activeOpacity={0.7}
             >
               <Text style={s.critiqueSubmitText}>{posting ? 'FILING...' : 'SUBMIT CRITIQUE'}</Text>
-              <Text style={{ fontFamily: fonts.ui, fontSize: 12, color: colors.ink }}>✦</Text>
+              <Sparkles size={10} color={colors.ink} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
         </View>
@@ -448,71 +458,103 @@ export default function LogDetailScreen() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  centerFull: { justifyContent: 'center', alignItems: 'center', gap: 16 },
+  notFoundText: { color: colors.fog, fontFamily: fonts.body, fontSize: 14, marginTop: 8 },
   header: {
     paddingTop: 56, paddingHorizontal: 16, paddingBottom: 16,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
   },
   backBtn: { width: 50 },
-  backIcon: { fontFamily: fonts.ui, fontSize: 24, color: colors.sepia },
   headerTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.bone },
-  shareBtn: { width: 50, alignItems: 'flex-end', justifyContent: 'center' },
+  shareBtn: { width: 50, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
   shareBtnText: { fontFamily: fonts.uiBold, fontSize: 10, color: colors.sepia, letterSpacing: 1 },
   
   content: { paddingBottom: 40 },
-  
-  // Log Details — Mathematical translation from Web CSS
-  // Web: padding IS_TOUCH 1.5rem 1rem = 24px 16px
-  logCard: { paddingHorizontal: 16, paddingBottom: 16 },
-  // Web: fontSize 0.75rem=12px, ls 0.15em=1.8px, color var(--sepia), textTransform uppercase
-  userRefText: { fontFamily: fonts.ui, fontSize: 12, letterSpacing: 1.8, color: colors.sepia, textTransform: 'uppercase' },
-  // Web: fontSize 0.65rem=10.4px, ls 0.2em=2.08px, color var(--fog)
-  timestamp: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.fog },
-  // Web: fontSize 0.4rem=6.4px, padding 0.1rem 0.5rem = 1.6px 8px
-  archivistBadge: { paddingHorizontal: 8, paddingVertical: 2, backgroundColor: 'rgba(196,150,26,0.1)', borderWidth: 1, borderColor: 'rgba(196,150,26,0.3)', borderRadius: 2 },
-  archivistBadgeText: { fontFamily: fonts.ui, fontSize: 6.5, letterSpacing: 1, color: colors.sepia },
-  auteurBadge: { paddingHorizontal: 8, paddingVertical: 2, backgroundColor: '#DAA520', borderRadius: 2 },
 
-  // Web: width 140px height 210px, borderRadius 2px, border 1px rgba(196,150,26,0.35), boxShadow 0 20px 40px rgba(0,0,0,0.8) + 0 0 30px rgba(139,105,20,0.1)
+  // Content Card
+  contentCard: { backgroundColor: 'rgba(10,7,3,0.92)', minHeight: 800, borderTopWidth: 1, borderColor: 'rgba(139,105,20,0.15)', borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: -20 }, shadowOpacity: 0.8, shadowRadius: 40, elevation: 24 },
+  contentCardAuteur: { backgroundColor: 'rgba(25,10,10,0.92)', borderColor: 'rgba(180,45,45,0.25)' },
+  logCardInner: { paddingHorizontal: 16, paddingBottom: 16, marginTop: 0, paddingTop: 24 },
+  logCenter: { alignItems: 'center' },
+
+  // User Row
+  userRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 24, width: '100%' },
+  userRowLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, minWidth: 0 },
+  userRefText: { fontFamily: fonts.ui, fontSize: 12, letterSpacing: 1.8, color: colors.sepia, textTransform: 'uppercase' },
+  timestamp: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.fog },
+  archivistBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 2, backgroundColor: 'rgba(196,150,26,0.1)', borderWidth: 1, borderColor: 'rgba(196,150,26,0.3)', borderRadius: 2 },
+  archivistBadgeText: { fontFamily: fonts.ui, fontSize: 6.5, letterSpacing: 1, color: colors.sepia },
+  auteurBadge: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 2, backgroundColor: '#DAA520', borderRadius: 2 },
+  auteurBadgeLabel: { fontFamily: fonts.ui, fontSize: 6.5, letterSpacing: 1, color: colors.ink },
+
+  // Poster
+  posterSection: { width: '100%', alignItems: 'center', marginBottom: 24, zIndex: 10 },
+  posterGlow: { position: 'absolute', top: '50%', left: '50%', width: 180, height: 250, marginLeft: -90, marginTop: -125, borderRadius: 125, zIndex: 0 },
+  posterGlowAuteur: { backgroundColor: 'rgba(125,31,31,0.12)' },
+  posterGlowArchivist: { backgroundColor: 'rgba(139,105,20,0.12)' },
   posterBounds: { width: 140, height: 210, borderRadius: 2, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(196,150,26,0.35)', backgroundColor: colors.soot, shadowColor: '#000', shadowOffset: {width: 0, height: 20}, shadowOpacity: 0.8, shadowRadius: 40, elevation: 12 },
   posterBoundsAuteur: { borderColor: 'rgba(180,45,45,0.35)', shadowColor: 'rgba(125,31,31,0.2)', shadowOffset: {width:0, height:20}, shadowOpacity: 0.8, shadowRadius: 40 },
   posterCentered: { width: '100%', height: '100%', resizeMode: 'cover' },
-  
-  // Web ACTION DECK button: padding 1rem 0 = 16px 0, gap 0.5rem=8px, bg var(--ink), borderRadius 4px
-  deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 16, gap: 8, backgroundColor: colors.ink, borderRadius: 4 },
-  // Web: fontSize 0.45rem=7.2px, ls 0.15em=1.08px
-  deckLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.1, color: colors.fog },
-  
-  // Web Pull Quote: padding 1.5rem, fontSize clamp(1.2rem,5vw,1.6rem)≈20px, lineHeight 1.35, textAlign center
+  posterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+
+  // Title
+  titleSection: { alignItems: 'center', marginBottom: 12 },
+  logFilmTitle: { fontFamily: fonts.display, fontSize: 32, lineHeight: 35, color: colors.parchment, textAlign: 'center', textShadowColor: 'rgba(0,0,0,0.5)', textShadowOffset: {width:0, height:4}, textShadowRadius: 12 },
+  logFilmYear: { fontFamily: fonts.ui, fontSize: 12, letterSpacing: 3.6, color: colors.fog, marginTop: 8 },
+  ratingWrap: { marginTop: 12 },
+
+  // Review
+  reviewSection: { marginTop: 24, marginBottom: 16, paddingHorizontal: 24 },
+  ornamentalRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 16, marginBottom: 16, marginTop: 16 },
+  ornamentalLine: { flex: 1, maxWidth: 80, height: 1, backgroundColor: 'rgba(139,105,20,0.4)' },
+  ornamentalStar: { opacity: 0.7 },
   featuredQuoteWrap: { paddingVertical: 24, alignItems: 'center' },
-  featuredQuoteLogo: { fontFamily: fonts.ui, fontSize: 12, letterSpacing: 4, color: colors.sepia, opacity: 0.8 },
   featuredQuote: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, fontStyle: 'italic', lineHeight: 27, textAlign: 'center', textShadowColor: 'rgba(139,105,20,0.15)', textShadowOffset: {width:0, height:2}, textShadowRadius: 12 },
-  
-  // Web Review: fontSize 0.95rem=15.2px, lineHeight 1.85→28, padding 0 1.5rem=0 24px
   reviewBodyWrap: { paddingHorizontal: 0, marginTop: 0 },
   review: { fontFamily: fonts.body, fontSize: 15, color: colors.bone, lineHeight: 28, opacity: 0.9 },
+  dropCapRow: { flexDirection: 'row', alignItems: 'flex-start' },
+  dropCapLetter: { fontFamily: fonts.display, fontSize: 40, color: colors.sepia, lineHeight: 35, marginRight: 8, marginTop: -3, textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: {width:0, height:2}, textShadowRadius: 8 },
+  dropCapBody: { flex: 1, paddingTop: 3, fontFamily: fonts.body, fontSize: 15, color: colors.bone, lineHeight: 28, opacity: 0.9 },
 
-  // Web Editorial Badge: top 1.5rem=24px, left 1.5rem=24px
-  editorialBadge: { position: 'absolute', top: 24, left: 24, backgroundColor: 'rgba(11,10,8,0.5)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)' },
+  // Editorial Badge
+  editorialBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, position: 'absolute', top: 90, left: 16, backgroundColor: 'rgba(11,10,8,0.5)', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)' },
   editorialBadgeText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.2, color: 'rgba(218,165,32,0.85)' },
 
-  // Autopsy — Web: border 1px rgba(139,105,20,0.25), borderRadius 4px
+  // Autopsy
+  autopsyWrap: { paddingHorizontal: 16 },
+  autopsyToggle: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'rgba(11,10,8,0.95)', borderRadius: 4, borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: -1, zIndex: 2 },
+  autopsyToggleInner: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
+  autopsyPulse: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia, shadowColor: 'rgba(139,105,20,0.6)', shadowOffset: {width:0, height:0}, shadowRadius: 8, shadowOpacity: 1 },
+  autopsyToggleTitle: { fontFamily: fonts.display, fontSize: 12, letterSpacing: 2.5, color: colors.parchment },
+  autopsyToggleConf: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepia, opacity: 0.6 },
+  rotated: { transform: [{ rotate: '180deg' }] },
   autopsyCard: { backgroundColor: colors.ink, padding: 24, borderRadius: 2, borderWidth: 1, borderColor: colors.ash, borderTopWidth: 0, marginTop: -2, borderTopLeftRadius: 0, borderTopRightRadius: 0, shadowColor: '#000', shadowOffset: {width:0, height:10}, shadowOpacity: 0.5, shadowRadius: 10 },
+  autopsyContent: { gap: 24 },
   autopsyLabel: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.fog },
   autopsyValue: { fontFamily: fonts.display, fontSize: 20, lineHeight: 22, color: colors.parchment, opacity: 0.85, letterSpacing: 1 },
   autopsyTrack: { width: '100%', height: 8, backgroundColor: colors.soot, borderRadius: 1, borderWidth: 1, borderColor: 'rgba(10, 7, 3, 0.8)', overflow: 'hidden' },
   autopsyFill: { height: '100%' },
 
-  // Comments — Web: AnnotationPanel styles
+  // Action Deck
+  actionDeckWrap: { paddingHorizontal: 16, marginTop: 8 },
+  actionDeck: { flexDirection: 'row', backgroundColor: 'rgba(139,105,20,0.15)', borderRadius: 6, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', marginBottom: 16, overflow: 'hidden', padding: 1, gap: 1, zIndex: 1 },
+  deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 16, gap: 8, backgroundColor: colors.ink, borderRadius: 4 },
+  deckLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.1, color: colors.fog },
+  deckLabelActive: { color: colors.sepia },
+
+  // Comments
   commentsSection: { paddingHorizontal: 16, marginTop: 16, paddingBottom: 40 },
   emptyComments: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog, textAlign: 'center', marginTop: 24 },
   commentItem: { paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
+  userInfoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
   commUsername: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, color: colors.sepia },
   commBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   commDate: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog },
+  commDeleteBtn: { marginTop: 8, alignSelf: 'flex-end' },
   commDelete: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1, color: colors.bloodReel },
 
-  // Critique Input — Web: AnnotationPanel "File an enduring critique..."
+  // Critique Input
   critiqueInputWrap: { 
     marginTop: 32, paddingTop: 24, 
     borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)',
@@ -530,6 +572,6 @@ const s = StyleSheet.create({
   },
   critiqueSubmitText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.ink },
   
-  backBtnRow: { marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.ash, borderRadius: 2 },
+  backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.ash, borderRadius: 2 },
   backBtnText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2, color: colors.bone },
 });

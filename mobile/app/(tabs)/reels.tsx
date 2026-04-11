@@ -97,7 +97,7 @@ const StackCard = memo(function StackCard({ stack, onPress }: { stack: any; onPr
         {posters.length === 0 ? (
           <LinearGradient colors={gradientColors} style={StyleSheet.absoluteFillObject} />
         ) : (
-          <View style={{ flexDirection: 'row', width: '100%', height: '100%' }}>
+          <View style={st.stackCardPosterRow}>
             {posters.map((f: any, i: number) => (
               <View key={i} style={[st.stackCardPosterPanel, { width: `${100 / posters.length}%` }]}>
                 <Image
@@ -161,9 +161,9 @@ const StackCard = memo(function StackCard({ stack, onPress }: { stack: any; onPr
 function SkeletonCard() {
   return (
     <View style={st.skeleton}>
-      <View style={[st.shimmerBlock, { width: '30%', height: 8 }]} />
-      <View style={[st.shimmerBlock, { width: '70%', height: 16, marginTop: 8 }]} />
-      <View style={[st.shimmerBlock, { width: '45%', height: 10, marginTop: 8 }]} />
+      <View style={[st.shimmerBlock, st.shimmerNarrow]} />
+      <View style={[st.shimmerBlock, st.shimmerWide]} />
+      <View style={[st.shimmerBlock, st.shimmerMedium]} />
     </View>
   );
 }
@@ -378,13 +378,17 @@ export default function ReelScreen() {
   // ── Unauthenticated Gate ──
   if (!isAuthenticated) {
     return (
-      <View style={[st.container, { justifyContent: 'center', alignItems: 'center' }]}>
+      <View style={st.gateContainer}>
         <LinearGradient colors={[colors.ink, colors.soot]} style={StyleSheet.absoluteFillObject} />
-        <Text style={st.gateGlyph}>◎</Text>
+        <Image
+          source={require('../../assets/images/reelhouse-logo.png')}
+          style={st.gateLogo}
+          resizeMode="contain"
+        />
         <Text style={st.gateTitle}>Admit One Required</Text>
         <Text style={st.gateSub}>Join the Society to access The Reel.</Text>
         <TouchableOpacity style={st.gateCta} onPress={() => router.push('/login')}>
-          <Text style={st.gateCtaText}>JOIN THE SOCIETY</Text>
+          <Text style={st.gateCtaText}>REQUEST MEMBERSHIP</Text>
         </TouchableOpacity>
       </View>
     );
@@ -399,9 +403,22 @@ export default function ReelScreen() {
       <Animated.View entering={FadeIn.duration(600)} style={st.sectionHeaderWrap}>
         <Text style={st.headerEyebrow}>✦ THE REELHOUSE SOCIETY ✦</Text>
         <Text style={st.headerTitle}>The Reel</Text>
+
+        {/* Decorative Est. 1924 rule */}
+        <View style={st.headerEstRow}>
+          <LinearGradient colors={['transparent', colors.sepia]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.headerEstLine} />
+          <Text style={st.headerEst}>EST. 1924</Text>
+          <LinearGradient colors={[colors.sepia, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={st.headerEstLine} />
+        </View>
+
         {section === 'logs' && (
           <Animated.View entering={FadeIn.duration(400)} style={st.liveRow}>
-            <View style={[st.liveDot, { backgroundColor: user?.role === 'auteur' || (user as any)?.role === 'god' ? 'rgba(180,45,45,1)' : user?.role === 'archivist' ? colors.sepia : '#22c55e', shadowColor: user?.role === 'auteur' || (user as any)?.role === 'god' ? 'rgba(125,31,31,1)' : user?.role === 'archivist' ? colors.sepia : '#22c55e', shadowOpacity: 0.8, shadowRadius: 6 }]} />
+            <View style={[
+              st.liveDot,
+              (user?.role === 'auteur' || (user as any)?.role === 'god') ? st.liveDotAuteur
+                : user?.role === 'archivist' ? st.liveDotArchivist
+                : st.liveDotDefault
+            ]} />
             <Text style={st.liveText}>
               LIVE · {logCount > 0 ? `${logCount} LOG${logCount === 1 ? '' : 'S'}` : 'AWAITING SIGNAL'}
             </Text>
@@ -440,13 +457,13 @@ export default function ReelScreen() {
 
   const logsEmpty = useMemo(() => {
     if (feedLoading) return (
-      <View style={{ paddingHorizontal: 16 }}>
+      <View style={st.skeletonWrap}>
         {Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)}
       </View>
     );
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={st.emptyWrap}>
-        <Text style={st.emptyGlyph}>◉</Text>
+        <Text style={st.emptyGlyph}>✦</Text>
         <Text style={st.emptyTitle}>
           {feedFilter === 'following' ? 'Your orbit is quiet.' : 'The projection booth is dark.'}
         </Text>
@@ -472,7 +489,7 @@ export default function ReelScreen() {
 
       {/* Search Bar */}
       <View style={st.searchWrap}>
-        <Text style={st.searchIcon}>⌕</Text>
+        <Text style={st.searchIcon}>✦</Text>
         <TextInput
           style={st.searchInput}
           placeholder="Search stacks, films, curators…"
@@ -492,9 +509,9 @@ export default function ReelScreen() {
       <View style={st.filterRow}>
         <FilterChip label="ALL STACKS" active={stackFilter === 'all'} onPress={() => switchStackFilter('all')} />
         <FilterChip label="FOLLOWING" active={stackFilter === 'following'} onPress={() => switchStackFilter('following')} />
-        <View style={{ flex: 1 }} />
+        <View style={st.filterSpacer} />
         <Text style={st.resultCount}>
-          {filteredStacks.length} {stackSearch ? 'RESULTS' : 'ARCHIVES'}
+          {filteredStacks.length} {stackSearch ? 'RESULTS' : 'STACKS'}
         </Text>
       </View>
 
@@ -506,14 +523,19 @@ export default function ReelScreen() {
         onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/list-modal'); }}
         activeOpacity={0.8}
       >
-        <Text style={st.createStackText}>+ CREATE COLLECTION</Text>
+        <LinearGradient
+          colors={['transparent', 'rgba(139,105,20,0.06)', 'transparent']}
+          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+          style={st.createStackGlow}
+        />
+        <Text style={st.createStackText}>✦ CURATE A COLLECTION</Text>
       </TouchableOpacity>
     </>
   ), [section, stackSearch, stackFilter, filteredStacks.length, switchSection, switchStackFilter, router]);
 
   const stackEmpty = useMemo(() => {
     if (stacksLoading) return (
-      <View style={{ paddingHorizontal: 16 }}>
+      <View style={st.skeletonWrap}>
         {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
       </View>
     );
@@ -602,7 +624,7 @@ export default function ReelScreen() {
             </View>
           )}
 
-          <View style={{ height: 40 }} />
+          <View style={st.stackBottomSpacer} />
         </ScrollView>
       )}
 
@@ -619,31 +641,39 @@ const st = StyleSheet.create({
   listContent: { paddingBottom: 120 },
 
   // ── Header ──
-  sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 },
-  headerEyebrow: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4, color: colors.sepia, opacity: 0.7, marginBottom: 6 },
-  headerTitle: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment, ...effects.textGlowSepia },
-  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 6 },
-  liveDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#22c55e', ...effects.glowSepia },
-  liveText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.fog, opacity: 0.7 },
+  sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 },
+  headerEyebrow: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5, color: colors.sepia, opacity: 0.6, marginBottom: 8 },
+  headerTitle: { fontFamily: fonts.display, fontSize: 34, color: colors.parchment, ...effects.textGlowSepia },
+  headerEstRow: {
+    flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 10, marginBottom: 4,
+  },
+  headerEstLine: { width: 28, height: 1 },
+  headerEst: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 5, color: colors.sepia, opacity: 0.35 },
+  liveRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
+  liveDot: { width: 6, height: 6, borderRadius: 3 },
+  liveDotDefault: { backgroundColor: '#22c55e', shadowColor: '#22c55e', shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
+  liveDotArchivist: { backgroundColor: colors.sepia, shadowColor: colors.sepia, shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
+  liveDotAuteur: { backgroundColor: 'rgba(180,45,45,1)', shadowColor: 'rgba(125,31,31,1)', shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
+  liveText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.fog, opacity: 0.65 },
 
   // ── Tab Bar ──
   tabBarRow: {
-    flexDirection: 'row', marginHorizontal: 16, marginTop: 4, marginBottom: 12,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', borderRadius: 4, overflow: 'hidden',
+    flexDirection: 'row', marginHorizontal: 16, marginTop: 6, marginBottom: 14,
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.12)', borderRadius: 4, overflow: 'hidden',
   },
   tabPill: {
-    flex: 1, paddingVertical: 11, alignItems: 'center',
-    backgroundColor: 'rgba(10,7,3,0.6)',
+    flex: 1, paddingVertical: 12, alignItems: 'center',
+    backgroundColor: 'rgba(10,7,3,0.7)',
   },
   tabPillActive: {
-    backgroundColor: 'rgba(139,105,20,0.08)',
+    backgroundColor: 'rgba(139,105,20,0.06)',
     borderBottomWidth: 2, borderBottomColor: colors.sepia,
   },
-  tabPillText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 3, color: colors.fog },
+  tabPillText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 4, color: colors.fog },
   tabPillTextActive: { color: colors.sepia },
   tabPillDot: {
     width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.sepia,
-    marginTop: 4, ...effects.glowSepia,
+    marginTop: 5, ...effects.glowSepia,
   },
 
   // ── Filter Row ──
@@ -669,6 +699,7 @@ const st = StyleSheet.create({
     height: 1.5, backgroundColor: colors.sepia, borderRadius: 1,
   },
   resultCount: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.5 },
+  filterSpacer: { flex: 1 },
 
   // ── Search ──
   searchWrap: {
@@ -676,7 +707,7 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.12)',
     borderRadius: 4, paddingHorizontal: 12, height: 40,
   },
-  searchIcon: { fontSize: 16, color: colors.sepia, opacity: 0.5, marginRight: 8 },
+  searchIcon: { fontSize: 10, color: colors.sepia, opacity: 0.4, marginRight: 10 },
   searchInput: {
     flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.parchment,
     paddingVertical: 0,
@@ -687,10 +718,13 @@ const st = StyleSheet.create({
   // ── Create Stack CTA ──
   createStackBtn: {
     marginHorizontal: 16, marginBottom: 16,
-    backgroundColor: 'rgba(139,105,20,0.08)', borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.2)', borderRadius: 4,
-    paddingVertical: 12, alignItems: 'center',
-    borderStyle: 'dashed',
+    backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1,
+    borderColor: 'rgba(139,105,20,0.15)', borderRadius: 4,
+    paddingVertical: 14, alignItems: 'center',
+    overflow: 'hidden',
+  },
+  createStackGlow: {
+    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
   },
   createStackText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 3, color: colors.sepia },
 
@@ -718,6 +752,7 @@ const st = StyleSheet.create({
   stackCardPosterPanel: {
     height: '100%',
   },
+  stackCardPosterRow: { flexDirection: 'row', width: '100%', height: '100%' },
   stackCardRef: {
     position: 'absolute',
     top: 8, right: 8,
@@ -780,7 +815,8 @@ const st = StyleSheet.create({
   emptyBtnText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2, color: colors.sepia },
 
   // ── Auth Gate ──
-  gateGlyph: { fontSize: 36, color: colors.sepia, opacity: 0.3, marginBottom: 16 },
+  gateContainer: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center' },
+  gateLogo: { width: 48, height: 48, opacity: 0.3, marginBottom: 20 },
   gateTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8 },
   gateSub: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', marginBottom: 24 },
   gateCta: {
@@ -798,4 +834,9 @@ const st = StyleSheet.create({
     borderColor: 'rgba(139,105,20,0.06)',
   },
   shimmerBlock: { backgroundColor: 'rgba(139,105,20,0.06)', borderRadius: 2 },
+  shimmerNarrow: { width: '30%', height: 8 },
+  shimmerWide: { width: '70%', height: 16, marginTop: 8 },
+  shimmerMedium: { width: '45%', height: 10, marginTop: 8 },
+  skeletonWrap: { paddingHorizontal: 16 },
+  stackBottomSpacer: { height: 40 },
 });

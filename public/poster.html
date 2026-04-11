@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>The ReelHouse Society — Poster</title>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1080px;
+    height: 1080px;
+    background: #0B0A08;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Film grain overlay */
+  body::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+
+  /* Scratches */
+  .scratches {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.07;
+  }
+  .scratch { position: absolute; background: #C4961A; }
+  .s1 { width: 1px; height: 200px; top: 8%; left: 22%; transform: rotate(2deg); }
+  .s2 { width: 1px; height: 280px; top: 3%; left: 73%; transform: rotate(-1.5deg); }
+  .s3 { width: 1px; height: 140px; top: 38%; left: 44%; transform: rotate(4deg); }
+  .s4 { width: 1px; height: 320px; top: 0; left: 89%; transform: rotate(0.8deg); opacity: 0.4; }
+
+  /* Corner wear */
+  .wear { position: absolute; z-index: 3; pointer-events: none; }
+  .wear-tl { top:0;left:0; width:140px;height:140px; background:radial-gradient(circle at 0% 0%, rgba(43,33,24,0.5) 0%, transparent 70%);}
+  .wear-br { bottom:0;right:0; width:160px;height:160px; background:radial-gradient(circle at 100% 100%, rgba(43,33,24,0.55) 0%, transparent 70%);}
+  .wear-tr { top:0;right:0; width:110px;height:110px; background:radial-gradient(circle at 100% 0%, rgba(43,33,24,0.35) 0%, transparent 70%);}
+  .wear-bl { bottom:0;left:0; width:120px;height:120px; background:radial-gradient(circle at 0% 100%, rgba(43,33,24,0.4) 0%, transparent 70%);}
+
+  .poster {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 4;
+    padding: 50px 70px;
+    width: 100%;
+    height: 100%;
+    gap: 0;
+  }
+
+  /* Ornamental line */
+  .orn { height: 2px; background: linear-gradient(90deg, transparent, #C4961A, transparent); opacity: 0.5; }
+  .orn-top { width: 55%; margin-bottom: 20px; }
+  .orn-bot { width: 35%; margin-top: 16px; }
+
+  .headline {
+    font-family: 'Rye', serif;
+    color: #C4961A;
+    font-size: 54px;
+    text-align: center;
+    letter-spacing: 0.05em;
+    line-height: 1.15;
+    text-shadow: 0 2px 10px rgba(196,150,26,0.12);
+    margin-bottom: 6px;
+  }
+
+  .sub-label {
+    font-family: 'Special Elite', cursive;
+    color: #6B6055;
+    font-size: 15px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  /* Logo — actual official logo */
+  .logo-wrap {
+    margin-bottom: 16px;
+  }
+  .logo-wrap img {
+    width: 260px;
+    height: auto;
+    filter: drop-shadow(0 0 24px rgba(196,150,26,0.12));
+  }
+
+  /* Buster — exact official SVG from Buster.tsx */
+  .buster-wrap {
+    margin-bottom: 16px;
+  }
+  .buster-wrap svg {
+    filter: drop-shadow(0 4px 16px rgba(0,0,0,0.6));
+  }
+
+  .tagline {
+    font-family: 'Rye', serif;
+    color: #EDE5D8;
+    font-size: 48px;
+    text-align: center;
+    letter-spacing: 0.04em;
+    line-height: 1.15;
+    margin-bottom: 6px;
+    text-shadow: 0 2px 10px rgba(196,150,26,0.08);
+  }
+
+  .sub-tagline {
+    font-family: 'Special Elite', cursive;
+    color: #C4961A;
+    font-size: 30px;
+    font-style: italic;
+    text-align: center;
+    opacity: 0.8;
+  }
+
+  .dots {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-top: 14px;
+  }
+  .dot { width: 4px; height: 4px; background: #C4961A; border-radius: 50%; opacity: 0.5; }
+  .dot-line { width: 36px; height: 1px; background: #C4961A; opacity: 0.25; }
+
+  .est {
+    font-family: 'Special Elite', cursive;
+    color: #6B6055;
+    font-size: 13px;
+    letter-spacing: 0.45em;
+    margin-top: 14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="scratches">
+  <div class="scratch s1"></div>
+  <div class="scratch s2"></div>
+  <div class="scratch s3"></div>
+  <div class="scratch s4"></div>
+</div>
+<div class="wear wear-tl"></div>
+<div class="wear wear-br"></div>
+<div class="wear wear-tr"></div>
+<div class="wear wear-bl"></div>
+
+<div class="poster">
+  <div class="orn orn-top"></div>
+
+  <div class="headline">THE REELHOUSE<br>SOCIETY</div>
+  <div class="sub-label">PRIVATE CINEMA SOCIETY</div>
+
+  <!-- ═══ ACTUAL OFFICIAL LOGO from public/reelhouse-logo-full.png ═══ -->
+  <div class="logo-wrap">
+    <img src="/reelhouse-logo-full.png" alt="The ReelHouse Society Logo">
+  </div>
+
+  <!-- ═══ ACTUAL OFFICIAL BUSTER — exact SVG from Buster.tsx (peeking mood + crown) ═══ -->
+  <div class="buster-wrap">
+    <svg viewBox="0 0 100 140" width="90" height="126" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="#E8DFC8" opacity="0.92"/>
+      <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="none" stroke="rgba(242,232,160,0.15)" stroke-width="3"/>
+      <ellipse cx="38" cy="52" rx="6" ry="5" fill="#0A0703"/>
+      <ellipse cx="62" cy="52" rx="6" ry="5" fill="#0A0703"/>
+      <circle cx="40" cy="51" r="2" fill="white"/>
+      <circle cx="64" cy="51" r="2" fill="white"/>
+      <path d="M 38 68 Q 50 76 62 66" stroke="#0A0703" stroke-width="2.5" fill="none"/>
+      <rect x="44" y="68" width="3" height="5" fill="#0A0703" rx="0.5"/>
+      <rect x="49" y="69" width="3" height="4" fill="#0A0703" rx="0.5"/>
+      <path d="M 42 16 L 44 8 L 50 14 L 56 8 L 58 16 Z" fill="#8B6914" stroke="#F2E8A0" stroke-width="0.5"/>
+    </svg>
+  </div>
+
+  <div class="tagline">THE SOCIETY<br>IS WATCHING.</div>
+  <div class="sub-tagline">Are you watching back?</div>
+
+  <div class="orn orn-bot"></div>
+
+  <div class="dots">
+    <div class="dot-line"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot-line"></div>
+  </div>
+
+  <div class="est">REELHOUSE.APP</div>
+</div>
+
+</body>
+</html>

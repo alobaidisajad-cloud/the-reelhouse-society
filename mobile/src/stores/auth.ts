@@ -1,7 +1,9 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Linking from 'expo-linking';
 
 export interface AuthState {
   user: User | null;
@@ -61,7 +63,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const { data: profile } = await supabase
-          .from('profiles').select('*').eq('id', session.user.id).single();
+          .from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', session.user.id).single();
         if (profile) {
           set({ user: { ...session.user, ...profile, following: [] } as unknown as User, isAuthenticated: true, loading: false });
           // Hydrate following in background
@@ -91,7 +93,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     set({ user: { ...data.user, following: [] } as unknown as User, isAuthenticated: true });
 
     // Enrich with profile in background
-    Promise.resolve(supabase.from('profiles').select('*').eq('id', data.user.id).single())
+    Promise.resolve(supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user.id).single())
       .then((res) => {
         if (res.data) set((s) => ({ user: s.user ? { ...s.user, ...res.data } : null }));
       }).catch(() => {});
@@ -100,10 +102,13 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   signup: async (email, password, username, persona = 'The Cinephile') => {
+    // Build the redirect URL so confirmation emails deep-link back to the app
+    const redirectTo = Linking.createURL('auth-callback');
     const { data, error } = await supabase.auth.signUp({
       email, password,
       options: {
         data: { username },
+        emailRedirectTo: redirectTo,
       },
     });
     if (error) throw error;
@@ -111,7 +116,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (data?.session) {
       // Email confirmation disabled — immediate login
       await supabase.from('profiles').update({ username, persona }).eq('id', data.user!.id);
-      const { data: profile } = await supabase.from('profiles').select('*').eq('id', data.user!.id).single();
+      const { data: profile } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user!.id).single();
       set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true });
       return { needsConfirmation: false };
     }
@@ -120,8 +125,24 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   logout: async () => {
+    // 1. Sign out from Supabase
     try { await supabase.auth.signOut(); } catch { /* continue */ }
+
+    // 2. Clear zustand auth state
     set({ user: null, isAuthenticated: false });
+
+    // 3. Clear all Supabase auth tokens from AsyncStorage (native)
+    if (Platform.OS !== 'web') {
+      try {
+        const allKeys = await AsyncStorage.getAllKeys();
+        const authKeys = allKeys.filter(key =>
+          key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')
+        );
+        if (authKeys.length > 0) {
+          await AsyncStorage.multiRemove(authKeys);
+        }
+      } catch { /* cleanup is non-critical */ }
+    }
   },
 
   updateUser: async (updates) => {

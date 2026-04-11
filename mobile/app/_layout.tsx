@@ -7,6 +7,9 @@ import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite';
 import { CourierPrime_400Regular, CourierPrime_700Bold, CourierPrime_400Regular_Italic } from '@expo-google-fonts/courier-prime';
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Linking from 'expo-linking';
+import { useRouter } from 'expo-router';
+import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme/theme';
 import Preloader from '@/src/components/Preloader';
@@ -46,6 +49,77 @@ export default function RootLayout() {
     prepare();
   }, []);
 
+  // ── Deep link handler for auth callbacks ──
+  // Intercepts reelhouse://auth/callback and reelhouse://reset-password deep links
+  useEffect(() => {
+    function handleDeepLink(event: { url: string }) {
+      handleAuthDeepLink(event.url);
+    }
+
+    // Handle the URL that launched the app (cold start)
+    Linking.getInitialURL().then(url => {
+      if (url) handleAuthDeepLink(url);
+    });
+
+    // Handle URLs while the app is already open (warm start)
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    return () => subscription.remove();
+  }, [appReady]);
+
+  async function handleAuthDeepLink(url: string) {
+    if (!url) return;
+
+    try {
+      const parsed = Linking.parse(url);
+      const path = parsed.path || '';
+      const queryParams = parsed.queryParams || {};
+
+      // Handle: reelhouse://auth/callback?token_hash=xxx&type=signup|recovery
+      if (path.includes('auth/callback') || path.includes('auth-callback')) {
+        const tokenHash = queryParams.token_hash as string;
+        const type = queryParams.type as string;
+
+        if (tokenHash && type) {
+          if (type === 'recovery') {
+            // Exchange token first, then navigate to reset-password
+            const { error } = await supabase.auth.verifyOtp({
+              token_hash: tokenHash,
+              type: 'recovery',
+            });
+            if (!error) {
+              // Small delay to ensure the router is ready
+              setTimeout(() => {
+                const router = require('expo-router').router;
+                router.push('/reset-password');
+              }, 300);
+            }
+          } else {
+            // Email verification — navigate to auth-callback screen which handles the exchange
+            setTimeout(() => {
+              const router = require('expo-router').router;
+              router.push({
+                pathname: '/auth-callback',
+                params: { token_hash: tokenHash, type },
+              });
+            }, 300);
+          }
+        }
+        return;
+      }
+
+      // Handle: reelhouse://reset-password (direct deep link)
+      if (path.includes('reset-password')) {
+        setTimeout(() => {
+          const router = require('expo-router').router;
+          router.push('/reset-password');
+        }, 300);
+        return;
+      }
+    } catch {
+      // Deep link parsing failed — silently ignore
+    }
+  }
+
   const onLayoutReady = useCallback(async () => {
     if (appReady && fontsLoaded) {
       await SplashScreen.hideAsync();
@@ -77,6 +151,8 @@ export default function RootLayout() {
         <Stack.Screen name="vault-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="login" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
         <Stack.Screen name="social-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="reset-password" options={{ animation: 'ios_from_right' }} />
+        <Stack.Screen name="auth-callback" options={{ animation: 'fade' }} />
       </Stack>
       
       {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}

@@ -21,6 +21,7 @@ import DirectorPanel from '../components/film/DirectorPanel'
 import WatchProviders from '../components/film/WatchProviders'
 import CountryReleases from '../components/film/CountryReleases'
 import Poster from '../components/film/Poster'
+import ViewingChronicle from '../components/film/ViewingChronicle'
 
 import ShareToLoungeModal from '../components/ShareToLoungeModal'
 import type { SharePayload } from '../components/ShareToLoungeModal'
@@ -48,7 +49,8 @@ function FilmHero({ film, onPlayTrailer }: any) {
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
     const trailer = film.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
         || film.videos?.results?.find((v: any) => v.site === 'YouTube')
-    const existingLog = _loggedIndex[film.id]
+    const allLogsForFilm = _loggedIndex[film.id] || []
+    const existingLog = allLogsForFilm[0] // Latest log (newest-first)
     const statusLabel: any = { watched: <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> WATCHED</>, rewatched: <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> REWATCHED</>, abandoned: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> ABANDONED</> }
 
     // --- Smart Review Count Fallback ---
@@ -200,6 +202,11 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', fontSize: '0.72rem', padding: '0.85rem' }} onClick={() => openLogModal(film, existingLog?.id)}>
                             <Plus size={15} /> {existingLog ? 'Edit Log' : 'Log This Film'}
                         </button>
+                        {existingLog && (
+                            <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.68rem', padding: '0.75rem', borderColor: 'rgba(139,105,20,0.5)', color: 'var(--sepia)' }} onClick={() => openLogModal(film)}>
+                                <RotateCcw size={13} /> Log Rewatch{allLogsForFilm.length > 1 ? ` (${allLogsForFilm.length + 1})` : ''}
+                            </button>
+                        )}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
                             {existingLog && (
                                 <button className="btn btn-ghost" style={{ flex: '1 1 auto', justifyContent: 'center', fontSize: '0.65rem', borderColor: 'rgba(139,105,20,0.5)', color: 'var(--sepia)' }} onClick={() => setShowExport(true)}>
@@ -347,6 +354,11 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         <button className="btn btn-primary" style={{ fontSize: '0.75rem' }} onClick={() => openLogModal(film, existingLog?.id)}>
                             <Plus size={14} /> {existingLog ? 'Edit Log' : 'Log This Film'}
                         </button>
+                        {existingLog && (
+                            <button className="btn btn-ghost" style={{ fontSize: '0.75rem', borderColor: 'rgba(139,105,20,0.5)', color: 'var(--sepia)' }} onClick={() => openLogModal(film)}>
+                                <RotateCcw size={14} /> Log Rewatch{allLogsForFilm.length > 1 ? ` (${allLogsForFilm.length + 1})` : ''}
+                            </button>
+                        )}
                         {existingLog && (
                             <button className="btn btn-ghost" style={{ fontSize: '0.75rem', borderColor: 'var(--sepia)', color: 'var(--sepia)' }} onClick={() => setShowExport(true)}>
                                 <Camera size={14} /> Export Dossier
@@ -581,6 +593,12 @@ function FilmDetails({ film, onPlayVideo }: any) {
     )
 }
 
+// ── Viewing Chronicle Wrapper — reads logs for a specific film from the store ──
+function ViewingChronicleSection({ filmId }: { filmId: number }) {
+    const allLogs = useFilmStore(s => s.getAllLogsForFilm(filmId))
+    return <ViewingChronicle logs={allLogs} />
+}
+
 // ── Main Page Export ──
 export default function FilmDetailPage() {
     const { isTouch: IS_TOUCH } = useViewport()
@@ -706,7 +724,8 @@ export default function FilmDetailPage() {
                     </button>
                     <FilmDetails film={film} onPlayVideo={handlePlayVideo} />
 
-
+                    {/* Viewing Chronicle — shows all rewatches for this film */}
+                    {film?.id && <ViewingChronicleSection filmId={film.id} />}
 
                     <SectionErrorBoundary label="SIMILAR FILMS">
                     {Array.isArray(similar) && similar.length > 0 && (
