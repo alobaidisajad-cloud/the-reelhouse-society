@@ -37,7 +37,7 @@ import CountryReleases from '@/src/components/film/CountryReleases';
 import {
   Clock, Globe, ArrowLeft, Eye, Play, Pencil, Plus,
   Bookmark as BookIcon, Share2, RotateCcw, XCircle, Check,
-  ArrowUpRight, Film as FilmIcon, Camera, MessageCircle,
+  ArrowUpRight, Film as FilmIcon, Camera, MessageCircle, History,
 } from 'lucide-react-native';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
@@ -583,6 +583,81 @@ export default function FilmDetailScreen() {
             </View>
           )}
         </AnimatedView>
+
+        {/* ═══ YOUR LOG — Review + Viewing History ═══ */}
+        {existingLog && (
+          <AnimatedView entering={FadeInDown.duration(400).delay(80)} style={{
+            marginHorizontal: 20, marginTop: 12, marginBottom: -4,
+            backgroundColor: 'rgba(139,105,20,0.06)',
+            borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
+            borderRadius: 8, padding: 14,
+          }}>
+            {/* Rating + meta row */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+              {(existingLog.rating ?? 0) > 0 && (
+                <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 16, color: colors.flicker }}>
+                  {'★'.repeat(Math.floor(existingLog.rating ?? 0))}{(existingLog.rating ?? 0) % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(existingLog.rating ?? 0))}
+                </Text>
+              )}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                {existingLog.watchedDate && (
+                  <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>
+                    {new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </Text>
+                )}
+                {(existingLog.viewCount || 1) > 1 && (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                    <RotateCcw size={7} color={colors.fog} />
+                    <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>{existingLog.viewCount} viewings</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+            {/* Review text */}
+            {existingLog.review ? (
+              <Text style={{
+                fontFamily: fonts.body, fontSize: 13.5, color: colors.bone,
+                lineHeight: 21, opacity: 0.9,
+              }}>
+                {(existingLog.review || '').replace(/<[^>]+>/g, '').trim()}
+              </Text>
+            ) : null}
+            {/* Viewing History — past reviews */}
+            {existingLog.viewingHistory && existingLog.viewingHistory.length > 0 && (
+              <View style={{ marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)', paddingTop: 10 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, marginBottom: 8 }}>
+                  <History size={10} color={colors.sepia} />
+                  <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia }}>
+                    VIEWING CHRONICLE — {existingLog.viewingHistory.length + 1} viewings
+                  </Text>
+                </View>
+                {existingLog.viewingHistory.map((entry: any, idx: number) => (
+                  <View key={idx} style={{
+                    paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(139,105,20,0.2)',
+                    marginBottom: idx < (existingLog.viewingHistory?.length || 0) - 1 ? 10 : 0,
+                  }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                      <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.soot, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', position: 'absolute', left: -17, top: 2 }} />
+                      <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>
+                        {entry.date ? new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
+                      </Text>
+                      {entry.rating > 0 && (
+                        <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 12, color: colors.bone }}>
+                          {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
+                        </Text>
+                      )}
+                    </View>
+                    {entry.review ? (
+                      <Text style={{ fontFamily: fonts.body, fontSize: 12.5, color: colors.bone, lineHeight: 19, opacity: 0.7, fontStyle: 'italic' }}>
+                        "{entry.review.replace(/<[^>]+>/g, '').trim()}"
+                      </Text>
+                    ) : null}
+                  </View>
+                ))}
+              </View>
+            )}
+          </AnimatedView>
+        )}
 
         <SectionDivider label="THE DOSSIER" />
 
