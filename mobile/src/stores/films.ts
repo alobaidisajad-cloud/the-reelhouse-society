@@ -277,7 +277,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const page = loadMore ? state.logsPage : 0
 
                 const { data, error } = await supabase
-                    .from('logs').select('*').eq('user_id', user.id)
+                    .from('logs').select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, private_notes, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history').eq('user_id', user.id)
                     .order('watched_date', { ascending: false })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
                 
@@ -332,7 +332,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const PAGE_SIZE = 1000
                 while (true) {
                     const { data, error } = await supabase
-                        .from('watchlists').select('*').eq('user_id', user.id)
+                        .from('watchlists').select('id, user_id, film_id, film_title, poster_path, year, created_at').eq('user_id', user.id)
                         .order('created_at', { ascending: false })
                         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
                     if (error || !data || data.length === 0) break
@@ -356,7 +356,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const page = loadMore ? state.vaultPage : 0
 
                 const { data, error } = await supabase
-                    .from('vaults').select('*').eq('user_id', user.id)
+                    .from('vaults').select('id, user_id, film_id, film_title, poster_path, year, format, created_at').eq('user_id', user.id)
                     .order('created_at', { ascending: false })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
 
@@ -382,7 +382,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const page = loadMore ? state.listsPage : 0
 
                 const { data: lists, error } = await supabase
-                    .from('lists').select('*').eq('user_id', user.id)
+                    .from('lists').select('id, user_id, title, description, is_ranked, is_private, created_at').eq('user_id', user.id)
                     .order('created_at', { ascending: false })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
                 
@@ -394,7 +394,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     let allItems: any[] = []
                     if (listIds.length > 0) {
                         const { data: items } = await supabase
-                            .from('list_items').select('*').in('list_id', listIds).limit(1000)
+                            .from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).limit(1000)
                         allItems = items || []
                     }
                     // Group items by list_id client-side
@@ -796,7 +796,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const uid = userId || useAuthStore.getState().user?.id
                 if (!uid) return []
                 const { data, error } = await supabase
-                    .from('physical_archive').select('*').eq('user_id', uid)
+                    .from('physical_archive').select('id, user_id, film_id, film_title, poster_path, year, formats, notes, condition, created_at').eq('user_id', uid)
                     .order('created_at', { ascending: false }).limit(2000)
                 if (!error && data) {
                     const items = data.map((item: any) => ({
