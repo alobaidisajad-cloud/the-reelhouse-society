@@ -471,9 +471,9 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const user = useAuthStore.getState().user
                 if (!user) return
 
-                // ── Rewatch: archive old review into viewing_history, then UPDATE existing log ──
+                // ── Rewatch: if a log already exists for this film, archive old review into viewing_history ──
                 const existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined
-                if (existingLog && log.status === 'rewatched') {
+                if (existingLog) {
                     const oldHistory = existingLog.viewingHistory || []
                     const archivedEntry = {
                         date: existingLog.watchedDate || existingLog.createdAt || new Date().toISOString(),
