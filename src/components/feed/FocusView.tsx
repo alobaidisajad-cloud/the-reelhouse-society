@@ -215,56 +215,124 @@ export default function FocusView({
                 </div>
             )}
 
-            {/* ── VIEWING CHRONICLE — Past reviews from rewatches ── */}
-            {log.viewingHistory && log.viewingHistory.length > 0 && (
-                <div style={{ padding: '0 1.5rem', marginTop: '1.5rem' }}>
-                    <div style={{ background: 'linear-gradient(135deg, rgba(139,105,20,0.05), rgba(10,7,3,0.4))', border: '1px solid rgba(139,105,20,0.18)', borderRadius: 6, padding: '1rem 1.25rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
-                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sepia)', display: 'inline-block' }} />
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
-                                VIEWING CHRONICLE — {log.viewingHistory.length + 1} viewings
-                            </span>
-                        </div>
-                        {log.viewingHistory.map((entry: any, idx: number) => (
-                            <div key={idx} style={{
-                                paddingLeft: '1rem', borderLeft: '2px solid rgba(139,105,20,0.2)',
-                                marginBottom: idx < log.viewingHistory.length - 1 ? '0.75rem' : 0,
-                                paddingBottom: idx < log.viewingHistory.length - 1 ? '0.75rem' : 0,
-                                borderBottom: idx < log.viewingHistory.length - 1 ? '1px solid rgba(139,105,20,0.08)' : 'none',
-                                position: 'relative',
-                            }}>
-                                {/* Timeline dot */}
-                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--soot)', border: '1.5px solid rgba(139,105,20,0.4)', position: 'absolute', left: -5, top: 3 }} />
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
-                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
-                                        {idx === log.viewingHistory.length - 1 ? '◆ FIRST WATCH' : `VIEWING ${log.viewingHistory.length - idx}`}
-                                    </span>
-                                    {entry.date && (
-                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em', color: 'var(--fog)' }}>
-                                            · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                                        </span>
-                                    )}
-                                </div>
-                                {entry.rating > 0 && (
-                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--flicker)', marginBottom: '0.2rem' }}>
-                                        {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
-                                    </div>
-                                )}
-                                {entry.review && (
-                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', lineHeight: 1.6, opacity: 0.7, fontStyle: 'italic', margin: 0 }}>
-                                        "{entry.review.replace(/<[^>]+>/g, '').trim()}"
-                                    </p>
-                                )}
-                                {entry.watchedWith && (
-                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '0.25rem', display: 'block' }}>
-                                        ♡ {entry.watchedWith}
-                                    </span>
-                                )}
+            {/* ── VIEWING CHRONICLE — Horizontal swipeable review carousel ── */}
+            {log.viewingHistory && log.viewingHistory.length > 0 && (() => {
+                const allViewings = [
+                    // Current review as the first page
+                    ...(log.review ? [{
+                        label: '◆ LATEST VIEWING',
+                        date: log.watchedDate || log.watched_date,
+                        rating: log.rating,
+                        review: log.review,
+                        watchedWith: log.watchedWith || log.watched_with,
+                        isCurrent: true,
+                    }] : []),
+                    // Past reviews
+                    ...log.viewingHistory.map((entry: any, idx: number) => ({
+                        label: idx === log.viewingHistory.length - 1 ? '◆ FIRST WATCH' : `VIEWING ${log.viewingHistory.length - idx}`,
+                        date: entry.date,
+                        rating: entry.rating,
+                        review: entry.review,
+                        watchedWith: entry.watchedWith,
+                        isCurrent: false,
+                    })),
+                ]
+                return (
+                    <div style={{ padding: '0 1.5rem', marginTop: '1.5rem' }}>
+                        <div style={{ background: 'linear-gradient(135deg, rgba(139,105,20,0.05), rgba(10,7,3,0.4))', border: '1px solid rgba(139,105,20,0.18)', borderRadius: 6, overflow: 'hidden' }}>
+                            {/* Header */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', padding: '0.75rem 1.25rem', borderBottom: '1px solid rgba(139,105,20,0.1)' }}>
+                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sepia)', display: 'inline-block' }} />
+                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
+                                    VIEWING CHRONICLE — {allViewings.length} viewings
+                                </span>
                             </div>
-                        ))}
+                            {/* Horizontal scroll container */}
+                            <div
+                                style={{
+                                    display: 'flex',
+                                    overflowX: 'auto',
+                                    scrollSnapType: 'x mandatory',
+                                    scrollbarWidth: 'none',
+                                    WebkitOverflowScrolling: 'touch',
+                                }}
+                                className="chronicle-scroll"
+                            >
+                                {allViewings.map((entry, idx) => (
+                                    <div key={idx} style={{
+                                        minWidth: '100%',
+                                        maxWidth: '100%',
+                                        scrollSnapAlign: 'start',
+                                        padding: '1rem 1.25rem',
+                                        boxSizing: 'border-box',
+                                    }}>
+                                        {/* Viewing label + date */}
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
+                                            <span style={{
+                                                fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em',
+                                                color: entry.isCurrent ? 'var(--sepia)' : 'var(--fog)',
+                                                background: entry.isCurrent ? 'rgba(139,105,20,0.12)' : 'transparent',
+                                                padding: entry.isCurrent ? '0.15rem 0.4rem' : 0,
+                                                borderRadius: '2px',
+                                            }}>
+                                                {entry.label}
+                                            </span>
+                                            {entry.date && (
+                                                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em', color: 'var(--fog)' }}>
+                                                    · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                        {/* Rating */}
+                                        {entry.rating > 0 && (
+                                            <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--flicker)', marginBottom: '0.3rem' }}>
+                                                {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
+                                            </div>
+                                        )}
+                                        {/* Review text */}
+                                        {entry.review && (
+                                            <p style={{
+                                                fontFamily: 'var(--font-body)',
+                                                fontSize: entry.isCurrent ? '0.95rem' : '0.85rem',
+                                                color: 'var(--bone)',
+                                                lineHeight: 1.7,
+                                                opacity: entry.isCurrent ? 0.9 : 0.7,
+                                                fontStyle: entry.isCurrent ? 'normal' : 'italic',
+                                                margin: 0,
+                                                maxHeight: '12rem',
+                                                overflowY: 'auto',
+                                                scrollbarWidth: 'thin',
+                                                scrollbarColor: 'rgba(139,105,20,0.3) transparent',
+                                            }}>
+                                                {entry.isCurrent ? '' : '"'}{typeof entry.review === 'string' ? entry.review.replace(/<[^>]+>/g, '').trim() : ''}{entry.isCurrent ? '' : '"'}
+                                            </p>
+                                        )}
+                                        {/* Watched with */}
+                                        {entry.watchedWith && (
+                                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '0.4rem', display: 'block' }}>
+                                                ♡ {entry.watchedWith}
+                                            </span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                            {/* Dot indicators */}
+                            {allViewings.length > 1 && (
+                                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem', padding: '0.5rem 0 0.75rem' }}>
+                                    {allViewings.map((_, idx) => (
+                                        <span key={idx} style={{
+                                            width: 5, height: 5, borderRadius: '50%',
+                                            background: idx === 0 ? 'var(--sepia)' : 'rgba(139,105,20,0.25)',
+                                            transition: 'background 0.3s',
+                                        }} />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        <style>{`.chronicle-scroll::-webkit-scrollbar { display: none; }`}</style>
                     </div>
-                </div>
-            )}
+                )
+            })()}
 
             {/* Autopsy */}
             {log.isAutopsied && log.autopsy && (

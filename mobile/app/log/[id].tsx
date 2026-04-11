@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, KeyboardAvoidingView, Platform, Image, Share, ImageBackground, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, KeyboardAvoidingView, Platform, Image, Share, ImageBackground, Alert, Dimensions } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ import { Heart, MessageSquare, Edit3, MessageCircle, ChevronLeft, ChevronDown, S
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 const AnimatedView = Animated.createAnimatedComponent(View);
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 function timeAgo(dateStr: string | Date | undefined): string {
   if (!dateStr) return '';
@@ -327,7 +328,7 @@ export default function LogDetailScreen() {
             ) : null}
           </View>
 
-          {/* ═══ VIEWING HISTORY — Past reviews from rewatches ═══ */}
+          {/* ═══ VIEWING CHRONICLE — Horizontal swipeable carousel ═══ */}
           {(() => {
             const rawHist = log.viewing_history;
             const history: any[] = Array.isArray(rawHist)
@@ -336,50 +337,112 @@ export default function LogDetailScreen() {
                 ? (() => { try { return JSON.parse(rawHist); } catch { return []; } })()
                 : []);
             if (!history.length) return null;
+
+            const allViewings = [
+              // Current review as first page
+              ...(log.review ? [{
+                label: '◆ LATEST VIEWING',
+                date: log.watched_date,
+                rating: log.rating,
+                review: log.review,
+                watchedWith: log.watched_with,
+                isCurrent: true,
+              }] : []),
+              // Past reviews
+              ...history.map((entry: any, idx: number) => ({
+                label: idx === history.length - 1 ? '◆ FIRST WATCH' : `VIEWING ${history.length - idx}`,
+                date: entry.date,
+                rating: entry.rating,
+                review: entry.review,
+                watchedWith: entry.watchedWith,
+                isCurrent: false,
+              })),
+            ];
+
+            const [activeIdx, setActiveIdx] = useState(0);
+            const cardWidth = SCREEN_WIDTH - 32;
+
             return (
-              <View style={{ marginHorizontal: 16, marginTop: 8, marginBottom: 16, backgroundColor: 'rgba(139,105,20,0.05)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.18)', borderRadius: 6, padding: 14 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <View style={{ marginHorizontal: 16, marginTop: 8, marginBottom: 16, backgroundColor: 'rgba(139,105,20,0.05)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.18)', borderRadius: 6, overflow: 'hidden' }}>
+                {/* Header */}
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)' }}>
                   <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia }} />
                   <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia }}>
-                    VIEWING CHRONICLE — {history.length + 1} viewings
+                    VIEWING CHRONICLE — {allViewings.length} viewings
                   </Text>
                 </View>
-                {history.map((entry: any, idx: number) => (
-                  <View key={idx} style={{
-                    paddingLeft: 14, borderLeftWidth: 2, borderLeftColor: 'rgba(139,105,20,0.2)',
-                    marginBottom: idx < history.length - 1 ? 14 : 0, paddingBottom: idx < history.length - 1 ? 14 : 0,
-                    borderBottomWidth: idx < history.length - 1 ? 1 : 0, borderBottomColor: 'rgba(139,105,20,0.08)',
-                  }}>
-                    {/* Timeline dot */}
-                    <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.soot, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', position: 'absolute', left: -5, top: 2 }} />
-                    {/* Date + rating */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog }}>
-                        {idx === history.length - 1 ? '◆ FIRST WATCH' : `VIEWING ${history.length - idx}`}
-                      </Text>
-                      {entry.date && (
-                        <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>
-                          · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+
+                {/* Horizontal scroll */}
+                <ScrollView
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={(e) => {
+                    const page = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
+                    setActiveIdx(page);
+                  }}
+                  style={{ flexGrow: 0 }}
+                >
+                  {allViewings.map((entry, idx) => (
+                    <View key={idx} style={{ width: cardWidth, padding: 14 }}>
+                      {/* Label + date */}
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                        <View style={{
+                          backgroundColor: entry.isCurrent ? 'rgba(139,105,20,0.12)' : 'transparent',
+                          paddingHorizontal: entry.isCurrent ? 6 : 0,
+                          paddingVertical: entry.isCurrent ? 2 : 0,
+                          borderRadius: 2,
+                        }}>
+                          <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: entry.isCurrent ? colors.sepia : colors.fog }}>
+                            {entry.label}
+                          </Text>
+                        </View>
+                        {entry.date && (
+                          <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>
+                            · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                          </Text>
+                        )}
+                      </View>
+                      {/* Rating */}
+                      {entry.rating > 0 && (
+                        <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 13, color: colors.flicker || colors.sepia, marginBottom: 6 }}>
+                          {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
                         </Text>
                       )}
+                      {/* Review */}
+                      {entry.review ? (
+                        <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+                          <Text style={{
+                            fontFamily: fonts.body, fontSize: entry.isCurrent ? 14 : 13,
+                            color: colors.bone, lineHeight: entry.isCurrent ? 22 : 20,
+                            opacity: entry.isCurrent ? 0.9 : 0.75,
+                            fontStyle: entry.isCurrent ? 'normal' : 'italic',
+                          }}>
+                            {entry.isCurrent ? '' : '"'}{(entry.review || '').replace(/<[^>]+>/g, '').trim()}{entry.isCurrent ? '' : '"'}
+                          </Text>
+                        </ScrollView>
+                      ) : null}
+                      {/* Watched with */}
+                      {entry.watchedWith ? (
+                        <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 6 }}>
+                          ♡ {entry.watchedWith}
+                        </Text>
+                      ) : null}
                     </View>
-                    {entry.rating > 0 && (
-                      <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 13, color: colors.flicker || colors.sepia, marginBottom: 4 }}>
-                        {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
-                      </Text>
-                    )}
-                    {entry.review ? (
-                      <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.75, fontStyle: 'italic' }}>
-                        "{(entry.review || '').replace(/<[^>]+>/g, '').trim()}"
-                      </Text>
-                    ) : null}
-                    {entry.watchedWith ? (
-                      <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 4 }}>
-                        ♡ {entry.watchedWith}
-                      </Text>
-                    ) : null}
+                  ))}
+                </ScrollView>
+
+                {/* Dot indicators */}
+                {allViewings.length > 1 && (
+                  <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 10, paddingTop: 4 }}>
+                    {allViewings.map((_, idx) => (
+                      <View key={idx} style={{
+                        width: 5, height: 5, borderRadius: 2.5,
+                        backgroundColor: idx === activeIdx ? colors.sepia : 'rgba(139,105,20,0.25)',
+                      }} />
+                    ))}
                   </View>
-                ))}
+                )}
               </View>
             );
           })()}
