@@ -360,7 +360,7 @@ export default function LogDetailScreen() {
               })),
             ];
 
-            const cardWidth = SCREEN_WIDTH - 32;
+            const cardWidth = SCREEN_WIDTH - 34; // 32 margin + 2 border
 
             return (
               <View style={{ marginHorizontal: 16, marginTop: 8, marginBottom: 16, backgroundColor: 'rgba(139,105,20,0.05)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.18)', borderRadius: 6, overflow: 'hidden' }}>
