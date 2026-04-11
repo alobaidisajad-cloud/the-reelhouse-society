@@ -28,7 +28,7 @@ export default function LogDetailPage() {
                 .from('logs')
                 .select(`
                     id, rating, review, pull_quote, drop_cap, editorial_header, is_spoiler, is_autopsied, autopsy, created_at,
-                    user_id, film_id, film_title, poster_path, year, status,
+                    user_id, film_id, film_title, poster_path, year, status, viewing_history, view_count, watched_date, watched_with,
                     profiles!logs_user_id_fkey ( username, role, preferences )
                 `)
                 .eq('id', logId)
@@ -66,6 +66,15 @@ export default function LogDetailPage() {
                 endorsementCount: count || 0,
                 isAutopsied: data.is_autopsied,
                 autopsy: data.autopsy,
+                viewingHistory: (() => {
+                    const raw = data.viewing_history;
+                    if (Array.isArray(raw)) return raw;
+                    if (typeof raw === 'string') { try { return JSON.parse(raw); } catch { return []; } }
+                    return [];
+                })(),
+                viewCount: data.view_count || 1,
+                watchedDate: data.watched_date,
+                watchedWith: data.watched_with,
             }
 
             setLog(formattedLog)

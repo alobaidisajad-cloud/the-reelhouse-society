@@ -215,6 +215,57 @@ export default function FocusView({
                 </div>
             )}
 
+            {/* ── VIEWING CHRONICLE — Past reviews from rewatches ── */}
+            {log.viewingHistory && log.viewingHistory.length > 0 && (
+                <div style={{ padding: '0 1.5rem', marginTop: '1.5rem' }}>
+                    <div style={{ background: 'linear-gradient(135deg, rgba(139,105,20,0.05), rgba(10,7,3,0.4))', border: '1px solid rgba(139,105,20,0.18)', borderRadius: 6, padding: '1rem 1.25rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.75rem' }}>
+                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--sepia)', display: 'inline-block' }} />
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--sepia)' }}>
+                                VIEWING CHRONICLE — {log.viewingHistory.length + 1} viewings
+                            </span>
+                        </div>
+                        {log.viewingHistory.map((entry: any, idx: number) => (
+                            <div key={idx} style={{
+                                paddingLeft: '1rem', borderLeft: '2px solid rgba(139,105,20,0.2)',
+                                marginBottom: idx < log.viewingHistory.length - 1 ? '0.75rem' : 0,
+                                paddingBottom: idx < log.viewingHistory.length - 1 ? '0.75rem' : 0,
+                                borderBottom: idx < log.viewingHistory.length - 1 ? '1px solid rgba(139,105,20,0.08)' : 'none',
+                                position: 'relative',
+                            }}>
+                                {/* Timeline dot */}
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--soot)', border: '1.5px solid rgba(139,105,20,0.4)', position: 'absolute', left: -5, top: 3 }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.3rem' }}>
+                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)' }}>
+                                        {idx === log.viewingHistory.length - 1 ? '◆ FIRST WATCH' : `VIEWING ${log.viewingHistory.length - idx}`}
+                                    </span>
+                                    {entry.date && (
+                                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.08em', color: 'var(--fog)' }}>
+                                            · {new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                        </span>
+                                    )}
+                                </div>
+                                {entry.rating > 0 && (
+                                    <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--flicker)', marginBottom: '0.2rem' }}>
+                                        {'★'.repeat(Math.floor(entry.rating))}{entry.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(entry.rating))}
+                                    </div>
+                                )}
+                                {entry.review && (
+                                    <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--bone)', lineHeight: 1.6, opacity: 0.7, fontStyle: 'italic', margin: 0 }}>
+                                        "{entry.review.replace(/<[^>]+>/g, '').trim()}"
+                                    </p>
+                                )}
+                                {entry.watchedWith && (
+                                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.08em', color: 'var(--fog)', marginTop: '0.25rem', display: 'block' }}>
+                                        ♡ {entry.watchedWith}
+                                    </span>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Autopsy */}
             {log.isAutopsied && log.autopsy && (
                 <div style={{ padding: '0 1.25rem' }}>
