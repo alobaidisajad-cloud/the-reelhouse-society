@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, Eye, History, Lock, Archive, Check, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
+import { X, Eye, History, Lock, Archive, Check, Trash2, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-react'
 import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { tmdb } from '../../tmdb'
 import { ReelRating } from '../UI'
@@ -34,7 +34,15 @@ export default function LogForm({ film }: { film: any }) {
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
     const user = useAuthStore(state => state.user)
 
-    const [status, setStatus] = useState<'watched' | 'rewatched' | 'abandoned'>('watched')
+    // Detect rewatch mode: film exists in log index and we're NOT editing an existing log
+    const _loggedIndex = useFilmStore(state => state._loggedIndex)
+    const previousLog = useMemo(() => {
+        if (logModalEditLogId || !film?.id) return null
+        return _loggedIndex[film.id] || null
+    }, [film?.id, logModalEditLogId, _loggedIndex])
+    const isRewatchMode = !!previousLog
+
+    const [status, setStatus] = useState<'watched' | 'rewatched' | 'abandoned'>(isRewatchMode ? 'rewatched' : 'watched')
     const [rating, setRating] = useState(0)
     const [review, setReview] = useState('')
     const [isSpoiler, setIsSpoiler] = useState(false)
@@ -261,6 +269,50 @@ export default function LogForm({ film }: { film: any }) {
                     </div>
                 </div>
             </div>
+
+            {/* ── YOUR PREVIOUS TAKE — Rewatch context panel ── */}
+            {isRewatchMode && previousLog && (
+                <div style={{
+                    background: 'linear-gradient(135deg, rgba(139,105,20,0.08), rgba(10,7,3,0.6))',
+                    border: '1px solid rgba(139,105,20,0.25)',
+                    borderRadius: 8, padding: '1rem 1.1rem',
+                    marginBottom: '-0.5rem',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.65rem' }}>
+                        <RotateCcw size={11} color="var(--sepia)" />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.18em', color: 'var(--sepia)' }}>
+                            YOUR PREVIOUS TAKE
+                        </span>
+                        {(previousLog.viewCount || 1) > 1 && (
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.1em', color: 'var(--fog)', background: 'rgba(255,255,255,0.04)', padding: '0.1rem 0.4rem', borderRadius: 3 }}>
+                                VIEWING {previousLog.viewCount || 1}
+                            </span>
+                        )}
+                    </div>
+                    {previousLog.rating > 0 && (
+                        <div style={{ fontFamily: 'var(--font-sub)', fontSize: '0.9rem', color: 'var(--flicker)', marginBottom: '0.4rem' }}>
+                            {'★'.repeat(Math.floor(previousLog.rating))}{previousLog.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(previousLog.rating))}
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', color: 'var(--fog)', marginLeft: '0.5rem' }}>
+                                {previousLog.rating % 1 === 0 ? previousLog.rating : previousLog.rating.toFixed(1)}/5
+                            </span>
+                        </div>
+                    )}
+                    {previousLog.review && (
+                        <p style={{
+                            fontFamily: 'var(--font-body)', fontSize: '0.8rem', color: 'var(--bone)',
+                            lineHeight: 1.6, margin: 0, opacity: 0.8, fontStyle: 'italic',
+                            maxHeight: 120, overflowY: 'auto',
+                        }}>
+                            "{previousLog.review.replace(/<[^>]+>/g, '').trim()}"
+                        </p>
+                    )}
+                    {previousLog.watchedDate && (
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.5rem' }}>
+                            LOGGED {new Date(previousLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Status */}
             <div>

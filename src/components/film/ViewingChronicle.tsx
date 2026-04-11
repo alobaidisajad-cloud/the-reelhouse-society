@@ -146,18 +146,20 @@ export default function ViewingChronicle({ log }: ViewingChronicleProps) {
                                     </div>
                                 )}
 
-                                {/* Review excerpt */}
-                                {viewing.review && (
-                                    <p style={{
-                                        fontFamily: 'var(--font-body)', fontSize: '0.82rem',
-                                        color: 'var(--bone)', lineHeight: 1.55, margin: 0,
-                                        opacity: isLatest ? 0.9 : 0.65,
-                                        display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any,
-                                        overflow: 'hidden',
-                                    }}>
-                                        "{viewing.review}"
-                                    </p>
-                                )}
+                                {/* Review — full text, scrollable if long */}
+                                {viewing.review && (() => {
+                                    const stripped = viewing.review.replace(/<[^>]+>/g, '').trim()
+                                    return (
+                                        <p style={{
+                                            fontFamily: 'var(--font-body)', fontSize: '0.82rem',
+                                            color: 'var(--bone)', lineHeight: 1.6, margin: 0,
+                                            opacity: isLatest ? 0.9 : 0.7,
+                                            whiteSpace: 'pre-wrap',
+                                        }}>
+                                            "{stripped}"
+                                        </p>
+                                    )
+                                })()}
 
                                 {/* Watched with */}
                                 {viewing.watchedWith && (
