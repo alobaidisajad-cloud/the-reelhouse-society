@@ -85,6 +85,20 @@ export default function AnnotationPanel({ logId, open, isExpandedView = false }:
             setAnnotateText('')
             if (textareaRef.current) textareaRef.current.style.height = 'auto'
             reelToast.success('Critique filed.')
+
+            // ── Notify the log author about the critique (background, non-blocking) ──
+            supabase.from('logs').select('user_id, film_title').eq('id', logId).single()
+                .then(({ data: logInfo }) => {
+                    if (logInfo && String(logInfo.user_id) !== String(currentUser.id)) {
+                        supabase.from('notifications').insert({
+                            user_id: logInfo.user_id,
+                            type: 'comment',
+                            from_username: currentUser.username,
+                            message: `@${currentUser.username} critiqued your log of ${logInfo.film_title || 'a film'}`,
+                            read: false,
+                        })
+                    }
+                })
         } else {
             reelToast.error('Could not save critique.')
         }

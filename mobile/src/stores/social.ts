@@ -35,7 +35,7 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         set({ loading: true });
         const { data, error } = await supabase
             .from('notifications')
-            .select('*')
+            .select('id, user_id, type, from_username, message, read, created_at')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(50);

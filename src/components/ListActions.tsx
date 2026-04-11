@@ -70,6 +70,20 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
             setCommentText('')
             setLocalCommentCount(c => c + 1)
             queryClient.invalidateQueries({ queryKey: ['list-comments', listId] })
+
+            // ── Notify the list owner about the critic (background, non-blocking) ──
+            supabase.from('lists').select('user_id, title').eq('id', listId).single()
+                .then(({ data: listInfo }) => {
+                    if (listInfo && String(listInfo.user_id) !== String(user!.id)) {
+                        supabase.from('notifications').insert({
+                            user_id: listInfo.user_id,
+                            type: 'comment',
+                            from_username: user!.username,
+                            message: `@${user!.username} critiqued your stack "${listInfo.title || 'Untitled'}"`,
+                            read: false,
+                        })
+                    }
+                })
         } catch { reelToast.error('Failed to comment') }
         setSubmittingComment(false)
     }

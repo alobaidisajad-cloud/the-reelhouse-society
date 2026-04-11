@@ -11,6 +11,7 @@ const NOTIF_ICONS: Record<string, string> = {
     follow: '◆',
     reaction: '✧',
     endorse: '✦',
+    comment: '¶',
     system: '§',
     annotate: '¶',
     achievement: '◈',
@@ -68,7 +69,7 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
         const fetchNotifs = async () => {
             const { data, error } = await supabase
                 .from('notifications')
-                .select('*')
+                .select('id, user_id, type, from_username, message, read, created_at')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .limit(50)
@@ -174,7 +175,7 @@ export default function NotificationBell({ isOpen, onOpenChange }: NotificationB
         // Navigate based on type
         if (n.type === 'follow' && n.from) {
             navigate(`/user/${n.from}`)
-        } else if (n.type === 'reaction' || n.type === 'endorse') {
+        } else if (n.type === 'reaction' || n.type === 'endorse' || n.type === 'comment') {
             navigate('/feed')
         }
         setOpen(false)
