@@ -17,17 +17,32 @@ function formatDate(dateStr?: string): string {
     } catch { return '' }
 }
 
-interface ViewingChronicleProps {
-    logs: FilmLog[]
+interface ViewingEntry {
+    date?: string
+    rating: number
+    review?: string
+    watchedWith?: string | null
 }
 
-export default function ViewingChronicle({ logs }: ViewingChronicleProps) {
+interface ViewingChronicleProps {
+    log: FilmLog
+}
+
+export default function ViewingChronicle({ log }: ViewingChronicleProps) {
     const [expanded, setExpanded] = useState(false)
     
-    // Don't render if there's only one or zero logs
-    if (logs.length < 2) return null
+    const history = log.viewingHistory || []
+    if (history.length === 0) return null
 
-    const viewingCount = logs.length
+    // Build timeline: current viewing (latest) + all past viewings from history
+    const currentViewing: ViewingEntry = {
+        date: log.watchedDate || log.createdAt,
+        rating: log.rating,
+        review: log.review,
+        watchedWith: log.watchedWith,
+    }
+    const allViewings = [currentViewing, ...history] // newest-first
+    const viewingCount = (log.viewCount || 1)
     
     return (
         <section>
@@ -56,12 +71,12 @@ export default function ViewingChronicle({ logs }: ViewingChronicleProps) {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {/* Rating evolution sparkline */}
                     <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.65rem', color: 'var(--fog)', opacity: 0.7 }}>
-                        {logs.filter(l => l.rating > 0).map((l, i, arr) => (
-                            <span key={l.id}>
-                                {formatRating(l.rating)}
+                        {[...allViewings].reverse().filter(v => v.rating > 0).map((v, i, arr) => (
+                            <span key={i}>
+                                {formatRating(v.rating)}
                                 {i < arr.length - 1 ? ' → ' : ''}
                             </span>
-                        )).reverse()}
+                        ))}
                     </span>
                     {expanded ? <ChevronUp size={14} color="var(--fog)" /> : <ChevronDown size={14} color="var(--fog)" />}
                 </div>
@@ -74,14 +89,15 @@ export default function ViewingChronicle({ logs }: ViewingChronicleProps) {
                     borderLeft: '2px solid rgba(139,105,20,0.2)',
                     display: 'flex', flexDirection: 'column', gap: '0',
                 }}>
-                    {logs.map((log, index) => {
-                        const isFirst = index === logs.length - 1 // Oldest = first watch
+                    {allViewings.map((viewing, index) => {
+                        const isFirst = index === allViewings.length - 1 // Oldest = first watch
                         const isLatest = index === 0
+                        const viewNum = viewingCount - index
 
                         return (
-                            <div key={log.id} style={{
+                            <div key={index} style={{
                                 position: 'relative', padding: '1rem 0 1rem 1.25rem',
-                                borderBottom: index < logs.length - 1 ? '1px solid rgba(139,105,20,0.08)' : 'none',
+                                borderBottom: index < allViewings.length - 1 ? '1px solid rgba(139,105,20,0.08)' : 'none',
                             }}>
                                 {/* Timeline dot */}
                                 <div style={{
@@ -104,11 +120,11 @@ export default function ViewingChronicle({ logs }: ViewingChronicleProps) {
                                         {isFirst ? (
                                             <><Eye size={9} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 3 }} />FIRST WATCH</>
                                         ) : (
-                                            <><RotateCcw size={8} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 3 }} />VIEWING {viewingCount - index}</>
+                                            <><RotateCcw size={8} style={{ display: 'inline-block', verticalAlign: 'middle', marginRight: 3 }} />VIEWING {viewNum}</>
                                         )}
                                     </span>
                                     <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.48rem', letterSpacing: '0.08em', color: 'var(--fog)' }}>
-                                        {formatDate(log.watchedDate)}
+                                        {formatDate(viewing.date)}
                                     </span>
                                     {isLatest && (
                                         <span style={{
@@ -120,18 +136,18 @@ export default function ViewingChronicle({ logs }: ViewingChronicleProps) {
                                 </div>
 
                                 {/* Rating */}
-                                {log.rating > 0 && (
+                                {viewing.rating > 0 && (
                                     <div style={{
                                         fontFamily: 'var(--font-sub)', fontSize: '0.85rem',
                                         color: isLatest ? 'var(--flicker)' : 'var(--bone)',
                                         marginBottom: '0.25rem',
                                     }}>
-                                        {formatRating(log.rating)}
+                                        {formatRating(viewing.rating)}
                                     </div>
                                 )}
 
                                 {/* Review excerpt */}
-                                {log.review && (
+                                {viewing.review && (
                                     <p style={{
                                         fontFamily: 'var(--font-body)', fontSize: '0.82rem',
                                         color: 'var(--bone)', lineHeight: 1.55, margin: 0,
@@ -139,14 +155,14 @@ export default function ViewingChronicle({ logs }: ViewingChronicleProps) {
                                         display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical' as any,
                                         overflow: 'hidden',
                                     }}>
-                                        "{log.review}"
+                                        "{viewing.review}"
                                     </p>
                                 )}
 
                                 {/* Watched with */}
-                                {log.watchedWith && (
+                                {viewing.watchedWith && (
                                     <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.1em', color: 'var(--fog)', marginTop: '0.25rem' }}>
-                                        ♡ {log.watchedWith}
+                                        ♡ {viewing.watchedWith}
                                     </div>
                                 )}
                             </div>

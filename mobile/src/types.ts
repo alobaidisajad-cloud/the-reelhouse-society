@@ -67,6 +67,14 @@ export interface FilmLog {
     editorialHeader?: string | null
     dropCap?: boolean
     videoUrl?: string | null
+    // Viewing Chronicle — rewatch history stored in same log
+    viewCount?: number
+    viewingHistory?: Array<{
+        date?: string
+        rating: number
+        review?: string
+        watchedWith?: string | null
+    }>
 }
 
 // ── Watchlist ──

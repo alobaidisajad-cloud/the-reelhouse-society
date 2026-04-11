@@ -199,8 +199,7 @@ export default function FilmDetailScreen() {
 
   const filmId = Number(id);
   const isWatchlisted = !!_watchlistIndex[filmId];
-  const allLogsForFilm = _loggedIndex[filmId] || [];
-  const existingLog = allLogsForFilm[0]; // Latest log (newest-first)
+  const existingLog = _loggedIndex[filmId] || null;
   const isArchivist = user && ['archivist', 'auteur'].includes(user.role);
   const localReview = logs.find((l: any) => (l.filmId === filmId || String(l.filmId) === String(filmId)) && l.review);
   const currentUsername = user?.username || null;
@@ -497,7 +496,7 @@ export default function FilmDetailScreen() {
               <View style={s.ctaIconRow}>
                 <RotateCcw size={12} color={colors.sepia} strokeWidth={2} />
                 <Text style={s.ctaRewatchText}>
-                  LOG REWATCH{allLogsForFilm.length > 1 ? ` (${allLogsForFilm.length + 1})` : ''}
+                  LOG REWATCH{(existingLog?.viewCount || 1) > 1 ? ` (${(existingLog?.viewCount || 1) + 1})` : ''}
                 </Text>
               </View>
             </TouchableOpacity>

@@ -49,8 +49,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
     const trailer = film.videos?.results?.find((v: any) => v.type === 'Trailer' && v.site === 'YouTube')
         || film.videos?.results?.find((v: any) => v.site === 'YouTube')
-    const allLogsForFilm = _loggedIndex[film.id] || []
-    const existingLog = allLogsForFilm[0] // Latest log (newest-first)
+    const existingLog = _loggedIndex[film.id] || null
     const statusLabel: any = { watched: <><Check size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> WATCHED</>, rewatched: <><RotateCcw size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> REWATCHED</>, abandoned: <><X size={12} style={{ display: "inline-block", verticalAlign: "middle" }} /> ABANDONED</> }
 
     // --- Smart Review Count Fallback ---
@@ -204,7 +203,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         </button>
                         {existingLog && (
                             <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.68rem', padding: '0.75rem', borderColor: 'rgba(139,105,20,0.5)', color: 'var(--sepia)' }} onClick={() => openLogModal(film)}>
-                                <RotateCcw size={13} /> Log Rewatch{allLogsForFilm.length > 1 ? ` (${allLogsForFilm.length + 1})` : ''}
+                                <RotateCcw size={13} /> Log Rewatch{(existingLog?.viewCount || 1) > 1 ? ` (${(existingLog?.viewCount || 1) + 1})` : ''}
                             </button>
                         )}
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.6rem' }}>
@@ -356,7 +355,7 @@ function FilmHero({ film, onPlayTrailer }: any) {
                         </button>
                         {existingLog && (
                             <button className="btn btn-ghost" style={{ fontSize: '0.75rem', borderColor: 'rgba(139,105,20,0.5)', color: 'var(--sepia)' }} onClick={() => openLogModal(film)}>
-                                <RotateCcw size={14} /> Log Rewatch{allLogsForFilm.length > 1 ? ` (${allLogsForFilm.length + 1})` : ''}
+                                <RotateCcw size={14} /> Log Rewatch{(existingLog?.viewCount || 1) > 1 ? ` (${(existingLog?.viewCount || 1) + 1})` : ''}
                             </button>
                         )}
                         {existingLog && (
@@ -593,10 +592,11 @@ function FilmDetails({ film, onPlayVideo }: any) {
     )
 }
 
-// ── Viewing Chronicle Wrapper — reads logs for a specific film from the store ──
+// ── Viewing Chronicle Wrapper — reads the single log for a film and shows its viewing history ──
 function ViewingChronicleSection({ filmId }: { filmId: number }) {
-    const allLogs = useFilmStore(s => s.getAllLogsForFilm(filmId))
-    return <ViewingChronicle logs={allLogs} />
+    const log = useFilmStore(s => s._loggedIndex[filmId])
+    if (!log || !log.viewingHistory?.length) return null
+    return <ViewingChronicle log={log} />
 }
 
 // ── Main Page Export ──
