@@ -5,8 +5,8 @@ import { supabase } from '../supabaseClient'
 import { useAuthStore, useUIStore, useFilmStore } from '../store'
 import reelToast from '../utils/reelToast'
 
-export default function ListActions({ listId, certifyCount: initialCertifyCount, isCertified: initialIsCertified, commentCount: initialCommentCount }: {
-    listId: string; certifyCount: number; isCertified: boolean; commentCount: number
+export default function ListActions({ listId, certifyCount: initialCertifyCount, isCertified: initialIsCertified, commentCount: initialCommentCount, hideBorder }: {
+    listId: string; certifyCount: number; isCertified: boolean; commentCount: number; hideBorder?: boolean
 }) {
     const { isAuthenticated, user } = useAuthStore()
     const { openSignupModal } = useUIStore()
@@ -97,7 +97,7 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
 
     return (
         <div style={{ marginTop: 'auto' }} onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: '1px solid rgba(139,105,20,0.1)', paddingTop: '0.6rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: hideBorder ? 'none' : '1px solid rgba(139,105,20,0.1)', paddingTop: hideBorder ? 0 : '0.6rem', marginTop: hideBorder ? 0 : '0.5rem' }}>
                 {/* Certify button */}
                 <button
                     onClick={handleCertify}

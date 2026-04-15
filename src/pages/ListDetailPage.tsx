@@ -214,12 +214,13 @@ export default function ListDetailPage() {
                         </p>
                     )}
 
-                    <div style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <div style={{ marginTop: '2rem', display: 'flex', alignItems: 'center', gap: '1.5rem', borderTop: '1px solid rgba(139,105,20,0.2)', paddingTop: '1rem' }}>
                         <ListActions 
                             listId={id as string} 
                             certifyCount={certifyCount} 
                             isCertified={isCertified} 
                             commentCount={commentCount} 
+                            hideBorder={true}
                         />
                         {!isOwner && <ReportButton contentType="list" contentId={id as string} />}
                         {isArchivist && (
