@@ -27,44 +27,71 @@ export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: ()
             const html2canvas = (await import('html2canvas')).default
             const canvas = await html2canvas(cardRef.current, {
                 backgroundColor: '#0A0703',
-                scale: 3, // High-res for social media
+                scale: 3,
                 useCORS: true,
+                allowTaint: true,
                 logging: false,
+                imageTimeout: 15000,
+                onclone: (clonedDoc: Document) => {
+                    // Force all images in clone to crossOrigin anonymous for CORS
+                    clonedDoc.querySelectorAll('img').forEach(img => {
+                        img.crossOrigin = 'anonymous'
+                    })
+                },
             })
             const link = document.createElement('a')
             link.download = `reelhouse-${log.title?.replace(/\s+/g, '-').toLowerCase() || 'log'}.png`
             link.href = canvas.toDataURL('image/png')
+            document.body.appendChild(link)
             link.click()
-            reelToast.success('Card downloaded.')
-        } catch {
-            reelToast.error('Download failed. Try a screenshot instead.')
+            document.body.removeChild(link)
+            reelToast.success('Card saved to your device ✦')
+        } catch (err) {
+            console.error('Download failed:', err)
+            reelToast.error('Download failed — try a screenshot instead.')
         } finally {
             setDownloading(false)
         }
     }
 
-    // Native share (Web Share API)
+    // Native share (Web Share API) with download fallback
     const handleShare = async () => {
-        if (!cardRef.current) return
-        try {
-            const html2canvas = (await import('html2canvas')).default
-            const canvas = await html2canvas(cardRef.current, {
-                backgroundColor: '#0A0703',
-                scale: 3,
-                useCORS: true,
-                logging: false,
-            })
-            canvas.toBlob(async (blob) => {
-                if (!blob) return
-                const file = new File([blob], 'reelhouse-log.png', { type: 'image/png' })
-                if (navigator.share && navigator.canShare?.({ files: [file] })) {
-                    await navigator.share({ files: [file], title: `${log.title} — ReelHouse Log` })
-                } else {
-                    // Fallback: download
-                    handleDownload()
+        // Try native share first (mobile browsers)
+        const shareText = `"${log.title}" — logged on ReelHouse by @${user?.username || 'anonymous'}`
+        const shareUrl = `${window.location.origin}/log/${log.id || ''}`
+        
+        if (navigator.share) {
+            try {
+                // Try sharing as image file first
+                if (cardRef.current) {
+                    const html2canvas = (await import('html2canvas')).default
+                    const canvas = await html2canvas(cardRef.current, {
+                        backgroundColor: '#0A0703',
+                        scale: 3,
+                        useCORS: true,
+                        allowTaint: true,
+                        logging: false,
+                    })
+                    const blob = await new Promise<Blob | null>(resolve => canvas.toBlob(resolve, 'image/png'))
+                    if (blob) {
+                        const file = new File([blob], 'reelhouse-log.png', { type: 'image/png' })
+                        if (navigator.canShare?.({ files: [file] })) {
+                            await navigator.share({ files: [file], title: shareText })
+                            return
+                        }
+                    }
                 }
-            })
-        } catch {
+                // Fallback: share text/URL only
+                await navigator.share({ title: log.title, text: shareText, url: shareUrl })
+            } catch (err: any) {
+                if (err?.name !== 'AbortError') handleDownload()
+            }
+        } else {
+            // Desktop fallback: copy link + download
+            try {
+                await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`)
+                reelToast.success('Link copied — downloading card...')
+            } catch {}
             handleDownload()
         }
     }
@@ -130,15 +157,20 @@ export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: ()
                         boxShadow: '0 30px 80px rgba(0,0,0,0.9), 0 0 1px rgba(139,105,20,0.3)',
                     }}
                 >
-                    {/* ── Blurred atmospheric backdrop ── */}
+                    {/* ── Blurred atmospheric backdrop (img element for html2canvas compat) ── */}
                     {(log.altPoster || log.poster) && (
-                        <div style={{
-                            position: 'absolute', inset: -60,
-                            backgroundImage: `url(${tmdb.poster(log.altPoster || log.poster, 'w342')})`,
-                            backgroundSize: 'cover', backgroundPosition: 'center',
-                            filter: 'blur(40px) sepia(0.7) brightness(0.15) saturate(1.2)',
-                            zIndex: 0,
-                        }} />
+                        <img
+                            src={tmdb.poster(log.altPoster || log.poster, 'w342')}
+                            alt=""
+                            crossOrigin="anonymous"
+                            style={{
+                                position: 'absolute', inset: -60,
+                                width: 'calc(100% + 120px)', height: 'calc(100% + 120px)',
+                                objectFit: 'cover', objectPosition: 'center',
+                                filter: 'blur(40px) sepia(0.7) brightness(0.15) saturate(1.2)',
+                                zIndex: 0,
+                            }}
+                        />
                     )}
 
                     {/* Film grain overlay */}
@@ -185,6 +217,7 @@ export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: ()
                                         <img
                                             src={tmdb.poster(log.altPoster || log.poster, 'w342')}
                                             alt={log.title}
+                                            crossOrigin="anonymous"
                                             style={{
                                                 width: 72, height: 108, objectFit: 'cover',
                                                 borderRadius: '3px', flexShrink: 0,
@@ -266,6 +299,7 @@ export function ShareCardOverlay({ log, onClose, user }: { log: any; onClose: ()
                                     <img
                                         src={tmdb.poster(log.altPoster || log.poster, 'w342')}
                                         alt={log.title}
+                                        crossOrigin="anonymous"
                                         style={{
                                             width: '65%', aspectRatio: '2/3', objectFit: 'cover',
                                             borderRadius: '4px',
