@@ -15,8 +15,10 @@
 import React, { useState, useRef, useCallback } from 'react';
 import {
     View, Text, StyleSheet, TextInput, TouchableOpacity,
-    KeyboardAvoidingView, Platform, Alert, Image, FlatList, ScrollView,
+    KeyboardAvoidingView, Platform
 } from 'react-native';
+import DraggableFlatList, { ScaleDecorator, RenderItemParams } from 'react-native-draggable-flatlist';
+import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -25,7 +27,23 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
-import { Search, X, Globe, Lock, Plus } from 'lucide-react-native';
+import reelToast from '@/src/utils/reelToast';
+import { Search, X, Globe, Lock, Plus, GripVertical } from 'lucide-react-native';
+
+interface ListFilm {
+    id: number;
+    title: string;
+    poster_path?: string | null;
+}
+
+interface SearchResult {
+    id: number;
+    title?: string;
+    name?: string;
+    poster_path?: string | null;
+    release_date?: string;
+    media_type?: string;
+}
 
 export default function ListModal() {
     const router = useRouter();
@@ -39,12 +57,12 @@ export default function ListModal() {
     const [title, setTitle] = useState(editList?.title || '');
     const [description, setDescription] = useState(editList?.description || '');
     const [isPrivate, setIsPrivate] = useState(editList?.isPrivate || false);
-    const [films, setFilms] = useState<any[]>(editList?.films || []);
+    const [films, setFilms] = useState<ListFilm[]>(editList?.films as ListFilm[] || []);
     const [saving, setSaving] = useState(false);
 
     // Search state
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<any[]>([]);
+    const [results, setResults] = useState<SearchResult[]>([]);
     const [searching, setSearching] = useState(false);
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -58,9 +76,9 @@ export default function ListModal() {
             try {
                 const res = await tmdb.search(q, 1);
                 const filtered = (res.results || [])
-                    .filter((r: any) => r.media_type !== 'person')
-                    .filter((r: any) => !films.some(f => f.id === r.id))
-                    .slice(0, 6);
+                    .filter((r) => r.media_type !== 'person')
+                    .filter((r) => !films.some(f => f.id === r.id))
+                    .slice(0, 6) as SearchResult[];
                 setResults(filtered);
             } catch { setResults([]); }
             finally { setSearching(false); }
@@ -68,8 +86,8 @@ export default function ListModal() {
     }, [films]);
 
     // ── Add film to list ──
-    const addFilm = (f: any) => {
-        setFilms(prev => [...prev, { id: f.id, title: f.title || f.name, poster_path: f.poster_path }]);
+    const addFilm = (f: SearchResult) => {
+        setFilms(prev => [...prev, { id: f.id, title: f.title ?? f.name, poster_path: f.poster_path }]);
         setQuery('');
         setResults([]);
         Haptics.selectionAsync();
@@ -84,7 +102,7 @@ export default function ListModal() {
     // ── Save handler ──
     const handleSave = async () => {
         if (!title.trim()) {
-            Alert.alert('Required', 'Please provide a title for your list.');
+            reelToast('Every stack requires a title. Name your thesis.');
             return;
         }
         setSaving(true);
@@ -108,150 +126,180 @@ export default function ListModal() {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             fetchLists();
             router.back();
-        } catch (err: any) {
+        } catch (err: unknown) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            Alert.alert('Error', err.message || 'Failed to save list.');
+            const msg = err instanceof Error ? err.message : 'The stack could not be archived.';
+            reelToast.error(msg);
         } finally {
             setSaving(false);
         }
     };
 
+    const renderFilmItem = ({ item, drag, isActive }: RenderItemParams<ListFilm>) => {
+        return (
+            <ScaleDecorator>
+                <TouchableOpacity
+                    activeOpacity={1}
+                    onLongPress={drag}
+                    disabled={isActive}
+                    style={[
+                        s.filmRow,
+                        { marginHorizontal: 20, marginBottom: 6 },
+                        isActive ? { backgroundColor: 'rgba(139,105,20,0.2)', borderColor: colors.sepia, elevation: 5, shadowColor: '#000', shadowOpacity: 0.3, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10 } : {}
+                    ]}
+                >
+                    <GripVertical size={16} color={isActive ? colors.sepia : colors.fog} style={{ opacity: 0.5 }} />
+                    {item.poster_path && <Image source={{ uri: tmdb.poster(item.poster_path, 'w92') }} style={s.filmPoster} />}
+                    <Text style={s.filmTitle} numberOfLines={1}>{item.title}</Text>
+                    <TouchableOpacity onPress={() => removeFilm(item.id)} style={s.removeBtn}>
+                        <X size={14} color={colors.danger} />
+                    </TouchableOpacity>
+                </TouchableOpacity>
+            </ScaleDecorator>
+        );
+    };
+
+    const ListHeader = (
+        <>
+            {/* Drag Handle */}
+            <View style={s.handleWrap}>
+                <View style={s.handle} />
+            </View>
+
+            {/* Header */}
+            <View style={s.header}>
+                <View>
+                    <Text style={s.headerLabel}>NEW STACK</Text>
+                    <Text style={s.headerTitle}>Curate a Stack</Text>
+                </View>
+                <TouchableOpacity onPress={() => router.back()} style={s.closeBtn} activeOpacity={0.7}>
+                    <X size={16} color={colors.fog} />
+                    <Text style={s.closeBtnText}>CLOSE</Text>
+                </TouchableOpacity>
+            </View>
+
+            {/* Title */}
+            <View style={s.sec}>
+                <Text style={s.label}>STACK TITLE</Text>
+                <TextInput
+                    style={s.input}
+                    value={title}
+                    onChangeText={setTitle}
+                    placeholder="E.g. Neon Noir Masterpieces"
+                    placeholderTextColor={colors.fog}
+                    autoFocus
+                    maxLength={100}
+                />
+            </View>
+
+            {/* Film Search & Add */}
+            <View style={[s.sec, { marginBottom: films.length > 0 ? 12 : 0 }]}>
+                <Text style={s.label}>ADD FILMS</Text>
+                <View style={s.searchWrap}>
+                    <Search size={14} color={colors.fog} style={s.searchIcon} />
+                    <TextInput
+                        style={s.searchInput}
+                        placeholder="Search films to add..."
+                        placeholderTextColor={colors.fog}
+                        value={query}
+                        onChangeText={handleSearch}
+                        returnKeyType="search"
+                    />
+                </View>
+
+                {/* Search results dropdown */}
+                {results.length > 0 && (
+                    <Animated.View entering={FadeIn.duration(150)} style={s.dropdown}>
+                        {results.map(r => (
+                            <TouchableOpacity key={r.id} style={s.dropRow} onPress={() => addFilm(r)} activeOpacity={0.7}>
+                                {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={s.dropPoster} cachePolicy="memory-disk" />}
+                                <View style={s.dropFlex}>
+                                    <Text style={s.dropTitle} numberOfLines={1}>{r.title ?? r.name}</Text>
+                                    <Text style={s.dropMeta}>{r.release_date?.slice(0, 4) ?? '—'}</Text>
+                                </View>
+                                <Plus size={16} color={colors.sepia} />
+                            </TouchableOpacity>
+                        ))}
+                    </Animated.View>
+                )}
+            </View>
+        </>
+    );
+
+    const ListFooter = (
+        <>
+            {/* Description */}
+            <View style={s.sec}>
+                <Text style={s.label}>DESCRIPTION (OPTIONAL)</Text>
+                <TextInput
+                    style={[s.input, s.descInput]}
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder="A brief curation note..."
+                    placeholderTextColor={colors.fog}
+                    multiline
+                    textAlignVertical="top"
+                    maxLength={500}
+                />
+            </View>
+
+            {/* Privacy Toggle */}
+            <View style={s.sec}>
+                <Text style={s.label}>VISIBILITY</Text>
+                <View style={s.toggleRow}>
+                    <TouchableOpacity
+                        style={[s.toggleBtn, !isPrivate && s.toggleActive]}
+                        onPress={() => { setIsPrivate(false); Haptics.selectionAsync(); }}
+                        activeOpacity={0.7}
+                    >
+                        <Globe size={14} color={!isPrivate ? colors.ink : colors.fog} />
+                        <Text style={[s.toggleText, !isPrivate && s.toggleTextActive]}>PUBLIC</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[s.toggleBtn, isPrivate && s.toggleActive]}
+                        onPress={() => { setIsPrivate(true); Haptics.selectionAsync(); }}
+                        activeOpacity={0.7}
+                    >
+                        <Lock size={14} color={isPrivate ? colors.ink : colors.fog} />
+                        <Text style={[s.toggleText, isPrivate && s.toggleTextActive]}>PRIVATE</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* Submit */}
+            <View style={s.submitRow}>
+                <TouchableOpacity
+                    style={[s.submitBtn, (saving || !title.trim()) && s.submitDisabled]}
+                    onPress={handleSave}
+                    disabled={saving || !title.trim()}
+                    activeOpacity={0.8}
+                >
+                    <Text style={s.submitText}>
+                        {saving ? 'SAVING...' : (editList ? 'SAVE CHANGES' : 'CREATE LIST')}
+                    </Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => router.back()} activeOpacity={0.7}>
+                    <Text style={s.cancelText}>Cancel</Text>
+                </TouchableOpacity>
+            </View>
+        </>
+    );
+
     return (
         <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.container}>
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 60 }}>
-                {/* Drag Handle */}
-                <View style={s.handleWrap}>
-                    <View style={s.handle} />
-                </View>
-
-                {/* Header */}
-                <View style={s.header}>
-                    <View>
-                        <Text style={s.headerLabel}>NEW COLLECTION</Text>
-                        <Text style={s.headerTitle}>Create a List</Text>
-                    </View>
-                    <TouchableOpacity onPress={() => router.back()} style={s.closeBtn} activeOpacity={0.7}>
-                        <X size={16} color={colors.fog} />
-                        <Text style={s.closeBtnText}>CLOSE</Text>
-                    </TouchableOpacity>
-                </View>
-
-                {/* Title */}
-                <View style={s.sec}>
-                    <Text style={s.label}>LIST TITLE</Text>
-                    <TextInput
-                        style={s.input}
-                        value={title}
-                        onChangeText={setTitle}
-                        placeholder="E.g. Neon Noir Masterpieces"
-                        placeholderTextColor={colors.fog}
-                        autoFocus
-                        maxLength={100}
-                    />
-                </View>
-
-                {/* Film Search & Add */}
-                <View style={s.sec}>
-                    <Text style={s.label}>ADD FILMS</Text>
-                    <View style={s.searchWrap}>
-                        <Search size={14} color={colors.fog} style={{ position: 'absolute', left: 12, top: 13, zIndex: 1 }} />
-                        <TextInput
-                            style={s.searchInput}
-                            placeholder="Search films to add..."
-                            placeholderTextColor={colors.fog}
-                            value={query}
-                            onChangeText={handleSearch}
-                            returnKeyType="search"
-                        />
-                    </View>
-
-                    {/* Search results dropdown */}
-                    {results.length > 0 && (
-                        <Animated.View entering={FadeIn.duration(150)} style={s.dropdown}>
-                            {results.map(r => (
-                                <TouchableOpacity key={r.id} style={s.dropRow} onPress={() => addFilm(r)} activeOpacity={0.7}>
-                                    {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={s.dropPoster} />}
-                                    <View style={{ flex: 1 }}>
-                                        <Text style={s.dropTitle} numberOfLines={1}>{r.title || r.name}</Text>
-                                        <Text style={s.dropMeta}>{r.release_date?.slice(0, 4) || '—'}</Text>
-                                    </View>
-                                    <Plus size={16} color={colors.sepia} />
-                                </TouchableOpacity>
-                            ))}
-                        </Animated.View>
-                    )}
-
-                    {/* Selected films */}
-                    {films.length > 0 && (
-                        <View style={s.filmsList}>
-                            {films.map((f, i) => (
-                                <Animated.View key={f.id} entering={FadeInDown.duration(200).delay(i * 50)} style={s.filmRow}>
-                                    {f.poster_path && <Image source={{ uri: tmdb.poster(f.poster_path, 'w92') }} style={s.filmPoster} />}
-                                    <Text style={s.filmTitle} numberOfLines={1}>{f.title}</Text>
-                                    <TouchableOpacity onPress={() => removeFilm(f.id)} style={s.removeBtn}>
-                                        <X size={14} color={colors.danger} />
-                                    </TouchableOpacity>
-                                </Animated.View>
-                            ))}
-                        </View>
-                    )}
-                </View>
-
-                {/* Description */}
-                <View style={s.sec}>
-                    <Text style={s.label}>DESCRIPTION (OPTIONAL)</Text>
-                    <TextInput
-                        style={[s.input, { minHeight: 80 }]}
-                        value={description}
-                        onChangeText={setDescription}
-                        placeholder="A brief curation note..."
-                        placeholderTextColor={colors.fog}
-                        multiline
-                        textAlignVertical="top"
-                        maxLength={500}
-                    />
-                </View>
-
-                {/* Privacy Toggle */}
-                <View style={s.sec}>
-                    <Text style={s.label}>VISIBILITY</Text>
-                    <View style={s.toggleRow}>
-                        <TouchableOpacity
-                            style={[s.toggleBtn, !isPrivate && s.toggleActive]}
-                            onPress={() => { setIsPrivate(false); Haptics.selectionAsync(); }}
-                            activeOpacity={0.7}
-                        >
-                            <Globe size={14} color={!isPrivate ? colors.ink : colors.fog} />
-                            <Text style={[s.toggleText, !isPrivate && { color: colors.ink }]}>PUBLIC</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={[s.toggleBtn, isPrivate && s.toggleActive]}
-                            onPress={() => { setIsPrivate(true); Haptics.selectionAsync(); }}
-                            activeOpacity={0.7}
-                        >
-                            <Lock size={14} color={isPrivate ? colors.ink : colors.fog} />
-                            <Text style={[s.toggleText, isPrivate && { color: colors.ink }]}>PRIVATE</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-
-                {/* Submit */}
-                <View style={s.submitRow}>
-                    <TouchableOpacity
-                        style={[s.submitBtn, (saving || !title.trim()) && { opacity: 0.5 }]}
-                        onPress={handleSave}
-                        disabled={saving || !title.trim()}
-                        activeOpacity={0.8}
-                    >
-                        <Text style={s.submitText}>
-                            {saving ? 'SAVING...' : (editList ? 'SAVE CHANGES' : 'CREATE LIST')}
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={s.cancelBtn} onPress={() => router.back()} activeOpacity={0.7}>
-                        <Text style={s.cancelText}>Cancel</Text>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
+            <DraggableFlatList
+                data={films}
+                onDragBegin={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+                onDragEnd={({ data }) => setFilms(data)}
+                keyExtractor={(item) => String(item.id)}
+                renderItem={renderFilmItem}
+                ListHeaderComponent={ListHeader}
+                ListFooterComponent={ListFooter}
+                contentContainerStyle={s.scrollPad}
+                showsVerticalScrollIndicator={false}
+                keyboardShouldPersistTaps="handled"
+                containerStyle={{flex: 1}}
+            />
         </KeyboardAvoidingView>
     );
 }
@@ -315,6 +363,7 @@ const s = StyleSheet.create({
     },
     toggleActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     toggleText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+    toggleTextActive: { color: colors.ink },
 
     // Submit
     submitRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, marginTop: 28 },
@@ -322,4 +371,11 @@ const s = StyleSheet.create({
     submitText: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 2, color: colors.ink, fontWeight: '600' },
     cancelBtn: { paddingVertical: 14, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
     cancelText: { fontFamily: fonts.ui, fontSize: 11, color: colors.fog },
+
+    // Extracted
+    scrollPad: { paddingBottom: 60 },
+    searchIcon: { position: 'absolute', left: 12, top: 13, zIndex: 1 },
+    dropFlex: { flex: 1 },
+    descInput: { minHeight: 80 },
+    submitDisabled: { opacity: 0.5 },
 });

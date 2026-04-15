@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react'
-import { Plus, Lock, Globe, Search as SearchIcon, X, Film } from 'lucide-react'
+import { Plus, Lock, Globe, Search as SearchIcon, X, Film, GripVertical } from 'lucide-react'
+import { Reorder } from 'framer-motion'
 import { tmdb } from '../tmdb'
 import reelToast from '../utils/reelToast'
 import { Portal } from './UI'
@@ -162,19 +163,26 @@ export default function CreateListModal({ onClose, onCreate, initialList = null 
 
                         {/* Selected Films List */}
                         {films.length > 0 && (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                            <Reorder.Group axis="y" values={films} onReorder={setFilms} style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', listStyle: 'none', padding: 0, margin: 0 }}>
                                 {films.map(f => (
-                                    <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.6rem', background: 'rgba(10,7,3,0.6)', border: '1px solid rgba(139,105,20,0.2)', borderRadius: '4px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                    <Reorder.Item key={f.id} value={f} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.4rem 0.6rem', background: 'rgba(10,7,3,0.6)', border: '1px solid rgba(139,105,20,0.2)', borderRadius: '4px', cursor: 'grab' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', pointerEvents: 'none' }}>
+                                            <GripVertical size={12} color="var(--sepia)" style={{ opacity: 0.5, marginRight: '0.2rem' }} />
                                             <Film size={12} color="var(--fog)" />
                                             <span style={{ fontFamily: 'var(--font-sub)', fontSize: '0.8rem', color: 'var(--parchment)' }}>{f.title}</span>
                                         </div>
-                                        <button onClick={(e) => { e.preventDefault(); handleRemoveFilm(f.id) }} style={{ background: 'none', border: 'none', color: 'var(--danger)', opacity: 0.7, cursor: 'pointer', padding: 0 }} onMouseEnter={e => e.currentTarget.style.opacity = '1'} onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}>
+                                        <button 
+                                            onPointerDown={(e) => e.stopPropagation()} // Prevent drag when clicking X
+                                            onClick={(e) => { e.preventDefault(); handleRemoveFilm(f.id) }} 
+                                            style={{ background: 'none', border: 'none', color: 'var(--danger)', opacity: 0.7, cursor: 'pointer', padding: 0 }} 
+                                            onMouseEnter={e => e.currentTarget.style.opacity = '1'} 
+                                            onMouseLeave={e => e.currentTarget.style.opacity = '0.7'}
+                                        >
                                             <X size={12} />
                                         </button>
-                                    </div>
+                                    </Reorder.Item>
                                 ))}
-                            </div>
+                            </Reorder.Group>
                         )}
                     </div>
 
