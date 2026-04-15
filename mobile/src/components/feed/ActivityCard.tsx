@@ -288,13 +288,18 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index }: { 
                 <Text style={[s.cardReview, s.dropCapLetter]}>
                   {item.review.replace(/<[^>]+>/g, '').trim().charAt(0)}
                 </Text>
-                <Text style={[s.cardReview, s.dropCapBody]} numberOfLines={6}>
+                <Text style={[s.cardReview, s.dropCapBody]} numberOfLines={12}>
                   {item.review.replace(/<[^>]+>/g, '').trim().slice(1)}
                 </Text>
               </View>
             ) : item.review ? (
-              <Text style={s.cardReview} numberOfLines={6}>{item.review.replace(/<[^>]+>/g, '').trim()}</Text>
+              <Text style={s.cardReview} numberOfLines={12}>{item.review.replace(/<[^>]+>/g, '').trim()}</Text>
             ) : null}
+            {item.review && item.review.replace(/<[^>]+>/g, '').trim().length > 200 && (
+              <TouchableOpacity onPress={() => router.push(`/log/${item.id}`)} activeOpacity={0.7} style={{ marginTop: 6 }}>
+                <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.sepia, textDecorationLine: 'underline', textDecorationColor: 'rgba(139,105,20,0.3)' }}>Read more</Text>
+              </TouchableOpacity>
+            )}
 
             {item.watched_with && (
               <Text style={s.watchedWith}>
