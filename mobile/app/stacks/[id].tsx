@@ -31,15 +31,15 @@ export default function StackDetailScreen() {
   const { user } = useAuthStore();
   const { logs, toggleListEndorse, hasListEndorsed } = useFilmStore();
 
-  const [list, setList] = useState<any>(null);
+  const [list, setList] = useState<Record<string, any> | null>(null);
   const [loading, setLoading] = useState(true);
   const [certifyCount, setCertifyCount] = useState(0);
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<any[]>([]);
+  const [comments, setComments] = useState<Record<string, any>[]>([]);
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showLoungeShare, setShowLoungeShare] = useState(false);
-  const [lounges, setLounges] = useState<any[]>([]);
+  const [lounges, setLounges] = useState<Record<string, any>[]>([]);
   const [sharingTo, setSharingTo] = useState<string | null>(null);
 
   // Scroll animations
@@ -173,7 +173,7 @@ export default function StackDetailScreen() {
         });
       }
     } catch {
-      reelToast.error('Failed to submit critique.');
+      reelToast.error('Your critique could not be filed.');
     }
     setSubmittingComment(false);
   };
@@ -223,22 +223,22 @@ export default function StackDetailScreen() {
         },
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      reelToast.success('Shared to lounge!');
+      reelToast.success('Dispatched to the parlour.');
       setTimeout(() => setShowLoungeShare(false), 800);
     } catch {
-      reelToast.error('Failed to share.');
+      reelToast.error('Dispatch failed. The courier is delayed.');
     }
     setSharingTo(null);
   };
 
   const handleDelete = () => {
     Alert.alert(
-      'Delete Stack',
-      'This will permanently remove this collection. This cannot be undone.',
+      'Incinerate Stack',
+      'This will permanently destroy this collection. This action is irreversible.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Delete',
+          text: 'Incinerate',
           style: 'destructive',
           onPress: async () => {
             try {
@@ -247,7 +247,7 @@ export default function StackDetailScreen() {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
               router.back();
             } catch {
-              Alert.alert('Error', 'Failed to delete this stack.');
+              reelToast.error('The collection resists destruction.');
             }
           },
         },
@@ -263,7 +263,7 @@ export default function StackDetailScreen() {
             <ArrowLeft size={20} color={colors.bone} />
           </TouchableOpacity>
         </View>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <View style={s.loadingCenter}>
           <ActivityIndicator size="large" color={colors.sepia} />
         </View>
       </View>
@@ -285,7 +285,7 @@ export default function StackDetailScreen() {
         >
           <View style={s.posterWrap}>
             {posterUri ? (
-              <Image source={posterUri} style={s.poster} contentFit="cover" transition={300} placeholder={blurhash} />
+              <Image source={posterUri} style={s.poster} contentFit="cover" transition={300} placeholder={blurhash} cachePolicy="memory-disk" />
             ) : (
               <View style={[s.poster, s.noPoster]} />
             )}
@@ -354,9 +354,7 @@ export default function StackDetailScreen() {
 
             {/* Content Overlaid on Header */}
             <View style={s.headerContentWrap}>
-              <Animated.Text entering={FadeInDown.duration(600)} style={s.refCode}>
-                VOL. {list.id.slice(0,4).toUpperCase()}
-              </Animated.Text>
+
               <Animated.Text entering={FadeInDown.duration(600).delay(100)} style={s.title}>
                 {list.title.toUpperCase()}
               </Animated.Text>
@@ -376,7 +374,7 @@ export default function StackDetailScreen() {
               <Animated.View entering={FadeInDown.duration(600).delay(350)} style={s.actionBar}>
                 <TouchableOpacity style={s.actionItem} onPress={handleCertify} activeOpacity={0.7}>
                   <Award size={16} color={isCertified ? colors.sepia : colors.fog} fill={isCertified ? colors.sepia : 'none'} />
-                  <Text style={[s.actionLabel, isCertified && { color: colors.sepia }]}>
+                  <Text style={[s.actionLabel, isCertified && s.actionLabelActive]}>
                     {certifyCount > 0 ? `${certifyCount} ` : ''}{isCertified ? 'CERTIFIED' : 'CERTIFY'}
                   </Text>
                 </TouchableOpacity>
@@ -385,7 +383,7 @@ export default function StackDetailScreen() {
 
                 <TouchableOpacity style={s.actionItem} onPress={handleToggleComments} activeOpacity={0.7}>
                   <MessageCircle size={14} color={showComments ? colors.sepia : colors.fog} />
-                  <Text style={[s.actionLabel, showComments && { color: colors.sepia }]}>CRITIC</Text>
+                  <Text style={[s.actionLabel, showComments && s.actionLabelActive]}>CRITIC</Text>
                 </TouchableOpacity>
 
                 <View style={s.actionDivider} />
@@ -418,8 +416,9 @@ export default function StackDetailScreen() {
                         onChangeText={setCommentText}
                         returnKeyType="send"
                         onSubmitEditing={handleSubmitComment}
+                        maxLength={500}
                       />
-                      <TouchableOpacity onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.commentSendBtn, (!commentText.trim()) && { opacity: 0.3 }]}>
+                      <TouchableOpacity onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.commentSendBtn, (!commentText.trim()) && s.sendBtnDisabled]}>
                         <Send size={14} color={colors.sepia} />
                       </TouchableOpacity>
                     </View>
@@ -456,8 +455,8 @@ export default function StackDetailScreen() {
               </TouchableOpacity>
             </View>
             {lounges.length === 0 ? (
-              <View style={{ padding: 30, alignItems: 'center' }}>
-                <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.fog }}>No lounges found. Join or create one first.</Text>
+              <View style={s.loungeEmptyWrap}>
+                <Text style={s.loungeEmptyText}>No lounges found. Join or create one first.</Text>
               </View>
             ) : (
               lounges.map(lounge => (
@@ -470,7 +469,7 @@ export default function StackDetailScreen() {
                 >
                   <View style={s.loungeAvatar}>
                     {lounge.cover_image ? (
-                      <Image source={tmdb.poster(lounge.cover_image, 'w92')} style={{ width: '100%', height: '100%' }} contentFit="cover" />
+                      <Image source={tmdb.poster(lounge.cover_image, 'w92')} style={s.loungeAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
                     ) : (
                       <MessageCircle size={12} color={colors.sepia} />
                     )}
@@ -568,5 +567,13 @@ const s = StyleSheet.create({
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, marginBottom: 8 },
   emptySubtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center' },
+
+  // Extracted
+  loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  actionLabelActive: { color: colors.sepia },
+  sendBtnDisabled: { opacity: 0.3 },
+  loungeEmptyWrap: { padding: 30, alignItems: 'center' },
+  loungeEmptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog },
+  loungeAvatarImg: { width: '100%', height: '100%' },
 });
 

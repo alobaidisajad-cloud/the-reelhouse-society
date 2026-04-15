@@ -195,10 +195,7 @@ export default function ListDetailPage() {
                         </div>
                     )}
 
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.65rem', letterSpacing: '0.4em', color: 'var(--sepia)', marginBottom: '1rem' }}>
-                        THE STACKS — VOLUME {id}
-                    </div>
-                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.5rem, 6vw, 4rem)', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1.5rem', textShadow: '0 4px 15px rgba(0,0,0,0.5)' }}>
+                    <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.5rem, 6vw, 4rem)', color: 'var(--parchment)', lineHeight: 1.1, marginBottom: '1.5rem', marginTop: '0.5rem', textShadow: '0 4px 15px rgba(0,0,0,0.5)', paddingRight: isOwner ? '5rem' : 0 }}>
                         {title}
                     </h1>
 
