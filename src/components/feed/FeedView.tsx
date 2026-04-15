@@ -148,16 +148,20 @@ export default function FeedView({
 
                 {/* Review */}
                 {log.review && (
-                    <div style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.8rem' : '0.85rem', color: 'var(--bone)', marginTop: '0.4rem', lineHeight: 1.65, opacity: 0.85 }}>
+                    <div 
+                        className={`feed-review-body ${log.dropCap ? 'drop-cap-review' : ''}`}
+                        style={{ fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.8rem' : '0.85rem', color: 'var(--bone)', marginTop: '0.4rem', lineHeight: 1.65, opacity: 0.85 }}
+                    >
                         {log.isSpoiler && !spoilersRevealed ? (
                             <div onClick={(e) => { e.stopPropagation(); setSpoilersRevealed(true); }} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(139,105,20,0.15)', padding: '1rem', textAlign: 'center', cursor: 'pointer', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
                                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>[ CLASSIFIED ]</span>
                                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--fog)', fontStyle: 'italic' }}>Tap to decode spoilers.</span>
                             </div>
-                        ) : log.dropCap ? (
-                            <><span style={{ float: 'left', fontSize: IS_TOUCH ? '2rem' : '2.5rem', lineHeight: IS_TOUCH ? '1.8rem' : '2.2rem', padding: '0.15rem 0.4rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)', textShadow: '0 2px 8px rgba(139,105,20,0.2)' }}>{strippedReview.charAt(0)}</span><span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '')) }} /> : log.review.slice(1)) : (strippedReview.length > 300 ? strippedReview.slice(1, 300) + '…' : strippedReview.slice(1))}</span>{!showFullText && strippedReview.length > 300 && <div onClick={(e) => { e.stopPropagation(); navigate(`/log/${log.id}`) }} style={{ display: 'inline-block', marginTop: '0.4rem', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--sepia)', cursor: 'pointer', borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '1px', transition: 'color 0.2s' }}>Read more</div>}</>
                         ) : (
-                            <><span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '')) }} /> : log.review) : (strippedReview.length > 300 ? strippedReview.slice(0, 300) + '…' : strippedReview)}</span>{!showFullText && strippedReview.length > 300 && <div onClick={(e) => { e.stopPropagation(); navigate(`/log/${log.id}`) }} style={{ display: 'inline-block', marginTop: '0.4rem', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--sepia)', cursor: 'pointer', borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '1px', transition: 'color 0.2s' }}>Read more</div>}</>
+                            <>
+                                <span>{showFullText ? (/<[a-z][\s\S]*>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '')) }} /> : log.review) : (strippedReview.length > 300 ? strippedReview.slice(0, 300) + '…' : strippedReview)}</span>
+                                {!showFullText && strippedReview.length > 300 && <div onClick={(e) => { e.stopPropagation(); navigate(`/log/${log.id}`) }} style={{ display: 'inline-block', marginTop: '0.4rem', fontFamily: 'var(--font-body)', fontSize: '0.75rem', color: 'var(--sepia)', cursor: 'pointer', borderBottom: '1px solid rgba(139,105,20,0.3)', paddingBottom: '1px', transition: 'color 0.2s' }}>Read more</div>}
+                            </>
                         )}
                     </div>
                 )}

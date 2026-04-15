@@ -194,20 +194,18 @@ export default function FocusView({
             {/* Focus Review Body */}
             {log.review && (
                 <div style={{ padding: '0 1.5rem' }}>
-                    <div style={{
-                        fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.95rem' : '1.05rem',
-                        color: 'var(--bone)', lineHeight: 1.85, opacity: 0.9,
-                    }}>
+                    <div 
+                        className={`feed-review-body ${log.dropCap ? 'drop-cap-review' : ''}`}
+                        style={{
+                            fontFamily: 'var(--font-body)', fontSize: IS_TOUCH ? '0.95rem' : '1.05rem',
+                            color: 'var(--bone)', lineHeight: 1.85, opacity: 0.9,
+                        }}
+                    >
                         {log.isSpoiler && !spoilersRevealed ? (
                             <div onClick={(e) => { e.stopPropagation(); setSpoilersRevealed(true); }} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(139,105,20,0.15)', padding: '1.5rem', textAlign: 'center', cursor: 'pointer', borderRadius: '4px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem' }}>
                                 <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.2em', color: 'var(--sepia)' }}>[ CLASSIFIED ]</span>
                                 <span style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', fontStyle: 'italic' }}>Tap to decode spoilers.</span>
                             </div>
-                        ) : log.dropCap ? (
-                            <>{/* Drop cap rendering */}
-                                <span style={{ float: 'left', fontSize: IS_TOUCH ? '2.5rem' : '3rem', lineHeight: IS_TOUCH ? '2.2rem' : '2.6rem', padding: '0.2rem 0.5rem 0 0', fontFamily: 'var(--font-display)', color: 'var(--sepia)', textShadow: '0 2px 8px rgba(139,105,20,0.2)' }}>{strippedReview.charAt(0)}</span>
-                                <span>{/\<[a-z][\s\S]*\>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '')) }} /> : log.review.slice(1)}</span>
-                            </>
                         ) : (
                             <span>{/\<[a-z][\s\S]*\>/i.test(log.review) ? <span dangerouslySetInnerHTML={{ __html: sanitizeHTML(log.review.replace(/<blockquote>[\s\n]*<\/blockquote>/gi, '')) }} /> : log.review}</span>
                         )}

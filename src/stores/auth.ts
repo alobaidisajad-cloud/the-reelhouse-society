@@ -273,15 +273,7 @@ export const useAuthStore = create<AuthState>()(
                         ])
                         if (followErr && !followErr.message?.includes('duplicate')) throw followErr
                         
-                        if (!followErr) {
-                            await supabase.from('notifications').insert({
-                                user_id: targetId,
-                                type: 'follow',
-                                from_username: fromUsername,
-                                message: `@${fromUsername} pulled you into their orbit`,
-                                read: false
-                            })
-                        }
+                        // DB trigger handles notification generation
                     }
                 } catch {
                     // Rollback

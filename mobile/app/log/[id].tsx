@@ -111,15 +111,7 @@ export default function LogDetailScreen() {
         setComments(prev => [...prev, data]);
         setNewComment('');
 
-        // Notify poster if not self
-        if (log.user_id !== user?.id) {
-          await supabase.from('notifications').insert({
-            user_id: log.user_id,
-            type: 'comment',
-            from_username: user?.username,
-            message: `@${user?.username} added a critique to your log of ${log.film_title}`,
-          });
-        }
+        // DB trigger handles notification generation for 'comment' 
       }
     } catch { 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -310,7 +302,7 @@ export default function LogDetailScreen() {
 
           {/* Full Width Review / Pull Quote — Web: padding 1.5rem 1.5rem, textAlign center */}
           <View style={s.reviewSection}>
-            {log.pull_quote ? (
+            {log.pull_quote && (
               <View style={s.featuredQuoteWrap}>
                  {/* Ornamental divider */}
                  <View style={s.ornamentalRow}>
@@ -326,22 +318,24 @@ export default function LogDetailScreen() {
                    <View style={s.ornamentalLine} />
                  </View>
               </View>
-            ) : log.review ? (
+            )}
+            
+            {log.review && (
               <View style={s.reviewBodyWrap}>
-                 {log.drop_cap ? (
-                   <View style={s.dropCapRow}>
-                     <Text style={s.dropCapLetter}>
-                       {log.review.replace(/<[^>]+>/g, '').trim().charAt(0)}
-                     </Text>
-                     <Text style={s.dropCapBody}>
-                       {log.review.replace(/<[^>]+>/g, '').trim().slice(1)}
-                     </Text>
-                   </View>
-                 ) : (
-                   <Text style={s.review}>{log.review.replace(/<[^>]+>/g, '').trim()}</Text>
-                 )}
+                {(() => {
+                  const cleanReview = log.review.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+                  if (!cleanReview) return null;
+                  return (
+                    <Text style={s.review}>
+                      {log.drop_cap ? (
+                        <Text style={s.dropCapLetter}>{cleanReview.charAt(0)}</Text>
+                      ) : null}
+                      {log.drop_cap ? cleanReview.slice(1) : cleanReview}
+                    </Text>
+                  );
+                })()}
               </View>
-            ) : null}
+            )}
           </View>
 
           {/* ═══ VIEWING CHRONICLE — Horizontal swipeable carousel ═══ */}

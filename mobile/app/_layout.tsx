@@ -68,6 +68,13 @@ export default function RootLayout() {
         // Set Sentry user context after auth is restored
         const currentUser = useAuthStore.getState().user;
         setSentryUser(currentUser ? { id: currentUser.id, username: currentUser.username, role: currentUser.role } : null);
+        
+        // Wake up the Real-time Notification Service — The "Live Wire"
+        if (currentUser) {
+            import('@/src/stores/social').then(({ useNotificationStore }) => {
+                useNotificationStore.getState().setupRealtime();
+            });
+        }
       } catch {} finally {
         setAppReady(true);
       }

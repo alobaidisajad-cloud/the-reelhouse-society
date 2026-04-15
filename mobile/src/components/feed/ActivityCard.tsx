@@ -277,24 +277,26 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index }: { 
             {item.rating > 0 && <View style={s.ratingWrap}><ReelRating rating={item.rating} size={15} /></View>}
             
             {/* Review / Pull Quote */}
-            {item.pull_quote ? (
+            {item.pull_quote && (
               <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isPremium && !isAuteur && s.pullQuoteWrapPremium]}>
                 <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium]}>
                   « {item.pull_quote} »
                 </Text>
               </View>
-            ) : item.drop_cap && item.review ? (
-              <View style={s.dropCapRow}>
-                <Text style={[s.cardReview, s.dropCapLetter]}>
-                  {item.review.replace(/<[^>]+>/g, '').trim().charAt(0)}
+            )}
+            
+            {item.review && (() => {
+              const cleanReview = item.review.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '').trim();
+              if (!cleanReview) return null;
+              return (
+                <Text style={s.cardReview} numberOfLines={12}>
+                  {item.drop_cap ? (
+                    <Text style={s.dropCapLetter}>{cleanReview.charAt(0)}</Text>
+                  ) : null}
+                  {item.drop_cap ? cleanReview.slice(1) : cleanReview}
                 </Text>
-                <Text style={[s.cardReview, s.dropCapBody]} numberOfLines={12}>
-                  {item.review.replace(/<[^>]+>/g, '').trim().slice(1)}
-                </Text>
-              </View>
-            ) : item.review ? (
-              <Text style={s.cardReview} numberOfLines={12}>{item.review.replace(/<[^>]+>/g, '').trim()}</Text>
-            ) : null}
+              );
+            })()}
             {item.review && item.review.replace(/<[^>]+>/g, '').trim().length > 200 && (
               <TouchableOpacity onPress={() => router.push(`/log/${item.id}`)} activeOpacity={0.7} style={{ marginTop: 6 }}>
                 <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.sepia, textDecorationLine: 'underline', textDecorationColor: 'rgba(139,105,20,0.3)' }}>Read more</Text>

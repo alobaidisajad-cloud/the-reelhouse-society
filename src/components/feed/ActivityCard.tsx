@@ -134,7 +134,7 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
     // ── Memoized stripped-HTML review text — prevents 6x regex per render ──
     const strippedReview = useMemo(() => {
         if (!log.review) return ''
-        return log.review.replace(/<[^>]+>/g, '').trim()
+        return log.review.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '').trim()
     }, [log.review])
 
     // ── Shared props for both views ──

@@ -63,7 +63,12 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
     setNotifications(prev => prev.map(n => ({ ...n, read: true })))
   }
 
-  const handleClick = (n: Notification) => {
+  const handleClick = async (n: Notification) => {
+    if (!n.read && user?.id && isSupabaseConfigured) {
+      await supabase.from('notifications').update({ read: true }).eq('id', n.id)
+      setNotifications(prev => prev.map(item => item.id === n.id ? { ...item, read: true } : item))
+    }
+    
     if (n.target_url) navigate(n.target_url)
     else if (n.from) navigate(`/user/${n.from}`)
     onClose()

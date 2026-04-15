@@ -781,6 +781,10 @@
 .section-title-lg    { font-family: var(--font-ui); font-size: calc(var(--text-sm) * 1.1); letter-spacing: 0.4em; color: var(--sepia); margin-bottom: 1rem; }
 
 /* ── Rich Text Blocks ── */
+.feed-review-body {
+  white-space: pre-wrap; /* Crucial for preserving text newlines typed by the user */
+}
+
 .feed-review-body blockquote {
   border-left: 3px solid var(--sepia);
   padding: 0.75rem 1.25rem;
@@ -795,6 +799,26 @@
 }
 .feed-review-body p:last-child {
   margin-bottom: 0;
+}
+
+/* ── Web Drop Cap ── */
+.drop-cap-review::first-letter {
+  float: left;
+  font-size: 2.5rem;
+  line-height: 2rem;
+  padding: 0.15rem 0.5rem 0 0;
+  font-family: var(--font-display);
+  color: var(--sepia);
+  text-shadow: 0 2px 8px rgba(139,105,20,0.2);
+}
+
+/* On touch devices, scale drop cap down slightly */
+@media (any-pointer: coarse) {
+  .drop-cap-review::first-letter {
+    font-size: 2rem;
+    line-height: 1.8rem;
+    padding: 0.15rem 0.4rem 0 0;
+  }
 }
 
 /* ── Empty State Panels ── */
