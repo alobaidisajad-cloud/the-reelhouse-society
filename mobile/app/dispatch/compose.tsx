@@ -27,7 +27,7 @@ export default function ComposeDossierScreen() {
 
     useEffect(() => {
         if (!canWrite) {
-            reelToast('Auteur tier required', { icon: '🔒' });
+            reelToast('Auteur tier required');
             router.back();
         }
     }, [canWrite]);
@@ -67,11 +67,11 @@ export default function ComposeDossierScreen() {
                     ...payload
                 }]);
                 if (error) throw error;
-                reelToast('Dossier Published ✦', { icon: '📰' });
+                reelToast.success('Dossier published');
             }
-            router.replace('/(tabs)/explore');
-        } catch (error: any) {
-            reelToast('Transmission Failed', { icon: '⚠️' });
+            router.replace('/(tabs)/dispatch');
+        } catch (err) {
+            reelToast.error('Transmission failed');
         } finally {
             setIsPublishing(false);
         }
@@ -97,7 +97,7 @@ export default function ComposeDossierScreen() {
             </View>
 
             {isPreview ? (
-                <ScrollView style={styles.workspace} contentContainerStyle={{ padding: 20 }}>
+                <ScrollView style={styles.workspace} contentContainerStyle={styles.previewContent}>
                     <Text style={styles.previewEyebrow}>LIVE PREVIEW</Text>
                     {title ? <Text style={styles.previewTitle}>{title}</Text> : null}
                     {content ? (
@@ -111,7 +111,7 @@ export default function ComposeDossierScreen() {
                     )}
                 </ScrollView>
             ) : (
-                <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+                <KeyboardAvoidingView style={styles.kavFlex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
                     <ScrollView style={styles.workspace} keyboardShouldPersistTaps="handled">
                         <TextInput
                             style={styles.titleInput}
@@ -307,7 +307,9 @@ const styles = StyleSheet.create({
         fontFamily: fonts.bodyItalic,
         fontSize: 14,
         color: colors.fog,
-    }
+    },
+    kavFlex: { flex: 1 },
+    previewContent: { padding: 20 },
 });
 
 const markdownStyles = {

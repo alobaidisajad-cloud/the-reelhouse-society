@@ -161,7 +161,7 @@ export function DarkroomFilterModal({ visible, onClose }: DarkroomFilterModalPro
                             </View>
                         </View>
                         
-                        <View style={{ height: 40 }} />
+                        <View style={s.scrollSpacer} />
                     </ScrollView>
                     
                     {/* Apply Button */}
@@ -307,5 +307,6 @@ const s = StyleSheet.create({
         fontSize: 12,
         letterSpacing: 3,
         color: colors.ink,
-    }
+    },
+    scrollSpacer: { height: 40 },
 });

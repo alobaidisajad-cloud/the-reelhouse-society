@@ -8,14 +8,26 @@ import { ShieldAlert, Trash2, Check, ArrowLeft, Ban } from 'lucide-react-native'
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
+import reelToast from '@/src/utils/reelToast';
 import { LinearGradient } from 'expo-linear-gradient';
+
+interface TribunalReport {
+  id: string;
+  content_type: string;
+  content_id: string;
+  reason: string;
+  details?: string;
+  status: string;
+  created_at: string;
+  reporter?: { id: string; username: string } | { id: string; username: string }[];
+}
 
 const ADMIN_ID = 'd1c40ed8-10bc-4a6e-b51a-b6d3559bf755';
 
 export default function TribunalScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<TribunalReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -57,7 +69,7 @@ export default function TribunalScreen() {
     fetchReports();
   }, [fetchReports]);
 
-  const handleResolve = async (id: string, action: 'dismiss' | 'delete' | 'ban_user', report: any) => {
+  const handleResolve = async (id: string, action: 'dismiss' | 'delete' | 'ban_user', report: TribunalReport) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Alert.alert(
       'Confirm Action',
@@ -97,8 +109,9 @@ export default function TribunalScreen() {
               
               setReports(prev => prev.filter(r => r.id !== id));
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            } catch (err: any) {
-              Alert.alert('Action Failed', err.message);
+            } catch (err: unknown) {
+              const msg = err instanceof Error ? err.message : 'The Tribunal directive could not be executed.';
+              reelToast.error(msg);
             }
           }
         }

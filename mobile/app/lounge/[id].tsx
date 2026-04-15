@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, FlatList, Image, Modal,
-  AppState, ActivityIndicator, Clipboard,
+  KeyboardAvoidingView, Platform, FlatList, Modal,
+  AppState, ActivityIndicator,
 } from 'react-native';
+import * as ExpoClipboard from 'expo-clipboard';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
@@ -12,11 +14,12 @@ import {
   ArrowLeft, Users, Settings, Send, Reply, Copy, Trash2,
   LogOut, X, Lock, Globe, Crown, Sparkles, Check, MessageCircle,
 } from 'lucide-react-native';
-import { useLoungeStore, LoungeMessage } from '@/src/stores/lounge';
+import { useLoungeStore, LoungeMessage, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { supabase } from '@/src/lib/supabase';
+import { LoungeMember } from '@/src/types';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -30,7 +33,7 @@ const SharedCard = React.memo(({ msg }: { msg: LoungeMessage }) => {
 
   return (
     <View style={s.sharedCard}>
-      {posterUrl && <Image source={{ uri: posterUrl }} style={s.sharedPoster} />}
+      {posterUrl && <Image source={{ uri: posterUrl }} style={s.sharedPoster} contentFit="cover" cachePolicy="memory-disk" />}
       <View style={s.sharedInfo}>
         <View style={s.sharedTypeBadge}>
           <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
@@ -54,7 +57,7 @@ const MessageBubble = React.memo(({ msg, isSelf, showAuthor, onLongPress }: {
       {showAuthor && !isSelf && (
         <View style={s.msgAvatar}>
           {msg.avatar_url
-            ? <Image source={{ uri: msg.avatar_url }} style={s.msgAvatarImg} />
+            ? <Image source={{ uri: msg.avatar_url }} style={s.msgAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
             : <Text style={s.msgAvatarLetter}>{msg.username?.[0]?.toUpperCase()}</Text>
           }
         </View>
@@ -96,11 +99,20 @@ const MessageBubble = React.memo(({ msg, isSelf, showAuthor, onLongPress }: {
 // ════════════════════════════════════════════════════════════
 // ACTION SHEET — Long-press menu
 // ════════════════════════════════════════════════════════════
-function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete }: any) {
+interface ActionSheetProps {
+  visible: boolean;
+  msg: LoungeMessage | null;
+  isSelf: boolean;
+  onClose: () => void;
+  onReply: (msg: LoungeMessage) => void;
+  onDelete: (messageId: string) => void;
+}
+
+function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete }: ActionSheetProps) {
   if (!visible || !msg) return null;
 
   const handleCopy = async () => {
-    Clipboard.setString(msg.content || '');
+    ExpoClipboard.setStringAsync(msg.content || '');
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     onClose();
   };
@@ -141,14 +153,22 @@ function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete }: any) 
 // ════════════════════════════════════════════════════════════
 // SETTINGS PANEL
 // ════════════════════════════════════════════════════════════
-function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: any) {
+interface LoungeSettingsPanelProps {
+  lounge: LoungeRoom;
+  members: LoungeMember[];
+  visible: boolean;
+  onClose: () => void;
+  isCreator: boolean;
+}
+
+function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: LoungeSettingsPanelProps) {
   const router = useRouter();
   const { leaveLounge } = useLoungeStore();
   const [copied, setCopied] = useState(false);
 
   const handleCopyCode = async () => {
     if (lounge.invite_code) {
-      Clipboard.setString(lounge.invite_code);
+      ExpoClipboard.setStringAsync(lounge.invite_code);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -203,7 +223,7 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: a
             <View style={s.memberRow}>
               <View style={s.memberAvatar}>
                 {item.avatar_url
-                  ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} />
+                  ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" />
                   : <Users size={13} color={colors.fog} strokeWidth={1.5} />
                 }
               </View>
@@ -249,7 +269,7 @@ export default function LoungeRoomScreen() {
   const [replyTo, setReplyTo] = useState<LoungeMessage | null>(null);
   const [actionSheetMsg, setActionSheetMsg] = useState<LoungeMessage | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [members, setMembers] = useState<any[]>([]);
+  const [members, setMembers] = useState<LoungeMember[]>([]);
 
   const flatListRef = useRef<FlatList>(null);
 
@@ -258,7 +278,9 @@ export default function LoungeRoomScreen() {
     let timeout: NodeJS.Timeout;
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'background') {
-        timeout = setTimeout(() => {}, 30000);
+        timeout = setTimeout(() => {
+          // Keep connection alive — re-fetch on return
+        }, 30000);
       } else if (state === 'active') {
         clearTimeout(timeout);
         if (id) fetchMessages(id);
@@ -279,9 +301,9 @@ export default function LoungeRoomScreen() {
         .eq('lounge_id', id)
         .then(({ data }) => {
           if (data) {
-            setMembers(data.map((m: any) => ({
+            setMembers(data.map((m: { user_id: string; profiles?: { username?: string; avatar_url?: string } | null }) => ({
               user_id: m.user_id,
-              username: m.profiles?.username || 'user',
+              username: m.profiles?.username ?? 'user',
               avatar_url: m.profiles?.avatar_url,
             })));
           }
@@ -547,7 +569,8 @@ const s = StyleSheet.create({
   msgTime: {
     fontFamily: fonts.ui,
     fontSize: 9,
-    color: colors.ash,
+    color: colors.fog,
+    opacity: 0.5,
   },
 
   msgBubble: {

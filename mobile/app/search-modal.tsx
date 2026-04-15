@@ -13,9 +13,10 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   View, Text, TextInput, StyleSheet, Pressable, Platform,
-  FlatList, KeyboardAvoidingView, ActivityIndicator, Image,
+  FlatList, KeyboardAvoidingView, ActivityIndicator,
   ScrollView, TouchableOpacity, Keyboard,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import {
@@ -29,7 +30,14 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { supabase } from '@/src/lib/supabase';
 
+interface ProfileRow { id: string; username: string; avatar_url?: string; role?: string }
+interface LogRow { id: string; film_title: string; review?: string; rating?: number; username?: string; role?: string; poster_path?: string; created_at?: string }
+interface ProgrammeRow { id: string; title: string; description?: string; is_public?: boolean; created_at?: string }
+
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w92';
+
+/** Warm sepia-toned blurhash — used as placeholder while images load */
+const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
 // ═══════════════════════════════════════════════════════════════
 // TABS
@@ -147,8 +155,8 @@ export default function SearchModal() {
         if (item.media_type === 'movie' || (!item.media_type && item.title)) {
           f.push({
             id: `film-${item.id}`, type: 'film',
-            title: item.title || item.name || '',
-            subtitle: item.release_date?.slice(0, 4) || 'FILM',
+            title: item.title ?? item.name ?? '',
+            subtitle: item.release_date?.slice(0, 4) ?? 'FILM',
             image: item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null,
             extra: item.vote_average ? `★ ${item.vote_average.toFixed(1)}` : undefined,
             _nav: `/film/${item.id}`,
@@ -159,7 +167,7 @@ export default function SearchModal() {
 
           const entry: SR = {
             id: `person-${item.id}`, type: isDir ? 'director' : 'actor',
-            title: item.name || '',
+            title: item.name ?? '',
             subtitle: dept,
             image: item.profile_path ? `${TMDB_IMG}${item.profile_path}` : null,
             _nav: `/person/${item.id}`,
@@ -175,9 +183,9 @@ export default function SearchModal() {
 
     // ── Parse users ──
     if (usersRes.status === 'fulfilled' && !usersRes.value.error) {
-      setUsers((usersRes.value.data || []).map((u: any) => ({
+      setUsers((usersRes.value.data ?? []).map((u: ProfileRow) => ({
         id: `user-${u.id}`, type: 'user',
-        title: `@${u.username || 'anonymous'}`,
+        title: `@${u.username ?? 'anonymous'}`,
         subtitle: u.role ? (u.role === 'auteur' ? '★ AUTEUR' : u.role === 'archivist' ? '✦ ARCHIVIST' : 'MEMBER') : 'MEMBER',
         image: u.avatar_url || null,
         role: u.role,
@@ -187,10 +195,10 @@ export default function SearchModal() {
 
     // ── Parse logs ──
     if (logsRes.status === 'fulfilled' && !logsRes.value.error) {
-      setLogs((logsRes.value.data || []).map((l: any) => ({
+      setLogs((logsRes.value.data ?? []).map((l: LogRow) => ({
         id: `log-${l.id}`, type: 'log',
-        title: l.film_title || 'Untitled',
-        subtitle: `@${(l.username || 'anon').toUpperCase()}`,
+        title: l.film_title ?? 'Untitled',
+        subtitle: `@${(l.username ?? 'anon').toUpperCase()}`,
         image: l.poster_path ? `${TMDB_IMG}${l.poster_path}` : null,
         rating: l.rating,
         role: l.role,
@@ -201,9 +209,9 @@ export default function SearchModal() {
 
     // ── Parse lists ──
     if (listsRes.status === 'fulfilled' && !listsRes.value.error) {
-      setLists((listsRes.value.data || []).map((p: any) => ({
+      setLists((listsRes.value.data ?? []).map((p: ProgrammeRow) => ({
         id: `list-${p.id}`, type: 'list',
-        title: p.title || 'Untitled Stack',
+        title: p.title ?? 'Untitled Stack',
         subtitle: p.description ? p.description.slice(0, 60) : 'PUBLIC STACK',
         image: null,
         _nav: '',
@@ -264,7 +272,7 @@ export default function SearchModal() {
   // ═══════════════════════════════════════════════════════════════
   const onPress = useCallback((r: SR) => {
     Haptics.selectionAsync();
-    if (r._nav) router.push(r._nav as any);
+    if (r._nav) router.push(r._nav as `/${string}`);
   }, [router]);
 
   // ═══════════════════════════════════════════════════════════════
@@ -288,7 +296,7 @@ export default function SearchModal() {
           {/* Image */}
           <View style={[st.rowImg, isPerson && st.rowImgRound]}>
             {item.image ? (
-              <Image source={{ uri: item.image }} style={st.img} />
+              <Image source={{ uri: item.image }} style={st.img} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={150} />
             ) : (
               <View style={st.imgEmpty}>
                 {item.type === 'list' ? <Bookmark size={14} color={colors.fog} /> :
@@ -359,15 +367,17 @@ export default function SearchModal() {
             returnKeyType="search"
             keyboardAppearance="dark"
             selectionColor={colors.sepia}
+            accessibilityLabel="Search the archives"
+            accessibilityHint="Search for films, actors, directors, and members"
             onSubmitEditing={() => Keyboard.dismiss()}
           />
           {query.length > 0 && (
-            <Pressable onPress={() => setQuery('')} style={st.clearBtn}>
+            <Pressable onPress={() => setQuery('')} style={st.clearBtn} accessibilityRole="button" accessibilityLabel="Clear search">
               <X size={14} color={colors.fog} />
             </Pressable>
           )}
         </View>
-        <Pressable onPress={() => router.back()} style={st.cancelWrap} hitSlop={12}>
+        <Pressable onPress={() => router.back()} style={st.cancelWrap} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close search">
           <Text style={st.cancelText}>Cancel</Text>
         </Pressable>
       </View>
@@ -439,8 +449,8 @@ export default function SearchModal() {
         {/* No results */}
         {searched && !searching && filtered.length === 0 && (
           <Animated.View entering={FadeIn} style={st.center}>
-            <Text style={st.centerLabel}>NO RESULTS IN THE ARCHIVE</Text>
-            <Text style={st.emptySub}>Try a different search term or filter.</Text>
+            <Text style={st.centerLabel}>THE ARCHIVE RETURNS SILENCE</Text>
+            <Text style={st.emptySub}>Adjust your query or consult a different catalogue.</Text>
           </Animated.View>
         )}
 
@@ -453,6 +463,9 @@ export default function SearchModal() {
             contentContainerStyle={{ paddingTop: 4, paddingBottom: Math.max(insets.bottom, 20) + 20 }}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
+            initialNumToRender={12}
+            maxToRenderPerBatch={8}
+            windowSize={5}
           />
         )}
       </View>
@@ -535,7 +548,7 @@ const st = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(139,105,20,0.12)', marginRight: 12,
   },
   rowImgRound: { width: 42, height: 42, borderRadius: 21 },
-  img: { width: '100%', height: '100%', resizeMode: 'cover' },
+  img: { width: '100%', height: '100%' },
   imgEmpty: { alignItems: 'center', justifyContent: 'center' },
 
   rowText: { flex: 1 },

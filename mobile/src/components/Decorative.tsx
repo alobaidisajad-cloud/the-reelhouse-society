@@ -86,12 +86,7 @@ export function ReelRating({ rating, size = 16, onChange }: { rating: number; si
         const reelImage = (
           <Image 
             source={source} 
-            style={{ 
-              width: size, 
-              height: size, 
-              resizeMode: 'contain', 
-              opacity: full ? 1 : 0.8 
-            }} 
+            style={[s.reelImage, { width: size, height: size }, full && s.reelFull]} 
           />
         );
 
@@ -100,20 +95,19 @@ export function ReelRating({ rating, size = 16, onChange }: { rating: number; si
             const halfVal = reel - 0.5;
             const fullVal = reel;
             return (
-                <View key={reel} style={{ width: size, height: size, position: 'relative' }}>
+                <View key={reel} style={[s.reelTouchWrap, { width: size, height: size }]}>
                     {reelImage}
-                    {/* Left half = half-star, Right half = full star */}
-                    <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, flexDirection: 'row' }}>
+                    <View style={s.reelSplitRow}>
                         <TouchableOpacity 
                             activeOpacity={1} 
                             onPress={() => onChange(rating === halfVal ? 0 : halfVal)}
-                            style={{ flex: 1 }}
+                            style={s.reelHalf}
                             hitSlop={{ top: 4, bottom: 4, left: 2, right: 0 }}
                         />
                         <TouchableOpacity 
                             activeOpacity={1} 
                             onPress={() => onChange(rating === fullVal ? 0 : fullVal)}
-                            style={{ flex: 1 }}
+                            style={s.reelHalf}
                             hitSlop={{ top: 4, bottom: 4, left: 0, right: 2 }}
                         />
                     </View>
@@ -169,6 +163,11 @@ const s = StyleSheet.create({
 
   // Reel Rating
   reelRow: { flexDirection: 'row', gap: 6 },
+  reelImage: { resizeMode: 'contain', opacity: 0.8 },
+  reelFull: { opacity: 1 },
+  reelTouchWrap: { position: 'relative' },
+  reelSplitRow: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, flexDirection: 'row' },
+  reelHalf: { flex: 1 },
   reelIcon: { lineHeight: 20 },
   reelFilled: { color: colors.sepia },
   reelEmpty: { color: colors.ash },

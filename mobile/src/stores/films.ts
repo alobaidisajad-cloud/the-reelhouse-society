@@ -3,6 +3,8 @@ import { supabase } from '../lib/supabase'
 import { useAuthStore } from './auth'
 import { FilmLog, WatchlistItem, VaultItem, FilmList, TicketStub, Interaction, PhysicalArchiveItem } from '../types'
 import reelToast from '../utils/reelToast'
+import { colors } from '../theme/theme'
+import { enqueueMutation } from '../utils/offlineQueue'
 
 /** Lightweight shape for TMDB film data passed into store methods */
 interface TMDBFilmInput {
@@ -37,9 +39,11 @@ export interface FilmState {
     vaultPage: number
     listsHasMore: boolean
     listsPage: number
+    watchlistHasMore: boolean
+    watchlistPage: number
 
     fetchLogs: (loadMore?: boolean) => Promise<void>
-    fetchWatchlist: () => Promise<void>
+    fetchWatchlist: (loadMore?: boolean) => Promise<void>
     fetchVault: (loadMore?: boolean) => Promise<void>
     fetchLists: (loadMore?: boolean) => Promise<void>
     fetchStubs: () => Promise<void>
@@ -71,6 +75,12 @@ export interface FilmState {
     _watchlistIndex: Record<number, true>
     /** O(1) logged film lookup index (maps filmId to its single log) */
     _loggedIndex: Record<number, FilmLog>
+    /** Inflight guards — prevent duplicate concurrent fetches */
+    _fetchingLogs: boolean
+    _fetchingWatchlist: boolean
+    _fetchingVault: boolean
+    _fetchingLists: boolean
+    _addLogMutex: boolean
 }
 
 export const useFilmStore = create<FilmState>()((set, get) => ({
@@ -87,10 +97,18 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
             vaultPage: 0,
             listsHasMore: true,
             listsPage: 0,
+            watchlistHasMore: true,
+            watchlistPage: 0,
             _endorsedIndex: {} as Record<string, true>,  // O(1) lookup — rebuilt on mutations
             _listEndorsedIndex: {} as Record<string, true>,
             _watchlistIndex: {} as Record<number, true>,
             _loggedIndex: {} as Record<number, FilmLog>,
+            // ── Inflight guards — prevent duplicate concurrent fetches ──
+            _fetchingLogs: false,
+            _fetchingWatchlist: false,
+            _fetchingVault: false,
+            _fetchingLists: false,
+            _addLogMutex: false,
 
             toggleEndorse: async (targetId) => {
                 const user = useAuthStore.getState().user
@@ -131,16 +149,19 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                                     user_id: logInfo.user_id,
                                     type: 'endorse',
                                     from_username: user.username,
-                                    message: `@${user.username} endorsed your review of ${logInfo.film_title || 'a film'}`,
+                                    message: `@${user.username} endorsed your review of ${logInfo.film_title ?? 'a film'}`,
                                     read: false
                                 })
                             }
                         }
                     }
-                } catch (e: any) {
-                    if (e?.message?.toLowerCase().includes('fetch') || e?.message?.toLowerCase().includes('network')) {
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message : '';
+                    if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
                         // Offline Background Queue — Keep the optimistic UI, sync later
-                        
+                        if (!exists) {
+                            enqueueMutation({ type: 'endorse_log', payload: { user_id: user.id, target_log_id: targetId } })
+                        }
                     } else {
                         // Functional Rollback to prevent race condition erasure
                         if (exists) {
@@ -165,7 +186,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     .eq('type', 'endorse_log')
                     .limit(2000)
                 if (!error && data) {
-                    const mapped: Interaction[] = (data || []).map(r => ({
+                    const mapped: Interaction[] = (data ?? []).map(r => ({
                         type: 'endorse' as const,
                         targetId: r.target_log_id,
                         timestamp: r.created_at,
@@ -211,16 +232,19 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                                     user_id: listInfo.user_id,
                                     type: 'endorse',
                                     from_username: user.username,
-                                    message: `@${user.username} certified your list "${listInfo.title || 'Untitled'}"`,
+                                    message: `@${user.username} certified your list "${listInfo.title ?? 'Untitled'}"`,
                                     read: false
                                 })
                             }
                         }
                     }
-                } catch (e: any) {
-                    if (e?.message?.toLowerCase().includes('fetch') || e?.message?.toLowerCase().includes('network')) {
-                        // Offline queueing
-                        
+                } catch (e: unknown) {
+                    const msg = e instanceof Error ? e.message : '';
+                    if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+                        // Offline queueing — persist for background sync
+                        if (!exists) {
+                            enqueueMutation({ type: 'endorse_list', payload: { user_id: user.id, target_list_id: listId } })
+                        }
                     } else {
                         if (exists) {
                             const next = [...get().interactions, exists]
@@ -248,7 +272,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     .eq('type', 'endorse_list')
                     .limit(2000)
                 if (!error && data) {
-                    const newListEndorsements = (data || []).map(r => ({
+                    const newListEndorsements = (data ?? []).map(r => ({
                         type: 'endorse_list' as const,
                         targetId: r.target_list_id,
                         timestamp: r.created_at,
@@ -271,7 +295,9 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const state = get()
+                if (state._fetchingLogs) return  // Inflight guard
                 if (loadMore && !state.logsHasMore) return
+                set({ _fetchingLogs: true })
 
                 const PAGE_SIZE = 50
                 const page = loadMore ? state.logsPage : 0
@@ -281,7 +307,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     .order('watched_date', { ascending: false })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
                 
-                if (error || !data) return
+                if (error || !data) { set({ _fetchingLogs: false }); return }
                 
                 const hasMore = data.length === PAGE_SIZE
 
@@ -289,27 +315,27 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                         id: dbLog.id,
                         filmId: dbLog.film_id,
                         title: dbLog.film_title,
-                        poster: dbLog.poster_path || null,
-                        year: dbLog.year || null,
+                        poster: dbLog.poster_path ?? null,
+                        year: dbLog.year ?? null,
                         rating: dbLog.rating,
                         review: dbLog.review,
-                        status: dbLog.status || 'watched',
-                        isSpoiler: dbLog.is_spoiler || false,
+                        status: dbLog.status ?? 'watched',
+                        isSpoiler: dbLog.is_spoiler ?? false,
                         watchedDate: dbLog.watched_date,
-                        watchedWith: dbLog.watched_with || null,
-                        privateNotes: dbLog.private_notes || null,
-                        abandonedReason: dbLog.abandoned_reason || null,
-                        physicalMedia: dbLog.physical_media || null,
-                        isAutopsied: dbLog.is_autopsied || false,
-                        autopsy: dbLog.autopsy || null,
-                        altPoster: dbLog.alt_poster || null,
-                        editorialHeader: dbLog.editorial_header || null,
-                        dropCap: dbLog.drop_cap || false,
-                        pullQuote: dbLog.pull_quote || '',
-                        videoUrl: dbLog.video_url || null,
+                        watchedWith: dbLog.watched_with ?? null,
+                        privateNotes: dbLog.private_notes ?? null,
+                        abandonedReason: dbLog.abandoned_reason ?? null,
+                        physicalMedia: dbLog.physical_media ?? null,
+                        isAutopsied: dbLog.is_autopsied ?? false,
+                        autopsy: dbLog.autopsy ?? null,
+                        altPoster: dbLog.alt_poster ?? null,
+                        editorialHeader: dbLog.editorial_header ?? null,
+                        dropCap: dbLog.drop_cap ?? false,
+                        pullQuote: dbLog.pull_quote ?? '',
+                        videoUrl: dbLog.video_url ?? null,
                         createdAt: dbLog.created_at,
-                        viewCount: dbLog.view_count || 1,
-                        viewingHistory: dbLog.viewing_history || [],
+                        viewCount: dbLog.view_count ?? 1,
+                        viewingHistory: dbLog.viewing_history ?? [],
                 }))
 
                 const nextLogs = loadMore ? [...state.logs, ...newLogs] : newLogs
@@ -320,37 +346,50 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     logs: nextLogs as FilmLog[], 
                     _loggedIndex: idx,
                     logsPage: page + 1,
-                    logsHasMore: hasMore
+                    logsHasMore: hasMore,
+                    _fetchingLogs: false,
                 })
             },
 
-            fetchWatchlist: async () => {
+            fetchWatchlist: async (loadMore = false) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                let allItems: any[] = []
-                let page = 0
-                const PAGE_SIZE = 1000
-                while (true) {
-                    const { data, error } = await supabase
-                        .from('watchlists').select('id, user_id, film_id, film_title, poster_path, year, created_at').eq('user_id', user.id)
-                        .order('created_at', { ascending: false })
-                        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
-                    if (error || !data || data.length === 0) break
-                    allItems = allItems.concat(data)
-                    if (data.length < PAGE_SIZE) break
-                    page++
-                }
-                const newWatchlist = allItems.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null }))
+                const state = get()
+                if (state._fetchingWatchlist) return  // Inflight guard
+                if (loadMore && !state.watchlistHasMore) return
+                set({ _fetchingWatchlist: true })
+
+                const PAGE_SIZE = 50
+                const page = loadMore ? state.watchlistPage : 0
+
+                const { data, error } = await supabase
+                    .from('watchlists').select('id, user_id, film_id, film_title, poster_path, year, created_at').eq('user_id', user.id)
+                    .order('created_at', { ascending: false })
+                    .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
+
+                if (error || !data) { set({ _fetchingWatchlist: false }); return }
+
+                const hasMore = data.length === PAGE_SIZE
+                const newItems = data.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path ?? null, year: w.year ?? null }))
+                const nextWatchlist = loadMore ? [...state.watchlist, ...newItems] : newItems
                 const idx: Record<number, true> = {}
-                newWatchlist.forEach(w => { idx[w.id] = true })
-                set({ watchlist: newWatchlist, _watchlistIndex: idx })
+                nextWatchlist.forEach(w => { idx[w.id] = true })
+                set({
+                    watchlist: nextWatchlist,
+                    _watchlistIndex: idx,
+                    watchlistPage: page + 1,
+                    watchlistHasMore: hasMore,
+                    _fetchingWatchlist: false,
+                })
             },
 
             fetchVault: async (loadMore = false) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const state = get()
+                if (state._fetchingVault) return  // Inflight guard
                 if (loadMore && !state.vaultHasMore) return
+                set({ _fetchingVault: true })
 
                 const PAGE_SIZE = 50
                 const page = loadMore ? state.vaultPage : 0
@@ -362,13 +401,16 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
 
                 if (!error && data) {
                     const hasMore = data.length === PAGE_SIZE
-                    const newVault = data.map((v) => ({ id: v.film_id, title: v.film_title, poster_path: v.poster_path || null, year: v.year || null, format: v.format || 'Digital' }))
+                    const newVault = data.map((v) => ({ id: v.film_id, title: v.film_title, poster_path: v.poster_path ?? null, year: v.year ?? null, format: v.format ?? 'Digital' }))
                     
                     set({ 
                         vault: loadMore ? [...state.vault, ...newVault] : newVault,
                         vaultPage: page + 1,
-                        vaultHasMore: hasMore
+                        vaultHasMore: hasMore,
+                        _fetchingVault: false,
                     })
+                } else {
+                    set({ _fetchingVault: false })
                 }
             },
 
@@ -376,7 +418,9 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const state = get()
+                if (state._fetchingLists) return  // Inflight guard
                 if (loadMore && !state.listsHasMore) return
+                set({ _fetchingLists: true })
 
                 const PAGE_SIZE = 20
                 const page = loadMore ? state.listsPage : 0
@@ -391,30 +435,33 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
 
                     // ── Batched fetch: single query for ALL list items instead of N+1 ──
                     const listIds = lists.map(l => l.id)
-                    let allItems: any[] = []
+                    let allItems: Array<{ list_id: string; film_id: number; film_title: string; poster_path: string | null }> = []
                     if (listIds.length > 0) {
                         const { data: items } = await supabase
                             .from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).limit(1000)
-                        allItems = items || []
+                        allItems = items ?? []
                     }
                     // Group items by list_id client-side
                     const itemsByList = new Map<string, typeof allItems>()
                     for (const item of allItems) {
-                        const arr = itemsByList.get(item.list_id) || []
+                        const arr = itemsByList.get(item.list_id) ?? []
                         arr.push(item)
                         itemsByList.set(item.list_id, arr)
                     }
                     const fullLists = lists.map((list) => ({
                         id: list.id, title: list.title, description: list.description,
-                        isRanked: list.is_ranked, isPrivate: list.is_private || false, createdAt: list.created_at,
-                        films: (itemsByList.get(list.id) || []).map((i: any) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path || null })),
+                        isRanked: list.is_ranked, isPrivate: list.is_private ?? false, createdAt: list.created_at,
+                        films: (itemsByList.get(list.id) ?? []).map((i) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path ?? null })),
                     }))
                     
                     set({ 
                         lists: loadMore ? [...state.lists, ...fullLists] : fullLists,
                         listsPage: page + 1,
-                        listsHasMore: hasMore
+                        listsHasMore: hasMore,
+                        _fetchingLists: false,
                     })
+                } else {
+                    set({ _fetchingLists: false })
                 }
             },
 
@@ -423,22 +470,22 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 if (!user) return
                 const { data, error } = await supabase
                     .from('tickets')
-                    .select('*, showtimes(film_title, date)')
+                    .select('id, user_id, showtime_id, seat, ticket_type, amount, qr_code, screen_name, created_at, showtimes(film_title, date)')
                     .eq('user_id', user.id)
                     .order('created_at', { ascending: false })
                     .limit(500)
                 if (!error && data) {
                     set({
                         stubs: data.map((t) => ({
-                            id: t.id || '',
-                            filmTitle: t.showtimes?.film_title || 'Unknown Film',
-                            date: t.showtimes?.date || '',
-                            seat: t.seat || '—',
-                            ticketType: t.ticket_type || 'Standard',
-                            amount: t.amount || 0,
-                            qrCode: t.qr_code || null,
-                            screenName: t.screen_name || null,
-                            createdAt: t.created_at || new Date().toISOString(),
+                            id: t.id ?? '',
+                            filmTitle: t.showtimes?.film_title ?? 'Unknown Film',
+                            date: t.showtimes?.date ?? '',
+                            seat: t.seat ?? '—',
+                            ticketType: t.ticket_type ?? 'Standard',
+                            amount: t.amount ?? 0,
+                            qrCode: t.qr_code ?? null,
+                            screenName: t.screen_name ?? null,
+                            createdAt: t.created_at ?? new Date().toISOString(),
                         })),
                     })
                 }
@@ -454,12 +501,12 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const { data, error } = await supabase.from('tickets').insert([{
                     user_id: user.id,
                     showtime_id: stub.showtimeId,
-                    slot_id: stub.slotId || 'default',
-                    seat: stub.seat || '—',
-                    ticket_type: stub.ticketType || 'Standard',
-                    amount: stub.amount || 0,
-                    qr_code: stub.qrCode || null,
-                    screen_name: stub.screenName || null,
+                    slot_id: stub.slotId ?? 'default',
+                    seat: stub.seat ?? '—',
+                    ticket_type: stub.ticketType ?? 'Standard',
+                    amount: stub.amount ?? 0,
+                    qr_code: stub.qrCode ?? null,
+                    screen_name: stub.screenName ?? null,
                 }]).select().single()
                 if (!error && data) {
                     return data.id
@@ -472,30 +519,35 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 if (!user) return
 
                 // ── Rewatch: if a log already exists for this film, archive old review into viewing_history ──
+                // Mutex — prevent double-tap creating duplicate rewatch entries
+                if (get()._addLogMutex) return
+                set({ _addLogMutex: true })
+
                 const existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined
                 if (existingLog) {
-                    const oldHistory = existingLog.viewingHistory || []
+                    const oldHistory = existingLog.viewingHistory ?? []
                     const archivedEntry = {
-                        date: existingLog.watchedDate || existingLog.createdAt || new Date().toISOString(),
+                        date: existingLog.watchedDate ?? existingLog.createdAt ?? new Date().toISOString(),
                         rating: existingLog.rating,
-                        review: existingLog.review || '',
-                        watchedWith: existingLog.watchedWith || null,
+                        review: existingLog.review ?? '',
+                        watchedWith: existingLog.watchedWith ?? null,
                     }
                     const newHistory = [archivedEntry, ...oldHistory]
-                    const newViewCount = (existingLog.viewCount || 1) + 1
+                    const newViewCount = (existingLog.viewCount ?? 1) + 1
 
                     await get().updateLog(existingLog.id, {
-                        rating: log.rating || 0,
-                        review: log.review || '',
+                        rating: log.rating ?? 0,
+                        review: log.review ?? '',
                         status: 'rewatched',
-                        watchedDate: log.watchedDate || new Date().toISOString(),
-                        watchedWith: log.watchedWith || null,
-                        isSpoiler: log.isSpoiler || false,
-                        privateNotes: log.privateNotes || null,
-                        physicalMedia: log.physicalMedia || null,
+                        watchedDate: log.watchedDate ?? new Date().toISOString(),
+                        watchedWith: log.watchedWith ?? null,
+                        isSpoiler: log.isSpoiler ?? false,
+                        privateNotes: log.privateNotes ?? null,
+                        physicalMedia: log.physicalMedia ?? null,
                         viewCount: newViewCount,
                         viewingHistory: newHistory,
                     } as Partial<FilmLog>)
+                    set({ _addLogMutex: false })
                     return
                 }
 
@@ -503,24 +555,24 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const { data, error } = await supabase.from('logs').insert([{
                     user_id: user.id,
                     film_id: log.filmId, film_title: log.title,
-                    poster_path: log.poster || null, year: log.year || null,
-                    rating: log.rating || 0, review: log.review || '',
-                    status: log.status || 'watched', is_spoiler: log.isSpoiler || false,
-                    watched_date: log.watchedDate || new Date().toISOString(),
-                    watched_with: log.watchedWith || null,
-                    private_notes: log.privateNotes || null,
-                    abandoned_reason: log.abandonedReason || null,
-                    physical_media: log.physicalMedia || null,
-                    is_autopsied: log.isAutopsied || false, autopsy: log.autopsy || null,
-                    alt_poster: log.altPoster || null, editorial_header: log.editorialHeader || null,
-                    drop_cap: log.dropCap || false, pull_quote: log.pullQuote || '',
-                    video_url: log.videoUrl || null,
-                    format: log.physicalMedia || 'Digital',
+                    poster_path: log.poster ?? null, year: log.year ?? null,
+                    rating: log.rating ?? 0, review: log.review ?? '',
+                    status: log.status ?? 'watched', is_spoiler: log.isSpoiler ?? false,
+                    watched_date: log.watchedDate ?? new Date().toISOString(),
+                    watched_with: log.watchedWith ?? null,
+                    private_notes: log.privateNotes ?? null,
+                    abandoned_reason: log.abandonedReason ?? null,
+                    physical_media: log.physicalMedia ?? null,
+                    is_autopsied: log.isAutopsied ?? false, autopsy: log.autopsy ?? null,
+                    alt_poster: log.altPoster ?? null, editorial_header: log.editorialHeader ?? null,
+                    drop_cap: log.dropCap ?? false, pull_quote: log.pullQuote ?? '',
+                    video_url: log.videoUrl ?? null,
+                    format: log.physicalMedia ?? 'Digital',
                     view_count: 1,
                     viewing_history: '[]',
                 }]).select().single()
 
-                if (error) return
+                if (error) { set({ _addLogMutex: false }); return }
 
                 const fullLog = { ...log, id: data.id, createdAt: data.created_at, viewCount: 1, viewingHistory: [] } as FilmLog
                 set((state) => ({
@@ -533,11 +585,12 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 if (log.physicalMedia && syncFormatMap[log.physicalMedia] && log.filmId !== undefined) {
                     const fmt = syncFormatMap[log.physicalMedia]
                     try {
-                        await get().addToPhysicalArchive({ id: log.filmId, title: log.title || '', poster_path: log.poster, release_date: log.year?.toString() }, [fmt])
+                        await get().addToPhysicalArchive({ id: log.filmId, title: log.title ?? '', poster_path: log.poster, release_date: log.year?.toString() }, [fmt])
                     } catch (e) {
                         console.error('Failed to auto-sync physical archive', e)
                     }
                 }
+                set({ _addLogMutex: false })
             },
 
             markAsWatched: async (film, status = 'watched') => {
@@ -551,8 +604,8 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const { data, error } = await supabase.from('logs').insert([{
                     user_id: user.id,
                     film_id: film.id,
-                    film_title: film.title || film.name || 'Untitled',
-                    poster_path: film.poster_path || null,
+                    film_title: film.title ?? film.name ?? 'Untitled',
+                    poster_path: film.poster_path ?? null,
                     year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : null,
                     rating: 0,
                     review: '',
@@ -566,7 +619,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const newLog: FilmLog = {
                     id: data.id,
                     filmId: film.id,
-                    title: film.title || film.name || 'Untitled',
+                    title: film.title ?? film.name ?? 'Untitled',
                     poster: film.poster_path,
                     year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
                     rating: 0,
@@ -596,10 +649,10 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const logs = get().logs
                 const count = logs.length
                 let level = 'FIRST REEL'
-                let color = 'var(--fog)'
-                if (count > 50) { level = 'THE ORACLE'; color = 'var(--sepia)' }
-                else if (count > 20) { level = 'MIDNIGHT DEVOTEE'; color = 'var(--blood-reel)' }
-                else if (count > 5) { level = 'THE REGULAR'; color = 'var(--flicker)' }
+                let color = colors.fog
+                if (count > 50) { level = 'THE ORACLE'; color = colors.sepia }
+                else if (count > 20) { level = 'MIDNIGHT DEVOTEE'; color = colors.bloodReel }
+                else if (count > 5) { level = 'THE REGULAR'; color = colors.flicker }
                 return { count, level, color, progress: (count % 20) * 5 }
             },
 
@@ -648,7 +701,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                         const logToUpdate = get().logs.find(l => l.id === id)
                         if (logToUpdate && logToUpdate.filmId !== undefined) {
                             try {
-                                await get().addToPhysicalArchive({ id: logToUpdate.filmId, title: logToUpdate.title || '', poster_path: logToUpdate.poster, release_date: logToUpdate.year?.toString() }, [fmt])
+                                await get().addToPhysicalArchive({ id: logToUpdate.filmId, title: logToUpdate.title ?? '', poster_path: logToUpdate.poster, release_date: logToUpdate.year?.toString() }, [fmt])
                             } catch (e) {
                                 console.error('Failed to auto-sync physical archive on update', e)
                             }
@@ -673,14 +726,14 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 if (!user) return
                 const { error } = await supabase.from('watchlists').insert([{
                     user_id: user.id, film_id: film.id,
-                    film_title: film.title || film.name || 'Unknown',
-                    poster_path: film.poster_path || null,
+                    film_title: film.title ?? film.name ?? 'Unknown',
+                    poster_path: film.poster_path ?? null,
                     year: film.release_date ? new Date(film.release_date).getFullYear() : null,
                 }])
                 if (error) throw error
                 set((state) => {
                     const exists = state.watchlist.find((f) => f.id === film.id)
-                    const nextWatchlist = exists ? state.watchlist : [...state.watchlist, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }]
+                    const nextWatchlist = exists ? state.watchlist : [...state.watchlist, { id: film.id, title: film.title ?? film.name ?? 'Unknown', poster_path: film.poster_path, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined }]
                     return {
                         watchlist: nextWatchlist,
                         _watchlistIndex: { ...state._watchlistIndex, [film.id]: true }
@@ -700,7 +753,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                         _watchlistIndex: nextIndex 
                     }
                 })
-                await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId); reelToast(`"${itemToRemove?.title || 'Film'}" removed from watchlist.`);
+                await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId); reelToast(`"${itemToRemove?.title ?? 'Film'}" removed from watchlist.`);
             },
 
             addToVault: async (film, format = 'Digital') => {
@@ -708,15 +761,15 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 if (!user) return
                 const { error } = await supabase.from('vaults').insert([{
                     user_id: user.id, film_id: film.id,
-                    film_title: film.title || film.name || 'Unknown',
-                    poster_path: film.poster_path || null,
+                    film_title: film.title ?? film.name ?? 'Unknown',
+                    poster_path: film.poster_path ?? null,
                     year: film.release_date ? new Date(film.release_date).getFullYear() : null,
                     format,
                 }])
                 if (error) throw error
                 set((state) => ({
                     vault: state.vault.find((f) => f.id === film.id) ? state.vault
-                        : [...state.vault, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path, format }],
+                        : [...state.vault, { id: film.id, title: film.title ?? film.name ?? 'Unknown', poster_path: film.poster_path, format }],
                 }))
             },
 
@@ -731,11 +784,23 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const { data, error } = await supabase.from('lists').insert([{
-                    user_id: user.id, title: list.title, description: list.description || '', is_private: list.isPrivate || false
+                    user_id: user.id, title: list.title, description: list.description ?? '', is_private: list.isPrivate ?? false
                 }]).select().single()
                 if (error) throw error
                 if (data) {
-                    set((state) => ({ lists: [{ id: data.id, title: list.title || 'Untitled', description: list.description || '', isRanked: false, isPrivate: list.isPrivate || false, films: [], createdAt: data.created_at }, ...state.lists] }))
+                    // Batch-insert films into list_items if provided
+                    const inputFilms = (list as { films?: { id: number; title?: string; poster_path?: string | null }[] }).films ?? []
+                    if (inputFilms.length > 0) {
+                        const items = inputFilms.map((f) => ({
+                            list_id: data.id,
+                            film_id: f.id,
+                            film_title: f.title ?? 'Unknown',
+                            poster_path: f.poster_path ?? null,
+                        }))
+                        await supabase.from('list_items').insert(items)
+                    }
+                    const filmEntries = inputFilms.map((f) => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? null }))
+                    set((state) => ({ lists: [{ id: data.id, title: list.title ?? 'Untitled', description: list.description ?? '', isRanked: false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: data.created_at }, ...state.lists] }))
                 }
             },
 
@@ -768,13 +833,13 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
 
             addFilmToList: async (listId, film) => {
                 const { error } = await supabase.from('list_items').insert([{
-                    list_id: listId, film_id: film.id, film_title: film.title || film.name || 'Unknown',
-                    poster_path: film.poster_path || null,
+                    list_id: listId, film_id: film.id, film_title: film.title ?? film.name ?? 'Unknown',
+                    poster_path: film.poster_path ?? null,
                 }])
                 if (error) throw error
                 set((state) => ({
                     lists: state.lists.map((l) => l.id === listId
-                        ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, { id: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path }] }
+                        ? { ...l, films: l.films.find((f) => f.id === film.id) ? l.films : [...l.films, { id: film.id, title: film.title ?? film.name ?? 'Unknown', poster_path: film.poster_path }] }
                         : l
                     ),
                 }))
@@ -793,21 +858,21 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
 
             // ── PHYSICAL ARCHIVE ──
             fetchPhysicalArchive: async (userId?: string) => {
-                const uid = userId || useAuthStore.getState().user?.id
+                const uid = userId ?? useAuthStore.getState().user?.id
                 if (!uid) return []
                 const { data, error } = await supabase
                     .from('physical_archive').select('id, user_id, film_id, film_title, poster_path, year, formats, notes, condition, created_at').eq('user_id', uid)
                     .order('created_at', { ascending: false }).limit(2000)
                 if (!error && data) {
-                    const items = data.map((item: any) => ({
+                    const items = data.map((item) => ({
                         id: item.id,
                         filmId: item.film_id,
                         title: item.film_title,
-                        poster_path: item.poster_path || null,
-                        year: item.year || null,
-                        formats: item.formats || [],
-                        notes: item.notes || '',
-                        condition: item.condition || 'good',
+                        poster_path: item.poster_path ?? null,
+                        year: item.year ?? null,
+                        formats: item.formats ?? [],
+                        notes: item.notes ?? '',
+                        condition: item.condition ?? 'good',
                         createdAt: item.created_at,
                     }))
                     if (!userId || userId === useAuthStore.getState().user?.id) {
@@ -825,8 +890,8 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const { data, error } = await supabase.from('physical_archive').upsert([{
                     user_id: user.id,
                     film_id: film.id,
-                    film_title: film.title || film.name || 'Unknown',
-                    poster_path: film.poster_path || null,
+                    film_title: film.title ?? film.name ?? 'Unknown',
+                    poster_path: film.poster_path ?? null,
                     year: film.release_date ? new Date(film.release_date).getFullYear() : null,
                     formats,
                     notes,
@@ -839,7 +904,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                         if (exists) {
                             return { physicalArchive: state.physicalArchive.map(a => a.filmId === film.id ? { ...a, formats, notes, condition } : a) }
                         }
-                        return { physicalArchive: [{ id: data.id, filmId: film.id, title: film.title || film.name || 'Unknown', poster_path: film.poster_path || null, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined, formats, notes, condition, createdAt: data.created_at }, ...state.physicalArchive] }
+                        return { physicalArchive: [{ id: data.id, filmId: film.id, title: film.title ?? film.name ?? 'Unknown', poster_path: film.poster_path ?? null, year: film.release_date ? new Date(film.release_date).getFullYear() : undefined, formats, notes, condition, createdAt: data.created_at }, ...state.physicalArchive] }
                     })
                 }
             },
@@ -851,7 +916,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 if (!error) set((state) => ({ physicalArchive: state.physicalArchive.filter(a => a.filmId !== filmId) }))
             },
 
-            updatePhysicalArchiveItem: async (filmId: number, updates: any) => {
+            updatePhysicalArchiveItem: async (filmId: number, updates: Partial<PhysicalArchiveItem>) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const dbUpdates: Record<string, unknown> = {}

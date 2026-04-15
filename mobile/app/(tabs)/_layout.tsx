@@ -70,13 +70,7 @@ function TabIcon({
           <View style={[
             s.indicatorDot,
             { backgroundColor: isCenter ? colors.flicker : colors.sepia },
-            isCenter && {
-              shadowColor: colors.flicker,
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0.8,
-              shadowRadius: 6,
-              elevation: 4,
-            },
+            isCenter && s.centerGlow,
           ]} />
         )}
       </View>
@@ -90,7 +84,7 @@ function TabIcon({
 function TabBarBackground() {
   return (
     <View style={StyleSheet.absoluteFill}>
-      <View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(11,10,8,0.88)' }]} />
+      <View style={[StyleSheet.absoluteFill, s.tabBarBg]} />
       <BlurView
         intensity={Platform.OS === 'ios' ? 45 : 90}
         tint="dark"
@@ -124,6 +118,8 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: colors.sepia,
         tabBarInactiveTintColor: colors.fog,
+        animation: 'fade',
+        lazy: true,
       }}
     >
       <Tabs.Screen
@@ -151,14 +147,27 @@ export default function TabLayout() {
         options={{
           title: 'Lobby',
           tabBarIcon: ({ focused }) => {
+            const scale = useSharedValue(1);
+            const iconOpacity = useSharedValue(0.35);
+
+            React.useEffect(() => {
+              scale.value = withSpring(focused ? 1.15 : 1, {
+                damping: 15,
+                stiffness: 220,
+                mass: 0.5,
+              });
+              iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: 200 });
+            }, [focused]);
+
+            const animatedStyle = useAnimatedStyle(() => ({
+              transform: [{ scale: scale.value }],
+              opacity: iconOpacity.value,
+            }));
+
             const iconColor = focused ? colors.flicker : colors.bone;
-            const iconOpacity = focused ? 1 : 0.35;
             return (
               <View style={s.tabIconRoot}>
-                <Animated.View style={[
-                  s.tabIconInner,
-                  { opacity: iconOpacity, transform: [{ scale: focused ? 1.15 : 1 }] },
-                ]}>
+                <Animated.View style={[s.tabIconInner, animatedStyle]}>
                   <ReelEyeIcon
                     size={26}
                     color={iconColor}
@@ -170,13 +179,7 @@ export default function TabLayout() {
                     <View style={[
                       s.indicatorDot,
                       { backgroundColor: colors.flicker },
-                      {
-                        shadowColor: colors.flicker,
-                        shadowOffset: { width: 0, height: 0 },
-                        shadowOpacity: 0.8,
-                        shadowRadius: 6,
-                        elevation: 4,
-                      },
+                      s.centerGlow,
                     ]} />
                   )}
                 </View>
@@ -267,5 +270,17 @@ const s = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
+  },
+
+  tabBarBg: {
+    backgroundColor: 'rgba(11,10,8,0.88)',
+  },
+
+  centerGlow: {
+    shadowColor: colors.flicker,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.8,
+    shadowRadius: 6,
+    elevation: 4,
   },
 });

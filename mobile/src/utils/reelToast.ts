@@ -1,23 +1,45 @@
-import { Alert } from 'react-native';
+/**
+ * reelToast — Cinematic toast notification API.
+ * 
+ * Drop-in replacement for Alert.alert(). Call from anywhere:
+ *   reelToast.success('Saved to watchlist ✦')
+ *   reelToast.error('Connection failed')
+ */
 import * as Haptics from 'expo-haptics';
 
-interface ToastOptions {
-    icon?: string;
+// ── Global toast state (singleton pattern) ──
+export type ToastType = 'success' | 'error' | 'info';
+export interface ToastPayload {
+  message: string;
+  type: ToastType;
+  id: number;
 }
 
-function triggerToast(message: string, options?: ToastOptions) {
+let _toastId = 0;
+let _listener: ((payload: ToastPayload) => void) | null = null;
+
+export function setToastListener(fn: ((payload: ToastPayload) => void) | null) {
+  _listener = fn;
+}
+
+function emitToast(message: string, type: ToastType) {
+  _toastId++;
+  if (type === 'error') {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  } else {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    // In a full production app, this would use a dedicated Toast library.
-    // For Nitrate Noir styling with current dependencies, Alert is a reliable fallback.
-    Alert.alert(options?.icon ? `${options.icon} ${message}` : message);
+  }
+  _listener?.({ message, type, id: _toastId });
 }
 
-const reelToast = Object.assign(triggerToast, {
-    success: (msg: string) => triggerToast(msg, { icon: '✦' }),
-    error: (msg: string) => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        Alert.alert('Error', msg);
-    },
-});
+// ── Public API ──
+const reelToast = Object.assign(
+  (msg: string) => emitToast(msg, 'info'),
+  {
+    success: (msg: string) => emitToast(msg, 'success'),
+    error: (msg: string) => emitToast(msg, 'error'),
+    info: (msg: string) => emitToast(msg, 'info'),
+  }
+);
 
 export default reelToast;

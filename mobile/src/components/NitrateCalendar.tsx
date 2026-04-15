@@ -130,13 +130,13 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
                                         end={{ x: 1, y: 1 }}
                                         style={s.daySelectedBg}
                                     >
-                                        <Text style={[s.dayText, { color: colors.ink, fontFamily: fonts.uiBold }]}>{day}</Text>
+                                        <Text style={s.dayTextSelected}>{day}</Text>
                                     </LinearGradient>
                                 ) : (
                                     <Text style={[
                                         s.dayText,
-                                        future && { color: 'rgba(196,184,152,0.2)' },
-                                        isToday && { color: colors.flicker, fontFamily: fonts.uiBold },
+                                        future && s.dayTextFuture,
+                                        isToday && s.dayTextToday,
                                     ]}>
                                         {day}
                                     </Text>
@@ -227,6 +227,18 @@ const s = StyleSheet.create({
         fontFamily: fonts.sub,
         fontSize: 12,
         color: colors.bone,
+    },
+    dayTextSelected: {
+        fontFamily: fonts.uiBold,
+        fontSize: 12,
+        color: colors.ink,
+    },
+    dayTextFuture: {
+        color: 'rgba(196,184,152,0.2)',
+    },
+    dayTextToday: {
+        color: colors.flicker,
+        fontFamily: fonts.uiBold,
     },
     daySelected: {
         // Glow handled by LinearGradient child

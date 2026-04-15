@@ -8,11 +8,18 @@ import { useAuthStore } from '@/src/stores/auth';
 import reelToast from '@/src/utils/reelToast';
 import { colors, fonts } from '@/src/theme/theme';
 
+interface DossierComment {
+    id: string;
+    username: string;
+    body: string;
+    created_at: string;
+}
+
 export default function DossierCritiquePanel({ dossierId, open }: { dossierId: string; open: boolean }) {
     const { user: currentUser } = useAuthStore();
     const router = useRouter();
     const [text, setText] = useState('');
-    const [comments, setComments] = useState<any[]>([]);
+    const [comments, setComments] = useState<DossierComment[]>([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [showAll, setShowAll] = useState(false);
@@ -130,7 +137,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                                     <TouchableOpacity 
                                         onPress={() => handleUpdate(c.id)} 
                                         disabled={isUpdating || !editBody.trim()}
-                                        style={[s.updateBtn, (isUpdating || !editBody.trim()) && { opacity: 0.5 }]}
+                                        style={[s.updateBtn, (isUpdating || !editBody.trim()) && s.updateBtnDisabled]}
                                     >
                                         <Text style={s.updateText}>UPDATE</Text>
                                     </TouchableOpacity>
@@ -164,15 +171,16 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                         placeholder="File a critique on this dossier…"
                         placeholderTextColor={colors.fog}
                         multiline
+                        maxLength={1000}
                     />
                     <View style={s.submitRow}>
                         <TouchableOpacity
                             onPress={handleSubmit}
                             disabled={submitting || !text.trim()}
-                            style={[s.submitBtn, (submitting || !text.trim()) && { opacity: 0.4 }]}
+                            style={[s.submitBtn, (submitting || !text.trim()) && s.submitBtnDisabled]}
                         >
                             <Text style={s.submitText}>SUBMIT CRITIQUE</Text>
-                            <Send size={14} color={colors.ink} style={{ marginLeft: 6 }} />
+                            <Send size={14} color={colors.ink} style={s.submitIcon} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -344,6 +352,9 @@ const s = StyleSheet.create({
         color: colors.ink,
         letterSpacing: 2,
     },
+    submitIcon: { marginLeft: 6 },
+    submitBtnDisabled: { opacity: 0.4 },
+    updateBtnDisabled: { opacity: 0.5 },
     loginPrompt: {
         fontFamily: fonts.ui,
         fontSize: 10,

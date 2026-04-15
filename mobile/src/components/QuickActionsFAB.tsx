@@ -18,7 +18,7 @@ export default function QuickActionsFAB() {
         setOpen(!open);
     };
 
-    const handleAction = (route: any) => {
+    const handleAction = (route: string) => {
         Haptics.selectionAsync();
         setOpen(false);
         setTimeout(() => {
@@ -61,7 +61,7 @@ export default function QuickActionsFAB() {
                     <Text style={s.sheetTitle}>QUICK ACTIONS</Text>
 
                     <TouchableOpacity style={s.actionRow} onPress={() => handleAction('/log-modal')} activeOpacity={0.7}>
-                        <View style={[s.actionIconWrap, { backgroundColor: 'rgba(196,150,26,0.1)' }]}>
+                        <View style={[s.actionIconWrap, s.actionIconLog]}>
                             <Film size={20} color={colors.sepia} />
                         </View>
                         <View>
@@ -71,7 +71,7 @@ export default function QuickActionsFAB() {
                     </TouchableOpacity>
 
                     <TouchableOpacity style={s.actionRow} onPress={() => handleAction('/list-modal')} activeOpacity={0.7}>
-                        <View style={[s.actionIconWrap, { backgroundColor: 'rgba(232,223,200,0.1)' }]}>
+                        <View style={[s.actionIconWrap, s.actionIconList]}>
                             <ListPlus size={20} color={colors.bone} />
                         </View>
                         <View>
@@ -80,8 +80,8 @@ export default function QuickActionsFAB() {
                         </View>
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={[s.actionRow, { borderBottomWidth: 0 }]} onPress={() => handleAction('/darkroom')} activeOpacity={0.7}>
-                        <View style={[s.actionIconWrap, { backgroundColor: 'rgba(107,26,10,0.15)' }]}>
+                    <TouchableOpacity style={[s.actionRow, s.actionRowLast]} onPress={() => handleAction('/darkroom')} activeOpacity={0.7}>
+                        <View style={[s.actionIconWrap, s.actionIconOracle]}>
                             <Sparkles size={20} color={colors.bloodReel} />
                         </View>
                         <View>
@@ -147,6 +147,10 @@ const s = StyleSheet.create({
     actionIconWrap: {
         width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 16,
     },
+    actionIconLog: { backgroundColor: 'rgba(196,150,26,0.1)' },
+    actionIconList: { backgroundColor: 'rgba(232,223,200,0.1)' },
+    actionIconOracle: { backgroundColor: 'rgba(107,26,10,0.15)' },
+    actionRowLast: { borderBottomWidth: 0 },
     actionTitle: {
         fontFamily: fonts.display, fontSize: 16, color: colors.parchment, marginBottom: 4,
     },

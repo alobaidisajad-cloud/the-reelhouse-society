@@ -64,7 +64,7 @@ export default function YearInCinemaScreen() {
     }
   };
 
-  const renderSlide = ({ item, index }: { item: any; index: number }) => {
+  const renderSlide = ({ item, index }: { item: { type: string }; index: number }) => {
     const isActive = currentIndex === index;
 
     return (

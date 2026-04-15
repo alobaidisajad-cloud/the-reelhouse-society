@@ -1,24 +1,32 @@
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
-import { useMemo } from 'react';
+import React, { useMemo, memo } from 'react';
 import Svg, { Circle, Text as SvgText, Line } from 'react-native-svg';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
+
+interface PassportLog {
+    filmId?: number;
+    year?: number | string;
+    rating: number;
+    physicalMedia?: string | null;
+    status?: string;
+}
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const STAMP_SIZE = (SCREEN_W - 64) / 2.5; // fit ~2.5 stamps per row
 
 const PASSPORT_STAMPS = [
-    { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', test: (logs: any[]) => logs.length >= 100 },
-    { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', test: (logs: any[]) => logs.length >= 500 },
-    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs: any[]) => logs.filter((l: any) => l.year && parseInt(l.year) < 1960).length >= 20 },
-    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs: any[]) => logs.filter((l: any) => l.rating === 5).length >= 10 },
-    { id: 'vault_keeper', label: 'VAULT KEEPER', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: any[]) => logs.some((l: any) => l.physicalMedia) },
-    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', test: (logs: any[]) => logs.some((l: any) => l.status === 'abandoned') },
-    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs: any[]) => new Set(logs.filter((l: any) => l.year).map((l: any) => Math.floor(parseInt(l.year) / 10) * 10)).size >= 7 },
-    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↻', test: (logs: any[]) => { const seen = new Set(); return logs.some((l: any) => { if (seen.has(l.filmId)) return true; seen.add(l.filmId); return false; }); } },
+    { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', test: (logs: PassportLog[]) => logs.length >= 100 },
+    { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', test: (logs: PassportLog[]) => logs.length >= 500 },
+    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs: PassportLog[]) => logs.filter((l) => l.year && parseInt(String(l.year)) < 1960).length >= 20 },
+    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs: PassportLog[]) => logs.filter((l) => l.rating === 5).length >= 10 },
+    { id: 'vault_keeper', label: 'VAULT KEEPER', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: PassportLog[]) => logs.some((l) => l.physicalMedia) },
+    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', test: (logs: PassportLog[]) => logs.some((l) => l.status === 'abandoned') },
+    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs: PassportLog[]) => new Set(logs.filter((l) => l.year).map((l) => Math.floor(parseInt(String(l.year)) / 10) * 10)).size >= 7 },
+    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↻', test: (logs: PassportLog[]) => { const seen = new Set<number>(); return logs.some((l) => { if (l.filmId && seen.has(l.filmId)) return true; if (l.filmId) seen.add(l.filmId); return false; }); } },
 ];
 
-function PassportStamp({ stamp, earned, index }: { stamp: { id: string; label: string; sub: string; glyph: string }; earned: boolean; index: number }) {
+const PassportStamp = memo(function PassportStamp({ stamp, earned, index }: { stamp: { id: string; label: string; sub: string; glyph: string }; earned: boolean; index: number }) {
     const rotations = [-4, 3, -2, 5, -3, 2, -5, 4];
     const rotation = rotations[index % 8];
     const size = STAMP_SIZE;
@@ -94,10 +102,10 @@ function PassportStamp({ stamp, earned, index }: { stamp: { id: string; label: s
             </Svg>
         </Animated.View>
     );
-}
+});
 
-export function NoirPassport({ logs }: { logs?: any[] }) {
-    const safeLogs = logs || [];
+export const NoirPassport = memo(function NoirPassport({ logs }: { logs?: PassportLog[] }) {
+    const safeLogs = logs ?? [];
 
     const earned = useMemo(() =>
         PASSPORT_STAMPS.map(s => ({ ...s, earned: s.test(safeLogs) })),
@@ -134,7 +142,7 @@ export function NoirPassport({ logs }: { logs?: any[] }) {
             </View>
         </Animated.View>
     );
-}
+});
 
 const s = StyleSheet.create({
     container: { paddingVertical: 16, paddingHorizontal: 16 },
@@ -150,7 +158,7 @@ const s = StyleSheet.create({
     bottomRight: { bottom: 12, right: 12, borderBottomWidth: 1, borderRightWidth: 1, borderBottomColor: 'rgba(139,105,20,0.4)', borderRightColor: 'rgba(139,105,20,0.4)' },
     // Header
     header: { alignItems: 'center', marginBottom: 24, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.2)', paddingBottom: 20 },
-    societyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.sepia, marginBottom: 8, opacity: 0.7 },
+    societyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.sepia, marginBottom: 8, opacity: 0.8 },
     title: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 32, marginBottom: 10 },
     counter: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.fog },
     // Stamps
@@ -158,5 +166,5 @@ const s = StyleSheet.create({
     stampWrap: { alignItems: 'center', justifyContent: 'center' },
     // Footer
     footer: { alignItems: 'center', marginTop: 24, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,105,20,0.2)' },
-    footerText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.fog, opacity: 0.4, textAlign: 'center' },
+    footerText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.fog, opacity: 0.5, textAlign: 'center' },
 });

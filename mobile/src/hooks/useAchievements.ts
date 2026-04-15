@@ -29,12 +29,12 @@ export const BADGE_DEFS: Badge[] = [
   }},
   { key: 'drifter', label: 'THE DRIFTER', glyph: '§', description: 'Watch from 4+ decades', check: (l) => {
     const decades = new Set<number>()
-    l.forEach(log => { const y = log.year || parseInt((log as any).release_date?.slice(0,4) || '0'); if (y) decades.add(Math.floor(y / 10)) })
+    l.forEach(log => { const y = log.year || parseInt((log.release_date || '0').slice(0, 4)); if (y) decades.add(Math.floor(y / 10)) })
     return decades.size >= 4
   }},
   { key: 'completionist', label: 'THE COMPLETIONIST', glyph: '⊕', description: 'Rate every logged film', check: (l) => l.length > 0 && l.every(log => log.rating > 0) },
   { key: 'nocturne', label: 'THE NOCTURNE', glyph: '⊗', description: 'Log 5 films after midnight', check: (l) => {
-    const nightLogs = l.filter(log => { const h = new Date(log.created_at || (log as any).loggedAt || '').getHours(); return h >= 0 && h < 5 })
+    const nightLogs = l.filter(log => { const h = new Date(log.created_at || log.loggedAt || '').getHours(); return h >= 0 && h < 5 })
     return nightLogs.length >= 5
   }},
   { key: 'marathon', label: 'THE MARATHON', glyph: '⟐', description: 'Log 3+ films in one day', check: (l) => {

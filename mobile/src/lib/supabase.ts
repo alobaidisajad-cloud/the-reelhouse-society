@@ -16,7 +16,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-supabase.auth.onAuthStateChange(async (event: any) => {
+supabase.auth.onAuthStateChange(async (event, _session) => {
     if (event === 'TOKEN_REFRESH_FAILED') {
         supabase.auth.signOut({ scope: 'local' }).catch(() => { });
         if (Platform.OS !== 'web') {

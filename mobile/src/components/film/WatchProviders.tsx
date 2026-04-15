@@ -1,22 +1,37 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, Linking, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Linking, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { Tv } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 
-export function WatchProviders({ providers }: { providers: any }) {
-  const countryData = providers ? (providers['US'] || providers[Object.keys(providers)[0]]) : null;
-  const flatrate = countryData?.flatrate || [];
-  const rent = countryData?.rent || [];
-  const buy = countryData?.buy || [];
+interface Provider {
+  provider_id: number;
+  provider_name: string;
+  logo_path?: string | null;
+}
+
+interface CountryProviders {
+  flatrate?: Provider[];
+  rent?: Provider[];
+  buy?: Provider[];
+  link?: string;
+}
+
+export function WatchProviders({ providers }: { providers: Record<string, CountryProviders> | null }) {
+  const countryData = providers ? (providers['US'] ?? providers[Object.keys(providers)[0]]) : null;
+  const flatrate = countryData?.flatrate ?? [];
+  const rent = countryData?.rent ?? [];
+  const buy = countryData?.buy ?? [];
   const hasAny = flatrate.length > 0 || rent.length > 0 || buy.length > 0;
   const link = countryData?.link;
 
-  const ProviderLogo = ({ p, providerLink }: { p: any, providerLink: string }) => (
+  const ProviderLogo = ({ p, providerLink }: { p: Provider, providerLink: string }) => (
     <TouchableOpacity onPress={() => Linking.openURL(providerLink)} activeOpacity={0.7}>
       {p.logo_path ? (
         <Image
           source={{ uri: `https://image.tmdb.org/t/p/original${p.logo_path}` }}
           style={s.logo}
+          contentFit="cover"
         />
       ) : (
         <View style={s.logoFallback}>
@@ -29,7 +44,7 @@ export function WatchProviders({ providers }: { providers: any }) {
   return (
     <View style={s.container}>
       <View style={s.header}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+        <View style={s.headerRow}>
           <Tv size={12} color={colors.bone} />
           <Text style={s.title}>WHERE TO WATCH</Text>
         </View>
@@ -46,7 +61,7 @@ export function WatchProviders({ providers }: { providers: any }) {
             <View style={s.section}>
               <Text style={s.sectionLabel}>STREAM FREE</Text>
               <View style={s.grid}>
-                {flatrate.slice(0, 6).map((p: any) => (
+                {flatrate.slice(0, 6).map((p: Provider) => (
                   <ProviderLogo key={p.provider_id} p={p} providerLink={link} />
                 ))}
               </View>
@@ -57,7 +72,7 @@ export function WatchProviders({ providers }: { providers: any }) {
             <View style={s.section}>
               <Text style={s.sectionLabel}>RENT</Text>
               <View style={s.grid}>
-                {rent.slice(0, 6).map((p: any) => (
+                {rent.slice(0, 6).map((p: Provider) => (
                   <ProviderLogo key={p.provider_id} p={p} providerLink={link} />
                 ))}
               </View>
@@ -68,7 +83,7 @@ export function WatchProviders({ providers }: { providers: any }) {
             <View style={s.section}>
               <Text style={s.sectionLabel}>BUY</Text>
               <View style={s.grid}>
-                {buy.slice(0, 4).map((p: any) => (
+                {buy.slice(0, 4).map((p: Provider) => (
                   <ProviderLogo key={p.provider_id} p={p} providerLink={link} />
                 ))}
               </View>
@@ -106,6 +121,11 @@ const s = StyleSheet.create({
     fontSize: 10,
     letterSpacing: 2,
     color: colors.bone,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   emptyState: {
     padding: 24,

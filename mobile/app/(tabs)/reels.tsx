@@ -1,24 +1,74 @@
 import { useEffect, useCallback, useState, useMemo, memo, useRef } from 'react';
 import {
   View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl,
-  TextInput, Platform, Image, ScrollView, LayoutAnimation, UIManager,
+  TextInput, Platform, ScrollView, LayoutAnimation, UIManager,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import { Image } from 'expo-image';
 import Animated, {
   FadeInDown, FadeIn
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/lib/supabase';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { tmdb } from '@/src/lib/tmdb';
+import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
 import { SectionDivider } from '@/src/components/Decorative';
 import QuickActionsFAB from '@/src/components/QuickActionsFAB';
+import PressableScale from '@/src/components/PressableScale';
+import Buster from '@/src/components/Buster';
+import SkeletonPulse from '@/src/components/SkeletonPulse';
+import { setScrollY } from '@/src/utils/scrollBridge';
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
+
+
+
+/** Shape of a processed stack for display */
+interface StackFilm {
+  id: number;
+  title: string;
+  poster_path: string | null;
+}
+
+interface StackData {
+  id: string;
+  title: string;
+  description: string;
+  curator: string;
+  curatorId: string;
+  createdAt: string;
+  films: StackFilm[];
+  count: number;
+  certifyCount: number;
+}
+
+interface ListRow {
+  id: string;
+  title: string;
+  description?: string;
+  created_at: string;
+  user_id: string;
+  is_private: boolean;
+}
+
+interface ListItemRow {
+  list_id: string;
+  film_id: number;
+  film_title: string;
+  poster_path: string | null;
+}
+
+interface EndorseRow {
+  target_list_id: string;
+}
+
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -39,7 +89,7 @@ const CINEMATIC_TRANSITION = {
 // ══════════════════════════════════════════════════════════════
 //  SECTION TAB PILL
 // ══════════════════════════════════════════════════════════════
-function TabPill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+const TabPill = memo(function TabPill({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -52,12 +102,12 @@ function TabPill({ label, active, onPress }: { label: string; active: boolean; o
       )}
     </TouchableOpacity>
   );
-}
+});
 
 // ══════════════════════════════════════════════════════════════
 //  FILTER PILL (ALL / FOLLOWING)
 // ══════════════════════════════════════════════════════════════
-function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -70,7 +120,7 @@ function FilterChip({ label, active, onPress }: { label: string; active: boolean
       )}
     </TouchableOpacity>
   );
-}
+});
 
 // ══════════════════════════════════════════════════════════════
 //  STACK CARD — Compact Dossier Card (Parity with Web)
@@ -82,28 +132,31 @@ const PRESET_GRADIENTS: readonly [string, string, ...string[]][] = [
   ['#0a0508', '#1a0f18', '#0a0508'],
 ];
 
-const StackCard = memo(function StackCard({ stack, onPress }: { stack: any; onPress: () => void }) {
-  const posters = (stack.films || []).filter((f: any) => f.poster_path).slice(0, 3);
-  const curatorInitial = (stack.curator || 'S')[0].toUpperCase();
+const StackCard = memo(function StackCard({ stack, onPress }: { stack: StackData; onPress: () => void }) {
+  const posters = (stack.films ?? []).filter((f: StackFilm) => f.poster_path).slice(0, 3);
+  const curatorInitial = (stack.curator ?? 'S')[0].toUpperCase();
   const refCode = stack.id ? `REF: ${stack.id.slice(0, 4).toUpperCase()}` : 'REF: 0000';
   
   const hash = stack.id ? stack.id.charCodeAt(0) : 0;
   const gradientColors = PRESET_GRADIENTS[Math.abs(hash) % PRESET_GRADIENTS.length];
 
   return (
-    <TouchableOpacity activeOpacity={0.85} onPress={onPress} style={st.stackCard}>
+    <PressableScale onPress={onPress} style={st.stackCard} haptic>
       {/* ── Background Poster Triptych (Web Parity) ── */}
       <View style={st.stackCardPosterWrap}>
         {posters.length === 0 ? (
           <LinearGradient colors={gradientColors} style={StyleSheet.absoluteFillObject} />
         ) : (
           <View style={st.stackCardPosterRow}>
-            {posters.map((f: any, i: number) => (
+            {posters.map((f: StackFilm, i: number) => (
               <View key={i} style={[st.stackCardPosterPanel, { width: `${100 / posters.length}%` }]}>
                 <Image
                   source={{ uri: `${TMDB_IMG}${f.poster_path}` }}
                   style={StyleSheet.absoluteFillObject}
                   resizeMode="cover"
+                  cachePolicy="memory-disk"
+                  placeholder={{ blurhash: SEPIA_HASH }}
+                  transition={100}
                 />
                 {/* Fade overlays to blend panels */}
                 {i < posters.length - 1 && (
@@ -135,7 +188,7 @@ const StackCard = memo(function StackCard({ stack, onPress }: { stack: any; onPr
       <View style={st.stackCardContent}>
         {/* Meta Row */}
         <View style={st.stackCardMetaRow}>
-          <Text style={st.stackCardBadgeText}>{stack.count || 0} FILMS</Text>
+          <Text style={st.stackCardBadgeText}>{stack.count ?? 0} FILMS</Text>
           {stack.certifyCount > 0 && (
             <Text style={st.stackCertifyText}>✦ {stack.certifyCount}</Text>
           )}
@@ -143,41 +196,56 @@ const StackCard = memo(function StackCard({ stack, onPress }: { stack: any; onPr
         </View>
 
         {/* Title */}
-        <Text style={st.stackCardTitle} numberOfLines={2}>{(stack.title || '').toUpperCase()}</Text>
+        <Text style={st.stackCardTitle} numberOfLines={2}>{(stack.title ?? '').toUpperCase()}</Text>
 
         {/* Curator */}
         <View style={st.stackCardCuratorRow}>
           <View style={st.stackCardCuratorDot} />
-          <Text style={st.stackCardCuratorName}>@{(stack.curator || 'society').toUpperCase()}</Text>
+          <Text style={st.stackCardCuratorName}>@{(stack.curator ?? 'society').toUpperCase()}</Text>
         </View>
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 });
 
 // ══════════════════════════════════════════════════════════════
 //  SKELETON LOADER
 // ══════════════════════════════════════════════════════════════
-function SkeletonCard() {
+const SkeletonCard = memo(function SkeletonCard() {
   return (
     <View style={st.skeleton}>
-      <View style={[st.shimmerBlock, st.shimmerNarrow]} />
-      <View style={[st.shimmerBlock, st.shimmerWide]} />
-      <View style={[st.shimmerBlock, st.shimmerMedium]} />
+      <SkeletonPulse height={8} width={'40%'} />
+      <SkeletonPulse height={14} width={'80%'} />
+      <SkeletonPulse height={8} width={'55%'} />
     </View>
   );
-}
+});
 
 // ══════════════════════════════════════════════════════════════
 //  MAIN SCREEN: THE REEL
 // ══════════════════════════════════════════════════════════════
 export default function ReelScreen() {
   const insets = useSafeAreaInsets();
-  const { isAuthenticated, user } = useAuthStore();
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const user = useAuthStore(s => s.user);
   const router = useRouter();
 
   const NAV_HEIGHT = 44 + 12;
   const topPad = insets.top + NAV_HEIGHT + 8;
+
+  // Reset scroll bridge so NavBar returns to transparent on this tab
+  useEffect(() => { setScrollY(0); }, []);
+
+  // #7: Persistent scroll position — restore on tab focus
+  const scrollOffsetRef = useRef(0);
+  const logsFlatListRef = useRef<FlatList>(null);
+  useFocusEffect(
+    useCallback(() => {
+      if (scrollOffsetRef.current > 0 && section === 'logs' && logsFlatListRef.current) {
+        logsFlatListRef.current.scrollToOffset({ offset: scrollOffsetRef.current, animated: false });
+      }
+    }, [section])
+  );
 
   // ── Section + Filter State ──
   const [section, setSection] = useState<ReelSection>('logs');
@@ -195,7 +263,7 @@ export default function ReelScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   // ── Stacks Data ──
-  const [allStacks, setAllStacks] = useState<any[]>([]);
+  const [allStacks, setAllStacks] = useState<StackData[]>([]);
   const [stacksLoading, setStacksLoading] = useState(false);
 
   // ══════════════════════════════════════════════════════════
@@ -204,124 +272,175 @@ export default function ReelScreen() {
 
   const fetchFeed = useCallback(async (mode: FeedFilter) => {
     try {
-      let query = supabase
-        .from('logs')
-        .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, profiles!logs_user_id_fkey(username, avatar_url, role)')
-        .not('review', 'is', null)
-        .neq('review', '')
-        .order('created_at', { ascending: false })
-        .limit(40);
-
+      // ── Following mode: use server-side RPC for single-query join ──
       if (mode === 'following' && user?.following && user.following.length > 0) {
+        const { data: rpcData, error: rpcError } = await supabase.rpc('get_following_feed', {
+          p_usernames: user.following,
+          p_limit: 40,
+          p_offset: 0,
+        });
+
+        // If RPC exists and succeeds, use it (single server-side query)
+        if (!rpcError && rpcData) {
+          return (rpcData as Record<string, unknown>[]).map((d) => ({
+            id: String(d.id),
+            username: d.username as string ?? 'unknown',
+            avatar_url: d.avatar_url as string | undefined,
+            film_title: d.film_title,
+            film_id: d.film_id,
+            poster_path: d.poster_path,
+            rating: d.rating,
+            review: d.review,
+            drop_cap: d.drop_cap,
+            status: (d.status as string) ?? 'watched',
+            created_at: d.created_at,
+            year: d.year,
+            editorial_header: d.editorial_header,
+            pull_quote: d.pull_quote,
+            role: d.role as string | undefined,
+            is_autopsied: d.is_autopsied,
+            autopsy: d.autopsy,
+          }));
+        }
+
+        // Fallback: if RPC not deployed yet, use old N+1 pattern
         const { data: profiles } = await supabase
           .from('profiles').select('id').in('username', user.following).limit(500);
-        if (profiles && profiles.length > 0) {
-          query = query.in('user_id', profiles.map(p => p.id));
-        } else {
-          return [];
-        }
+        if (!profiles || profiles.length === 0) return [];
+        const { data } = await supabase
+          .from('logs')
+          .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, profiles!logs_user_id_fkey(username, avatar_url, role)')
+          .not('review', 'is', null).neq('review', '')
+          .in('user_id', profiles.map(p => p.id))
+          .order('created_at', { ascending: false }).limit(40);
+        if (!data) return [];
+        return data.map((d: Record<string, unknown> & { profiles?: { username?: string; avatar_url?: string; role?: string } | Array<{ username?: string; avatar_url?: string; role?: string }> }) => ({
+          id: String(d.id),
+          username: Array.isArray(d.profiles) ? d.profiles[0]?.username : d.profiles?.username ?? 'unknown',
+          avatar_url: Array.isArray(d.profiles) ? d.profiles[0]?.avatar_url : d.profiles?.avatar_url,
+          film_title: d.film_title, film_id: d.film_id, poster_path: d.poster_path,
+          rating: d.rating, review: d.review, drop_cap: d.drop_cap,
+          status: d.status ?? 'watched', created_at: d.created_at, year: d.year,
+          editorial_header: d.editorial_header, pull_quote: d.pull_quote,
+          role: Array.isArray(d.profiles) ? d.profiles[0]?.role : d.profiles?.role,
+          is_autopsied: d.is_autopsied, autopsy: d.autopsy,
+        }));
       }
 
-      const { data } = await query;
+      // ── All mode: standard query ──
+      const { data } = await supabase
+        .from('logs')
+        .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, profiles!logs_user_id_fkey(username, avatar_url, role)')
+        .not('review', 'is', null).neq('review', '')
+        .order('created_at', { ascending: false }).limit(40);
       if (!data) return [];
 
-      return data.map((d: any) => ({
+      return data.map((d: Record<string, unknown> & { profiles?: { username?: string; avatar_url?: string; role?: string } | Array<{ username?: string; avatar_url?: string; role?: string }> }) => ({
         id: String(d.id),
-        username: Array.isArray(d.profiles) ? d.profiles[0]?.username : d.profiles?.username || 'unknown',
+        username: Array.isArray(d.profiles) ? d.profiles[0]?.username : d.profiles?.username ?? 'unknown',
         avatar_url: Array.isArray(d.profiles) ? d.profiles[0]?.avatar_url : d.profiles?.avatar_url,
-        film_title: d.film_title,
-        film_id: d.film_id,
-        poster_path: d.poster_path,
-        rating: d.rating,
-        review: d.review,
-        drop_cap: d.drop_cap,
-        status: d.status || 'watched',
-        created_at: d.created_at,
-        year: d.year,
-        editorial_header: d.editorial_header,
-        pull_quote: d.pull_quote,
+        film_title: d.film_title, film_id: d.film_id, poster_path: d.poster_path,
+        rating: d.rating, review: d.review, drop_cap: d.drop_cap,
+        status: d.status ?? 'watched', created_at: d.created_at, year: d.year,
+        editorial_header: d.editorial_header, pull_quote: d.pull_quote,
         role: Array.isArray(d.profiles) ? d.profiles[0]?.role : d.profiles?.role,
-        is_autopsied: d.is_autopsied,
-        autopsy: d.autopsy,
+        is_autopsied: d.is_autopsied, autopsy: d.autopsy,
       }));
     } catch { return []; }
   }, [user?.following]);
 
   const fetchStacks = useCallback(async () => {
-    setStacksLoading(true);
+    // #1: Stale-While-Revalidate — only show skeletons on first load
+    const isFirstLoad = allStacks.length === 0;
+    if (isFirstLoad) setStacksLoading(true);
     try {
+      // Single query: lists + curator username via foreign key join
       const { data: lists } = await supabase
         .from('lists')
-        .select('id, title, description, created_at, user_id, is_private')
+        .select('id, title, description, created_at, user_id, is_private, profiles!lists_user_id_fkey(username)')
         .eq('is_private', false)
         .order('created_at', { ascending: false })
         .limit(60);
 
       if (!lists || lists.length === 0) { setAllStacks([]); setStacksLoading(false); return; }
 
-      const userIds = [...new Set(lists.map((l: any) => l.user_id).filter(Boolean))];
-      let usernameMap: Record<string, string> = {};
-      if (userIds.length > 0) {
-        const { data: p } = await supabase.from('profiles').select('id, username').in('id', userIds);
-        if (p) usernameMap = Object.fromEntries(p.map((x: any) => [x.id, x.username]));
+      const listIds = lists.map((l: ListRow & { profiles?: { username?: string } | Array<{ username?: string }> }) => l.id);
+
+      // Parallel: list_items + endorsement counts (2 queries instead of 3 sequential)
+      const [itemsResp, endorseResp] = await Promise.all([
+        listIds.length > 0
+          ? supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds)
+          : Promise.resolve({ data: [] }),
+        listIds.length > 0
+          ? supabase.from('interactions').select('target_list_id').in('target_list_id', listIds).eq('type', 'endorse_list')
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      const itemsMap: Record<string, ListItemRow[]> = {};
+      if (itemsResp.data) {
+        (itemsResp.data as ListItemRow[]).forEach((item) => {
+          if (!itemsMap[item.list_id]) itemsMap[item.list_id] = [];
+          itemsMap[item.list_id].push(item);
+        });
       }
 
-      const listIds = lists.map((l: any) => l.id);
-      let itemsMap: Record<string, any[]> = {};
-      if (listIds.length > 0) {
-        const { data: items } = await supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds);
-        if (items) {
-          items.forEach((item: any) => {
-            if (!itemsMap[item.list_id]) itemsMap[item.list_id] = [];
-            itemsMap[item.list_id].push(item);
-          });
-        }
+      const endorseMap: Record<string, number> = {};
+      if (endorseResp.data) {
+        (endorseResp.data as EndorseRow[]).forEach((e) => {
+          endorseMap[e.target_list_id] = (endorseMap[e.target_list_id] ?? 0) + 1;
+        });
       }
 
-      let endorseMap: Record<string, number> = {};
-      if (listIds.length > 0) {
-        const { data: endorsements } = await supabase
-          .from('interactions').select('target_list_id')
-          .in('target_list_id', listIds).eq('type', 'endorse_list');
-        if (endorsements) {
-          endorsements.forEach((e: any) => {
-            endorseMap[e.target_list_id] = (endorseMap[e.target_list_id] || 0) + 1;
-          });
-        }
-      }
-
-      setAllStacks(lists.map((l: any) => ({
-        id: l.id,
-        title: l.title,
-        description: l.description || '',
-        curator: usernameMap[l.user_id] || 'society',
-        curatorId: l.user_id,
-        createdAt: l.created_at,
-        films: (itemsMap[l.id] || []).map((item: any) => ({
-          id: item.film_id, title: item.film_title, poster_path: item.poster_path || null,
-        })),
-        count: (itemsMap[l.id] || []).length,
-        certifyCount: endorseMap[l.id] || 0,
-      })));
+      setAllStacks(lists.map((l: ListRow & { profiles?: { username?: string } | Array<{ username?: string }> }) => {
+        const curator = Array.isArray(l.profiles) ? l.profiles[0]?.username : l.profiles?.username;
+        return {
+          id: l.id,
+          title: l.title,
+          description: l.description ?? '',
+          curator: curator ?? 'society',
+          curatorId: l.user_id,
+          createdAt: l.created_at,
+          films: (itemsMap[l.id] ?? []).map((item: ListItemRow) => ({
+            id: item.film_id, title: item.film_title, poster_path: item.poster_path ?? null,
+          })),
+          count: (itemsMap[l.id] ?? []).length,
+          certifyCount: endorseMap[l.id] ?? 0,
+        };
+      }));
     } catch {}
-    setStacksLoading(false);
-  }, []);
+    if (isFirstLoad) setStacksLoading(false);
+  }, [allStacks.length]);
 
   const loadAll = useCallback(async () => {
-    setFeedLoading(true);
+    // #1: Stale-While-Revalidate — only show skeletons on first load
+    const isFirstLoad = communityFeed.length === 0;
+    if (isFirstLoad) {
+      // The Nitrate Memory (Phase 2): Instantly load prior session
+      const cached = await AsyncStorage.getItem('nitrate_memory_feed');
+      if (cached) {
+        try { setCommunityFeed(JSON.parse(cached)); } catch {}
+      } else {
+        setFeedLoading(true);
+      }
+    }
     const [community, following] = await Promise.all([
       fetchFeed('all'),
       isAuthenticated && user?.following?.length ? fetchFeed('following') : Promise.resolve([]),
     ]);
+
+    if (community.length > 0) {
+      AsyncStorage.setItem('nitrate_memory_feed', JSON.stringify(community.slice(0, 15)));
+    }
+
     setCommunityFeed(community);
     setFollowingFeed(following);
-    setFeedLoading(false);
+    if (isFirstLoad) setFeedLoading(false);
     fetchStacks();
-  }, [fetchFeed, fetchStacks, isAuthenticated, user?.following?.length]);
+  }, [fetchFeed, fetchStacks, isAuthenticated, user?.following?.length, communityFeed.length]);
 
   useEffect(() => {
     if (isAuthenticated) loadAll();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, loadAll]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -331,22 +450,22 @@ export default function ReelScreen() {
   }, [loadAll]);
 
   // ── Derived Data ──
-  const activeFeed = feedFilter === 'following' ? followingFeed : communityFeed;
+  const activeFeed = useMemo(() => feedFilter === 'following' ? followingFeed : communityFeed, [feedFilter, followingFeed, communityFeed]);
   const logCount = communityFeed.length;
 
   // ── Filtered Stacks ──
   const filteredStacks = useMemo(() => {
     let result = [...allStacks];
     if (stackFilter === 'following' && user?.following && user.following.length > 0) {
-      result = result.filter((s: any) => user.following!.includes(s.curator));
+      result = result.filter((s: StackData) => user.following!.includes(s.curator));
     }
     if (stackSearch.trim()) {
       const q = stackSearch.toLowerCase().trim();
-      result = result.filter((s: any) =>
+      result = result.filter((s: StackData) =>
         s.title.toLowerCase().includes(q) ||
         (s.description && s.description.toLowerCase().includes(q)) ||
         s.curator.toLowerCase().includes(q) ||
-        (s.films || []).some((f: any) => f.title && f.title.toLowerCase().includes(q))
+        (s.films ?? []).some((f: StackFilm) => f.title && f.title.toLowerCase().includes(q))
       );
     }
     return result;
@@ -387,7 +506,7 @@ export default function ReelScreen() {
         />
         <Text style={st.gateTitle}>Admit One Required</Text>
         <Text style={st.gateSub}>Join the Society to access The Reel.</Text>
-        <TouchableOpacity style={st.gateCta} onPress={() => router.push('/login')}>
+        <TouchableOpacity style={st.gateCta} onPress={() => router.push('/login')} accessibilityRole="button" accessibilityLabel="Request membership">
           <Text style={st.gateCtaText}>REQUEST MEMBERSHIP</Text>
         </TouchableOpacity>
       </View>
@@ -402,7 +521,7 @@ export default function ReelScreen() {
       {/* Section Header */}
       <Animated.View entering={FadeIn.duration(600)} style={st.sectionHeaderWrap}>
         <Text style={st.headerEyebrow}>✦ THE REELHOUSE SOCIETY ✦</Text>
-        <Text style={st.headerTitle}>The Reel</Text>
+        <Text style={st.headerTitle} accessibilityRole="header">The Reel</Text>
 
         {/* Decorative Est. 1924 rule */}
         <View style={st.headerEstRow}>
@@ -415,7 +534,7 @@ export default function ReelScreen() {
           <Animated.View entering={FadeIn.duration(400)} style={st.liveRow}>
             <View style={[
               st.liveDot,
-              (user?.role === 'auteur' || (user as any)?.role === 'god') ? st.liveDotAuteur
+              user?.role === 'auteur' ? st.liveDotAuteur
                 : user?.role === 'archivist' ? st.liveDotArchivist
                 : st.liveDotDefault
             ]} />
@@ -463,7 +582,7 @@ export default function ReelScreen() {
     );
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={st.emptyWrap}>
-        <Text style={st.emptyGlyph}>✦</Text>
+        <Buster size={48} mood="peeking" />
         <Text style={st.emptyTitle}>
           {feedFilter === 'following' ? 'Your orbit is quiet.' : 'The projection booth is dark.'}
         </Text>
@@ -541,7 +660,7 @@ export default function ReelScreen() {
     );
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={st.emptyWrap}>
-        <Text style={st.emptyGlyph}>✦</Text>
+        <Buster size={48} mood="thinking" />
         <Text style={st.emptyTitle}>
           {stackSearch ? 'No stacks match your search.' : 'The archive awaits its first curator.'}
         </Text>
@@ -563,6 +682,30 @@ export default function ReelScreen() {
     );
   }, [stacksLoading, stackSearch, router]);
 
+  const renderStackItem = useCallback(({ item }: { item: StackData }) => (
+    <View style={st.stackGridCell}>
+      <StackCard
+        stack={item}
+        onPress={() => { Haptics.selectionAsync(); router.push(`/stacks/${item.id}`); }}
+      />
+    </View>
+  ), [router]);
+
+  // Mind Reader Pre-Fetching Engine
+  const viewabilityConfig = useRef({
+    minimumViewTime: 800,
+    itemVisiblePercentThreshold: 80,
+  }).current;
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: any[] }) => {
+    viewableItems.forEach((vi) => {
+      // FeedItem has a film_id inside logs.
+      if (vi.item && vi.item.film_id) {
+        tmdb.detail(vi.item.film_id).catch(() => {});
+      }
+    });
+  }).current;
+
   // ══════════════════════════════════════════════════════════
   //  RENDER
   // ══════════════════════════════════════════════════════════
@@ -575,7 +718,9 @@ export default function ReelScreen() {
       />
 
       {section === 'logs' ? (
-        <FlatList
+        <FlashList
+          ref={logsFlatListRef as any}
+          key="logs-feed"
           data={activeFeed}
           keyExtractor={(item) => item.id}
           renderItem={renderLogItem}
@@ -591,15 +736,49 @@ export default function ReelScreen() {
               progressViewOffset={topPad}
             />
           }
-          initialNumToRender={6}
-          maxToRenderPerBatch={8}
-          windowSize={7}
-          removeClippedSubviews={Platform.OS === 'android'}
+          onScroll={(e) => {
+            const y = e.nativeEvent.contentOffset.y;
+            setScrollY(y);
+            scrollOffsetRef.current = y;
+            
+            // The Projectionist's Touch (Mechanical Scroll Haptics)
+            const velocity = Math.abs(e.nativeEvent.velocity?.y ?? 0);
+            if (velocity > 0.8) {
+              const now = Date.now();
+              const delay = Math.max(15, 100 - (velocity * 12)); // scales clicking speed against scroll speed
+              if (now - lastHapticRef.current > delay) {
+                lastHapticRef.current = now;
+                Haptics.selectionAsync();
+              }
+            }
+          }}
+          // Option 3: Celluloid Tension (Heavy Overscroll Physics)
+          decelerationRate="fast"
+          overScrollMode="never"
+          bounces={true}
+          scrollEventThrottle={32}
+          estimatedItemSize={280}
+          viewabilityConfig={viewabilityConfig}
+          onViewableItemsChanged={onViewableItemsChanged}
         />
       ) : (
-        <ScrollView
+        <FlatList
+          key="stacks-grid"
+          data={filteredStacks}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          renderItem={renderStackItem}
+          columnWrapperStyle={st.stackGridRow}
           contentContainerStyle={[st.listContent, { paddingTop: topPad }]}
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={stackHeader}
+          ListEmptyComponent={stackEmpty}
+          ListFooterComponent={<View style={st.stackBottomSpacer} />}
+          onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+          // Option 3: Celluloid Tension (Heavy Overscroll Physics)
+          decelerationRate="fast"
+          overScrollMode="never"
+          scrollEventThrottle={32}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -608,25 +787,26 @@ export default function ReelScreen() {
               progressViewOffset={topPad}
             />
           }
-        >
-          {stackHeader}
-
-          {filteredStacks.length === 0 ? stackEmpty : (
-            <View style={st.stackGridWrap}>
-              {filteredStacks.map((item: any) => (
-                <View key={item.id} style={st.stackGridCell}>
-                  <StackCard
-                    stack={item}
-                    onPress={() => { Haptics.selectionAsync(); router.push(`/stacks/${item.id}`); }}
-                  />
-                </View>
-              ))}
-            </View>
-          )}
-
-          <View style={st.stackBottomSpacer} />
-        </ScrollView>
+          initialNumToRender={6}
+          maxToRenderPerBatch={8}
+          windowSize={5}
+          removeClippedSubviews={true}
+        />
       )}
+
+      {/* Option 1: The Archivist's Spotlight (Hardware Accelerated Vignette) */}
+      <View style={[StyleSheet.absoluteFillObject, { pointerEvents: 'none' }]} pointerEvents="none">
+        <LinearGradient
+          colors={['#0A0703', 'rgba(10,7,3,0)']}
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 140 }}
+          pointerEvents="none"
+        />
+        <LinearGradient
+          colors={['rgba(10,7,3,0)', '#0A0703']}
+          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 180 }}
+          pointerEvents="none"
+        />
+      </View>
 
       <QuickActionsFAB />
     </View>
@@ -642,7 +822,7 @@ const st = StyleSheet.create({
 
   // ── Header ──
   sectionHeaderWrap: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 12, paddingBottom: 14 },
-  headerEyebrow: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5, color: colors.sepia, opacity: 0.6, marginBottom: 8 },
+  headerEyebrow: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5, color: colors.sepia, opacity: 0.7, marginBottom: 8 },
   headerTitle: { fontFamily: fonts.display, fontSize: 34, color: colors.parchment, ...effects.textGlowSepia },
   headerEstRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 10, marginBottom: 4,
@@ -651,7 +831,7 @@ const st = StyleSheet.create({
   headerEst: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 5, color: colors.sepia, opacity: 0.35 },
   liveRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 10 },
   liveDot: { width: 6, height: 6, borderRadius: 3 },
-  liveDotDefault: { backgroundColor: '#22c55e', shadowColor: '#22c55e', shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
+  liveDotDefault: { backgroundColor: colors.sepia, shadowColor: colors.sepia, shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
   liveDotArchivist: { backgroundColor: colors.sepia, shadowColor: colors.sepia, shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
   liveDotAuteur: { backgroundColor: 'rgba(180,45,45,1)', shadowColor: 'rgba(125,31,31,1)', shadowOpacity: 0.8, shadowRadius: 6, elevation: 3 },
   liveText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.fog, opacity: 0.65 },
@@ -672,7 +852,7 @@ const st = StyleSheet.create({
   tabPillText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 4, color: colors.fog },
   tabPillTextActive: { color: colors.sepia },
   tabPillDot: {
-    width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.sepia,
+    width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia,
     marginTop: 5, ...effects.glowSepia,
   },
 
@@ -683,7 +863,7 @@ const st = StyleSheet.create({
   },
   filterChip: {
     paddingHorizontal: 12, paddingVertical: 6,
-    borderRadius: 20, borderWidth: 1,
+    borderRadius: 3, borderWidth: 1,
     borderColor: 'rgba(139,105,20,0.12)',
     backgroundColor: 'transparent',
     position: 'relative',
@@ -695,7 +875,7 @@ const st = StyleSheet.create({
   filterChipText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog },
   filterChipTextActive: { color: colors.sepia },
   filterActiveLine: {
-    position: 'absolute', bottom: -1, left: '20%' as any, right: '20%' as any,
+    position: 'absolute', bottom: -1, left: '20%', right: '20%',
     height: 1.5, backgroundColor: colors.sepia, borderRadius: 1,
   },
   resultCount: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.5 },
@@ -707,7 +887,7 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.12)',
     borderRadius: 4, paddingHorizontal: 12, height: 40,
   },
-  searchIcon: { fontSize: 10, color: colors.sepia, opacity: 0.4, marginRight: 10 },
+  searchIcon: { fontSize: 10, color: colors.sepia, opacity: 0.55, marginRight: 10 },
   searchInput: {
     flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.parchment,
     paddingVertical: 0,
@@ -729,16 +909,15 @@ const st = StyleSheet.create({
   createStackText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 3, color: colors.sepia },
 
   // ── Stack Card (Web Parity) ──
-  stackGridWrap: {
-    flexDirection: 'row', flexWrap: 'wrap',
-    paddingHorizontal: 10, gap: 0,
+  stackGridRow: {
+    paddingHorizontal: 12, gap: 12,
   },
-  stackGridCell: { width: '50%' as any, paddingHorizontal: 6 },
+  stackGridCell: { flex: 1 },
   stackCard: {
     flex: 1, backgroundColor: 'rgba(10,5,3,1)',
     borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
     borderRadius: 8, overflow: 'hidden',
-    height: 180, // Web has a minHeight, we use absolute height for the grid
+    height: 200, // Taller for premium feel; web has minHeight
     marginBottom: 12,
     ...effects.shadowPrimary,
     position: 'relative',
@@ -799,11 +978,11 @@ const st = StyleSheet.create({
     opacity: 0.8,
   },
   stackCardCuratorName: { 
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog 
+    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog 
   },
 
   // ── Empty States ──
-  emptyWrap: { alignItems: 'center', paddingTop: 40, paddingHorizontal: 32 },
+  emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
   emptyGlyph: { fontSize: 32, color: colors.sepia, opacity: 0.2, marginBottom: 16 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, opacity: 0.65, textAlign: 'center', marginBottom: 8 },
   emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.45, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 20 },
@@ -825,7 +1004,7 @@ const st = StyleSheet.create({
     borderColor: 'rgba(242,232,160,0.3)',
     ...effects.glowSepia,
   },
-  gateCtaText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2.5, color: colors.ink, fontWeight: '700' },
+  gateCtaText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2.5, color: colors.ink },
 
   // ── Skeleton ──
   skeleton: {

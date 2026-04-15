@@ -1,3 +1,4 @@
+import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
@@ -5,36 +6,47 @@ import Buster from '@/src/components/Buster';
 import { RadarChart } from '@/src/components/profile/RadarChart';
 import { colors, fonts } from '@/src/theme/theme';
 
+interface DNALog {
+    year?: number | string;
+    rating: number;
+    isAutopsied?: boolean;
+    autopsy?: Record<string, number> | null;
+}
+
+interface DNAUser {
+    username?: string;
+}
+
 const { width } = Dimensions.get('window');
 
-export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any; onClose: () => void }) {
+export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }: { logs: DNALog[]; user: DNAUser; onClose: () => void }) {
     if (!logs || logs.length < 5) return null;
 
     const decades: Record<string, number> = {};
-    logs.forEach((log: any) => {
-        const year = parseInt(log.year || '2000');
+    logs.forEach((log) => {
+        const year = parseInt(String(log.year ?? '2000'));
         const decade = `${Math.floor(year / 10) * 10}s`;
-        decades[decade] = (decades[decade] || 0) + 1;
+        decades[decade] = (decades[decade] ?? 0) + 1;
     });
-    const topDecades = Object.entries(decades).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3);
-    const rated = logs.filter((l: any) => l.rating > 0);
-    const avgRating = rated.length ? (rated.reduce((s: number, l: any) => s + l.rating, 0) / rated.length).toFixed(1) : '—';
-    const obscurityScore = Math.round(40 + (5 - parseFloat(avgRating || '3')) * 12 + Math.min(logs.length, 30));
+    const topDecades = Object.entries(decades).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    const rated = logs.filter((l) => l.rating > 0);
+    const avgRating = rated.length ? (rated.reduce((s, l) => s + l.rating, 0) / rated.length).toFixed(1) : '—';
+    const obscurityScore = Math.round(40 + (5 - parseFloat(avgRating === '—' ? '3' : avgRating)) * 12 + Math.min(logs.length, 30));
 
     const archetypes = [
         { min: 0, label: 'Initiate' }, { min: 5, label: 'Devotee' }, { min: 15, label: 'Archivist' },
         { min: 30, label: 'Cinephile' }, { min: 60, label: 'Obsessive' }, { min: 100, label: 'The Oracle' },
     ];
-    const archetype = archetypes.filter(a => logs.length >= a.min).pop()?.label || 'Initiate';
+    const archetype = archetypes.filter(a => logs.length >= a.min).pop()?.label ?? 'Initiate';
     const tones = parseFloat(avgRating) >= 4 ? 'Romanticism' : parseFloat(avgRating) >= 3 ? 'Realism' : parseFloat(avgRating) >= 2 ? 'Dark Romanticism' : 'Nihilism';
 
-    const autopsies = logs.filter((l: any) => l.isAutopsied && l.autopsy).map((l: any) => l.autopsy);
+    const autopsies = logs.filter((l) => l.isAutopsied && l.autopsy).map((l) => l.autopsy!);
     let avgAutopsy: { story: number; cinematography: number; sound: number } | null = null;
     if (autopsies.length > 0) {
         avgAutopsy = {
-            story: Math.round(autopsies.reduce((s: number, a: any) => s + (a.story || a.screenplay || a.script || 0), 0) / autopsies.length),
-            cinematography: Math.round(autopsies.reduce((s: number, a: any) => s + (a.cinematography || a.visuals || a.acting || 0), 0) / autopsies.length),
-            sound: Math.round(autopsies.reduce((s: number, a: any) => s + (a.sound || a.score || a.editing || 0), 0) / autopsies.length),
+            story: Math.round(autopsies.reduce((s, a) => s + (a.story ?? a.screenplay ?? a.script ?? 0), 0) / autopsies.length),
+            cinematography: Math.round(autopsies.reduce((s, a) => s + (a.cinematography ?? a.visuals ?? a.acting ?? 0), 0) / autopsies.length),
+            sound: Math.round(autopsies.reduce((s, a) => s + (a.sound ?? a.score ?? a.editing ?? 0), 0) / autopsies.length),
         };
     }
 
@@ -52,7 +64,7 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
                         <Buster size={24} mood="smiling" />
                     </View>
                     <View>
-                        <Text style={s.username}>@{user?.username || 'cinephile'}</Text>
+                        <Text style={s.username}>@{user?.username ?? 'cinephile'}</Text>
                         <Text style={s.subtext}>THE REELHOUSE SOCIETY</Text>
                     </View>
                 </View>
@@ -87,7 +99,7 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
                 <View style={s.decadesWrap}>
                     <Text style={s.sectionEyebrow}>DOMINANT ERAS</Text>
                     <View style={s.decadesRow}>
-                        {topDecades.map(([decade, count]: any) => {
+                        {topDecades.map(([decade, count]) => {
                             const pct = Math.round((count / logs.length) * 100);
                             return (
                                 <View key={decade} style={s.decadeBox}>
@@ -111,7 +123,7 @@ export function CinemaDNACard({ logs, user, onClose }: { logs: any[]; user: any;
             </View>
         </Animated.View>
     );
-}
+});
 
 const s = StyleSheet.create({
     overlay: {

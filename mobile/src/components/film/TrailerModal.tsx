@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 
@@ -15,11 +16,20 @@ export function TrailerModal({ visible, videoId, onClose }: { visible: boolean; 
                     <Text style={s.closeBtnText}>CLOSE</Text>
                 </TouchableOpacity>
                 <View style={s.videoWrap}>
+                    {/* Nitrate Projector Overlay: Tints the raw YouTube feed sepia */}
+                    <View style={{ position: 'absolute', zIndex: 2, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
+                        <LinearGradient 
+                            colors={['rgba(139,105,20,0.25)', 'transparent', 'rgba(139,105,20,0.15)']} 
+                            style={StyleSheet.absoluteFillObject} 
+                        />
+                    </View>
                     <WebView
-                        source={{ uri: `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0` }}
+                        source={{ uri: `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&controls=0&showinfo=0&fs=0&playsinline=1&iv_load_policy=3` }}
                         style={s.webview}
                         allowsInlineMediaPlayback
                         mediaPlaybackRequiresUserAction={false}
+                        bounces={false}
+                        scrollEnabled={false}
                         startInLoadingState
                         renderLoading={() => <ActivityIndicator size="large" color={colors.sepia} style={StyleSheet.absoluteFillObject} />}
                     />

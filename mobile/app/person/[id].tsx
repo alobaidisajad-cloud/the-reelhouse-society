@@ -26,9 +26,10 @@
  */
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList,
   Dimensions, RefreshControl, Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, {
   FadeInDown, FadeIn, useSharedValue, useAnimatedStyle,
   withRepeat, withTiming, Easing,
@@ -40,6 +41,7 @@ import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, effects, spacing } from '@/src/theme/theme';
 import { SectionDivider, MarqueeLights } from '@/src/components/Decorative';
+import PressableScale from '@/src/components/PressableScale';
 import {
   Film as FilmIcon, ArrowLeft, Star, MessageCircle,
   ChevronDown, ChevronUp, MapPin, Calendar, Skull, Clock,
@@ -51,10 +53,40 @@ const POSTER_GRID_GAP = 10;
 const POSTER_COL = 3;
 const POSTER_W = (SCREEN_W - 40 - POSTER_GRID_GAP * (POSTER_COL - 1)) / POSTER_COL;
 const AnimatedView = Animated.createAnimatedComponent(View);
-const PERF_COUNT = 14; // Film-strip perforation holes
+const PERF_COUNT = 14;
+
+/** Warm sepia-toned blurhash — used as placeholder while images load */
+const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
+
+// ── Strict Interfaces ────────────────────────────────────────
+interface PersonDetail {
+  name: string;
+  profile_path: string | null;
+  birthday: string | null;
+  deathday: string | null;
+  place_of_birth: string | null;
+  known_for_department: string | null;
+  biography: string | null;
+}
+
+interface PersonCredit {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path: string | null;
+  backdrop_path?: string | null;
+  release_date?: string;
+  vote_average?: number;
+  vote_count?: number;
+  popularity?: number;
+  character?: string;
+  job?: string;
+}
+
+import type { StyleProp, ViewStyle } from 'react-native';
 
 // ── Shimmer Pulse ────────────────────────────────────────────
-function ShimmerBlock({ style }: { style: any }) {
+function ShimmerBlock({ style }: { style: StyleProp<ViewStyle> }) {
   const opacity = useSharedValue(0.3);
   useEffect(() => {
     opacity.value = withRepeat(
@@ -91,19 +123,22 @@ function FilmStripPerforations() {
 }
 
 // ── Film Poster Card (grid item) ─────────────────────────────
-function FilmPosterCard({ film, width }: { film: any; width: number }) {
+function FilmPosterCard({ film, width }: { film: PersonCredit; width: number }) {
   const router = useRouter();
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w185') : null;
   return (
-    <TouchableOpacity
+    <PressableScale
       style={st.gridCard}
       onPress={() => router.push(`/film/${film.id}`)}
-      activeOpacity={0.7}
     >
       {posterUri ? (
         <Image
           source={{ uri: posterUri }}
           style={[st.gridPoster, { width, height: width * 1.5 }]}
+          contentFit="cover"
+          cachePolicy="memory-disk"
+          placeholder={{ blurhash: SEPIA_HASH }}
+          transition={200}
         />
       ) : (
         <View style={[st.gridPoster, st.gridPosterPlaceholder, { width, height: width * 1.5 }]}>
@@ -112,24 +147,23 @@ function FilmPosterCard({ film, width }: { film: any; width: number }) {
       )}
       <Text style={st.gridTitle} numberOfLines={1}>{film.title}</Text>
       <Text style={st.gridYear}>{getYear(film.release_date) || 'TBA'}</Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
 // ── Defining Work Card ───────────────────────────────────────
-function DefiningCard({ film }: { film: any }) {
+function DefiningCard({ film }: { film: PersonCredit }) {
   const router = useRouter();
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w342') : null;
   const score = obscurityScore(film);
   return (
-    <TouchableOpacity
+    <PressableScale
       style={st.defCard}
       onPress={() => router.push(`/film/${film.id}`)}
-      activeOpacity={0.7}
     >
       <View style={st.defPosterWrap}>
         {posterUri ? (
-          <Image source={{ uri: posterUri }} style={st.defPoster} resizeMode="cover" />
+          <Image source={{ uri: posterUri }} style={st.defPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
         ) : (
           <View style={[st.defPoster, st.defPosterPlaceholder]}>
             <FilmIcon size={20} color={colors.fog} strokeWidth={1} />
@@ -155,18 +189,18 @@ function DefiningCard({ film }: { film: any }) {
       <View style={st.defBadgeWrap}>
         <ObscurityBadge score={score} />
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
 // ════════════════════════════════════════════════════════════
 //  UTILITY — career span in years
 // ════════════════════════════════════════════════════════════
-function calcCareerSpan(credits: any[]): number {
+function calcCareerSpan(credits: PersonCredit[]): number {
   if (credits.length === 0) return 0;
   const years = credits
-    .map((c: any) => parseInt(c.release_date?.substring(0, 4), 10))
-    .filter((y: number) => !isNaN(y));
+    .map((c) => parseInt(c.release_date?.substring(0, 4) ?? '', 10))
+    .filter((y) => !isNaN(y));
   if (years.length === 0) return 0;
   return Math.max(...years) - Math.min(...years);
 }
@@ -177,8 +211,8 @@ function calcCareerSpan(credits: any[]): number {
 export default function PersonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const [person, setPerson] = useState<any>(null);
-  const [allCredits, setAllCredits] = useState<any[]>([]);
+  const [person, setPerson] = useState<PersonDetail | null>(null);
+  const [allCredits, setAllCredits] = useState<PersonCredit[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [showFullBio, setShowFullBio] = useState(false);
@@ -199,11 +233,11 @@ export default function PersonDetailScreen() {
 
       if (creditData) {
         const seen = new Set<number>();
-        const merged: any[] = [];
+        const merged: PersonCredit[] = [];
         for (const c of [...(creditData.cast || []), ...(creditData.crew || [])]) {
           if (!seen.has(c.id)) { seen.add(c.id); merged.push(c); }
         }
-        setAllCredits(merged.filter((f: any) => f.poster_path && f.vote_count > 5).sort((a: any, b: any) => b.popularity - a.popularity));
+        setAllCredits(merged.filter((f) => f.poster_path && (f.vote_count ?? 0) > 5).sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0)));
       }
     } catch { }
     finally { setLoading(false); setRefreshing(false); }
@@ -212,7 +246,7 @@ export default function PersonDetailScreen() {
   useEffect(() => { setLoading(true); fetchData(); }, [fetchData]);
 
   // ── Derived data ──
-  const definingFilm = useMemo(() => allCredits.find((f: any) => f.backdrop_path) || null, [allCredits]);
+  const definingFilm = useMemo(() => allCredits.find((f) => f.backdrop_path) || null, [allCredits]);
   const heroBackdrop = definingFilm?.backdrop_path ? tmdb.backdrop(definingFilm.backdrop_path) : null;
   const definingWorks = allCredits.slice(0, 4);
   const remainingCredits = allCredits.slice(4);
@@ -220,10 +254,10 @@ export default function PersonDetailScreen() {
   const careerSpan = useMemo(() => calcCareerSpan(allCredits), [allCredits]);
 
   const isDirector = person?.known_for_department === 'Directing';
-  const directedFilms = useMemo(() => allCredits.filter((c: any) => c.job === 'Director' || (isDirector && c.character)), [allCredits, isDirector]);
+  const directedFilms = useMemo(() => allCredits.filter((c) => c.job === 'Director' || (isDirector && c.character)), [allCredits, isDirector]);
   const seenCount = useMemo(() => {
     if (!isDirector || directedFilms.length === 0) return 0;
-    return logs.filter((l: any) => directedFilms.some((f: any) => f.id === l.filmId)).length;
+    return logs.filter((l) => directedFilms.some((f) => f.id === l.filmId)).length;
   }, [logs, directedFilms, isDirector]);
   const auteurPct = directedFilms.length > 0 ? Math.round((seenCount / directedFilms.length) * 100) : 0;
 
@@ -255,7 +289,7 @@ export default function PersonDetailScreen() {
       <Text style={s.notFoundBody}>
         This person does not exist in the TMDB archive, or the reel was lost.
       </Text>
-      <TouchableOpacity style={s.backBtnBottom} onPress={() => router.back()}>
+      <TouchableOpacity style={s.backBtnBottom} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
         <View style={s.backBtnRow}>
           <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
           <Text style={s.backBtnBottomText}>GO BACK</Text>
@@ -269,7 +303,7 @@ export default function PersonDetailScreen() {
   return (
     <View style={s.container}>
       {/* ── Floating Back Button ── */}
-      <TouchableOpacity style={s.floatingBack} onPress={() => router.back()} activeOpacity={0.7}>
+      <TouchableOpacity style={s.floatingBack} onPress={() => router.back()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Go back">
         <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
       </TouchableOpacity>
 
@@ -283,7 +317,7 @@ export default function PersonDetailScreen() {
         ═══════════════════════════════════════════════════════ */}
         <View style={s.heroWrap}>
           {heroBackdrop ? (
-            <Image source={{ uri: heroBackdrop }} style={s.heroBg} resizeMode="cover" />
+            <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={400} />
           ) : (
             <LinearGradient
               colors={['rgba(139,105,20,0.12)', 'rgba(10,7,3,0.95)']}
@@ -311,7 +345,7 @@ export default function PersonDetailScreen() {
             <View style={s.portraitGlow} />
             <View style={s.portraitCard}>
               {photoUri ? (
-                <Image source={{ uri: photoUri }} style={s.portrait} resizeMode="cover" />
+                <Image source={{ uri: photoUri }} style={s.portrait} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${person.name} portrait photo`} />
               ) : (
                 <View style={[s.portrait, s.portraitPlaceholder]}>
                   <Text style={s.portraitInitial}>{person.name?.charAt(0) || '?'}</Text>
@@ -335,7 +369,7 @@ export default function PersonDetailScreen() {
 
           {/* Name */}
           <AnimatedView entering={FadeInDown.duration(500).delay(50)}>
-            <Text style={s.personName}>{person.name}</Text>
+            <Text style={s.personName} accessibilityRole="header">{person.name}</Text>
           </AnimatedView>
 
           {/* Birth / Death / Place */}
@@ -437,13 +471,7 @@ export default function PersonDetailScreen() {
               style={s.bioTopLine}
             />
             <Text style={s.bioLabel}>CLASSIFIED DOSSIER — BIOGRAPHY</Text>
-            <ScrollView
-              style={s.bioScroll}
-              nestedScrollEnabled
-              showsVerticalScrollIndicator
-            >
-              <Text style={s.bioText}>{person.biography}</Text>
-            </ScrollView>
+            <Text style={s.bioText}>{person.biography}</Text>
           </AnimatedView>
         ) : null}
 
@@ -454,9 +482,15 @@ export default function PersonDetailScreen() {
               <SectionDivider label="DEFINING WORKS" />
               <Text style={s.sectionSubtitle}>The Legacy</Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.definingList}>
-              {definingWorks.map((film: any) => <DefiningCard key={film.id} film={film} />)}
-            </ScrollView>
+            <FlatList
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              data={definingWorks}
+              keyExtractor={(item) => String(item.id)}
+              contentContainerStyle={s.definingList}
+              initialNumToRender={4}
+              renderItem={({ item }) => <DefiningCard film={item} />}
+            />
           </AnimatedView>
         )}
 
@@ -476,21 +510,27 @@ export default function PersonDetailScreen() {
             />
             <SectionDivider label="COMPLETE FILMOGRAPHY" />
             <Text style={s.sectionSubtitle}>The Full Archive</Text>
-            <View style={s.filmGrid}>
-              {remainingCredits.map((film: any) => (
-                <FilmPosterCard key={film.id} film={film} width={POSTER_W} />
-              ))}
-            </View>
+            <FlatList
+              data={remainingCredits}
+              keyExtractor={(item) => String(item.id)}
+              numColumns={3}
+              columnWrapperStyle={s.filmGridRow}
+              scrollEnabled={false}
+              initialNumToRender={12}
+              maxToRenderPerBatch={12}
+              windowSize={3}
+              renderItem={({ item }) => <FilmPosterCard film={item} width={POSTER_W} />}
+            />
           </AnimatedView>
         )}
 
         {/* ── Empty state ── */}
         {allCredits.length === 0 && !loading && (
-          <View style={s.emptyState}>
+          <AnimatedView entering={FadeInDown.duration(600)} style={s.emptyState}>
             <Text style={s.emptyLabel}>THE VAULT IS SEALED</Text>
             <Text style={s.emptyTitle}>No Known Works Found</Text>
             <Text style={s.emptyBody}>The archive has no film records on file for this artist.</Text>
-          </View>
+          </AnimatedView>
         )}
 
         {/* ── Closing society bar ── */}
@@ -566,7 +606,7 @@ const s = StyleSheet.create({
   // ── Society Watermark ──
   societyMark: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
-    color: colors.sepia, opacity: 0.45, marginBottom: 12,
+    color: colors.sepia, opacity: 0.55, marginBottom: 12,
   },
 
   // ── Department Badge ──
@@ -591,7 +631,7 @@ const s = StyleSheet.create({
   dateItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   dateText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
   dateTextDeath: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: 'rgba(200,80,80,0.7)' },
-  dateTextFaded: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog, opacity: 0.7 },
+  dateTextFaded: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog, opacity: 0.8 },
 
   // ── Stats Strip ──
   statsStrip: {
@@ -625,7 +665,7 @@ const s = StyleSheet.create({
   auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 } as any,
   auteurHuntTitle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
   auteurHuntCount: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1, color: colors.parchment },
-  auteurHuntTrack: { height: 3, backgroundColor: colors.ash, borderRadius: 2, overflow: 'hidden' },
+  auteurHuntTrack: { height: 4, backgroundColor: colors.ash, borderRadius: 2, overflow: 'hidden' },
   auteurHuntFill: { height: '100%', backgroundColor: colors.sepia, borderRadius: 2 } as any,
   auteurComplete: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5,
@@ -645,7 +685,6 @@ const s = StyleSheet.create({
   },
   bioTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 } as any,
   bioLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 12, opacity: 0.8 },
-  bioScroll: { maxHeight: 200 },
   bioText: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, lineHeight: 24 },
 
   // ── Sections ──
@@ -661,7 +700,7 @@ const s = StyleSheet.create({
   goldSep: { height: 1, marginBottom: 20 },
 
   // ── Filmography Grid ──
-  filmGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: POSTER_GRID_GAP },
+  filmGridRow: { gap: POSTER_GRID_GAP, marginBottom: POSTER_GRID_GAP },
 
   // ── Empty State ──
   emptyState: {
@@ -670,18 +709,18 @@ const s = StyleSheet.create({
     borderRadius: 4, backgroundColor: 'rgba(18,14,9,0.4)',
   },
   emptyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, opacity: 0.6, marginBottom: 4 },
+  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, opacity: 0.7, marginBottom: 4 },
   emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
 
   // ── Back Button ──
-  backBtnBottom: { marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
+  backBtnBottom: { marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 4 },
   backBtnBottomText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.bone },
   backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
   // ── Closing Bar ──
   closingBar: { alignItems: 'center', marginTop: 32, marginBottom: 8, paddingHorizontal: 40 },
   closingLine: { width: '100%', height: 1, marginBottom: 12 },
-  closingText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5, color: colors.sepia, opacity: 0.3 },
+  closingText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5, color: colors.sepia, opacity: 0.4 },
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -712,7 +751,7 @@ const st = StyleSheet.create({
   },
   gridPosterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
   gridTitle: {
-    fontFamily: fonts.sub, fontSize: 9, color: colors.bone,
+    fontFamily: fonts.sub, fontSize: 10, color: colors.bone,
     marginTop: 5, width: POSTER_W,
   },
   gridMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 },
@@ -732,7 +771,7 @@ const st = StyleSheet.create({
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: 8, paddingBottom: 8, paddingTop: 50,
   } as any,
-  defTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 15 },
+  defTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 16 },
   defMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
   defYear: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog },
   defRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },

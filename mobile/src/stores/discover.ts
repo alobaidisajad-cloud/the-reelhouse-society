@@ -1,28 +1,48 @@
 import { create } from 'zustand';
 
+export interface DiscoverFilm {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+  media_type?: string;
+  popularity?: number;
+  release_date?: string;
+  vote_average?: number;
+  [key: string]: unknown;
+}
+
+export interface DiscoverMood {
+  label: string;
+  emoji?: string;
+  genres?: number[];
+}
+
+export interface DiscoverFilters {
+  genreId: number | null;
+  decade: string | null;
+  sortBy: string;
+  language: string | null;
+  minRating: number;
+  yearFrom: number | null;
+  yearTo: number | null;
+}
+
 export interface DiscoverState {
   page: number;
-  mood: any | null;
+  mood: DiscoverMood | null;
   query: string;
   inputVal: string;
-  accumulatedFilms: any[];
-  filters: {
-    genreId: number | null;
-    decade: any | null;
-    sortBy: string;
-    language: string | null;
-    minRating: number;
-    yearFrom: number | null;
-    yearTo: number | null;
-  };
+  accumulatedFilms: DiscoverFilm[];
+  filters: DiscoverFilters;
   setPage: (v: number) => void;
-  setMood: (m: any | null) => void;
+  setMood: (m: DiscoverMood | null) => void;
   setQuery: (q: string) => void;
   setInputVal: (v: string) => void;
-  setAccumulatedFilms: (updater: any[] | ((prev: any[]) => any[])) => void;
-  setFilters: (updater: any | ((prev: any) => any)) => void;
+  setAccumulatedFilms: (updater: DiscoverFilm[] | ((prev: DiscoverFilm[]) => DiscoverFilm[])) => void;
+  setFilters: (updater: DiscoverFilters | ((prev: DiscoverFilters) => DiscoverFilters)) => void;
   clearFilters: () => void;
-  updateFilter: (obj: any) => void;
+  updateFilter: (obj: Partial<DiscoverFilters>) => void;
   clearSearch: () => void;
 }
 

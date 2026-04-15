@@ -19,6 +19,8 @@ export interface NotificationState {
     markRead: (id: string) => Promise<void>;
     markAllRead: () => Promise<void>;
     dismiss: (id: string) => Promise<void>;
+    /** Derived O(1) counter — updated on every mutation */
+    _unreadCount: number;
     unreadCount: () => number;
     setupRealtime: () => void | (() => void);
 }
@@ -27,6 +29,7 @@ export interface NotificationState {
 export const useNotificationStore = create<NotificationState>((set, get) => ({
     notifications: [],
     loading: false,
+    _unreadCount: 0,
 
     fetchNotifications: async () => {
         const user = useAuthStore.getState().user;
@@ -41,18 +44,22 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
             .limit(50);
             
         if (!error && data) {
-            set({ notifications: data });
+            set({ notifications: data, _unreadCount: data.filter(n => !n.read).length });
         }
         set({ loading: false });
     },
 
     markRead: async (id: string) => {
         // Optimistic update
-        set((state) => ({
-            notifications: state.notifications.map((n) =>
-                n.id === id ? { ...n, read: true } : n
-            ),
-        }));
+        set((state) => {
+            const wasUnread = state.notifications.some(n => n.id === id && !n.read);
+            return {
+                notifications: state.notifications.map((n) =>
+                    n.id === id ? { ...n, read: true } : n
+                ),
+                _unreadCount: wasUnread ? state._unreadCount - 1 : state._unreadCount,
+            };
+        });
         
         // Background DB sync
         await supabase.from('notifications').update({ read: true }).eq('id', id);
@@ -64,20 +71,25 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
 
         set((state) => ({
             notifications: state.notifications.map((n) => ({ ...n, read: true })),
+            _unreadCount: 0,
         }));
 
         await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
     },
 
     dismiss: async (id: string) => {
-        set((state) => ({
-            notifications: state.notifications.filter((n) => n.id !== id),
-        }));
+        set((state) => {
+            const wasDismissedUnread = state.notifications.some(n => n.id === id && !n.read);
+            return {
+                notifications: state.notifications.filter((n) => n.id !== id),
+                _unreadCount: wasDismissedUnread ? state._unreadCount - 1 : state._unreadCount,
+            };
+        });
 
         await supabase.from('notifications').delete().eq('id', id);
     },
 
-    unreadCount: () => get().notifications.filter((n) => !n.read).length,
+    unreadCount: () => get()._unreadCount,
 
     setupRealtime: () => {
         const user = useAuthStore.getState().user;
@@ -96,7 +108,8 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
                     set((state) => {
                         // Prevent duplicate injects
                         if (state.notifications.some(n => n.id === newNotif.id)) return state;
-                        return { notifications: [newNotif, ...state.notifications].slice(0, 50) };
+                        const next = [newNotif, ...state.notifications].slice(0, 50);
+                        return { notifications: next, _unreadCount: next.filter(n => !n.read).length };
                     });
                 }
             )

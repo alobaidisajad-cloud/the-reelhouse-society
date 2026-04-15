@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, Modal,
-  ActivityIndicator, Image,
+  KeyboardAvoidingView, Platform, ScrollView, Modal,
+  ActivityIndicator,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
 import Animated, {
   FadeInDown, FadeInUp, FadeIn,
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence,
@@ -15,6 +17,8 @@ import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import reelToast from '@/src/utils/reelToast';
+import { pickAny } from '@/src/lore/fragments';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedText = Animated.createAnimatedComponent(Text);
@@ -31,7 +35,8 @@ function getPasswordChecks(pw: string) {
     special:   /[^A-Za-z0-9]/.test(pw),
   };
 }
-const PW_CHECK_LABELS: Array<[string, string]> = [
+type PwCheckKey = keyof ReturnType<typeof getPasswordChecks>;
+const PW_CHECK_LABELS: Array<[PwCheckKey, string]> = [
   ['length', '8+ characters'],
   ['uppercase', 'Uppercase letter'],
   ['lowercase', 'Lowercase letter'],
@@ -192,7 +197,7 @@ export default function LoginScreen() {
             .eq('id', data.session.user.id)
             .single();
           useAuthStore.setState({
-            user: { ...data.session.user, ...profile, following: [] } as any,
+            user: { ...data.session.user, ...profile, following: [] } as import('@/src/types').User,
             isAuthenticated: true,
           });
           setAwaitingConfirmation(false);
@@ -209,9 +214,9 @@ export default function LoginScreen() {
     setResending(true);
     try {
       await supabase.auth.resend({ type: 'signup', email: confirmedEmail });
-      Alert.alert('Sent!', 'A new verification link has been sent to your inbox.');
+      reelToast('A new cipher has been wired to your inbox.');
     } catch {
-      Alert.alert('Error', 'Could not resend. Please try again.');
+      reelToast.error('The telegraph line is disrupted. Try again.');
     } finally {
       setResending(false);
     }
@@ -219,28 +224,29 @@ export default function LoginScreen() {
 
   const handleSubmit = async () => {
     if (!emailOrUsername || !password || (!isLogin && !username)) {
-      Alert.alert('Missing Fields', 'Please fill all fields.');
+      reelToast('All fields are required for clearance.');
       return;
     }
     // Rate limiting check
     const now = Date.now();
     if (isLogin && now < lockoutUntil) {
       const remaining = Math.ceil((lockoutUntil - now) / 1000);
-      Alert.alert('Too Many Attempts', `Account locked. Try again in ${remaining}s.`);
+      reelToast(`Credentials suspended. Retry in ${remaining}s.`);
       return;
     }
     // Enforce password strength on signup
     if (!isLogin && !pwStrong) {
-      Alert.alert('Weak Password', 'Password does not meet all security requirements.');
+      reelToast('Your cipher does not meet Society encryption standards.');
       return;
     }
     // Username availability guard
     if (!isLogin && usernameStatus === 'taken') {
-      Alert.alert('Username Taken', 'That username is already taken. Choose another.');
+      reelToast('That handle is already claimed by another patron.');
       return;
     }
     if (submitting) return;
     setSubmitting(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     try {
       if (isLogin) {
@@ -250,7 +256,7 @@ export default function LoginScreen() {
       } else {
         const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '_');
         if (formattedUsername.length < 3) {
-          Alert.alert('Invalid Username', 'Username must be at least 3 characters.');
+          reelToast('Handle must be at least 3 characters.');
           setSubmitting(false);
           return;
         }
@@ -263,20 +269,21 @@ export default function LoginScreen() {
           router.back();
         }
       }
-    } catch (error: any) {
-      let msg = error?.message || 'Authentication failed.';
+    } catch (error: unknown) {
+      const rawMsg = error instanceof Error ? error.message : 'Authentication failed.';
+      let msg = rawMsg;
       if (msg.includes('Database error saving new user')) msg = 'Username is already taken.';
       if (msg.includes('Invalid login credentials')) {
         setLoginAttempts(prev => prev + 1);
         if (loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS) {
           setLockoutUntil(Date.now() + LOCKOUT_DURATION_MS);
           setLoginAttempts(0);
-          msg = 'Account locked for 30 seconds due to too many failed attempts.';
+          msg = 'Too many failed attempts. Credentials suspended for 30 seconds.';
         } else {
-          msg = 'Invalid email/username or password.';
+          msg = 'Identity not recognized. Check your credentials.';
         }
       }
-      Alert.alert('Error', msg);
+      reelToast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -285,6 +292,7 @@ export default function LoginScreen() {
   const handleOAuth = async (provider: 'google' | 'apple') => {
     if (submitting) return;
     setSubmitting(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       const redirectUri = Linking.createURL('/');
       const { data, error } = await supabase.auth.signInWithOAuth({
@@ -302,8 +310,9 @@ export default function LoginScreen() {
           // Supabase handles the PKCE code exchange via deep link
         }
       }
-    } catch (err: any) {
-      Alert.alert('OAuth Error', err.message || 'Failed to authenticate.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Authentication failed. The booth is dark.';
+      reelToast.error(msg);
     } finally {
       setSubmitting(false);
     }
@@ -311,7 +320,7 @@ export default function LoginScreen() {
 
   const handleForgotPassword = async () => {
     if (!forgotEmail.trim()) {
-      Alert.alert('Missing Email', 'Please enter your email address to reset your password.');
+      reelToast('Please enter your email to request a credential reset.');
       return;
     }
     setForgotLoading(true);
@@ -321,8 +330,9 @@ export default function LoginScreen() {
       });
       if (error) throw error;
       setForgotSent(true);
-    } catch (err: any) {
-      Alert.alert('Error', err.message || 'Could not send reset link.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'The telegraph line is down. Try again.';
+      reelToast.error(msg);
     } finally {
       setForgotLoading(false);
     }
@@ -371,7 +381,7 @@ export default function LoginScreen() {
 
             {/* Resend button */}
             <TouchableOpacity
-              style={[s.confirmResendBtn, resending && { opacity: 0.5 }]}
+              style={[s.confirmResendBtn, resending && s.submitDisabled]}
               onPress={handleResend}
               disabled={resending}
               activeOpacity={0.7}
@@ -401,19 +411,20 @@ export default function LoginScreen() {
       <FilmPerforations side="left" />
       <FilmPerforations side="right" />
 
+      {/* Close button — pinned above scroll */}
+      <TouchableOpacity
+        style={s.closeBtn}
+        onPress={() => router.back()}
+        hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+      >
+        <Text style={s.closeText}>✕</Text>
+      </TouchableOpacity>
+
       <ScrollView
         contentContainerStyle={s.scroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Close button */}
-        <TouchableOpacity
-          style={s.closeBtn}
-          onPress={() => router.back()}
-          hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
-        >
-          <Text style={s.closeText}>✕</Text>
-        </TouchableOpacity>
 
         {/* ── Header ── */}
         <AnimatedView entering={FadeInDown.duration(900).reduceMotion(ReduceMotion.Never)} style={s.header}>
@@ -423,13 +434,13 @@ export default function LoginScreen() {
               <Image
                 source={require('../assets/images/reelhouse-logo.png')}
                 style={s.stampLogo}
-                resizeMode="contain"
+                contentFit="contain"
               />
             </View>
           </View>
 
           <Text style={s.eyebrow}>
-            {isLogin ? 'RETURNING PATRON' : 'NEW MEMBER APPLICATION'}
+            {isLogin ? 'IDENTIFY YOURSELF' : 'REQUEST MEMBERSHIP'}
           </Text>
 
           <AnimatedText style={[s.title, titleGlowStyle]}>
@@ -442,6 +453,10 @@ export default function LoginScreen() {
             {isLogin
               ? 'The House remembers its own.'
               : 'Every great collection begins with a single frame.'}
+          </Text>
+
+          <Text style={s.loreTransmission}>
+            — “{pickAny()}”
           </Text>
         </AnimatedView>
 
@@ -470,6 +485,7 @@ export default function LoginScreen() {
                 }}
                 blurOnSubmit={false}
                 autoCorrect={false}
+                maxLength={254}
               />
             </View>
           </View>
@@ -493,6 +509,7 @@ export default function LoginScreen() {
                   onSubmitEditing={() => passwordRef.current?.focus()}
                   blurOnSubmit={false}
                   autoCorrect={false}
+                  maxLength={30}
                 />
                 {/* Status indicator */}
                 {usernameStatus !== 'idle' && (
@@ -528,6 +545,7 @@ export default function LoginScreen() {
                 returnKeyType="go"
                 onSubmitEditing={handleSubmit}
                 autoCorrect={false}
+                maxLength={128}
               />
               <TouchableOpacity
                 style={s.showBtn}
@@ -557,10 +575,10 @@ export default function LoginScreen() {
               <View style={s.checksGrid}>
                 {PW_CHECK_LABELS.map(([key, label]) => (
                   <View key={key} style={s.checkRow}>
-                    <Text style={[s.checkIcon, { color: (pwChecks as any)[key] ? '#4caf50' : colors.fog }]}>
-                      {(pwChecks as any)[key] ? '✓' : '○'}
+                    <Text style={[s.checkIcon, { color: pwChecks[key] ? '#4caf50' : colors.fog }]}>
+                      {pwChecks[key] ? '✓' : '○'}
                     </Text>
-                    <Text style={[s.checkLabel, { color: (pwChecks as any)[key] ? '#4caf50' : colors.fog }]}>
+                    <Text style={[s.checkLabel, { color: pwChecks[key] ? '#4caf50' : colors.fog }]}>
                       {label}
                     </Text>
                   </View>
@@ -594,12 +612,12 @@ export default function LoginScreen() {
               <View style={s.submitLoading}>
                 <ActivityIndicator size="small" color={colors.ink} />
                 <Text style={s.submitText}>
-                  {isLogin ? 'ENTERING...' : 'REGISTERING...'}
+                  {isLogin ? 'VERIFYING...' : 'PROCESSING APPLICATION...'}
                 </Text>
               </View>
             ) : (
               <Text style={s.submitText}>
-                {isLogin ? '✦  ENTER THE HOUSE' : '✦  CLAIM YOUR SEAT'}
+                {isLogin ? '✦  IDENTIFY & ENTER' : '✦  REQUEST ADMISSION'}
               </Text>
             )}
           </TouchableOpacity>
@@ -641,9 +659,9 @@ export default function LoginScreen() {
         <AnimatedView entering={FadeInUp.duration(600).delay(450).reduceMotion(ReduceMotion.Never)} style={s.toggleWrap}>
           <TouchableOpacity onPress={toggleMode} activeOpacity={0.6}>
             <Text style={s.toggleText}>
-              {isLogin ? "Don't have a seat? " : 'Already a patron? '}
+              {isLogin ? 'No membership? ' : 'Already admitted? '}
               <Text style={s.toggleHighlight}>
-                {isLogin ? 'Join the Society' : 'Sign in'}
+                {isLogin ? 'Request admission' : 'Identify yourself'}
               </Text>
             </Text>
           </TouchableOpacity>
@@ -695,7 +713,7 @@ export default function LoginScreen() {
               <View>
                 <Text style={s.modalBodyText}>
                   We sent a password reset link to{' '}
-                  <Text style={{ color: colors.parchment, fontFamily: fonts.bodyBold }}>
+                  <Text style={s.forgotEmailHighlight}>
                     {forgotEmail}
                   </Text>
                   .
@@ -715,7 +733,7 @@ export default function LoginScreen() {
                 </TouchableOpacity>
               </View>
             ) : (
-              <View style={{ gap: 16 }}>
+              <View style={s.forgotFormBody}>
                 <Text style={s.modalBodyText}>
                   Enter the email associated with your account and we'll send you a classified reset link.
                 </Text>
@@ -732,6 +750,7 @@ export default function LoginScreen() {
                     returnKeyType="go"
                     onSubmitEditing={handleForgotPassword}
                     autoCorrect={false}
+                    maxLength={254}
                   />
                 </View>
                 <TouchableOpacity
@@ -845,8 +864,17 @@ const s = StyleSheet.create({
     textAlign: 'center',
     opacity: 0.8,
   },
-
-  // ── Form Card ──
+  loreTransmission: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 10,
+    color: colors.fog,
+    textAlign: 'center',
+    marginTop: 12,
+    opacity: 0.6,
+    lineHeight: 16,
+    maxWidth: 280,
+    alignSelf: 'center',
+  },
   formCard: {
     backgroundColor: 'rgba(14, 13, 10, 0.7)',
     borderWidth: 1,
@@ -1074,6 +1102,9 @@ const s = StyleSheet.create({
     padding: 28,
     ...effects.glowSepia,
   },
+  forgotFormBody: {
+    gap: 16,
+  },
   modalCloseBtn: {
     position: 'absolute',
     top: 16,
@@ -1147,6 +1178,10 @@ const s = StyleSheet.create({
     letterSpacing: 2,
     color: colors.ink,
     fontWeight: '700',
+  },
+  forgotEmailHighlight: {
+    color: colors.parchment,
+    fontFamily: fonts.bodyBold,
   },
 
   // ── Strength Meter ──

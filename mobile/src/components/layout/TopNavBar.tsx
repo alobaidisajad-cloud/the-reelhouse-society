@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState, useCallback, memo } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform, Dimensions } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Search, Plus, Bell, MessageSquareText } from 'lucide-react-native';
@@ -8,13 +8,15 @@ import { useRouter } from 'expo-router';
 import { MasterLogo } from '@/src/components/MasterLogo';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import { useNotificationStore } from '@/src/stores/social';
 import { LinearGradient } from 'expo-linear-gradient';
+import { onScrollYChange } from '@/src/utils/scrollBridge';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 // ── Premium Nav Icon Button ──────────────────────────────────────
 // Micro-interaction: press-in scale-down + release bounce-back
-function NavIconButton({
+const NavIconButton = memo(function NavIconButton({
   icon: Icon,
   onPress,
   badge = false,
@@ -57,7 +59,7 @@ function NavIconButton({
       )}
     </AnimatedPressable>
   );
-}
+});
 
 // ════════════════════════════════════════════════════════════════
 //  TOP NAV BAR — The Society's Crown
@@ -65,21 +67,46 @@ function NavIconButton({
 //  CENTER: MasterLogo
 //  RIGHT:  Search  |  Notifications Bell
 // ════════════════════════════════════════════════════════════════
-export function TopNavBar() {
+export const TopNavBar = memo(function TopNavBar() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { user } = useAuthStore();
 
+  // #9 — Scroll-reactive transparency (throttled to prevent excessive re-renders)
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const lastProgressRef = React.useRef(0);
+  const handleScrollChange = useCallback((y: number) => {
+    const progress = Math.min(1, Math.max(0, y / 100));
+    // Only re-render if progress changed by ≥5% — imperceptible otherwise
+    if (Math.abs(progress - lastProgressRef.current) >= 0.05 || progress === 0 || progress === 1) {
+      lastProgressRef.current = progress;
+      setScrollProgress(progress);
+    }
+  }, []);
+
+  useEffect(() => {
+    return onScrollYChange(handleScrollChange);
+  }, [handleScrollChange]);
+
+  // Interpolate blur intensity: 0 at top → 45/100 when scrolled
+  const blurIntensity = Platform.OS === 'ios'
+    ? Math.round(scrollProgress * 45)
+    : Math.round(scrollProgress * 100);
+
   // Role-gate: only Archivist & Auteur see the Lounge icon
-  const userRole = (user?.role as string) || 'cinephile';
+  const userRole = (user?.role as string) ?? 'cinephile';
   const hasLoungeAccess = userRole === 'archivist' || userRole === 'auteur';
+  const unreadCount = useNotificationStore((s) => s._unreadCount);
 
   return (
     <View style={styles.container}>
       <BlurView
-        intensity={Platform.OS === 'ios' ? 45 : 100}
+        intensity={blurIntensity}
         tint="dark"
-        style={[styles.blur, { paddingTop: Math.max(insets.top, 20) }]}
+        style={[
+          styles.blur,
+          { paddingTop: Math.max(insets.top, 20), backgroundColor: `rgba(11,10,8,${scrollProgress * 0.7})` },
+        ]}
       >
         <View style={styles.navContent}>
           {/* ── LEFT CLUSTER: Log + Lounge ── */}
@@ -114,6 +141,7 @@ export function TopNavBar() {
               icon={Bell}
               onPress={() => router.push('/notifications-modal')}
               size={19}
+              badge={unreadCount > 0}
             />
           </View>
         </View>
@@ -128,7 +156,7 @@ export function TopNavBar() {
       </BlurView>
     </View>
   );
-}
+});
 
 // ════════════════════════════════════════════════════════════════
 //  STYLES — Nitrate Noir Premium Nav

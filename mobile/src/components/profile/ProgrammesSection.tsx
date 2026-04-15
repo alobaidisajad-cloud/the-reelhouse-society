@@ -4,38 +4,59 @@
  * Matches web's 150-line component.
  */
 import { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { useFilmStore } from '@/src/stores/films';
 
+interface ProgrammeFilm {
+    id?: number;
+    filmId?: number;
+    title?: string;
+    name?: string;
+    poster_path?: string | null;
+    poster?: string | null;
+}
+
+interface Programme {
+    id: string;
+    title: string;
+    description: string;
+    films?: Array<{ title?: string; poster_path?: string | null }>;
+}
+
+interface ProgrammeUser {
+    role?: string;
+}
+
 export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile }: {
-    programmes?: any[];
-    user?: any;
-    uniqueFilms?: any[];
+    programmes?: Programme[];
+    user?: ProgrammeUser;
+    uniqueFilms?: ProgrammeFilm[];
     isOwnProfile?: boolean;
 }) {
-    const safeProgs = programmes || [];
-    const safeFilms = uniqueFilms || [];
+    const safeProgs = programmes ?? [];
+    const safeFilms = uniqueFilms ?? [];
     const { logs } = useFilmStore();
 
     const [isCreating, setIsCreating] = useState(false);
     const [title, setTitle] = useState('');
     const [playbill, setPlaybill] = useState('');
-    const [film1, setFilm1] = useState<any>(null);
-    const [film2, setFilm2] = useState<any>(null);
+    const [film1, setFilm1] = useState<ProgrammeFilm | null>(null);
+    const [film2, setFilm2] = useState<ProgrammeFilm | null>(null);
     const [searchText, setSearchText] = useState('');
     const [selectingFor, setSelectingFor] = useState<1 | 2 | null>(null);
 
-    const isAuteur = (logs?.length || 0) >= 20 || user?.role === 'auteur' || user?.role === 'archivist';
+    const isAuteur = (logs?.length ?? 0) >= 20 || user?.role === 'auteur' || user?.role === 'archivist';
 
     const filteredFilms = useMemo(() => {
         if (!searchText.trim()) return safeFilms.slice(0, 20);
         const q = searchText.toLowerCase();
-        return safeFilms.filter((f: any) =>
-            (f.title || f.name || '').toLowerCase().includes(q)
+        return safeFilms.filter((f: ProgrammeFilm) =>
+            (f.title ?? f.name ?? '').toLowerCase().includes(q)
         ).slice(0, 20);
     }, [safeFilms, searchText]);
 
@@ -114,10 +135,10 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                                 <Text style={s.filmSelectLabel}>{label}</Text>
                                 {selected ? (
                                     <TouchableOpacity style={s.selectedFilm} onPress={() => { setSelectingFor(slot); setSearchText(''); }}>
-                                        {posterUri(selected.poster_path || selected.poster) && (
-                                            <Image source={{ uri: posterUri(selected.poster_path || selected.poster)! }} style={s.selectedPoster} />
+                                        {posterUri(selected.poster_path ?? selected.poster) && (
+                                            <Image source={{ uri: posterUri(selected.poster_path ?? selected.poster)! }} style={s.selectedPoster} contentFit="cover" />
                                         )}
-                                        <Text style={s.selectedTitle} numberOfLines={2}>{selected.title || selected.name}</Text>
+                                        <Text style={s.selectedTitle} numberOfLines={2}>{selected.title ?? selected.name}</Text>
                                     </TouchableOpacity>
                                 ) : (
                                     <TouchableOpacity style={s.filmSelectTrigger} onPress={() => { setSelectingFor(slot); setSearchText(''); }}>
@@ -140,7 +161,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                                 autoFocus
                             />
                             <ScrollView style={s.pickerList} nestedScrollEnabled>
-                                {filteredFilms.map((f: any) => (
+                                {filteredFilms.map((f: ProgrammeFilm) => (
                                     <TouchableOpacity
                                         key={f.id || f.filmId}
                                         style={s.pickerItem}
@@ -151,7 +172,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                                             Haptics.selectionAsync();
                                         }}
                                     >
-                                        <Text style={s.pickerItemText} numberOfLines={1}>{f.title || f.name}</Text>
+                                        <Text style={s.pickerItemText} numberOfLines={1}>{f.title ?? f.name}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
@@ -178,24 +199,24 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
             )}
 
             {/* Display existing programmes */}
-            {safeProgs.length > 0 && !isCreating && safeProgs.map((prog: any) => (
+            {safeProgs.length > 0 && !isCreating && safeProgs.map((prog: Programme) => (
                 <Animated.View key={prog.id} entering={FadeIn.duration(400)} style={s.progCard}>
                     {/* Overlapping posters */}
                     <View style={s.progPosters}>
                         {prog.films?.[0]?.poster_path && (
-                            <Image source={{ uri: posterUri(prog.films[0].poster_path)! }} style={s.progPoster1} />
+                            <Image source={{ uri: posterUri(prog.films[0].poster_path)! }} style={s.progPoster1} contentFit="cover" />
                         )}
                         {prog.films?.[1]?.poster_path && (
-                            <Image source={{ uri: posterUri(prog.films[1].poster_path)! }} style={s.progPoster2} />
+                            <Image source={{ uri: posterUri(prog.films[1].poster_path)! }} style={s.progPoster2} contentFit="cover" />
                         )}
                     </View>
                     <View style={s.progInfo}>
                         <Text style={s.progEyebrow}>THE NIGHTLY PROGRAMME</Text>
                         <Text style={s.progTitle}>{prog.title}</Text>
                         <View style={s.progFilmsRow}>
-                            <Text style={s.progFilmName}>{prog.films?.[0]?.title || 'Unknown Film'}</Text>
+                            <Text style={s.progFilmName}>{prog.films?.[0]?.title ?? 'Unknown Film'}</Text>
                             <Text style={s.progPlus}> + </Text>
-                            <Text style={s.progFilmName}>{prog.films?.[1]?.title || 'Unknown Film'}</Text>
+                            <Text style={s.progFilmName}>{prog.films?.[1]?.title ?? 'Unknown Film'}</Text>
                         </View>
                         <Text style={s.progDesc} numberOfLines={4}>{prog.description}</Text>
                     </View>
@@ -245,7 +266,7 @@ const s = StyleSheet.create({
     },
     filmSelectTriggerText: { fontFamily: fonts.body, fontSize: 11, color: colors.fog },
     selectedFilm: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 6, borderWidth: 1, borderColor: colors.sepia, borderRadius: 4 },
-    selectedPoster: { width: 30, height: 45, borderRadius: 2, resizeMode: 'cover' },
+    selectedPoster: { width: 30, height: 45, borderRadius: 2 },
     selectedTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.bone, flex: 1 },
     // Picker
     pickerWrap: {
@@ -275,11 +296,11 @@ const s = StyleSheet.create({
     },
     progPosters: { width: 100, position: 'relative' },
     progPoster1: {
-        width: 70, height: 105, borderRadius: 4, resizeMode: 'cover',
+        width: 70, height: 105, borderRadius: 4,
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)', zIndex: 2,
     },
     progPoster2: {
-        width: 70, height: 105, borderRadius: 4, resizeMode: 'cover',
+        width: 70, height: 105, borderRadius: 4,
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
         position: 'absolute', left: 20, top: 20, zIndex: 1, opacity: 0.6,
     },

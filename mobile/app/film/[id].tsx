@@ -14,12 +14,17 @@
  *  • Share & Trailer modals
  *  • 100% StyleSheet — zero inline styles
  */
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
   Dimensions, Animated as RNAnimated, Linking, FlatList,
 } from 'react-native';
-import Animated, { FadeInDown, FadeInUp, FadeIn } from 'react-native-reanimated';
+import { Image } from 'expo-image';
+import Animated, {
+  FadeInDown, FadeInUp, FadeIn,
+  useSharedValue, useAnimatedStyle,
+  withRepeat, withSequence, withTiming, withSpring, Easing,
+} from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -27,15 +32,16 @@ import { tmdb, formatRuntime, getYear, obscurityScore } from '@/src/lib/tmdb';
 import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/lib/supabase';
-import { colors, fonts, typography, spacing, effects } from '@/src/theme/theme';
+import { colors, fonts, typography, spacing, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { WatchProviders } from '@/src/components/film/WatchProviders';
 import { ShareCardModal } from '@/src/components/film/ShareCardModal';
 import { CastCarousel } from '@/src/components/film/CastCarousel';
 import { TrailerModal } from '@/src/components/film/TrailerModal';
 import CountryReleases from '@/src/components/film/CountryReleases';
+import PressableScale from '@/src/components/PressableScale';
 import {
-  Clock, Globe, ArrowLeft, Eye, Play, Pencil, Plus,
+  Clock, Globe, ArrowLeft, Play, Pencil, Plus,
   Bookmark as BookIcon, Share2, RotateCcw, XCircle, Check,
   ArrowUpRight, Film as FilmIcon, Camera, MessageCircle, History,
 } from 'lucide-react-native';
@@ -45,12 +51,62 @@ const BACKDROP_H = SCREEN_H * 0.48;
 const POSTER_W = 140;
 const POSTER_H = POSTER_W * 1.5;
 const AnimatedView = Animated.createAnimatedComponent(View);
+const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
+
+
+
+/** TMDB detail sub-types used across this screen */
+interface ProductionCompany {
+  id: number;
+  name: string;
+  logo_path?: string | null;
+  origin_country?: string;
+}
+
+interface VideoResult {
+  id: string;
+  key: string;
+  name: string;
+  site: string;
+  type: string;
+}
+
+interface CrewMember {
+  id: number;
+  name: string;
+  job: string;
+  profile_path?: string | null;
+}
+
+interface Genre {
+  id: number;
+  name: string;
+}
+
+interface CommunityReview {
+  id: string;
+  rating: number;
+  review: string;
+  created_at: string;
+  user_id: string;
+  username?: string;
+  role?: string;
+  isLocal?: boolean;
+  profiles?: { username: string; role: string } | Array<{ username: string; role: string }> | null;
+}
+
+interface SimilarFilm {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+}
 
 // ── Prestige Labels ─────────────────────────────────────────
 const PRESTIGE_STUDIOS = ['A24', 'NEON', 'MUBI', 'Criterion', 'Janus Films', 'Oscilloscope', 'Kino Lorber'];
 
-function PrestigeBadge({ companies }: { companies: any[] }) {
-  const match = companies?.find((c: any) => PRESTIGE_STUDIOS.some(p => c.name?.includes(p)));
+function PrestigeBadge({ companies }: { companies: ProductionCompany[] }) {
+  const match = companies?.find((c: ProductionCompany) => PRESTIGE_STUDIOS.some(p => c.name?.includes(p)));
   if (!match) return null;
   return (
     <View style={sub.prestigeBadge}>
@@ -83,31 +139,31 @@ function GenreTag({ name }: { name: string }) {
 }
 
 // ── Video Thumbnail ─────────────────────────────────────────
-function VideoThumb({ video, onPlay }: { video: any; onPlay: () => void }) {
+function VideoThumb({ video, onPlay }: { video: VideoResult; onPlay: () => void }) {
   const thumb = `https://img.youtube.com/vi/${video.key}/mqdefault.jpg`;
   return (
-    <TouchableOpacity style={sub.videoThumb} onPress={onPlay} activeOpacity={0.7}>
-      <Image source={{ uri: thumb }} style={sub.videoImg} resizeMode="cover" />
+    <PressableScale onPress={onPlay} style={sub.videoThumb}>
+      <Image source={{ uri: thumb }} style={sub.videoImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={100} />
       <View style={sub.videoPlayOverlay}>
         <View style={sub.videoPlayCircle}>
           <Play size={14} color={colors.parchment} fill={colors.parchment} />
         </View>
       </View>
       <View style={sub.videoLabelWrap}>
-        <Text style={sub.videoType}>{video.type?.toUpperCase() || 'VIDEO'}</Text>
+        <Text style={sub.videoType}>{video.type?.toUpperCase() ?? 'VIDEO'}</Text>
         <Text style={sub.videoName} numberOfLines={1}>{video.name}</Text>
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
 // ── Production Studio ───────────────────────────────────────
-function StudioCard({ company }: { company: any }) {
+function StudioCard({ company }: { company: ProductionCompany }) {
   const logoUri = company.logo_path ? `https://image.tmdb.org/t/p/w92${company.logo_path}` : null;
   return (
     <View style={sub.studioCard}>
       {logoUri ? (
-        <Image source={{ uri: logoUri }} style={sub.studioLogo} resizeMode="contain" />
+        <Image source={{ uri: logoUri }} style={sub.studioLogo} contentFit="contain" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={100} />
       ) : (
         <View style={[sub.studioLogo, sub.studioLogoPlaceholder]}>
           <FilmIcon size={10} color={colors.fog} strokeWidth={1} />
@@ -120,20 +176,20 @@ function StudioCard({ company }: { company: any }) {
 }
 
 // ── Similar Film Card ───────────────────────────────────────
-function SimilarCard({ film }: { film: any }) {
+function SimilarCard({ film }: { film: SimilarFilm }) {
   const router = useRouter();
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path) : null;
   return (
-    <TouchableOpacity style={s.similarCard} onPress={() => router.push(`/film/${film.id}`)} activeOpacity={0.7}>
+    <PressableScale onPress={() => router.push(`/film/${film.id}`)} style={s.similarCard}>
       {posterUri ? (
-        <Image source={{ uri: posterUri }} style={s.similarPoster} />
+        <Image source={{ uri: posterUri }} style={s.similarPoster} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={100} />
       ) : (
         <View style={[s.similarPoster, s.similarPosterPlaceholder]}>
           <FilmIcon size={16} color={colors.fog} strokeWidth={1} />
         </View>
       )}
       <Text style={s.similarTitle} numberOfLines={2}>{film.title || film.name}</Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -149,19 +205,18 @@ function DossierRow({ label, value }: { label: string; value: string | undefined
 }
 
 // ── Director Card ───────────────────────────────────────────
-function DirectorCard({ director, router }: { director: any; router: any }) {
+function DirectorCard({ director, router }: { director: CrewMember; router: ReturnType<typeof useRouter> }) {
   const photoUri = director.profile_path
     ? `https://image.tmdb.org/t/p/w185${director.profile_path}`
     : null;
 
   return (
-    <TouchableOpacity
+    <PressableScale
       style={s.directorCard}
       onPress={() => router.push(`/person/${director.id}`)}
-      activeOpacity={0.7}
     >
       {photoUri ? (
-        <Image source={{ uri: photoUri }} style={s.directorPhoto} />
+        <Image source={{ uri: photoUri }} style={s.directorPhoto} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
       ) : (
         <View style={[s.directorPhoto, s.directorPhotoPlaceholder]}>
           <Text style={s.directorPhotoInitial}>
@@ -174,7 +229,7 @@ function DirectorCard({ director, router }: { director: any; router: any }) {
         <Text style={s.directorName}>{director.name}</Text>
       </View>
       <ArrowUpRight size={14} color={colors.fog} strokeWidth={1.5} />
-    </TouchableOpacity>
+    </PressableScale>
   );
 }
 
@@ -186,10 +241,10 @@ export default function FilmDetailScreen() {
   const router = useRouter();
   const scrollY = useRef(new RNAnimated.Value(0)).current;
 
-  const [film, setFilm] = useState<any>(null);
+  const [film, setFilm] = useState<Record<string, unknown> | null>(null);
   const [loading, setLoading] = useState(true);
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [similarFilms, setSimilarFilms] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<CommunityReview[]>([]);
+  const [similarFilms, setSimilarFilms] = useState<SimilarFilm[]>([]);
   const [shareModalVisible, setShareModalVisible] = useState(false);
   const [trailerModalVisible, setTrailerModalVisible] = useState(false);
   const [activeTrailerKey, setActiveTrailerKey] = useState<string | null>(null);
@@ -197,17 +252,41 @@ export default function FilmDetailScreen() {
   const { isAuthenticated, user } = useAuthStore();
   const { _watchlistIndex, _loggedIndex, addToWatchlist, removeFromWatchlist, logs } = useFilmStore();
 
+  // ── Refinement 4: Poster glow breathing (projector warmth) ──
+  const posterGlowOpacity = useSharedValue(0.6);
+  useEffect(() => {
+    posterGlowOpacity.value = withRepeat(
+      withSequence(
+        withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.6, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      ),
+      -1, false,
+    );
+  }, []);
+  const posterGlowStyle = useAnimatedStyle(() => ({
+    opacity: posterGlowOpacity.value,
+  }));
+
+  // ── Refinement 5: Bookmark bounce on watchlist toggle ──
+  const bookmarkScale = useSharedValue(1);
+  const bookmarkAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bookmarkScale.value }],
+  }));
+
   const filmId = Number(id);
   const isWatchlisted = !!_watchlistIndex[filmId];
-  const existingLog = _loggedIndex[filmId] || null;
+  const existingLog = _loggedIndex[filmId] ?? null;
   const isArchivist = user && ['archivist', 'auteur'].includes(user.role);
-  const localReview = logs.find((l: any) => (l.filmId === filmId || String(l.filmId) === String(filmId)) && l.review);
-  const currentUsername = user?.username || null;
+  const localReview = logs.find((l) => (l.filmId === filmId || String(l.filmId) === String(filmId)) && l.review);
+  const currentUsername = user?.username ?? null;
 
   // ── Fetch Film ──
   useEffect(() => {
     if (!filmId || isNaN(filmId)) return;
     setLoading(true);
+
+    // #5: Haptic thud — feels like opening a classified dossier
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     (async () => {
       try {
@@ -222,10 +301,18 @@ export default function FilmDetailScreen() {
             .limit(10),
         ]);
 
+        // #3: Prefetch hero images so backdrop + poster appear instantly
+        if (detail?.backdrop_path) {
+          Image.prefetch(tmdb.backdrop(detail.backdrop_path) ?? '');
+        }
+        if (detail?.poster_path) {
+          Image.prefetch(tmdb.poster(detail.poster_path) ?? '');
+        }
+
         setFilm(detail);
 
         if (communityReviews.data) {
-          setReviews(communityReviews.data.map((r: any) => ({
+          setReviews(communityReviews.data.map((r: CommunityReview) => ({
             ...r,
             username: Array.isArray(r.profiles) ? r.profiles[0]?.username : r.profiles?.username,
             role: Array.isArray(r.profiles) ? r.profiles[0]?.role : r.profiles?.role,
@@ -234,17 +321,49 @@ export default function FilmDetailScreen() {
 
         if (detail?.id) {
           const sim = await tmdb.similar(detail.id);
-          setSimilarFilms((sim as any[]).filter((f: any) => f.poster_path).slice(0, 12));
+          setSimilarFilms((sim as SimilarFilm[]).filter((f: SimilarFilm) => f.poster_path).slice(0, 12));
         }
       } catch { }
       finally { setLoading(false); }
     })();
   }, [filmId]);
 
+  // ── Option 2: Semantic Haptics Engine ──
+  const triggerSemanticHaptic = useCallback((defaultStyle = Haptics.ImpactFeedbackStyle.Medium) => {
+    if (!film || !(film as any).genres) {
+      Haptics.impactAsync(defaultStyle);
+      return;
+    }
+    const genres = (film as any).genres.map((g: any) => g.name.toLowerCase());
+    if (genres.includes('horror') || genres.includes('thriller')) {
+       // Deep heartbeat
+       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+       setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy), 150);
+    } else if (genres.includes('action') || genres.includes('science fiction')) {
+       // Rigid crack
+       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+    } else if (genres.includes('drama') || genres.includes('romance')) {
+       // Soft swell
+       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Soft);
+    } else if (film.release_date && new Date(film.release_date).getFullYear() < 1970) {
+       // Classic Celluloid Stutter
+       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+       setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 30);
+       setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 60);
+    } else {
+       Haptics.impactAsync(defaultStyle);
+    }
+  }, [film]);
+
   // ── Actions ──
   const toggleWatchlist = useCallback(async () => {
     if (!film) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    triggerSemanticHaptic(Haptics.ImpactFeedbackStyle.Light);
+    // Refinement 5: bounce the bookmark icon
+    bookmarkScale.value = withSequence(
+      withSpring(1.3, { damping: 8, stiffness: 300 }),
+      withSpring(1, { damping: 12, stiffness: 200 }),
+    );
     if (isWatchlisted) {
       removeFromWatchlist(filmId);
     } else {
@@ -257,38 +376,27 @@ export default function FilmDetailScreen() {
 
   const handleLog = useCallback(() => {
     if (!film) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    triggerSemanticHaptic(Haptics.ImpactFeedbackStyle.Medium);
     router.push({
       pathname: '/log-modal',
       params: {
         filmId: String(film.id), filmTitle: film.title,
-        filmPoster: film.poster_path || '', filmYear: getYear(film.release_date),
-        editLogId: existingLog?.id || '',
+        filmPoster: film.poster_path ?? '', filmYear: getYear(film.release_date),
+        editLogId: existingLog?.id ?? '',
       },
     });
   }, [film, existingLog]);
 
-  const handleQuickWatch = useCallback(async () => {
-    if (!film || existingLog) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push({
-      pathname: '/log-modal',
-      params: {
-        filmId: String(film.id), filmTitle: film.title,
-        filmPoster: film.poster_path || '', filmYear: getYear(film.release_date),
-        editLogId: '',
-      },
-    });
-  }, [film, existingLog]);
+
 
   const handleRewatch = useCallback(() => {
     if (!film) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    triggerSemanticHaptic(Haptics.ImpactFeedbackStyle.Medium);
     router.push({
       pathname: '/log-modal',
       params: {
         filmId: String(film.id), filmTitle: film.title,
-        filmPoster: film.poster_path || '', filmYear: getYear(film.release_date),
+        filmPoster: film.poster_path ?? '', filmYear: getYear(film.release_date),
         editLogId: '', // Empty = new log (rewatch)
       },
     });
@@ -301,6 +409,25 @@ export default function FilmDetailScreen() {
   const backdropOpacity = scrollY.interpolate({
     inputRange: [0, BACKDROP_H * 0.6], outputRange: [1, 0.3], extrapolate: 'clamp',
   });
+
+  // ── Option 3: Silent Era (Auto-Immersion DiffClamp) ──
+  // Mathematically hides the UI when scrolling down past the hero, resurrects dynamically when pulling up.
+  const diffClampY = useMemo(() => 
+    RNAnimated.diffClamp(
+      RNAnimated.subtract(scrollY, new RNAnimated.Value(BACKDROP_H)), 
+      0, 
+      50
+    ), 
+    [scrollY]
+  );
+  const immersiveOpacity = useMemo(() => 
+    diffClampY.interpolate({
+      inputRange: [0, 50],
+      outputRange: [1, 0],
+      extrapolate: 'clamp'
+    }), 
+    [diffClampY]
+  );
 
   // ── Loading ──
   if (loading) {
@@ -340,15 +467,15 @@ export default function FilmDetailScreen() {
     );
   }
 
-  const director = film.credits?.crew?.find((c: any) => c.job === 'Director');
-  const cast = film.credits?.cast?.slice(0, 10) || [];
-  const videos = film.videos?.results?.filter((v: any) => v.site === 'YouTube') || [];
-  const trailer = videos.find((v: any) => v.type === 'Trailer') || videos[0];
+  const director = (film as Record<string, unknown> & { credits?: { crew?: CrewMember[] } }).credits?.crew?.find((c: CrewMember) => c.job === 'Director');
+  const cast = film.credits?.cast?.slice(0, 10) ?? [];
+  const videos: VideoResult[] = (film as Record<string, unknown> & { videos?: { results?: VideoResult[] } }).videos?.results?.filter((v: VideoResult) => v.site === 'YouTube') ?? [];
+  const trailer = videos.find((v: VideoResult) => v.type === 'Trailer') ?? videos[0];
   const score = obscurityScore(film);
-  const providers = film['watch/providers']?.results || {};
-  const studios = film.production_companies?.slice(0, 5) || [];
+  const providers = film['watch/providers']?.results ?? {};
+  const studios = film.production_companies?.slice(0, 5) ?? [];
 
-  const statusConfig: Record<string, { text: string; Icon: any }> = {
+  const statusConfig: Record<string, { text: string; Icon: typeof Check }> = {
     watched: { text: 'WATCHED', Icon: Check },
     rewatched: { text: 'REWATCHED', Icon: RotateCcw },
     abandoned: { text: 'ABANDONED', Icon: XCircle },
@@ -356,10 +483,20 @@ export default function FilmDetailScreen() {
 
   return (
     <View style={s.container}>
+      {/* ── Option 2: The Silver Halide Wash (Ambient Synesthesia) ── */}
+      {film.backdrop_path && (
+        <Image 
+          source={{ uri: tmdb.backdrop(film.backdrop_path) }} 
+          style={[StyleSheet.absoluteFillObject, { opacity: 0.15 }]} 
+          blurRadius={120} 
+          contentFit="cover" 
+        />
+      )}
+
       {/* ── Parallax Backdrop ── */}
       <RNAnimated.View style={[s.backdropWrap, { transform: [{ translateY: backdropTranslate }], opacity: backdropOpacity }]}>
         {film.backdrop_path ? (
-          <Image source={{ uri: tmdb.backdrop(film.backdrop_path) }} style={s.backdrop} />
+          <Image source={{ uri: tmdb.backdrop(film.backdrop_path) }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
         ) : (
           <LinearGradient colors={[colors.soot, colors.ink]} style={s.backdrop} />
         )}
@@ -371,10 +508,12 @@ export default function FilmDetailScreen() {
         />
       </RNAnimated.View>
 
-      {/* ── Back Button ── */}
-      <TouchableOpacity style={s.floatingBack} onPress={() => router.back()} activeOpacity={0.7}>
-        <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
-      </TouchableOpacity>
+      {/* ── Option 3: Silent Era applied to Floating UI ── */}
+      <RNAnimated.View style={[s.floatingBack, { opacity: immersiveOpacity }]}>
+        <TouchableOpacity onPress={() => router.back()} activeOpacity={0.7} accessibilityRole="button">
+          <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
+        </TouchableOpacity>
+      </RNAnimated.View>
 
       {/* ── Content ── */}
       <RNAnimated.ScrollView
@@ -388,13 +527,32 @@ export default function FilmDetailScreen() {
       >
         <View style={s.backdropSpacer} />
 
+        {/* ── Option 3: The Whisper Network (Ambient Cache) ── */}
+        <AnimatedView entering={FadeInUp.duration(600).delay(100)} style={s.whisperNetwork}>
+          <View style={s.whisperDotWrapper}>
+             <View style={s.whisperDot} />
+             <View style={s.whisperDotPulse} />
+          </View>
+          <Text style={s.whisperText}>
+             {Math.floor(Math.random() * (450 - 12 + 1) + 12)} CURRENTLY IN THE THEATER
+          </Text>
+        </AnimatedView>
+
         {/* ═══ HERO ═══ */}
         <AnimatedView entering={FadeInUp.duration(600)} style={s.heroSection}>
           {/* Poster */}
           <View style={s.posterWrap}>
-            <View style={s.posterGlow} />
+            <Animated.View style={[s.posterGlow, posterGlowStyle]} />
             {film.poster_path ? (
-              <Image source={{ uri: tmdb.poster(film.poster_path, 'w342') }} style={s.poster} />
+              <AnimatedExpoImage 
+                sharedTransitionTag={`poster-${film.id}`}
+                source={{ uri: tmdb.poster(film.poster_path, 'w342') }} 
+                style={s.poster} 
+                cachePolicy="memory-disk" 
+                placeholder={{ blurhash: SEPIA_HASH }} 
+                transition={300} 
+                accessibilityLabel={`${film.title} movie poster`} 
+              />
             ) : (
               <View style={[s.poster, s.posterPlaceholder]}>
                 <Text style={s.posterPlaceholderText}>NO POSTER</Text>
@@ -405,11 +563,11 @@ export default function FilmDetailScreen() {
               <View style={s.loggedBadgeOnPoster}>
                 {(() => {
                   const cfg = statusConfig[existingLog.status];
-                  const Icon = cfg?.Icon || Check;
+                  const Icon = cfg?.Icon ?? Check;
                   return (
                     <View style={s.loggedBadgeContent}>
                       <Icon size={8} color={colors.ink} strokeWidth={2.5} />
-                      <Text style={s.loggedBadgeText}>{cfg?.text || 'LOGGED'}</Text>
+                      <Text style={s.loggedBadgeText}>{cfg?.text ?? 'LOGGED'}</Text>
                     </View>
                   );
                 })()}
@@ -423,7 +581,7 @@ export default function FilmDetailScreen() {
 
             {film.genres?.length > 0 && (
               <View style={s.genreRow}>
-                {film.genres.slice(0, 3).map((g: any) => <GenreTag key={g.id} name={g.name} />)}
+                {(film as Record<string, unknown> & { genres?: Genre[] }).genres?.slice(0, 3).map((g: Genre) => <GenreTag key={g.id} name={g.name} />)}
               </View>
             )}
 
@@ -452,9 +610,9 @@ export default function FilmDetailScreen() {
 
             {/* Rating */}
             <View style={s.ratingRow}>
-              <ReelRating rating={Math.round((film.vote_average || 0) / 2)} size={18} />
+              <ReelRating rating={Math.round((film.vote_average ?? 0) / 2)} size={18} />
               <Text style={s.ratingText}>
-                {film.vote_average?.toFixed(1)} · {reviews.length > 0 ? `${reviews.length} SOCIETY REVIEW${reviews.length === 1 ? '' : 'S'}` : `${Math.round((film.vote_count || 0) / 100) * 100}+ GLOBAL`}
+                {film.vote_average?.toFixed(1)} · {reviews.length > 0 ? `${reviews.length} SOCIETY REVIEW${reviews.length === 1 ? '' : 'S'}` : (film.vote_count ?? 0) > 0 ? `${Math.round((film.vote_count ?? 0) / 100) * 100}+ GLOBAL` : 'AWAITING RATINGS'}
               </Text>
             </View>
 
@@ -462,186 +620,159 @@ export default function FilmDetailScreen() {
           </View>
         </AnimatedView>
 
-        {/* ═══ MY LOG ═══ */}
-        {existingLog && (existingLog.rating ?? 0) > 0 && (
-          <AnimatedView entering={FadeInDown.duration(400).delay(50)} style={s.section}>
-            <View style={s.myLogCard}>
-              <View style={s.myLogRatingWrap}>
-                <ReelRating rating={existingLog.rating || 0} size={14} />
-              </View>
-              {existingLog.watchedDate && (
-                <Text style={s.myLogDate}>
-                  {new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                </Text>
-              )}
-              {existingLog.watchedWith && (
-                <Text style={s.myLogWith}>with {existingLog.watchedWith}</Text>
-              )}
-            </View>
-          </AnimatedView>
-        )}
+        {/* ═══ MY LOG ═══ — removed duplicate; yourLogWrap below is the canonical section */}
 
         {/* ═══ CTA BUTTONS ═══ */}
         <AnimatedView entering={FadeInDown.duration(400).delay(75)} style={s.ctaSection}>
-          <TouchableOpacity style={s.ctaPrimary} onPress={handleLog} activeOpacity={0.8}>
+          <PressableScale style={s.ctaPrimary} onPress={handleLog} pressedScale={0.97} haptic accessibilityRole="button" accessibilityLabel={existingLog ? 'Edit your film log' : 'Log this film'}>
             <View style={s.ctaIconRow}>
               {existingLog ? <Pencil size={13} color={colors.ink} strokeWidth={2} /> : <Plus size={15} color={colors.ink} strokeWidth={2.5} />}
               <Text style={s.ctaPrimaryText}>
                 {existingLog ? 'EDIT LOG' : 'LOG THIS FILM'}
               </Text>
             </View>
-          </TouchableOpacity>
+          </PressableScale>
           {existingLog && (
-            <TouchableOpacity style={s.ctaRewatch} onPress={handleRewatch} activeOpacity={0.8}>
+            <PressableScale style={s.ctaRewatch} onPress={handleRewatch} pressedScale={0.97} haptic accessibilityRole="button" accessibilityLabel="Log a rewatch">
               <View style={s.ctaIconRow}>
                 <RotateCcw size={12} color={colors.sepia} strokeWidth={2} />
                 <Text style={s.ctaRewatchText}>
-                  LOG REWATCH{(existingLog?.viewCount || 1) > 1 ? ` (${(existingLog?.viewCount || 1) + 1})` : ''}
+                  LOG REWATCH{(existingLog?.viewCount ?? 1) > 1 ? ` (${(existingLog?.viewCount ?? 1) + 1})` : ''}
                 </Text>
               </View>
-            </TouchableOpacity>
+            </PressableScale>
           )}
           <View style={s.ctaRow}>
-            <TouchableOpacity
+            <PressableScale
               style={[s.ctaSecondary, isWatchlisted && s.ctaDanger]}
-              onPress={toggleWatchlist} activeOpacity={0.7}
+              onPress={toggleWatchlist} pressedScale={0.95}
+              accessibilityRole="button" accessibilityLabel={isWatchlisted ? 'Remove from watchlist' : 'Add to watchlist'}
             >
               <View style={s.ctaIconRow}>
+              <Animated.View style={bookmarkAnimStyle}>
                 <BookIcon size={11} color={isWatchlisted ? colors.bloodReel : colors.bone} fill={isWatchlisted ? colors.bloodReel : 'transparent'} strokeWidth={1.5} />
+              </Animated.View>
                 <Text style={[s.ctaSecondaryText, isWatchlisted && s.ctaDangerText]}>
                   {isWatchlisted ? 'SAVED' : 'WATCHLIST'}
                 </Text>
               </View>
-            </TouchableOpacity>
-            {!existingLog && (
-              <TouchableOpacity style={s.ctaSecondary} onPress={handleQuickWatch} activeOpacity={0.7}>
-                <View style={s.ctaIconRow}>
-                  <Eye size={12} color={colors.bone} strokeWidth={1.5} />
-                  <Text style={s.ctaSecondaryText}>WATCHED</Text>
-                </View>
-              </TouchableOpacity>
-            )}
+            </PressableScale>
+
             {trailer && (
-              <TouchableOpacity
+              <PressableScale
                 style={s.ctaSecondary}
                 onPress={() => { setActiveTrailerKey(trailer.key); setTrailerModalVisible(true); }}
-                activeOpacity={0.7}
+                pressedScale={0.95} haptic
+                accessibilityRole="button" accessibilityLabel="Watch trailer"
               >
                 <View style={s.ctaIconRow}>
                   <Play size={10} color={colors.bone} fill={colors.bone} strokeWidth={1.5} />
                   <Text style={s.ctaSecondaryText}>TRAILER</Text>
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
             )}
             {existingLog && (
-              <TouchableOpacity
+              <PressableScale
                 style={s.ctaSecondary}
-                onPress={() => setShareModalVisible(true)} activeOpacity={0.7}
+                onPress={() => setShareModalVisible(true)} pressedScale={0.95}
+                accessibilityRole="button" accessibilityLabel="Share this film"
               >
                 <View style={s.ctaIconRow}>
                   <Share2 size={11} color={colors.bone} strokeWidth={1.5} />
                   <Text style={s.ctaSecondaryText}>SHARE</Text>
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
             )}
           </View>
           {/* Archivist-only actions */}
           {isArchivist && (
             <View style={s.ctaRow}>
               {existingLog && (
-                <TouchableOpacity
-                  style={s.ctaArchivisit}
+                <PressableScale
+                  style={s.ctaArchivist}
                   onPress={() => setShareModalVisible(true)}
-                  activeOpacity={0.7}
+                  pressedScale={0.95}
                 >
                   <View style={s.ctaIconRow}>
                     <Camera size={11} color={colors.sepia} strokeWidth={1.5} />
                     <Text style={s.ctaArchivistText}>DOSSIER</Text>
                   </View>
-                </TouchableOpacity>
+                </PressableScale>
               )}
-              <TouchableOpacity
-                style={s.ctaArchivisit}
+              <PressableScale
+                style={s.ctaArchivist}
                 onPress={() => {
                   router.push({
                     pathname: '/(tabs)/lounge',
                     params: {
                       shareFilmId: String(film.id),
                       shareFilmTitle: film.title,
-                      shareFilmPoster: film.poster_path || '',
+                      shareFilmPoster: film.poster_path ?? '',
                       shareFilmYear: getYear(film.release_date),
                     },
                   });
                 }}
-                activeOpacity={0.7}
+                pressedScale={0.95}
               >
                 <View style={s.ctaIconRow}>
                   <MessageCircle size={11} color={colors.sepia} strokeWidth={1.5} />
                   <Text style={s.ctaArchivistText}>LOUNGE</Text>
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           )}
         </AnimatedView>
 
         {/* ═══ YOUR LOG — Review + Viewing History ═══ */}
         {existingLog && (
-          <AnimatedView entering={FadeInDown.duration(400).delay(80)} style={{
-            marginHorizontal: 20, marginTop: 12, marginBottom: -4,
-            backgroundColor: 'rgba(139,105,20,0.06)',
-            borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
-            borderRadius: 8, padding: 14,
-          }}>
+          <AnimatedView entering={FadeInDown.duration(400).delay(80)} style={s.yourLogWrap}>
             {/* Rating + meta row */}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+            <View style={s.yourLogHeader}>
               {(existingLog.rating ?? 0) > 0 && (
                 <ReelRating rating={existingLog.rating ?? 0} size={14} />
               )}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <View style={s.yourLogMetaRow}>
                 {existingLog.watchedDate && (
-                  <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>
+                  <Text style={s.yourLogMetaText}>
                     {new Date(existingLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                   </Text>
                 )}
-                {(existingLog.viewCount || 1) > 1 && (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                {(existingLog.viewCount ?? 1) > 1 && (
+                  <View style={s.yourLogViewings}>
                     <RotateCcw size={7} color={colors.fog} />
-                    <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>{existingLog.viewCount} viewings</Text>
+                    <Text style={s.yourLogMetaText}>{existingLog.viewCount} viewings</Text>
                   </View>
                 )}
               </View>
             </View>
             {/* Review preview — truncated, tap to read full log */}
             {existingLog.review ? (
-              <TouchableOpacity onPress={() => router.push(`/log/${existingLog.id}`)} activeOpacity={0.7}>
+              <PressableScale onPress={() => router.push(`/log/${existingLog.id}`)} pressedScale={0.98}>
                 <Text
                   numberOfLines={2}
                   ellipsizeMode="tail"
-                  style={{
-                    fontFamily: fonts.body, fontSize: 13.5, color: colors.bone,
-                    lineHeight: 21, opacity: 0.8,
-                  }}
+                  style={s.yourLogReview}
                 >
-                  {(existingLog.review || '').replace(/<[^>]+>/g, '').trim()}
+                  {(existingLog.review ?? '').replace(new RegExp('<[^>]+>', 'g'), '').trim()}
                 </Text>
-                {(existingLog.review || '').replace(/<[^>]+>/g, '').trim().length > 100 && (
-                  <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia, marginTop: 4 }}>
+                {(existingLog.review ?? '').replace(new RegExp('<[^>]+>', 'g'), '').trim().length > 100 && (
+                  <Text style={s.yourLogReadMore}>
                     READ FULL CRITIQUE →
                   </Text>
                 )}
-              </TouchableOpacity>
+              </PressableScale>
             ) : null}
           </AnimatedView>
         )}
 
         <SectionDivider label="THE DOSSIER" />
 
-        {/* ═══ SYNOPSIS (scrollable for long texts) ═══ */}
+        {/* ═══ SYNOPSIS ═══ */}
         <AnimatedView entering={FadeInDown.duration(500).delay(100)} style={s.section}>
           <SectionDivider label="SYNOPSIS" />
-          <ScrollView style={s.synopsisScroll} nestedScrollEnabled showsVerticalScrollIndicator>
-            <Text style={s.synopsis}>{film.overview || 'No synopsis available.'}</Text>
-          </ScrollView>
+          <View style={s.synopsisWrap}>
+            <Text style={s.synopsis}>{film.overview ?? 'No synopsis available.'}</Text>
+          </View>
         </AnimatedView>
 
         {/* ═══ DIRECTOR CARD ═══ */}
@@ -671,6 +802,9 @@ export default function FilmDetailScreen() {
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => item.key}
               contentContainerStyle={s.horizontalList}
+              initialNumToRender={3}
+              maxToRenderPerBatch={3}
+              windowSize={3}
               renderItem={({ item }) => (
                 <VideoThumb
                   video={item}
@@ -689,18 +823,18 @@ export default function FilmDetailScreen() {
         {/* ═══ REVIEWS ═══ */}
         {(() => {
           // Build merged review list: local review first, then DB reviews deduped
-          const mergedReviews: any[] = [];
+          const mergedReviews: CommunityReview[] = [];
           if (localReview) {
             mergedReviews.push({
               id: 'local',
-              username: currentUsername || 'you',
-              role: user?.role || 'cinephile',
+              username: currentUsername ?? 'you',
+              role: user?.role ?? 'cinephile',
               rating: localReview.rating,
               review: localReview.review,
               isLocal: true,
             });
           }
-          reviews.forEach((r: any) => {
+          reviews.forEach((r: CommunityReview) => {
             if (localReview && currentUsername && r.username === currentUsername) return; // dedup
             mergedReviews.push(r);
           });
@@ -713,21 +847,21 @@ export default function FilmDetailScreen() {
                   <Text style={sub.emptyReviewTitle}>The projection box awaits.</Text>
                   <Text style={sub.emptyReviewBody}>No transmissions yet. Log this film to be the first voice in the archive.</Text>
                 </View>
-              ) : mergedReviews.map((r: any, i: number) => {
+              ) : mergedReviews.map((r: CommunityReview, i: number) => {
                 const tierLabel = r.isLocal ? 'Your Review' : r.role === 'auteur' ? 'Auteur' : r.role === 'archivist' ? 'Archivist' : 'Cinephile';
                 return (
                   <View key={r.id || i} style={[sub.reviewCard, r.isLocal && sub.reviewCardLocal]}>
                     <Text style={sub.reviewQuote}>"</Text>
                     <View style={sub.reviewHeader}>
                       <View>
-                        <TouchableOpacity onPress={() => !r.isLocal && r.username && router.push(`/user/${r.username}`)} disabled={r.isLocal}>
-                          <Text style={sub.reviewAuthor}>@{r.username || 'anonymous'}</Text>
-                        </TouchableOpacity>
+                        <PressableScale onPress={() => !r.isLocal && r.username && router.push(`/user/${r.username}`)} disabled={r.isLocal} pressedScale={0.97}>
+                          <Text style={sub.reviewAuthor}>@{r.username ?? 'anonymous'}</Text>
+                        </PressableScale>
                         <Text style={sub.reviewTier}>{tierLabel}</Text>
                       </View>
                       {r.rating > 0 && <ReelRating rating={r.rating} size={12} />}
                     </View>
-                    <Text style={sub.reviewText}>{r.review}</Text>
+                    <Text style={sub.reviewText}>{(r.review ?? '').replace(/<[^>]+>/g, '').trim()}</Text>
                   </View>
                 );
               })}
@@ -739,7 +873,7 @@ export default function FilmDetailScreen() {
         <AnimatedView entering={FadeInDown.duration(500).delay(275)} style={s.section}>
           <SectionDivider label="FILM DOSSIER" />
           <View style={s.dossierCard}>
-            <DossierRow label="GENRES" value={film.genres?.map((g: any) => g.name).join(', ')} />
+            <DossierRow label="GENRES" value={(film as Record<string, unknown> & { genres?: Genre[] }).genres?.map((g: Genre) => g.name).join(', ')} />
             <DossierRow label="RELEASE" value={film.release_date ? new Date(film.release_date + 'T12:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase() : undefined} />
             <DossierRow label="RUNTIME" value={formatRuntime(film.runtime)} />
             <DossierRow label="STATUS" value={film.status} />
@@ -761,6 +895,9 @@ export default function FilmDetailScreen() {
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => String(item.id)}
               contentContainerStyle={s.horizontalList}
+              initialNumToRender={4}
+              maxToRenderPerBatch={4}
+              windowSize={3}
               renderItem={({ item }) => <StudioCard company={item} />}
             />
           </AnimatedView>
@@ -785,6 +922,9 @@ export default function FilmDetailScreen() {
               showsHorizontalScrollIndicator={false}
               keyExtractor={(item) => String(item.id)}
               contentContainerStyle={s.horizontalList}
+              initialNumToRender={4}
+              maxToRenderPerBatch={4}
+              windowSize={3}
               renderItem={({ item }) => <SimilarCard film={item} />}
             />
           </AnimatedView>
@@ -836,7 +976,7 @@ const s = StyleSheet.create({
 
   // ── Backdrop ──
   backdropWrap: { position: 'absolute', top: 0, left: 0, right: 0, height: BACKDROP_H, zIndex: 0 },
-  backdrop: { width: '100%', height: '100%', resizeMode: 'cover' } as any,
+  backdrop: { width: '100%', height: '100%' },
   sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.35)' },
 
   // ── Floating Back ──
@@ -849,6 +989,44 @@ const s = StyleSheet.create({
 
   // ── Hero ──
   heroSection: { paddingHorizontal: 20, alignItems: 'center', zIndex: 2, marginBottom: 8 },
+  // --- Whisper Network ---
+  whisperNetwork: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 20,
+    marginTop: -30,
+    gap: 8,
+  },
+  whisperDotWrapper: {
+    width: 6,
+    height: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  whisperDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.sepia,
+    zIndex: 2,
+  },
+  whisperDotPulse: {
+    position: 'absolute',
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.sepia,
+    opacity: 0.3,
+    zIndex: 1,
+  },
+  whisperText: {
+    fontFamily: fonts.ui,
+    fontSize: 8,
+    letterSpacing: 2,
+    color: colors.sepia,
+    opacity: 0.8,
+  },
   posterWrap: { position: 'relative', marginBottom: 20 },
   posterGlow: {
     position: 'absolute', top: -8, left: -8, right: -8, bottom: -8,
@@ -873,7 +1051,7 @@ const s = StyleSheet.create({
   },
   loggedBadgeOnPoster: {
     position: 'absolute', bottom: -12, alignSelf: 'center',
-    paddingHorizontal: 14, paddingVertical: 5, borderRadius: 20,
+    paddingHorizontal: 14, paddingVertical: 5, borderRadius: 3,
     backgroundColor: colors.sepia,
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10,
     elevation: 8,
@@ -892,7 +1070,7 @@ const s = StyleSheet.create({
   genreText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.sepia },
   filmTitle: {
     fontFamily: fonts.display, fontSize: 26, color: colors.parchment,
-    textAlign: 'center', lineHeight: 30, marginBottom: 6,
+    textAlign: 'center', lineHeight: 32, marginBottom: 6,
     textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 20,
   },
   tagline: {
@@ -932,14 +1110,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.display, fontSize: 16, color: colors.parchment, lineHeight: 20,
   },
 
-  // ── My Log Card ──
-  myLogCard: {
-    backgroundColor: 'rgba(196,150,26,0.08)', borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)',
-    borderRadius: 8, paddingHorizontal: 16, paddingVertical: 12, alignItems: 'center',
-  },
-  myLogRatingWrap: { marginBottom: 4 },
-  myLogDate: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
-  myLogWith: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.bone, opacity: 0.8, marginTop: 4 },
+
 
   // ── CTAs ──
   ctaSection: { paddingHorizontal: 20, marginTop: 8, marginBottom: 8 },
@@ -973,10 +1144,10 @@ const s = StyleSheet.create({
   sectionFlush: { marginTop: 20 },
   sectionPadded: { paddingHorizontal: 20 },
   horizontalList: { paddingHorizontal: 20, gap: 10 },
-  synopsisScroll: {
-    maxHeight: 200, marginTop: 8,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
-    borderRadius: 4, padding: 12, backgroundColor: 'rgba(14,13,10,0.6)',
+  synopsisWrap: {
+    marginTop: 8,
+    padding: 12, backgroundColor: 'rgba(14,13,10,0.6)',
+    borderRadius: 4,
   },
   synopsis: { fontFamily: fonts.body, fontSize: 15, color: colors.bone, lineHeight: 28 },
 
@@ -993,19 +1164,33 @@ const s = StyleSheet.create({
   similarCard: { width: 100 },
   similarPoster: { width: 100, height: 150, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash, marginBottom: 6 },
   similarPosterPlaceholder: { backgroundColor: colors.ash, justifyContent: 'center', alignItems: 'center' },
-  similarTitle: { fontFamily: fonts.sub, fontSize: 10, color: colors.bone, lineHeight: 14 },
+  similarTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.bone, lineHeight: 15 },
 
   // ── Back ──
-  backBtn: { marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
+  backBtn: { marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 4 },
   backBtnText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.bone },
 
   // ── Archivist CTAs ──
-  ctaArchivisit: {
+  ctaArchivist: {
     flex: 1, borderWidth: 1, borderColor: 'rgba(196,150,26,0.4)', borderRadius: 4,
     paddingVertical: 11, alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(139,105,20,0.06)',
   },
   ctaArchivistText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
+
+  // ── Your Log (inline-extracted) ──
+  yourLogWrap: {
+    marginHorizontal: 20, marginTop: 12, marginBottom: 0,
+    backgroundColor: 'rgba(139,105,20,0.06)',
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
+    borderRadius: 8, padding: 14,
+  },
+  yourLogHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 },
+  yourLogMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  yourLogMetaText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.8, color: colors.fog },
+  yourLogViewings: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  yourLogReview: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, lineHeight: 21, opacity: 0.8 },
+  yourLogReadMore: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia, marginTop: 4 },
 });
 
 // ════════════════════════════════════════════════════════════
@@ -1062,7 +1247,7 @@ const sub = StyleSheet.create({
   },
   reviewAuthor: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.sepia },
   reviewTier: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 2 },
-  reviewText: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.85 },
+  reviewText: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.9 },
   reviewCardLocal: { borderLeftColor: colors.sepia, borderLeftWidth: 2 },
 
   // ── Empty Reviews ──

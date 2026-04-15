@@ -6,12 +6,17 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "reelhouse",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.reelhouse.society",
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "The ReelHouse requires access to your archives to set your Society portrait."
+      }
     },
     "android": {
+      "package": "com.reelhouse.society",
       "adaptiveIcon": {
         "backgroundColor": "#0B0A08",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -40,7 +45,8 @@
           }
         }
       ],
-      "expo-font"
+      "expo-font",
+      "@sentry/react-native"
     ],
     "experiments": {
       "typedRoutes": true,

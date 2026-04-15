@@ -1,8 +1,9 @@
 import { useEffect, useCallback, useState, useMemo, memo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, RefreshControl,
-  Image, TouchableOpacity, Dimensions, Platform,
+  View, Text, StyleSheet, ScrollView, FlatList, RefreshControl,
+  TouchableOpacity, Dimensions, Platform,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, {
   FadeInDown, FadeInUp, FadeIn,
   useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming,
@@ -11,6 +12,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useRouter } from 'expo-router';
 
 import { useAuthStore } from '@/src/stores/auth';
@@ -18,11 +20,71 @@ import { useFilmStore } from '@/src/stores/films';
 import { useNotificationStore } from '@/src/stores/social';
 import { tmdb } from '@/src/lib/tmdb';
 import { supabase } from '@/src/lib/supabase';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { SectionDivider, ReelRating } from '@/src/components/Decorative';
 import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import Buster from '@/src/components/Buster';
+import PressableScale from '@/src/components/PressableScale';
 import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
+import { setScrollY } from '@/src/utils/scrollBridge';
+
+
+
+/** Lightweight TMDB film shape used across the home screen */
+interface TMDBFilm {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  release_date?: string;
+  vote_average?: number;
+  vote_count?: number;
+  overview?: string;
+  media_type?: string;
+  popularity?: number;
+}
+
+/** Shape of a featured log row from supabase */
+interface FeaturedLog {
+  id: string;
+  film_id: number;
+  film_title: string;
+  poster_path: string | null;
+  rating: number;
+  review: string;
+  status: string;
+  watched_with: string | null;
+  pull_quote: string | null;
+  drop_cap: boolean;
+  editorial_header: string | null;
+  is_autopsied: boolean;
+  autopsy: string | null;
+  created_at: string;
+  user_id: string;
+  profiles: { username: string; role: string; avatar_url?: string | null } | Array<{ username: string; role: string; avatar_url?: string | null }> | null;
+}
+
+interface EngagementRow {
+  target_log_id?: string;
+  log_id?: string;
+}
+
+interface PulseActivity {
+  id: string;
+  user: string;
+  userRole: string;
+  film: { id: number; title: string; poster_path: string | null };
+  rating: number;
+  text: string;
+  dropCap: boolean;
+  pullQuote: string;
+  watchedWith: string | null;
+  is_autopsied: boolean;
+  autopsy: string | null;
+  editorialHeader?: string | null;
+  time: string;
+}
 
 const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 
@@ -34,7 +96,7 @@ const { width: SCREEN_W } = Dimensions.get('window');
 // ══════════════════════════════════════════════════════════════
 //  FILM TICKER — Scrolling ticker at the very top (web parity)
 // ══════════════════════════════════════════════════════════════
-const FilmTicker = memo(function FilmTicker({ films }: { films: any[] }) {
+const FilmTicker = memo(function FilmTicker({ films }: { films: TMDBFilm[] }) {
   const translateX = useSharedValue(0);
   const ITEM_W = 200;
   const TOTAL_W = films.length * ITEM_W;
@@ -68,7 +130,7 @@ const FilmTicker = memo(function FilmTicker({ films }: { films: any[] }) {
           <View key={`tick-${i}`} style={[s.tickerItem, { width: ITEM_W }]}>
             <Text style={s.tickerDot}>✦</Text>
             <Text style={s.tickerTitle} numberOfLines={1}>
-              {(f.title || '').toUpperCase()}
+              {(f.title ?? f.name ?? '').toUpperCase()}
             </Text>
             {f.release_date && (
               <Text style={s.tickerYear}>({f.release_date.slice(0, 4)})</Text>
@@ -133,29 +195,30 @@ const MarqueeBulbRow = memo(function MarqueeBulbRow({ count = 12 }: { count?: nu
 // ══════════════════════════════════════════════════════════════
 //  MARQUEE BOARD — The hero centerpiece
 // ══════════════════════════════════════════════════════════════
-function MarqueeBoard({ film }: { film: any }) {
+const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFilm | null }) {
   const router = useRouter();
   const [localCount, setLocalCount] = useState(0);
 
   useEffect(() => {
     if (!film?.id) return;
     supabase.from('logs').select('id', { count: 'exact', head: true }).eq('film_id', film.id)
-      .then(({ count }) => setLocalCount(count || 0));
+      .then(({ count }) => setLocalCount(count ?? 0));
   }, [film?.id]);
 
+  const globalCount = Math.round((film?.vote_count ?? 0) / 100) * 100;
   const reviewText = localCount > 0
     ? `${localCount} SOCIETY REVIEW${localCount === 1 ? '' : 'S'}`
-    : `${Math.round((film?.vote_count || 0) / 100) * 100}+ GLOBAL RATINGS`;
+    : globalCount > 0 ? `${globalCount}+ GLOBAL RATINGS` : 'AWAITING RATINGS';
 
   if (!film) return (
     <View style={s.marqueeShell}>
-      <MarqueeBulbRow count={12} />
+      <MarqueeBulbRow count={8} />
       <View style={s.marqueeBoard}>
         <View style={[s.shimmer, { width: '40%', height: 8 }]} />
         <View style={[s.shimmer, { width: '70%', height: 24, marginTop: 8 }]} />
         <View style={[s.shimmer, { width: '55%', height: 12, marginTop: 8 }]} />
       </View>
-      <MarqueeBulbRow count={12} />
+      <MarqueeBulbRow count={8} />
     </View>
   );
 
@@ -167,7 +230,7 @@ function MarqueeBoard({ film }: { film: any }) {
       activeOpacity={0.85}
       onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push(`/film/${film.id}`); }}
     >
-      <MarqueeBulbRow count={12} />
+      <MarqueeBulbRow count={8} />
 
       <View style={s.marqueeBoard}>
         {/* Background poster (blurred) */}
@@ -176,6 +239,9 @@ function MarqueeBoard({ film }: { film: any }) {
             source={{ uri: posterBg }}
             style={s.marqueeBgImg}
             blurRadius={Platform.OS === 'ios' ? 20 : 14}
+            cachePolicy="memory-disk"
+            placeholder={{ blurhash: SEPIA_HASH }}
+            transition={200}
           />
         )}
         {/* Deep vignette */}
@@ -199,10 +265,11 @@ function MarqueeBoard({ film }: { film: any }) {
         {/* Content */}
         <View style={s.marqueeContent}>
           <Text style={s.marqueeEyebrow}>✦ MAIN FEATURE ✦</Text>
+          <Text style={s.marqueeLoreSub}>As decreed by the Programming Committee</Text>
 
           <View style={s.marqueeTitleWrap}>
             <Text style={s.marqueeTitle} numberOfLines={3}>
-              {(film.title || 'REELHOUSE').toUpperCase()}
+              {(film.title ?? 'REELHOUSE').toUpperCase()}
             </Text>
           </View>
 
@@ -215,27 +282,28 @@ function MarqueeBoard({ film }: { film: any }) {
                 <Text style={s.marqueeYearText}>{film.release_date.slice(0, 4)}</Text>
               </View>
             )}
-            <ReelRating rating={Math.round((film.vote_average || 0) / 2)} size={13} />
+            <ReelRating rating={Math.round((film.vote_average ?? 0) / 2)} size={13} />
           </View>
           <Text style={s.marqueeReviewCount}>{reviewText}</Text>
         </View>
       </View>
 
-      <MarqueeBulbRow count={12} />
+      <MarqueeBulbRow count={8} />
     </TouchableOpacity>
   );
-}
+});
 
 // ══════════════════════════════════════════════════════════════
 //  FILM STRIP ROW — Horizontal scrolling poster strip
 // ══════════════════════════════════════════════════════════════
-const FilmCard = memo(function FilmCard({ film, onPress }: { film: any; onPress: () => void }) {
+const FilmCard = memo(function FilmCard({ film, onPress, index = 0 }: { film: TMDBFilm; onPress: () => void; index?: number }) {
   const posterUri = film.poster_path ? `${TMDB_IMG_W185}${film.poster_path}` : null;
   return (
-    <TouchableOpacity style={s.filmCard} onPress={onPress} activeOpacity={0.7}>
+    <Animated.View entering={FadeInDown.duration(400).delay(Math.min(index * 50, 300))}>
+    <PressableScale style={s.filmCard} onPress={onPress} haptic>
       <View style={[s.posterWrap, !posterUri && s.posterEmpty]}>
         {posterUri ? (
-          <Image source={{ uri: posterUri }} style={s.posterImg} />
+          <Image source={{ uri: posterUri }} style={s.posterImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={100} />
         ) : (
           <Text style={s.posterPlaceholder}>✦</Text>
         )}
@@ -250,12 +318,28 @@ const FilmCard = memo(function FilmCard({ film, onPress }: { film: any; onPress:
       {film.release_date && (
         <Text style={s.filmYear}>{film.release_date.slice(0, 4)}</Text>
       )}
-    </TouchableOpacity>
+    </PressableScale>
+    </Animated.View>
   );
 });
 
-const FilmStripRow = memo(function FilmStripRow({ title, label, films }: { title: string; label: string; films: any[] }) {
+const FilmStripRow = memo(function FilmStripRow({ title, label, films }: { title: string; label: string; films: TMDBFilm[] }) {
   const router = useRouter();
+  const handlePress = useCallback((filmId: number) => {
+    Haptics.selectionAsync();
+    router.push(`/film/${filmId}`);
+  }, [router]);
+
+  const renderFilmCard = useCallback(({ item, index }: { item: TMDBFilm; index: number }) => (
+    <FilmCard
+      film={item}
+      index={index}
+      onPress={() => handlePress(item.id)}
+    />
+  ), [handlePress]);
+
+  const filmKeyExtractor = useCallback((item: TMDBFilm) => `${title}-${item.id}`, [title]);
+
   if (!films || films.length === 0) return null;
 
   return (
@@ -269,20 +353,19 @@ const FilmStripRow = memo(function FilmStripRow({ title, label, films }: { title
         </View>
       </View>
 
-      <ScrollView
+      <FlatList
         horizontal
+        data={films}
+        keyExtractor={filmKeyExtractor}
+        renderItem={renderFilmCard}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={s.stripScroll}
         decelerationRate="fast"
-      >
-        {films.map((f) => (
-          <FilmCard
-            key={`${title}-${f.id}`}
-            film={f}
-            onPress={() => { Haptics.selectionAsync(); router.push(`/film/${f.id}`); }}
-          />
-        ))}
-      </ScrollView>
+        windowSize={3}
+        maxToRenderPerBatch={6}
+        initialNumToRender={4}
+        removeClippedSubviews={true}
+      />
     </Animated.View>
   );
 });
@@ -292,49 +375,18 @@ const FilmStripRow = memo(function FilmStripRow({ title, label, films }: { title
 // ══════════════════════════════════════════════════════════════
 function FeaturedCritiqueInner() {
   const router = useRouter();
-  const [featured, setFeatured] = useState<any>(null);
+  const [featured, setFeatured] = useState<FeaturedLog | null>(null);
 
   useEffect(() => {
     (async () => {
       try {
-        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-        const { data: hotLogs } = await supabase
-          .from('logs')
+        const { data: featuredLog } = await supabase
+          .rpc('get_featured_critique')
           .select('id, film_id, film_title, poster_path, rating, review, status, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, created_at, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
-          .not('review', 'is', null)
-          .neq('review', '')
-          .gt('rating', 0)
-          .gte('created_at', twentyFourHoursAgo)
-          .order('created_at', { ascending: false })
-          .limit(20);
+          .single();
 
-        if (hotLogs && hotLogs.length > 0) {
-          const logIds = hotLogs.map((l: any) => l.id);
-          const [endorseResult, commentResult] = await Promise.all([
-            supabase.from('interactions').select('target_log_id').eq('type', 'endorse_log').in('target_log_id', logIds),
-            supabase.from('log_comments').select('log_id').in('log_id', logIds),
-          ]);
-          const engagement: Record<string, number> = {};
-          (endorseResult.data || []).forEach((e: any) => { engagement[e.target_log_id] = (engagement[e.target_log_id] || 0) + 1; });
-          (commentResult.data || []).forEach((c: any) => { engagement[c.log_id] = (engagement[c.log_id] || 0) + 1; });
-
-          const sorted = [...hotLogs].sort((a: any, b: any) => {
-            const engA = engagement[a.id] || 0;
-            const engB = engagement[b.id] || 0;
-            if (engB !== engA) return engB - engA;
-            return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-          });
-          setFeatured(sorted[0]);
-        } else {
-          const { data: fallback } = await supabase
-            .from('logs')
-            .select('id, film_id, film_title, poster_path, rating, review, status, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, created_at, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
-            .not('review', 'is', null)
-            .neq('review', '')
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .single();
-          if (fallback) setFeatured(fallback);
+        if (featuredLog) {
+          setFeatured(featuredLog as FeaturedLog);
         }
       } catch {}
     })();
@@ -342,7 +394,7 @@ function FeaturedCritiqueInner() {
 
   if (!featured) return null;
 
-  const username = Array.isArray(featured.profiles) ? featured.profiles[0]?.username : featured.profiles?.username || 'SOCIETY';
+  const username = Array.isArray(featured.profiles) ? featured.profiles[0]?.username : featured.profiles?.username ?? 'SOCIETY';
   const role = Array.isArray(featured.profiles) ? featured.profiles[0]?.role : featured.profiles?.role;
   const avatar_url = Array.isArray(featured.profiles) ? featured.profiles[0]?.avatar_url : featured.profiles?.avatar_url;
 
@@ -360,8 +412,8 @@ function FeaturedCritiqueInner() {
       <View style={s.critiqueHeaderRow}>
         <LinearGradient colors={[colors.sepia, colors.flicker]} style={s.sectionAccentBar} />
         <View>
-          <Text style={s.sectionEyebrow}>PICK OF THE WEEK</Text>
           <Text style={s.sectionTitle}>Featured Critique</Text>
+          <Text style={s.sectionLoreSub}>Selected by the Editorial Tribunal</Text>
         </View>
       </View>
 
@@ -369,8 +421,8 @@ function FeaturedCritiqueInner() {
          <ActivityCard item={activityItem} index={0} />
       </View>
 
-      <TouchableOpacity style={s.critiqueSubmitBtn} onPress={() => router.push('/log-modal')}>
-        <Text style={s.critiqueSubmitText}>SUBMIT A CRITIQUE</Text>
+      <TouchableOpacity style={s.critiqueSubmitBtn} onPress={() => router.push('/log-modal')} activeOpacity={0.7}>
+        <Text style={s.critiqueSubmitText}>✦ SUBMIT YOUR OWN DISPATCH ✦</Text>
       </TouchableOpacity>
     </Animated.View>
   );
@@ -382,10 +434,10 @@ const FeaturedCritique = memo(FeaturedCritiqueInner);
 // ══════════════════════════════════════════════════════════════
 function SocialPulseSectionInner() {
   const router = useRouter();
-  const { user } = useAuthStore();
-  const [activities, setActivities] = useState<any[]>([]);
+  const user = useAuthStore(s => s.user);
+  const [activities, setActivities] = useState<PulseActivity[]>([]);
 
-  const isAuteur = user?.role === 'auteur' || (user as any)?.role === 'god';
+  const isAuteur = user?.role === 'auteur';
   const pulseAccent = isAuteur ? colors.bloodReel : colors.sepia;
   const pulseGradient = isAuteur ? [colors.bloodReel, 'rgba(125,31,31,0.6)'] as const : [colors.sepia, colors.flicker] as const;
 
@@ -400,15 +452,15 @@ function SocialPulseSectionInner() {
         .limit(6);
 
       if (data) {
-        setActivities(data.map((log: any) => ({
+        setActivities(data.map((log: FeaturedLog) => ({
           id: log.id,
-          user: log.profiles?.username || 'cinephile',
-          userRole: log.profiles?.role || 'cinephile',
+          user: (Array.isArray(log.profiles) ? log.profiles[0]?.username : log.profiles?.username) ?? 'cinephile',
+          userRole: (Array.isArray(log.profiles) ? log.profiles[0]?.role : log.profiles?.role) ?? 'cinephile',
           film: { id: log.film_id, title: log.film_title, poster_path: log.poster_path },
           rating: log.rating,
           text: log.review,
           dropCap: log.drop_cap,
-          pullQuote: log.pull_quote || '',
+          pullQuote: log.pull_quote ?? '',
           watchedWith: log.watched_with,
           is_autopsied: log.is_autopsied,
           autopsy: log.autopsy,
@@ -425,8 +477,8 @@ function SocialPulseSectionInner() {
         <View style={s.pulseHeaderRow}>
           <LinearGradient colors={pulseGradient} style={[s.sectionAccentBar, isAuteur && { shadowColor: pulseAccent }]} />
           <View>
-            <Text style={s.sectionEyebrow}>LIVE FROM THE FOYER</Text>
             <Text style={s.sectionTitle}>The Pulse</Text>
+            <Text style={s.sectionLoreSub}>Dispatches from your fellow members</Text>
           </View>
         </View>
         <View style={[s.pulseEmpty, isAuteur && { borderTopColor: 'rgba(180,45,45,0.08)', borderBottomColor: 'rgba(180,45,45,0.05)', backgroundColor: 'rgba(125,31,31,0.02)' }]}>
@@ -444,7 +496,6 @@ function SocialPulseSectionInner() {
       <View style={s.pulseHeaderRow}>
         <LinearGradient colors={pulseGradient} style={[s.sectionAccentBar, isAuteur && { shadowColor: pulseAccent }]} />
         <View>
-          <Text style={s.sectionEyebrow}>LIVE FROM THE FOYER</Text>
           <Text style={s.sectionTitle}>The Pulse</Text>
         </View>
       </View>
@@ -470,26 +521,26 @@ function timeAgo(dateStr: string | null): string {
   if (!dateStr) return '';
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'JUST NOW';
-  if (mins < 60) return `${mins}M AGO`;
+  if (mins < 1) return 'MOMENTS AGO';
+  if (mins < 60) return `${mins} MIN. AGO`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}H AGO`;
+  if (hrs < 24) return `${hrs} HRS. AGO`;
   const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}D AGO`;
+  if (days < 7) return `${days} DAYS AGO`;
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
 }
 
 // ════════════════════════════════════════════════════════════════
 //  EXTERNAL PULSE CARD
 // ════════════════════════════════════════════════════════════════
-function PulseCardItem({ act }: { act: any }) {
+const PulseCardItem = memo(function PulseCardItem({ act }: { act: PulseActivity }) {
   const router = useRouter();
 
   const isArchivist = act.userRole === 'archivist';
   const isAuteur = act.userRole === 'auteur';
   const isPremium = isArchivist || isAuteur || act.pullQuote;
   const accentColor = isAuteur ? 'rgba(180,45,45,0.5)' : isArchivist ? 'rgba(196,150,26,0.5)' : 'rgba(139,105,20,0.3)';
-  const reviewStripped = (act.text || '').replace(/<[^>]+>/g, '');
+  const reviewStripped = (act.text ?? '').replace(/<[^>]+>/g, '');
   const truncReview = reviewStripped.length > 110 ? reviewStripped.slice(0, 110) + '…' : reviewStripped;
   const posterUri = act.film?.poster_path ? `${TMDB_IMG_W185}${act.film.poster_path}` : null;
 
@@ -518,7 +569,7 @@ function PulseCardItem({ act }: { act: any }) {
       [0, 1],
       isAuteur ? ['rgba(125,31,31,0.45)', 'rgba(180,45,45,0.7)'] : ['rgba(196,150,26,0.45)', 'rgba(218,165,32,0.7)']
     );
-    return { borderLeftColor: colorBorder as any };
+    return { borderLeftColor: colorBorder as string };
   });
 
   const animatedShimmerStyle = useAnimatedStyle(() => {
@@ -558,7 +609,7 @@ function PulseCardItem({ act }: { act: any }) {
         {/* ── PREMIUM EDITORIAL / ATMOSPHERIC HEADER ── */}
         {act.editorialHeader ? (
           <View style={s.editorialBanner}>
-            <Image source={{ uri: `${TMDB_IMG_W780}${act.editorialHeader}` }} style={s.editorialBannerImg} blurRadius={2} />
+            <Image source={{ uri: `${TMDB_IMG_W780}${act.editorialHeader}` }} style={s.editorialBannerImg} blurRadius={2} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
             <LinearGradient colors={['rgba(11,10,8,0.2)', 'transparent', 'rgba(18,14,9,0.9)']} locations={[0, 0.3, 1]} style={StyleSheet.absoluteFillObject} />
             <View style={s.editorialBadge}>
               <Text style={s.editorialBadgeText}>✦ EDITORIAL</Text>
@@ -566,7 +617,7 @@ function PulseCardItem({ act }: { act: any }) {
           </View>
         ) : isPremium && posterUri ? (
           <View style={s.premiumBanner}>
-            <Image source={{ uri: posterUri }} style={s.premiumBannerImg} blurRadius={10} />
+            <Image source={{ uri: posterUri }} style={s.premiumBannerImg} blurRadius={10} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
             <LinearGradient colors={['rgba(11,10,8,0.3)', 'rgba(18,14,9,0.95)']} style={StyleSheet.absoluteFillObject} />
           </View>
         ) : null}
@@ -588,7 +639,7 @@ function PulseCardItem({ act }: { act: any }) {
         <View style={s.pulseCardContent}>
           {posterUri && (
             <View style={s.pulsePosterWrap}>
-              <Image source={{ uri: posterUri }} style={s.pulsePoster} />
+              <Image source={{ uri: posterUri }} style={s.pulsePoster} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
             </View>
           )}
           <View style={s.pulseContentFlex}>
@@ -622,21 +673,23 @@ function PulseCardItem({ act }: { act: any }) {
       </AnimatedTouchable>
     </View>
   );
-}
+});
 
 // ════════════════════════════════════════════════════════════════
 //  MAIN SCREEN: THE LOBBY
 // ════════════════════════════════════════════════════════════════
 export default function LobbyScreen() {
   const insets = useSafeAreaInsets();
-  const { isAuthenticated } = useAuthStore();
-  const { fetchLogs, fetchEndorsements } = useFilmStore();
-  const { setupRealtime, fetchNotifications } = useNotificationStore();
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const fetchLogs = useFilmStore(s => s.fetchLogs);
+  const fetchEndorsements = useFilmStore(s => s.fetchEndorsements);
+  const setupRealtime = useNotificationStore(s => s.setupRealtime);
+  const fetchNotifications = useNotificationStore(s => s.fetchNotifications);
   const router = useRouter();
 
   const [refreshing, setRefreshing] = useState(false);
-  const [trending, setTrending] = useState<any[]>([]);
-  const [topRated, setTopRated] = useState<any[]>([]);
+  const [trending, setTrending] = useState<TMDBFilm[]>([]);
+  const [topRated, setTopRated] = useState<TMDBFilm[]>([]);
 
   // Dynamic top padding: safe area + nav bar height + breathing room
   const NAV_HEIGHT = 44 + 12; // navContent minHeight + blur paddingBottom
@@ -648,12 +701,34 @@ export default function LobbyScreen() {
         tmdb.trending('week'),
         tmdb.topRated(),
       ]);
-      setTrending((trendRes?.results || []).slice(0, 10));
-      setTopRated((topRes?.results || []).slice(0, 10));
+      const trendFilms = (trendRes?.results ?? []).slice(0, 10);
+      const topFilms = (topRes?.results ?? []).slice(0, 10);
+      setTrending(trendFilms);
+      setTopRated(topFilms);
+
+      // #9 — Persist to AsyncStorage for offline-first next launch
+      AsyncStorage.setItem('lobby_cache', JSON.stringify({ trending: trendFilms, topRated: topFilms, ts: Date.now() })).catch(() => {});
+
+      // #13 — Prefetch first 8 poster images so they appear instantly
+      const allPosters = [...trendFilms, ...topFilms]
+        .filter((f: TMDBFilm) => f.poster_path)
+        .slice(0, 8)
+        .map((f: TMDBFilm) => `${TMDB_IMG_W185}${f.poster_path}`);
+      allPosters.forEach(uri => Image.prefetch(uri).catch(() => {}));
     } catch {}
   }, []);
 
   useEffect(() => {
+    // #9 — Restore cached lobby data instantly, then fetch fresh
+    AsyncStorage.getItem('lobby_cache').then(raw => {
+      if (!raw) return;
+      try {
+        const cached = JSON.parse(raw);
+        if (cached.trending?.length) setTrending(cached.trending);
+        if (cached.topRated?.length) setTopRated(cached.topRated);
+      } catch {}
+    }).catch(() => {});
+
     loadLobbyData();
     if (isAuthenticated) {
       fetchLogs();
@@ -666,7 +741,7 @@ export default function LobbyScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     await loadLobbyData();
     if (isAuthenticated) await fetchLogs();
     setRefreshing(false);
@@ -689,20 +764,13 @@ export default function LobbyScreen() {
           locations={[0, 1]}
           style={s.welcomeSpotlight}
         />
-        <View style={[s.welcomeWrap, { paddingTop: topPad }]}>
+        <View style={[s.welcomeWrap, { paddingTop: topPad + 16 }]}>
+          {/* Top spacer — pushes content below the navbar */}
+          <View style={{ flex: 1 }} />
+
           <Animated.View entering={FadeInDown.duration(1200)} style={s.welcomeHeader}>
-
-            {/* Society crest */}
-            <View style={s.welcomeLogoWrap}>
-              <Image
-                source={require('../../assets/images/reelhouse-logo.png')}
-                style={s.welcomeLogo}
-                resizeMode="contain"
-              />
-            </View>
-
             <Text style={s.welcomeEyebrow}>WELCOME TO</Text>
-            <Text style={s.welcomeTitle}>{'THE\nREELHOUSE\nSOCIETY'}</Text>
+            <Text style={s.welcomeTitle} accessibilityRole="header">{'THE\nREELHOUSE\nSOCIETY'}</Text>
 
             <View style={s.welcomeEstRow}>
               <View style={s.welcomeEstLine} />
@@ -719,14 +787,28 @@ export default function LobbyScreen() {
             </View>
 
             <Text style={s.welcomeClimax}>Enter the Society.</Text>
-
           </Animated.View>
 
+          {/* Bottom spacer — pushes CTAs toward bottom */}
+          <View style={{ flex: 1 }} />
+
           <Animated.View entering={FadeInUp.duration(800).delay(500)} style={s.welcomeCtaWrap}>
-            <TouchableOpacity style={s.ctaPrimary} onPress={() => router.push('/login')}>
+            <TouchableOpacity
+              style={s.ctaPrimary}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/login'); }}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel="Request membership"
+            >
               <Text style={s.ctaPrimaryText}>✦ REQUEST MEMBERSHIP</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={s.ctaSecondary} onPress={() => router.push('/login')}>
+            <TouchableOpacity
+              style={s.ctaSecondary}
+              onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/login'); }}
+              activeOpacity={0.7}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in as existing member"
+            >
               <Text style={s.ctaSecondaryText}>ALREADY A MEMBER</Text>
             </TouchableOpacity>
           </Animated.View>
@@ -751,6 +833,10 @@ export default function LobbyScreen() {
           <Image
             source={{ uri: `${TMDB_IMG_W780}${heroFilm.backdrop_path}` }}
             style={s.heroBackdrop}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+            placeholder={{ blurhash: SEPIA_HASH }}
+            transition={300}
           />
           <LinearGradient
             colors={['rgba(10,7,3,0.1)', 'rgba(10,7,3,0.55)', colors.ink]}
@@ -769,6 +855,8 @@ export default function LobbyScreen() {
       <ScrollView
         contentContainerStyle={[s.scrollContent, { paddingTop: topPad }]}
         showsVerticalScrollIndicator={false}
+        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={32}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -784,7 +872,7 @@ export default function LobbyScreen() {
         {/* Hero welcome text */}
         <Animated.View entering={FadeIn.duration(800)} style={s.heroSection}>
           <Text style={s.heroEyebrow}>NOW ENTERING</Text>
-          <Text style={s.heroWelcome}>The Lobby</Text>
+          <Text style={s.heroWelcome} accessibilityRole="header">The Lobby</Text>
           <View style={s.heroRuleRow}>
             <LinearGradient colors={['transparent', colors.sepia]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.heroRuleGradient} />
             <Text style={s.heroRuleDot}>✦</Text>
@@ -826,8 +914,12 @@ export default function LobbyScreen() {
             style={s.lobbyFooterLogo}
             resizeMode="contain"
           />
+          <View style={s.lobbyFooterBusterWrap}>
+            <Buster size={24} mood="sleeping" />
+          </View>
           <Text style={s.lobbyFooterText}>THE REELHOUSE SOCIETY</Text>
           <Text style={s.lobbyFooterSub}>Est. 1924 · The Society is watching.</Text>
+          <Text style={s.lobbyFooterWhisper}>The projection booth never closes.</Text>
           <View style={s.lobbyFooterRule} />
         </View>
       </ScrollView>
@@ -846,7 +938,7 @@ const s = StyleSheet.create({
 
   // ── Film Ticker ──
   tickerWrap: {
-    height: 28, overflow: 'hidden', marginBottom: 16,
+    height: 28, overflow: 'hidden', marginBottom: 16, marginTop: 8,
     borderTopWidth: StyleSheet.hairlineWidth, borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(139,105,20,0.15)',
   },
@@ -855,11 +947,11 @@ const s = StyleSheet.create({
   tickerDot: { fontSize: 7, color: colors.sepia, opacity: 0.5 },
   tickerTitle: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.bone, opacity: 0.7 },
   tickerYear: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, opacity: 0.5 },
-  tickerEdge: { position: 'absolute', top: 0, bottom: 0, width: 40, zIndex: 2 },
+  tickerEdge: { position: 'absolute', top: 0, bottom: 0, width: 60, zIndex: 2 },
 
   // ── Welcome (Unauthenticated) ──
-  welcomeWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 36 },
-  welcomeHeader: { alignItems: 'center', marginBottom: 44 },
+  welcomeWrap: { flex: 1, alignItems: 'center', paddingHorizontal: 36, paddingBottom: 90 },
+  welcomeHeader: { alignItems: 'center' },
   welcomeSpotlight: {
     position: 'absolute', top: 0, left: '10%', right: '10%', height: '50%',
   },
@@ -907,7 +999,7 @@ const s = StyleSheet.create({
     borderColor: 'rgba(242, 232, 160, 0.35)',
     ...effects.shadowSurface, ...effects.glowSepia,
   },
-  ctaPrimaryText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 3, color: colors.ink, fontWeight: '700' },
+  ctaPrimaryText: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 3, color: colors.ink },
   ctaSecondary: {
     backgroundColor: 'rgba(10, 7, 3, 0.4)',
     borderWidth: 1, borderColor: 'rgba(139, 105, 20, 0.2)', borderRadius: 3,
@@ -922,15 +1014,14 @@ const s = StyleSheet.create({
   heroWelcome: { fontFamily: fonts.display, fontSize: 30, color: colors.parchment, ...effects.textGlowSepia },
   heroRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 10 },
   heroRuleGradient: { width: 36, height: 1 },
-  heroRuleLine: { width: 30, height: StyleSheet.hairlineWidth, backgroundColor: colors.sepia, opacity: 0.4 },
   heroRuleDot: { fontSize: 8, color: colors.sepia, opacity: 0.35 },
-  heroSubtitle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.fog, marginTop: 8, opacity: 0.5 },
+  heroSubtitle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.fog, marginTop: 8, opacity: 0.6 },
 
   heroBackdropWrap: {
     position: 'absolute', left: 0, right: 0, height: 380, zIndex: 0,
   },
   heroBackdrop: {
-    width: '100%', height: '100%', resizeMode: 'cover', opacity: 0.45,
+    width: '100%', height: '100%', opacity: 0.45,
   },
 
   // ── Marquee Board ──
@@ -948,14 +1039,15 @@ const s = StyleSheet.create({
   },
   marqueeBgImg: {
     ...StyleSheet.absoluteFillObject,
-    resizeMode: 'cover', opacity: 0.45,
+    contentFit: 'cover', opacity: 0.45,
     transform: [{ scale: 1.15 }],
   },
   marqueeSpotlight: {
     position: 'absolute', top: 0, left: '15%', right: '15%', height: '60%',
   },
   marqueeContent: { position: 'relative', zIndex: 1, alignItems: 'center' },
-  marqueeEyebrow: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4, color: colors.flicker, marginBottom: 14, ...effects.textGlowFlicker },
+  marqueeEyebrow: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4, color: colors.flicker, marginBottom: 4, ...effects.textGlowFlicker },
+  marqueeLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.5, marginBottom: 14, letterSpacing: 0.3 },
   marqueeTitleWrap: { paddingHorizontal: 4 },
   marqueeTitle: {
     fontFamily: fonts.display, fontSize: 30, color: colors.parchment, textAlign: 'center', lineHeight: 38,
@@ -968,8 +1060,9 @@ const s = StyleSheet.create({
     borderRadius: 3, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
   },
   marqueeYearText: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone },
-  marqueeReviewCount: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.6, marginTop: 10 },
+  marqueeReviewCount: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.6, marginTop: 10, marginBottom: 2 },
   shimmer: { backgroundColor: 'rgba(139,105,20,0.08)', borderRadius: 2, alignSelf: 'center' },
+  sectionLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.45, marginTop: 2, letterSpacing: 0.3 },
 
   // ── Film Strip ──
   filmStripSection: { marginBottom: 28, marginTop: 12 },
@@ -987,9 +1080,9 @@ const s = StyleSheet.create({
   },
   posterEmpty: { backgroundColor: colors.ash, justifyContent: 'center', alignItems: 'center' },
   posterPlaceholder: { fontFamily: fonts.display, color: colors.fog, fontSize: 20 },
-  posterImg: { width: '100%', height: '100%', resizeMode: 'cover' },
-  filmTitle: { fontFamily: fonts.sub, fontSize: 10, color: colors.bone, lineHeight: 14 },
-  filmYear: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, opacity: 0.6, marginTop: 1 },
+  posterImg: { width: '100%', height: '100%' },
+  filmTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.bone, lineHeight: 15 },
+  filmYear: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, opacity: 0.6, marginTop: 3 },
 
   // ── Shared Section Styles ──
   sectionAccentBar: { width: 3, height: 30, borderRadius: 2 },
@@ -1015,7 +1108,7 @@ const s = StyleSheet.create({
     backgroundColor: colors.soot, position: 'relative',
     ...effects.shadowPrimary,
   },
-  critiquePoster: { width: '100%', height: '100%', resizeMode: 'cover' },
+  critiquePoster: { width: '100%', height: '100%', contentFit: 'cover' },
   critiquePosterGlow: { position: 'absolute', top: -10, left: '10%', right: '10%', height: 12 },
   critiqueTextWrap: { flex: 1 },
   critiqueFilmTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.sepia, letterSpacing: 0.5, marginBottom: 6, opacity: 0.9 },
@@ -1079,10 +1172,10 @@ const s = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.15)',
     ...effects.shadowPrimary,
   },
-  pulsePoster: { width: '100%', height: '100%', resizeMode: 'cover' },
+  pulsePoster: { width: '100%', height: '100%', contentFit: 'cover' },
   pulseFilmTitle: { fontFamily: fonts.sub, fontSize: 14, color: colors.parchment, marginBottom: 4 },
   pulseReview: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, fontStyle: 'italic', lineHeight: 17, opacity: 0.85 },
-  pulseWatchedWith: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog, marginTop: 6 },
+  pulseWatchedWith: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginTop: 6 },
   pullQuoteWrap: { paddingLeft: 8, borderLeftWidth: 2, borderLeftColor: 'rgba(218,165,32,0.6)', marginBottom: 4 },
   pullQuoteText: { fontFamily: fonts.display, fontSize: 11, fontStyle: 'italic', color: '#DAA520', lineHeight: 16, ...effects.textGlowSepia },
 
@@ -1125,7 +1218,7 @@ const s = StyleSheet.create({
   premiumBannerImg: { width: '100%', height: '150%', top: '-25%', opacity: 0.4 },
 
   // ── Critique Section Extracted ──
-  critiqueCardWrap: { marginHorizontal: -12 },
+  critiqueCardWrap: { marginHorizontal: 0 },
   critiqueSubmitBtn: {
     backgroundColor: 'rgba(14,11,8,0.95)', marginTop: 4, borderRadius: 8,
     borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
@@ -1133,7 +1226,7 @@ const s = StyleSheet.create({
     ...effects.shadowSurface,
   },
   critiqueSubmitText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2, color: colors.sepia },
-  pulseCardOuter: { width: SCREEN_W * 0.82, marginRight: 14 },
+  pulseCardOuter: { width: SCREEN_W * 0.82 },
   pulseWatchedWithName: { color: colors.bone },
 
   // ── Lobby Footer ──
@@ -1145,13 +1238,18 @@ const s = StyleSheet.create({
     width: 40, height: StyleSheet.hairlineWidth,
     backgroundColor: colors.sepia, opacity: 0.2,
   },
-  lobbyFooterLogo: { width: 28, height: 28, opacity: 0.25, marginVertical: 14 },
+  lobbyFooterBusterWrap: { marginTop: 6 },
+  lobbyFooterLogo: { width: 28, height: 28, opacity: 0.35, marginVertical: 14 },
   lobbyFooterText: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5,
-    color: colors.sepia, opacity: 0.25, marginBottom: 4,
+    color: colors.sepia, opacity: 0.35, marginBottom: 4,
   },
   lobbyFooterSub: {
     fontFamily: fonts.sub, fontSize: 9, color: colors.fog,
-    opacity: 0.3, fontStyle: 'italic', marginBottom: 14,
+    opacity: 0.35, fontStyle: 'italic', marginBottom: 8,
+  },
+  lobbyFooterWhisper: {
+    fontFamily: fonts.bodyItalic, fontSize: 8, color: colors.fog,
+    opacity: 0.25, fontStyle: 'italic', marginBottom: 14, letterSpacing: 0.5,
   },
 });

@@ -19,9 +19,21 @@ import {
   Smartphone, Sparkles, Star,
 } from 'lucide-react-native';
 import { useAuthStore } from '@/src/stores/auth';
+import reelToast from '@/src/utils/reelToast';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import DataVault from '@/src/components/settings/DataVault';
+
+interface UserPreferences {
+  social_visibility?: string;
+  privacy_endorsements?: string;
+  privacy_annotations?: string;
+  notif_follows?: boolean;
+  notif_endorsements?: boolean;
+  notif_comments?: boolean;
+  notif_system?: boolean;
+  [key: string]: unknown;
+}
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -41,23 +53,23 @@ export default function SettingsScreen() {
   const { user, updateUser, logout } = useAuthStore();
 
   // ── Profile Fields ──
-  const [username, setUsername] = useState(user?.username || '');
-  const [displayName, setDisplayName] = useState(user?.display_name || user?.username || '');
-  const [bio, setBio] = useState(user?.bio || '');
+  const [username, setUsername] = useState(user?.username ?? '');
+  const [displayName, setDisplayName] = useState(user?.display_name ?? user?.username ?? '');
+  const [bio, setBio] = useState(user?.bio ?? '');
 
   // ── Privacy ──
   const [socialVisibility, setSocialVisibility] = useState<string>(
-    (user?.preferences as any)?.social_visibility || (user?.is_social_private ? 'private' : 'public')
+    (user?.preferences as UserPreferences | undefined)?.social_visibility ?? (user?.is_social_private ? 'private' : 'public')
   );
   const [privacyEndorsements, setPrivacyEndorsements] = useState<string>(
-    (user?.preferences as any)?.privacy_endorsements || 'everyone'
+    (user?.preferences as UserPreferences | undefined)?.privacy_endorsements ?? 'everyone'
   );
   const [privacyAnnotations, setPrivacyAnnotations] = useState<string>(
-    (user?.preferences as any)?.privacy_annotations || 'everyone'
+    (user?.preferences as UserPreferences | undefined)?.privacy_annotations ?? 'everyone'
   );
 
   // ── Notifications ──
-  const prefs = (user?.preferences || {}) as Record<string, any>;
+  const prefs = (user?.preferences ?? {}) as UserPreferences;
   const [notifFollows, setNotifFollows] = useState(prefs.notif_follows !== false);
   const [notifEndorsements, setNotifEndorsements] = useState(prefs.notif_endorsements !== false);
   const [notifComments, setNotifComments] = useState(prefs.notif_comments !== false);
@@ -72,15 +84,15 @@ export default function SettingsScreen() {
   // ── General ──
   const [saving, setSaving] = useState(false);
 
-  const userRole = (user?.role as string) || 'cinephile';
+  const userRole = (user?.role as string) ?? 'cinephile';
 
   // ── Re-sync state from user ──
   useEffect(() => {
     if (!user) return;
-    const p = (user.preferences || {}) as Record<string, any>;
-    setSocialVisibility(p.social_visibility || (user.is_social_private ? 'private' : 'public'));
-    setPrivacyEndorsements(p.privacy_endorsements || 'everyone');
-    setPrivacyAnnotations(p.privacy_annotations || 'everyone');
+    const p = (user.preferences || {}) as UserPreferences;
+    setSocialVisibility(p.social_visibility ?? (user.is_social_private ? 'private' : 'public'));
+    setPrivacyEndorsements(p.privacy_endorsements ?? 'everyone');
+    setPrivacyAnnotations(p.privacy_annotations ?? 'everyone');
     setNotifFollows(p.notif_follows !== undefined ? !!p.notif_follows : true);
     setNotifEndorsements(p.notif_endorsements !== undefined ? !!p.notif_endorsements : true);
     setNotifComments(p.notif_comments !== undefined ? !!p.notif_comments : true);
@@ -108,11 +120,10 @@ export default function SettingsScreen() {
       await setP('privacy_endorsements', privacyEndorsements);
       await setP('privacy_annotations', privacyAnnotations);
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert('Archived', 'Settings saved successfully.');
-    } catch (err: any) {
-      Alert.alert('Save Failed', err.message || 'An error occurred');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      reelToast.success('Your dossier has been amended.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Amendment failed — please try again.';
+      reelToast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -120,18 +131,19 @@ export default function SettingsScreen() {
 
   // ── Password Change ──
   const handlePasswordChange = async () => {
-    if (newPassword.length < 8) { Alert.alert('Error', 'Password must be at least 8 characters'); return; }
-    if (newPassword !== confirmPassword) { Alert.alert('Error', 'Passwords do not match'); return; }
+    if (newPassword.length < 8) { reelToast('Cipher must be at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { reelToast('Ciphers do not match.'); return; }
     setChangingPassword(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      Alert.alert('Updated', 'Password changed successfully.');
+      reelToast.success('Credentials re-encrypted.');
       setNewPassword('');
       setConfirmPassword('');
       setShowPasswordChange(false);
-    } catch (e: any) {
-      Alert.alert('Failed', e.message || 'Password change failed');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Re-encryption failed.';
+      reelToast.error(msg);
     } finally {
       setChangingPassword(false);
     }
@@ -139,7 +151,7 @@ export default function SettingsScreen() {
 
   // ── Sign Out ──
   const handleSignOut = () => {
-    Alert.alert('Sign Out', 'Leave The Society for now?', [
+    Alert.alert('Depart the Society', 'Your membership will remain. You may return at any time.', [
       { text: 'CANCEL', style: 'cancel' },
       { text: 'SIGN OUT', style: 'destructive', onPress: async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -152,8 +164,8 @@ export default function SettingsScreen() {
   // ── Delete Account ──
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account, all logs, lists, and reviews. This cannot be undone.',
+      'Expunge All Records',
+      'This will permanently destroy your dossier, all logs, stacks, and critiques. This action is irreversible.',
       [
         { text: 'CANCEL', style: 'cancel' },
         { text: 'DELETE', style: 'destructive', onPress: () => {
@@ -186,7 +198,7 @@ export default function SettingsScreen() {
   );
 
   // Section Header — matches web .settings-section-header
-  const SectionHead = ({ icon: Icon, label, danger }: { icon: any; label: string; danger?: boolean }) => (
+  const SectionHead = ({ icon: Icon, label, danger }: { icon: typeof User; label: string; danger?: boolean }) => (
     <View style={[st.sectionHeaderWrap]}>
       <View style={st.sectionHeaderRow}>
         <Icon size={14} color={danger ? 'rgba(162,36,36,0.7)' : colors.sepia} style={st.sectionHeaderIcon} />
@@ -218,7 +230,7 @@ export default function SettingsScreen() {
   );
 
   // Action Button — matches web .settings-action-btn
-  const ActionBtn = ({ icon: Icon, label, onPress, danger }: { icon: any; label: string; onPress: () => void; danger?: boolean }) => (
+  const ActionBtn = ({ icon: Icon, label, onPress, danger }: { icon: typeof User; label: string; onPress: () => void; danger?: boolean }) => (
     <TouchableOpacity
       style={[st.actionBtn, danger && st.actionBtnDanger]}
       onPress={onPress}
@@ -660,7 +672,7 @@ const st = StyleSheet.create({
   },
   heroEyebrow: {
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 5,
-    color: colors.sepia, opacity: 0.7,
+    color: colors.sepia, opacity: 0.8,
   },
   heroTitle: {
     fontFamily: fonts.display, fontSize: 32, color: colors.parchment,
@@ -670,11 +682,11 @@ const st = StyleSheet.create({
   },
   heroEst: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
-    color: colors.sepia, opacity: 0.4, marginBottom: 10,
+    color: colors.sepia, opacity: 0.5, marginBottom: 10,
   },
   heroDesc: {
     fontFamily: fonts.body, fontSize: 13, color: colors.bone,
-    opacity: 0.5, fontStyle: 'italic', textAlign: 'center', lineHeight: 20,
+    opacity: 0.6, fontStyle: 'italic', textAlign: 'center', lineHeight: 20,
     letterSpacing: 0.5, marginBottom: 16,
   },
   heroRuleBottom: {
@@ -905,12 +917,12 @@ const st = StyleSheet.create({
   },
   legalFooterLink: {
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2,
-    color: colors.fog, opacity: 0.5,
+    color: colors.fog, opacity: 0.6,
   },
   memberSince: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2,
     color: colors.sepia, textAlign: 'center',
-    marginTop: 20, opacity: 0.35,
+    marginTop: 20, opacity: 0.45,
   },
   endMarkRow: {
     flexDirection: 'row', alignItems: 'center', gap: 12,
@@ -922,12 +934,12 @@ const st = StyleSheet.create({
   },
   heritageMark: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3,
-    color: colors.sepia, textAlign: 'center', opacity: 0.3,
+    color: colors.sepia, textAlign: 'center', opacity: 0.4,
     marginTop: 12,
   },
   heritageCopyright: {
     fontFamily: fonts.body, fontSize: 9, color: colors.bone,
-    opacity: 0.2, textAlign: 'center', marginTop: 6,
+    opacity: 0.3, textAlign: 'center', marginTop: 6,
     fontStyle: 'italic',
   },
 });

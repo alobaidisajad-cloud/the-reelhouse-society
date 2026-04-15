@@ -4,12 +4,22 @@
  * Matches web's 116-line component exactly.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
+
+interface RouletteFilm {
+    id?: number;
+    filmId?: number;
+    title?: string;
+    name?: string;
+    poster_path?: string | null;
+    poster?: string | null;
+}
 
 const ORACLE_REASONS = [
     "The Oracle demands this.",
@@ -22,15 +32,15 @@ const ORACLE_REASONS = [
 
 export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     visible?: boolean;
-    watchlist?: any[];
+    watchlist?: RouletteFilm[];
     onClose?: () => void;
-    onSelect?: (id: any) => void;
+    onSelect?: (id: number) => void;
 }) {
     const router = useRouter();
     const [picking, setPicking] = useState(false);
-    const [result, setResult] = useState<any | null>(null);
+    const [result, setResult] = useState<RouletteFilm | null>(null);
     const [reason, setReason] = useState('');
-    const [flickerItem, setFlickerItem] = useState<any | null>(null);
+    const [flickerItem, setFlickerItem] = useState<RouletteFilm | null>(null);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     // Clean up on unmount
@@ -73,7 +83,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 
     const handleSelect = useCallback(() => {
         if (!result) return;
-        const filmId = result.id || result.filmId;
+        const filmId = result.id ?? result.filmId;
         onClose?.();
         setResult(null);
         if (onSelect) {
@@ -86,8 +96,8 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     // Don't render if not visible or not enough films
     if (!visible || !watchlist || watchlist.length < 2) return null;
 
-    const posterUri = (item: any) => {
-        const path = item?.poster_path || item?.poster;
+    const posterUri = (item: RouletteFilm | null) => {
+        const path = item?.poster_path ?? item?.poster;
         return path ? tmdb.poster(path, 'w342') : null;
     };
 
@@ -137,7 +147,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                                 )}
                             </TouchableOpacity>
                             <TouchableOpacity onPress={handleSelect}>
-                                <Text style={s.resultTitle}>{result.title || result.name}</Text>
+                                <Text style={s.resultTitle}>{result.title ?? result.name}</Text>
                             </TouchableOpacity>
                             <Text style={s.resultReason}>"{reason}"</Text>
                             <TouchableOpacity style={s.rerollBtn} onPress={spin} activeOpacity={0.7}>
@@ -181,9 +191,9 @@ const s = StyleSheet.create({
     },
     spinBtnText: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1, color: colors.ink },
     // Picking state
-    scanningText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, opacity: 0.5, marginBottom: 16 },
+    scanningText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, opacity: 0.65, marginBottom: 16 },
     flickerWrap: { width: 140, height: 210, borderRadius: 4, overflow: 'hidden' },
-    poster: { width: '100%', height: '100%', resizeMode: 'cover' },
+    poster: { width: '100%', height: '100%' },
     // Result state
     oracleSpoken: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
     resultPosterWrap: {

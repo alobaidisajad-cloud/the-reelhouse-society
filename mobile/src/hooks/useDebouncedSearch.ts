@@ -91,9 +91,9 @@ export function useDebouncedSearch<T>(
                     setResults(data)
                     setLoading(false)
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 // Silently ignore abort errors (expected during rapid typing)
-                if (err?.name !== 'AbortError') {
+                if (!(err instanceof DOMException && err.name === 'AbortError')) {
                     setResults([])
                     setLoading(false)
                 }

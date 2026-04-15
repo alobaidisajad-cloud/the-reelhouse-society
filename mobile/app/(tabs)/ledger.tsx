@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/src/stores/auth';
@@ -7,6 +8,9 @@ import { useFilmStore } from '@/src/stores/films';
 import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import { SectionDivider, ReelRating } from '@/src/components/Decorative';
+import { EmptyLedger, EmptyWatchlist, EmptyVault, EmptyLists } from '@/src/components/EmptyStates';
+import PressableScale from '@/src/components/PressableScale';
+import { setScrollY } from '@/src/utils/scrollBridge';
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -18,6 +22,9 @@ export default function StacksScreen() {
   const { logs, watchlist, vault, lists, fetchLogs, fetchWatchlist, fetchVault, fetchLists } = useFilmStore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabName>('logs');
+
+  // Reset scroll bridge so NavBar returns to transparent on this tab
+  useEffect(() => { setScrollY(0); }, []);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -75,28 +82,30 @@ export default function StacksScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
+          windowSize={7}
+          maxToRenderPerBatch={15}
+          initialNumToRender={12}
+          removeClippedSubviews={true}
           refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.sepia} />}
           renderItem={({ item, index }) => {
             const posterUri = item.poster ? `${TMDB_IMG}${item.poster}` : null;
             return (
               <AnimatedView entering={FadeInUp.duration(350).delay(Math.min(index * 40, 300))}>
-                <TouchableOpacity
-                  style={s.logRow}
-                  onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/log/${item.id}`); }}
-                  activeOpacity={0.7}
-                >
-                  {posterUri ? <Image source={{ uri: posterUri }} style={s.logPoster} /> : <View style={[s.logPoster, s.noPoster]} />}
-                  <View style={s.logInfo}>
-                    <Text style={s.logTitle} numberOfLines={1}>{item.title}</Text>
-                    <Text style={s.logMeta}>{item.year || ''}</Text>
-                    {item.rating > 0 && <ReelRating rating={item.rating} size={11} />}
+                <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/log/${item.id}`); }}>
+                  <View style={s.logRow}>
+                    {posterUri ? <Image source={{ uri: posterUri }} style={s.logPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`log-${item.id}`} /> : <View style={[s.logPoster, s.noPoster]} />}
+                    <View style={s.logInfo}>
+                      <Text style={s.logTitle} numberOfLines={1}>{item.title}</Text>
+                      <Text style={s.logMeta}>{item.year ?? ''}</Text>
+                      {item.rating > 0 && <ReelRating rating={item.rating} size={11} />}
+                    </View>
+                    <Text style={s.logStatus}>{(item.status ?? 'watched').toUpperCase()}</Text>
                   </View>
-                  <Text style={s.logStatus}>{(item.status || 'watched').toUpperCase()}</Text>
-                </TouchableOpacity>
+                </PressableScale>
               </AnimatedView>
             );
           }}
-          ListEmptyComponent={<Text style={s.emptyText}>No films logged yet.</Text>}
+          ListEmptyComponent={<EmptyLedger />}
         />
       )}
 
@@ -107,18 +116,23 @@ export default function StacksScreen() {
           numColumns={3}
           contentContainerStyle={s.gridContent}
           showsVerticalScrollIndicator={false}
+          windowSize={5}
+          maxToRenderPerBatch={18}
+          initialNumToRender={15}
+          removeClippedSubviews={true}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.sepia} />}
           renderItem={({ item, index }) => {
             const posterUri = item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null;
             return (
               <AnimatedView entering={FadeInUp.duration(300).delay(Math.min(index * 30, 250))} style={s.gridItem}>
                 <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/film/${item.id}`); }} activeOpacity={0.7}>
-                  {posterUri ? <Image source={{ uri: posterUri }} style={s.gridPoster} /> : <View style={[s.gridPoster, s.noPoster]}><Text style={s.noPosterText}>?</Text></View>}
+                  {posterUri ? <Image source={{ uri: posterUri }} style={s.gridPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`wl-${item.id}`} /> : <View style={[s.gridPoster, s.noPoster]}><Text style={s.noPosterText}>?</Text></View>}
                   <Text style={s.gridTitle} numberOfLines={1}>{item.title}</Text>
                 </TouchableOpacity>
               </AnimatedView>
             );
           }}
-          ListEmptyComponent={<Text style={s.emptyText}>Your watchlist is empty.</Text>}
+          ListEmptyComponent={<EmptyWatchlist />}
         />
       )}
 
@@ -129,19 +143,24 @@ export default function StacksScreen() {
           numColumns={3}
           contentContainerStyle={s.gridContent}
           showsVerticalScrollIndicator={false}
+          windowSize={5}
+          maxToRenderPerBatch={18}
+          initialNumToRender={15}
+          removeClippedSubviews={true}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.sepia} />}
           renderItem={({ item, index }) => {
             const posterUri = item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null;
             return (
               <AnimatedView entering={FadeInUp.duration(300).delay(Math.min(index * 30, 250))} style={s.gridItem}>
                 <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/film/${item.id}`); }} activeOpacity={0.7}>
-                  {posterUri ? <Image source={{ uri: posterUri }} style={s.gridPoster} /> : <View style={[s.gridPoster, s.noPoster]}><Text style={s.noPosterText}>?</Text></View>}
+                  {posterUri ? <Image source={{ uri: posterUri }} style={s.gridPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`vault-${item.id}`} /> : <View style={[s.gridPoster, s.noPoster]}><Text style={s.noPosterText}>?</Text></View>}
                   <Text style={s.gridTitle} numberOfLines={1}>{item.title}</Text>
                   <Text style={s.gridFormat}>{item.format}</Text>
                 </TouchableOpacity>
               </AnimatedView>
             );
           }}
-          ListEmptyComponent={<Text style={s.emptyText}>Your vault is empty.</Text>}
+          ListEmptyComponent={<EmptyVault />}
         />
       )}
 
@@ -151,21 +170,30 @@ export default function StacksScreen() {
           keyExtractor={(item) => item.id}
           contentContainerStyle={s.listContent}
           showsVerticalScrollIndicator={false}
+          windowSize={5}
+          maxToRenderPerBatch={10}
+          initialNumToRender={8}
+          removeClippedSubviews={true}
+          refreshControl={<RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.sepia} />}
           renderItem={({ item, index }) => (
-            <AnimatedView entering={FadeInUp.duration(350).delay(Math.min(index * 50, 300))} style={s.listCard}>
-              <Text style={s.listTitle}>{item.title}</Text>
-              <Text style={s.listMeta}>{item.films?.length || 0} films{item.description ? ` · ${item.description}` : ''}</Text>
-              {item.films && item.films.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.listPosters}>
-                  {item.films.slice(0, 6).map((f, i) => {
-                    const uri = f.poster_path ? `${TMDB_IMG}${f.poster_path}` : null;
-                    return uri ? <Image key={i} source={{ uri }} style={s.listPosterThumb} /> : null;
-                  })}
-                </ScrollView>
-              )}
+            <AnimatedView entering={FadeInUp.duration(350).delay(Math.min(index * 50, 300))}>
+              <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/stacks/${item.id}`); }}>
+                <View style={s.listCard}>
+                  <Text style={s.listTitle}>{item.title}</Text>
+                  <Text style={s.listMeta}>{item.films?.length ?? 0} films{item.description ? ` · ${item.description}` : ''}</Text>
+                  {item.films && item.films.length > 0 && (
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.listPosters}>
+                      {item.films.slice(0, 6).map((f, i) => {
+                        const uri = f.poster_path ? `${TMDB_IMG}${f.poster_path}` : null;
+                        return uri ? <Image key={i} source={{ uri }} style={s.listPosterThumb} contentFit="cover" cachePolicy="memory-disk" /> : null;
+                      })}
+                    </ScrollView>
+                  )}
+                </View>
+              </PressableScale>
             </AnimatedView>
           )}
-          ListEmptyComponent={<Text style={s.emptyText}>No lists created yet.</Text>}
+          ListEmptyComponent={<EmptyLists />}
         />
       )}
     </View>

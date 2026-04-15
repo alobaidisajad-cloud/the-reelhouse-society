@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import Animated, { 
     useSharedValue, 
     useAnimatedStyle, 
@@ -12,16 +12,27 @@ import Animated, {
 import Svg, { Path, Ellipse, Circle, Rect, G } from 'react-native-svg';
 import { colors, fonts } from '@/src/theme/theme';
 
-export type BusterMood = 'neutral' | 'crying' | 'smiling' | 'peeking';
+export type BusterMood = 'neutral' | 'crying' | 'smiling' | 'peeking' | 'thinking' | 'sleeping';
 
 interface BusterProps {
     size?: number;
     message?: string;
     mood?: BusterMood;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
 }
 
-export default function Buster({ size = 120, message, mood = 'neutral', style }: BusterProps) {
+/** Resolve Buster's default mood based on time of day — the ghost lives in the app */
+function clockMood(): BusterMood {
+    const hour = new Date().getHours();
+    if (hour >= 0 && hour < 6) return 'sleeping';      // Midnight–6am: even ghosts rest
+    if (hour >= 6 && hour < 10) return 'peeking';       // Morning: just woke up
+    if (hour >= 10 && hour < 17) return 'neutral';      // Midday: at work
+    if (hour >= 17 && hour < 22) return 'smiling';      // Evening: prime movie hours
+    return 'thinking';                                   // Late night: contemplating cinema
+}
+
+export default function Buster({ size = 120, message, mood, style }: BusterProps) {
+    const activeMood = mood ?? clockMood();
     const floatY = useSharedValue(0);
     const blinkScale = useSharedValue(1);
 
@@ -36,24 +47,24 @@ export default function Buster({ size = 120, message, mood = 'neutral', style }:
             true
         );
 
-        // Blinking logic — organic interval
-        const blink = () => {
-            blinkScale.value = withSequence(
-                withTiming(0.1, { duration: 100 }),
-                withTiming(1, { duration: 100 })
-            );
-            // Random delay between 3-8 seconds
-            const nextBlink = Math.random() * 5000 + 3000;
-            setTimeout(blink, nextBlink);
-        };
-        setTimeout(blink, 2000);
+        // Blinking logic — organic interval (skip for sleeping)
+        if (activeMood !== 'sleeping') {
+            const blink = () => {
+                blinkScale.value = withSequence(
+                    withTiming(0.1, { duration: 100 }),
+                    withTiming(1, { duration: 100 })
+                );
+                const nextBlink = Math.random() * 5000 + 3000;
+                setTimeout(blink, nextBlink);
+            };
+            setTimeout(blink, 2000);
+        }
     }, []);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ translateY: floatY.value }],
     }));
 
-    // eyeStyle was unused and contained invalid web CSS 'px' string values for transformOrigin which crashes the native Reanimated engine. Removed for safety.
     const busterColors = {
         body: '#E8DFC8',
         eyes: '#0A0703',
@@ -62,7 +73,7 @@ export default function Buster({ size = 120, message, mood = 'neutral', style }:
     };
 
     const renderMoodFace = () => {
-        switch (mood) {
+        switch (activeMood) {
             case 'crying':
                 return (
                     <G>
@@ -95,6 +106,25 @@ export default function Buster({ size = 120, message, mood = 'neutral', style }:
                         <Rect x="49" y="69" width="3" height="4" fill={busterColors.mouth} rx="0.5" />
                     </G>
                 );
+            case 'thinking':
+                return (
+                    <G>
+                        {/* Slightly pursed mouth — pondering */}
+                        <Path d="M 42 70 Q 50 74 58 70" stroke={busterColors.mouth} strokeWidth="2" fill="none" />
+                        <Rect x="46" y="70" width="3" height="3" fill={busterColors.mouth} rx="0.5" />
+                    </G>
+                );
+            case 'sleeping':
+                return (
+                    <G>
+                        {/* Peaceful closed-crescent eyes (overrides default eyes) */}
+                        {/* tiny "z z z" */}
+                        <Path d="M 72 30 L 78 30 L 72 38 L 78 38" stroke={busterColors.tear} strokeWidth="1.5" fill="none" opacity={0.6} />
+                        <Path d="M 78 22 L 83 22 L 78 28 L 83 28" stroke={busterColors.tear} strokeWidth="1.2" fill="none" opacity={0.4} />
+                        {/* Serene smile */}
+                        <Path d="M 40 68 Q 50 74 60 68" stroke={busterColors.mouth} strokeWidth="2" fill="none" />
+                    </G>
+                );
             case 'neutral':
             default:
                 return (
@@ -107,6 +137,30 @@ export default function Buster({ size = 120, message, mood = 'neutral', style }:
                     </G>
                 );
         }
+    };
+
+    // Sleeping mood: crescent eyes instead of open eyes
+    const renderEyes = () => {
+        if (activeMood === 'sleeping') {
+            return (
+                <G>
+                    <Path d="M 32 52 Q 38 46 44 52" stroke={busterColors.eyes} strokeWidth="2.5" fill="none" />
+                    <Path d="M 56 52 Q 62 46 68 52" stroke={busterColors.eyes} strokeWidth="2.5" fill="none" />
+                </G>
+            );
+        }
+        // Thinking mood: eyes look upward
+        const eyeY = activeMood === 'thinking' ? '48' : '52';
+        const eyeRy = activeMood === 'peeking' ? '5' : '7';
+        const pupilY = activeMood === 'thinking' ? '46' : activeMood === 'peeking' ? '51' : '50';
+        return (
+            <G>
+                <Ellipse cx="38" cy={eyeY} rx="6" ry={eyeRy} fill={busterColors.eyes} />
+                <Ellipse cx="62" cy={eyeY} rx="6" ry={eyeRy} fill={busterColors.eyes} />
+                <Circle cx="40" cy={pupilY} r="2" fill="white" />
+                <Circle cx="64" cy={pupilY} r="2" fill="white" />
+            </G>
+        );
     };
 
     return (
@@ -127,20 +181,14 @@ export default function Buster({ size = 120, message, mood = 'neutral', style }:
                         strokeWidth="3"
                     />
 
-                    {/* Eyes */}
-                    {/* We approximate blink using SVGs simple scale. We wrap eyes in G to apply scale if we were doing deep reanimated SVG, but for simplicity we keep it standard SVG components */}
-                    <G>
-                        <Ellipse cx="38" cy={mood === 'peeking' ? "52" : "52"} rx="6" ry={mood === 'peeking' ? "5" : "7"} fill={busterColors.eyes} />
-                        <Ellipse cx="62" cy={mood === 'peeking' ? "52" : "52"} rx="6" ry={mood === 'peeking' ? "5" : "7"} fill={busterColors.eyes} />
-                        <Circle cx="40" cy={mood === 'peeking' ? "51" : "50"} r="2" fill="white" />
-                        <Circle cx="64" cy={mood === 'peeking' ? "51" : "50"} r="2" fill="white" />
-                    </G>
+                    {/* Eyes — mood-aware via renderEyes() */}
+                    {renderEyes()}
 
                     {/* Mood */}
                     {renderMoodFace()}
                     
                     {/* Props */}
-                    {mood === 'smiling' && (
+                    {activeMood === 'smiling' && (
                         <Path d="M 42 16 L 44 8 L 50 14 L 56 8 L 58 16 Z" fill="#8B6914" stroke="#F2E8A0" strokeWidth="0.5" />
                     )}
                 </Svg>

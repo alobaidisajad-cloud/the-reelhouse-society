@@ -5,8 +5,9 @@
 import { useEffect, useCallback, useState, memo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl,
-  Image, Platform, Dimensions, Modal, Linking, ActivityIndicator,
+  Platform, Dimensions, Modal, Linking, ActivityIndicator, Share,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, {
   FadeIn, FadeInDown,
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
@@ -17,19 +18,50 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import {
   Eye, Pen, Heart, Share2, ChevronRight, X as XIcon,
-  Radio, Star, BookOpen, Sparkles, ExternalLink, FileText,
+  Radio, Star, Sparkles, ExternalLink, FileText,
 } from 'lucide-react-native';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatchStore, Dossier } from '@/src/stores/content';
 import { tmdb } from '@/src/lib/tmdb';
 import { supabase } from '@/src/lib/supabase';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import Buster from '@/src/components/Buster';
+import PressableScale from '@/src/components/PressableScale';
 
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 const { width: SCREEN_W } = Dimensions.get('window');
+
+
+
+interface DispatchFilm {
+  id: number;
+  title?: string;
+  name?: string;
+  backdrop_path?: string | null;
+  poster_path?: string | null;
+  release_date?: string;
+  vote_average?: number;
+  overview?: string;
+}
+
+interface WireStory {
+  id: string;
+  title: string;
+  excerpt: string;
+  category?: string;
+  date?: string;
+  time?: string;
+  author?: string;
+  image?: string;
+  link?: string;
+  body?: string;
+  fullContent?: string;
+  views?: number;
+  certifyCount?: number;
+  authorUsername?: string;
+}
 
 // ── Volume / Transmission number helpers ──
 const EPOCH = new Date('2026-03-12T00:00:00Z').getTime();
@@ -65,7 +97,7 @@ function SectionHeader({ title, sub }: { title: string; sub: string }) {
 // ════════════════════════════════════════════════════════════════
 //  NIGHTLY TRANSMISSION — Dynamic trending film pick
 // ════════════════════════════════════════════════════════════════
-const NightlyTransmission = memo(function NightlyTransmission({ films }: { films: any[] }) {
+const NightlyTransmission = memo(function NightlyTransmission({ films }: { films: DispatchFilm[] }) {
   const router = useRouter();
   const day = daysSinceEpoch();
   const film = films.length > 0 ? films[day % films.length] : null;
@@ -76,10 +108,10 @@ const NightlyTransmission = memo(function NightlyTransmission({ films }: { films
   const backdropUri = film.backdrop_path ? `${TMDB_IMG_W780}${film.backdrop_path}` : null;
 
   return (
-    <TouchableOpacity
+    <PressableScale
       style={st.transmissionWrap}
-      activeOpacity={0.85}
       onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push(`/film/${film.id}`); }}
+      pressedScale={0.98}
     >
       {/* Corner marks */}
       <View style={[st.corner, st.cornerTL]} />
@@ -89,7 +121,7 @@ const NightlyTransmission = memo(function NightlyTransmission({ films }: { films
 
       {/* Backdrop */}
       {backdropUri && (
-        <Image source={{ uri: backdropUri }} style={st.transmissionBg} blurRadius={Platform.OS === 'ios' ? 2 : 4} />
+        <Image source={{ uri: backdropUri }} style={st.transmissionBg} blurRadius={Platform.OS === 'ios' ? 2 : 4} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
       )}
       <View style={StyleSheet.absoluteFillObject}>
         <LinearGradient colors={['rgba(10,7,3,0.75)', 'rgba(10,7,3,0.9)']} style={StyleSheet.absoluteFillObject} />
@@ -103,7 +135,7 @@ const NightlyTransmission = memo(function NightlyTransmission({ films }: { films
         <Text style={st.transmissionLabel}>TONIGHT'S SCREENING — TRANSMISSION №{txNum}</Text>
 
         <Text style={st.transmissionTitle} numberOfLines={2}>
-          {(film.title || '').toUpperCase()}
+          {(film.title ?? '').toUpperCase()}
         </Text>
 
         <View style={st.transmissionMetaRow}>
@@ -119,26 +151,26 @@ const NightlyTransmission = memo(function NightlyTransmission({ films }: { films
 
         <View style={st.transmissionFooter}>
           <View style={st.transmissionBullet}>
-            <View style={[st.transmissionDot, { backgroundColor: colors.bloodReel }]} />
+            <View style={[st.transmissionDot, st.transmissionDotBlood]} />
             <Text style={st.transmissionFooterText}>WATCH INDEPENDENTLY</Text>
           </View>
           <View style={st.transmissionBullet}>
-            <View style={[st.transmissionDot, { backgroundColor: colors.sepia }]} />
+            <View style={[st.transmissionDot, st.transmissionDotSepia]} />
             <Text style={st.transmissionFooterText}>JOIN AT TRANSMISSION TIME</Text>
           </View>
         </View>
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 });
 
 // ════════════════════════════════════════════════════════════════
 //  DAILY FRAME — A cinematic still that changes every day
 // ════════════════════════════════════════════════════════════════
-const DailyFrame = memo(function DailyFrame({ films }: { films: any[] }) {
+const DailyFrame = memo(function DailyFrame({ films }: { films: DispatchFilm[] }) {
   const router = useRouter();
   const day = daysSinceEpoch();
-  const withBackdrop = films.filter((f: any) => f.backdrop_path);
+  const withBackdrop = films.filter((f: DispatchFilm) => f.backdrop_path);
   const film = withBackdrop.length > 0 ? withBackdrop[(day + 3) % withBackdrop.length] : null;
 
   if (!film) return null;
@@ -146,14 +178,18 @@ const DailyFrame = memo(function DailyFrame({ films }: { films: any[] }) {
   return (
     <View>
       <SectionHeader title="The Daily Frame" sub="Today's chosen still from the reels." />
-      <TouchableOpacity
+      <PressableScale
         style={st.dailyFrameWrap}
-        activeOpacity={0.85}
         onPress={() => router.push(`/film/${film.id}`)}
+        pressedScale={0.98}
+        haptic
       >
         <Image
           source={{ uri: `${TMDB_IMG_W780}${film.backdrop_path}` }}
           style={st.dailyFrameImg}
+          cachePolicy="memory-disk"
+          placeholder={{ blurhash: SEPIA_HASH }}
+          transition={200}
         />
         <LinearGradient
           colors={['transparent', 'rgba(10,7,3,0.4)', 'rgba(10,7,3,0.95)']}
@@ -161,16 +197,16 @@ const DailyFrame = memo(function DailyFrame({ films }: { films: any[] }) {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={st.dailyFrameCaption}>
-          <Text style={st.dailyFrameTitle} numberOfLines={1}>{film.title || film.name}</Text>
+          <Text style={st.dailyFrameTitle} numberOfLines={1}>{film.title ?? film.name}</Text>
           <View style={st.dailyFrameMetaRow}>
-            <Text style={st.dailyFrameMeta}>{(film.release_date || '')?.slice(0, 4)}</Text>
+            <Text style={st.dailyFrameMeta}>{(film.release_date ?? '')?.slice(0, 4)}</Text>
             <View style={st.dailyFrameViewRow}>
               <Text style={st.dailyFrameMeta}>VIEW THIS FILM</Text>
               <ChevronRight size={10} color={colors.sepia} strokeWidth={2} />
             </View>
           </View>
         </View>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 });
@@ -180,7 +216,7 @@ const DailyFrame = memo(function DailyFrame({ films }: { films: any[] }) {
 // ════════════════════════════════════════════════════════════════
 const DossierCard = memo(function DossierCard({ dossier, onPress }: { dossier: Dossier; onPress: () => void }) {
   return (
-    <TouchableOpacity style={st.dossierCard} onPress={onPress} activeOpacity={0.85}>
+    <PressableScale style={st.dossierCard} onPress={onPress} pressedScale={0.98} haptic>
       <View style={st.dossierAccentBar} />
 
       <View style={st.dossierMeta}>
@@ -204,20 +240,20 @@ const DossierCard = memo(function DossierCard({ dossier, onPress }: { dossier: D
         <Text style={st.dossierReadMoreText}>READ DOSSIER</Text>
         <ChevronRight size={12} color={colors.sepia} strokeWidth={2} />
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 });
 
 // ════════════════════════════════════════════════════════════════
 //  WIRE ITEM — Single news story in telegram format
 // ════════════════════════════════════════════════════════════════
-const WireItem = memo(function WireItem({ item, isLead, onPress }: { item: any; isLead?: boolean; onPress: () => void }) {
+const WireItem = memo(function WireItem({ item, isLead, onPress }: { item: WireStory; isLead?: boolean; onPress: () => void }) {
   if (isLead) {
     return (
-      <TouchableOpacity style={st.wireLead} onPress={onPress} activeOpacity={0.85}>
+      <PressableScale style={st.wireLead} onPress={onPress} pressedScale={0.98}>
         {item.image && (
           <View style={st.wireLeadImgWrap}>
-            <Image source={{ uri: item.image }} style={st.wireLeadImg} />
+            <Image source={{ uri: item.image }} style={st.wireLeadImg} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={150} />
             <LinearGradient
               colors={['transparent', 'rgba(10,7,3,0.4)', 'rgba(10,7,3,0.95)']}
               locations={[0, 0.4, 1]}
@@ -226,28 +262,28 @@ const WireItem = memo(function WireItem({ item, isLead, onPress }: { item: any; 
           </View>
         )}
         <View style={st.wireLeadBody}>
-          <Text style={st.wireCategory}>[{item.category || 'WIRE'}]</Text>
+          <Text style={st.wireCategory}>[{item.category ?? 'WIRE'}]</Text>
           <Text style={st.wireLeadTitle} numberOfLines={3}>{item.title}</Text>
           <Text style={st.wireLeadExcerpt} numberOfLines={3}>{item.excerpt}</Text>
           <Text style={st.wireMeta}>
-            {item.date} · {item.time} · BY {(item.author || 'THE ORACLE').toUpperCase()}
+            {item.date} · {item.time} · BY {(item.author ?? 'THE ORACLE').toUpperCase()}
           </Text>
         </View>
-      </TouchableOpacity>
+      </PressableScale>
     );
   }
 
   return (
-    <TouchableOpacity style={st.wireItem} onPress={onPress} activeOpacity={0.85}>
+    <PressableScale style={st.wireItem} onPress={onPress} pressedScale={0.98}>
       <View style={st.wireItemInner}>
-        <Text style={st.wireCategory}>[{item.category || 'WIRE'}]</Text>
+        <Text style={st.wireCategory}>[{item.category ?? 'WIRE'}]</Text>
         <Text style={st.wireTitle} numberOfLines={2}>{item.title}</Text>
         <Text style={st.wireExcerpt} numberOfLines={2}>{item.excerpt}</Text>
         <Text style={st.wireMeta}>
-          {item.date} · {item.time} · BY {(item.author || 'THE ORACLE').toUpperCase()}
+          {item.date} · {item.time} · BY {(item.author ?? 'THE ORACLE').toUpperCase()}
         </Text>
       </View>
-    </TouchableOpacity>
+    </PressableScale>
   );
 });
 
@@ -259,7 +295,7 @@ function ArticleReaderModal({
   visible,
   onClose,
 }: {
-  article: any;
+  article: Dossier | WireStory | null;
   visible: boolean;
   onClose: () => void;
 }) {
@@ -272,12 +308,14 @@ function ArticleReaderModal({
   useEffect(() => {
     if (!article || !visible) return;
     setCertified(false);
-    setCertifyCount(article.certifyCount || 0);
-    setLocalViews((article.views || 0) + 1);
+    setCertifyCount(article.certifyCount ?? 0);
+    setLocalViews((article.views ?? 0) + 1);
 
     // Increment views + check certify status
     if (article.id && !article.id.startsWith('seed-') && !article.id.startsWith('fb')) {
-      supabase.rpc('increment_dossier_views', { dossier_uuid: article.id }).catch(() => {});
+      supabase.rpc('increment_dossier_views', { dossier_uuid: article.id }).then(({ error }) => {
+        if (error) console.log(error);
+      });
       if (user) {
         supabase
           .from('dossier_certifications')
@@ -311,13 +349,13 @@ function ArticleReaderModal({
   const handleShare = () => {
     if (!article) return;
     const text = `"${article.title}" — a dossier on The Dispatch by The ReelHouse Society`;
-    // Using RN Share would be better, but this works for now
+    Share.share({ message: text }).catch(() => {});
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   if (!article) return null;
 
-  const content = article.fullContent || article.excerpt || article.body || '';
+  const content = article.fullContent ?? article.excerpt ?? article.body ?? '';
   const isDossier = !!article.fullContent;
 
   return (
@@ -329,7 +367,7 @@ function ArticleReaderModal({
           showsVerticalScrollIndicator={false}
         >
           {/* Close button */}
-          <TouchableOpacity style={st.readerClose} onPress={onClose} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+          <TouchableOpacity style={st.readerClose} onPress={onClose} hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }} accessibilityRole="button" accessibilityLabel="Close article">
             <XIcon size={20} color={colors.sepia} strokeWidth={1.5} />
           </TouchableOpacity>
 
@@ -379,31 +417,32 @@ function ArticleReaderModal({
           {/* Action bar */}
           {isDossier && (
             <View style={st.readerActions}>
-              <TouchableOpacity style={st.readerActionBtn} onPress={handleCertify}>
+              <PressableScale style={st.readerActionBtn} onPress={handleCertify} pressedScale={0.95} haptic>
                 <Heart size={14} color={certified ? colors.sepia : colors.fog} strokeWidth={1.5} fill={certified ? colors.sepia : 'transparent'} />
                 <Text style={[st.readerActionText, certified && st.readerActionCertified]}>
                   {certified ? 'CERTIFIED' : 'CERTIFY'} ({certifyCount})
                 </Text>
-              </TouchableOpacity>
+              </PressableScale>
 
-              <TouchableOpacity style={st.readerActionBtn} onPress={handleShare}>
+              <PressableScale style={st.readerActionBtn} onPress={handleShare} pressedScale={0.95}>
                 <Share2 size={14} color={colors.fog} strokeWidth={1.5} />
                 <Text style={st.readerActionText}>SHARE</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           )}
 
           {/* If it's a wire story with a link */}
           {article.link && (
-            <TouchableOpacity
+            <PressableScale
               style={st.wireReadFullBtn}
               onPress={() => { Linking.openURL(article.link); }}
+              pressedScale={0.97}
             >
               <View style={st.wireReadFullRow}>
                 <ExternalLink size={12} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={st.wireReadFullText}>READ FULL ARTICLE</Text>
               </View>
-            </TouchableOpacity>
+            </PressableScale>
           )}
 
           {/* End mark */}
@@ -423,20 +462,23 @@ function ArticleReaderModal({
 // ════════════════════════════════════════════════════════════════
 export default function DispatchScreen() {
   const insets = useSafeAreaInsets();
-  const { isAuthenticated, user } = useAuthStore();
-  const { dossiers, loading, fetchDossiers } = useDispatchStore();
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const user = useAuthStore(s => s.user);
+  const dossiers = useDispatchStore(s => s.dossiers);
+  const loading = useDispatchStore(s => s.loading);
+  const fetchDossiers = useDispatchStore(s => s.fetchDossiers);
   const router = useRouter();
 
   const NAV_HEIGHT = 44 + 12;
   const topPad = insets.top + NAV_HEIGHT + 8;
 
-  const canWrite = (user as any)?.role === 'auteur';
+  const canWrite = user?.role === 'auteur';
 
-  const [trending, setTrending] = useState<any[]>([]);
-  const [news, setNews] = useState<any[]>([]);
+  const [trending, setTrending] = useState<DispatchFilm[]>([]);
+  const [news, setNews] = useState<WireStory[]>([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedArticle, setSelectedArticle] = useState<any>(null);
+  const [selectedArticle, setSelectedArticle] = useState<Dossier | WireStory | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -444,17 +486,18 @@ export default function DispatchScreen() {
         tmdb.trending('week'),
         fetchDossiers(),
       ]);
-      setTrending((trendRes?.results || []).slice(0, 12));
+      setTrending((trendRes?.results ?? []).slice(0, 12));
     } catch {}
 
-    // News
-    setNewsLoading(true);
+    // News — #15: SWR pattern, only show loading on first load
+    const isFirstNews = news.length === 0;
+    if (isFirstNews) setNewsLoading(true);
     try {
       const items = await tmdb.getNews();
-      setNews((items || []).slice(0, 8));
+      setNews((items ?? []).slice(0, 8));
     } catch {}
-    setNewsLoading(false);
-  }, [fetchDossiers]);
+    if (isFirstNews) setNewsLoading(false);
+  }, [fetchDossiers, news.length]);
 
   useEffect(() => {
     loadData();
@@ -511,7 +554,7 @@ export default function DispatchScreen() {
             {/* Double rule top */}
             <View style={st.mastheadRuleTop} />
 
-            <Text style={st.mastheadTitle}>THE{'\n'}DISPATCH</Text>
+            <Text style={st.mastheadTitle} accessibilityRole="header">THE{'\n'}DISPATCH</Text>
 
             {/* Double rule bottom */}
             <View style={st.mastheadRuleBottom} />
@@ -665,22 +708,10 @@ export default function DispatchScreen() {
         </View>
 
         {/* Tab bar spacing */}
-        <View style={{ height: 120 }} />
+        <View style={st.tabBarSpacer} />
       </ScrollView>
 
-      {/* ── FAB — Auteur Write Button ── */}
-      {canWrite && (
-        <TouchableOpacity
-          style={st.fab}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/dispatch/compose'); }}
-          activeOpacity={0.85}
-        >
-          <View style={st.fabInner}>
-            <Pen size={12} color={colors.ink} strokeWidth={2} />
-            <Text style={st.fabText}>FILE DOSSIER</Text>
-          </View>
-        </TouchableOpacity>
-      )}
+
 
       {/* ── ARTICLE READER MODAL ── */}
       <ArticleReaderModal
@@ -719,7 +750,7 @@ const st = StyleSheet.create({
   },
   mastheadPublisher: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5,
-    color: colors.sepia, opacity: 0.7,
+    color: colors.sepia, opacity: 0.8,
   },
   mastheadRuleTop: {
     width: '100%', height: 6, marginBottom: 16,
@@ -748,7 +779,7 @@ const st = StyleSheet.create({
   pulseDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.bloodReel, opacity: 0.8 },
   mastheadSubtitle: {
     fontFamily: fonts.body, fontSize: 13, color: colors.bone,
-    opacity: 0.5, fontStyle: 'italic', textAlign: 'center', letterSpacing: 0.5,
+    opacity: 0.6, fontStyle: 'italic', textAlign: 'center', letterSpacing: 0.5,
   },
 
   // ── Divider ──
@@ -759,7 +790,7 @@ const st = StyleSheet.create({
   // ── Section header ──
   sectionHeaderBlock: { alignItems: 'center', marginBottom: 24 },
   shTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 6, textAlign: 'center' },
-  shSub: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 1, color: colors.sepia, opacity: 0.7, textAlign: 'center' },
+  shSub: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 1, color: colors.sepia, opacity: 0.8, textAlign: 'center' },
 
   // ── Writer bar ──
   writerBar: {
@@ -838,6 +869,8 @@ const st = StyleSheet.create({
   transmissionFooter: { flexDirection: 'row', gap: 16, flexWrap: 'wrap', justifyContent: 'center' },
   transmissionBullet: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   transmissionDot: { width: 6, height: 6, borderRadius: 3 },
+  transmissionDotBlood: { backgroundColor: colors.bloodReel },
+  transmissionDotSepia: { backgroundColor: colors.sepia },
   transmissionFooterText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1, color: colors.fog },
 
   // Corners
@@ -852,7 +885,7 @@ const st = StyleSheet.create({
     width: '100%', aspectRatio: 21 / 9, overflow: 'hidden',
     borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 2,
   },
-  dailyFrameImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  dailyFrameImg: { width: '100%', height: '100%', contentFit: 'cover' },
   dailyFrameCaption: { position: 'absolute', bottom: 12, left: 14, right: 14 },
   dailyFrameTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, lineHeight: 22, marginBottom: 4 },
   dailyFrameMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
@@ -865,14 +898,14 @@ const st = StyleSheet.create({
     overflow: 'hidden', marginBottom: 20, borderRadius: 2,
   },
   wireLeadImgWrap: { width: '100%', aspectRatio: 16 / 9, overflow: 'hidden' },
-  wireLeadImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+  wireLeadImg: { width: '100%', height: '100%', contentFit: 'cover' },
   wireLeadBody: { padding: 16 },
   wireLeadTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, lineHeight: 24, marginBottom: 8 },
   wireLeadExcerpt: { fontFamily: fonts.body, fontSize: 13, lineHeight: 20, color: colors.bone, opacity: 0.7, marginBottom: 10 },
   wireCategory: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5, color: colors.sepia, marginBottom: 4, opacity: 0.8 },
   wireTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, lineHeight: 20, marginBottom: 6 },
   wireExcerpt: { fontFamily: fonts.body, fontSize: 12, lineHeight: 18, color: colors.bone, opacity: 0.6, marginBottom: 6 },
-  wireMeta: { fontFamily: fonts.body, fontSize: 8, letterSpacing: 1, color: colors.sepia, opacity: 0.5 },
+  wireMeta: { fontFamily: fonts.body, fontSize: 8, letterSpacing: 1, color: colors.sepia, opacity: 0.6 },
   wireItem: {
     paddingVertical: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -899,13 +932,13 @@ const st = StyleSheet.create({
   // ── Footer ──
   footer: { alignItems: 'center', marginTop: 24 },
   footerMark: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4, color: colors.sepia, opacity: 0.5, marginBottom: 6 },
-  footerHeritage: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepia, opacity: 0.3, marginBottom: 6 },
-  footerCopyright: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, opacity: 0.3, textAlign: 'center' },
+  footerHeritage: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepia, opacity: 0.4, marginBottom: 6 },
+  footerCopyright: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, opacity: 0.4, textAlign: 'center' },
 
   // ── Empty ──
   emptyState: { alignItems: 'center', paddingVertical: 32, gap: 12 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, opacity: 0.6, textAlign: 'center', marginBottom: 4 },
-  emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.4, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, maxWidth: 260 },
+  emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.5, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, maxWidth: 260 },
 
   // ── Skeleton ──
   skeleton: {
@@ -920,23 +953,6 @@ const st = StyleSheet.create({
   skeletonGroup: { gap: 16, marginBottom: 32 },
   dossierList: { gap: 24, marginBottom: 16 },
   wireList: { gap: 0 },
-
-  // ── FAB ──
-  fab: {
-    position: 'absolute', bottom: 100, right: 20,
-    backgroundColor: colors.sepia, borderRadius: 40,
-    paddingVertical: 14, paddingHorizontal: 20,
-    ...effects.glowSepia,
-    shadowRadius: 30,
-    elevation: 12,
-  },
-  fabInner: {
-    flexDirection: 'row', alignItems: 'center', gap: 8,
-  },
-  fabText: {
-    fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1.5,
-    color: colors.ink,
-  },
 
   // ── Article Reader Modal ──
   readerOverlay: {
@@ -1002,4 +1018,5 @@ const st = StyleSheet.create({
     width: 32, height: StyleSheet.hairlineWidth,
     backgroundColor: colors.sepia, opacity: 0.3,
   },
+  tabBarSpacer: { height: 120 },
 });

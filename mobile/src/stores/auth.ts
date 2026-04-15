@@ -36,18 +36,20 @@ function pruneThrottles() {
   }
 }
 
-// ── Username → ID cache ──
-const _usernameIdCache = new Map<string, string>();
+// ── Username → ID cache (with 10min TTL to prevent stale mappings) ──
+const _usernameIdCache = new Map<string, { id: string; ts: number }>();
+const _USERNAME_CACHE_TTL = 10 * 60 * 1000;
 async function resolveUsernameToId(username: string): Promise<string | null> {
   const cached = _usernameIdCache.get(username);
-  if (cached) return cached;
+  if (cached && Date.now() - cached.ts < _USERNAME_CACHE_TTL) return cached.id;
+  if (cached) _usernameIdCache.delete(username);  // Expired — remove stale entry
   const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
   if (data?.id) {
     if (_usernameIdCache.size >= 200) {
       const oldest = _usernameIdCache.keys().next().value;
       if (oldest !== undefined) _usernameIdCache.delete(oldest);
     }
-    _usernameIdCache.set(username, data.id);
+    _usernameIdCache.set(username, { id: data.id, ts: Date.now() });
     return data.id;
   }
   return null;
@@ -60,12 +62,23 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   restoreSession: async () => {
     try {
+      // ── IRON VAULT CACHE: Instant RAM memory restoration before network ping ──
+      const vaultData = await AsyncStorage.getItem('ironvault_user_cache');
+      if (vaultData) {
+        try {
+          const parsedUser = JSON.parse(vaultData);
+          set({ user: parsedUser, isAuthenticated: true, loading: false });
+        } catch {}
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         const { data: profile } = await supabase
           .from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', session.user.id).single();
         if (profile) {
-          set({ user: { ...session.user, ...profile, following: [] } as unknown as User, isAuthenticated: true, loading: false });
+          const completeUser = { ...session.user, ...profile, following: [] } as unknown as User;
+          AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(completeUser));
+          set({ user: completeUser, isAuthenticated: true, loading: false });
           // Hydrate following in background
           hydrateFollowing();
           return;
@@ -90,12 +103,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (error) throw error;
 
     // Set auth immediately
-    set({ user: { ...data.user, following: [] } as unknown as User, isAuthenticated: true });
+    const completeUser = { ...data.user, following: [] } as unknown as User;
+    AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(completeUser));
+    set({ user: completeUser, isAuthenticated: true });
 
     // Enrich with profile in background
     Promise.resolve(supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user.id).single())
       .then((res) => {
-        if (res.data) set((s) => ({ user: s.user ? { ...s.user, ...res.data } : null }));
+        if (res.data) {
+           set((s) => {
+             const updatedUser = s.user ? { ...s.user, ...res.data } : null;
+             if (updatedUser) AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(updatedUser));
+             return { user: updatedUser };
+           });
+        }
       }).catch(() => {});
 
     hydrateFollowing();
@@ -117,7 +138,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       // Email confirmation disabled — immediate login
       await supabase.from('profiles').update({ username, persona }).eq('id', data.user!.id);
       const { data: profile } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user!.id).single();
-      set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true });
+      const completeUser = { ...data.user, ...profile, following: [] } as User;
+      AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(completeUser));
+      set({ user: completeUser, isAuthenticated: true });
       return { needsConfirmation: false };
     }
     // Email confirmation required
@@ -136,7 +159,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       try {
         const allKeys = await AsyncStorage.getAllKeys();
         const authKeys = allKeys.filter(key =>
-          key.startsWith('sb-') || key.includes('supabase') || key.includes('auth')
+          key.startsWith('sb-') || key.includes('supabase') || key.includes('auth') || key === 'ironvault_user_cache'
         );
         if (authKeys.length > 0) {
           await AsyncStorage.multiRemove(authKeys);
@@ -150,7 +173,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (!user) return;
 
     const throttleKey = `update:${user.id}`;
-    const lastCall = _actionThrottles.get(throttleKey) || 0;
+    const lastCall = _actionThrottles.get(throttleKey) ?? 0;
     if (Date.now() - lastCall < 1500) {
       // Slow down
       return;
@@ -168,18 +191,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       await supabase.from('profiles').update(dbUpdates).eq('id', user.id);
     }
     // Prevent client-side role elevation
-    const { role: _stripped, ...safeUpdates } = updates as any;
-    set((state) => ({ user: state.user ? { ...state.user, ...safeUpdates } : null }));
+    const { role: _stripped, ...safeUpdates } = updates as Partial<User> & { role?: unknown };
+    set((state) => {
+      const updatedUser = state.user ? { ...state.user, ...safeUpdates } : null;
+      if (updatedUser) AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(updatedUser));
+      return { user: updatedUser };
+    });
   },
 
   setPreference: async (key, value) => {
     const user = get().user;
     if (!user) return;
-    const prefs = { ...(user.preferences || {}), [key]: value };
+    const prefs = { ...(user.preferences ?? {}), [key]: value };
     set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }));
 
     const throttleKey = `pref:${user.id}`;
-    const lastCall = _actionThrottles.get(throttleKey) || 0;
+    const lastCall = _actionThrottles.get(throttleKey) ?? 0;
     if (Date.now() - lastCall < 1500) return;
     pruneThrottles();
     _actionThrottles.set(throttleKey, Date.now());
@@ -194,20 +221,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   followUser: async (targetUsername) => {
     const state = get();
-    const following = state.user?.following || [];
+    const following = state.user?.following ?? [];
     if (following.includes(targetUsername)) return;
 
     const throttleKey = `follow:${targetUsername}`;
-    const lastCall = _actionThrottles.get(throttleKey) || 0;
+    const lastCall = _actionThrottles.get(throttleKey) ?? 0;
     if (Date.now() - lastCall < 2000) return;
     pruneThrottles();
     _actionThrottles.set(throttleKey, Date.now());
 
     const userId = state.user?.id;
-    const fromUsername = state.user?.username || 'someone';
+    const fromUsername = state.user?.username ?? 'someone';
 
     // Optimistic update
-    set((s) => ({ user: s.user ? { ...s.user, following: [...(s.user.following || []), targetUsername] } : null }));
+    set((s) => ({ user: s.user ? { ...s.user, following: [...(s.user.following ?? []), targetUsername] } : null }));
 
     try {
       if (userId) {
@@ -226,22 +253,22 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
     } catch {
       // Rollback
-      set((s) => ({ user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null }));
+      set((s) => ({ user: s.user ? { ...s.user, following: (s.user.following ?? []).filter(u => u !== targetUsername) } : null }));
       Alert.alert('Error', 'Follow failed — please try again.');
     }
   },
 
   unfollowUser: async (targetUsername) => {
     const throttleKey = `unfollow:${targetUsername}`;
-    const lastCall = _actionThrottles.get(throttleKey) || 0;
+    const lastCall = _actionThrottles.get(throttleKey) ?? 0;
     if (Date.now() - lastCall < 2000) return;
     pruneThrottles();
     _actionThrottles.set(throttleKey, Date.now());
 
-    const prevFollowing = get().user?.following || [];
+    const prevFollowing = get().user?.following ?? [];
     const userId = get().user?.id;
 
-    set((s) => ({ user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null }));
+    set((s) => ({ user: s.user ? { ...s.user, following: (s.user.following ?? []).filter(u => u !== targetUsername) } : null }));
 
     try {
       if (userId) {
@@ -274,7 +301,7 @@ async function hydrateFollowing() {
     const targetIds = followRows.map(r => r.target_user_id);
     const { data: profiles } = await supabase
       .from('profiles').select('username').in('id', targetIds).limit(5000);
-    const usernames = (profiles || []).map(p => p.username).filter(Boolean);
+    const usernames = (profiles ?? []).map(p => p.username).filter(Boolean);
     useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: usernames } : null }));
   } catch { /* silently fail */ }
 }

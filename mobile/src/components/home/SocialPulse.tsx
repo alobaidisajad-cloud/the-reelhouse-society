@@ -2,8 +2,9 @@
  * SocialPulse — Real-time social activity feed for the home tab.
  * Shows recent activity from users the current user follows.
  */
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect, useCallback, memo } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -24,7 +25,21 @@ interface ActivityItem {
     created_at: string;
 }
 
-export function SocialPulse() {
+// ── Pure utility functions (module-level = zero GC pressure) ──
+function timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    return `${Math.floor(hours / 24)}d ago`;
+}
+
+function renderReels(rating: number): string {
+    return '◉'.repeat(rating) + '◯'.repeat(5 - rating);
+}
+
+export const SocialPulse = memo(function SocialPulse() {
     const router = useRouter();
     const { user } = useAuthStore();
     const [activities, setActivities] = useState<ActivityItem[]>([]);
@@ -40,7 +55,7 @@ export function SocialPulse() {
                 .select('following_id')
                 .eq('follower_id', user.id);
 
-            const followingIds = (follows || []).map((f: any) => f.following_id);
+            const followingIds = (follows ?? []).map((f) => f.following_id);
             if (followingIds.length === 0) { setLoading(false); return; }
 
             const { data: logs } = await supabase
@@ -50,10 +65,10 @@ export function SocialPulse() {
                 .order('created_at', { ascending: false })
                 .limit(15);
 
-            const items: ActivityItem[] = (logs || []).map((l: any) => ({
+            const items: ActivityItem[] = (logs ?? []).map((l) => ({
                 id: l.id,
                 user_id: l.user_id,
-                username: l.profiles?.username || 'unknown',
+                username: l.profiles?.username ?? 'unknown',
                 avatar_url: l.profiles?.avatar_url,
                 type: 'log',
                 film_title: l.film_title,
@@ -68,20 +83,11 @@ export function SocialPulse() {
         })();
     }, [user]);
 
-    const timeAgo = (dateStr: string) => {
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 60) return `${mins}m ago`;
-        const hours = Math.floor(mins / 60);
-        if (hours < 24) return `${hours}h ago`;
-        return `${Math.floor(hours / 24)}d ago`;
-    };
+
 
     if (loading || activities.length === 0) return null;
 
-    const renderReels = (rating: number) => {
-        return '◉'.repeat(rating) + '◯'.repeat(5 - rating);
-    };
+
 
     return (
         <Animated.View entering={FadeIn.duration(400)} style={s.container}>
@@ -100,7 +106,7 @@ export function SocialPulse() {
                         {/* Avatar */}
                         <View style={s.avatar}>
                             {item.avatar_url ? (
-                                <Image source={{ uri: item.avatar_url }} style={s.avatarImg} />
+                                <Image source={{ uri: item.avatar_url }} style={s.avatarImg} contentFit="cover" />
                             ) : (
                                 <Text style={s.avatarFallback}>{item.username[0]?.toUpperCase()}</Text>
                             )}
@@ -124,6 +130,7 @@ export function SocialPulse() {
                             <Image
                                 source={{ uri: `https://image.tmdb.org/t/p/w92${item.poster_path}` }}
                                 style={s.miniPoster}
+                                contentFit="cover"
                             />
                         )}
                     </TouchableOpacity>
@@ -131,7 +138,7 @@ export function SocialPulse() {
             ))}
         </Animated.View>
     );
-}
+});
 
 const s = StyleSheet.create({
     container: { paddingHorizontal: 16, paddingVertical: 16 },
@@ -145,7 +152,7 @@ const s = StyleSheet.create({
         backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash,
         alignItems: 'center', justifyContent: 'center',
     },
-    avatarImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+    avatarImg: { width: '100%', height: '100%' },
     avatarFallback: { fontFamily: fonts.uiBold, fontSize: 12, color: colors.sepia },
     activityContent: { flex: 1 },
     activityText: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 16 },
@@ -154,5 +161,5 @@ const s = StyleSheet.create({
     metaRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 3 },
     rating: { fontFamily: fonts.display, fontSize: 10, color: colors.sepia },
     timeText: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog },
-    miniPoster: { width: 30, height: 45, borderRadius: 2, resizeMode: 'cover', borderWidth: 1, borderColor: colors.ash },
+    miniPoster: { width: 30, height: 45, borderRadius: 2, borderWidth: 1, borderColor: colors.ash },
 });

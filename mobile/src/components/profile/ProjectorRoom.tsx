@@ -4,6 +4,17 @@ import Svg, { Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 
+interface CinephileStats {
+    count: number;
+    level: string;
+    color: string;
+    progress: number;
+}
+
+interface ProjectorUser {
+    username?: string;
+}
+
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 function StatDial({ count, color }: { count: number; color: string }) {
@@ -15,7 +26,7 @@ function StatDial({ count, color }: { count: number; color: string }) {
     const progress = Math.min(count / 100, 1);
 
     return (
-        <View style={{ alignItems: 'center', justifyContent: 'center', width: size, height: size }}>
+        <View style={[ds.dialWrap, { width: size, height: size }]}>
             <Svg width={size} height={size} style={{ position: 'absolute' }}>
                 {/* Background track */}
                 <Circle
@@ -37,7 +48,7 @@ function StatDial({ count, color }: { count: number; color: string }) {
     );
 }
 
-export function ProjectorRoom({ stats, user }: { stats?: any; user?: any }) {
+export function ProjectorRoom({ stats, user }: { stats?: CinephileStats; user?: ProjectorUser }) {
     if (!stats) return null;
 
     const handleCSVExport = async () => {
@@ -47,8 +58,9 @@ export function ProjectorRoom({ stats, user }: { stats?: any; user?: any }) {
                 message: `My ReelHouse Archive:\n\n${stats.count} films logged\nRanking: ${stats.level}\n\nThe ReelHouse Society`,
                 title: 'ReelHouse Archive Stats',
             });
-        } catch (e: any) {
-            Alert.alert('Export Failed', e.message);
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'Unknown error';
+            Alert.alert('Export Failed', msg);
         }
     };
 
@@ -57,7 +69,7 @@ export function ProjectorRoom({ stats, user }: { stats?: any; user?: any }) {
             {/* Stats dial */}
             <AnimatedView entering={FadeIn.duration(800)} style={s.dialWrap}>
                 <View style={s.dialCard}>
-                    <View style={{ alignItems: 'center', marginBottom: 24 }}>
+                    <View style={ds.dialCenter}>
                         <StatDial count={stats.count} color={stats.color} />
                     </View>
 
@@ -99,6 +111,8 @@ export function ProjectorRoom({ stats, user }: { stats?: any; user?: any }) {
 }
 
 const ds = StyleSheet.create({
+    dialWrap: { alignItems: 'center', justifyContent: 'center' },
+    dialCenter: { alignItems: 'center', marginBottom: 24 },
     dialValue: { fontFamily: fonts.display, fontSize: 36, lineHeight: 40 },
     dialLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 2 },
 });
@@ -119,8 +133,8 @@ const s = StyleSheet.create({
         padding: 32, alignItems: 'center', backgroundColor: colors.soot,
         borderWidth: 2, borderColor: colors.sepia, borderRadius: 4, position: 'relative',
     },
-    certCornerTL: { position: 'absolute', top: 10, left: 12, fontFamily: fonts.display, fontSize: 40, color: colors.sepia, opacity: 0.15 },
-    certCornerBR: { position: 'absolute', bottom: 10, right: 12, fontFamily: fonts.display, fontSize: 40, color: colors.sepia, opacity: 0.15 },
+    certCornerTL: { position: 'absolute', top: 10, left: 12, fontFamily: fonts.display, fontSize: 32, color: colors.sepia, opacity: 0.15 },
+    certCornerBR: { position: 'absolute', bottom: 10, right: 12, fontFamily: fonts.display, fontSize: 32, color: colors.sepia, opacity: 0.15 },
     certSociety: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 12 },
     certTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 12 },
     certBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 20, maxWidth: 300, marginBottom: 20 },
@@ -130,7 +144,7 @@ const s = StyleSheet.create({
     exportWrap: { alignItems: 'center', marginTop: 16 },
     exportBtn: {
         paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1,
-        borderColor: colors.ash, borderRadius: 4, backgroundColor: 'rgba(10,7,3,0.5)',
+        borderColor: 'rgba(139,105,20,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,7,3,0.5)',
     },
     exportText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 3, color: colors.fog },
 });

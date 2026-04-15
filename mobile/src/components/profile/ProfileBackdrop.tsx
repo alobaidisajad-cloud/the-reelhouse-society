@@ -1,4 +1,5 @@
-import { View, StyleSheet, Image } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { tmdb } from '@/src/lib/tmdb';
@@ -10,14 +11,24 @@ import { colors } from '@/src/theme/theme';
  * Keeps the poster VISIBLE but atmospheric — not muddy.
  * No gold glow (user feedback: looks messy/annoying).
  */
-export function ProfileBackdrop({ user, logs }: { user: any; logs: any[] }) {
+interface BackdropLog {
+    poster?: string | null;
+}
+
+interface BackdropUser {
+    role?: string;
+    tier?: string;
+    preferences?: { favorites?: Array<{ poster_path?: string | null }>; [key: string]: unknown } | null;
+}
+
+export function ProfileBackdrop({ user, logs }: { user: BackdropUser; logs: BackdropLog[] }) {
     const isAuteur = user?.role === 'auteur' || user?.tier === 'auteur';
     if (!isAuteur) return null;
 
-    const favorites = (user?.preferences?.favorites || []).filter((f: any) => f && f.poster_path);
+    const favorites = (user?.preferences?.favorites ?? []).filter((f: { poster_path?: string | null }) => f && f.poster_path);
     const posterSrc = favorites.length > 0
         ? `https://image.tmdb.org/t/p/w780${favorites[0].poster_path}`
-        : logs?.filter((l: any) => l.poster).slice(0, 1).map((l: any) => tmdb.poster(l.poster, 'w342'))[0];
+        : logs?.filter((l: BackdropLog) => l.poster).slice(0, 1).map((l: BackdropLog) => tmdb.poster(l.poster ?? '', 'w342'))[0];
 
     if (!posterSrc) return null;
 
@@ -27,7 +38,7 @@ export function ProfileBackdrop({ user, logs }: { user: any; logs: any[] }) {
             <Image
                 source={{ uri: posterSrc }}
                 style={s.image}
-                resizeMode="cover"
+                contentFit="cover"
             />
             
             {/* Dark wash to simulate CSS brightness(0.4) */}

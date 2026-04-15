@@ -1,15 +1,24 @@
-import React, { memo } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import React, { memo, useCallback } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import Animated, { FadeInRight } from 'react-native-reanimated';
 import { ArrowRight } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/src/theme/theme';
+import * as Haptics from 'expo-haptics';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 
+interface StripFilm {
+    id: number;
+    poster_path: string | null;
+    title?: string;
+    [key: string]: unknown;
+}
+
 interface FilmStripRowProps {
-    films: any[];
+    films: StripFilm[];
     title: string;
     label: string;
     description?: string;
@@ -17,6 +26,10 @@ interface FilmStripRowProps {
 
 export const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, description }: FilmStripRowProps) {
     const router = useRouter();
+    const handleFilmPress = useCallback((filmId: number) => {
+        Haptics.selectionAsync();
+        router.push(`/film/${filmId}`);
+    }, [router]);
 
     return (
         <View style={s.container}>
@@ -59,16 +72,21 @@ export const FilmStripRow = memo(function FilmStripRow({ films = [], title, labe
                 contentContainerStyle={s.listContent}
                 snapToInterval={120 + 16} // card width + gap
                 decelerationRate="fast"
+                windowSize={3}
+                maxToRenderPerBatch={8}
+                initialNumToRender={5}
+                removeClippedSubviews={true}
                 renderItem={({ item, index }) => (
                     <Animated.View entering={FadeInRight.delay(index * 50).duration(400)}>
                         <TouchableOpacity
                             activeOpacity={0.8}
-                            onPress={() => router.push(`/film/${item.id}`)}
+                            onPress={() => handleFilmPress(item.id)}
                             style={s.card}
                         >
                             <Image 
                                 source={{ uri: `${TMDB_IMG_W185}${item.poster_path}` }} 
                                 style={s.poster}
+                                contentFit="cover"
                             />
                         </TouchableOpacity>
                     </Animated.View>

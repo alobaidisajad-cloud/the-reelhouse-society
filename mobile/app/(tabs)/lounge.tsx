@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-  Modal, KeyboardAvoidingView, Platform, Image, Switch, Dimensions,
+  Modal, KeyboardAvoidingView, Platform, Switch, Dimensions,
   RefreshControl, ActivityIndicator,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import Animated, {
   FadeInDown, FadeIn, FadeInUp, SlideInDown, SlideOutDown,
@@ -20,9 +21,13 @@ import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
+import PressableScale from '@/src/components/PressableScale';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const JOINED_CARD_W = SCREEN_W * 0.42;
+
+/** Warm sepia-toned blurhash — used as placeholder while images load */
+const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -79,7 +84,7 @@ function LoungeGate() {
           </View>
         </View>
 
-        <Text style={s.gateTitle}>The Lounge</Text>
+        <Text style={s.gateTitle} accessibilityRole="header">The Lounge</Text>
         <Text style={s.gateEst}>EST. 1924</Text>
         <OrnamentalRule />
 
@@ -97,9 +102,10 @@ function LoungeGate() {
           style={s.gateCta}
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push('/settings');
+            router.push('/membership');
           }}
           activeOpacity={0.8}
+          accessibilityRole="button" accessibilityLabel="Become an Archivist to access The Lounge"
         >
           <Sparkles size={11} color={colors.ink} strokeWidth={2} />
           <Text style={s.gateCtaText}>BECOME AN ARCHIVIST</Text>
@@ -236,25 +242,24 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
 // ════════════════════════════════════════════════════════════
 const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; index: number }) => {
   const router = useRouter();
-  const coverUrl = (lounge as any).cover_image
-    ? tmdb.backdrop((lounge as any).cover_image, 'w500')
+  const coverUrl = lounge.cover_image
+    ? tmdb.backdrop(lounge.cover_image, 'w500')
     : null;
   const hasUnread = Boolean(lounge.unread_count && lounge.unread_count > 0);
 
   return (
     <AnimatedView entering={FadeInUp.duration(400).delay(index * 80)}>
-      <TouchableOpacity
+      <PressableScale
         style={s.joinedCard}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push(`/lounge/${lounge.id}`);
         }}
-        activeOpacity={0.75}
       >
         {/* Cover or atmospheric placeholder */}
         <View style={s.joinedImgWrap}>
           {coverUrl ? (
-            <Image source={{ uri: coverUrl }} style={s.joinedImg} resizeMode="cover" />
+            <Image source={{ uri: coverUrl }} style={s.joinedImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
           ) : (
             <LinearGradient
               colors={['rgba(196,150,26,0.06)', 'rgba(11,10,8,0.95)']}
@@ -287,7 +292,7 @@ const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
             </View>
           </View>
         </View>
-      </TouchableOpacity>
+      </PressableScale>
     </AnimatedView>
   );
 });
@@ -297,19 +302,18 @@ const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
 // ════════════════════════════════════════════════════════════
 const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; index: number }) => {
   const router = useRouter();
-  const coverUrl = (lounge as any).cover_image
-    ? tmdb.backdrop((lounge as any).cover_image, 'w500')
+  const coverUrl = lounge.cover_image
+    ? tmdb.backdrop(lounge.cover_image, 'w500')
     : null;
 
   return (
     <AnimatedView entering={FadeInUp.duration(350).delay(index * 60)}>
-      <TouchableOpacity
+      <PressableScale
         style={s.publicCard}
         onPress={() => {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           router.push(`/lounge/${lounge.id}`);
         }}
-        activeOpacity={0.75}
       >
         <View style={s.publicLeft}>
           <Text style={s.publicName} numberOfLines={1}>{lounge.name}</Text>
@@ -329,7 +333,7 @@ const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
         </View>
         {coverUrl ? (
           <View style={s.publicRight}>
-            <Image source={{ uri: coverUrl }} style={s.publicImg} resizeMode="cover" />
+            <Image source={{ uri: coverUrl }} style={s.publicImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
             <LinearGradient
               colors={['rgba(11,10,8,0.5)', 'transparent']}
               start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
@@ -341,7 +345,7 @@ const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
             <FilmIcon size={16} color={colors.sepia} strokeWidth={1} />
           </View>
         )}
-      </TouchableOpacity>
+      </PressableScale>
     </AnimatedView>
   );
 });
@@ -447,6 +451,7 @@ export default function LoungeScreen() {
             placeholderTextColor={colors.fog}
             value={searchQuery}
             onChangeText={setSearchQuery}
+            maxLength={120}
             selectionColor={colors.sepia}
           />
           {searchQuery.length > 0 && (
@@ -632,7 +637,7 @@ const s = StyleSheet.create({
     letterSpacing: 6,
     color: colors.sepia,
     marginBottom: 4,
-    opacity: 0.6,
+    opacity: 0.7,
   },
   gateSub: {
     fontFamily: fonts.uiMedium,
@@ -648,7 +653,7 @@ const s = StyleSheet.create({
     lineHeight: 22,
     textAlign: 'center',
     marginBottom: 32,
-    opacity: 0.7,
+    opacity: 0.8,
   },
   gateCta: {
     flexDirection: 'row',
@@ -671,7 +676,7 @@ const s = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 3,
     color: colors.fog,
-    opacity: 0.3,
+    opacity: 0.4,
     textAlign: 'center',
   },
 
@@ -709,7 +714,7 @@ const s = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 6,
     color: colors.sepia,
-    opacity: 0.5,
+    opacity: 0.6,
     marginTop: 2,
     marginBottom: 4,
     textAlign: 'center',
@@ -718,7 +723,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.bodyItalic,
     fontSize: 11.5,
     color: colors.bone,
-    opacity: 0.5,
+    opacity: 0.6,
     textAlign: 'center',
     marginBottom: 10,
   },
@@ -739,7 +744,7 @@ const s = StyleSheet.create({
     fontSize: 7,
     letterSpacing: 4,
     color: colors.sepia,
-    opacity: 0.5,
+    opacity: 0.6,
   },
 
   // ── Search ──
@@ -868,7 +873,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.bodyItalic,
     fontSize: 11,
     color: colors.fog,
-    opacity: 0.4,
+    opacity: 0.5,
     paddingHorizontal: 20,
     marginBottom: 16,
     textAlign: 'center',
@@ -1083,7 +1088,7 @@ const s = StyleSheet.create({
     fontFamily: fonts.ui,
     fontSize: 9,
     color: colors.fog,
-    opacity: 0.4,
+    opacity: 0.5,
     letterSpacing: 1,
   },
 

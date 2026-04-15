@@ -4,10 +4,25 @@
  * Nitrate Noir themed — matches the web exactly.
  */
 import { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, Image, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
+
+interface InsightLog {
+    filmId?: number;
+    film_id?: number;
+}
+
+interface TMDBMovieDetail {
+    genres?: Array<{ id: number; name: string }>;
+    genre_ids?: number[];
+    credits?: {
+        cast?: Array<{ id: number; name: string; profile_path: string | null }>;
+        crew?: Array<{ id: number; name: string; profile_path: string | null; job: string }>;
+    };
+}
 
 const GENRE_MAP: Record<number, string> = {
     28: 'Action', 12: 'Adventure', 16: 'Animation', 35: 'Comedy',
@@ -37,14 +52,14 @@ interface Insights {
     fetchedFilms: number;
 }
 
-export function CinematicInsights({ logs }: { logs: any[] }) {
+export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
     const [insights, setInsights] = useState<Insights | null>(null);
     const [loading, setLoading] = useState(false);
 
     const filmIds = useMemo(() => {
         const ids = new Set<number>();
         for (const log of logs) {
-            const fid = log.filmId || log.film_id;
+            const fid = log.filmId ?? log.film_id;
             if (fid) ids.add(Number(fid));
         }
         return Array.from(ids);
@@ -61,7 +76,7 @@ export function CinematicInsights({ logs }: { logs: any[] }) {
             const BATCH_SIZE = 4;
             const BATCH_DELAY = 400;
 
-            const allMovies: any[] = [];
+            const allMovies: TMDBMovieDetail[] = [];
 
             for (let i = 0; i < idsToFetch.length; i += BATCH_SIZE) {
                 if (cancelled) return;
@@ -91,12 +106,12 @@ export function CinematicInsights({ logs }: { logs: any[] }) {
                 // Genres
                 if (movie.genres) {
                     for (const g of movie.genres) {
-                        genreMap.set(g.name, (genreMap.get(g.name) || 0) + 1);
+                        genreMap.set(g.name, (genreMap.get(g.name) ?? 0) + 1);
                     }
                 } else if (movie.genre_ids) {
                     for (const gid of movie.genre_ids) {
                         const name = GENRE_MAP[gid];
-                        if (name) genreMap.set(name, (genreMap.get(name) || 0) + 1);
+                        if (name) genreMap.set(name, (genreMap.get(name) ?? 0) + 1);
                     }
                 }
 
@@ -169,15 +184,15 @@ export function CinematicInsights({ logs }: { logs: any[] }) {
         return (
             <View style={s.card}>
                 <Text style={s.sectionTitle}>ANALYZING {filmIds.length} LOGGED FILMS</Text>
-                <ActivityIndicator color={colors.sepia} style={{ marginVertical: 16 }} />
+                <ActivityIndicator color={colors.sepia} style={s.loaderMargin} />
                 <Text style={s.emptyText}>Fetching credits from TMDB...</Text>
             </View>
         );
     }
 
-    const maxActorCount = insights.topActors[0]?.count || 1;
-    const maxDirectorCount = insights.topDirectors[0]?.count || 1;
-    const maxGenreCount = insights.topGenres[0]?.count || 1;
+    const maxActorCount = insights.topActors[0]?.count ?? 1;
+    const maxDirectorCount = insights.topDirectors[0]?.count ?? 1;
+    const maxGenreCount = insights.topGenres[0]?.count ?? 1;
 
     return (
         <View style={s.container}>
@@ -196,7 +211,7 @@ export function CinematicInsights({ logs }: { logs: any[] }) {
                             {/* Photo */}
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
                                 {actor.profile_path ? (
-                                    <Image source={{ uri: `https://image.tmdb.org/t/p/w185${actor.profile_path}` }} style={s.avatarImg} />
+                                <Image source={{ uri: `https://image.tmdb.org/t/p/w185${actor.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" />
                                 ) : (
                                     <Text style={s.avatarFallback}>✦</Text>
                                 )}
@@ -226,7 +241,7 @@ export function CinematicInsights({ logs }: { logs: any[] }) {
                             </View>
                             <View style={[s.avatar, i === 0 && { borderColor: colors.sepia, borderWidth: 2 }]}>
                                 {director.profile_path ? (
-                                    <Image source={{ uri: `https://image.tmdb.org/t/p/w185${director.profile_path}` }} style={s.avatarImg} />
+                                <Image source={{ uri: `https://image.tmdb.org/t/p/w185${director.profile_path}` }} style={s.avatarImg} cachePolicy="memory-disk" />
                                 ) : (
                                     <Text style={s.avatarFallback}>✦</Text>
                                 )}
@@ -292,7 +307,7 @@ const s = StyleSheet.create({
         borderWidth: 1, borderColor: colors.ash, backgroundColor: colors.soot,
         alignItems: 'center', justifyContent: 'center',
     },
-    avatarImg: { width: '100%', height: '100%', resizeMode: 'cover' },
+    avatarImg: { width: '100%', height: '100%' } as any,
     avatarFallback: { fontFamily: fonts.display, fontSize: 14, color: colors.ash },
     personInfo: { flex: 1 },
     personName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, marginBottom: 4 },
@@ -305,4 +320,5 @@ const s = StyleSheet.create({
     genreName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone },
     genreCountWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
     pctText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.ash },
+    loaderMargin: { marginVertical: 16 },
 });

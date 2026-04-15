@@ -12,21 +12,23 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/src/stores/auth';
 import { useRouter } from 'expo-router';
 import { colors, fonts, effects } from '@/src/theme/theme';
-import { Film, LogIn } from 'lucide-react-native';
+import { LogIn } from 'lucide-react-native';
 import UserProfileScreen from '../user/[username]';
+import Buster from '@/src/components/Buster';
 
 export default function ProfileTab() {
-  const { isAuthenticated, user } = useAuthStore();
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const user = useAuthStore(s => s.user);
   const router = useRouter();
 
   if (!isAuthenticated || !user) {
     return (
       <View style={s.container}>
-        <Film size={48} color={colors.ash} strokeWidth={1} style={s.heroIcon} />
-        <Text style={s.prompt}>Sign in to view your profile</Text>
+        <Buster size={80} mood="peeking" message="The archive awaits your identity." />
+        <Text style={s.prompt}>Identify yourself to access your dossier</Text>
         <TouchableOpacity style={s.ctaBtn} onPress={() => router.push('/login')}>
           <LogIn size={11} color={colors.sepia} strokeWidth={1.5} />
-          <Text style={s.ctaBtnText}>SIGN IN</Text>
+          <Text style={s.ctaBtnText}>IDENTIFY YOURSELF</Text>
         </TouchableOpacity>
       </View>
     );
@@ -37,7 +39,6 @@ export default function ProfileTab() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center' },
-  heroIcon: { marginBottom: 16, opacity: 0.4 },
   prompt: { fontFamily: fonts.sub, fontSize: 16, color: colors.bone, marginBottom: 16 },
   ctaBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,

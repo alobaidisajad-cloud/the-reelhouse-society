@@ -17,6 +17,29 @@ import { useAuthStore } from '../stores/auth';
 const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY || '';
 const TMDB_BASE = 'https://api.themoviedb.org/3';
 
+interface LogInsertPayload {
+  user_id: string;
+  film_id: number;
+  film_title: string;
+  poster_path: string | null;
+  year: number | null;
+  rating: number;
+  review: string;
+  status: string;
+  is_spoiler: boolean;
+  watched_date: string;
+  created_at: string;
+  format: string;
+}
+
+interface WatchlistInsertPayload {
+  user_id: string;
+  film_id: number;
+  film_title: string;
+  poster_path: string | null;
+  year: number | null;
+}
+
 interface TMDBMatch {
   id: number;
   title: string;
@@ -185,11 +208,11 @@ export async function importArchiveZip(
   const zip = await JSZip.loadAsync(fileBase64, { base64: true });
 
   // ── Step 2: Smart CSV reader — handles nested folders ──
-  const findFile = (name: string): any => {
+  const findFile = (name: string): JSZip.JSZipObject | null => {
     let entry = zip.file(name);
     if (entry) return entry;
     for (const [path, zipEntry] of Object.entries(zip.files)) {
-      if (!(zipEntry as any).dir && (path.endsWith('/' + name) || path === name)) return zipEntry;
+      if (!zipEntry.dir && (path.endsWith('/' + name) || path === name)) return zipEntry;
     }
     return null;
   };
@@ -212,8 +235,8 @@ export async function importArchiveZip(
   // ── Find list CSVs ──
   const listFiles: { name: string; data: Record<string, string>[] }[] = [];
   for (const [path, entry] of Object.entries(zip.files)) {
-    if ((path.includes('/lists/') || path.startsWith('lists/')) && path.endsWith('.csv') && !(entry as any).dir) {
-      const text = await (entry as any).async('text');
+    if ((path.includes('/lists/') || path.startsWith('lists/')) && path.endsWith('.csv') && !entry.dir) {
+      const text = await entry.async('text');
       const segments = path.split('/');
       const fileName = segments[segments.length - 1];
       const listName = fileName.replace('.csv', '').replace(/-/g, ' ');
@@ -275,7 +298,7 @@ export async function importArchiveZip(
       .from('logs').select('film_id').eq('user_id', user.id)
       .range(ePage * 1000, (ePage + 1) * 1000 - 1);
     if (!data || data.length === 0) break;
-    data.forEach((l: any) => existingFilmIds.add(l.film_id));
+    data.forEach((l) => existingFilmIds.add(l.film_id));
     if (data.length < 1000) break;
     ePage++;
   }
@@ -283,7 +306,7 @@ export async function importArchiveZip(
   const existingWatchlistIds = new Set<number>();
   const { data: existingWatchlist } = await supabase
     .from('watchlists').select('film_id').eq('user_id', user.id);
-  (existingWatchlist || []).forEach((w: any) => existingWatchlistIds.add(w.film_id));
+  (existingWatchlist || []).forEach((w) => existingWatchlistIds.add(w.film_id));
 
   // ── Step 6: Review map ──
   const reviewMap = new Map<string, string>();
@@ -295,7 +318,7 @@ export async function importArchiveZip(
   });
 
   // ── Step 7: Import Diary ──
-  const logsToInsert: any[] = [];
+  const logsToInsert: LogInsertPayload[] = [];
   for (let i = 0; i < diary.length; i++) {
     const entry = diary[i];
     const name = getFilmName(entry);
@@ -336,7 +359,7 @@ export async function importArchiveZip(
   }
 
   // ── Step 8: Gap-fill Ratings ──
-  const ratingsToInsert: any[] = [];
+  const ratingsToInsert: LogInsertPayload[] = [];
   for (const entry of ratings) {
     const name = getFilmName(entry);
     const year = getFilmYear(entry);
@@ -370,7 +393,7 @@ export async function importArchiveZip(
   }
 
   // ── Step 9: Gap-fill Watched ──
-  const watchedToInsert: any[] = [];
+  const watchedToInsert: LogInsertPayload[] = [];
   for (const entry of watched) {
     const name = getFilmName(entry);
     const year = getFilmYear(entry);
@@ -398,7 +421,7 @@ export async function importArchiveZip(
   }
 
   // ── Step 10: Import Watchlist ──
-  const watchlistToInsert: any[] = [];
+  const watchlistToInsert: WatchlistInsertPayload[] = [];
   for (const entry of watchlist) {
     const name = getFilmName(entry);
     const year = getFilmYear(entry);
@@ -466,8 +489,9 @@ export async function importArchiveZip(
       }
       if (itemsInserted > 0) result.errors.push(`[OK] "${listFile.name}": ${itemsInserted} films`);
       result.lists++;
-    } catch (e: any) {
-      result.errors.push(`List "${listFile.name}": ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      result.errors.push(`List "${listFile.name}": ${msg}`);
     }
   }
 

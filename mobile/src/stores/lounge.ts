@@ -12,6 +12,7 @@ export interface LoungeRoom {
   invite_code: string | null;
   created_by: string;
   created_at: string;
+  cover_image?: string | null;
   member_count?: number;
   unread_count?: number;
   last_message?: string;
@@ -76,21 +77,21 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         .eq('user_id', user.id)
         .limit(100);
 
-      const myLoungeIds = (memberRows || []).map(r => r.lounge_id);
+      const myLoungeIds = (memberRows ?? []).map(r => r.lounge_id);
 
       // Fetch all non-private lounges + my private ones
-      let query = supabase.from('lounges').select('*').order('created_at', { ascending: false }).limit(50);
+      let query = supabase.from('lounges').select('id, name, description, is_private, invite_code, created_by, created_at').order('created_at', { ascending: false }).limit(50);
 
       const { data: lounges } = await query;
       if (!lounges) { set({ loading: false }); return; }
 
       // Enrich with last message and unread counts
-      const enriched: LoungeRoom[] = lounges.map((l: any) => ({
+      const enriched: LoungeRoom[] = lounges.map((l) => ({
         id: l.id,
         name: l.name,
-        description: l.description || '',
-        is_private: l.is_private || false,
-        invite_code: l.invite_code || null,
+        description: l.description ?? '',
+        is_private: l.is_private ?? false,
+        invite_code: l.invite_code ?? null,
         created_by: l.created_by,
         created_at: l.created_at,
         member_count: 0,
@@ -108,20 +109,20 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('lounge_messages')
-        .select('*, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
+        .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, created_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
         .eq('lounge_id', loungeId)
         .order('created_at', { ascending: true })
         .limit(100);
 
       if (data && !error) {
-        const messages: LoungeMessage[] = data.map((m: any) => ({
+        const messages: LoungeMessage[] = data.map((m) => ({
           id: m.id,
           lounge_id: m.lounge_id,
           user_id: m.user_id,
-          username: Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username || 'unknown',
+          username: Array.isArray(m.profiles) ? m.profiles[0]?.username : m.profiles?.username ?? 'unknown',
           avatar_url: Array.isArray(m.profiles) ? m.profiles[0]?.avatar_url : m.profiles?.avatar_url,
           content: m.content,
-          type: m.type || 'text',
+          type: m.type ?? 'text',
           reply_to_id: m.reply_to_id,
           reply_to_username: m.reply_to_username,
           reply_to_content: m.reply_to_content,
@@ -138,6 +139,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   sendMessage: async (loungeId, content, type = 'text', meta = {}) => {
     const user = useAuthStore.getState().user;
+    const ALLOWED_TYPES = ['text', 'film_share', 'log_share', 'system'] as const;
+    const safeType = (ALLOWED_TYPES as readonly string[]).includes(type) ? type : 'text';
     if (!user || !content.trim()) return;
 
     // Throttle
@@ -154,7 +157,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       user_id: user.id,
       username: user.username,
       content: content.trim().slice(0, 500),
-      type: type as any,
+      type: safeType as LoungeMessage['type'],
       created_at: new Date().toISOString(),
       ...meta,
     };
@@ -168,8 +171,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       const { error } = await supabase.from('lounge_messages').insert([{
         lounge_id: loungeId,
         user_id: user.id,
-        content: content.trim().slice(0, 500),
-        type,
+        content: content.trim().slice(0, 500).replace(/<[^>]*>/g, ''),
+        type: safeType,
         ...meta,
       }]);
       if (error) throw error;
@@ -281,7 +284,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           filter: `lounge_id=eq.${loungeId}`,
         },
         async (payload) => {
-          const msg = payload.new as any;
+          const msg = payload.new as Record<string, unknown>;
           // Ignore our own optimistic messages (they're already rendered)
           const existing = get().currentMessages.find(m => m.id === msg.id);
           if (existing) return;
@@ -306,7 +309,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             username,
             avatar_url,
             content: msg.content,
-            type: msg.type || 'text',
+            type: msg.type ?? 'text',
             reply_to_id: msg.reply_to_id,
             reply_to_username: msg.reply_to_username,
             reply_to_content: msg.reply_to_content,
@@ -329,7 +332,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'lounge_messages', filter: `lounge_id=eq.${loungeId}` },
         (payload) => {
-          const deletedId = (payload.old as any)?.id;
+          const deletedId = (payload.old as Record<string, unknown>)?.id as string | undefined;
           if (deletedId) {
             set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== deletedId) }));
           }

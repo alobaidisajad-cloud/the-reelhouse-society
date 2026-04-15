@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, Image,
+  View, Text, StyleSheet, ScrollView, TouchableOpacity,
   RefreshControl, TextInput, Dimensions, Linking, Animated as RNAnimated,
 } from 'react-native';
+import { Image } from 'expo-image';
 import AnimatedRN, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/src/stores/auth';
@@ -30,13 +31,109 @@ import {
   Flame, Crown, Dna, Dice5, CalendarDays,
 } from 'lucide-react-native';
 import { ReelRating } from '@/src/components/Decorative';
+import PressableScale from '@/src/components/PressableScale';
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
 const SCREEN_W = Dimensions.get('window').width;
 const POSTER_COL_4 = (SCREEN_W - 32 - 18) / 4;
 const POSTER_COL_3 = (SCREEN_W - 32 - 16) / 3;
 
+/** Warm sepia-toned blurhash — used as placeholder while images load */
+const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
+
 type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
+
+/** Strict interfaces for profile data */
+interface ProfileLog {
+  id: string;
+  filmId: number;
+  title: string;
+  poster: string | null;
+  year: number | null;
+  rating: number;
+  review: string | null;
+  status: string;
+  watchedDate: string | null;
+  pullQuote: string;
+  altPoster: string | null;
+  physicalMedia: string | null;
+  watchedWith: string | null;
+  createdAt: string;
+}
+
+interface ProfileWatchlistItem {
+  id: number;
+  title: string;
+  poster_path: string | null;
+  year?: number | null;
+}
+
+interface ProfileVaultItem {
+  id: string;
+  film_id: number;
+  filmId: number;
+  title: string;
+  poster_path: string | null;
+  year?: number | null;
+  formats: string[];
+  notes: string;
+  condition: string;
+  created_at: string;
+  createdAt: string;
+}
+
+interface ProfileListFilm {
+  id: number;
+  title: string;
+  poster: string | null;
+}
+
+interface ProfileList {
+  id: string;
+  title: string;
+  description: string;
+  isRanked: boolean;
+  isPrivate: boolean;
+  createdAt: string;
+  films: ProfileListFilm[];
+}
+
+interface HalfLifeEntry {
+  count: number;
+  trajectory: 'ASCENDING' | 'DECAYING' | 'ETERNAL';
+  delta: number;
+}
+
+interface SocialLink {
+  title: string;
+  url: string;
+}
+
+interface FormatCount {
+  id: string;
+  label: string;
+  color: string;
+  count: number;
+}
+
+interface ProfileUser {
+  id: string;
+  username: string;
+  avatar_url?: string | null;
+  bio?: string | null;
+  role?: string;
+  tier?: string;
+  persona?: string | null;
+  is_social_private?: boolean;
+  followers_count?: number;
+  following_count?: number;
+  followers?: string[];
+  following?: string[];
+  favorite_films?: number[];
+  preferences?: Record<string, unknown>;
+  created_at?: string;
+  social_links?: SocialLink[] | Record<string, string>;
+}
 
 // ════════════════════════════════════════════════════════════
 // HELPER COMPONENTS
@@ -87,14 +184,14 @@ function timeAgo(dateStr: string): string {
 
 export default function UserProfileScreen({ usernameOverride }: { usernameOverride?: string } = {}) {
   const params = useLocalSearchParams<{ username: string; tab?: string }>();
-  const username = usernameOverride || params.username;
+  const username = usernameOverride ?? params.username;
   const tab = params.tab;
   const router = useRouter();
   const { user, isAuthenticated, followUser, unfollowUser } = useAuthStore();
   const { logs: myLogs } = useFilmStore();
 
   // ── State ──
-  const [targetUser, setTargetUser] = useState<any>(null);
+  const [targetUser, setTargetUser] = useState<ProfileUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<ProfileTab | null>(null);
@@ -132,71 +229,106 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   }, [tab]);
 
   // ── Data ──
-  const [logs, setLogs] = useState<any[]>([]);
-  const [watchlist, setWatchlist] = useState<any[]>([]);
-  const [vault, setVault] = useState<any[]>([]);
-  const [lists, setLists] = useState<any[]>([]);
+  const [logs, setLogs] = useState<ProfileLog[]>([]);
+  const [watchlist, setWatchlist] = useState<ProfileWatchlistItem[]>([]);
+  const [vault, setVault] = useState<ProfileVaultItem[]>([]);
+  const [lists, setLists] = useState<ProfileList[]>([]);
 
   const isFollowing = user?.following?.includes(username);
   const isSelf = user?.username === username;
 
-  // ── Fetch all profile data ──
+  // ── Server-side counts (lightweight — no row data transferred) ──
+  const [counts, setCounts] = useState({ logs: 0, watchlist: 0, vault: 0, lists: 0 });
+  const [tabDataLoaded, setTabDataLoaded] = useState<Record<string, boolean>>({});
+
+  // ── Fetch profile metadata + counts only (initial load) ──
   const fetchUserData = useCallback(async () => {
     if (!username) return;
     try {
       const { data: profile, error } = await supabase
-        .from('profiles').select('*').eq('username', username).single();
+        .from('profiles').select('id, username, avatar_url, bio, role, tier, persona, is_social_private, followers_count, following_count, followers, following, favorite_films, preferences, created_at').eq('username', username).single();
       if (error || !profile) { setTargetUser(null); return; }
       setTargetUser(profile);
       if (profile.is_social_private && !isSelf) return;
 
-      const [logsResp, watchResp, vaultResp, listsResp] = await Promise.all([
-        supabase.from('logs')
-          .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, created_at, pull_quote, alt_poster, physical_media, watched_with')
-          .eq('user_id', profile.id).order('watched_date', { ascending: false }).limit(2000),
-        supabase.from('watchlists')
-          .select('film_id, film_title, poster_path, year')
-          .eq('user_id', profile.id).order('created_at', { ascending: false }).limit(200),
-        supabase.from('physical_archive')
-          .select('id, film_id, film_title, poster_path, year, formats, notes, condition, created_at')
-          .eq('user_id', profile.id).order('created_at', { ascending: false }).limit(500),
-        supabase.from('lists')
-          .select('id, title, description, is_ranked, is_private, created_at')
-          .eq('user_id', profile.id).eq('is_private', false).order('created_at', { ascending: false }).limit(50),
+      // Server-side counts — zero data transfer, just numbers
+      const [logsCount, watchCount, vaultCount, listsCount] = await Promise.all([
+        supabase.from('logs').select('id', { count: 'exact', head: true }).eq('user_id', profile.id),
+        supabase.from('watchlists').select('id', { count: 'exact', head: true }).eq('user_id', profile.id),
+        supabase.from('physical_archive').select('id', { count: 'exact', head: true }).eq('user_id', profile.id),
+        supabase.from('lists').select('id', { count: 'exact', head: true }).eq('user_id', profile.id).eq('is_private', false),
       ]);
+      setCounts({
+        logs: logsCount.count ?? 0,
+        watchlist: watchCount.count ?? 0,
+        vault: vaultCount.count ?? 0,
+        lists: listsCount.count ?? 0,
+      });
 
-      setLogs((logsResp.data || []).map(l => ({
-        id: String(l.id), filmId: l.film_id, title: l.film_title || '', poster: l.poster_path, year: l.year,
-        rating: l.rating, review: l.review, status: l.status || 'watched', watchedDate: l.watched_date,
-        pullQuote: l.pull_quote || '', altPoster: l.alt_poster || null, physicalMedia: l.physical_media || null,
-        watchedWith: l.watched_with || null, createdAt: l.created_at,
+      // Pre-fetch first page of logs for the overview (50 items, not 2000)
+      const { data: initialLogs } = await supabase.from('logs')
+        .select('id, film_id, film_title, poster_path, year, rating, review, status, watched_date, created_at, pull_quote, alt_poster, physical_media, watched_with')
+        .eq('user_id', profile.id).order('watched_date', { ascending: false }).limit(50);
+      setLogs((initialLogs ?? []).map(l => ({
+        id: String(l.id), filmId: l.film_id, title: l.film_title ?? '', poster: l.poster_path, year: l.year,
+        rating: l.rating, review: l.review, status: l.status ?? 'watched', watchedDate: l.watched_date,
+        pullQuote: l.pull_quote ?? '', altPoster: l.alt_poster ?? null, physicalMedia: l.physical_media ?? null,
+        watchedWith: l.watched_with ?? null, createdAt: l.created_at,
       })));
-      setWatchlist((watchResp.data || []).map(w => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path, year: w.year })));
-      setVault((vaultResp.data || []).map(v => ({
-        id: v.id, film_id: v.film_id, filmId: v.film_id, title: v.film_title, poster_path: v.poster_path, year: v.year,
-        formats: v.formats || [], notes: v.notes || '', condition: v.condition || 'good', created_at: v.created_at, createdAt: v.created_at,
-      })));
-
-      // Fetch list items
-      const listIds = (listsResp.data || []).map((l: any) => l.id);
-      let allListItems: any[] = [];
-      if (listIds.length > 0) {
-        const { data: items } = await supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).limit(1000);
-        allListItems = items || [];
-      }
-      const itemsByList = new Map<string, any[]>();
-      for (const item of allListItems) {
-        const arr = itemsByList.get(item.list_id) || [];
-        arr.push(item);
-        itemsByList.set(item.list_id, arr);
-      }
-      setLists((listsResp.data || []).map(l => ({
-        id: l.id, title: l.title, description: l.description || '', isRanked: l.is_ranked || false,
-        isPrivate: l.is_private || false, createdAt: l.created_at,
-        films: (itemsByList.get(l.id) || []).map((i: any) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path })),
-      })));
+      setTabDataLoaded(prev => ({ ...prev, archive: true, ledger: true }));
     } catch { }
   }, [username, isSelf]);
+
+  // ── Lazy tab data loader — fetches data only when a tab is first opened ──
+  const loadTabData = useCallback(async (tab: ProfileTab) => {
+    if (tabDataLoaded[tab] || !targetUser) return;
+    const uid = targetUser.id;
+    try {
+      if (tab === 'watchlist' && !tabDataLoaded.watchlist) {
+        const { data } = await supabase.from('watchlists')
+          .select('film_id, film_title, poster_path, year')
+          .eq('user_id', uid).order('created_at', { ascending: false }).limit(50);
+        setWatchlist((data ?? []).map(w => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path, year: w.year })));
+        setTabDataLoaded(prev => ({ ...prev, watchlist: true }));
+      } else if (tab === 'physical' && !tabDataLoaded.physical) {
+        const { data } = await supabase.from('physical_archive')
+          .select('id, film_id, film_title, poster_path, year, formats, notes, condition, created_at')
+          .eq('user_id', uid).order('created_at', { ascending: false }).limit(50);
+        setVault((data ?? []).map(v => ({
+          id: v.id, film_id: v.film_id, filmId: v.film_id, title: v.film_title, poster_path: v.poster_path, year: v.year,
+          formats: v.formats ?? [], notes: v.notes ?? '', condition: v.condition ?? 'good', created_at: v.created_at, createdAt: v.created_at,
+        })));
+        setTabDataLoaded(prev => ({ ...prev, physical: true }));
+      } else if (tab === 'lists' && !tabDataLoaded.lists) {
+        const { data: listsData } = await supabase.from('lists')
+          .select('id, title, description, is_ranked, is_private, created_at')
+          .eq('user_id', uid).eq('is_private', false).order('created_at', { ascending: false }).limit(50);
+        const listIds = (listsData ?? []).map((l: { id: string }) => l.id);
+        let allListItems: { list_id: string; film_id: number; film_title: string; poster_path: string | null }[] = [];
+        if (listIds.length > 0) {
+          const { data: items } = await supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).limit(500);
+          allListItems = items ?? [];
+        }
+        const itemsByList = new Map<string, typeof allListItems>();
+        for (const item of allListItems) {
+          const arr = itemsByList.get(item.list_id) ?? [];
+          arr.push(item);
+          itemsByList.set(item.list_id, arr);
+        }
+        setLists((listsData ?? []).map(l => ({
+          id: l.id, title: l.title, description: l.description ?? '', isRanked: l.is_ranked ?? false,
+          isPrivate: l.is_private ?? false, createdAt: l.created_at,
+          films: (itemsByList.get(l.id) ?? []).map((i) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path })),
+        })));
+        setTabDataLoaded(prev => ({ ...prev, lists: true }));
+      }
+    } catch { }
+  }, [targetUser, tabDataLoaded]);
+
+  // Trigger lazy load when tab changes
+  useEffect(() => {
+    if (activeTab) loadTabData(activeTab);
+  }, [activeTab, loadTabData]);
 
   useEffect(() => { setLoading(true); fetchUserData().finally(() => setLoading(false)); }, [fetchUserData]);
 
@@ -214,10 +346,10 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   }, [isAuthenticated, isFollowing, username]);
 
   // ── Computed Values ──
-  const tier = targetUser?.role || targetUser?.tier || 'free';
+  const tier = targetUser?.role ?? targetUser?.tier ?? 'free';
   const isArchivistPlus = ['archivist', 'auteur'].includes(tier);
   const isPrivate = targetUser?.is_social_private && !isSelf;
-  const totalFilms = logs.length;
+  const totalFilms = counts.logs || logs.length;
 
   // Stats level — matches web's cineStats computation exactly
   const statsLevel = totalFilms > 50 ? 'THE ORACLE' : totalFilms > 20 ? 'MIDNIGHT DEVOTEE' : totalFilms > 5 ? 'THE REGULAR' : 'FIRST REEL';
@@ -228,7 +360,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   const streak = useMemo(() => {
     const dates = new Set<string>();
     for (const log of logs) {
-      const d = log.watchedDate || log.createdAt;
+      const d = log.watchedDate ?? log.createdAt;
       if (d) dates.add(new Date(d).toISOString().slice(0, 10));
     }
     let count = 0;
@@ -267,9 +399,9 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
     for (const log of logs) {
       if (!log.filmId || !log.rating) continue;
       if (!byFilm[log.filmId]) byFilm[log.filmId] = [];
-      byFilm[log.filmId].push({ rating: log.rating, date: log.watchedDate || log.createdAt || new Date().toISOString() });
+      byFilm[log.filmId].push({ rating: log.rating, date: log.watchedDate ?? log.createdAt ?? new Date().toISOString() });
     }
-    const result: Record<number, any> = {};
+    const result: Record<number, HalfLifeEntry> = {};
     for (const [filmId, entries] of Object.entries(byFilm)) {
       if (entries.length < 2) continue;
       const sorted = [...entries].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -284,17 +416,17 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
     let result = [...watchlist];
     if (watchlistSearch.trim()) {
       const q = watchlistSearch.toLowerCase();
-      result = result.filter(f => (f.title || '').toLowerCase().includes(q));
+      result = result.filter(f => (f.title ?? '').toLowerCase().includes(q));
     }
-    if (watchlistSort === 'az') result.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
-    else if (watchlistSort === 'za') result.sort((a, b) => (b.title || '').localeCompare(a.title || ''));
+    if (watchlistSort === 'az') result.sort((a, b) => (a.title ?? '').localeCompare(b.title ?? ''));
+    else if (watchlistSort === 'za') result.sort((a, b) => (b.title ?? '').localeCompare(a.title ?? ''));
     return result;
   }, [watchlist, watchlistSearch, watchlistSort]);
 
   // Physical archive filtering
   const physicalFiltered = useMemo(() => {
     if (!physicalFilter) return vault;
-    return vault.filter((item: any) => item.formats?.includes(physicalFilter));
+    return vault.filter((item: ProfileVaultItem) => item.formats?.includes(physicalFilter));
   }, [vault, physicalFilter]);
 
   const physicalFormatCounts = useMemo(() => {
@@ -304,12 +436,12 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
       { id: 'laserdisc', label: 'LaserDisc', color: '#10b981' }, { id: 'steelbook', label: 'Steelbook', color: '#6366f1' },
       { id: 'criterion', label: 'Criterion', color: colors.sepia },
     ];
-    return FORMATS.map(f => ({ ...f, count: vault.filter((item: any) => item.formats?.includes(f.id)).length })).filter(f => f.count > 0);
+    return FORMATS.map(f => ({ ...f, count: vault.filter((item: ProfileVaultItem) => item.formats?.includes(f.id)).length })).filter(f => f.count > 0);
   }, [vault]);
 
   // Group by month helper
-  const groupByMonth = useCallback((items: any[], dateKey = 'watchedDate') => {
-    const grouped: Record<string, any[]> = {};
+  const groupByMonth = useCallback((items: ProfileLog[] | ProfileVaultItem[], dateKey = 'watchedDate') => {
+    const grouped: Record<string, (ProfileLog | ProfileVaultItem)[]> = {};
     for (const item of items) {
       const d = new Date(item[dateKey] || item.createdAt || new Date().toISOString());
       const title = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase();
@@ -321,28 +453,28 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
 
   // Social links parsing (matches web exactly)
   const socialLinks = useMemo(() => {
-    const raw = targetUser?.social_links || [];
-    if (Array.isArray(raw)) return raw.filter((l: any) => l.url && l.url.trim());
+    const raw = targetUser?.social_links ?? [];
+    if (Array.isArray(raw)) return raw.filter((l: SocialLink) => l.url && l.url.trim());
     if (typeof raw === 'object') {
       return Object.entries(raw)
-        .filter(([, v]: any) => v && (v as string).trim())
-        .map(([k, v]: any) => ({ title: k.charAt(0).toUpperCase() + k.slice(1), url: v }));
+        .filter(([, v]) => v && (v as string).trim())
+        .map(([k, v]) => ({ title: k.charAt(0).toUpperCase() + k.slice(1), url: v as string }));
     }
-    return [];
+    return [] as SocialLink[];
   }, [targetUser]);
 
   // Breathing glow interpolation
   const breatheShadowRadius = breatheAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 40] });
   const breatheShadowOpacity = breatheAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.6] });
 
-  // ── Collection Cards ──
+  // ── Collection Cards (use server-side counts for instant display, zero data transfer) ──
   const COLLECTION_CARDS = [
-    { id: 'archive' as ProfileTab, label: 'Archive', desc: 'WATCHED', count: logs.length, Icon: Archive, disabled: false, highlight: false },
+    { id: 'archive' as ProfileTab, label: 'Archive', desc: 'WATCHED', count: counts.logs || logs.length, Icon: Archive, disabled: false, highlight: false },
     { id: 'ledger' as ProfileTab, label: 'The Ledger', desc: 'DIARY', count: logs.filter(l => l.rating > 0 || (l.review && l.review.length > 0)).length, Icon: BookOpen, disabled: false, highlight: false },
-    { id: 'watchlist' as ProfileTab, label: 'Watchlist', desc: 'TO SEE', count: watchlist.length, Icon: Bookmark, disabled: false, highlight: false },
-    { id: 'lists' as ProfileTab, label: 'Stacks', desc: 'LISTS', count: lists.length, Icon: LayoutList, disabled: false, highlight: false },
-    { id: 'physical' as ProfileTab, label: 'Physical Archive', desc: 'COLLECTION', count: isArchivistPlus ? vault.length : 'LOCKED' as any, Icon: Disc, disabled: !isArchivistPlus, highlight: false },
-    { id: 'projector' as ProfileTab, label: 'Analytics', desc: 'PROJECTOR', count: 'LIFETIME' as any, Icon: LineChart, disabled: false, highlight: true },
+    { id: 'watchlist' as ProfileTab, label: 'Watchlist', desc: 'TO SEE', count: counts.watchlist || watchlist.length, Icon: Bookmark, disabled: false, highlight: false },
+    { id: 'lists' as ProfileTab, label: 'Stacks', desc: 'LISTS', count: counts.lists || lists.length, Icon: LayoutList, disabled: false, highlight: false },
+    { id: 'physical' as ProfileTab, label: 'Physical Archive', desc: 'COLLECTION', count: isArchivistPlus ? (counts.vault || vault.length) : 0, Icon: Disc, disabled: !isArchivistPlus, highlight: false },
+    { id: 'projector' as ProfileTab, label: 'Analytics', desc: 'PROJECTOR', count: 0, Icon: LineChart, disabled: false, highlight: true },
   ];
 
   const tabTitles: Record<string, string> = {
@@ -369,7 +501,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
       <FilmIcon size={48} color={colors.sepia} strokeWidth={1} style={s.notFoundIcon} />
       <Text style={s.notFoundTitle}>Member Not Found</Text>
       <Text style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>
-      <TouchableOpacity style={s.ghostBtn} onPress={() => router.back()}>
+      <TouchableOpacity style={s.ghostBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
         <View style={s.ghostBtnRow}>
           <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
           <Text style={s.ghostBtnText}>GO BACK</Text>
@@ -387,7 +519,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
         This profile is private. Only the owner can view their activity.
       </Text>
       {isAuthenticated && (
-        <TouchableOpacity style={s.primaryBtn} onPress={toggleFollow}>
+        <TouchableOpacity style={s.primaryBtn} onPress={toggleFollow} accessibilityRole="button" accessibilityLabel="Follow to view profile">
           <Text style={s.primaryBtnText}>FOLLOW TO VIEW</Text>
         </TouchableOpacity>
       )}
@@ -397,25 +529,25 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   // ════════════════════════════════════════════════════════════
   // POSTER CARD — Reusable log poster with tier glow
   // ════════════════════════════════════════════════════════════
-  const renderPosterCard = (log: any, width: number, showRating = false, showTimeAgo = false, navigateToLog = false) => {
-    const posterUri = tmdb.poster(log.altPoster || log.poster || log.poster_path, 'w185');
+  const renderPosterCard = (log: ProfileLog | ProfileVaultItem | ProfileWatchlistItem, width: number, showRating = false, showTimeAgo = false, navigateToLog = false) => {
+    const posterUri = tmdb.poster(log.altPoster ?? log.poster ?? log.poster_path, 'w185');
     const glowStyle = tier === 'auteur' ? s.auteurGlow : tier === 'archivist' ? s.archivistGlow : {};
     return (
-      <TouchableOpacity
-        key={log.id || log.filmId || log.film_id}
+      <PressableScale
+        key={log.id ?? log.filmId ?? log.film_id}
         style={[{ aspectRatio: 2 / 3, position: 'relative' }, width > 0 ? { width } : { flex: 1 }, isArchivistPlus ? glowStyle : {}]}
         onPress={() => {
           if (navigateToLog && log.id) {
             router.push(`/log/${log.id}`);
           } else {
-            const fid = log.filmId || log.film_id;
+            const fid = log.filmId ?? log.film_id;
             if (fid) router.push(`/film/${fid}`);
           }
         }}
-        activeOpacity={0.7}
+        haptic
       >
         {posterUri ? (
-          <Image source={{ uri: posterUri }} style={s.posterImg} />
+          <Image source={{ uri: posterUri }} style={s.posterImg} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
         ) : (
           <View style={[s.posterImg, s.posterPlaceholder]}>
             <FilmIcon size={18} color={colors.sepia} strokeWidth={1} />
@@ -430,14 +562,14 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
               </View>
             )}
             {showTimeAgo && (
-              <Text style={s.posterTimeAgo}>{timeAgo(log.watchedDate || log.createdAt)}</Text>
+              <Text style={s.posterTimeAgo}>{timeAgo(log.watchedDate ?? log.createdAt)}</Text>
             )}
           </View>
         )}
         {/* Status badges */}
         {log.status === 'rewatched' && <View style={s.statusBadge}><Sparkles size={7} color={colors.sepia} strokeWidth={1.5} /></View>}
         {log.status === 'abandoned' && <View style={[s.statusBadge, s.statusBadgeAbandoned]}><X size={7} color={colors.bloodReel} strokeWidth={2} /></View>}
-      </TouchableOpacity>
+      </PressableScale>
     );
   };
 
@@ -449,12 +581,12 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
       <View style={s.container}>
         {/* ── Tab Header ── */}
         <View style={s.tabPageHeader}>
-          <TouchableOpacity onPress={() => router.push(`/user/${username}`)} style={s.topNavBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={() => router.push(`/user/${username}`)} style={s.topNavBtn} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Back to profile">
             <ChevronLeft size={22} color={colors.sepia} />
           </TouchableOpacity>
           <View style={s.tabHeaderTextWrap}>
             <Text style={s.tabHeaderUsername}>@{username}</Text>
-            <Text style={s.tabHeaderTitle}>{tabTitles[activeTab] || activeTab}</Text>
+            <Text style={s.tabHeaderTitle} accessibilityRole="header">{tabTitles[activeTab] ?? activeTab}</Text>
           </View>
         </View>
 
@@ -465,7 +597,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           {activeTab === 'archive' && (
             <View style={s.tabContentPad}>
               {logs.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ gap: 8 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScrollMargin} contentContainerStyle={s.filterChipRow}>
                   {[{ id: 'all', label: 'All' }, { id: 'watched', label: 'Watched' }, { id: 'rewatched', label: 'Rewatched' }, { id: 'abandoned', label: 'Abandoned' }].map(sv => (
                     <TouchableOpacity key={sv.id} style={[s.filterChip, archiveSieve === sv.id && s.filterChipActive]} onPress={() => setArchiveSieve(sv.id)}>
                       <Text style={[s.filterChipText, archiveSieve === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
@@ -485,7 +617,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                     <View key={month}>
                       <Text style={s.monthHeader}>{month}</Text>
                       <View style={s.grid4}>
-                        {(items as any[]).map((log: any) => renderPosterCard(log, POSTER_COL_4))}
+                        {(items as ProfileLog[]).map((log: ProfileLog) => renderPosterCard(log, POSTER_COL_4))}
                       </View>
                     </View>
                   ))}
@@ -504,7 +636,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                     <TextInput style={s.searchInput} value={ledgerSearch} onChangeText={setLedgerSearch} placeholder="Search your archive..." placeholderTextColor={colors.fog} />
                     {ledgerSearch.length > 0 && <TouchableOpacity onPress={() => setLedgerSearch('')} style={s.searchClear}><X size={14} color={colors.fog} strokeWidth={1.5} /></TouchableOpacity>}
                   </View>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterChipRowTight}>
                     {(['all', 1, 2, 3, 4, 5] as const).map(r => (
                       <TouchableOpacity key={String(r)} style={[s.filterChip, ledgerRatingFilter === r && s.filterChipActive]} onPress={() => setLedgerRatingFilter(r)}>
                         {r === 'all' ? (
@@ -529,7 +661,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                     <View key={month}>
                       <Text style={s.monthHeader}>{month}</Text>
                       <View style={s.grid4}>
-                        {(items as any[]).map((log: any) => {
+                        {(items as ProfileLog[]).map((log: ProfileLog) => {
                           const hl = halfLifeMap[log.filmId];
                           return (
                             <View key={log.id} style={s.posterCardWrap}>
@@ -591,7 +723,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                   <Text style={s.searchNoResults}>No films match "{watchlistSearch}"</Text>
                 ) : (
                   <View style={s.grid3}>
-                    {watchlistFiltered.map((film: any) => renderPosterCard(film, POSTER_COL_3))}
+                    {watchlistFiltered.map((film: ProfileWatchlistItem) => renderPosterCard(film, POSTER_COL_3))}
                   </View>
                 )}
               </>)}
@@ -605,12 +737,12 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 <View style={s.emptyState}><LayoutList size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} /><Text style={s.emptyTitle}>The Stacks are Empty</Text><Text style={s.emptyDesc}>No lists yet.</Text></View>
               ) : (
                 <View style={s.stacksGrid}>
-                  {lists.map((list: any) => {
-                    const posters = (list.films || []).filter((f: any) => f.poster).slice(0, 3).map((f: any) => tmdb.poster(f.poster, 'w185'));
+                  {lists.map((list: ProfileList) => {
+                    const posters = (list.films || []).filter((f: ProfileListFilm) => f.poster).slice(0, 3).map((f: ProfileListFilm) => tmdb.poster(f.poster || '', 'w185'));
                     return (
-                      <TouchableOpacity key={list.id} style={s.stackCard} activeOpacity={0.7} onPress={() => router.push({ pathname: '/list-modal' as any, params: { listId: list.id } })}>
+                      <TouchableOpacity key={list.id} style={s.stackCard} activeOpacity={0.7} onPress={() => router.push({ pathname: '/list-modal', params: { listId: list.id } })}>
                         <View style={s.stackPosterWrap}>
-                          {posters.length > 0 ? posters.map((uri: string, i: number) => <Image key={i} source={{ uri }} style={[s.stackPosterPanel, { left: `${(i * 100) / posters.length}%` as any, width: `${100 / posters.length}%` as any }]} />) : <View style={s.stackEmptyBg} />}
+                          {posters.length > 0 ? posters.map((uri: string, i: number) => <Image key={i} source={{ uri }} style={[s.stackPosterPanel, { left: `${(i * 100) / posters.length}%`, width: `${100 / posters.length}%` }]} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />) : <View style={s.stackEmptyBg} />}
                           <View style={s.stackOverlay} />
                         </View>
                         <View style={s.stackContent}>
@@ -630,11 +762,11 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           {activeTab === 'physical' && (
             <View style={s.tabContentPad}>
               {physicalFormatCounts.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }} contentContainerStyle={{ gap: 6 }}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScrollMargin} contentContainerStyle={s.filterChipRowTight}>
                   <TouchableOpacity style={[s.filterChip, !physicalFilter && s.filterChipActive]} onPress={() => setPhysicalFilter(null)}>
                     <Text style={[s.filterChipText, !physicalFilter && s.filterChipTextActive]}>ALL ({vault.length})</Text>
                   </TouchableOpacity>
-                  {physicalFormatCounts.map((f: any) => (
+                  {physicalFormatCounts.map((f: FormatCount) => (
                     <TouchableOpacity key={f.id} style={[s.filterChip, physicalFilter === f.id && { borderColor: f.color, backgroundColor: `${f.color}15` }]} onPress={() => setPhysicalFilter(physicalFilter === f.id ? null : f.id)}>
                       <Text style={[s.filterChipText, physicalFilter === f.id && { color: f.color }]}>{f.label} ({f.count})</Text>
                     </TouchableOpacity>
@@ -650,14 +782,14 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                     <View key={month}>
                       <Text style={s.monthHeader}>{month}</Text>
                       <View style={s.grid4}>
-                        {(items as any[]).map((item: any) => {
+                        {(items as ProfileVaultItem[]).map((item: ProfileVaultItem) => {
                           const posterUri = tmdb.poster(item.poster_path, 'w185');
                           const fmt = (item.formats || [])[0];
                           const FC: Record<string, string> = { '4k': '#a855f7', bluray: '#3b82f6', dvd: '#f59e0b', vhs: '#ef4444', laserdisc: '#10b981', steelbook: '#6366f1', criterion: colors.sepia };
                           const FL: Record<string, string> = { '4k': '4K', bluray: 'BD', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LD', steelbook: 'SB', criterion: 'CC' };
                           return (
                             <TouchableOpacity key={item.id} style={s.posterCardWrap} activeOpacity={0.7} onPress={() => item.film_id && router.push(`/film/${item.film_id}`)}>
-                              {posterUri ? <Image source={{ uri: posterUri }} style={s.posterImg} /> : <View style={[s.posterImg, s.posterPlaceholder]}><FilmIcon size={14} color={colors.sepia} strokeWidth={1} /></View>}
+                              {posterUri ? <Image source={{ uri: posterUri }} style={s.posterImg} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} /> : <View style={[s.posterImg, s.posterPlaceholder]}><FilmIcon size={14} color={colors.sepia} strokeWidth={1} /></View>}
                               {fmt && <View style={[s.formatBadge, { borderColor: FC[fmt] || colors.sepia }]}><Text style={[s.formatBadgeText, { color: FC[fmt] || colors.sepia }]}>{FL[fmt] || fmt.toUpperCase()}</Text></View>}
                             </TouchableOpacity>
                           );
@@ -716,11 +848,11 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 </View>
 
                 {/* Your Favourites */}
-                {logs.filter((l: any) => l.rating >= 4).length > 0 && (
+                {logs.filter((l: ProfileLog) => l.rating >= 4).length > 0 && (
                   <View>
                     <SectionLabel text="HIGHEST RATED" />
                     <View style={s.card}>
-                      {logs.filter((l: any) => l.rating >= 4).slice(0, 6).map((log: any) => {
+                      {logs.filter((l: ProfileLog) => l.rating >= 4).slice(0, 6).map((log: ProfileLog) => {
                         const posterUri = tmdb.poster(log.poster, 'w185');
                         return (
                           <TouchableOpacity key={log.id} style={s.favouriteRow} onPress={() => log.filmId && router.push(`/film/${log.filmId}`)} activeOpacity={0.7}>
@@ -750,7 +882,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 )}
 
                 {/* Programmes */}
-                <ProgrammesSection programmes={[]} user={targetUser} uniqueFilms={logs.map((l: any) => ({ id: l.filmId, title: l.title, poster_path: l.poster || '' }))} isOwnProfile={isSelf} />
+                <ProgrammesSection programmes={[]} user={targetUser} uniqueFilms={logs.map((l: ProfileLog) => ({ id: l.filmId, title: l.title, poster_path: l.poster || '' }))} isOwnProfile={isSelf} />
               </View>
             </View>
           )}
@@ -884,7 +1016,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
             {/* ── Social Links ── */}
             {socialLinks.length > 0 && (
               <View style={s.socialLinksRow}>
-                {socialLinks.map((link: any, i: number) => (
+                {socialLinks.map((link: SocialLink, i: number) => (
                   <TouchableOpacity key={i} style={s.socialLinkChip} onPress={() => Linking.openURL(link.url.startsWith('http') ? link.url : `https://${link.url}`)} activeOpacity={0.7}>
                     <Globe size={10} color={colors.fog} />
                     <Text style={s.socialLinkText}>{(link.title || '').toUpperCase()}</Text>
@@ -914,7 +1046,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
               <StatCard label="FILMS" value={totalFilms} />
               <StatCard label="FOLLOWERS" value={targetUser.followers_count || 0} onPress={() => router.push({ pathname: '/social-modal', params: { userId: targetUser.id, type: 'followers' } })} />
               <StatCard label="FOLLOWING" value={targetUser.following_count || 0} onPress={() => router.push({ pathname: '/social-modal', params: { userId: targetUser.id, type: 'following' } })} />
-              <StatCard label="WATCHLIST" value={watchlist.length} isLast />
+              <StatCard label="WATCHLIST" value={counts.watchlist} isLast />
             </AnimatedView>
 
             {/* ── Streak ── */}
@@ -933,14 +1065,14 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
 
             {/* ── Recently Watched ── */}
             {(() => {
-              const recentLogs = logs.filter((l: any) => l.poster && l.poster.length > 5).slice(0, 3);
+              const recentLogs = logs.filter((l: ProfileLog) => l.poster && l.poster.length > 5).slice(0, 3);
               if (recentLogs.length === 0) return null;
               return (
                 <View style={s.triptychWrapRecent}>
                   <GoldDivider />
                   <SectionLabel text="RECENTLY WATCHED" />
                   <View style={s.recentRow}>
-                    {recentLogs.map((log: any) => (
+                    {recentLogs.map((log: ProfileLog) => (
                       <View key={log.id} style={s.recentItem}>
                         {renderPosterCard(log, 0, true, true)}
                       </View>
@@ -1053,7 +1185,6 @@ const s = StyleSheet.create({
   // ── Top Navigation ──
   topNav: { paddingTop: 56, paddingHorizontal: 16, paddingBottom: 8, position: 'absolute', top: 0, left: 0, right: 0, zIndex: 10 },
   topNavBtn: { width: 40, height: 40, justifyContent: 'center' },
-  topNavBtnText: { fontFamily: fonts.ui, fontSize: 24, color: '#FFF', textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
 
   // ── Tab Page Header ──
   tabPageHeader: {
@@ -1087,7 +1218,7 @@ const s = StyleSheet.create({
   },
   headerContent: {
     position: 'relative', zIndex: 4,
-    alignItems: 'center', paddingHorizontal: 20, paddingTop: 80, paddingBottom: 28,
+    alignItems: 'center', paddingHorizontal: 20, paddingTop: 120, paddingBottom: 28,
   },
 
   // ── Avatar ──
@@ -1131,7 +1262,7 @@ const s = StyleSheet.create({
   // ── Bio ──
   bio: {
     fontFamily: fonts.body, fontSize: 14, color: colors.bone, textAlign: 'center',
-    lineHeight: 22, marginTop: 10, paddingHorizontal: 24, fontStyle: 'italic', opacity: 0.8,
+    lineHeight: 22, marginTop: 10, paddingHorizontal: 24, fontStyle: 'italic', opacity: 0.85,
   },
 
   // ── Social Links ──
@@ -1139,7 +1270,7 @@ const s = StyleSheet.create({
   socialLinkChip: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingHorizontal: 10, paddingVertical: 5,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.12)', borderRadius: 3,
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 3,
   },
   socialLinkText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
 
@@ -1157,7 +1288,7 @@ const s = StyleSheet.create({
   followingBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.ash },
   followBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.ink, textAlign: 'center' },
   followingBtnText: { color: colors.fog },
-  ghostBtn: { paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.ash, borderRadius: 2 },
+  ghostBtn: { paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2 },
   ghostBtnText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2, color: colors.bone },
   primaryBtn: { backgroundColor: colors.sepia, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 2 },
   primaryBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.ink },
@@ -1168,7 +1299,7 @@ const s = StyleSheet.create({
   statsGrid: { flexDirection: 'row', width: '100%', marginTop: 20, justifyContent: 'center', alignItems: 'center' },
   statCard: { flex: 1, paddingVertical: 12, alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)' },
   statValue: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, lineHeight: 26, ...effects.textGlowSepia },
-  statLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, marginTop: 4, opacity: 0.7 },
+  statLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, marginTop: 4, opacity: 0.8 },
   statDivider: { width: StyleSheet.hairlineWidth, height: 24, backgroundColor: 'rgba(139,105,20,0.2)' },
 
   // ── Streak ──
@@ -1221,7 +1352,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center',
   },
   collectionCardLabel: { fontFamily: fonts.display, fontSize: 13, color: colors.parchment, textAlign: 'center', letterSpacing: 0.5 },
-  collectionCardDesc: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog },
+  collectionCardDesc: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
   collectionCardCount: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment },
   collectionCardWide: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
@@ -1262,11 +1393,11 @@ const s = StyleSheet.create({
   stacksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   stackCard: { width: (SCREEN_W - 32 - 10) / 2, borderRadius: 2, overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.2)', backgroundColor: colors.soot },
   stackPosterWrap: { width: '100%', height: 80, position: 'relative', overflow: 'hidden' },
-  stackPosterPanel: { position: 'absolute', top: 0, height: '100%', resizeMode: 'cover' },
+  stackPosterPanel: { position: 'absolute', top: 0, height: '100%', contentFit: 'cover' },
   stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.55)' },
   stackContent: { padding: 12 },
   stackBadge: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, backgroundColor: 'rgba(196,150,26,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 1, alignSelf: 'flex-start', overflow: 'hidden', marginBottom: 4 },
-  stackTitle: { fontFamily: fonts.display, fontSize: 13, color: colors.parchment, letterSpacing: 0.5, lineHeight: 18 },
+  stackTitle: { fontFamily: fonts.display, fontSize: 13, color: colors.parchment, letterSpacing: 0.5, lineHeight: 17 },
   stackDesc: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic', lineHeight: 16, marginTop: 4 },
 
   // ── Projector Tab ──
@@ -1280,8 +1411,7 @@ const s = StyleSheet.create({
   },
   accountRowText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.bone },
 
-  // ── Private Profile ──
-  privateSection: { alignItems: 'center', paddingVertical: 60, paddingHorizontal: 32 },
+
 
   // ── NEW: Early Return States ──
   centeredFull: { justifyContent: 'center', alignItems: 'center' },
@@ -1305,6 +1435,9 @@ const s = StyleSheet.create({
   tabContentPad: { paddingHorizontal: 16 },
   tabGap: { gap: 28 },
   filterGroupCol: { marginBottom: 16, gap: 10 },
+  filterScrollMargin: { marginBottom: 16 },
+  filterChipRow: { gap: 8 },
+  filterChipRowTight: { gap: 6 },
   searchIconStyle: { opacity: 0.5, marginRight: 6 },
   searchWrapFlex: { flex: 1 },
   searchNoResults: { textAlign: 'center', padding: 24, color: colors.fog, fontFamily: fonts.body, fontSize: 13 },
@@ -1396,13 +1529,13 @@ const s = StyleSheet.create({
   },
   founderText: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
-    color: 'rgba(196,150,26,0.5)', textAlign: 'center',
+    color: 'rgba(196,150,26,0.55)', textAlign: 'center',
   },
 
   // ── Member Since ──
   memberSince: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5,
-    color: colors.fog, opacity: 0.5, marginBottom: 4,
+    color: colors.fog, opacity: 0.6, marginBottom: 4,
   },
 
   // ── Society Seal ──
@@ -1419,6 +1552,6 @@ const s = StyleSheet.create({
   },
   sealText: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3,
-    color: 'rgba(196,150,26,0.4)',
+    color: 'rgba(196,150,26,0.45)',
   },
 });

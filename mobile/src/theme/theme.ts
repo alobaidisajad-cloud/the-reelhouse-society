@@ -4,16 +4,16 @@
 // ============================================================
 
 export const colors = {
-  // ── NITRATE NOIR PALETTE v3.0 — Maximum Premium ──
-  ink: '#0B0A08',         // Primary background (warm black, not cold)
-  parchment: '#EDE5D8',   // Primary text (warm off-white)
-  sepia: '#C4961A',       // Gold accent — buttons, links, active state
-  soot: '#0E0D0A',        // Secondary dark surface
-  flicker: '#F8F0C0',     // Light accent — hover states, highlights
+  // ── NITRATE NOIR PALETTE v3.1 — Aged Tungsten ──
+  ink: '#0A0906',         // Primary background (deeper warm brown-black)
+  parchment: '#E8DFD0',   // Primary text (yellowed, like actual old paper)
+  sepia: '#B8891A',       // Tarnished brass — buttons, links, active state
+  soot: '#0D0C08',        // Secondary dark surface (deeper warmth)
+  flicker: '#F0E8B0',     // Candlelight accent — hover states, highlights
   bloodReel: '#6B1A0A',   // Deep crimson — destructive actions, stamps
   danger: '#E74C3C',      // Alert red
   ash: '#2A2118',         // Borders, dividers, subtle backgrounds
-  bone: '#C8B99A',        // Secondary text
+  bone: '#C2B492',        // Secondary text (more weathered)
   fog: '#6B6055',         // Muted text, disabled
   silverNitrate: '#D8E0E8', // System/info accent
 
@@ -112,6 +112,9 @@ export const effects = {
     textShadowRadius: 4,
   }
 } as const;
+
+/** Warm sepia-toned blurhash — universal placeholder while images load */
+export const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
 export const typography = {
   jumbo: { fontSize: 64, lineHeight: 68, fontFamily: fonts.display, letterSpacing: 1.28 },

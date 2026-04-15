@@ -13,7 +13,9 @@ import Animated, {
   Extrapolation,
 } from 'react-native-reanimated';
 import { Image } from 'expo-image';
-import { colors } from '@/src/theme/theme';
+import * as Haptics from 'expo-haptics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { colors, fonts } from '@/src/theme/theme';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
@@ -31,7 +33,15 @@ const DIGITS = [
   { char: '1', delay: D1 + D2, dur: D3, shadowColor: 'rgba(248,240,192,0.55)', shadowRadius: 35 },
 ];
 
-function Digit({ d }: { d: any }) {
+interface DigitConfig {
+  char: string;
+  delay: number;
+  dur: number;
+  shadowColor: string;
+  shadowRadius: number;
+}
+
+function Digit({ d }: { d: DigitConfig }) {
   const op = useSharedValue(0);
   const scale = useSharedValue(0.96);
 
@@ -85,52 +95,68 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
   const flicker = useSharedValue(0.45);
 
   useEffect(() => {
-    // ── Breathe Animation (Continuous) ──
-    breathe.value = withRepeat(
-      withSequence(
-        withTiming(0.72, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
-        withTiming(0.42, { duration: 1500, easing: Easing.inOut(Easing.quad) })
-      ),
-      -1,
-      true
-    );
-
-    // ── Flicker Animation (Continuous) ──
-    flicker.value = withRepeat(
-      withSequence(
-        withTiming(0.45, { duration: 1155 }), // ~33% of 3500ms
-        withTiming(0.08, { duration: 35 }),   // ~1%
-        withTiming(0.45, { duration: 35 }),   // ~1%
-        withTiming(0.45, { duration: 1120 }), // ~32%
-        withTiming(0.15, { duration: 35 }),   // ~1%
-        withTiming(0.45, { duration: 35 }),   // ~1%
-        withTiming(0.45, { duration: 1085 })  // ~31%
-      ),
-      -1,
-      true
-    );
-
-    // ── Background Warmth ──
-    warmthOpacity.value = withTiming(0.35, { duration: CD, easing: Easing.in(Easing.quad) });
-
-    // ── Iris Bloom (starts after countdown) ──
-    irisScale.value = withDelay(CD, withTiming(1.06, { duration: BLOOM, easing: Easing.out(Easing.quad) }));
-    bloomOpacity.value = withDelay(CD, withSequence(
-      withTiming(0.30, { duration: BLOOM * 0.5 }),
-      withTiming(0.12, { duration: BLOOM * 0.5 })
-    ));
-    bloomScale.value = withDelay(CD, withSequence(
-      withTiming(1, { duration: BLOOM * 0.5 }),
-      withTiming(1.05, { duration: BLOOM * 0.5 })
-    ));
-
-    // ── Final Fade Out ──
-    const holdPct = (CD + BLOOM * 0.4);
-    fadeOut.value = withDelay(holdPct, withTiming(0, { duration: TOTAL - holdPct }, (finished) => {
-      if (finished) {
-        runOnJS(onComplete)();
+    // #18 — First-launch ceremony detection
+    (async () => {
+      const hasLaunched = await AsyncStorage.getItem('reelhouse_has_launched');
+      const isFirstLaunch = !hasLaunched;
+      if (isFirstLaunch) {
+        await AsyncStorage.setItem('reelhouse_has_launched', '1');
+        // Bass-rumble haptic pattern: Heavy → Medium → Light
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), D1);
+        setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), D1 + D2);
       }
-    }));
+
+      // ── Breathe Animation (Continuous) ──
+      breathe.value = withRepeat(
+        withSequence(
+          withTiming(0.72, { duration: 1500, easing: Easing.inOut(Easing.quad) }),
+          withTiming(0.42, { duration: 1500, easing: Easing.inOut(Easing.quad) })
+        ),
+        -1,
+        true
+      );
+
+      // ── Flicker Animation (Continuous) ──
+      flicker.value = withRepeat(
+        withSequence(
+          withTiming(0.45, { duration: 1155 }),
+          withTiming(0.08, { duration: 35 }),
+          withTiming(0.45, { duration: 35 }),
+          withTiming(0.45, { duration: 1120 }),
+          withTiming(0.15, { duration: 35 }),
+          withTiming(0.45, { duration: 35 }),
+          withTiming(0.45, { duration: 1085 })
+        ),
+        -1,
+        true
+      );
+
+      // ── Background Warmth ──
+      warmthOpacity.value = withTiming(0.35, { duration: CD, easing: Easing.in(Easing.quad) });
+
+      // ── Iris Bloom — wider on first launch ──
+      const bloomTarget = isFirstLaunch ? 1.5 : 1.06;
+      const bloomDuration = isFirstLaunch ? BLOOM * 1.5 : BLOOM;
+      irisScale.value = withDelay(CD, withTiming(bloomTarget, { duration: bloomDuration, easing: Easing.out(Easing.quad) }));
+      bloomOpacity.value = withDelay(CD, withSequence(
+        withTiming(0.30, { duration: bloomDuration * 0.5 }),
+        withTiming(0.12, { duration: bloomDuration * 0.5 })
+      ));
+      bloomScale.value = withDelay(CD, withSequence(
+        withTiming(1, { duration: bloomDuration * 0.5 }),
+        withTiming(1.05, { duration: bloomDuration * 0.5 })
+      ));
+
+      // ── Final Fade Out ──
+      const holdPct = (CD + bloomDuration * 0.4);
+      const totalDur = CD + bloomDuration + FADE;
+      fadeOut.value = withDelay(holdPct, withTiming(0, { duration: totalDur - holdPct }, (finished) => {
+        if (finished) {
+          runOnJS(onComplete)();
+        }
+      }));
+    })();
   }, []);
 
   const outerContainerStyle = useAnimatedStyle(() => ({
@@ -238,7 +264,7 @@ const styles = StyleSheet.create({
   },
   vignette: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.8)', // Simplified vignette
+    backgroundColor: 'rgba(0,0,0,0.35)',
     zIndex: 1,
   },
   warmth: {
@@ -284,14 +310,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   digit: {
-    fontFamily: 'Rye_400Regular',
-    fontSize: 120, // clamp roughly
+    fontFamily: fonts.display,
+    fontSize: Math.min(120, SCREEN_W * 0.28),
     color: '#EDE5D8',
     includeFontPadding: false,
   },
   statusLabel: {
-    marginTop: 40,
-    fontFamily: 'SpecialElite_400Regular',
+    marginTop: 48,
+    fontFamily: fonts.sub,
     fontSize: 11,
     letterSpacing: 5,
     color: 'rgba(196,150,26,0.50)',

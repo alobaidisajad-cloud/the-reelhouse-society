@@ -14,8 +14,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
     View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
-    Image, Dimensions, Platform, KeyboardAvoidingView, Alert, FlatList,
+    Dimensions, Platform, KeyboardAvoidingView, FlatList,
 } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -25,6 +26,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
+import reelToast from '@/src/utils/reelToast';
 import { ReelRating } from '@/src/components/Decorative';
 import NitrateCalendar from '@/src/components/NitrateCalendar';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
@@ -32,6 +34,24 @@ import {
     Search, X, Clock, Eye, History, Lock, Archive,
     ChevronDown, ChevronUp, Trash2, Check, Sparkles, Star,
 } from 'lucide-react-native';
+
+interface LogSearchResult {
+    id: number;
+    title?: string;
+    name?: string;
+    poster_path?: string | null;
+    release_date?: string;
+    media_type?: string;
+    vote_average?: number;
+}
+
+interface SelectedFilm {
+    id: number;
+    title?: string;
+    name?: string;
+    poster_path?: string | null;
+    release_date?: string;
+}
 
 const DRAFT_KEY = 'reelhouse_log_draft';
 const AUTOPSY_INIT: Record<string, number> = { story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 };
@@ -64,22 +84,22 @@ export default function LogModalScreen() {
 
     // ── Search state (Step 0) ──
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<any[]>([]);
+    const [results, setResults] = useState<LogSearchResult[]>([]);
     const [searching, setSearching] = useState(false);
     const [searchType, setSearchType] = useState('');
     const [searchContext, setSearchContext] = useState('');
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // ── Film state ──
-    const [film, setFilm] = useState<any>(params.filmId ? {
-        id: parseInt(params.filmId), title: params.filmTitle || '',
-        poster_path: params.filmPoster || null, release_date: params.filmYear || '',
+    const [film, setFilm] = useState<SelectedFilm | null>(params.filmId ? {
+        id: parseInt(params.filmId), title: params.filmTitle ?? '',
+        poster_path: params.filmPoster ?? null, release_date: params.filmYear ?? '',
     } : null);
 
     // ── Detect rewatch mode: film already logged and NOT editing ──
     const previousLog = useMemo(() => {
         if (params.editLogId || !film?.id) return null;
-        return _loggedIndex[film.id] || null;
+        return _loggedIndex[film.id] ?? null;
     }, [film?.id, params.editLogId, _loggedIndex]);
     const isRewatchMode = !!previousLog;
 
@@ -116,7 +136,7 @@ export default function LogModalScreen() {
     useEffect(() => {
         if (!film?.id) return;
         if (isAuteur || isPremium) {
-            tmdb.movieImages(film.id).then((imgs: any) => {
+            tmdb.movieImages(film.id).then((imgs: { posters?: Array<{ file_path: string }>; backdrops?: Array<{ file_path: string }> }) => {
                 if (imgs?.posters) setAvailablePosters(imgs.posters.slice(0, 20));
                 if (imgs?.backdrops) setAvailableBackdrops(imgs.backdrops.slice(0, 10));
             }).catch(() => {});
@@ -128,25 +148,25 @@ export default function LogModalScreen() {
         if (!editLogId) return;
         const log = logs.find(l => l.id === editLogId);
         if (!log) return;
-        setStatus(log.status || 'watched');
-        setRating(log.rating || 0);
-        setReview(log.review || '');
-        setIsSpoiler(log.isSpoiler || false);
-        setDate(log.watchedDate?.slice(0, 10) || new Date().toISOString().slice(0, 10));
-        setWatchedWith(log.watchedWith || '');
-        setPrivateNotes(log.privateNotes || '');
-        setPhysicalMedia(log.physicalMedia || 'None');
-        setAbandonedReason(log.abandonedReason || '');
+        setStatus(log.status ?? 'watched');
+        setRating(log.rating ?? 0);
+        setReview(log.review ?? '');
+        setIsSpoiler(log.isSpoiler ?? false);
+        setDate(log.watchedDate?.slice(0, 10) ?? new Date().toISOString().slice(0, 10));
+        setWatchedWith(log.watchedWith ?? '');
+        setPrivateNotes(log.privateNotes ?? '');
+        setPhysicalMedia(log.physicalMedia ?? 'None');
+        setAbandonedReason(log.abandonedReason ?? '');
         if (log.autopsy) {
             try { setAutopsy(typeof log.autopsy === 'string' ? JSON.parse(log.autopsy) : log.autopsy); }
             catch { setAutopsy({ ...AUTOPSY_INIT }); }
         }
-        setAltPoster(log.altPoster || null);
-        setEditorialHeader(log.editorialHeader || null);
-        setDropCap(log.dropCap || false);
-        setPullQuote(log.pullQuote || '');
-        setIsAutopsied(log.isAutopsied || false);
-        setAutopsyOpen(log.isAutopsied || false);
+        setAltPoster(log.altPoster ?? null);
+        setEditorialHeader(log.editorialHeader ?? null);
+        setDropCap(log.dropCap ?? false);
+        setPullQuote(log.pullQuote ?? '');
+        setIsAutopsied(log.isAutopsied ?? false);
+        setAutopsyOpen(log.isAutopsied ?? false);
         setFilm({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year?.toString() });
         setStep(1);
     }, [editLogId, logs]);
@@ -186,7 +206,7 @@ export default function LogModalScreen() {
         searchTimeout.current = setTimeout(async () => {
             try {
                 const res = await tmdb.search(q, 1);
-                const filtered = (res.results || []).filter((r: any) => r.media_type !== 'person').slice(0, 8);
+                const filtered = (res.results || []).filter((r) => r.media_type !== 'person').slice(0, 8) as LogSearchResult[];
                 setResults(filtered);
                 setSearchType(res.searchType || 'exact');
                 setSearchContext(res.matchedContext || '');
@@ -195,26 +215,26 @@ export default function LogModalScreen() {
         }, 400);
     }, []);
 
-    const selectFilm = (f: any) => {
+    const selectFilm = (f: LogSearchResult) => {
         setFilm(f); setStep(1); setQuery(''); setResults([]);
         Haptics.selectionAsync();
     };
 
     // ── SUBMIT LOG ──
     const handleLog = async () => {
-        if (!user) { Alert.alert('Sign in required'); return; }
+        if (!user) { reelToast('Identification required to file a record.'); return; }
         if (status !== 'abandoned' && rating === 0 && !review.trim()) {
-            Alert.alert('Rate or review', 'Please add a rating or review to log this film.');
+            reelToast('A rating or critique is required to seal the record.');
             return;
         }
         setSubmitting(true);
         try {
-            const logData: any = {
-                filmId: film.id, title: film.title || film.name || 'Untitled',
-                poster: altPoster || film.poster_path || null,
+            const logData: Partial<import('@/src/types').FilmLog> = {
+                filmId: film.id, title: film.title ?? film.name ?? 'Untitled',
+                poster: altPoster ?? film.poster_path ?? null,
                 year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : null,
                 rating, review: review.trim(), status, isSpoiler,
-                watchedDate: date, watchedWith: watchedWith.trim() || null,
+                watchedDate: date, watchedWith: watchedWith.trim() || null,  // intentional || — empty string should be null
                 privateNotes: isPremium ? (privateNotes.trim() || null) : null,
                 abandonedReason: status === 'abandoned' ? abandonedReason : null,
                 physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
@@ -230,7 +250,7 @@ export default function LogModalScreen() {
             AsyncStorage.removeItem(DRAFT_KEY);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             router.back();
-        } catch { Alert.alert('Error', 'Failed to save log.'); }
+        } catch { reelToast.error('The record could not be sealed. Try again.'); }
         setSubmitting(false);
     };
 
@@ -257,10 +277,10 @@ export default function LogModalScreen() {
     // ── Not authenticated ──
     if (!isAuthenticated) {
         return (
-            <View style={[st.root, { justifyContent: 'center', alignItems: 'center' }]}>
-                <Text style={{ fontFamily: fonts.display, fontSize: 20, color: colors.parchment }}>Sign in to log films</Text>
-                <TouchableOpacity style={st.signInBtn} onPress={() => { router.back(); router.push('/login' as any); }}>
-                    <Text style={st.signInBtnText}>SIGN IN</Text>
+            <View style={[st.root, st.centerAuthPrompt]}>
+                <Text style={st.identifyText}>Identify yourself to file records</Text>
+                <TouchableOpacity style={st.signInBtn} onPress={() => { router.back(); router.push('/login'); }}>
+                    <Text style={st.signInBtnText}>IDENTIFY YOURSELF</Text>
                 </TouchableOpacity>
             </View>
         );
@@ -271,12 +291,15 @@ export default function LogModalScreen() {
     // ════════════════════════════════════════
     return (
         <View style={st.root}>
-            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+            <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={st.kavFlex}>
+                {/* Drag handle */}
+                <View style={st.dragHandleWrap}><View style={st.dragHandle} /></View>
+
                 {/* Header */}
                 <View style={st.header}>
                     <View>
                         {isEditing && <View style={st.editBadge}><Text style={st.editBadgeText}>EDITING</Text></View>}
-                        <Text style={st.headerTitle}>{step === 0 ? 'Log a Film' : (film?.title || 'Log')}</Text>
+                        <Text style={st.headerTitle} numberOfLines={1}>{step === 0 ? 'Log a Film' : (film?.title || 'Log')}</Text>
                     </View>
                     <TouchableOpacity onPress={() => router.back()} style={st.closeBtn} activeOpacity={0.7}>
                         <X size={16} color={colors.fog} />
@@ -297,6 +320,7 @@ export default function LogModalScreen() {
                                 onChangeText={handleSearch}
                                 autoFocus
                                 returnKeyType="search"
+                                maxLength={120}
                             />
                         </View>
                         {searching && (
@@ -305,13 +329,13 @@ export default function LogModalScreen() {
                         {results.length > 0 && searchType === 'person' && (
                             <View style={st.searchBadgeRow}>
                                 <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
-                                <Text style={[st.searchBadge, { color: colors.sepia }]}>ACTOR/DIRECTOR MATCH: {searchContext.toUpperCase()}</Text>
+                                <Text style={[st.searchBadge, st.searchBadgeSepia]}>ACTOR/DIRECTOR MATCH: {searchContext.toUpperCase()}</Text>
                             </View>
                         )}
                         {results.length > 0 && searchType === 'typo' && (
                             <View style={st.searchBadgeRow}>
                                 <Sparkles size={8} color={colors.flicker} strokeWidth={1.5} />
-                                <Text style={[st.searchBadge, { color: colors.flicker }]}>FUZZY RESCUE: {searchContext.toUpperCase()}</Text>
+                                <Text style={[st.searchBadge, st.searchBadgeFlicker]}>FUZZY RESCUE: {searchContext.toUpperCase()}</Text>
                             </View>
                         )}
                         <FlatList
@@ -321,7 +345,7 @@ export default function LogModalScreen() {
                             contentContainerStyle={st.searchResultsContent}
                             renderItem={({ item: r }) => (
                                 <TouchableOpacity style={st.resultRow} onPress={() => selectFilm(r)} activeOpacity={0.7}>
-                                    {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} />}
+                                    {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} contentFit="cover" cachePolicy="memory-disk" />}
                                     <View style={st.resultFlex}>
                                         <Text style={st.resultTitle}>{r.title || r.name}</Text>
                                         <View style={st.resultMetaRow}>
@@ -356,7 +380,7 @@ export default function LogModalScreen() {
                                 <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
                                 <View style={st.deleteConfirmRow}>
                                     <TouchableOpacity style={st.deleteYes} onPress={handleDelete}><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></TouchableOpacity>
-                                    <TouchableOpacity style={st.deleteNo} onPress={() => setShowDeleteConfirm(false)}><Text style={[st.deleteBtnLabel, { color: colors.bone }]}>CANCEL</Text></TouchableOpacity>
+                                    <TouchableOpacity style={st.deleteNo} onPress={() => setShowDeleteConfirm(false)}><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></TouchableOpacity>
                                 </View>
                             </View>
                         )}
@@ -365,49 +389,45 @@ export default function LogModalScreen() {
                         <View style={st.filmHeader}>
                             {film.poster_path && (
                                 <View>
-                                    <Image source={{ uri: tmdb.poster(altPoster || film.poster_path, 'w185') }} style={st.poster} />
+                                    <Image source={{ uri: tmdb.poster(altPoster ?? film.poster_path, 'w185') }} style={st.poster} contentFit="cover" cachePolicy="memory-disk" />
                                     {altPoster && <View style={st.altBadge}><Text style={st.altBadgeText}>ALT</Text></View>}
                                 </View>
                             )}
                             <View style={st.filmInfoCol}>
-                                <Text style={st.filmTitle}>{film.title || film.name}</Text>
+                                <Text style={st.filmTitle}>{film.title ?? film.name}</Text>
                                 <Text style={st.filmYear}>{film.release_date?.slice(0, 4) || '—'}</Text>
                             </View>
                         </View>
 
                         {/* ── YOUR PREVIOUS TAKE — Rewatch context panel ── */}
                         {isRewatchMode && previousLog && (
-                            <Animated.View entering={FadeInDown.delay(100).duration(400)} style={{
-                                backgroundColor: 'rgba(139,105,20,0.06)',
-                                borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)',
-                                borderRadius: 8, padding: 14, marginBottom: -4,
-                            }}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                            <Animated.View entering={FadeInDown.delay(100).duration(400)} style={st.prevTakeBox}>
+                                <View style={st.prevTakeHeader}>
                                     <History size={11} color={colors.sepia} />
-                                    <Text style={{ fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia }}>YOUR PREVIOUS TAKE</Text>
+                                    <Text style={st.prevTakeLabel}>YOUR PREVIOUS TAKE</Text>
                                     {(previousLog.viewCount || 1) > 1 && (
-                                        <View style={{ backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 }}>
-                                            <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog }}>VIEWING {previousLog.viewCount || 1}</Text>
+                                        <View style={st.prevTakeCountBadge}>
+                                            <Text style={st.prevTakeCountText}>VIEWING {previousLog.viewCount || 1}</Text>
                                         </View>
                                     )}
                                 </View>
                                 {previousLog.rating > 0 && (
-                                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-                                        <Text style={{ fontFamily: fonts.sub || fonts.body, fontSize: 16, color: colors.flicker }}>
+                                    <View style={st.prevTakeRatingRow}>
+                                        <Text style={st.prevTakeStars}>
                                             {'★'.repeat(Math.floor(previousLog.rating))}{previousLog.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(previousLog.rating))}
                                         </Text>
-                                        <Text style={{ fontFamily: fonts.ui, fontSize: 9, color: colors.fog }}>
+                                        <Text style={st.prevTakeRatingNum}>
                                             {previousLog.rating % 1 === 0 ? previousLog.rating : previousLog.rating.toFixed(1)}/5
                                         </Text>
                                     </View>
                                 )}
                                 {previousLog.review ? (
-                                    <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.8, fontStyle: 'italic' }} numberOfLines={6}>
-                                        "{(previousLog.review || '').replace(/<[^>]+>/g, '').trim()}"
+                                    <Text style={st.prevTakeReview} numberOfLines={6}>
+                                        "{(previousLog.review ?? '').replace(/<[^>]+>/g, '').trim()}"
                                     </Text>
                                 ) : null}
                                 {previousLog.watchedDate ? (
-                                    <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 6 }}>
+                                    <Text style={st.prevTakeDate}>
                                         LOGGED {new Date(previousLog.watchedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </Text>
                                 ) : null}
@@ -423,7 +443,7 @@ export default function LogModalScreen() {
                                         {s === 'watched' && <Eye size={14} color={status === s ? colors.ink : colors.fog} />}
                                         {s === 'rewatched' && <History size={14} color={status === s ? colors.ink : colors.fog} />}
                                         {s === 'abandoned' && <X size={14} color={status === s ? colors.ink : colors.fog} />}
-                                        <Text style={[st.statusText, status === s && { color: colors.ink }]}>{s.toUpperCase()}</Text>
+                                        <Text style={[st.statusText, status === s && st.statusTextActive]}>{s.toUpperCase()}</Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
@@ -436,7 +456,7 @@ export default function LogModalScreen() {
                                 <View style={st.tagRow}>
                                     {ABANDONED_REASONS.map(r => (
                                         <TouchableOpacity key={r} style={[st.tag, abandonedReason === r && st.tagActive]} onPress={() => setAbandonedReason(r)} activeOpacity={0.7}>
-                                            <Text style={[st.tagText, abandonedReason === r && { color: colors.ink }]}>{r}</Text>
+                                            <Text style={[st.tagText, abandonedReason === r && st.tagTextActive]}>{r}</Text>
                                         </TouchableOpacity>
                                     ))}
                                 </View>
@@ -483,23 +503,47 @@ export default function LogModalScreen() {
                                     </View>
                                     <View style={st.quickDateRow}>
                                         <TouchableOpacity style={[st.qDateBtn, date === todayStr && st.qDateActive]} onPress={() => { setDate(todayStr); setCalendarOpen(false); }}>
-                                            <Text style={[st.qDateText, date === todayStr && { color: colors.ink }]}>TODAY</Text>
+                                            <Text style={[st.qDateText, date === todayStr && st.qDateTextActive]}>TODAY</Text>
                                         </TouchableOpacity>
                                         <TouchableOpacity style={[st.qDateBtn, date === yesterday && st.qDateActive]} onPress={() => { setDate(yesterday); setCalendarOpen(false); }}>
-                                            <Text style={[st.qDateText, date === yesterday && { color: colors.ink }]}>YESTERDAY</Text>
+                                            <Text style={[st.qDateText, date === yesterday && st.qDateTextActive]}>YESTERDAY</Text>
                                         </TouchableOpacity>
                                     </View>
                                     <TouchableOpacity style={st.dateDisplay} onPress={() => setCalendarOpen(!calendarOpen)} activeOpacity={0.7}>
                                         <Text style={st.dateText}>{new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
-                                        <Text style={[st.dateToggle, calendarOpen && { color: colors.sepia }]}>{calendarOpen ? '▲ CLOSE' : '▼ CHANGE'}</Text>
+                                        <Text style={[st.dateToggle, calendarOpen && st.dateToggleActive]}>{calendarOpen ? '▲ CLOSE' : '▼ CHANGE'}</Text>
                                     </TouchableOpacity>
                                     {calendarOpen && <View style={st.calendarWrap}><NitrateCalendar value={date} onChange={(v) => { setDate(v); setCalendarOpen(false); }} /></View>}
                                 </View>
 
-                                {/* Watched With */}
+                                {/* Watched With — #8: Social-aware autocomplete */}
                                 <View style={st.sec}>
                                     <Text style={st.secLabel}>WATCHED WITH</Text>
                                     <TextInput style={st.input} placeholder="A name, a memory, or @username..." placeholderTextColor={colors.fog} value={watchedWith} onChangeText={setWatchedWith} maxLength={60} />
+                                    {watchedWith.includes('@') && user?.following && user.following.length > 0 && (() => {
+                                        const atMatch = watchedWith.match(/@(\w*)$/);
+                                        if (!atMatch) return null;
+                                        const partial = atMatch[1].toLowerCase();
+                                        const matches = user.following.filter(u => u.toLowerCase().startsWith(partial)).slice(0, 4);
+                                        if (matches.length === 0) return null;
+                                        return (
+                                            <Animated.View entering={FadeIn.duration(150)} style={st.autoSuggestWrap}>
+                                                {matches.map(username => (
+                                                    <TouchableOpacity
+                                                        key={username}
+                                                        style={st.autoSuggestItem}
+                                                        onPress={() => {
+                                                            setWatchedWith(watchedWith.replace(/@\w*$/, username));
+                                                            Haptics.selectionAsync();
+                                                        }}
+                                                        activeOpacity={0.7}
+                                                    >
+                                                        <Text style={st.autoSuggestText}>@{username}</Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </Animated.View>
+                                        );
+                                    })()}
                                 </View>
 
                                 {/* Review Editor */}
@@ -511,7 +555,7 @@ export default function LogModalScreen() {
                                             <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
                                             <Text style={st.spoilerText}>CONTAINS SPOILERS</Text>
                                         </TouchableOpacity>
-                                        <Text style={[st.charCount, review.length > 1800 && { color: colors.flicker }]}>{review.length}/2000</Text>
+                                        <Text style={[st.charCount, review.length > 1800 && st.charCountWarn]}>{review.length}/2000</Text>
                                     </View>
                                 </View>
 
@@ -534,14 +578,14 @@ export default function LogModalScreen() {
                                         <View>
                                             <Text style={st.editLabel}>ARTICLE HEADER (STILL)</Text>
                                             {availableBackdrops.length > 0 ? (
-                                                <FlatList horizontal data={[{ file_path: '__none__' }, ...availableBackdrops]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={{ gap: 8 }}
+                                                <FlatList horizontal data={[{ file_path: '__none__' }, ...availableBackdrops]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGap}
                                                     renderItem={({ item: p }) => p.file_path === '__none__' ? (
                                                         <TouchableOpacity onPress={() => setEditorialHeader(null)} style={[st.stillThumb, editorialHeader === null && st.stillActive]}>
-                                                            <Text style={[st.stillNone, editorialHeader === null && { color: colors.ink }]}>NONE</Text>
+                                                            <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
                                                         </TouchableOpacity>
                                                     ) : (
                                                         <TouchableOpacity onPress={() => setEditorialHeader(p.file_path)}>
-                                                            <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && { opacity: 0.4 }]} />
+                                                            <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
                                                         </TouchableOpacity>
                                                     )}
                                                 />
@@ -552,7 +596,7 @@ export default function LogModalScreen() {
 
                                 {/* Auteur Toolkit */}
                                 <View style={[st.auteurBox, !isAuteur && st.auteurLocked]} pointerEvents={isAuteur ? 'auto' : 'box-none'}>
-                                    <TouchableOpacity style={st.auteurHead} onPress={() => { if (!isAuteur) { router.push('/membership' as any); return; } setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); }} activeOpacity={0.7}>
+                                    <TouchableOpacity style={st.auteurHead} onPress={() => { if (!isAuteur) { router.push('/membership'); return; } setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); }} activeOpacity={0.7}>
                                         <Text style={st.auteurHeadText}>{autopsyOpen ? '[-] HIDE DEEP AUTOPSY' : '[+] PERFORM DEEP AUTOPSY'}</Text>
                                         {!isAuteur && <View style={st.upgradeLockRow}><Lock size={10} color={colors.bloodReel} /><Text style={st.upgradeLink}>UPGRADE</Text></View>}
                                     </TouchableOpacity>
@@ -576,14 +620,14 @@ export default function LogModalScreen() {
                                             <View>
                                                 <Text style={st.editLabel}>CURATORIAL CONTROL (ALT POSTER)</Text>
                                                 {availablePosters.length > 0 ? (
-                                                    <FlatList horizontal data={[{ file_path: '__default__' }, ...availablePosters]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+                                                    <FlatList horizontal data={[{ file_path: '__default__' }, ...availablePosters]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGapPad}
                                                         renderItem={({ item: p }) => p.file_path === '__default__' ? (
                                                             <TouchableOpacity onPress={() => setAltPoster(null)} style={[st.pThumb, altPoster === null && st.pThumbActive]}>
-                                                                <Text style={[st.pDefault, altPoster === null && { color: colors.ink }]}>DEFAULT</Text>
+                                                                <Text style={[st.pDefault, altPoster === null && st.pDefaultActive]}>DEFAULT</Text>
                                                             </TouchableOpacity>
                                                         ) : (
                                                             <TouchableOpacity onPress={() => setAltPoster(p.file_path)}>
-                                                                <Image source={{ uri: tmdb.poster(p.file_path, 'w92') }} style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && { opacity: 0.4 }]} />
+                                                                <Image source={{ uri: tmdb.poster(p.file_path, 'w92') }} style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && st.pImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
                                                             </TouchableOpacity>
                                                         )}
                                                     />
@@ -602,12 +646,12 @@ export default function LogModalScreen() {
                                     <View style={[st.tagRow, !isPremium && st.premiumLocked]} pointerEvents={isPremium ? 'auto' : 'none'}>
                                         {PHYSICAL_OPTIONS.map(opt => (
                                             <TouchableOpacity key={opt} style={[st.tag, physicalMedia === opt && st.tagActive]} onPress={() => setPhysicalMedia(opt)} activeOpacity={0.7}>
-                                                <Text style={[st.tagText, physicalMedia === opt && { color: colors.ink }]}>{opt}</Text>
+                                                <Text style={[st.tagText, physicalMedia === opt && st.tagTextActive]}>{opt}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
                                     {!isPremium && (
-                                        <TouchableOpacity style={st.upgradeRow} onPress={() => router.push('/membership' as any)} activeOpacity={0.7}>
+                                        <TouchableOpacity style={st.upgradeRow} onPress={() => router.push('/membership')} activeOpacity={0.7}>
                                             <Lock size={10} color={colors.sepia} /><Text style={st.upgradeRowText}>UNLOCK WITH ARCHIVIST</Text>
                                         </TouchableOpacity>
                                     )}
@@ -620,11 +664,11 @@ export default function LogModalScreen() {
                                         <Text style={st.secLabel}>PRIVATE NOTES (THE CUTTING ROOM FLOOR)</Text>
                                     </View>
                                     {isPremium ? (
-                                        <TextInput style={[st.reviewInput, { minHeight: 80 }]} placeholder="Notes only you can see..." placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" />
+                                        <TextInput style={[st.reviewInput, st.privateNotesInput]} placeholder="Notes only you can see..." placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" />
                                     ) : (
                                         <View style={st.lockedBox}>
                                             <Lock size={20} color={colors.sepia} />
-                                            <TouchableOpacity onPress={() => router.push('/membership' as any)}>
+                                            <TouchableOpacity onPress={() => router.push('/membership')}>
                                                 <Text style={st.lockedText}>UNLOCK WITH ARCHIVIST</Text>
                                             </TouchableOpacity>
                                         </View>
@@ -637,13 +681,13 @@ export default function LogModalScreen() {
                         {lists.length > 0 && (
                             <View style={st.sec}>
                                 <Text style={st.secLabel}>ADD TO STACK</Text>
-                                <FlatList horizontal data={lists} showsHorizontalScrollIndicator={false} keyExtractor={l => l.id} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+                                <FlatList horizontal data={lists} showsHorizontalScrollIndicator={false} keyExtractor={l => l.id} contentContainerStyle={st.flatListGapPad}
                                     renderItem={({ item: list }) => {
                                         const isIn = list.films.some(f => f.id === film.id);
                                         return (
                                             <TouchableOpacity style={[st.listChip, isIn && st.listChipOn]} onPress={() => toggleList(list.id)} activeOpacity={0.7}>
                                                 {isIn && <Check size={12} color={colors.ink} />}
-                                                <Text style={[st.listChipText, isIn && { color: colors.ink }]} numberOfLines={1}>{list.title}</Text>
+                                                <Text style={[st.listChipText, isIn && st.listChipTextActive]} numberOfLines={1}>{list.title}</Text>
                                             </TouchableOpacity>
                                         );
                                     }}
@@ -653,11 +697,11 @@ export default function LogModalScreen() {
 
                         {/* SUBMIT */}
                         <View style={st.submitRow}>
-                            <TouchableOpacity style={[st.submitBtn, submitting && { opacity: 0.6 }]} onPress={handleLog} disabled={submitting} activeOpacity={0.8}>
-                                <Text style={st.submitText}>{submitting ? 'SAVING...' : (isEditing ? 'Save Changes' : 'Log This Film')}</Text>
+                            <TouchableOpacity style={[st.submitBtn, submitting && st.submitBtnSubmitting]} onPress={handleLog} disabled={submitting} activeOpacity={0.8}>
+                                <Text style={st.submitText}>{submitting ? 'SEALING RECORD…' : (isEditing ? 'SAVE CHANGES' : 'LOG THIS FILM')}</Text>
                             </TouchableOpacity>
                             <TouchableOpacity style={st.cancelBtn} onPress={() => router.back()} activeOpacity={0.7}>
-                                <Text style={st.cancelText}>Cancel</Text>
+                                <Text style={st.cancelText}>CANCEL</Text>
                             </TouchableOpacity>
                         </View>
                     </ScrollView>
@@ -670,6 +714,11 @@ export default function LogModalScreen() {
 // ════════════════════════════════════════
 const st = StyleSheet.create({
     root: { flex: 1, backgroundColor: colors.soot },
+    centerAuthPrompt: { justifyContent: 'center', alignItems: 'center' },
+    identifyText: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment },
+    kavFlex: { flex: 1 },
+    dragHandleWrap: { alignItems: 'center', paddingTop: 10 },
+    dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: Platform.OS === 'ios' ? 60 : 20, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.ash },
     editBadge: { backgroundColor: colors.bloodReel, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 2, alignSelf: 'flex-start', marginBottom: 4 },
     editBadgeText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: '#fff' },
@@ -688,6 +737,8 @@ const st = StyleSheet.create({
     searchingText: { fontFamily: fonts.ui, fontSize: 10, color: colors.sepia, letterSpacing: 3 },
     searchBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
     searchBadge: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5 },
+    searchBadgeSepia: { color: colors.sepia },
+    searchBadgeFlicker: { color: colors.flicker },
     searchResults: { marginTop: 8 },
     searchResultsContent: { gap: 8, paddingBottom: 40 },
     resultRow: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 10 },
@@ -707,6 +758,18 @@ const st = StyleSheet.create({
     secLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 8 },
     input: { backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, padding: 12, fontFamily: fonts.sub, fontSize: 13, color: colors.parchment },
     filmHeader: { flexDirection: 'row', gap: 16, marginBottom: 24 },
+
+    // Previous Take (rewatch context)
+    prevTakeBox: { backgroundColor: 'rgba(139,105,20,0.06)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', borderRadius: 8, padding: 14, marginBottom: -4 },
+    prevTakeHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 },
+    prevTakeLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
+    prevTakeCountBadge: { backgroundColor: 'rgba(255,255,255,0.04)', paddingHorizontal: 6, paddingVertical: 1, borderRadius: 3 },
+    prevTakeCountText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog },
+    prevTakeRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 5 },
+    prevTakeStars: { fontFamily: fonts.sub, fontSize: 16, color: colors.flicker },
+    prevTakeRatingNum: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog },
+    prevTakeReview: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.8, fontStyle: 'italic' },
+    prevTakeDate: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 6 },
     filmInfoCol: { flex: 1 },
     poster: { width: 100, height: 150, borderRadius: 3 },
     altBadge: { position: 'absolute', top: 4, right: 4, backgroundColor: colors.sepia, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 },
@@ -717,10 +780,12 @@ const st = StyleSheet.create({
     statusBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
     statusActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     statusText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+    statusTextActive: { color: colors.ink },
     tagRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
     tag: { paddingHorizontal: 10, paddingVertical: 6, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     tagActive: { backgroundColor: colors.flicker, borderColor: colors.flicker },
     tagText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
+    tagTextActive: { color: colors.ink },
 
     // Rating
     ratingHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
@@ -729,7 +794,7 @@ const st = StyleSheet.create({
     ratingBody: { alignItems: 'center', gap: 8 },
     ratingFooter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%' },
     ratingLabel: { fontFamily: fonts.ui, fontSize: 9, color: colors.sepia, letterSpacing: 2 },
-    ratingHint: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog, opacity: 0.5 },
+    ratingHint: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog, opacity: 0.6 },
 
     // More Toggle
     moreToggle: { paddingVertical: 12, borderTopWidth: 1, borderTopColor: colors.ash, borderBottomWidth: 1, borderBottomColor: colors.ash, marginBottom: 16 },
@@ -742,9 +807,11 @@ const st = StyleSheet.create({
     qDateBtn: { paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     qDateActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     qDateText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
+    qDateTextActive: { color: colors.ink },
     dateDisplay: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingHorizontal: 12, paddingVertical: 10 },
     dateText: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment },
     dateToggle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog },
+    dateToggleActive: { color: colors.sepia },
     calendarWrap: { marginTop: 8 },
 
     // Review
@@ -756,6 +823,8 @@ const st = StyleSheet.create({
     cboxSepia: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     spoilerText: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1 },
     charCount: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog },
+    charCountWarn: { color: colors.flicker },
+    privateNotesInput: { minHeight: 80 },
 
     // Editorial
     editDesk: { padding: 16, borderWidth: 1, borderColor: colors.sepia, borderRadius: 6, backgroundColor: 'rgba(196,150,26,0.05)', gap: 16, marginBottom: 20 },
@@ -769,6 +838,8 @@ const st = StyleSheet.create({
     stillNone: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog },
     stillImg: { width: 80, height: 45, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
     stillImgActive: { borderWidth: 2, borderColor: colors.sepia },
+    stillImgFaded: { opacity: 0.4 },
+    stillNoneActive: { color: colors.ink },
     noData: { fontFamily: fonts.body, fontSize: 11, color: colors.fog },
 
     // Auteur
@@ -790,6 +861,9 @@ const st = StyleSheet.create({
     pDefault: { fontFamily: fonts.ui, fontSize: 7, color: colors.fog },
     pImg: { width: 44, height: 66, borderRadius: 2, borderWidth: 1, borderColor: 'transparent' },
     pImgActive: { borderWidth: 2, borderColor: colors.bloodReel },
+    pImgFaded: { opacity: 0.4 },
+    pDefaultActive: { color: colors.ink },
+    cancelColor: { color: colors.bone },
 
     // Physical / Locked
     premiumLocked: { opacity: 0.4 },
@@ -802,6 +876,7 @@ const st = StyleSheet.create({
     listChip: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.ash, borderRadius: 3 },
     listChipOn: { backgroundColor: colors.sepia, borderColor: colors.sepia },
     listChipText: { fontFamily: fonts.ui, fontSize: 10, color: colors.fog, maxWidth: 120 },
+    listChipTextActive: { color: colors.ink },
 
     // Delete
     deleteBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingVertical: 10, borderWidth: 1, borderColor: colors.danger, borderRadius: 4, marginBottom: 16 },
@@ -816,7 +891,15 @@ const st = StyleSheet.create({
     // Submit
     submitRow: { flexDirection: 'row', gap: 12, marginTop: 8 },
     submitBtn: { flex: 1, backgroundColor: colors.sepia, paddingVertical: 14, borderRadius: 4, alignItems: 'center' },
-    submitText: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 2, color: colors.ink, fontWeight: '600' },
+    submitBtnSubmitting: { opacity: 0.6 },
+    submitText: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 2, color: colors.ink },
     cancelBtn: { paddingVertical: 14, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
-    cancelText: { fontFamily: fonts.ui, fontSize: 11, color: colors.fog },
+    cancelText: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 2, color: colors.fog },
+    flatListGap: { gap: 8 },
+    flatListGapPad: { gap: 8, paddingVertical: 4 },
+
+    // #8: Autocomplete suggestions
+    autoSuggestWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 6 },
+    autoSuggestItem: { backgroundColor: 'rgba(139,105,20,0.12)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 3, paddingHorizontal: 10, paddingVertical: 5 },
+    autoSuggestText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.sepia },
 });

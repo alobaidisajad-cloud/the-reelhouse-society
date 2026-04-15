@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>Slide 5 — Join The Society</title>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime&family=Bungee+Shade&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --ink: #0B0A08;
+    --parchment: #EDE5D8;
+    --sepia: #C4961A;
+    --soot: #0E0D0A;
+    --flicker: #F8F0C0;
+    --blood-reel: #6B1A0A;
+    --ash: #2A2118;
+    --bone: #C8B99A;
+    --fog: #6B6055;
+  }
+
+  body {
+    width: 1080px;
+    height: 1080px;
+    overflow: hidden;
+    background: var(--ink);
+    font-family: 'Courier Prime', monospace;
+  }
+
+  .canvas {
+    position: relative;
+    width: 1080px;
+    height: 1080px;
+    overflow: hidden;
+    background: linear-gradient(155deg, #1a150e 0%, #0B0A08 35%, #12100b 60%, #0B0A08 100%);
+  }
+
+  .grain {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0.05;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat; background-size: 156px 156px;
+  }
+
+  .vignette {
+    position: absolute; inset: 0; z-index: 3; pointer-events: none;
+    background: radial-gradient(ellipse 85% 80% at center, transparent 35%, rgba(0,0,0,0.35) 65%, rgba(0,0,0,0.8) 100%);
+  }
+
+  .scanlines {
+    position: absolute; inset: 0; z-index: 4; pointer-events: none;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+  }
+
+  .aged-border {
+    position: absolute; inset: 24px; z-index: 5;
+    border: 1px solid rgba(200, 185, 154, 0.12); pointer-events: none;
+  }
+  .aged-border::before { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(200, 185, 154, 0.06); }
+
+  .corner { position: absolute; width: 35px; height: 35px; z-index: 6; pointer-events: none; opacity: 0.35; }
+  .corner.tl { top: 20px; left: 20px; border-top: 2px solid var(--sepia); border-left: 2px solid var(--sepia); }
+  .corner.tr { top: 20px; right: 20px; border-top: 2px solid var(--sepia); border-right: 2px solid var(--sepia); }
+  .corner.bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--sepia); border-left: 2px solid var(--sepia); }
+  .corner.br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--sepia); border-right: 2px solid var(--sepia); }
+
+  .content {
+    position: absolute; inset: 0; z-index: 10;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 100px 80px; text-align: center;
+  }
+
+  .buster-center {
+    margin-bottom: 35px;
+    opacity: 0.15;
+    filter: drop-shadow(0 0 20px rgba(232, 223, 200, 0.1));
+  }
+
+  .logo {
+    width: 200px; height: auto; margin-bottom: 55px;
+    filter: drop-shadow(0 0 50px rgba(196, 150, 26, 0.35));
+  }
+
+  .hook {
+    font-family: 'Special Elite', cursive; font-size: 28px;
+    color: var(--bone); letter-spacing: 0.12em; margin-bottom: 12px; opacity: 0.85;
+  }
+
+  .hook-bold {
+    font-family: 'Special Elite', cursive; font-size: 30px;
+    color: var(--flicker); letter-spacing: 0.15em; margin-bottom: 55px;
+  }
+
+  .divider {
+    width: 180px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--sepia), transparent);
+    margin-bottom: 50px;
+  }
+
+  .cta-title {
+    font-family: 'Rye', serif; font-size: 52px; color: var(--sepia);
+    line-height: 1.2; text-shadow: 0 3px 25px rgba(0,0,0,0.7);
+    margin-bottom: 25px; letter-spacing: 0.02em;
+  }
+
+  .cta-url {
+    font-family: 'Courier Prime', monospace; font-size: 18px;
+    color: var(--fog); letter-spacing: 0.15em;
+  }
+
+  .footer {
+    font-family: 'Courier Prime', monospace; font-size: 11px;
+    color: var(--fog); letter-spacing: 0.25em; text-transform: uppercase;
+    position: absolute; bottom: 45px; z-index: 10; opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+  <div class="aged-border"></div>
+  <div class="corner tl"></div>
+  <div class="corner tr"></div>
+  <div class="corner bl"></div>
+  <div class="corner br"></div>
+
+  <div class="content">
+    <!-- BUSTER — stepping out of the shadows for the closer -->
+    <svg class="buster-center" viewBox="0 0 100 140" width="110" height="154" xmlns="http://www.w3.org/2000/svg">
+      <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="#E8DFC8" opacity="0.92"/>
+      <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="none" stroke="rgba(242,232,160,0.15)" stroke-width="3"/>
+      <ellipse cx="38" cy="52" rx="6" ry="7" fill="#0A0703"/>
+      <ellipse cx="62" cy="52" rx="6" ry="7" fill="#0A0703"/>
+      <circle cx="40" cy="50" r="2" fill="white"/>
+      <circle cx="64" cy="50" r="2" fill="white"/>
+      <path d="M 34 68 Q 50 80 66 68" stroke="#0A0703" stroke-width="2.5" fill="none"/>
+      <rect x="40" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+      <rect x="46" y="69" width="4" height="6" fill="#0A0703" rx="0.5"/>
+      <rect x="52" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+      <rect x="58" y="67" width="3" height="4" fill="#0A0703" rx="0.5"/>
+    </svg>
+
+    <p class="hook">Now you know.</p>
+    <p class="hook-bold">Don't be silent.</p>
+
+    <div class="divider"></div>
+
+    <h1 class="cta-title">Join The Society.</h1>
+
+    <p class="cta-url">thereelhousesociety.com</p>
+  </div>
+
+  <p class="footer">Track · Discover · Live Cinema</p>
+</div>
+</body>
+</html>

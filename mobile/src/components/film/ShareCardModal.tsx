@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { colors, fonts } from '@/src/theme/theme';
@@ -8,11 +9,27 @@ import { ReelRating } from '@/src/components/Decorative';
 
 const { width } = Dimensions.get('window');
 
+interface ShareFilm {
+  title: string;
+  overview?: string;
+  poster_path?: string | null;
+  backdrop_path?: string | null;
+  release_date?: string;
+}
+
+interface ShareLog {
+  rating: number;
+  review?: string | null;
+  status?: string;
+  watchedDate?: string;
+  altPoster?: string;
+}
+
 interface ShareCardModalProps {
   visible: boolean;
   onClose: () => void;
-  film: any;
-  log?: any;
+  film: ShareFilm | null;
+  log?: ShareLog | null;
 }
 
 export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalProps) {
@@ -58,7 +75,7 @@ export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalPr
               <View style={StyleSheet.absoluteFill}>
                 <Image 
                   source={{ uri: tmdb.backdrop(film.backdrop_path, 'w780') }} 
-                  style={{ width: '100%', height: '100%', opacity: 0.15 }} 
+                  style={s.backdropImg} 
                   blurRadius={10} 
                 />
               </View>
@@ -72,10 +89,10 @@ export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalPr
 
               <View style={s.filmInfoRow}>
                 {film.poster_path ? (
-                  <Image source={{ uri: tmdb.poster(log?.altPoster || film.poster_path, 'w185') }} style={s.cardPoster} />
+                  <Image source={{ uri: tmdb.poster(log?.altPoster ?? film.poster_path, 'w185') }} style={s.cardPoster} contentFit="cover" />
                 ) : (
-                  <View style={[s.cardPoster, { backgroundColor: colors.ash, justifyContent: 'center', alignItems: 'center'}]}>
-                    <Text style={{ fontFamily: fonts.ui, fontSize: 8, color: colors.fog }}>∅</Text>
+                  <View style={[s.cardPoster, s.cardPosterPlaceholder]}>
+                    <Text style={s.placeholderGlyph}>∅</Text>
                   </View>
                 )}
                 
@@ -204,6 +221,21 @@ const s = StyleSheet.create({
     borderRadius: 4,
     borderWidth: 1,
     borderColor: 'rgba(196,150,26,0.2)',
+  },
+  backdropImg: {
+    width: '100%',
+    height: '100%',
+    opacity: 0.15,
+  },
+  cardPosterPlaceholder: {
+    backgroundColor: colors.ash,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  placeholderGlyph: {
+    fontFamily: fonts.ui,
+    fontSize: 8,
+    color: colors.fog,
   },
   filmDetails: {
     flex: 1,

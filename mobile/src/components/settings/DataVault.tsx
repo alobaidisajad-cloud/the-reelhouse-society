@@ -70,8 +70,9 @@ export default function DataVault() {
       ].filter(Boolean));
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (e: any) {
-      Alert.alert('Import Failed', e.message || 'An error occurred during import.');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : 'An error occurred during import.';
+      Alert.alert('Import Failed', msg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setImporting(false);
@@ -93,18 +94,18 @@ export default function DataVault() {
 
     try {
       const headers = ['Title', 'Year', 'Rating', 'Status', 'Date Watched', 'Review', 'Format'];
-      const rows = logs.map((l: any) => [
-        `"${(l.title || l.film_title || '').replace(/"/g, '""')}"`,
-        l.year || '',
-        l.rating || '',
-        l.status || 'watched',
-        l.watchedDate || l.watched_date || l.createdAt?.slice(0, 10) || '',
-        `"${(l.review || '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-        l.format || 'Digital',
+      const rows = logs.map((l) => [
+        `"${(l.title ?? l.film_title ?? '').replace(/"/g, '""')}"`,
+        l.year ?? '',
+        l.rating ?? '',
+        l.status ?? 'watched',
+        l.watchedDate ?? l.watched_date ?? l.createdAt?.slice(0, 10) ?? '',
+        `"${(l.review ?? '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
+        l.format ?? 'Digital',
       ]);
-      const csv = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
+      const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 
-      const username = user?.username || 'archive';
+      const username = user?.username ?? 'archive';
       const date = new Date().toISOString().slice(0, 10);
       const filePath = `${FileSystem.cacheDirectory}reelhouse_${username}_${date}.csv`;
       await FileSystem.writeAsStringAsync(filePath, csv, { encoding: FileSystem.EncodingType.UTF8 });
@@ -122,8 +123,9 @@ export default function DataVault() {
       }
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: any) {
-      Alert.alert('Export Failed', err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Export failed';
+      Alert.alert('Export Failed', msg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setExporting(false);
@@ -144,7 +146,7 @@ export default function DataVault() {
       };
       const jsonStr = JSON.stringify(dump, null, 2);
 
-      const username = user?.username || 'archive';
+      const username = user?.username ?? 'archive';
       const date = new Date().toISOString().slice(0, 10);
       const filePath = `${FileSystem.cacheDirectory}reelhouse_${username}_${date}.json`;
       await FileSystem.writeAsStringAsync(filePath, jsonStr, { encoding: FileSystem.EncodingType.UTF8 });
@@ -159,8 +161,9 @@ export default function DataVault() {
         await Share.share({ message: jsonStr, title: 'ReelHouse Data Archive' });
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    } catch (err: any) {
-      Alert.alert('Export Failed', err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Export failed';
+      Alert.alert('Export Failed', msg);
     } finally {
       setExporting(false);
     }
@@ -200,7 +203,7 @@ export default function DataVault() {
             </View>
             {/* Progress track */}
             <View style={s.progressTrack}>
-              <View style={[s.progressBar, { width: `${progressPct}%` as any }]} />
+              <View style={[s.progressBar, { width: `${progressPct}%` }]} />
             </View>
             {importProgress.detail && (
               <Text style={s.progressDetail}>{importProgress.detail}</Text>
@@ -270,7 +273,7 @@ export default function DataVault() {
         <Text style={s.actionBtnText}>{exporting ? 'EXPORTING...' : 'EXPORT DATA (CSV)'}</Text>
       </TouchableOpacity>
 
-      <View style={{ height: 8 }} />
+      <View style={s.exportSpacer} />
 
       <TouchableOpacity style={s.actionBtn} onPress={handleExportJSON} disabled={exporting} activeOpacity={0.7}>
         <Download size={12} color={colors.fog} />
@@ -351,7 +354,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', flexWrap: 'wrap', gap: 10,
   },
   statCell: {
-    flex: 1, minWidth: '45%' as any,
+    flex: 1, minWidth: '45%',
     alignItems: 'center', paddingVertical: 10,
     backgroundColor: 'rgba(139,105,20,0.05)', borderRadius: 4,
   },
@@ -403,4 +406,5 @@ const s = StyleSheet.create({
     height: 1, marginVertical: 14,
     backgroundColor: 'rgba(139,105,20,0.15)',
   },
+  exportSpacer: { height: 8 },
 });

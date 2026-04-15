@@ -227,6 +227,36 @@ export interface TMDBSearchResult {
     matchedContext?: string
 }
 
+// ── Dossier Detail (read screen) ──
+export interface DossierDetail {
+    id: string
+    title: string
+    excerpt?: string
+    full_content?: string
+    author?: string
+    author_username?: string
+    user_id?: string
+    created_at?: string
+    views?: number
+    certify_count?: number
+}
+
+// ── Dossier Comment (annotation) ──
+export interface DossierComment {
+    id: string
+    user_id: string
+    username: string
+    body: string
+    created_at: string
+}
+
+// ── Lounge Member ──
+export interface LoungeMember {
+    user_id: string
+    username: string
+    avatar_url?: string
+}
+
 // ── UI State ──
 export interface UIState {
     logModalOpen: boolean

@@ -19,7 +19,7 @@ interface ShareToLoungeProps {
 
 export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId }: ShareToLoungeProps) {
     const { user } = useAuthStore();
-    const [lounges, setLounges] = useState<any[]>([]);
+    const [lounges, setLounges] = useState<{ id: string; name: string }[]>([]);
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
@@ -33,7 +33,7 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
                 .from('lounge_members')
                 .select('lounge_id, lounges(id, name)')
                 .eq('user_id', user.id);
-            setLounges((data || []).map((d: any) => d.lounges).filter(Boolean));
+            setLounges((data ?? []).map((d: Record<string, unknown>) => d.lounges as { id: string; name: string }).filter(Boolean));
             setLoading(false);
         })();
     }, [visible, user]);
@@ -51,6 +51,7 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
             await supabase.from('lounge_messages').insert({
                 lounge_id: selectedLounge,
                 user_id: user.id,
+                username: user.username || 'anon',
                 content,
                 metadata: { type: 'film_share', film_id: filmId, film_title: filmTitle },
             });
@@ -58,7 +59,7 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             onClose();
             setMessage(''); setSelectedLounge(null);
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('Share to lounge failed:', e);
         } finally {
             setSending(false);
@@ -79,7 +80,7 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
                     <Text style={s.filmLabel}>SHARING: {filmTitle?.toUpperCase()}</Text>
 
                     {loading ? (
-                        <ActivityIndicator color={colors.sepia} style={{ marginVertical: 24 }} />
+                        <ActivityIndicator color={colors.sepia} style={s.loadingIndicator} />
                     ) : lounges.length === 0 ? (
                         <Text style={s.emptyText}>You haven't joined any lounges yet.</Text>
                     ) : (
@@ -88,13 +89,13 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
                             <FlatList
                                 data={lounges}
                                 keyExtractor={(item) => item.id}
-                                style={{ maxHeight: 160 }}
+                                style={s.loungeList}
                                 renderItem={({ item }) => (
                                     <TouchableOpacity
                                         style={[s.loungeItem, selectedLounge === item.id && s.loungeActive]}
                                         onPress={() => { setSelectedLounge(item.id); Haptics.selectionAsync(); }}
                                     >
-                                        <Text style={[s.loungeName, selectedLounge === item.id && { color: colors.sepia }]}>
+                                        <Text style={[s.loungeName, selectedLounge === item.id && s.loungeNameActive]}>
                                             {item.name}
                                         </Text>
                                     </TouchableOpacity>
@@ -108,10 +109,11 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
                                 value={message}
                                 onChangeText={setMessage}
                                 multiline
+                                maxLength={500}
                             />
 
                             <TouchableOpacity
-                                style={[s.sendBtn, (!selectedLounge || sending) && { opacity: 0.4 }]}
+                                style={[s.sendBtn, (!selectedLounge || sending) && s.sendBtnDisabled]}
                                 onPress={handleSend}
                                 disabled={!selectedLounge || sending}
                             >
@@ -139,6 +141,9 @@ const s = StyleSheet.create({
     loungeItem: { paddingVertical: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, marginBottom: 6 },
     loungeActive: { borderColor: colors.sepia, backgroundColor: 'rgba(139,105,20,0.1)' },
     loungeName: { fontFamily: fonts.sub, fontSize: 14, color: colors.bone },
+    loungeNameActive: { color: colors.sepia },
+    loungeList: { maxHeight: 160 },
+    loadingIndicator: { marginVertical: 24 },
     emptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center', paddingVertical: 24 },
     messageInput: {
         backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: colors.ash,
@@ -147,5 +152,6 @@ const s = StyleSheet.create({
         textAlignVertical: 'top', marginTop: 12,
     },
     sendBtn: { backgroundColor: colors.sepia, paddingVertical: 14, alignItems: 'center', borderRadius: 4, marginTop: 16 },
+    sendBtnDisabled: { opacity: 0.4 },
     sendText: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 2, color: colors.ink },
 });

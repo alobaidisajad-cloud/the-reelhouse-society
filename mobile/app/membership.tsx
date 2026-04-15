@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform,
-  Alert, Dimensions, Linking,
+  Dimensions, Linking,
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -11,6 +11,7 @@ import { ChevronLeft } from 'lucide-react-native';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts } from '@/src/theme/theme';
+import reelToast from '@/src/utils/reelToast';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const CARD_W = SCREEN_W * 0.78;
@@ -98,7 +99,7 @@ export default function MembershipScreen() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
 
-  const userRole = (user?.role as string) || 'cinephile';
+  const userRole = (user?.role as string) ?? 'cinephile';
 
   const handleCheckout = async (tier: string) => {
     if (!isAuthenticated || !user) {
@@ -114,7 +115,7 @@ export default function MembershipScreen() {
       if (error || !data?.redirect_url) throw error;
       await Linking.openURL(data.redirect_url);
     } catch {
-      Alert.alert('Checkout Unavailable', 'Please try again in a moment.');
+      reelToast.error('Checkout unavailable. Please try again.');
     } finally {
       setIsRedirecting(false);
     }
@@ -131,7 +132,7 @@ export default function MembershipScreen() {
       if (error || !data?.redirect_url) throw error;
       await Linking.openURL(data.redirect_url);
     } catch {
-      Alert.alert('Checkout Unavailable', 'Please try again in a moment.');
+      reelToast.error('Checkout unavailable. Please try again.');
     } finally {
       setIsRedirecting(false);
     }
@@ -151,7 +152,7 @@ export default function MembershipScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={{ paddingBottom: 80 }} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={st.scrollContent} showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
         <Animated.View entering={FadeInDown.duration(700)} style={st.header}>
@@ -176,9 +177,9 @@ export default function MembershipScreen() {
             contentOffset={{ x: CARD_W + CARD_GAP - (SCREEN_W - CARD_W) / 2, y: 0 }}
           >
             {TIERS.map((tier, idx) => (
-              <View key={tier.id} style={{ width: CARD_W, paddingTop: (tier as any).popular ? 12 : 0 }}>
+              <View key={tier.id} style={[st.tierCardOuter, tier.popular && st.tierCardOuterPopular]}>
                 {/* Popular badge — outside clippped card */}
-                {(tier as any).popular && (
+                {tier.popular && (
                   <View style={st.popularBadgeWrap}>
                     <View style={st.popularBadge}>
                       <LinearGradient colors={[colors.sepia, '#b89530']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
@@ -199,13 +200,13 @@ export default function MembershipScreen() {
                 )}
 
                 {/* Tier Name */}
-                <Text style={[st.tierName, tier.id === 'auteur' && { color: '#a83232' }]}>{tier.name}</Text>
+                <Text style={[st.tierName, tier.id === 'auteur' && st.tierNameAuteur]}>{tier.name}</Text>
                 <Text style={[st.tierLabel, { color: tier.labelColor, opacity: tier.id === 'cinephile' ? 0.6 : 1 }]}>{tier.label}</Text>
 
                 {/* Price */}
                 {tier.price === 'Free' ? (
                   <View style={st.tierPriceWrap}>
-                    <Text style={[st.priceAmount, { fontSize: 32, color: colors.bone, opacity: 0.8 }]}>Free</Text>
+                    <Text style={[st.priceAmount, st.priceAmountFree]}>Free</Text>
                     <Text style={st.pricePeriod}>{tier.pricePeriod}</Text>
                   </View>
                 ) : (
@@ -228,8 +229,8 @@ export default function MembershipScreen() {
                   {tier.featuredFeature && (
                     <View style={[st.featuredBox, { borderColor: tier.id === 'auteur' ? 'rgba(125,31,31,0.25)' : 'rgba(139,105,20,0.18)' }]}>
                       <View style={[st.featureDot, { backgroundColor: tier.dotColor, marginTop: 5 }]} />
-                      <View style={{ flex: 1 }}>
-                        <Text style={[st.featuredTitle, tier.id === 'auteur' && { color: '#a83232' }]}>{tier.featuredFeature.title}</Text>
+                      <View style={st.featuredBoxFlex}>
+                        <Text style={[st.featuredTitle, tier.id === 'auteur' && st.featuredTitleAuteur]}>{tier.featuredFeature.title}</Text>
                         <Text style={st.featuredDesc}>{tier.featuredFeature.desc}</Text>
                       </View>
                     </View>
@@ -238,7 +239,7 @@ export default function MembershipScreen() {
                   {tier.features.map((feature, i) => (
                     <View key={i} style={st.featureRow}>
                       {tier.id === 'auteur' ? (
-                        <Text style={{ fontSize: 8, color: '#7d1f1f', marginTop: 3 }}>{'\u2605'}</Text>
+                        <Text style={st.auteurStarDot}>{'\u2605'}</Text>
                       ) : (
                         <View style={[st.featureDot, { backgroundColor: tier.dotColor, opacity: tier.id === 'cinephile' ? 0.5 : 1 }]} />
                       )}
@@ -296,13 +297,13 @@ export default function MembershipScreen() {
           <View style={st.foundingTexture} />
 
           <View style={st.foundingSeal}>
-            <Text style={{ fontSize: 18, color: colors.sepia }}>{'\u2605'}</Text>
+            <Text style={st.foundingSealStar}>{'\u2605'}</Text>
           </View>
           <Text style={st.foundingTag}>LIMITED OFFER {'\u00B7'} CLASS OF 1924</Text>
           <Text style={st.foundingTitle}>Founding Members</Text>
           <Text style={st.foundingDesc}>
             The first 100 members to join The Society receive{' '}
-            <Text style={{ fontStyle: 'italic', color: colors.parchment }}>Archivist access for life</Text>
+            <Text style={st.foundingDescHighlight}>Archivist access for life</Text>
             {' '}{'\u2014'} permanently, with no recurring charges, ever. A single entry in the ledger. A permanent seat in the house.
           </Text>
 
@@ -336,7 +337,7 @@ export default function MembershipScreen() {
           </Text>
           <View style={st.philosophyDivider}>
             <View style={st.philosophyLine} />
-            <Text style={{ fontSize: 12, color: colors.flicker }}>{'\u2605'}</Text>
+            <Text style={st.philosophyFlicker}>{'\u2605'}</Text>
             <View style={st.philosophyLine} />
           </View>
         </Animated.View>
@@ -348,6 +349,7 @@ export default function MembershipScreen() {
 
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  scrollContent: { paddingBottom: 80 },
   navBar: {
     paddingTop: Platform.OS === 'ios' ? 56 : 32,
     paddingHorizontal: 16, paddingBottom: 8,
@@ -399,12 +401,16 @@ const st = StyleSheet.create({
 
   // Tier name & label
   tierName: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, lineHeight: 28, marginBottom: 4 },
+  tierNameAuteur: { color: '#a83232' },
+  tierCardOuter: { width: CARD_W },
+  tierCardOuterPopular: { paddingTop: 12 },
   tierLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, marginBottom: 18 },
 
   // Price
   tierPriceWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 2, marginBottom: 4 },
   priceCurrency: { fontFamily: fonts.ui, fontSize: 14, color: colors.parchment, opacity: 0.7 },
   priceAmount: { fontFamily: fonts.display, fontSize: 42, color: colors.parchment, lineHeight: 44 },
+  priceAmountFree: { fontSize: 32, color: colors.bone, opacity: 0.8 },
   pricePeriod: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1, marginLeft: 2 },
   priceBilling: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, letterSpacing: 1, opacity: 0.6, marginBottom: 18 },
 
@@ -418,6 +424,12 @@ const st = StyleSheet.create({
     alignItems: 'flex-start', marginBottom: 4,
   },
   featuredTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment, fontWeight: 'bold', lineHeight: 17, marginBottom: 4 },
+  featuredTitleAuteur: { color: '#a83232' },
+  featuredBoxFlex: { flex: 1 },
+  auteurStarDot: { fontSize: 8, color: '#7d1f1f', marginTop: 3 },
+  foundingSealStar: { fontSize: 18, color: colors.sepia },
+  foundingDescHighlight: { fontStyle: 'italic', color: colors.parchment },
+  philosophyFlicker: { fontSize: 12, color: colors.flicker },
   featuredDesc: { fontFamily: fonts.sub, fontSize: 11, color: colors.bone, lineHeight: 16, opacity: 0.8 },
 
   featureRow: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
@@ -490,7 +502,7 @@ const st = StyleSheet.create({
   foundingBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2.5, color: colors.ink, zIndex: 1 },
   foundingFooter: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5,
-    color: colors.fog, marginTop: 16, opacity: 0.5,
+    color: colors.fog, marginTop: 16, opacity: 0.6,
   },
 
   // ── Philosophy Section ──

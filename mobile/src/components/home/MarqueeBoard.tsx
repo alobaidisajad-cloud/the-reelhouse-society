@@ -1,21 +1,35 @@
 /**
  * MarqueeBoard — Animated trending films marquee for home tab.
  */
-import { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Dimensions, Image, TouchableOpacity } from 'react-native';
+import React, { useEffect, useRef, useCallback, memo } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 
-interface MarqueeProps {
-    films: any[];
+interface MarqueeFilm {
+    id: number;
+    title?: string;
+    poster_path?: string | null;
+    release_date?: string;
+    [key: string]: unknown;
 }
 
-export function MarqueeBoard({ films }: MarqueeProps) {
+interface MarqueeProps {
+    films: MarqueeFilm[];
+}
+
+export const MarqueeBoard = memo(function MarqueeBoard({ films }: MarqueeProps) {
     const scrollX = useRef(new Animated.Value(0)).current;
     const router = useRouter();
+
+    const handleFilmPress = useCallback((filmId: number) => {
+        Haptics.selectionAsync();
+        router.push(`/film/${filmId}`);
+    }, [router]);
 
     const items = films.slice(0, 10);
     if (items.length === 0) return null;
@@ -45,13 +59,14 @@ export function MarqueeBoard({ films }: MarqueeProps) {
                         <TouchableOpacity
                             key={`${film.id}-${i}`}
                             style={s.filmItem}
-                            onPress={() => { Haptics.selectionAsync(); router.push(`/film/${film.id}`); }}
+                            onPress={() => handleFilmPress(film.id)}
                             activeOpacity={0.8}
                         >
                             {film.poster_path && (
                                 <Image
                                     source={{ uri: `https://image.tmdb.org/t/p/w154${film.poster_path}` }}
                                     style={s.poster}
+                                    contentFit="cover"
                                 />
                             )}
                             <View style={s.filmInfo}>
@@ -65,7 +80,7 @@ export function MarqueeBoard({ films }: MarqueeProps) {
             <View style={s.fadeMask} pointerEvents="none" />
         </View>
     );
-}
+});
 
 const s = StyleSheet.create({
     container: {
@@ -76,7 +91,7 @@ const s = StyleSheet.create({
     marqueeWrap: { overflow: 'hidden', height: 80 },
     marqueeTrack: { flexDirection: 'row' },
     filmItem: { width: 200, flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 8 },
-    poster: { width: 44, height: 66, borderRadius: 3, resizeMode: 'cover', borderWidth: 1, borderColor: colors.ash },
+    poster: { width: 44, height: 66, borderRadius: 3, borderWidth: 1, borderColor: colors.ash },
     filmInfo: { flex: 1 },
     filmTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone, marginBottom: 2 },
     filmYear: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1 },

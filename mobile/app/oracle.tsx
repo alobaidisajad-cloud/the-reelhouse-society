@@ -11,13 +11,22 @@ import { ArrowLeft, Sparkles, Film, ArrowRight } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 
+interface OracleFilm {
+  id: number;
+  title?: string;
+  poster_path?: string | null;
+  release_date?: string;
+  overview?: string;
+  media_type?: string;
+}
+
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
 export default function OracleScreen() {
   const router = useRouter();
   const [mood, setMood] = useState('');
   const [loading, setLoading] = useState(false);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<OracleFilm[]>([]);
 
   const askOracle = async () => {
     if (!mood.trim()) return;
@@ -31,8 +40,8 @@ export default function OracleScreen() {
       // We will perform a keyword TMDB search based on the mood.
       const searchRes = await tmdb.search(mood);
       const movies = (searchRes?.results || [])
-        .filter((r: any) => r.media_type === 'movie' || r.media_type === undefined) // TMDB search endpoints sometime omit media_type for keyword endpoints
-        .slice(0, 5);
+        .filter((r) => r.media_type === 'movie' || r.media_type === undefined) // TMDB search endpoints sometime omit media_type for keyword endpoints
+        .slice(0, 5) as OracleFilm[];
       
       setTimeout(() => {
         setRecommendations(movies);

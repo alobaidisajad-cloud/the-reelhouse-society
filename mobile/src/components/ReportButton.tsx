@@ -46,8 +46,9 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
             Alert.alert('Report Submitted', 'Thank you. The Society moderators will review this.');
             setVisible(false);
             setSelectedReason(''); setDetails('');
-        } catch (e: any) {
-            Alert.alert('Error', e.message || 'Failed to submit report.');
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : 'Failed to submit report.';
+            Alert.alert('Error', msg);
         } finally {
             setSubmitting(false);
         }
@@ -80,7 +81,7 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
                             </TouchableOpacity>
                         ))}
 
-                        <Text style={[s.label, { marginTop: 16 }]}>ADDITIONAL DETAILS (OPTIONAL)</Text>
+                        <Text style={[s.label, s.labelWithGap]}>ADDITIONAL DETAILS (OPTIONAL)</Text>
                         <TextInput
                             style={s.input}
                             multiline
@@ -91,7 +92,7 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
                         />
 
                         <TouchableOpacity
-                            style={[s.submitBtn, (!selectedReason || submitting) && { opacity: 0.4 }]}
+                            style={[s.submitBtn, (!selectedReason || submitting) && s.submitBtnDisabled]}
                             onPress={handleSubmit}
                             disabled={!selectedReason || submitting}
                         >
@@ -127,5 +128,7 @@ const s = StyleSheet.create({
         textAlignVertical: 'top',
     },
     submitBtn: { backgroundColor: colors.sepia, paddingVertical: 14, alignItems: 'center', borderRadius: 4, marginTop: 16 },
+    submitBtnDisabled: { opacity: 0.4 },
     submitText: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 2, color: colors.ink },
+    labelWithGap: { marginTop: 16 },
 });

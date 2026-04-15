@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import type { EmailOtpType } from '@supabase/supabase-js';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -41,7 +42,7 @@ export default function AuthCallbackScreen() {
       // Exchange the OTP token for a real session
       const { data, error } = await supabase.auth.verifyOtp({
         token_hash: tokenHash,
-        type: type as any,
+        type: type as EmailOtpType,
       });
       if (error) throw error;
 
@@ -62,7 +63,7 @@ export default function AuthCallbackScreen() {
           .single();
 
         useAuthStore.setState({
-          user: { ...data.session.user, ...profile, following: [] } as any,
+          user: { ...data.session.user, ...profile, following: [] } as import('@/src/types').User,
           isAuthenticated: true,
         });
 
@@ -71,8 +72,9 @@ export default function AuthCallbackScreen() {
       } else {
         throw new Error('Verification succeeded but no session was created.');
       }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Verification failed. The link may have expired.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Verification failed. The link may have expired.';
+      setErrorMsg(msg);
       setStatus('error');
     }
   }

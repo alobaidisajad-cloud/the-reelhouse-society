@@ -1,22 +1,28 @@
 import React, { useCallback, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, interpolateColor } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { DeviceEventEmitter } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/lib/supabase';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import reelToast from '@/src/utils/reelToast';
+import PressableScale from '@/src/components/PressableScale';
 
 import { Heart, MessageSquare, Edit3, Bookmark, MessageCircle } from 'lucide-react-native';
 
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const AnimatedView = Animated.createAnimatedComponent(View);
+const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
+
+
 
 export interface FeedItem {
   id: string;
@@ -36,10 +42,10 @@ export interface FeedItem {
   drop_cap?: boolean;
   watched_with?: string | null;
   is_autopsied?: boolean;
-  autopsy?: any;
+  autopsy?: Record<string, number>;
 }
 
-export function ActivityCard({ item, index }: { item: FeedItem; index: number }) {
+export const ActivityCard = React.memo(function ActivityCard({ item, index }: { item: FeedItem; index: number }) {
   const router = useRouter();
   const posterUri = item.poster_path ? `${TMDB_IMG_W185}${item.poster_path}` : null;
   const isArchivist = item.role === 'archivist';
@@ -96,7 +102,7 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
   const endorsed = hasEndorsed(item.id);
   const timeAgo = getTimeAgo(item.created_at);
   const isOwner = currentUser?.username === item.username;
-  const isLoungeEligible = currentUser && ['archivist', 'auteur'].includes((currentUser as any).role);
+  const isLoungeEligible = currentUser && ['archivist', 'auteur'].includes(currentUser.role ?? '');
   const filmSaved = !!_watchlistIndex[item.film_id];
 
   // ── CERTIFY (Endorse) ──
@@ -122,7 +128,7 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
           filmId: String(item.film_id),
           editLogId: item.id,
           filmTitle: item.film_title,
-          posterPath: item.poster_path || '',
+          posterPath: item.poster_path ?? '',
         },
       });
     } else {
@@ -154,12 +160,13 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
   }, [isLoungeEligible]);
 
   return (
-    <AnimatedView entering={FadeInUp.duration(500).delay(Math.min(index * 60, 300))} style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur, effects.shadowPrimary, animatedBorderStyle]}>
+    <View>
+      <AnimatedView entering={FadeInUp.duration(500).delay(Math.min(index * 60, 300))} style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur, effects.shadowPrimary, animatedBorderStyle]}>
       
       {/* ── Top Shimmer Line for Premium / Auteur ── */}
       {(isPremium || isAuteur) && (
-        <View style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, overflow: 'hidden', zIndex: 5 }}>
-          <AnimatedView style={[{ width: '200%', height: '100%', flexDirection: 'row' }, animatedShimmerStyle]}>
+        <View style={s.shimmerContainer}>
+          <AnimatedView style={[s.shimmerView, animatedShimmerStyle]}>
             <LinearGradient
               colors={[
                 'transparent',
@@ -169,7 +176,7 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
                 'transparent'
               ]}
               start={{x: 0, y: 0}} end={{x: 1, y: 0}}
-              style={{ width: '100%', height: '100%' }}
+              style={s.shimmerGradient}
             />
           </AnimatedView>
         </View>
@@ -192,17 +199,21 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
       {/* ── EDITORIAL HEADER STRIP (Matches Web) ── */}
       {(item.editorial_header || (isPremium && item.poster_path)) && (
         <View style={s.editorialHeaderContainer}>
-          <ImageBackground 
-            source={{ uri: backdropUri as string }} 
-            style={s.editorialHeaderImage} 
-            imageStyle={[s.editorialHeaderImageStyle, !item.editorial_header && { transform: [{ scale: 1.3 }], opacity: 0.35 }]}
-            blurRadius={!item.editorial_header ? 15 : 0}
-          >
+          <View style={[s.editorialHeaderImage, { overflow: 'hidden' }]}>
+            <Image
+              source={{ uri: backdropUri as string }} 
+              style={[StyleSheet.absoluteFillObject, s.editorialHeaderImageStyle, !item.editorial_header && { transform: [{ scale: 1.3 }], opacity: 0.35 }]}
+              blurRadius={!item.editorial_header ? 15 : 0}
+              cachePolicy="memory-disk"
+              placeholder={{ blurhash: SEPIA_HASH }}
+              contentFit="cover"
+              transition={200}
+            />
             <LinearGradient colors={['rgba(11,10,8,0.3)', 'rgba(11,10,8,0.95)']} style={StyleSheet.absoluteFillObject} />
             {item.editorial_header && (
                <View style={s.editorialBadge}><Text style={s.editorialBadgeText}>✦ EDITORIAL</Text></View>
             )}
-          </ImageBackground>
+          </View>
           {/* Golden bottom border accent */}
           <LinearGradient 
              colors={['transparent', 'rgba(196,150,26,0.3)', 'transparent']} 
@@ -216,28 +227,40 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
       <View style={s.cardBody}>
         
         {/* LEFT COLUMN: Poster with Scanlines & Stamp */}
-        <TouchableOpacity onPress={() => router.push(`/film/${item.film_id}`)} activeOpacity={0.8} style={s.posterWrap}>
+        <PressableScale onPress={() => { DeviceEventEmitter.emit('reelhouse:projection-mark'); router.push(`/film/${item.film_id}`); }} haptic="heavy" style={s.posterWrap}>
           {posterUri && (isPremium || isAuteur) && (
-            <Image 
+            <AnimatedExpoImage 
               source={{ uri: posterUri }} 
               style={[s.cardPoster, { position: 'absolute', transform: [{ scale: 1.15 }], opacity: 0.6, tintColor: isAuteur ? '#521010' : '#8B6914' }]} 
-              blurRadius={15} 
+              blurRadius={15}
+              cachePolicy="memory-disk"
+              recyclingKey={`blur-${item.film_id}`}
+              placeholder={{ blurhash: SEPIA_HASH }}
+              transition={100}
             />
           )}
           {posterUri && (
-            <Image source={{ uri: posterUri }} style={s.cardPoster} />
+            <AnimatedExpoImage 
+              sharedTransitionTag={`poster-${item.film_id}`}
+              source={{ uri: posterUri }} 
+              style={s.cardPoster} 
+              cachePolicy="memory-disk" 
+              recyclingKey={`poster-${item.film_id}`} 
+              placeholder={{ blurhash: SEPIA_HASH }} 
+              transition={100} 
+            />
           )}
-        </TouchableOpacity>
+        </PressableScale>
 
         {/* RIGHT COLUMN: Content */}
         <View style={s.cardInfo}>
-          <TouchableOpacity onPress={() => router.push(`/log/${item.id}`)} activeOpacity={0.8}>
+          <PressableScale onPress={() => router.push(`/log/${item.id}`)} haptic="light">
             {/* User Row */}
             <View style={s.inlineUserRow}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 }}>
-                <TouchableOpacity onPress={() => router.push(`/user/${item.username}`)} activeOpacity={0.7}>
+              <View style={s.userRowInner}>
+                <PressableScale onPress={() => router.push(`/user/${item.username}`)} haptic="light">
                   <Text style={s.cardUsername}>@{item.username.toUpperCase()}</Text>
-                </TouchableOpacity>
+                </PressableScale>
                 {isArchivist && <Text style={s.badgeArchivist}>✦ ARCHIVIST</Text>}
                 {isAuteur && <Text style={s.badgeAuteur}>★ AUTEUR</Text>}
               </View>
@@ -251,7 +274,7 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
             </View>
 
             {/* Rating */}
-            {item.rating > 0 && <View style={{ marginBottom: 12, alignItems: 'center' }}><ReelRating rating={item.rating} size={15} /></View>}
+            {item.rating > 0 && <View style={s.ratingWrap}><ReelRating rating={item.rating} size={15} /></View>}
             
             {/* Review / Pull Quote */}
             {item.pull_quote ? (
@@ -261,11 +284,11 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
                 </Text>
               </View>
             ) : item.drop_cap && item.review ? (
-              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                <Text style={[[s.cardReview, { fontFamily: fonts.display, fontSize: 44, color: colors.sepia, lineHeight: 46, marginRight: 8, marginTop: -4, textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: {width:0, height:2}, textShadowRadius: 8 }]]}>
+              <View style={s.dropCapRow}>
+                <Text style={[s.cardReview, s.dropCapLetter]}>
                   {item.review.replace(/<[^>]+>/g, '').trim().charAt(0)}
                 </Text>
-                <Text style={[s.cardReview, { flex: 1, paddingTop: 4 }]} numberOfLines={6}>
+                <Text style={[s.cardReview, s.dropCapBody]} numberOfLines={6}>
                   {item.review.replace(/<[^>]+>/g, '').trim().slice(1)}
                 </Text>
               </View>
@@ -275,10 +298,10 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
 
             {item.watched_with && (
               <Text style={s.watchedWith}>
-                ♡ WITH <Text style={{ color: colors.bone }}>{item.watched_with.toUpperCase()}</Text>
+                ♡ WITH <Text style={s.watchedWithName}>{item.watched_with.toUpperCase()}</Text>
               </Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
 
           {/* ════════════════════════════════════════════════════ */}
           {/*  ACTION DECK — 4-Button Grid (Web: grid 4×1fr, gap 1px) */}
@@ -287,10 +310,10 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
           {/* ════════════════════════════════════════════════════ */}
           <View style={s.actionDeck}>
             {/* CERTIFY */}
-            <TouchableOpacity style={s.actionBtn} onPress={handleCertify} activeOpacity={0.6}>
+            <PressableScale style={s.actionBtn} onPress={handleCertify} haptic="medium">
               <Heart size={16} strokeWidth={2} color={endorsed ? colors.sepia : colors.fog} fill={endorsed ? colors.sepia : 'transparent'} />
               <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]}>{endorsed ? 'CERTIFIED' : 'CERT'}</Text>
-            </TouchableOpacity>
+            </PressableScale>
 
             {/* CRITIQUE */}
             <TouchableOpacity style={s.actionBtn} onPress={handleCritique} activeOpacity={0.6}>
@@ -319,39 +342,48 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
 
       {/* ── AUTOPSY (Full-width in Feed matches Web) ── */}
       {(item.is_autopsied || item.autopsy) && (
-        <View style={{ paddingHorizontal: 16 }}>
+        <View style={s.autopsySectionWrap}>
            <TouchableOpacity 
               onPress={() => { Haptics.selectionAsync(); setAutopsyOpen(!autopsyOpen); }} 
               activeOpacity={0.7} 
-              style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'rgba(11,10,8,0.95)', borderRadius: 4, borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', borderTopWidth: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, marginTop: -1 }}
+              style={s.autopsyToggleBtn}
             >
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <AnimatedView style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia, shadowColor: 'rgba(139,105,20,0.6)', shadowOffset: {width:0, height:0}, shadowRadius: 8, shadowOpacity: 1 }} />
-                <Text style={{ fontFamily: fonts.display, fontSize: 12, letterSpacing: 2.5, color: colors.parchment }}>THE AUTOPSY</Text>
-                <Text style={{ fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepia, opacity: 0.6 }}>CONFIDENTIAL</Text>
+              <View style={s.autopsyToggleContent}>
+                <AnimatedView style={s.autopsyDot} />
+                <Text style={s.autopsyTitle}>THE AUTOPSY</Text>
+                <Text style={s.autopsyConfidential}>CONFIDENTIAL</Text>
               </View>
-              <Text style={{ fontFamily: fonts.ui, fontSize: 8, color: colors.fog, transform: [{ rotate: autopsyOpen ? '180deg' : '0deg' }] }}>▼</Text>
+              <Text style={[s.autopsyChevron, autopsyOpen && s.autopsyChevronOpen]}>▼</Text>
            </TouchableOpacity>
 
            {autopsyOpen && (
              <AnimatedView entering={FadeInUp.duration(300)} style={s.autopsyCard}>
-               <View style={{ gap: 20 }}>
+               <View style={s.autopsyInner}>
                  {[
-                    { key: 'story', label: 'STORY', value: item.autopsy?.story !== undefined ? item.autopsy.story : item.autopsy?.screenplay || 0 },
-                    { key: 'script', label: 'SCRIPT / DIALOGUE', value: item.autopsy?.script !== undefined ? item.autopsy.script : item.autopsy?.screenplay || 0 },
-                    { key: 'acting', label: 'ACTING & CHARACTER', value: item.autopsy?.acting || item.autopsy?.direction || 0 },
-                    { key: 'cinematography', label: 'CINEMATOGRAPHY', value: item.autopsy?.cinematography || 0 },
-                    { key: 'editing', label: 'EDITING & PACING', value: item.autopsy?.editing !== undefined ? item.autopsy.editing : item.autopsy?.pacing || 0 },
-                    { key: 'sound', label: 'SOUND DESIGN & SCORE', value: item.autopsy?.sound || 0 },
+                    { key: 'story', label: 'STORY', value: item.autopsy?.story !== undefined ? item.autopsy.story : item.autopsy?.screenplay ?? 0 },
+                    { key: 'script', label: 'SCRIPT / DIALOGUE', value: item.autopsy?.script !== undefined ? item.autopsy.script : item.autopsy?.screenplay ?? 0 },
+                    { key: 'acting', label: 'ACTING & CHARACTER', value: item.autopsy?.acting ?? item.autopsy?.direction ?? 0 },
+                    { key: 'cinematography', label: 'CINEMATOGRAPHY', value: item.autopsy?.cinematography ?? 0 },
+                    { key: 'editing', label: 'EDITING & PACING', value: item.autopsy?.editing !== undefined ? item.autopsy.editing : item.autopsy?.pacing ?? 0 },
+                    { key: 'sound', label: 'SOUND DESIGN & SCORE', value: item.autopsy?.sound ?? 0 },
                  ].map(stat => (
-                   <View key={stat.key}>
-                     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 }}>
+                   <View key={stat.key} style={{ marginBottom: 12 }}>
+                     <View style={s.autopsyBarHeader}>
                        <Text style={s.autopsyLabel}>{stat.label}</Text>
                        <Text style={s.autopsyValue}>{stat.value === 10 ? '10.0' : parseFloat(String(stat.value)).toFixed(1)}</Text>
                      </View>
-                     <View style={s.autopsyTrack}>
-                       <LinearGradient colors={[colors.sepia, '#5a430d']} style={[s.autopsyFill, { width: `${(stat.value / 10) * 100}%` }]} start={{x:0, y:0}} end={{x:0, y:1}} />
-                     </View>
+                     <PressableScale haptic="medium" style={s.autopsyTrack} pressedScale={0.99}>
+                       {/* Film strip sprocket holes illusion */}
+                       <View style={s.sprocketStrip}>
+                         {Array.from({ length: 30 }).map((_, i) => (
+                           <View key={i} style={s.sprocketHole} />
+                         ))}
+                       </View>
+                       <LinearGradient colors={[colors.sepia, '#5a430d']} style={[s.autopsyFill, { width: `${(stat.value / 10) * 100}%` }]} start={{x:0, y:0}} end={{x:0, y:1}}>
+                         {/* Playhead marker simulating explicit scene cut */}
+                         <View style={s.cutMarker} />
+                       </LinearGradient>
+                     </PressableScale>
                    </View>
                  ))}
                </View>
@@ -367,9 +399,10 @@ export function ActivityCard({ item, index }: { item: FeedItem; index: number })
         filmId={String(item.film_id)}
         posterPath={item.poster_path}
       />
-    </AnimatedView>
+      </AnimatedView>
+    </View>
   );
-}
+});
 
 function getTimeAgo(dateStr: string): string {
   const now = Date.now();
@@ -504,6 +537,35 @@ const s = StyleSheet.create({
     fontSize: 14,
     color: colors.parchment,
   },
+  // --- Scrubber Illusions ---
+  sprocketStrip: {
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 2,
+    opacity: 0.15,
+    zIndex: 1,
+  },
+  sprocketHole: {
+    width: 2,
+    height: 4,
+    backgroundColor: '#000',
+    borderRadius: 1,
+  },
+  cutMarker: {
+    position: 'absolute',
+    right: 0,
+    top: -2,
+    bottom: -2,
+    width: 3,
+    backgroundColor: colors.bone,
+    shadowColor: colors.sepia,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 4,
+    borderRadius: 2,
+  },
   // Web: fontSize 0.75rem=12px, letterSpacing 0.15em=1.8px, color var(--sepia), textTransform uppercase
   cardUsername: {
     fontFamily: fonts.ui,
@@ -591,7 +653,7 @@ const s = StyleSheet.create({
   cardPoster: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    contentFit: 'cover',
     position: 'absolute',
   },
   societyStamp: {
@@ -763,4 +825,29 @@ const s = StyleSheet.create({
   autopsyValue: { fontFamily: fonts.display, fontSize: 16, lineHeight: 18, color: colors.parchment, opacity: 0.85, letterSpacing: 1 },
   autopsyTrack: { width: '100%', height: 6, backgroundColor: colors.soot, borderRadius: 1, borderWidth: 1, borderColor: 'rgba(10, 7, 3, 0.8)', overflow: 'hidden' },
   autopsyFill: { height: '100%' },
+
+  // ── Extracted Inline Styles (Performance: created once at module load) ──
+  shimmerContainer: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, overflow: 'hidden', zIndex: 5 } as const,
+  shimmerView: { width: '200%', height: '100%', flexDirection: 'row' } as const,
+  shimmerGradient: { width: '100%', height: '100%' } as const,
+  userRowInner: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap', flex: 1 } as const,
+  ratingWrap: { marginBottom: 12, alignItems: 'center' } as const,
+  dropCapRow: { flexDirection: 'row', alignItems: 'flex-start' } as const,
+  dropCapLetter: { fontFamily: fonts.display, fontSize: 44, color: colors.sepia, lineHeight: 46, marginRight: 8, marginTop: -4, textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8 },
+  dropCapBody: { flex: 1, paddingTop: 4 },
+  autopsySectionWrap: { paddingHorizontal: 16 },
+  autopsyToggle: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'rgba(11,10,8,0.95)', borderRadius: 4, borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', borderTopWidth: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, marginTop: -1 } as const,
+  autopsyToggleContent: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' } as const,
+  autopsyDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia, shadowColor: 'rgba(139,105,20,0.6)', shadowOffset: { width: 0, height: 0 }, shadowRadius: 8, shadowOpacity: 1 },
+  autopsyTitle: { fontFamily: fonts.display, fontSize: 12, letterSpacing: 2.5, color: colors.parchment },
+  autopsyConfidential: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepia, opacity: 0.6 },
+  autopsyStatsGap: { gap: 20 },
+  autopsyStatHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 } as const,
+  autopsyArrowBase: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog },
+  watchedWithName: { color: colors.bone },
+  autopsyToggleBtn: { width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, paddingHorizontal: 16, backgroundColor: 'rgba(11,10,8,0.95)', borderRadius: 4, borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', borderTopWidth: 0, borderTopLeftRadius: 0, borderTopRightRadius: 0, marginTop: -1 } as const,
+  autopsyChevron: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog },
+  autopsyChevronOpen: { transform: [{ rotate: '180deg' }] },
+  autopsyInner: { gap: 20 },
+  autopsyBarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 } as const,
 });

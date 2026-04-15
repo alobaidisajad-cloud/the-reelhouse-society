@@ -7,10 +7,26 @@ import { ProjectorRoom } from './ProjectorRoom';
 import { CinematicInsights } from './CinematicInsights';
 import { colors } from '@/src/theme/theme';
 
+interface ProjectorTabStats {
+    count: number;
+    level: string;
+    color: string;
+    progress: number;
+}
+
+interface ProjectorTabUser {
+    username?: string;
+}
+
+interface ProjectorTabLog {
+    filmId?: number;
+    film_id?: number;
+}
+
 interface Props {
-    stats: any;
-    user: any;
-    logs: any[];
+    stats: ProjectorTabStats;
+    user: ProjectorTabUser;
+    logs: ProjectorTabLog[];
 }
 
 export function ProfileProjectorTab({ stats, user, logs }: Props) {

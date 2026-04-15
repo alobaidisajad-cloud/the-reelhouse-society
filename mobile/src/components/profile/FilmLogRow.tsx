@@ -1,16 +1,33 @@
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { memo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import { tmdb } from '@/src/lib/tmdb';
 
-export function FilmLogRow({ log, onPress, isOwnProfile }: { log: any; onPress?: () => void; isOwnProfile?: boolean }) {
+interface FilmLogRowData {
+    id: string;
+    film_title: string;
+    poster_path?: string | null;
+    year?: number | null;
+    rating: number;
+    review?: string | null;
+}
+
+interface FilmLogRowProps {
+    log: FilmLogRowData;
+    onPress?: () => void;
+    isOwnProfile?: boolean;
+}
+
+export const FilmLogRow = memo(function FilmLogRow({ log, onPress, isOwnProfile }: FilmLogRowProps) {
     const posterUri = log.poster_path ? tmdb.poster(log.poster_path, 'w92') : null;
     return (
         <TouchableOpacity style={s.container} onPress={onPress} activeOpacity={0.7}>
             {posterUri ? (
-                <Image source={{ uri: posterUri }} style={s.poster} />
+                <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`log-${log.id}`} />
             ) : (
-                <View style={[s.poster, { backgroundColor: colors.ash }]} />
+                <View style={[s.poster, s.posterPlaceholder]} />
             )}
             <View style={s.info}>
                 <Text style={s.title}>{log.film_title}</Text>
@@ -22,7 +39,7 @@ export function FilmLogRow({ log, onPress, isOwnProfile }: { log: any; onPress?:
             </View>
         </TouchableOpacity>
     );
-}
+});
 
 const s = StyleSheet.create({
     container: { flexDirection: 'row', padding: 12, borderBottomWidth: 1, borderBottomColor: colors.ash },
@@ -32,4 +49,5 @@ const s = StyleSheet.create({
     meta: { flexDirection: 'row', gap: 12, marginTop: 4, marginBottom: 8, alignItems: 'center' },
     year: { fontFamily: fonts.ui, fontSize: 10, color: colors.sepia, letterSpacing: 2 },
     review: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, fontStyle: 'italic' },
+    posterPlaceholder: { backgroundColor: colors.ash },
 });

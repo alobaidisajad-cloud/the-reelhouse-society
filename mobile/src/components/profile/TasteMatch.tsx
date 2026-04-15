@@ -2,15 +2,20 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, fonts } from '@/src/theme/theme';
 
+interface TasteLog {
+  rating: number;
+  year?: number;
+}
+
 interface TasteMatchProps {
-  myLogs: any[];
-  theirLogs: any[];
+  myLogs: TasteLog[];
+  theirLogs: TasteLog[];
   theirUsername: string;
 }
 
-function getRatingVector(logs: any[]) {
+function getRatingVector(logs: TasteLog[]) {
   const counts = [0, 0, 0, 0, 0]; // 1-5 stars
-  logs.forEach((l: any) => {
+  logs.forEach((l) => {
     const r = Math.round(l.rating || 0);
     if (r >= 1 && r <= 5) counts[r - 1]++;
   });
@@ -18,9 +23,9 @@ function getRatingVector(logs: any[]) {
   return counts.map(c => c / total);
 }
 
-function getDecadeVector(logs: any[]) {
+function getDecadeVector(logs: TasteLog[]) {
   const decades: Record<number, number> = {};
-  logs.forEach((l: any) => {
+  logs.forEach((l) => {
     if (l.year) {
       const d = Math.floor(l.year / 10) * 10;
       decades[d] = (decades[d] || 0) + 1;

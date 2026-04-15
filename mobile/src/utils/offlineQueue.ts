@@ -5,11 +5,13 @@ import reelToast from './reelToast';
 export interface QueuedMutation {
     id: string;
     type: 'endorse_log' | 'endorse_list' | 'mark_watched';
-    payload: any;
+    payload: Record<string, unknown>;
     timestamp: number;
 }
 
 const QUEUE_KEY = 'reelhouse-offline-mutations';
+const MAX_QUEUE_SIZE = 100; // Cap to prevent unbounded growth
+const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export async function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp'>) {
     let queue: QueuedMutation[] = [];
@@ -24,11 +26,16 @@ export async function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'tim
     
     const newMutation: QueuedMutation = {
         ...mutation,
-        id: crypto.randomUUID(),
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
         timestamp: Date.now()
     };
     
     queue.push(newMutation);
+
+    // Cap queue size to prevent unbounded growth
+    if (queue.length > MAX_QUEUE_SIZE) {
+        queue = queue.slice(-MAX_QUEUE_SIZE);
+    }
     
     try {
         await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
@@ -52,6 +59,10 @@ export async function flushOfflineQueue() {
 
     if (queue.length === 0) return;
 
+    // Prune stale mutations (>24h old)
+    const now = Date.now();
+    queue = queue.filter(m => now - m.timestamp < STALE_THRESHOLD_MS);
+
     console.log(`[OfflineSync] Flushing ${queue.length} queued mutations...`);
     
     const remainingQueue: QueuedMutation[] = [];
@@ -68,10 +79,11 @@ export async function flushOfflineQueue() {
                 await supabase.from('logs').insert([mutation.payload]);
             }
             // Add more cases as needed...
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errMsg = error instanceof Error ? error.message : '';
             console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
             // If it failed due to network, keep it in the queue. If it failed due to constraint (like duplicate), discard it.
-            if (error?.message?.toLowerCase().includes('fetch') || error?.message?.toLowerCase().includes('network')) {
+            if (errMsg.toLowerCase().includes('fetch') || errMsg.toLowerCase().includes('network')) {
                 remainingQueue.push(mutation);
             }
         }

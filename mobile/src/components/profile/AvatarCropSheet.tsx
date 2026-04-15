@@ -69,9 +69,10 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
 
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onSuccess(publicUrl);
-    } catch (err: any) {
-      console.error(err);
-      Alert.alert('Upload Failed', err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error(msg);
+      Alert.alert('Upload Failed', msg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setUploading(false);

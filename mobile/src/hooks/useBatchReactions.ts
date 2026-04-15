@@ -43,7 +43,7 @@ export function useBatchReactions(logIds: string[]) {
                     .in('id', userIds)
                 if (profilesData) {
                     usernameMap = Object.fromEntries(
-                        profilesData.map((p: any) => [p.id, p.username])
+                        profilesData.map((p) => [p.id, p.username])
                     )
                 }
             }

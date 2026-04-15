@@ -2,12 +2,17 @@
  * TasteDNA — Visual taste fingerprint display.
  * Shows genre preferences as a DNA-style bar visualization.
  */
+import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 
+interface TasteDNALog {
+    genre_ids?: number[];
+}
+
 interface TasteDNAProps {
-    logs: any[];
+    logs: TasteDNALog[];
 }
 
 const GENRE_MAP: Record<number, string> = {
@@ -18,7 +23,7 @@ const GENRE_MAP: Record<number, string> = {
     53: 'Thriller', 10752: 'War', 37: 'Western',
 };
 
-export function TasteDNA({ logs }: TasteDNAProps) {
+export const TasteDNA = memo(function TasteDNA({ logs }: TasteDNAProps) {
     if (logs.length < 5) return null;
 
     // Compute genre distribution from logs
@@ -27,7 +32,7 @@ export function TasteDNA({ logs }: TasteDNAProps) {
         if (log.genre_ids) {
             for (const gid of log.genre_ids) {
                 const name = GENRE_MAP[gid];
-                if (name) genreCounts.set(name, (genreCounts.get(name) || 0) + 1);
+                if (name) genreCounts.set(name, (genreCounts.get(name) ?? 0) + 1);
             }
         }
     }
@@ -56,7 +61,7 @@ export function TasteDNA({ logs }: TasteDNAProps) {
                         <Animated.View key={genre} entering={FadeInRight.delay(i * 60).duration(300)} style={s.row}>
                             <Text style={s.genreLabel}>{genre.toUpperCase()}</Text>
                             <View style={s.barTrack}>
-                                <View style={[s.barFill, { width: barWidth as any, backgroundColor: dnaColors[i] || colors.sepia }]} />
+                                <View style={[s.barFill, { width: `${(count / maxCount) * 100}%`, backgroundColor: dnaColors[i] ?? colors.sepia }]} />
                             </View>
                             <Text style={s.pctLabel}>{pct}%</Text>
                         </Animated.View>
@@ -71,7 +76,7 @@ export function TasteDNA({ logs }: TasteDNAProps) {
             </View>
         </Animated.View>
     );
-}
+});
 
 const s = StyleSheet.create({
     container: {

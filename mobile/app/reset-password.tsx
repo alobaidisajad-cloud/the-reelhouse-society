@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator,
+  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
 } from 'react-native';
 import Animated, {
   FadeInDown, FadeIn, useSharedValue, useAnimatedStyle,
@@ -10,6 +10,7 @@ import Animated, {
 import { supabase } from '@/src/lib/supabase';
 import { useRouter } from 'expo-router';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import reelToast from '@/src/utils/reelToast';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -55,11 +56,11 @@ export default function ResetPasswordScreen() {
 
   const handleReset = async () => {
     if (!strong) {
-      Alert.alert('Weak Password', 'Password does not meet security requirements.');
+      reelToast('Password does not meet security requirements.');
       return;
     }
     if (password !== confirm) {
-      Alert.alert('Mismatch', 'Passwords do not match.');
+      reelToast('Passwords do not match.');
       return;
     }
 
@@ -80,7 +81,7 @@ export default function ResetPasswordScreen() {
         router.replace('/(tabs)');
       }, 2500);
     } catch (err: any) {
-      Alert.alert('Error', err.message || 'Failed to reset password.');
+      reelToast.error(err.message || 'Failed to reset password.');
     } finally {
       setLoading(false);
     }
@@ -154,6 +155,7 @@ export default function ResetPasswordScreen() {
                 returnKeyType="next"
                 onSubmitEditing={() => confirmRef.current?.focus()}
                 blurOnSubmit={false}
+                maxLength={128}
               />
               <TouchableOpacity
                 style={s.showBtn}
@@ -215,6 +217,7 @@ export default function ResetPasswordScreen() {
                 autoCorrect={false}
                 returnKeyType="go"
                 onSubmitEditing={handleReset}
+                maxLength={128}
               />
             </View>
             {confirm.length > 0 && password !== confirm && (

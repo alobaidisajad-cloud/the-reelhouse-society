@@ -1,32 +1,66 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useNotificationStore, AppNotification } from '@/src/stores/social';
 import { colors, fonts } from '@/src/theme/theme';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
+import { Heart, MessageCircle, UserPlus, Star, Award, Bell } from 'lucide-react-native';
+import { EmptyState } from '@/src/components/EmptyStates';
 
-function NotificationItem({ item, onRead, onDismiss }: { item: AppNotification; onRead: (id: string) => void; onDismiss: (id: string) => void }) {
+// Map notification types to icons
+const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
+  endorse: { Icon: Heart, color: colors.sepia },
+  comment: { Icon: MessageCircle, color: colors.bone },
+  follow:  { Icon: UserPlus, color: colors.flicker || colors.sepia },
+  rate:    { Icon: Star, color: colors.sepia },
+  default: { Icon: Award, color: colors.fog },
+};
+
+function NotificationItem({ item, index, onRead, onDismiss }: { item: AppNotification; index: number; onRead: (id: string) => void; onDismiss: (id: string) => void }) {
   const isRead = item.read;
+  const router = useRouter();
+  const typeInfo = TYPE_ICONS[item.type] || TYPE_ICONS.default;
+  const TypeIcon = typeInfo.Icon;
   
   const handlePress = () => {
     if (!isRead) {
       Haptics.selectionAsync();
       onRead(item.id);
     }
+    // Navigate to film or user if available
+    if (item.film_id) router.push(`/film/${item.film_id}`);
+    else if (item.from_username) router.push(`/user/${item.from_username}`);
   };
 
+  const posterUri = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null;
+
   return (
-    <Animated.View entering={FadeInUp.duration(300)} exiting={FadeOutDown.duration(200)}>
+    <Animated.View entering={FadeInUp.duration(300).delay(index * 50)} exiting={FadeOutDown.duration(200)}>
       <TouchableOpacity 
         style={[s.itemWrap, !isRead && s.itemUnread]} 
         onPress={handlePress}
         activeOpacity={0.7}
       >
+        {/* Action icon */}
+        <View style={[s.iconCircle, { borderColor: typeInfo.color }]}>
+          <TypeIcon size={14} color={typeInfo.color} strokeWidth={1.5} />
+        </View>
+
+        {/* Content */}
         <View style={s.itemContent}>
-          <Text style={s.itemMessage}><Text style={s.itemUser}>@{item.from_username || 'system'}</Text> {item.message}</Text>
+          <Text style={s.itemMessage}>
+            <Text style={s.itemUser}>@{item.from_username || 'system'}</Text> {item.message}
+          </Text>
           <Text style={s.itemTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
         </View>
+
+        {/* Mini poster thumbnail */}
+        {posterUri && (
+          <Image source={{ uri: posterUri }} style={s.miniPoster} contentFit="cover" />
+        )}
+
         <TouchableOpacity style={s.dismissBtn} onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onDismiss(item.id);
@@ -49,11 +83,14 @@ export default function NotificationsModal() {
 
   return (
     <View style={s.container}>
+      {/* Drag handle */}
+      <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
+
       <View style={s.header}>
         <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
           <Text style={s.closeText}>CLOSE</Text>
         </TouchableOpacity>
-        <Text style={s.title}>Notifications</Text>
+        <Text style={s.title}>Dispatches</Text>
         <TouchableOpacity 
            style={s.markReadBtn} 
            onPress={handleMarkAllRead}
@@ -68,16 +105,21 @@ export default function NotificationsModal() {
         keyExtractor={n => n.id}
         contentContainerStyle={s.listContent}
         showsVerticalScrollIndicator={false}
+        windowSize={7}
+        maxToRenderPerBatch={15}
+        initialNumToRender={12}
+        removeClippedSubviews={true}
         ListEmptyComponent={
-          <View style={s.emptyState}>
-            <Text style={s.emptyIcon}>📭</Text>
-            <Text style={s.emptyTitle}>No New Transmissions</Text>
-            <Text style={s.emptySub}>Your frequency is silent.</Text>
-          </View>
+          <EmptyState
+            icon={<Bell size={28} color={colors.sepia} strokeWidth={1} />}
+            title="No New Transmissions"
+            subtitle="Your frequency is silent."
+          />
         }
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <NotificationItem 
-            item={item} 
+            item={item}
+            index={index}
             onRead={(id) => markRead(id)} 
             onDismiss={(id) => dismiss(id)} 
           />
@@ -89,6 +131,8 @@ export default function NotificationsModal() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  dragHandleWrap: { alignItems: 'center', paddingTop: 10 },
+  dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 16 : 24, paddingBottom: 16,
@@ -103,18 +147,27 @@ const s = StyleSheet.create({
   listContent: { paddingBottom: 40 },
   
   itemWrap: {
-    flexDirection: 'row', alignItems: 'center', padding: 16,
+    flexDirection: 'row', alignItems: 'center', padding: 14,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.ink, gap: 10,
   },
   itemUnread: {
     backgroundColor: 'rgba(196,150,26,0.06)',
     borderLeftWidth: 3, borderLeftColor: colors.bloodReel,
   },
-  itemContent: { flex: 1, paddingRight: 10 },
+  iconCircle: {
+    width: 30, height: 30, borderRadius: 15,
+    borderWidth: 1, alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(11,10,8,0.6)',
+  },
+  itemContent: { flex: 1 },
   itemMessage: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   itemUser: { fontFamily: fonts.sub, color: colors.parchment },
   itemTime: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.fog, marginTop: 4 },
+  miniPoster: {
+    width: 24, height: 36, borderRadius: 2,
+    backgroundColor: colors.soot,
+  },
   
   dismissBtn: { padding: 8 },
   dismissText: { fontSize: 12, color: colors.fog },

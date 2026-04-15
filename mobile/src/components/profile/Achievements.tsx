@@ -2,57 +2,70 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, fonts } from '@/src/theme/theme';
 
+interface AchievementLog {
+    rating: number;
+    review?: string;
+    genres?: Array<{ id: number | string }> | number[];
+    year?: number;
+    watchedDate?: string;
+    createdAt?: string;
+}
+
 const BADGES = [
   {
     id: 'first-reel',
     title: 'FIRST REEL',
     desc: 'Log your first film',
     glyph: '✦',
-    check: (logs: any[]) => logs.length >= 1,
+    check: (logs: AchievementLog[]) => logs.length >= 1,
   },
   {
     id: 'the-regular',
     title: 'THE REGULAR',
     desc: 'Log 10 films',
     glyph: '❖',
-    check: (logs: any[]) => logs.length >= 10,
+    check: (logs: AchievementLog[]) => logs.length >= 10,
   },
   {
     id: 'midnight-devotee',
     title: 'MIDNIGHT DEVOTEE',
     desc: 'Log 25 films',
     glyph: '◆',
-    check: (logs: any[]) => logs.length >= 25,
+    check: (logs: AchievementLog[]) => logs.length >= 25,
   },
   {
     id: 'the-oracle',
     title: 'THE ORACLE',
     desc: 'Log 100 films',
     glyph: '◈',
-    check: (logs: any[]) => logs.length >= 100,
+    check: (logs: AchievementLog[]) => logs.length >= 100,
   },
   {
     id: 'the-connoisseur',
     title: 'THE CONNOISSEUR',
     desc: 'Rate 5 films with 5 reels',
     glyph: '✧',
-    check: (logs: any[]) => logs.filter((l: any) => l.rating === 5).length >= 5,
+    check: (logs: AchievementLog[]) => logs.filter((l) => l.rating === 5).length >= 5,
   },
   {
     id: 'the-critic',
     title: 'THE CRITIC',
     desc: 'Write 10 reviews',
     glyph: '§',
-    check: (logs: any[]) => logs.filter((l: any) => l.review?.length > 20).length >= 10,
+    check: (logs: AchievementLog[]) => logs.filter((l) => (l.review?.length || 0) > 20).length >= 10,
   },
   {
     id: 'genre-explorer',
     title: 'GENRE EXPLORER',
     desc: 'Log films in 5+ genres',
     glyph: '⊕',
-    check: (logs: any[]) => {
+    check: (logs: AchievementLog[]) => {
       const genres = new Set<string>();
-      logs.forEach((l: any) => l.genres?.forEach((g: any) => genres.add(g.id || g)));
+      logs.forEach((l) => {
+        if (Array.isArray(l.genres)) {
+          l.genres.forEach((g) => genres.add(typeof g === 'object' ? String(g.id) : String(g)));
+        }
+      });
       return genres.size >= 5;
     },
   },
@@ -61,9 +74,9 @@ const BADGES = [
     title: 'DECADE DRIFTER',
     desc: 'Watch films from 4+ decades',
     glyph: '⊗',
-    check: (logs: any[]) => {
+    check: (logs: AchievementLog[]) => {
       const decades = new Set<number>();
-      logs.forEach((l: any) => { if (l.year) decades.add(Math.floor(l.year / 10) * 10); });
+      logs.forEach((l) => { if (l.year) decades.add(Math.floor(l.year / 10) * 10); });
       return decades.size >= 4;
     },
   },
@@ -72,9 +85,9 @@ const BADGES = [
     title: 'MARATHON RUNNER',
     desc: 'Log 3+ films in one day',
     glyph: '⟐',
-    check: (logs: any[]) => {
+    check: (logs: AchievementLog[]) => {
       const counts: Record<string, number> = {};
-      logs.forEach((l: any) => {
+      logs.forEach((l) => {
         const d = (l.watchedDate || l.createdAt || '').slice(0, 10);
         if (d) counts[d] = (counts[d] || 0) + 1;
       });
@@ -86,11 +99,11 @@ const BADGES = [
     title: 'THE COMPLETIONIST',
     desc: 'Rate every logged film',
     glyph: '⊛',
-    check: (logs: any[]) => logs.length >= 5 && logs.every((l: any) => l.rating > 0),
+    check: (logs: AchievementLog[]) => logs.length >= 5 && logs.every((l) => l.rating > 0),
   },
 ];
 
-export function Achievements({ logs }: { logs: any[] }) {
+export function Achievements({ logs }: { logs: AchievementLog[] }) {
   const earned = useMemo(() =>
     BADGES.map(b => ({ ...b, unlocked: b.check(logs) })),
     [logs]
@@ -153,7 +166,7 @@ const s = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 2,
     color: colors.sepia,
-    opacity: 0.7,
+    opacity: 0.8,
   },
   grid: {
     flexDirection: 'row',
@@ -194,7 +207,7 @@ const s = StyleSheet.create({
   },
   badgeTitle: {
     fontFamily: fonts.ui,
-    fontSize: 7,
+    fontSize: 8,
     letterSpacing: 1.5,
     textAlign: 'center',
   },

@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState, memo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
@@ -9,9 +10,26 @@ import { ReelRating } from '@/src/components/Decorative';
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 const AnimatedView = Animated.createAnimatedComponent(View);
 
-export function FeaturedReview() {
+interface FeaturedProfile {
+  username: string;
+  role?: string;
+}
+
+interface FeaturedLog {
+  id: string;
+  film_id: number;
+  film_title: string;
+  poster_path: string | null;
+  rating: number;
+  review: string;
+  created_at: string;
+  user_id: string;
+  profiles?: FeaturedProfile | FeaturedProfile[];
+}
+
+export const FeaturedReview = memo(function FeaturedReview() {
   const router = useRouter();
-  const [featured, setFeatured] = useState<any>(null);
+  const [featured, setFeatured] = useState<FeaturedLog | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -46,7 +64,7 @@ export function FeaturedReview() {
   if (!featured) return null;
 
   const posterUri = featured.poster_path ? `${TMDB_IMG_W500}${featured.poster_path}` : null;
-  const username = Array.isArray(featured.profiles) ? featured.profiles[0]?.username : featured.profiles?.username || 'SOCIETY';
+  const username = Array.isArray(featured.profiles) ? featured.profiles[0]?.username : featured.profiles?.username ?? 'SOCIETY';
   const role = Array.isArray(featured.profiles) ? featured.profiles[0]?.role : featured.profiles?.role;
 
   return (
@@ -63,7 +81,7 @@ export function FeaturedReview() {
           </View>
           <View style={s.featuredContent}>
             {posterUri && (
-              <Image source={{ uri: posterUri }} style={s.featuredPoster} />
+              <Image source={{ uri: posterUri }} style={s.featuredPoster} contentFit="cover" />
             )}
             <View style={s.featuredTextWrap}>
                <Text style={s.featuredReview} numberOfLines={5}>"{featured.review}"</Text>
@@ -84,7 +102,7 @@ export function FeaturedReview() {
       </View>
     </AnimatedView>
   );
-}
+});
 
 const s = StyleSheet.create({
   featuredContainer: { paddingHorizontal: 16, marginTop: 16, marginBottom: 24, alignItems: 'center' },

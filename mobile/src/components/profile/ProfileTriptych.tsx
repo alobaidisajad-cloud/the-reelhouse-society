@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Modal, TextInput, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import Animated, { FadeInUp, FadeInDown, Layout, ZoomIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Plus, X } from 'lucide-react-native';
@@ -71,15 +72,14 @@ function TierSlotGlow({ tier, children }: { tier: 'archivist' | 'auteur'; childr
             <LinearGradient
                 colors={shimmerColors}
                 start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-                style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, borderRadius: 6, zIndex: 4 }}
+                style={s.shimmerTop}
             />
             {/* Tier glyph indicator (web ::after) */}
-            <View style={{ position: 'absolute', top: 5, right: 6, zIndex: 5 }}>
-                <Text style={{
-                    fontSize: 9, color: glyphColor,
+            <View style={s.glyphWrap}>
+                <Text style={[s.glyphText, {
+                    color: glyphColor,
                     textShadowColor: glyphShadow,
-                    textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8,
-                }}>{glyph}</Text>
+                }]}>{glyph}</Text>
             </View>
         </AnimatedView>
     );
@@ -91,20 +91,36 @@ interface TriptychFilm {
     poster_path: string;
 }
 
+interface TriptychSearchResult {
+    id: number;
+    title: string;
+    poster_path?: string | null;
+    release_date?: string;
+    media_type?: string;
+}
+
+interface TriptychUser {
+    id: string;
+    preferences?: {
+        favorites?: TriptychFilm[];
+        [key: string]: unknown;
+    } | null;
+}
+
 const { width: SCREEN_W } = Dimensions.get('window');
 
-export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, isOwnProfile: boolean, userRole?: string }) {
+export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: TriptychUser, isOwnProfile: boolean, userRole?: string }) {
     const { updateUser } = useAuthStore();
     const isArchivist = userRole === 'archivist';
     const isAuteur = userRole === 'auteur';
     
-    const favorites = (user?.preferences?.favorites as TriptychFilm[]) || [];
-    const slots: Array<TriptychFilm | null> = [favorites[0] || null, favorites[1] || null, favorites[2] || null];
+    const favorites = (user?.preferences?.favorites as TriptychFilm[]) ?? [];
+    const slots: Array<TriptychFilm | null> = [favorites[0] ?? null, favorites[1] ?? null, favorites[2] ?? null];
 
     const [isEditing, setIsEditing] = useState(false);
     const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [searchResults, setSearchResults] = useState<TriptychSearchResult[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -118,7 +134,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
         searchRef.current = setTimeout(async () => {
             try {
                 const data = await tmdb.search(searchQuery);
-                const movies = (data?.results || []).filter((r: any) => r.media_type === 'movie' && r.poster_path);
+                const movies = (data?.results ?? []).filter((r: TriptychSearchResult) => r.media_type === 'movie' && r.poster_path);
                 setSearchResults(movies.slice(0, 10));
             } catch (err) {
             } finally {
@@ -142,14 +158,14 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
         setSearchResults([]);
     };
 
-    const handleSetFilm = async (film: any) => {
+    const handleSetFilm = async (film: TriptychSearchResult) => {
         if (editingSlotIndex === null) return;
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         
         const newFavs = [...slots];
         newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path };
         
-        const currentPrefs = user?.preferences || {};
+        const currentPrefs = user?.preferences ?? {};
         const updatedPrefs = { ...currentPrefs, favorites: newFavs };
         
         updateUser({ preferences: updatedPrefs });
@@ -157,7 +173,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
 
         try {
             await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id);
-        } catch (error: any) {
+        } catch (_e: unknown) {
         }
     };
 
@@ -166,14 +182,14 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
         const newFavs = [...slots];
         newFavs[index] = null;
         
-        const currentPrefs = user?.preferences || {};
+        const currentPrefs = user?.preferences ?? {};
         const updatedPrefs = { ...currentPrefs, favorites: newFavs };
         
         updateUser({ preferences: updatedPrefs });
 
         try {
             await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id);
-        } catch (error: any) {
+        } catch (_e: unknown) {
         }
     };
 
@@ -196,7 +212,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
                                 // Only apply static border for non-tiered users
                                 film && !isArchivist && !isAuteur && s.slotFilled,
                                 // Remove border when TierSlotGlow handles it
-                                film && (isArchivist || isAuteur) && { borderWidth: 0 },
+                                film && (isArchivist || isAuteur) && s.slotNoBorder,
                             ]}
                             activeOpacity={isOwnProfile ? 0.7 : 1}
                             onPress={() => handleSelectSlot(i)}
@@ -205,7 +221,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
                                 <>
                                     <Image 
                                         source={{ uri: tmdb.poster(film.poster_path, 'w342') }} 
-                                        style={s.poster} 
+                                        style={s.poster}
+                                        contentFit="cover"
                                     />
                                     {isOwnProfile && (
                                         <TouchableOpacity style={s.clearBtn} onPress={() => handleClearSlot(i)}>
@@ -226,7 +243,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
                     if (film && isAuteur) {
                         return <TierSlotGlow key={i} tier="auteur">{slotContent}</TierSlotGlow>;
                     }
-                    return <View key={i} style={{ flex: 1 }}>{slotContent}</View>;
+                    return <View key={i} style={s.slotFlexWrap}>{slotContent}</View>;
                 })}
             </View>
 
@@ -261,9 +278,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: any, i
                                         onPress={() => handleSetFilm(film)}
                                     >
                                         {film.poster_path ? (
-                                            <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} />
+                                            <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} contentFit="cover" />
                                         ) : (
-                                            <View style={[s.resultPoster, { backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center' }]}>
+                                            <View style={[s.resultPoster, s.resultPosterPlaceholder]}>
                                                 <Search size={16} color={colors.ash} />
                                             </View>
                                         )}
@@ -315,7 +332,6 @@ const s = StyleSheet.create({
     poster: {
         width: '100%',
         height: '100%',
-        resizeMode: 'cover'
     },
     clearBtn: {
         position: 'absolute',
@@ -418,5 +434,12 @@ const s = StyleSheet.create({
         fontSize: 12,
         color: colors.fog,
         letterSpacing: 2,
-    }
+    },
+    // ── Extracted from inline ──
+    shimmerTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, borderRadius: 6, zIndex: 4 },
+    glyphWrap: { position: 'absolute', top: 5, right: 6, zIndex: 5 },
+    glyphText: { fontSize: 9, textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
+    slotNoBorder: { borderWidth: 0 },
+    slotFlexWrap: { flex: 1 },
+    resultPosterPlaceholder: { backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center' },
 });

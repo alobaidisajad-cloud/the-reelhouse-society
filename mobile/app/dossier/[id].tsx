@@ -9,16 +9,17 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
+import { DossierDetail, DossierComment } from '@/src/types';
 
 export default function DossierReaderScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { user } = useAuthStore();
     
-    const [dossier, setDossier] = useState<any>(null);
+    const [dossier, setDossier] = useState<DossierDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [certified, setCertified] = useState(false);
     const [certifyCount, setCertifyCount] = useState(0);
-    const [comments, setComments] = useState<any[]>([]);
+    const [comments, setComments] = useState<DossierComment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [posting, setPosting] = useState(false);
 
@@ -29,7 +30,7 @@ export default function DossierReaderScreen() {
                 // In a real scenario we'd query dispatch_dossiers
                 const { data, error } = await supabase
                     .from('dispatch_dossiers')
-                    .select('*')
+                    .select('id, title, excerpt, full_content, author, author_username, user_id, created_at, views, certify_count')
                     .eq('id', id)
                     .single();
                 
@@ -43,7 +44,7 @@ export default function DossierReaderScreen() {
                 // Fetch Comments
                 const { data: commData } = await supabase
                     .from('dossier_comments')
-                    .select('*')
+                    .select('id, user_id, username, body, created_at')
                     .eq('dossier_id', id)
                     .order('created_at', { ascending: true });
                 
@@ -67,17 +68,6 @@ export default function DossierReaderScreen() {
             }
         }
         
-        // Seeded content bypass for UI testing if 'id' starts with seed
-        if (id.startsWith('seed')) {
-            setDossier({
-                title: 'The Architecture of Anxiety',
-                author: 'NitrateOracle',
-                created_at: new Date().toISOString(),
-                full_content: `The modern cinematic landscape operates primarily on **tension**. It is not the tension of the plot, but the tension of *existence*. \n\n## The Framing Device\nWhen we look closely at how the camera moves through a physical space, we see the echoes of our own societal claustrophobia.`
-            });
-            setLoading(false);
-            return;
-        }
 
         fetchDossier();
     }, [id, user]);
@@ -188,15 +178,6 @@ export default function DossierReaderScreen() {
                             {certified ? 'CERTIFIED' : 'CERTIFY'}
                         </Text>
                     </TouchableOpacity>
-                    <TouchableOpacity 
-                        style={styles.actionBtn} 
-                        onPress={() => {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                            reelToast('Sharing coming soon');
-                        }}
-                    >
-                        <Text style={styles.actionLabel}>SHARE</Text>
-                    </TouchableOpacity>
                 </View>
 
                 <Text style={styles.endMark}>— ✦ —</Text>
@@ -205,7 +186,7 @@ export default function DossierReaderScreen() {
                 <View style={styles.commentsSection}>
                     <SectionDivider label={`ANNOTATIONS (${comments.length})`} />
                     
-                    {comments.map((c: any) => (
+                    {comments.map((c: DossierComment) => (
                         <View key={c.id} style={styles.commentItem}>
                         <TouchableOpacity onPress={() => router.push(`/user/${c.username}`)} activeOpacity={0.7}>
                             <Text style={styles.commUsername}>@{c.username}</Text>

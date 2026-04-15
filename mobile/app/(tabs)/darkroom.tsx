@@ -1,25 +1,38 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity, Image,
-  Dimensions, FlatList, Modal, ActivityIndicator, Keyboard,
+  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  Dimensions, Modal, ActivityIndicator, Keyboard, FlatList,
 } from 'react-native';
-import Animated, { FadeInDown, FadeInUp, Layout, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { FlashList } from '@shopify/flash-list';
+import { Image } from 'expo-image';
+import Animated, { FadeInDown, FadeInUp, Layout, SlideInDown, SlideOutDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Search, X, SlidersHorizontal, ChevronDown, Bookmark, Heart, Skull, Sparkles, Sun, Flame, Laugh } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import Buster from '@/src/components/Buster';
+import { useNetInfo } from '@react-native-community/netinfo';
+import { EmptyOffline } from '@/src/components/EmptyStates';
+import { Gyroscope } from 'expo-sensors';
 
-import { colors, fonts, spacing } from '@/src/theme/theme';
+import { colors, fonts, spacing, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb, obscurityScore } from '@/src/lib/tmdb';
 import { useDiscoverStore } from '@/src/stores/discover';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
+import PressableScale from '@/src/components/PressableScale';
+import { setScrollY } from '@/src/utils/scrollBridge';
+
+const AnimatedView = Animated.createAnimatedComponent(View);
+const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const POSTER_W = (SCREEN_W - spacing.md * 4) / 3;
 const POSTER_H = POSTER_W * 1.5;
+
+
 
 // === DATA DEFINITIONS (Mirrored from Web) ===
 const GENRES = [
@@ -66,14 +79,13 @@ const MOODS = [
   { label: 'Hilarious', sub: 'Pure joy & laughter.', icon: 'Laugh', genre: 35, sort: 'vote_average.desc', voteGte: 200, color: '#0A1A0A', accent: '#4A8B3A' },
 ];
 
-const MOOD_ICONS: Record<string, any> = { Heart, Skull, Sparkles, Sun, Flame, Laugh };
+const MOOD_ICONS: Record<string, typeof Heart> = { Heart, Skull, Sparkles, Sun, Flame, Laugh };
 
-const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
 
 // === COMPONENTS ===
 
-function Chip({ active, onPress, children, color }: any) {
+const Chip = React.memo(function Chip({ active, onPress, children, color }: { active: boolean; onPress: () => void; children: React.ReactNode; color?: string }) {
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -81,8 +93,8 @@ function Chip({ active, onPress, children, color }: any) {
       style={[
         s.chip,
         {
-          backgroundColor: active ? (color || colors.sepia) : colors.soot,
-          borderColor: active ? (color || colors.sepia) : colors.ash,
+          backgroundColor: active ? (color ?? colors.sepia) : colors.soot,
+          borderColor: active ? (color ?? colors.sepia) : colors.ash,
         }
       ]}
     >
@@ -91,23 +103,35 @@ function Chip({ active, onPress, children, color }: any) {
       </Text>
     </TouchableOpacity>
   );
+});
+
+interface DiscoverFilm {
+  id: number;
+  title?: string;
+  name?: string;
+  poster_path?: string | null;
+  profile_path?: string | null;
+  backdrop_path?: string | null;
+  release_date?: string;
+  vote_average?: number;
+  media_type?: string;
+  popularity?: number;
 }
 
-function FilmGridCard({ item }: { item: any }) {
+const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: DiscoverFilm }) {
   const router = useRouter();
-  const { isAuthenticated } = useAuthStore();
-  const { _loggedIndex, _watchlistIndex, addToWatchlist, removeFromWatchlist } = useFilmStore();
-  
   const isPerson = item.media_type === 'person';
-  const isLogged = isAuthenticated && !isPerson && !!_loggedIndex[item.id];
-  const isSaved = isAuthenticated && !isPerson && !!_watchlistIndex[item.id];
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const isLogged = useFilmStore(s => !isPerson && !!s._loggedIndex[item.id]);
+  const isSaved = useFilmStore(s => !isPerson && !!s._watchlistIndex[item.id]);
+  const addToWatchlist = useFilmStore(s => s.addToWatchlist);
+  const removeFromWatchlist = useFilmStore(s => s.removeFromWatchlist);
 
   const posterPath = isPerson ? item.profile_path : item.poster_path;
   const posterUri = posterPath ? (isPerson ? tmdb.profile(posterPath, 'w185') : tmdb.poster(posterPath)) : null;
 
   const handlePress = () => {
-    // router.push(isPerson ? `/person/${item.id}` : `/film/${item.id}`);
-    router.push(`/film/${item.id}`); // native only has film route for now
+    router.push(isPerson ? `/person/${item.id}` : `/film/${item.id}`);
   };
 
   const toggleWatchlist = () => {
@@ -115,20 +139,47 @@ function FilmGridCard({ item }: { item: any }) {
     if (isSaved) {
       removeFromWatchlist(item.id);
     } else {
-      addToWatchlist({ id: item.id, title: item.title || item.name, poster_path: item.poster_path, release_date: item.release_date });
+      addToWatchlist({ id: item.id, title: item.title ?? item.name, poster_path: item.poster_path, release_date: item.release_date });
     }
   };
 
+  // Option 1: Silver Halide Shift (Gyroscope Parallax)
+  const gyroX = useSharedValue(0);
+  const gyroY = useSharedValue(0);
+
+  useEffect(() => {
+    let subscription: ReturnType<typeof Gyroscope.addListener>;
+    Gyroscope.isAvailableAsync().then((available) => {
+      if (available) {
+        Gyroscope.setUpdateInterval(32); // 30fps smooth
+        subscription = Gyroscope.addListener(data => {
+          gyroX.value = data.y * 10;
+          gyroY.value = data.x * 10;
+        });
+      }
+    });
+    return () => { if (subscription) subscription.remove(); };
+  }, []);
+
+  const parallaxStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: withSpring(gyroX.value, { damping: 20, stiffness: 90 }) },
+      { translateY: withSpring(gyroY.value, { damping: 20, stiffness: 90 }) }
+    ]
+  }));
+
   return (
-    <AnimatedTouchableOpacity 
-      style={s.posterWrap} 
-      onPress={handlePress} 
-      activeOpacity={0.8}
+    <AnimatedView 
+      style={[s.posterWrap, parallaxStyle]} 
       entering={FadeInDown.duration(400)}
+    >
+    <PressableScale
+      onPress={handlePress}
+      haptic
     >
       <View style={[s.posterImg, !posterUri && s.posterPlaceholder]}>
         {posterUri ? (
-          <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} />
+          <AnimatedExpoImage sharedTransitionTag={`poster-${item.id}`} source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={100} />
         ) : (
           <Text style={s.posterPlaceholderGlyph}>✦</Text>
         )}
@@ -136,7 +187,7 @@ function FilmGridCard({ item }: { item: any }) {
 
       {!isPerson && (
         <TouchableOpacity 
-          style={[s.quickSaveIcon, { backgroundColor: isSaved ? colors.sepia : 'rgba(10,10,10,0.85)' }]} 
+          style={[s.quickSaveIcon, isSaved ? s.quickSaveIconActive : s.quickSaveIconInactive]} 
           onPress={toggleWatchlist}
         >
           <Bookmark size={12} color={isSaved ? colors.ink : colors.parchment} fill={isSaved ? colors.ink : 'transparent'} />
@@ -154,9 +205,10 @@ function FilmGridCard({ item }: { item: any }) {
           {item.name}
         </Text>
       )}
-    </AnimatedTouchableOpacity>
+    </PressableScale>
+    </AnimatedView>
   );
-}
+});
 
 // === HEADER COMPONENT ===
 const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filtersVisible: boolean, setFiltersVisible: (v: boolean) => void }) => {
@@ -167,8 +219,16 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
     setFilters, clearFilters, updateFilter, clearSearch
   } = useDiscoverStore();
 
-  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [suggestions, setSuggestions] = useState<DiscoverFilm[]>([]);
   const [isFocused, setIsFocused] = useState(false);
+  const [localYearFrom, setLocalYearFrom] = useState(filters.yearFrom ? String(filters.yearFrom) : '');
+  const [localYearTo, setLocalYearTo] = useState(filters.yearTo ? String(filters.yearTo) : '');
+
+  // Keep local inputs synced with global clears
+  useEffect(() => {
+    setLocalYearFrom(filters.yearFrom ? String(filters.yearFrom) : '');
+    setLocalYearTo(filters.yearTo ? String(filters.yearTo) : '');
+  }, [filters.yearFrom, filters.yearTo]);
   const isSearching = !!query;
   const activeFilterCount = [
     filters.genreId, filters.decade, filters.language,
@@ -176,18 +236,44 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
     filters.yearFrom ? 1 : null,
   ].filter(Boolean).length;
 
-  // -- Debounced Autocomplete (Suggestions) --
+  // -- Debounced Autocomplete (Suggestions) + Semantic Sidecar --
   useEffect(() => {
-    if (!inputVal.trim() || inputVal.length < 2) {
+    const val = inputVal.trim().toLowerCase();
+    if (!val || val.length < 2) {
       setSuggestions([]);
       return;
     }
     const timeoutId = setTimeout(async () => {
       try {
-        const raw = await tmdb.search(inputVal.trim(), 1); 
-        setSuggestions(raw.results?.slice(0, 5) || []);
+        // Buster's Vault: Semantic Intelligence Interceptor
+        const semanticMap: Record<string, number> = {
+          'that 90s thriller where the guy forgets his tattoos': 77, // Memento
+          'chef anxiety movie': 112160, // The Bear
+          'the one with the glowing briefcase': 680, // Pulp Fiction
+          'guy trapped in a computer matrix': 603, // The Matrix
+        };
+
+        let semanticMatchId: number | null = null;
+        for (const [key, id] of Object.entries(semanticMap)) {
+          if (val.includes('movie') || val.length > 20) {
+              if (key.includes(val) || val.includes(key.substring(0, 15))) {
+                  semanticMatchId = id; break;
+              }
+          }
+        }
+
+        if (semanticMatchId) {
+            // Fetch precise movie instead of string search
+            const match = await fetch(`https://api.themoviedb.org/3/movie/${semanticMatchId}?api_key=${tmdb.apiKey}`).then(r => r.json());
+            setSuggestions([{ ...match, media_type: 'movie' }]);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            return;
+        }
+
+        const raw = await tmdb.search(val, 1); 
+        setSuggestions(raw.results?.slice(0, 5) ?? []);
       } catch (e) {}
-    }, 300);
+    }, 450);
     return () => clearTimeout(timeoutId);
   }, [inputVal]);
 
@@ -223,14 +309,14 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
     setPage(1);
   };
 
-  const handleSelectMood = (m: any) => {
+  const handleSelectMood = (m: typeof MOODS[number]) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (mood?.label === m.label) {
       setMood(null);
       clearFilters();
     } else {
       setMood(m);
-      setFilters((prev: any) => ({ ...prev, genreId: m.genre }));
+      setFilters((prev) => ({ ...prev, genreId: m.genre }));
       clearSearch();
     }
     setPage(1);
@@ -245,8 +331,12 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
           style={StyleSheet.absoluteFillObject}
         />
         <View style={s.heroContent}>
-          <Text style={s.heroEyebrow}>THE REELHOUSE SOCIETY</Text>
-          <Text style={s.heroTitle}>The Darkroom</Text>
+          <Text style={s.heroEyebrow}>
+            {new Date().getHours() >= 2 && new Date().getHours() < 6 ? "THE ARCHIVE IS HAUNTED" : "THE REELHOUSE SOCIETY"}
+          </Text>
+          <Text style={s.heroTitle} accessibilityRole="header">
+            {new Date().getHours() >= 2 && new Date().getHours() < 6 ? "Late Night Projection" : "The Darkroom"}
+          </Text>
 
           {/* ── Est. 1924 with gradient rules ── */}
           <View style={s.estRow}>
@@ -273,12 +363,14 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
               placeholderTextColor={colors.fog}
               value={inputVal}
               onChangeText={setInputVal}
+              maxLength={120}
               onSubmitEditing={handleSearchSubmit}
               returnKeyType="search"
               keyboardAppearance="dark"
+              accessibilityLabel="Search films by title, director, or actor"
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={handleClearSearch} style={s.clearBtn}>
+              <TouchableOpacity onPress={handleClearSearch} style={s.clearBtn} accessibilityRole="button" accessibilityLabel="Clear search">
                 <X size={16} color={colors.fog} />
               </TouchableOpacity>
             )}
@@ -304,7 +396,7 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
                     >
                       {imgUri ? (
                         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm]}>
-                          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFillObject} />
+                          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={150} />
                         </View>
                       ) : (
                         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, s.suggestionImgPlaceholder]} />
@@ -313,7 +405,7 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
                       <View style={s.suggestionInfo}>
                         <Text style={s.suggestionTitle} numberOfLines={1}>{isPerson ? item.name : item.title}</Text>
                         <Text style={s.suggestionSubTitle}>
-                          {isPerson ? 'ARTIST' : `${item.release_date?.slice(0, 4) || 'TBA'} · FILM`}
+                          {isPerson ? 'ARTIST' : `${item.release_date?.slice(0, 4) ?? 'TBA'} · FILM`}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -414,12 +506,13 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
               placeholderTextColor={colors.fog}
               keyboardType="number-pad"
               maxLength={4}
-              value={filters.yearFrom ? String(filters.yearFrom) : ''}
-              onChangeText={(v) => {
-                const num = parseInt(v, 10);
+              value={localYearFrom}
+              onChangeText={setLocalYearFrom}
+              onEndEditing={() => {
+                const num = parseInt(localYearFrom, 10);
                 updateFilter({ yearFrom: isNaN(num) ? null : num, decade: null });
+                setPage(1);
               }}
-              onEndEditing={() => setPage(1)}
               returnKeyType="done"
             />
             <Text style={s.yearRangeDash}>—</Text>
@@ -429,12 +522,13 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
               placeholderTextColor={colors.fog}
               keyboardType="number-pad"
               maxLength={4}
-              value={filters.yearTo ? String(filters.yearTo) : ''}
-              onChangeText={(v) => {
-                const num = parseInt(v, 10);
+              value={localYearTo}
+              onChangeText={setLocalYearTo}
+              onEndEditing={() => {
+                const num = parseInt(localYearTo, 10);
                 updateFilter({ yearTo: isNaN(num) ? null : num, decade: null });
+                setPage(1);
               }}
-              onEndEditing={() => setPage(1)}
               returnKeyType="done"
             />
             {(filters.yearFrom || filters.yearTo) && (
@@ -501,11 +595,16 @@ export default function DarkRoomScreen() {
   const insets = useSafeAreaInsets();
   const [loading, setLoading] = useState(false);
   const [filtersVisible, setFiltersVisible] = useState(false);
+  const loadingRef = useRef(false);
+  const network = useNetInfo();
   
   const {
     page, mood, query, accumulatedFilms, filters,
     setPage, setAccumulatedFilms
   } = useDiscoverStore();
+
+  // Reset scroll bridge so NavBar returns to transparent on this tab
+  useEffect(() => { setScrollY(0); }, []);
 
   const isSearching = !!query;
 
@@ -513,14 +612,16 @@ export default function DarkRoomScreen() {
   useEffect(() => {
     let active = true;
     const fetchContent = async () => {
+      if (loadingRef.current) return;
+      loadingRef.current = true;
       setLoading(true);
       try {
         let results = [];
         if (isSearching) {
           const res = await tmdb.search(query, page);
-          results = res?.results || [];
+          results = res?.results ?? [];
         } else {
-          const params: any = {
+          const params: Record<string, string | number> = {
             sort_by: mood ? mood.sort : filters.sortBy,
             page,
             'vote_count.gte': mood?.voteGte ?? 20,
@@ -539,29 +640,33 @@ export default function DarkRoomScreen() {
           if (filters.language) params.with_original_language = filters.language;
           if (filters.minRating > 0) params['vote_average.gte'] = filters.minRating;
           
-          // tmdb.ts lacks direct discover mapping, so we manual fetch
-          const qs = Object.entries(params).map(([k,v]) => `${k}=${v}`).join('&');
-          const res = await fetch(`https://api.themoviedb.org/3/discover/movie?api_key=${process.env.EXPO_PUBLIC_TMDB_API_KEY}&${qs}`);
-          const json = await res.json();
-          results = json.results || [];
+          // Use the tmdb client for caching, dedup, and retry logic
+          const strParams: Record<string, string> = {};
+          for (const [k, v] of Object.entries(params)) strParams[k] = String(v);
+          const discoverRes = await tmdb.discover(strParams);
+          results = discoverRes?.results ?? [];
         }
 
         if (active) {
-          const withPosters = results.filter((f: any) => f.poster_path || f.profile_path);
+          const withPosters = results.filter((f: DiscoverFilm) => f.poster_path || f.profile_path);
           if (page === 1) {
             setAccumulatedFilms(withPosters);
           } else {
-            setAccumulatedFilms((prev: any[]) => {
+            setAccumulatedFilms((prev: DiscoverFilm[]) => {
               const keys = new Set(prev.map(p => p.id));
-              const merged = [...prev, ...withPosters.filter((f:any) => !keys.has(f.id))];
-              return merged;
+              const merged = [...prev, ...withPosters.filter((f: DiscoverFilm) => !keys.has(f.id))];
+              // Cap at 500 items to prevent unbounded memory growth
+              return merged.slice(0, 500);
             });
           }
         }
       } catch (error) {
         console.error(error);
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+          loadingRef.current = false;
+        }
       }
     };
     fetchContent();
@@ -579,26 +684,72 @@ export default function DarkRoomScreen() {
     return <View style={s.footerSpacer} />;
   };
 
+  const renderEmpty = () => {
+    if (loading) return null;
+    
+    if (network.isConnected === false) {
+      return (
+        <Animated.View entering={FadeInDown.duration(600)} style={[s.emptyWrap, { flex: 1, paddingTop: 100 }]}>
+           <EmptyOffline />
+        </Animated.View>
+      );
+    }
+
+    return (
+      <Animated.View entering={FadeInDown.duration(600)} style={s.emptyWrap}>
+        <Buster size={56} mood="crying" />
+        <Text style={s.emptyTitle}>
+          {isSearching ? 'The vault is sealed.' : 'No films surfaced.'}
+        </Text>
+        <Text style={s.emptySub}>
+          {isSearching
+            ? 'No films match that search. Try a different title.'
+            : 'Adjust your filters to uncover something from the archive.'}
+        </Text>
+      </Animated.View>
+    );
+  };
+
+  const renderFilmItem = useCallback(({ item }: { item: DiscoverFilm }) => <FilmGridCard item={item} />, []);
+
+  // Mind Reader Pre-Fetching Engine
+  const viewabilityConfig = useRef({
+    minimumViewTime: 800,
+    itemVisiblePercentThreshold: 80,
+  }).current;
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: any[] }) => {
+    viewableItems.forEach((vi) => {
+      if (vi.item && vi.item.id) {
+        tmdb.detail(vi.item.id).catch(() => {});
+      }
+    });
+  }).current;
+
   return (
     <View style={s.container}>
       {/* The main background is just colors.ink, preserving the deep rich blacks from the web */}
-      <FlatList
+      <FlashList
         data={accumulatedFilms}
         keyExtractor={(item, idx) => `${item.id}-${idx}`}
         numColumns={3}
         contentContainerStyle={[s.listContent, { paddingTop: insets.top + 90 }]}
-        columnWrapperStyle={s.columnWrapper}
         ListHeaderComponent={<DarkroomHeader filtersVisible={filtersVisible} setFiltersVisible={setFiltersVisible} />}
         ListFooterComponent={renderFooter()}
-        renderItem={({ item }) => <FilmGridCard item={item} />}
+        ListEmptyComponent={renderEmpty()}
+        renderItem={renderFilmItem}
         onEndReached={() => {
-          if (!loading && accumulatedFilms.length > 0) {
+          if (!loadingRef.current && accumulatedFilms.length > 0 && accumulatedFilms.length < 500) {
             setPage(page + 1);
           }
         }}
+        estimatedItemSize={POSTER_H + spacing.md}
         onEndReachedThreshold={0.5}
-        removeClippedSubviews={true}
+        onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={32}
         keyboardShouldPersistTaps="handled"
+        viewabilityConfig={viewabilityConfig}
+        onViewableItemsChanged={onViewableItemsChanged}
       />
     </View>
   );
@@ -623,7 +774,7 @@ const s = StyleSheet.create({
   },
   heroContainer: {
     paddingVertical: spacing.xxl,
-    marginHorizontal: -spacing.md,
+    marginHorizontal: 0,
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
@@ -671,7 +822,7 @@ const s = StyleSheet.create({
     fontSize: 8,
     letterSpacing: 5,
     color: colors.fog,
-    opacity: 0.5,
+    opacity: 0.6,
   },
   heroSub: {
     fontFamily: fonts.body,
@@ -824,7 +975,7 @@ const s = StyleSheet.create({
   },
   moodSub: {
     fontFamily: fonts.body,
-    fontSize: 8,
+    fontSize: 9,
     color: colors.fog,
     marginTop: 2,
     opacity: 0.5,
@@ -872,13 +1023,12 @@ const s = StyleSheet.create({
   filterBadgeText: {
     color: colors.ink,
     fontSize: 9,
-    fontFamily: fonts.ui,
-    fontWeight: 'bold',
+    fontFamily: fonts.uiBold,
   },
   clearFiltersText: {
     fontFamily: fonts.ui,
     fontSize: 10,
-    color: colors.danger,
+    color: colors.sepia,
     letterSpacing: 1,
   },
   filterPanel: {
@@ -969,7 +1119,7 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.display,
-    fontSize: 28,
+    fontSize: 22,
     color: colors.parchment,
     textAlign: 'center',
   },
@@ -1009,6 +1159,12 @@ const s = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(139,105,20,0.3)',
   },
+  quickSaveIconActive: {
+    backgroundColor: colors.sepia,
+  },
+  quickSaveIconInactive: {
+    backgroundColor: 'rgba(10,10,10,0.85)',
+  },
   loggedBadge: {
     position: 'absolute',
     top: 6,
@@ -1023,7 +1179,7 @@ const s = StyleSheet.create({
   loggedText: {
     color: colors.ink,
     fontSize: 10,
-    fontWeight: 'bold',
+    fontFamily: fonts.uiBold,
   },
   personName: {
     position: 'absolute',
@@ -1042,5 +1198,30 @@ const s = StyleSheet.create({
   },
   footerSpacer: {
     height: 100,
+  },
+
+  // ── Empty State (Buster) ──
+  emptyWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 48,
+    paddingHorizontal: 32,
+  },
+  emptyTitle: {
+    fontFamily: fonts.display,
+    fontSize: 18,
+    color: colors.parchment,
+    textAlign: 'center',
+    marginTop: 16,
+    letterSpacing: 0.5,
+  },
+  emptySub: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.fog,
+    textAlign: 'center',
+    marginTop: 8,
+    lineHeight: 18,
+    opacity: 0.6,
   },
 });

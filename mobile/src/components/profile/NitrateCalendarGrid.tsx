@@ -4,8 +4,13 @@ import Svg, { Rect, G, Defs, LinearGradient as SvgLinearGradient, Stop } from 'r
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 
+interface CalendarGridLog {
+  watchDate?: string;
+  createdAt?: string;
+}
+
 interface Props {
-  logs: any[]; // Array of log objects with created_at or watch_date
+  logs: CalendarGridLog[];
 }
 
 const WEEKS = 52;

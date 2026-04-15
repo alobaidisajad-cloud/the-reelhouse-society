@@ -1,8 +1,8 @@
 /**
  * NotificationCenter — Full notification panel with grouped notifications.
  */
-import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl, Image } from 'react-native';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -10,11 +10,32 @@ import { colors, fonts } from '@/src/theme/theme';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 
+// ── Pure utility functions (module-level = zero GC pressure) ──
+function getIcon(type: string): string {
+    switch (type) {
+        case 'endorse': return '♥';
+        case 'follow': return '◎';
+        case 'comment': return '✎';
+        case 'mention': return '@';
+        case 'achievement': return '★';
+        default: return '✦';
+    }
+}
+
+function timeAgo(dateStr: string): string {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h`;
+    return `${Math.floor(hours / 24)}d`;
+}
+
 interface Notification {
     id: string;
     type: string;
     message: string;
-    metadata?: any;
+    metadata?: Record<string, unknown> | null;
     created_at: string;
     read: boolean;
 }
@@ -30,11 +51,11 @@ export default function NotificationCenter() {
         if (!user) return;
         const { data } = await supabase
             .from('notifications')
-            .select('*')
+            .select('id, type, message, metadata, created_at, read')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(50);
-        setNotifications(data || []);
+        setNotifications(data ?? []);
         setLoading(false);
     }, [user]);
 
@@ -62,30 +83,12 @@ export default function NotificationCenter() {
         }
         // Navigate based on type
         if (n.metadata?.film_id) router.push(`/film/${n.metadata.film_id}`);
-        else if (n.metadata?.user_id) router.push(`/user/${n.metadata.username || n.metadata.user_id}`);
+        else if (n.metadata?.user_id) router.push(`/user/${n.metadata.username ?? n.metadata.user_id}`);
     };
 
-    const getIcon = (type: string) => {
-        switch (type) {
-            case 'endorse': return '♥';
-            case 'follow': return '◎';
-            case 'comment': return '✎';
-            case 'mention': return '@';
-            case 'achievement': return '★';
-            default: return '✦';
-        }
-    };
 
-    const timeAgo = (dateStr: string) => {
-        const diff = Date.now() - new Date(dateStr).getTime();
-        const mins = Math.floor(diff / 60000);
-        if (mins < 60) return `${mins}m`;
-        const hours = Math.floor(mins / 60);
-        if (hours < 24) return `${hours}h`;
-        return `${Math.floor(hours / 24)}d`;
-    };
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
 
     return (
         <View style={s.container}>
@@ -102,13 +105,17 @@ export default function NotificationCenter() {
                 data={notifications}
                 keyExtractor={item => item.id}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}
+                windowSize={5}
+                maxToRenderPerBatch={10}
+                initialNumToRender={15}
+                removeClippedSubviews={true}
                 renderItem={({ item }) => (
                     <TouchableOpacity
                         style={[s.notifRow, !item.read && s.notifUnread]}
                         onPress={() => handlePress(item)}
                         activeOpacity={0.7}
                     >
-                        <View style={[s.iconCircle, !item.read && { backgroundColor: 'rgba(139,105,20,0.2)' }]}>
+                        <View style={[s.iconCircle, !item.read && s.iconCircleUnread]}>
                             <Text style={s.icon}>{getIcon(item.type)}</Text>
                         </View>
                         <View style={s.notifContent}>
@@ -140,6 +147,7 @@ const s = StyleSheet.create({
     notifRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
     notifUnread: { backgroundColor: 'rgba(139,105,20,0.04)' },
     iconCircle: { width: 36, height: 36, borderRadius: 18, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' },
+    iconCircleUnread: { backgroundColor: 'rgba(139,105,20,0.2)' },
     icon: { fontSize: 16, color: colors.sepia },
     notifContent: { flex: 1 },
     notifMessage: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 18 },

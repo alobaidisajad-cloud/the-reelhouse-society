@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { supabase } from '@/src/lib/supabase';
@@ -7,6 +8,15 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
+import reelToast from '@/src/utils/reelToast';
+
+interface VaultSearchResult {
+  id: number;
+  title?: string;
+  poster_path?: string | null;
+  release_date?: string;
+  media_type?: string;
+}
 
 export default function VaultModal() {
   const router = useRouter();
@@ -14,7 +24,7 @@ export default function VaultModal() {
   const { fetchVault } = useFilmStore();
 
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<VaultSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -27,13 +37,13 @@ export default function VaultModal() {
     setLoading(true);
     try {
       const resp = await tmdb.search(text);
-      const movies = (resp.results || []).filter((r: any) => r.media_type === 'movie' || r.media_type === undefined);
+      const movies = (resp.results || []).filter((r) => r.media_type === 'movie' || r.media_type === undefined) as VaultSearchResult[];
       setResults(movies);
     } catch { }
     setLoading(false);
   }, []);
 
-  const handleSelectFormat = (film: any) => {
+  const handleSelectFormat = (film: VaultSearchResult) => {
     Alert.alert('Select Format', `What format of ${film.title} do you own?`, [
       { text: '4K Ultra HD', onPress: () => handleAddToVault(film, ['4K']) },
       { text: 'Blu-ray', onPress: () => handleAddToVault(film, ['Blu-ray']) },
@@ -43,7 +53,7 @@ export default function VaultModal() {
     ]);
   };
 
-  const handleAddToVault = async (film: any, formats: string[]) => {
+  const handleAddToVault = async (film: VaultSearchResult, formats: string[]) => {
     setSaving(true);
     try {
       const { error } = await supabase.from('physical_archive').insert({
@@ -57,12 +67,12 @@ export default function VaultModal() {
       });
       if (error) throw error;
       
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      reelToast.success(`${film.title} cataloged.`);
       fetchVault();
       router.back();
-    } catch (err: any) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      Alert.alert('Error', err.message);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to catalog.';
+      reelToast.error(msg);
     } finally {
       setSaving(false);
     }
@@ -70,6 +80,9 @@ export default function VaultModal() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.container}>
+      {/* Drag handle */}
+      <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
+
       <View style={s.header}>
         <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
           <Text style={s.closeText}>CANCEL</Text>
@@ -110,7 +123,7 @@ export default function VaultModal() {
             return (
               <TouchableOpacity style={s.resultRow} onPress={() => handleSelectFormat(item)} activeOpacity={0.7}>
                 {posterUri ? (
-                  <Image source={{ uri: posterUri }} style={s.poster} />
+                  <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" />
                 ) : (
                   <View style={[s.poster, { backgroundColor: colors.ash }]} />
                 )}
@@ -129,6 +142,8 @@ export default function VaultModal() {
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
+  dragHandleWrap: { alignItems: 'center' as const, paddingTop: 10 },
+  dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 16 : 24, paddingBottom: 16,
