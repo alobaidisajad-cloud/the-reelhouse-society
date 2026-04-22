@@ -162,7 +162,7 @@ const FilmGrid = ({ films }: { films: any[] }) => {
     const watchlist = useFilmStore(s => s.watchlist)
     const addToWatchlist = useFilmStore(s => s.addToWatchlist)
     const removeFromWatchlist = useFilmStore(s => s.removeFromWatchlist)
-    const openSignupModal = useUIStore(s => s.openSignupModal)
+    const navigate = useNavigate()
     const loggedFilmIds = useMemo(() => new Set(logs.map((l: any) => l.filmId)), [logs])
     const watchlistIds = useMemo(() => new Set(watchlist.map((w: any) => w.filmId)), [watchlist])
     return (
@@ -208,7 +208,7 @@ const FilmGrid = ({ films }: { films: any[] }) => {
                                     className="discover-quick-save"
                                     onClick={(e) => {
                                         e.preventDefault(); e.stopPropagation()
-                                        if (!isAuthenticated) { openSignupModal(); return }
+                                        if (!isAuthenticated) { navigate('/join'); return }
                                         if (isSaved) {
                                             removeFromWatchlist(item.id)
                                             reelToast.success('Removed from watchlist')

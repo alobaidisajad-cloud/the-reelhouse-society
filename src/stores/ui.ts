@@ -5,8 +5,6 @@ export interface UIStoreState {
     logModalOpen: boolean
     logModalFilm: Record<string, unknown> | null
     logModalEditLogId: string | null
-    signupModalOpen: boolean
-    signupRole: string
     showPaywall: boolean
     paywallFeature: string | null
     handbookOpen: boolean
@@ -17,9 +15,6 @@ export interface UIStoreState {
     openLogModal: (film?: Record<string, unknown> | null, editLogId?: string | null) => void
     closeLogModal: () => void
 
-    openSignupModal: (role?: string) => void
-    closeSignupModal: () => void
-
     openPaywall: (featureName: string) => void
     closePaywall: () => void
 }
@@ -29,8 +24,6 @@ export const useUIStore = create<UIStoreState>((set) => ({
     logModalOpen: false,
     logModalFilm: null,
     logModalEditLogId: null,
-    signupModalOpen: false,
-    signupRole: 'cinephile',
     showPaywall: false,
     paywallFeature: null,
     handbookOpen: false,
@@ -45,10 +38,6 @@ export const useUIStore = create<UIStoreState>((set) => ({
         set({ logModalOpen: true, logModalFilm: film, logModalEditLogId: editLogId }),
     closeLogModal: () =>
         set({ logModalOpen: false, logModalFilm: null, logModalEditLogId: null }),
-
-    openSignupModal: (role = 'cinephile') =>
-        set({ signupModalOpen: true, signupRole: role }),
-    closeSignupModal: () => set({ signupModalOpen: false }),
 
     openPaywall: (featureName) =>
         set({ showPaywall: true, paywallFeature: featureName }),

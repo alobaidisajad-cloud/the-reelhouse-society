@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Award, MessageCircle, Send } from 'lucide-react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../supabaseClient'
@@ -9,7 +10,7 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
     listId: string; certifyCount: number; isCertified: boolean; commentCount: number; hideBorder?: boolean
 }) {
     const { isAuthenticated, user } = useAuthStore()
-    const { openSignupModal } = useUIStore()
+    const navigate = useNavigate()
     const queryClient = useQueryClient()
     const [certifyCount, setCertifyCount] = useState(initialCertifyCount)
     const [isCertified, setIsCertified] = useState(initialIsCertified)
@@ -44,7 +45,7 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
     const handleCertify = async (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        if (!isAuthenticated) { openSignupModal(); return }
+        if (!isAuthenticated) { navigate('/join'); return }
         // Optimistic
         if (isCertified) {
             setCertifyCount(c => Math.max(0, c - 1))
@@ -91,7 +92,7 @@ export default function ListActions({ listId, certifyCount: initialCertifyCount,
     const toggleComments = (e: React.MouseEvent) => {
         e.preventDefault()
         e.stopPropagation()
-        if (!isAuthenticated) { openSignupModal(); return }
+        if (!isAuthenticated) { navigate('/join'); return }
         setShowComments(!showComments)
     }
 

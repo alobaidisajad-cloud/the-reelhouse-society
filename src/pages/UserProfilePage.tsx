@@ -48,7 +48,7 @@ export default function UserProfilePage() {
     const { user: currentUser, isAuthenticated, updateUser } = useAuthStore()
     const { logs: currentLogs, watchlist: currentWatchlist, lists: currentLists, stubs: currentStubs, physicalArchive, getCinephileStats } = useFilmStore()
     const { programmes: currentProgrammes } = useProgrammeStore()
-    const { openSignupModal, openLogModal } = useUIStore()
+    const { openLogModal } = useUIStore()
     const fileRef = useRef(null)
     const isOwnProfile = !routeUsername || routeUsername === currentUser?.username || routeUsername === 'me'
 
@@ -320,7 +320,7 @@ export default function UserProfilePage() {
     }
 
     const handleFollow = async () => {
-        if (!currentUser) { openSignupModal(); return }
+        if (!currentUser) { navigate('/join'); return }
         if (followLoading || isOwnProfile) return
         setFollowLoading(true)
         const pUser: any = profileUser
@@ -421,7 +421,7 @@ export default function UserProfilePage() {
     if (!isAuthenticated && isOwnProfile) return (
         <div style={{ paddingTop: 120, textAlign: 'center', padding: '6rem 1.5rem' }}>
             <Buster size={120} mood="peeking" message="Who goes there? Sign in to see your profile." />
-            <div style={{ marginTop: '2rem' }}><button className="btn btn-primary" onClick={() => openSignupModal()}>Enter The House</button></div>
+            <div style={{ marginTop: '2rem' }}><button className="btn btn-primary" onClick={() => navigate('/join')}>Enter The House</button></div>
         </div>
     )
 

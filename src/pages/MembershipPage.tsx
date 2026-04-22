@@ -12,7 +12,7 @@ import PageSEO from '../components/PageSEO'
 
 export default function MembershipPage() {
     const { isAuthenticated, user } = useAuthStore()
-    const { openSignupModal } = useUIStore()
+    const navigate = useNavigate()
     const [csvImportOpen, setCsvImportOpen] = useState(false)
 
     const containerVariants = {
@@ -36,7 +36,7 @@ export default function MembershipPage() {
     const isCurrentAuteur = userRole === 'auteur'
 
     const handleCheckout = async (tier: string) => {
-        if (!isAuthenticated || !user) { openSignupModal(tier); return }
+        if (!isAuthenticated || !user) { navigate('/join'); return }
         setIsRedirecting(true)
         try {
             const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {
@@ -108,7 +108,7 @@ export default function MembershipPage() {
                         {isAuthenticated && (!user?.role || (user?.role as string) === 'cinephile') ? (
                             <div className="current-rank">YOUR CURRENT RANK</div>
                         ) : (
-                            <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.8rem', letterSpacing: '0.2em' }} onClick={() => openSignupModal('cinephile')}>
+                            <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.8rem', letterSpacing: '0.2em' }} onClick={() => navigate('/join')}>
                                 JOIN FREE
                             </button>
                         )}
@@ -258,7 +258,7 @@ export default function MembershipPage() {
                         style={{ opacity: isRedirecting ? 0.7 : 1 }}
                         disabled={isRedirecting}
                         onClick={async () => {
-                            if (!isAuthenticated || !user) { openSignupModal('founding'); return }
+                            if (!isAuthenticated || !user) { navigate('/join'); return }
                             setIsRedirecting(true)
                             try {
                                 const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {

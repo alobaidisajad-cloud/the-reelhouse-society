@@ -21,7 +21,6 @@ export default function LogForm({ film }: { film: any }) {
     const logModalOpen = useUIStore(state => state.logModalOpen)
     const logModalEditLogId = useUIStore(state => state.logModalEditLogId)
     const closeLogModal = useUIStore(state => state.closeLogModal)
-    const openSignupModal = useUIStore(state => state.openSignupModal)
 
     const addLog = useFilmStore(state => state.addLog)
     const updateLog = useFilmStore(state => state.updateLog)
@@ -491,7 +490,7 @@ export default function LogForm({ film }: { film: any }) {
                         THE PHYSICAL ARCHIVE
                     </div>
                     {!isPremium && (
-                        <span style={{ color: 'var(--fog)', fontSize: '0.5rem', cursor: 'pointer' }} onClick={() => openSignupModal('archivist')}>
+                        <span style={{ color: 'var(--fog)', fontSize: '0.5rem', cursor: 'pointer' }} onClick={() => navigate('/join')}>
                             <Lock size={8} style={{ display: 'inline', marginRight: '0.1rem' }} /> REQUIRES ARCHIVIST TIER
                         </span>
                     )}

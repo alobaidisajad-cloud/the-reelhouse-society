@@ -24,7 +24,6 @@ import AchievementToast from './components/AchievementToast'
 // BootcampModal retired — onboarding content lives in the Handbook now
 const PaywallModal = lazy(() => import('./components/PaywallModal'))
 const LogModal = lazy(() => import('./components/LogModal'))
-const SignupModal = lazy(() => import('./components/SignupModal'))
 const HandbookModal = lazy(() => import('./components/HandbookModal'))
 const CommandPalette = lazy(() => import('./components/CommandPalette'))
 const OnboardingModal = lazy(() => import('./components/OnboardingModal'))
@@ -52,6 +51,7 @@ const ComposeDossierPage = lazy(() => import('./pages/ComposeDossierPage'))
 const MembershipPage = lazy(() => import('./pages/MembershipPage'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 const AuthCallbackPage = lazy(() => import('./pages/AuthCallbackPage'))
+const AuthPage = lazy(() => import('./pages/AuthPage'))
 const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'))
 const YearInCinemaPage = lazy(() => import('./pages/YearInCinemaPage'))
 const SettingsPage = lazy(() => import('./pages/SettingsPage'))
@@ -258,7 +258,6 @@ export default function App() {
           {showPaywall && <PaywallModal featureName={paywallFeature} onClose={closePaywall} />}
           <CommandPalette />
           <LogModal />
-          <SignupModal />
           <HandbookModal />
           <OnboardingModal />
           {csvImportOpen && <CSVImport onClose={() => setCsvImportOpen(false)} />}
@@ -287,6 +286,10 @@ export default function App() {
               <Route path="/society" element={<ErrorBoundary key="society"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
               <Route path="/auth/callback" element={<ErrorBoundary key="auth"><AuthCallbackPage /></ErrorBoundary>} />
               <Route path="/auth/reset-password" element={<ErrorBoundary key="reset-pw"><PageWrapper><ResetPasswordPage /></PageWrapper></ErrorBoundary>} />
+              <Route path="/join" element={<ErrorBoundary key="join"><PageWrapper><AuthPage mode="join" /></PageWrapper></ErrorBoundary>} />
+              <Route path="/login" element={<ErrorBoundary key="login"><PageWrapper><AuthPage mode="login" /></PageWrapper></ErrorBoundary>} />
+              <Route path="/verify" element={<ErrorBoundary key="verify"><PageWrapper><AuthPage mode="verify" /></PageWrapper></ErrorBoundary>} />
+              <Route path="/forgot-password" element={<ErrorBoundary key="forgot-password"><PageWrapper><AuthPage mode="forgot-password" /></PageWrapper></ErrorBoundary>} />
               <Route path="/darkroom" element={<Navigate to="/discover" replace />} />
               <Route path="/membership" element={<Navigate to="/patronage" replace />} />
               <Route path="/year-in-cinema" element={<ErrorBoundary key="yic"><PageWrapper><YearInCinemaPage /></PageWrapper></ErrorBoundary>} />

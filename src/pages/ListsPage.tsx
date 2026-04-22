@@ -217,7 +217,7 @@ export default function ListsPage() {
         queryClient.invalidateQueries({ queryKey: ['all-public-lists'] })
     }
 
-    const { openSignupModal } = useUIStore()
+    const navigate = useNavigate()
     const [showCreate, setShowCreate] = useState(false)
     const [query, setQuery] = useState('')
     const [debouncedQuery, setDebouncedQuery] = useState('')
@@ -413,7 +413,7 @@ export default function ListsPage() {
                             <Plus size={14} /> CREATE COLLECTION
                         </button>
                     ) : (
-                        <button className="btn btn-ghost stacks-cta" style={{ padding: '0.7rem 1.8rem', letterSpacing: '0.12em', fontSize: '0.6rem' }} onClick={() => openSignupModal()}>
+                        <button className="btn btn-ghost stacks-cta" style={{ padding: '0.7rem 1.8rem', letterSpacing: '0.12em', fontSize: '0.6rem' }} onClick={() => navigate('/join')}>
                             JOIN TO CREATE COLLECTIONS
                         </button>
                     )}
@@ -593,7 +593,7 @@ export default function ListsPage() {
                             <div className="stacks-gate-desc">
                                 Forge your own collections. Immortalize your cinematic taste in the permanent archive.
                             </div>
-                            <button className="btn btn-primary stacks-gate-btn" style={{ padding: '0.8rem 2.2rem', letterSpacing: '0.2em', fontSize: '0.65rem' }} onClick={() => openSignupModal()}>
+                            <button className="btn btn-primary stacks-gate-btn" style={{ padding: '0.8rem 2.2rem', letterSpacing: '0.2em', fontSize: '0.65rem' }} onClick={() => navigate('/join')}>
                                 CLAIM YOUR SEAT
                             </button>
                             <div className="stacks-gate-rule stacks-gate-rule--bottom" />

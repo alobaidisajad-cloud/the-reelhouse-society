@@ -17,17 +17,16 @@ export default function BottomNav() {
     const user = useAuthStore(s => s.user)
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
     const openLogModal = useUIStore(s => s.openLogModal)
-    const openSignupModal = useUIStore(s => s.openSignupModal)
 
     const handleTap = (tab: typeof TABS[0]) => {
         if (tab.id === 'log') {
             if (isAuthenticated) openLogModal()
-            else openSignupModal()
+            else navigate('/join')
             return
         }
         if (tab.id === 'profile') {
             if (isAuthenticated && user?.username) navigate(`/user/${user.username}`)
-            else openSignupModal()
+            else navigate('/join')
             return
         }
         if (tab.path) navigate(tab.path)

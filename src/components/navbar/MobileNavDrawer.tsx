@@ -18,7 +18,7 @@ export default function MobileNavDrawer({ isOpen, onClose, onOpenNotifications }
     const user = useAuthStore(state => state.user)
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
     const openLogModal = useUIStore(state => state.openLogModal)
-    const openSignupModal = useUIStore(state => state.openSignupModal)
+    const navigate = useNavigate()
     const openHandbook = useUIStore(state => state.openHandbook)
 
     return (
@@ -85,7 +85,7 @@ export default function MobileNavDrawer({ isOpen, onClose, onOpenNotifications }
                         ) : (
                             <button
                                 className="btn btn-primary"
-                                onClick={() => { openSignupModal('cinephile'); onClose() }}
+                                onClick={() => { navigate('/join'); onClose() }}
                                 style={{ marginTop: '1rem' }}
                             >
                                 Enter The House

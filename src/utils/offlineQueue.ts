@@ -33,19 +33,35 @@ export async function flushOfflineQueue() {
     
     for (const mutation of queue) {
         try {
+            let dbError = null;
+
             if (mutation.type === 'endorse_log') {
                 const { user_id, target_log_id } = mutation.payload;
-                await supabase.from('interactions').insert([{ user_id, target_log_id, type: 'endorse_log' }]);
+                const { error } = await supabase.from('interactions').insert([{ user_id, target_log_id, type: 'endorse_log' }]);
+                dbError = error;
             } else if (mutation.type === 'endorse_list') {
                 const { user_id, target_list_id } = mutation.payload;
-                await supabase.from('interactions').insert([{ user_id, target_list_id, type: 'endorse_list' }]);
+                const { error } = await supabase.from('interactions').insert([{ user_id, target_list_id, type: 'endorse_list' }]);
+                dbError = error;
             } else if (mutation.type === 'mark_watched') {
-                await supabase.from('logs').insert([mutation.payload]);
+                const { error } = await supabase.from('logs').insert([mutation.payload]);
+                dbError = error;
             }
-            // Add more cases as needed...
+
+            if (dbError) {
+                console.error(`[OfflineSync] DB Error for ${mutation.type}:`, dbError);
+                // Supabase returns 23505 for unique constraint violations. 
+                // If it's a duplicate, we can safely discard it.
+                if (dbError.code !== '23505') {
+                    // For other errors (like network timeouts returned as errors), keep in queue
+                    if (dbError.message?.toLowerCase().includes('fetch') || dbError.message?.toLowerCase().includes('network')) {
+                        remainingQueue.push(mutation);
+                    }
+                }
+            }
         } catch (error: any) {
-            console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
-            // If it failed due to network, keep it in the queue. If it failed due to constraint (like duplicate), discard it.
+            console.error(`[OfflineSync] Exception executing ${mutation.type}:`, error);
+            // Fetch/Network exceptions thrown by the client should keep the item in the queue
             if (error?.message?.toLowerCase().includes('fetch') || error?.message?.toLowerCase().includes('network')) {
                 remainingQueue.push(mutation);
             }

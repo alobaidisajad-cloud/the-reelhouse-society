@@ -71,7 +71,7 @@ export default function FeedPage() {
     const isAuthenticated = useAuthStore(s => s.isAuthenticated)
     const user = useAuthStore(s => s.user)
     const followUser = useAuthStore(s => s.followUser)
-    const openSignupModal = useUIStore(state => state.openSignupModal)
+    const navigate = useNavigate()
     const openLogModal = useUIStore(state => state.openLogModal)
 
     // ── Feed Tab State ──
@@ -437,7 +437,7 @@ export default function FeedPage() {
                                     <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.9rem', color: 'var(--bone)', maxWidth: 400, lineHeight: 1.6, opacity: 0.7 }}>
                                         Join The Society to trace the footsteps of the finest critics and publish your own cinematic dispatches.
                                     </div>
-                                    <button className="btn btn-primary" style={{ padding: '0.85rem 2.5rem', letterSpacing: '0.2em', fontSize: '0.65rem' }} onClick={() => openSignupModal()}>
+                                    <button className="btn btn-primary" style={{ padding: '0.85rem 2.5rem', letterSpacing: '0.2em', fontSize: '0.65rem' }} onClick={() => navigate('/join')}>
                                         CLAIM YOUR SEAT
                                     </button>
                                     <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px', background: 'linear-gradient(90deg, transparent, var(--sepia), transparent)' }} />

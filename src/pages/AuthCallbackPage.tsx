@@ -13,13 +13,23 @@ export default function AuthCallbackPage() {
     const navigate = useNavigate()
     const [status, setStatus] = useState('verifying') // verifying | success | error
     const [errorMsg, setErrorMsg] = useState('')
+    const [flowType, setFlowType] = useState<string | null>(null)
 
     useEffect(() => {
         async function handleCallback() {
             try {
                 const params = new URLSearchParams(window.location.search)
+                const hashParams = new URLSearchParams(window.location.hash.replace('#', '?'))
+                
+                // Immediately check for Supabase redirect errors
+                const urlError = params.get('error_description') || hashParams.get('error_description')
+                if (urlError) {
+                    throw new Error(urlError.replace(/\+/g, ' '))
+                }
+
                 const tokenHash = params.get('token_hash')
-                const type = params.get('type') // 'signup' | 'recovery' | 'email_change'
+                const type = params.get('type') || hashParams.get('type') // 'signup' | 'recovery' | 'email_change'
+                setFlowType(type)
 
                 // Supabase PKCE flow — exchange the token for a real session
                 if (tokenHash && type) {
@@ -137,11 +147,20 @@ export default function AuthCallbackPage() {
                         <p style={{ fontFamily: 'var(--font-body)', fontSize: '0.85rem', color: 'var(--fog)', lineHeight: 1.6, marginBottom: '2rem' }}>
                             {errorMsg}
                         </p>
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => navigate('/')}
-                            style={{ width: '100%', justifyContent: 'center' }}
-                        >
+                        {flowType === 'recovery' ? (
+                            <button className="btn btn-primary" onClick={() => navigate('/forgot-password')} style={{ width: '100%', justifyContent: 'center' }}>
+                                Request New Reset Link
+                            </button>
+                        ) : flowType === 'signup' ? (
+                            <button className="btn btn-primary" onClick={() => navigate('/verify')} style={{ width: '100%', justifyContent: 'center' }}>
+                                Resend Verification Link
+                            </button>
+                        ) : (
+                            <button className="btn btn-primary" onClick={() => navigate('/login')} style={{ width: '100%', justifyContent: 'center' }}>
+                                Return to Sign In
+                            </button>
+                        )}
+                        <button className="btn btn-ghost" onClick={() => navigate('/')} style={{ width: '100%', justifyContent: 'center', marginTop: '0.75rem', fontSize: '0.7rem' }}>
                             Return to The Lobby
                         </button>
                     </>

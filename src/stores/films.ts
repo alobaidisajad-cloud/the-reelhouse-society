@@ -170,9 +170,19 @@ export const useFilmStore = create<FilmState>()(
                     } else {
                         // Functional Rollback to prevent race condition erasure
                         if (exists) {
-                            set((state) => ({ interactions: [...state.interactions, exists] }))
+                            set((state) => ({ 
+                                interactions: [...state.interactions, exists],
+                                _endorsedIndex: { ...state._endorsedIndex, [targetId]: true as const }
+                            }))
                         } else {
-                            set((state) => ({ interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')) }))
+                            set((state) => {
+                                const nextIdx = { ...state._endorsedIndex }
+                                delete nextIdx[targetId]
+                                return {
+                                    interactions: state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse')),
+                                    _endorsedIndex: nextIdx
+                                }
+                            })
                         }
                         reelToast.error('Endorsement failed — please try again.')
                     }
@@ -244,8 +254,8 @@ export const useFilmStore = create<FilmState>()(
                             set({ interactions: next, _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: true } })
                         } else {
                             const next = get().interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'))
-                            const idx: Record<string, true> = {}
-                            next.forEach((i) => { if (i.type === 'endorse_list') idx[i.targetId] = true })
+                            const idx = { ...get()._listEndorsedIndex }
+                            delete idx[listId]
                             set({ interactions: next, _listEndorsedIndex: idx })
                         }
                         reelToast.error('Failed to certify list.')

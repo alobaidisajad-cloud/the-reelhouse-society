@@ -48,7 +48,6 @@ export default function Navbar() {
     const logout = useAuthStore(state => state.logout)
 
     const openLogModal = useUIStore(state => state.openLogModal)
-    const openSignupModal = useUIStore(state => state.openSignupModal)
 
     const [mobileOpen, setMobileOpen] = useState(false)
     const [searchOpen, setSearchOpen] = useState(false)
@@ -197,7 +196,7 @@ export default function Navbar() {
                                 <button
                                     className="btn btn-ghost"
                                     style={{ fontSize: '0.65rem', padding: '0.35em 0.9em' }}
-                                    onClick={() => openSignupModal('cinephile')}
+                                    onClick={() => navigate('/join')}
                                     aria-label="Enter"
                                 >
                                     <LogIn size={12} /> <span className="hide-mobile">Enter</span>

@@ -10,7 +10,7 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
 
     const downloadCsv = async () => {
         if (!isPremium) {
-            useUIStore.getState().openSignupModal('archivist')
+            window.location.href = '/join'
             return reelToast("CSV Export is restricted to Archivists.", { icon: <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /></>, style: { background: 'var(--soot)', color: 'var(--sepia)', border: '1px solid var(--sepia)' } })
         }
         
@@ -112,7 +112,7 @@ export function ProjectorRoom({ stats, user }: { stats: any; user: any }) {
             </div>
             {!isPremium && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.5rem' }}>
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }} onClick={() => useUIStore.getState().openSignupModal('archivist')}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.1em', color: 'var(--sepia)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem' }} onClick={() => window.location.href = '/join'}>
                         <Lock size={10} /> ARCHIVIST EXCLUSIVE
                     </div>
                 </div>

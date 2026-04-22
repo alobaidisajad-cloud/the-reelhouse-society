@@ -61,7 +61,6 @@ export default function HomePage() {
     useScrollRevealAll(mainRef)
 
     // Enterprise Fix: Granular Selectors
-    const openSignupModal = useUIStore(state => state.openSignupModal)
     const openLogModal = useUIStore(state => state.openLogModal)
     const isAuthenticated = useAuthStore(state => state.isAuthenticated)
 
@@ -267,7 +266,7 @@ export default function HomePage() {
                                     letterSpacing: '0.18em',
                                     width: IS_TOUCH ? '100%' : 'auto',
                                 }}
-                                onClick={() => openSignupModal('cinephile')}
+                                onClick={() => navigate('/join')}
                             >
                                 ✦ JOIN THE SOCIETY
                             </button>
@@ -449,7 +448,7 @@ export default function HomePage() {
                                             width: IS_TOUCH ? '100%' : 'auto',
                                             maxWidth: IS_TOUCH ? '320px' : 'none',
                                         }}
-                                        onClick={() => openSignupModal()}
+                                        onClick={() => navigate('/join')}
                                     >
                                         ADMIT ONE
                                     </button>
