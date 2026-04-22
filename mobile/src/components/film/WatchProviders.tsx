@@ -1,8 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, Linking, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { Tv } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
+
+/** Warm sepia-toned blurhash */
+const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
 interface Provider {
   provider_id: number;
@@ -26,19 +30,22 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
   const link = countryData?.link;
 
   const ProviderLogo = ({ p, providerLink }: { p: Provider, providerLink: string }) => (
-    <TouchableOpacity onPress={() => Linking.openURL(providerLink)} activeOpacity={0.7}>
+    <PressableScale onPress={() => Linking.openURL(providerLink)} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
       {p.logo_path ? (
         <Image
           source={{ uri: `https://image.tmdb.org/t/p/original${p.logo_path}` }}
           style={s.logo}
           contentFit="cover"
+          cachePolicy="memory-disk"
+          placeholder={{ blurhash: SEPIA_HASH }}
+          transition={50}
         />
       ) : (
         <View style={s.logoFallback}>
-          <Text style={s.logoFallbackText} numberOfLines={2}>{p.provider_name}</Text>
+          <Text style={s.logoFallbackText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{p.provider_name}</Text>
         </View>
       )}
-    </TouchableOpacity>
+    </PressableScale>
   );
 
   return (
@@ -46,7 +53,7 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
       <View style={s.header}>
         <View style={s.headerRow}>
           <Tv size={12} color={colors.bone} />
-          <Text style={s.title}>WHERE TO WATCH</Text>
+          <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>WHERE TO WATCH</Text>
         </View>
       </View>
 
@@ -59,7 +66,7 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
         <>
           {flatrate.length > 0 && (
             <View style={s.section}>
-              <Text style={s.sectionLabel}>STREAM FREE</Text>
+              <Text style={s.sectionLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>STREAM FREE</Text>
               <View style={s.grid}>
                 {flatrate.slice(0, 6).map((p: Provider) => (
                   <ProviderLogo key={p.provider_id} p={p} providerLink={link} />
@@ -70,7 +77,7 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
 
           {rent.length > 0 && (
             <View style={s.section}>
-              <Text style={s.sectionLabel}>RENT</Text>
+              <Text style={s.sectionLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>RENT</Text>
               <View style={s.grid}>
                 {rent.slice(0, 6).map((p: Provider) => (
                   <ProviderLogo key={p.provider_id} p={p} providerLink={link} />
@@ -81,7 +88,7 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
 
           {buy.length > 0 && (
             <View style={s.section}>
-              <Text style={s.sectionLabel}>BUY</Text>
+              <Text style={s.sectionLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>BUY</Text>
               <View style={s.grid}>
                 {buy.slice(0, 4).map((p: Provider) => (
                   <ProviderLogo key={p.provider_id} p={p} providerLink={link} />
@@ -91,11 +98,11 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
           )}
 
           <View style={s.footer}>
-            <Text style={s.footerText}>DATA BY JUSTWATCH</Text>
+            <Text style={s.footerText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>DATA BY JUSTWATCH</Text>
             {link && (
-              <TouchableOpacity onPress={() => Linking.openURL(link)}>
-                <Text style={s.footerLink}>VIEW ALL OPTIONS →</Text>
-              </TouchableOpacity>
+              <PressableScale onPress={() => Linking.openURL(link)} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                <Text style={s.footerLink} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>VIEW ALL OPTIONS →</Text>
+              </PressableScale>
             )}
           </View>
         </>
@@ -106,12 +113,13 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
 
 const s = StyleSheet.create({
   container: {
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(255,255,255,0.05)',
+    backgroundColor: 'rgba(8,6,4,0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(139,105,20,0.3)',
     borderRadius: 4,
     padding: 16,
     marginVertical: 12,
+    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6,
   },
   header: {
     marginBottom: 16,
@@ -130,9 +138,9 @@ const s = StyleSheet.create({
   emptyState: {
     padding: 24,
     alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.01)',
+    backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.03)',
+    borderColor: 'rgba(139,105,20,0.15)',
     borderRadius: 4,
   },
   emptyDisplay: {
@@ -168,17 +176,17 @@ const s = StyleSheet.create({
     height: 38,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.3)',
+    borderColor: 'rgba(139,105,20,0.3)',
   },
   logoFallback: {
     width: 38,
     height: 38,
     borderRadius: 8,
-    backgroundColor: colors.ash,
+    backgroundColor: 'rgba(8,6,4,0.98)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.3)',
+    borderColor: 'rgba(139,105,20,0.3)',
     padding: 2,
   },
   logoFallbackText: {
@@ -191,7 +199,7 @@ const s = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: 'rgba(139,105,20,0.1)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

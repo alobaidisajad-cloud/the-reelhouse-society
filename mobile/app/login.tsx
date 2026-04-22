@@ -11,6 +11,8 @@ import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence,
   Easing, interpolate, ReduceMotion,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
 import { supabase } from '@/src/lib/supabase';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -25,29 +27,9 @@ const AnimatedText = Animated.createAnimatedComponent(Text);
 
 WebBrowser.maybeCompleteAuthSession();
 
-// ── Password strength checks — identical to web ──
-function getPasswordChecks(pw: string) {
-  return {
-    length:    pw.length >= 8,
-    uppercase: /[A-Z]/.test(pw),
-    lowercase: /[a-z]/.test(pw),
-    number:    /[0-9]/.test(pw),
-    special:   /[^A-Za-z0-9]/.test(pw),
-  };
-}
-type PwCheckKey = keyof ReturnType<typeof getPasswordChecks>;
-const PW_CHECK_LABELS: Array<[PwCheckKey, string]> = [
-  ['length', '8+ characters'],
-  ['uppercase', 'Uppercase letter'],
-  ['lowercase', 'Lowercase letter'],
-  ['number', 'Number'],
-  ['special', 'Special character'],
-];
-function getStrengthInfo(passed: number) {
-  const labels = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'];
-  const clrs   = ['', colors.bloodReel, '#c4a000', '#c4a000', colors.sepia, '#4caf50'];
-  return { label: labels[passed], color: clrs[passed] };
-}
+import { PasswordStrengthMeter, getPasswordChecks } from '@/src/components/auth/PasswordStrengthMeter';
+import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
+import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
 
 // ── Decorative film-strip perforations ──
 function FilmPerforations({ side }: { side: 'left' | 'right' }) {
@@ -93,7 +75,9 @@ function PulsingRule() {
 
 export default function LoginScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { login, signup } = useAuthStore();
+
 
   const [isLogin, setIsLogin] = useState(true);
   const [emailOrUsername, setEmailOrUsername] = useState('');
@@ -147,7 +131,6 @@ export default function LoginScreen() {
   const pwChecks = getPasswordChecks(password);
   const pwPassed = Object.values(pwChecks).filter(Boolean).length;
   const pwStrong = pwPassed === 5;
-  const { label: pwStrengthLabel, color: pwStrengthColor } = getStrengthInfo(pwPassed);
 
   // ── DEBOUNCED USERNAME AVAILABILITY CHECK ──
   useEffect(() => {
@@ -349,85 +332,45 @@ export default function LoginScreen() {
   // ── EMAIL CONFIRMATION SCREEN ──
   if (awaitingConfirmation) {
     return (
-      <View style={s.container}>
-        <View style={s.confirmationWrap}>
-          <AnimatedView entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.confirmationContent}>
-            {/* Close */}
-            <TouchableOpacity
-              style={s.closeBtn}
-              onPress={() => { setAwaitingConfirmation(false); router.back(); }}
-              hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
-            >
-              <Text style={s.closeText}>✕</Text>
-            </TouchableOpacity>
-
-            {/* Floating mail icon */}
-            <View style={s.confirmIconWrap}>
-              <Text style={s.confirmIconEmoji}>✉️</Text>
-            </View>
-
-            <Text style={s.confirmEyebrow}>CLEARANCE PENDING</Text>
-            <Text style={s.confirmTitle}>Check Your Inbox.</Text>
-            <Text style={s.confirmBody}>
-              We sent a classified verification link to:
-            </Text>
-            <View style={s.confirmEmailBox}>
-              <Text style={s.confirmEmailText}>{confirmedEmail}</Text>
-            </View>
-            <Text style={s.confirmInstructions}>
-              CLICK THE LINK IN YOUR EMAIL TO COMPLETE YOUR ENROLLMENT.{"\n"}
-              CHECK YOUR SPAM FOLDER IF IT DOESN'T ARRIVE WITHIN 2 MINUTES.
-            </Text>
-
-            {/* Resend button */}
-            <TouchableOpacity
-              style={[s.confirmResendBtn, resending && s.submitDisabled]}
-              onPress={handleResend}
-              disabled={resending}
-              activeOpacity={0.7}
-            >
-              {resending ? (
-                <View style={s.submitLoading}>
-                  <ActivityIndicator size="small" color={colors.bone} />
-                  <Text style={s.confirmResendText}>SENDING...</Text>
-                </View>
-              ) : (
-                <Text style={s.confirmResendText}>↻  RESEND LINK</Text>
-              )}
-            </TouchableOpacity>
-
-            <Text style={s.confirmAutoNote}>
-              THIS SCREEN WILL AUTOMATICALLY LOG YOU IN ONCE CONFIRMED.
-            </Text>
-          </AnimatedView>
-        </View>
-      </View>
+      <EmailConfirmationScreen
+        confirmedEmail={confirmedEmail}
+        resending={resending}
+        onResend={handleResend}
+        onClose={() => { setAwaitingConfirmation(false); router.back(); }}
+      />
     );
   }
 
   return (
-    <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      {/* Film-strip decoration */}
+    <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      {/* ── Background & Atmospherics ── */}
+      <LinearGradient
+        colors={[colors.ink, '#0B0907', colors.soot]}
+        locations={[0, 0.5, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
       <FilmPerforations side="left" />
       <FilmPerforations side="right" />
 
-      {/* Close button — pinned above scroll */}
-      <TouchableOpacity
-        style={s.closeBtn}
-        onPress={() => router.back()}
-        hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
-      >
-        <Text style={s.closeText}>✕</Text>
-      </TouchableOpacity>
+      {/* ── Pinned Header / Close (0-Overlap) ── */}
+      <View style={s.fixedHeader}>
+        <TouchableOpacity
+          style={s.closeBtn}
+          onPress={() => router.back()}
+          hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+        >
+          <Text style={s.closeText}>✕</Text>
+        </TouchableOpacity>
+      </View>
 
-      <ScrollView
-        contentContainerStyle={s.scroll}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-
-        {/* ── Header ── */}
-        <AnimatedView entering={FadeInDown.duration(900).reduceMotion(ReduceMotion.Never)} style={s.header}>
+      <KeyboardAvoidingView style={s.keyboardFlex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom + 10 : 0}>
+        <ScrollView
+          contentContainerStyle={s.scroll}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ── Titles ── */}
+          <AnimatedView entering={FadeInDown.duration(900).reduceMotion(ReduceMotion.Never)} style={s.header}>
           {/* Decorative stamp — official logo */}
           <View style={s.stampContainer}>
             <View style={s.stampBorder}>
@@ -439,7 +382,7 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <Text style={s.eyebrow}>
+          <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             {isLogin ? 'IDENTIFY YOURSELF' : 'REQUEST MEMBERSHIP'}
           </Text>
 
@@ -550,42 +493,15 @@ export default function LoginScreen() {
               <TouchableOpacity
                 style={s.showBtn}
                 onPress={() => setShowPassword(v => !v)}
-                hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
               >
-                <Text style={s.showText}>{showPassword ? 'HIDE' : 'SHOW'}</Text>
+                <Text style={s.showText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{showPassword ? 'HIDE' : 'SHOW'}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Password strength meter (signup only) */}
-          {!isLogin && password.length > 0 && (
-            <AnimatedView entering={FadeInDown.duration(300)} style={s.strengthWrap}>
-              <View style={s.strengthBarRow}>
-                {[1, 2, 3, 4, 5].map(i => (
-                  <View
-                    key={i}
-                    style={[
-                      s.strengthSegment,
-                      { backgroundColor: i <= pwPassed ? pwStrengthColor : colors.ash },
-                    ]}
-                  />
-                ))}
-                <Text style={[s.strengthLabel, { color: pwStrengthColor }]}>{pwStrengthLabel}</Text>
-              </View>
-              <View style={s.checksGrid}>
-                {PW_CHECK_LABELS.map(([key, label]) => (
-                  <View key={key} style={s.checkRow}>
-                    <Text style={[s.checkIcon, { color: pwChecks[key] ? '#4caf50' : colors.fog }]}>
-                      {pwChecks[key] ? '✓' : '○'}
-                    </Text>
-                    <Text style={[s.checkLabel, { color: pwChecks[key] ? '#4caf50' : colors.fog }]}>
-                      {label}
-                    </Text>
-                  </View>
-                ))}
-              </View>
-            </AnimatedView>
-          )}
+          {!isLogin && password.length > 0 && <PasswordStrengthMeter password={password} />}
 
           {/* Forgot password link (login mode only) */}
           {isLogin && (
@@ -595,7 +511,7 @@ export default function LoginScreen() {
                 setForgotSent(false);
                 setForgotModalVisible(true);
               }}
-              style={s.forgotBtn}
+              style={s.forgotBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
               <Text style={s.forgotText}>Forgot your credentials?</Text>
             </TouchableOpacity>
@@ -606,58 +522,26 @@ export default function LoginScreen() {
             style={[s.submitBtn, submitting && s.submitDisabled]}
             onPress={handleSubmit}
             disabled={submitting}
-            activeOpacity={0.7}
+            activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           >
             {submitting ? (
               <View style={s.submitLoading}>
                 <ActivityIndicator size="small" color={colors.ink} />
-                <Text style={s.submitText}>
+                <Text style={s.submitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                   {isLogin ? 'VERIFYING...' : 'PROCESSING APPLICATION...'}
                 </Text>
               </View>
             ) : (
-              <Text style={s.submitText}>
+              <Text style={s.submitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {isLogin ? '✦  IDENTIFY & ENTER' : '✦  REQUEST ADMISSION'}
               </Text>
             )}
           </TouchableOpacity>
-
-          {/* Divider */}
-          <View style={s.dividerWrap}>
-            <View style={s.dividerLine} />
-            <Text style={s.dividerText}>OR</Text>
-            <View style={s.dividerLine} />
-          </View>
-
-          {/* OAuth */}
-          <View style={s.oauthWrap}>
-            {Platform.OS === 'ios' && (
-              <TouchableOpacity
-                style={[s.oauthBtn, s.oauthApple, submitting && s.submitDisabled]}
-                onPress={() => handleOAuth('apple')}
-                disabled={submitting}
-                activeOpacity={0.7}
-              >
-                <Text style={s.oauthAppleIcon}></Text>
-                <Text style={s.oauthAppleText}>CONTINUE WITH APPLE</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={[s.oauthBtn, submitting && s.submitDisabled]}
-              onPress={() => handleOAuth('google')}
-              disabled={submitting}
-              activeOpacity={0.7}
-            >
-              <Text style={s.oauthGoogleIcon}>G</Text>
-              <Text style={s.oauthText}>CONTINUE WITH GOOGLE</Text>
-            </TouchableOpacity>
-          </View>
         </AnimatedView>
 
         {/* ── Toggle Login/Signup ── */}
         <AnimatedView entering={FadeInUp.duration(600).delay(450).reduceMotion(ReduceMotion.Never)} style={s.toggleWrap}>
-          <TouchableOpacity onPress={toggleMode} activeOpacity={0.6}>
+          <TouchableOpacity onPress={toggleMode} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
             <Text style={s.toggleText}>
               {isLogin ? 'No membership? ' : 'Already admitted? '}
               <Text style={s.toggleHighlight}>
@@ -674,166 +558,87 @@ export default function LoginScreen() {
           </Text>
         </AnimatedView>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       {/* ── Forgot Password Modal ── */}
-      <Modal
+      <PasswordRecoveryModal
         visible={forgotModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setForgotModalVisible(false)}
-      >
-        <KeyboardAvoidingView style={s.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={() => setForgotModalVisible(false)}
-          />
-          <View style={s.modalContent}>
-            {/* Close */}
-            <TouchableOpacity
-              style={s.modalCloseBtn}
-              onPress={() => setForgotModalVisible(false)}
-              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
-            >
-              <Text style={s.modalCloseText}>✕</Text>
-            </TouchableOpacity>
-
-            {/* Header */}
-            <View style={s.modalHeader}>
-              <View style={s.modalIconWrap}>
-                <Text style={s.modalIcon}>🔒</Text>
-              </View>
-              <Text style={s.modalEyebrow}>CREDENTIAL RECOVERY</Text>
-              <Text style={s.modalTitle}>
-                {forgotSent ? 'Check Your Inbox' : 'Reset Password'}
-              </Text>
-            </View>
-
-            {forgotSent ? (
-              <View>
-                <Text style={s.modalBodyText}>
-                  We sent a password reset link to{' '}
-                  <Text style={s.forgotEmailHighlight}>
-                    {forgotEmail}
-                  </Text>
-                  .
-                </Text>
-                <Text style={s.modalSubText}>
-                  Check your spam folder if it doesn't arrive within 2 minutes.
-                </Text>
-                <TouchableOpacity
-                  style={s.modalSubmitBtn}
-                  onPress={() => {
-                    setForgotModalVisible(false);
-                    setForgotSent(false);
-                  }}
-                  activeOpacity={0.7}
-                >
-                  <Text style={s.modalSubmitText}>BACK TO SIGN IN</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <View style={s.forgotFormBody}>
-                <Text style={s.modalBodyText}>
-                  Enter the email associated with your account and we'll send you a classified reset link.
-                </Text>
-                <View style={s.inputWrap}>
-                  <TextInput
-                    style={s.input}
-                    placeholder="your@email.com"
-                    placeholderTextColor={colors.fog}
-                    value={forgotEmail}
-                    onChangeText={setForgotEmail}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
-                    selectionColor={colors.sepia}
-                    returnKeyType="go"
-                    onSubmitEditing={handleForgotPassword}
-                    autoCorrect={false}
-                    maxLength={254}
-                  />
-                </View>
-                <TouchableOpacity
-                  style={[s.modalSubmitBtn, forgotLoading && s.submitDisabled]}
-                  onPress={handleForgotPassword}
-                  disabled={forgotLoading}
-                  activeOpacity={0.7}
-                >
-                  {forgotLoading ? (
-                    <View style={s.submitLoading}>
-                      <ActivityIndicator size="small" color={colors.ink} />
-                      <Text style={s.modalSubmitText}>SENDING...</Text>
-                    </View>
-                  ) : (
-                    <Text style={s.modalSubmitText}>SEND RESET LINK</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </KeyboardAvoidingView>
-      </Modal>
-    </KeyboardAvoidingView>
+        forgotSent={forgotSent}
+        forgotEmail={forgotEmail}
+        forgotLoading={forgotLoading}
+        onClose={() => setForgotModalVisible(false)}
+        onEmailChange={setForgotEmail}
+        onSubmit={handleForgotPassword}
+        onBackToSignIn={() => { setForgotModalVisible(false); setForgotSent(false); }}
+      />
+    </View>
   );
 }
 
 // ══════════════════════════════════════════════════════════════
-// STYLES — Nitrate Noir Premium Auth
+// STYLES — Archival Ledger Form
 // ══════════════════════════════════════════════════════════════
 const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.ink,
   },
-  scroll: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 32,
-    paddingBottom: 40,
-    paddingTop: 60,
+  keyboardFlex: {
+    flex: 1,
   },
-
-  // ── Close ──
-  closeBtn: {
+  fixedHeader: {
     position: 'absolute',
-    top: 56,
+    top: 0,
+    left: 0,
     right: 0,
-    zIndex: 10,
-    padding: 8,
-    width: 40,
-    height: 40,
-    alignItems: 'center',
+    height: 56,
+    zIndex: 100,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 24,
+    paddingTop: 16,
+  },
+  closeBtn: {
+    width: 44, height: 44,
+    alignItems: 'flex-end',
     justifyContent: 'center',
   },
   closeText: {
     color: colors.fog,
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: fonts.ui,
+    opacity: 0.8,
+  },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingBottom: 24,
+    paddingTop: 40,
   },
 
-  // ── Header ──
+  // ── Headers ──
   header: {
     alignItems: 'center',
     marginBottom: 32,
   },
   stampContainer: {
-    marginBottom: 20,
+    marginBottom: 16,
   },
   stampBorder: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
     borderWidth: 1.5,
-    borderColor: colors.sepiaBorder,
-    backgroundColor: 'rgba(196, 150, 26, 0.06)',
+    borderColor: 'rgba(196,150,26,0.3)',
     alignItems: 'center',
     justifyContent: 'center',
-    overflow: 'hidden',
-    ...effects.glowSepia,
+    backgroundColor: '#0E0B08',
   },
   stampLogo: {
-    width: 44,
-    height: 44,
+    width: 28,
+    height: 35,
+    tintColor: colors.sepia,
   },
   eyebrow: {
     fontFamily: fonts.sub,
@@ -876,27 +681,26 @@ const s = StyleSheet.create({
     alignSelf: 'center',
   },
   formCard: {
-    backgroundColor: 'rgba(14, 13, 10, 0.7)',
+    backgroundColor: '#110D0A',
     borderWidth: 1,
-    borderColor: colors.ash,
-    borderRadius: 4,
+    borderColor: '#30261A',
+    borderRadius: 6,
     padding: 24,
-    gap: 18,
-    overflow: 'hidden',
+    gap: 20,
   },
   formCardGlow: {
     position: 'absolute',
     top: 0,
-    left: 20,
-    right: 20,
+    left: 40,
+    right: 40,
     height: 1,
     backgroundColor: colors.sepia,
-    opacity: 0.25,
+    opacity: 0.4,
   },
 
-  // ── Fields ──
+  // ── Archival Inputs ──
   fieldGroup: {
-    gap: 6,
+    gap: 8,
   },
   inputLabel: {
     fontFamily: fonts.ui,
@@ -910,22 +714,22 @@ const s = StyleSheet.create({
   },
   inputPrefix: {
     position: 'absolute',
-    left: 14,
-    top: 15,
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.fog,
+    left: 4,
+    top: 10,
+    fontFamily: fonts.mono,
+    fontSize: 16,
+    color: colors.sepia,
     zIndex: 2,
+    opacity: 0.8,
   },
   input: {
-    backgroundColor: colors.soot,
-    borderWidth: 1,
-    borderColor: colors.ash,
-    borderRadius: 3,
-    padding: 14,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    fontFamily: fonts.body,
+    backgroundColor: 'transparent',
+    borderBottomWidth: 2,
+    borderColor: '#3A2E1C',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    fontSize: 16,
+    fontFamily: fonts.mono,
     color: colors.parchment,
   },
   fieldHint: {
@@ -1085,175 +889,5 @@ const s = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 14,
     opacity: 0.6,
-  },
-
-  // ── Forgot Password Modal ──
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(5, 3, 1, 0.95)',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  modalContent: {
-    backgroundColor: colors.ink,
-    borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.3)',
-    borderRadius: 4,
-    padding: 28,
-    ...effects.glowSepia,
-  },
-  forgotFormBody: {
-    gap: 16,
-  },
-  modalCloseBtn: {
-    position: 'absolute',
-    top: 16,
-    right: 16,
-    zIndex: 10,
-    padding: 8,
-  },
-  modalCloseText: {
-    color: colors.fog,
-    fontSize: 16,
-    fontFamily: fonts.ui,
-  },
-  modalHeader: {
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  modalIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(196,150,26,0.08)',
-    borderWidth: 1,
-    borderColor: colors.sepiaBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-  modalIcon: {
-    fontSize: 22,
-  },
-  modalEyebrow: {
-    fontFamily: fonts.ui,
-    fontSize: 8,
-    letterSpacing: 4,
-    color: colors.sepia,
-    marginBottom: 8,
-  },
-  modalTitle: {
-    fontFamily: fonts.display,
-    fontSize: 24,
-    color: colors.parchment,
-    textAlign: 'center',
-    ...effects.textShadowDeep,
-  },
-  modalBodyText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.bone,
-    lineHeight: 22,
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  modalSubText: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
-    letterSpacing: 1,
-    color: colors.fog,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  modalSubmitBtn: {
-    backgroundColor: colors.sepia,
-    borderRadius: 3,
-    paddingVertical: 14,
-    alignItems: 'center',
-    ...effects.glowSepia,
-  },
-  modalSubmitText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: colors.ink,
-    fontWeight: '700',
-  },
-  forgotEmailHighlight: {
-    color: colors.parchment,
-    fontFamily: fonts.bodyBold,
-  },
-
-  // ── Strength Meter ──
-  strengthWrap: { gap: 10 },
-  strengthBarRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  strengthSegment: { flex: 1, height: 3, borderRadius: 2 },
-  strengthLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, marginLeft: 8, minWidth: 80 },
-  checksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '48%' as any },
-  checkIcon: { fontFamily: fonts.ui, fontSize: 11 },
-  checkLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5 },
-
-  // ── Username Availability ──
-  usernameStatusWrap: {
-    position: 'absolute', right: 14, top: 0, bottom: 0,
-    justifyContent: 'center',
-  },
-  usernameAvailable: { fontSize: 16, color: '#4caf50', fontFamily: fonts.uiBold },
-  usernameTaken: { fontSize: 14, color: colors.bloodReel, fontFamily: fonts.uiBold },
-
-  // ── Email Confirmation Screen ──
-  confirmationWrap: {
-    flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32,
-  },
-  confirmationContent: { alignItems: 'center', maxWidth: 360 },
-  confirmIconWrap: {
-    width: 64, height: 64, borderRadius: 32,
-    backgroundColor: 'rgba(196, 150, 26, 0.1)',
-    borderWidth: 1.5, borderColor: colors.sepia,
-    alignItems: 'center', justifyContent: 'center',
-    marginBottom: 20,
-    ...effects.glowSepia,
-  },
-  confirmIconEmoji: { fontSize: 28 },
-  confirmEyebrow: {
-    fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4,
-    color: colors.sepia, marginBottom: 12,
-  },
-  confirmTitle: {
-    fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
-    textAlign: 'center', lineHeight: 34, marginBottom: 16,
-    ...effects.textShadowDeep,
-  },
-  confirmBody: {
-    fontFamily: fonts.body, fontSize: 13, color: colors.bone,
-    textAlign: 'center', lineHeight: 22, marginBottom: 12,
-  },
-  confirmEmailBox: {
-    backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash,
-    borderRadius: 2, paddingVertical: 10, paddingHorizontal: 16,
-    marginBottom: 20, alignSelf: 'stretch',
-  },
-  confirmEmailText: {
-    fontFamily: fonts.ui, fontSize: 11, letterSpacing: 0.8,
-    color: colors.flicker, textAlign: 'center',
-  },
-  confirmInstructions: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1,
-    color: colors.fog, textAlign: 'center', lineHeight: 16,
-    marginBottom: 24,
-  },
-  confirmResendBtn: {
-    borderWidth: 1, borderColor: colors.ash, borderRadius: 2,
-    paddingVertical: 10, paddingHorizontal: 20,
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    marginBottom: 20,
-  },
-  confirmResendText: {
-    fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.bone,
-  },
-  confirmAutoNote: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1,
-    color: colors.fog, textAlign: 'center', opacity: 0.6,
   },
 });

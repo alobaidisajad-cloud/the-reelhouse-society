@@ -18,7 +18,10 @@ interface TMDBSearchResult {
     popularity?: number;
     known_for?: TMDBSearchResult[];
     release_date?: string;
-    [key: string]: unknown;
+    vote_average?: number;
+    vote_count?: number;
+    known_for_department?: string;
+    overview?: string;
 }
 
 interface TMDBSearchResponse {
@@ -43,7 +46,16 @@ interface TMDBMovieDetail {
     credits?: { cast?: unknown[]; crew?: unknown[] };
     videos?: { results?: unknown[] };
     similar?: { results?: unknown[] };
-    [key: string]: unknown;
+    production_countries?: Array<{ iso_3166_1: string; name: string }>;
+    production_companies?: Array<{ id: number; name: string; logo_path?: string | null; origin_country?: string }>;
+    status?: string;
+    original_language?: string;
+    budget?: number;
+    revenue?: number;
+    tagline?: string;
+    vote_count?: number;
+    'watch/providers'?: { results?: Record<string, unknown> };
+    release_dates?: unknown;
 }
 
 interface TMDBMovieListResponse {
@@ -58,7 +70,11 @@ interface TMDBPersonDetail {
     name: string;
     biography?: string;
     profile_path?: string | null;
-    [key: string]: unknown;
+    birthday?: string;
+    deathday?: string | null;
+    place_of_birth?: string;
+    known_for_department?: string;
+    also_known_as?: string[];
 }
 
 interface TMDBPersonCredits {

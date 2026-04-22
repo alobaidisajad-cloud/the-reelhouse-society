@@ -20,7 +20,7 @@ export default function HandbookModal({ visible, onClose }: { visible: boolean; 
                 <View style={s.card}>
                     <View style={s.header}>
                         <Text style={s.title}>The Society Handbook</Text>
-                        <TouchableOpacity onPress={onClose} activeOpacity={0.7}>
+                        <TouchableOpacity onPress={onClose} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                             <Text style={s.closeText}>✕</Text>
                         </TouchableOpacity>
                     </View>

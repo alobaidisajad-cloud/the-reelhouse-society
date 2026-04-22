@@ -32,7 +32,7 @@ import { supabase } from '@/src/lib/supabase';
 
 interface ProfileRow { id: string; username: string; avatar_url?: string; role?: string }
 interface LogRow { id: string; film_title: string; review?: string; rating?: number; username?: string; role?: string; poster_path?: string; created_at?: string }
-interface ProgrammeRow { id: string; title: string; description?: string; is_public?: boolean; created_at?: string }
+interface ListRow { id: string; title: string; description?: string; is_private?: boolean; created_at?: string }
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w92';
 
@@ -120,26 +120,28 @@ export default function SearchModal() {
     setSearching(true);
     setSearched(true);
     const text = q.trim();
+    // Escape SQL wildcard chars to prevent pattern injection via ilike
+    const safeText = text.replace(/[%_]/g, '\\$&');
 
     const [tmdbRes, usersRes, logsRes, listsRes] = await Promise.allSettled([
       tmdb.search(text),
       supabase
         .from('profiles')
         .select('id, username, avatar_url, role')
-        .or(`username.ilike.%${text}%,display_name.ilike.%${text}%`)
+        .or(`username.ilike.%${safeText}%,display_name.ilike.%${safeText}%`)
         .limit(15),
       supabase
         .from('logs')
         .select('id, film_title, review, rating, username, role, poster_path, created_at')
-        .or(`film_title.ilike.%${text}%,review.ilike.%${text}%,username.ilike.%${text}%`)
+        .or(`film_title.ilike.%${safeText}%,review.ilike.%${safeText}%,username.ilike.%${safeText}%`)
         .not('review', 'is', null)
         .order('created_at', { ascending: false })
         .limit(20),
       supabase
-        .from('programmes')
-        .select('id, title, description, is_public, created_at')
-        .or(`title.ilike.%${text}%,description.ilike.%${text}%`)
-        .eq('is_public', true)
+        .from('lists')
+        .select('id, title, description, is_private, created_at')
+        .or(`title.ilike.%${safeText}%,description.ilike.%${safeText}%`)
+        .eq('is_private', false)
         .order('created_at', { ascending: false })
         .limit(12),
     ]);
@@ -209,12 +211,12 @@ export default function SearchModal() {
 
     // ── Parse lists ──
     if (listsRes.status === 'fulfilled' && !listsRes.value.error) {
-      setLists((listsRes.value.data ?? []).map((p: ProgrammeRow) => ({
+      setLists((listsRes.value.data ?? []).map((p: ListRow) => ({
         id: `list-${p.id}`, type: 'list',
         title: p.title ?? 'Untitled Stack',
         subtitle: p.description ? p.description.slice(0, 60) : 'PUBLIC STACK',
         image: null,
-        _nav: '',
+        _nav: `/stacks/${p.id}`,
       })));
     }
 
@@ -309,21 +311,21 @@ export default function SearchModal() {
 
           {/* Text */}
           <View style={st.rowText}>
-            <Text style={st.rowTitle} numberOfLines={1}>{item.title}</Text>
+            <Text style={st.rowTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.title}</Text>
 
             <View style={st.rowSubRow}>
-              <Text style={st.rowSub} numberOfLines={1}>{item.subtitle}</Text>
+              <Text style={st.rowSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.subtitle}</Text>
               {item.rating ? (
                 <Text style={st.rowRating}>{'◉'.repeat(Math.min(item.rating, 5))}</Text>
               ) : null}
               {item.extra && item.type !== 'log' ? (
-                <Text style={st.rowExtra}>{item.extra}</Text>
+                <Text style={st.rowExtra} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
               ) : null}
             </View>
 
             {/* Log excerpt */}
             {item.type === 'log' && item.extra ? (
-              <Text style={st.rowExcerpt} numberOfLines={1}>{item.extra}</Text>
+              <Text style={st.rowExcerpt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
             ) : null}
 
             {/* User/log role badge */}
@@ -372,7 +374,7 @@ export default function SearchModal() {
             onSubmitEditing={() => Keyboard.dismiss()}
           />
           {query.length > 0 && (
-            <Pressable onPress={() => setQuery('')} style={st.clearBtn} accessibilityRole="button" accessibilityLabel="Clear search">
+            <Pressable onPress={() => setQuery('')} style={st.clearBtn} hitSlop={{top: 15, right: 15, bottom: 15, left: 15}} accessibilityRole="button" accessibilityLabel="Clear search">
               <X size={14} color={colors.fog} />
             </Pressable>
           )}
@@ -401,6 +403,7 @@ export default function SearchModal() {
                   style={[st.tabBtn, active && st.tabActive]}
                   onPress={() => { Haptics.selectionAsync(); setTab(t.key); }}
                   activeOpacity={0.7}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
                   <Icon size={11} color={active ? colors.ink : colors.fog} strokeWidth={active ? 2.5 : 1.5} />
                   <Text style={[st.tabText, active && st.tabTextActive]}>{t.label}</Text>

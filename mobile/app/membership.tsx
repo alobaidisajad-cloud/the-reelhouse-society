@@ -147,7 +147,7 @@ export default function MembershipScreen() {
     <View style={st.container}>
       {/* Nav */}
       <View style={st.navBar}>
-        <TouchableOpacity onPress={() => router.back()} style={st.navBackBtn} activeOpacity={0.7}>
+        <TouchableOpacity onPress={() => router.back()} style={st.navBackBtn} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
           <ChevronLeft size={22} color={colors.bone} />
         </TouchableOpacity>
       </View>
@@ -264,6 +264,7 @@ export default function MembershipScreen() {
                       tier.ctaStyle === 'auteur' && st.tierCtaAuteur,
                     ]}
                     activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     disabled={isRedirecting}
                     onPress={() => {
                       if (tier.id === 'cinephile') {
@@ -320,7 +321,7 @@ export default function MembershipScreen() {
             Compare to $19.99/yr recurring {'\u2014'} this pays for itself in under 3 years and never charges again.
           </Text>
 
-          <TouchableOpacity style={st.foundingBtn} activeOpacity={0.7} disabled={isRedirecting} onPress={handleFoundingCheckout}>
+          <TouchableOpacity style={st.foundingBtn} activeOpacity={0.7} disabled={isRedirecting} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} onPress={handleFoundingCheckout}>
             <LinearGradient colors={[colors.sepia, '#b89530']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
             <Text style={st.foundingBtnText}>{isRedirecting ? 'SECURING LEDGER...' : 'CLAIM A FOUNDING SEAT'}</Text>
           </TouchableOpacity>

@@ -72,7 +72,7 @@ export default function OnboardingModal({ visible, onComplete }: OnboardingModal
 
                     <View style={s.footer}>
                         {step > 0 && (
-                            <TouchableOpacity onPress={() => { setStep(step - 1); Haptics.selectionAsync(); }} activeOpacity={0.7}>
+                            <TouchableOpacity onPress={() => { setStep(step - 1); Haptics.selectionAsync(); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                                 <Text style={s.backText}>← BACK</Text>
                             </TouchableOpacity>
                         )}

@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ReelHouse Master Interface Pipeline</title>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  body {
+    background: #000;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 50px;
+    padding: 50px;
+    justify-content: center;
+  }
+
+  .slide {
+    width: 1080px;
+    height: 1080px;
+    background: radial-gradient(circle at center, #11100e 0%, #060504 100%);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* Ultra-thin elegant corner brackets from Light Mode Incident */
+  .corner { 
+    position: absolute; 
+    width: 45px; 
+    height: 45px; 
+    border: 1px solid rgba(196,150,26,0.25); 
+    z-index: 3; 
+    pointer-events: none;
+  }
+  .tl { top: 35px; left: 35px; border-right: none; border-bottom: none; }
+  .tr { top: 35px; right: 35px; border-left: none; border-bottom: none; }
+  .bl { bottom: 35px; left: 35px; border-right: none; border-top: none; }
+  .br { bottom: 35px; right: 35px; border-left: none; border-top: none; }
+
+  /* Very subtle film grain */
+  .grain {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0.02;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .slide-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    position: relative;
+    z-index: 4;
+  }
+
+  /* Typography matching the Master Format */
+  .logo {
+    width: 140px;
+    margin-bottom: 50px;
+    filter: sepia(1) hue-rotate(10deg) saturate(2) brightness(0.9);
+  }
+  
+  .banner-box {
+    border: 1px solid rgba(196,150,26,0.5);
+    padding: 12px 30px;
+    transform: rotate(-1.5deg);
+    margin-bottom: 60px;
+  }
+  .banner-text {
+    font-family: 'Special Elite', cursive;
+    color: #C4961A;
+    font-size: 16px;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+  }
+
+  .main-title-box {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+  }
+  .main-title-line1 {
+    font-family: 'Rye', serif;
+    color: #EDE5D8;
+    font-size: 85px;
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+  .main-title-line2 {
+    font-family: 'Rye', serif;
+    color: #C4961A;
+    font-size: 85px;
+    line-height: 1;
+    letter-spacing: 2px;
+  }
+
+  .subtitle {
+    font-family: 'Special Elite', cursive;
+    color: #C4961A;
+    font-size: 20px;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-top: 50px;
+    margin-bottom: 50px;
+    opacity: 0.9;
+  }
+
+  .divider {
+    width: 300px;
+    height: 1px;
+    background: radial-gradient(circle, rgba(196,150,26,0.3) 0%, transparent 100%);
+  }
+
+  .footer {
+    font-family: 'Special Elite', cursive;
+    color: #4a423a;
+    font-size: 15px;
+    letter-spacing: 0.5em;
+    position: absolute;
+    bottom: 55px;
+  }
+
+  /* Feature Slides Typography */
+  .feat-label {
+    font-family: 'Special Elite', cursive;
+    color: #C4961A;
+    font-size: 18px;
+    letter-spacing: 0.5em;
+    margin-bottom: 25px;
+    opacity: 0.9;
+  }
+
+  .feat-title {
+    font-family: 'Rye', serif;
+    color: #EDE5D8;
+    font-size: 65px;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+  }
+
+  /* Seamless Interactive Drop Zone! No dashed borders. */
+  .drop-zone {
+    width: 100%;
+    height: 520px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    margin-bottom: 40px;
+  }
+
+  .upload-hint {
+    font-family: 'Special Elite', cursive;
+    color: #C4961A;
+    font-size: 14px;
+    letter-spacing: 0.3em;
+    border: 1px solid rgba(196,150,26,0.3);
+    padding: 10px 20px;
+    opacity: 0.5;
+    transition: 0.2s ease;
+  }
+  .drop-zone:hover .upload-hint { opacity: 1; background: rgba(196,150,26,0.05); }
+
+  .uploaded-img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: auto;
+    height: 100%;
+    object-fit: contain;
+    z-index: 2;
+    display: none;
+    filter: contrast(1.05) brightness(0.95);
+  }
+
+  /* Massive smooth fade layer to lock the image into the darkness */
+  .shadow-fade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 3;
+    background: radial-gradient(circle at center, transparent 40%, rgba(6,5,4,0.95) 85%, rgba(6,5,4,1) 100%),
+                linear-gradient(to top, rgba(6,5,4,1) 0%, transparent 20%, transparent 80%, rgba(6,5,4,1) 100%);
+  }
+
+  .feat-body {
+    font-family: 'Courier Prime', monospace;
+    font-size: 24px;
+    color: #EDE5D8;
+    opacity: 0.7;
+    text-align: center;
+    max-width: 680px;
+    line-height: 1.6;
+    letter-spacing: 0.5px;
+  }
+
+  .feat-footnote {
+    font-family: 'Special Elite', cursive;
+    color: #4a423a;
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    position: absolute;
+    bottom: 55px;
+  }
+
+</style>
+</head>
+<body>
+
+  <!-- SLIDE 1: Title Card -->
+  <div class="slide">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="grain"></div>
+    <div class="slide-container">
+      <img class="logo" src="public/reelhouse-logo-transparent.png" onerror="this.src='public/reelhouse-logo.svg'">
+      <div class="banner-box"><div class="banner-text">PUBLIC SERVICE ANNOUNCEMENT</div></div>
+      <div class="main-title-box">
+        <div class="main-title-line1">THE NATIVE APP</div>
+        <div class="main-title-line2">DECLASSIFIED</div>
+      </div>
+      <div class="subtitle">WHAT EXACTLY ARE WE BUILDING? &rarr;</div>
+      <div class="divider"></div>
+      <div class="footer">SOCIETY ARCHIVES</div>
+    </div>
+  </div>
+
+  <!-- SLIDE 2: Log Your Cinema -->
+  <div class="slide">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="grain"></div>
+    <div class="slide-container">
+      <div class="feat-label">F U N C T I O N &nbsp; N O . &nbsp; 1</div>
+      <div class="feat-title">Log Your Cinema</div>
+      
+      <div class="drop-zone" onclick="document.getElementById('file1').click()">
+        <span class="upload-hint" id="hint1">[ CLICK TO ESTABLISH IMAGE ]</span>
+        <img class="uploaded-img" id="img1">
+        <div class="shadow-fade"></div>
+      </div>
+      <input type="file" id="file1" style="display:none;" accept="image/*">
+      
+      <div class="feat-body">
+        Digitize your viewing history. Relying on your biological memory is highly inefficient and strictly forbidden by the Society. The darkroom requires a permanent paper trail.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 3: Submit Dossiers -->
+  <div class="slide">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="grain"></div>
+    <div class="slide-container">
+      <div class="feat-label">F U N C T I O N &nbsp; N O . &nbsp; 2</div>
+      <div class="feat-title">Submit Dossiers</div>
+      
+      <div class="drop-zone" onclick="document.getElementById('file2').click()">
+        <span class="upload-hint" id="hint2">[ CLICK TO ESTABLISH IMAGE ]</span>
+        <img class="uploaded-img" id="img2">
+        <div class="shadow-fade"></div>
+      </div>
+      <input type="file" id="file2" style="display:none;" accept="image/*">
+      
+      <div class="feat-body">
+        Write merciless Dossiers. Rate films on a strict scale from "Generational Masterpiece" to "I am actively seeking financial compensation from the director." Do not hold back.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 4: Build The Stacks -->
+  <div class="slide">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="grain"></div>
+    <div class="slide-container">
+      <div class="feat-label">F U N C T I O N &nbsp; N O . &nbsp; 3</div>
+      <div class="feat-title">Build The Stacks</div>
+      
+      <div class="drop-zone" onclick="document.getElementById('file3').click()">
+        <span class="upload-hint" id="hint3">[ CLICK TO ESTABLISH IMAGE ]</span>
+        <img class="uploaded-img" id="img3">
+        <div class="shadow-fade"></div>
+      </div>
+      <input type="file" id="file3" style="display:none;" accept="image/*">
+      
+      <div class="feat-body">
+        Curate custom Stacks purely to establish your cinematic superiority in online arguments. We will keep your highly specific 47-movie list of "Atmospheric Rain Scenes" perfectly secure.
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE 5: Infiltrate The Lounge -->
+  <div class="slide">
+    <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+    <div class="grain"></div>
+    <div class="slide-container">
+      <div class="feat-label">F U N C T I O N &nbsp; N O . &nbsp; 4</div>
+      <div class="feat-title" style="color: #C4961A;">Infiltrate The Lounge</div>
+      
+      <div class="drop-zone" onclick="document.getElementById('file4').click()">
+        <span class="upload-hint" id="hint4">[ CLICK TO ESTABLISH IMAGE ]</span>
+        <img class="uploaded-img" id="img4">
+        <div class="shadow-fade"></div>
+      </div>
+      <input type="file" id="file4" style="display:none;" accept="image/*">
+      
+      <div class="feat-body">
+        Step into the chat rooms. Defending a financially disastrous 1970s sci-fi film against complete strangers in real-time is the highest form of cinematic appreciation.
+      </div>
+      <div class="feat-footnote">*Buster is tracking the deployment. Stop asking for a release date.</div>
+    </div>
+  </div>
+
+<script>
+  function setupDropZone(inputId, imgId, hintId) {
+    document.getElementById(inputId).addEventListener('change', function(e) {
+      if (e.target.files && e.target.files[0]) {
+        var reader = new FileReader();
+        reader.onload = function(evt) {
+          var img = document.getElementById(imgId);
+          img.src = evt.target.result;
+          img.style.display = 'block';
+          document.getElementById(hintId).style.display = 'none';
+        }
+        reader.readAsDataURL(e.target.files[0]);
+      }
+    });
+  }
+  setupDropZone('file1', 'img1', 'hint1');
+  setupDropZone('file2', 'img2', 'hint2');
+  setupDropZone('file3', 'img3', 'hint3');
+  setupDropZone('file4', 'img4', 'hint4');
+</script>
+
+</body>
+</html>

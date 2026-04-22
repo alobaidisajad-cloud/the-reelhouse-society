@@ -5,11 +5,14 @@ export interface DiscoverFilm {
   title?: string;
   name?: string;
   poster_path?: string | null;
+  backdrop_path?: string | null;
   media_type?: string;
   popularity?: number;
   release_date?: string;
   vote_average?: number;
-  [key: string]: unknown;
+  vote_count?: number;
+  overview?: string;
+  genre_ids?: number[];
 }
 
 export interface DiscoverMood {

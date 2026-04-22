@@ -11,6 +11,7 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 import { useNotificationStore } from '@/src/stores/social';
 import { LinearGradient } from 'expo-linear-gradient';
 import { onScrollYChange } from '@/src/utils/scrollBridge';
+import * as Haptics from 'expo-haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -23,7 +24,7 @@ const NavIconButton = memo(function NavIconButton({
   accent = false,
   size = 20,
 }: {
-  icon: any;
+  icon: React.ComponentType<{ size: number; color: string; strokeWidth: number }>;
   onPress: () => void;
   badge?: boolean;
   accent?: boolean;
@@ -39,6 +40,7 @@ const NavIconButton = memo(function NavIconButton({
     <AnimatedPressable
       onPressIn={() => {
         scale.value = withSpring(0.82, { damping: 15, stiffness: 300 });
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       }}
       onPressOut={() => {
         scale.value = withSpring(1, { damping: 12, stiffness: 200 });
@@ -131,7 +133,7 @@ export const TopNavBar = memo(function TopNavBar() {
           </View>
 
           {/* ── RIGHT CLUSTER: Search + Notifications ── */}
-          <View style={styles.sideCluster}>
+          <View style={[styles.sideCluster, styles.rightCluster]}>
             <NavIconButton
               icon={Search}
               onPress={() => router.push('/search-modal')}
@@ -192,8 +194,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    minWidth: 76,
+    minWidth: 82, // Accommodates 2 icons (38 * 2 + 6)
     zIndex: 2, // Above the absolute-centered logo
+  },
+  rightCluster: {
+    justifyContent: 'flex-end',
   },
 
   // ── Icon buttons ──

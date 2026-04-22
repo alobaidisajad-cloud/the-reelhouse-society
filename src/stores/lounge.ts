@@ -31,7 +31,7 @@ export interface LoungeMessage {
     avatar_url?: string
     content: string
     type: 'text' | 'film_share' | 'log_share' | 'person_share' | 'list_share' | 'dossier_share'
-    metadata: Record<string, any>
+    metadata: Record<string, unknown>
     created_at: string
     reply_to_id?: string | null
     reply_to_content?: string | null
@@ -61,7 +61,7 @@ export interface LoungeStoreState {
     _subscribeToLounge: (loungeId: string) => void
     pauseRealtime: () => void
     resumeRealtime: () => Promise<void>
-    sendMessage: (content: string, type?: LoungeMessage['type'], metadata?: Record<string, any>, replyTo?: { id: string; content: string; username: string } | null) => Promise<void>
+    sendMessage: (content: string, type?: LoungeMessage['type'], metadata?: Record<string, unknown>, replyTo?: { id: string; content: string; username: string } | null) => Promise<void>
     deleteMessage: (messageId: string) => Promise<void>
     markAsRead: (loungeId: string) => Promise<void>
     fetchUnreadCounts: () => Promise<void>
@@ -73,7 +73,7 @@ export interface LoungeStoreState {
 }
 
 // ── Realtime channel reference ──
-let _activeChannel: any = null
+let _activeChannel: ReturnType<typeof supabase.channel> | null = null
 const _messageThrottles = new Map<string, number>()
 const PAGE_SIZE = 50
 
@@ -118,7 +118,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         if (!lounges) return
 
         // Fetch latest message for each lounge
-        const enriched = await Promise.all(lounges.map(async (l: any) => {
+        const enriched = await Promise.all(lounges.map(async (l) => {
             const { data: lastMsg } = await supabase
                 .from('lounge_messages')
                 .select('content, created_at, profiles!lounge_messages_user_id_fkey(username)')
@@ -127,13 +127,15 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 .limit(1)
                 .single()
 
+            const parsedLastMsg = lastMsg as { content: string; created_at: string; profiles?: { username: string } } | null
+
             return {
                 ...l,
                 creator_username: l.profiles?.username,
-                last_message: lastMsg ? {
-                    content: lastMsg.content,
-                    username: (lastMsg as any).profiles?.username || 'Unknown',
-                    created_at: lastMsg.created_at,
+                last_message: parsedLastMsg ? {
+                    content: parsedLastMsg.content,
+                    username: parsedLastMsg.profiles?.username || 'Unknown',
+                    created_at: parsedLastMsg.created_at,
                 } : undefined,
             }
         }))
@@ -175,9 +177,9 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const { data } = await query
         if (!data) return
 
-        const filtered = data.filter((l: any) => !joinedIds.includes(l.id))
+        const filtered = data.filter((l) => !joinedIds.includes(l.id))
         set({
-            publicLounges: filtered.map((l: any) => ({
+            publicLounges: filtered.map((l) => ({
                 ...l,
                 creator_username: l.profiles?.username,
             }))
@@ -323,7 +325,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .order('created_at', { ascending: false })
             .limit(PAGE_SIZE)
 
-        const messages: LoungeMessage[] = (msgs || []).reverse().map((m: any) => ({
+        const messages: LoungeMessage[] = (msgs || []).reverse().map((m: { id: string, lounge_id: string, user_id: string, content: string, type: LoungeMessage['type'], metadata: Record<string, unknown>, created_at: string, reply_to_id: string | null, reply_to_content: string | null, reply_to_username: string | null, profiles?: { username: string, avatar_url: string } }) => ({
             id: m.id,
             lounge_id: m.lounge_id,
             user_id: m.user_id,
@@ -339,7 +341,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         }))
 
         set({
-            activeLounge: { ...lounge, creator_username: (lounge as any).profiles?.username, is_member },
+            activeLounge: { ...lounge, creator_username: (lounge as { profiles?: { username?: string } }).profiles?.username, is_member },
             messages,
             isLoading: false,
             hasMoreMessages: (msgs || []).length === PAGE_SIZE,
@@ -364,7 +366,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 schema: 'public',
                 table: 'lounge_messages',
                 filter: `lounge_id=eq.${loungeId}`,
-            }, async (payload: any) => {
+            }, async (payload: { new: { id: string, lounge_id: string, user_id: string, content: string, type?: LoungeMessage['type'], metadata?: Record<string, unknown>, created_at: string, reply_to_id?: string | null, reply_to_content?: string | null, reply_to_username?: string | null } }) => {
                 const currentUserId = useAuthStore.getState().user?.id
                 // Fetch the profile for the new message
                 const { data: profile } = await supabase
@@ -406,7 +408,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 schema: 'public',
                 table: 'lounge_messages',
                 filter: `lounge_id=eq.${loungeId}`,
-            }, (payload: any) => {
+            }, (payload: { old: { id: string } }) => {
                 set(s => ({
                     messages: s.messages.filter(m => m.id !== payload.old.id)
                 }))
@@ -447,7 +449,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .order('created_at', { ascending: true })
 
         if (missedMsgs && missedMsgs.length > 0) {
-            const mappedMissed: LoungeMessage[] = missedMsgs.map((m: any) => ({
+            const mappedMissed: LoungeMessage[] = missedMsgs.map((m: { id: string, lounge_id: string, user_id: string, content: string, type: LoungeMessage['type'], metadata: Record<string, unknown>, created_at: string, reply_to_id: string | null, reply_to_content: string | null, reply_to_username: string | null, profiles?: { username: string, avatar_url: string } }) => ({
                 id: m.id,
                 lounge_id: m.lounge_id,
                 user_id: m.user_id,
@@ -576,7 +578,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
 
         if (data) {
             const counts: Record<string, number> = {}
-            data.forEach((r: any) => { counts[r.lounge_id] = r.unread_count })
+            data.forEach((r: { lounge_id: string; unread_count: number }) => { counts[r.lounge_id] = r.unread_count })
             set({ unreadCounts: counts })
         }
     },
@@ -600,7 +602,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             return
         }
 
-        const mapped: LoungeMessage[] = olderMsgs.reverse().map((m: any) => ({
+        const mapped: LoungeMessage[] = olderMsgs.reverse().map((m: { id: string, lounge_id: string, user_id: string, content: string, type: LoungeMessage['type'], metadata: Record<string, unknown>, created_at: string, reply_to_id: string | null, reply_to_content: string | null, reply_to_username: string | null, profiles?: { username: string, avatar_url: string } }) => ({
             id: m.id,
             lounge_id: m.lounge_id,
             user_id: m.user_id,
@@ -690,7 +692,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .order('joined_at', { ascending: true })
 
         if (!data) return []
-        return data.map((m: any) => ({
+        return data.map((m: { user_id: string; joined_at: string; profiles?: { username: string; avatar_url: string | null } }) => ({
             user_id: m.user_id,
             username: m.profiles?.username || 'Unknown',
             avatar_url: m.profiles?.avatar_url || null,
@@ -709,7 +711,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 event: 'INSERT',
                 schema: 'public',
                 table: 'lounge_messages',
-            }, async (payload: any) => {
+            }, async (payload: { new: { user_id: string; lounge_id: string; content?: string } }) => {
                 // Skip own messages
                 if (payload.new.user_id === user.id) return
 

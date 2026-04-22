@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput,
+  View, Text, StyleSheet, ScrollView, TextInput,
   Modal, KeyboardAvoidingView, Platform, Switch, Dimensions,
   RefreshControl, ActivityIndicator,
 } from 'react-native';
@@ -8,10 +8,11 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import Animated, {
   FadeInDown, FadeIn, FadeInUp, SlideInDown, SlideOutDown,
-  useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing,
+  useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation,
 } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
+import Svg, { Path, Rect, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import {
   Search, Plus, Lock, Users, Globe, X, MessageCircle,
@@ -19,9 +20,10 @@ import {
 } from 'lucide-react-native';
 import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const JOINED_CARD_W = SCREEN_W * 0.42;
@@ -37,9 +39,21 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 function OrnamentalRule() {
   return (
     <View style={s.ornRule}>
-      <View style={s.ornLine} />
-      <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
-      <View style={s.ornLine} />
+      <Svg width="100%" height="12" viewBox="0 0 300 12" preserveAspectRatio="none">
+        <Defs>
+          <SvgLinearGradient id="g-lounge" x1="0" y1="0" x2="1" y2="0">
+            <Stop offset="0" stopColor={colors.sepia} stopOpacity="0" />
+            <Stop offset="0.3" stopColor={colors.sepia} stopOpacity="0.4" />
+            <Stop offset="0.5" stopColor={colors.sepia} stopOpacity="0.8" />
+            <Stop offset="0.7" stopColor={colors.sepia} stopOpacity="0.4" />
+            <Stop offset="1" stopColor={colors.sepia} stopOpacity="0" />
+          </SvgLinearGradient>
+        </Defs>
+        <Rect x="0" y="5.5" width="300" height="0.5" fill="url(#g-lounge)" />
+        <Path d="M150 0 L156 6 L150 12 L144 6 Z" fill={colors.sepia} opacity="0.8" />
+        <Path d="M135 4 L139 6 L135 8 L131 6 Z" fill={colors.sepia} opacity="0.4" />
+        <Path d="M165 4 L169 6 L165 8 L161 6 Z" fill={colors.sepia} opacity="0.4" />
+      </Svg>
     </View>
   );
 }
@@ -48,13 +62,14 @@ function OrnamentalRule() {
 // BREATHING GLOW — Subtle ambient pulse on the header crest
 // ════════════════════════════════════════════════════════════
 function CrestGlow() {
-  const glow = useSharedValue(0.3);
+  const glow = useSharedValue(0.1);
 
   useEffect(() => {
     glow.value = withRepeat(
-      withTiming(0.8, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.9, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
       -1, true
     );
+    return () => cancelAnimation(glow);
   }, []);
 
   const glowStyle = useAnimatedStyle(() => ({
@@ -88,28 +103,25 @@ function LoungeGate() {
         <Text style={s.gateEst}>EST. 1924</Text>
         <OrnamentalRule />
 
-        <Text style={s.gateSub}>ARCHIVIST MEMBERS ONLY</Text>
+        <Text style={[s.gateSub, { fontFamily: fonts.mono, letterSpacing: 4 }]}>[ CLEARANCE REQUIRED ]</Text>
 
         <Text style={s.gateDesc}>
           Beyond this door lies The Lounge — intimate cinema
           salons where the devoted gather to discuss, debate,
           and discover. Private screening rooms. Whispered
-          critiques. A place where cinema lives between the frames,
+          critiques. {"\n\n"}A place where cinema lives between the frames,
           and every conversation is a love letter to the art.
         </Text>
 
-        <TouchableOpacity
+        <PressableScale
           style={s.gateCta}
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-            router.push('/membership');
-          }}
-          activeOpacity={0.8}
+          onPress={() => router.push('/membership')}
+          haptic="medium"
           accessibilityRole="button" accessibilityLabel="Become an Archivist to access The Lounge"
         >
           <Sparkles size={11} color={colors.ink} strokeWidth={2} />
-          <Text style={s.gateCtaText}>BECOME AN ARCHIVIST</Text>
-        </TouchableOpacity>
+          <Text style={s.gateCtaText} numberOfLines={1}>BECOME AN ARCHIVIST</Text>
+        </PressableScale>
 
         <Text style={s.gateFootnote}>
           PRIVATE SCREENING ROOMS / PUBLIC SALONS / CINEMA DISCOURSE
@@ -124,6 +136,7 @@ function LoungeGate() {
 // ════════════════════════════════════════════════════════════
 function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [isPrivate, setIsPrivate] = useState(false);
@@ -132,7 +145,6 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
 
   const handleCreate = async () => {
     if (!name.trim()) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setCreating(true);
     const id = await createLounge(name.trim(), description.trim(), isPrivate);
     setCreating(false);
@@ -150,16 +162,16 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
       <KeyboardAvoidingView style={s.sheetKeyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <BlurView intensity={40} tint="dark" style={StyleSheet.absoluteFill}>
-          <TouchableOpacity activeOpacity={1} style={s.sheetBackdrop} onPress={onClose} />
+        <BlurView intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(5,3,1,0.6)' }]}>
+          <PressableScale style={s.sheetBackdrop} onPress={onClose} />
         </BlurView>
 
-        <AnimatedView entering={SlideInDown.springify().damping(24)} exiting={SlideOutDown} style={s.sheet}>
+        <AnimatedView entering={SlideInDown.duration(350).easing(Easing.out(Easing.cubic))} exiting={SlideOutDown.duration(250)} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
           <View style={s.sheetHandle} />
 
           <View style={s.sheetHeaderWrap}>
-            <Text style={s.sheetEyebrow}>CURATE YOUR CINEMA CIRCLE</Text>
-            <Text style={s.sheetTitle}>Open a Lounge</Text>
+            <Text style={s.sheetEyebrow}>[ SUBMIT DESK LEDGER ]</Text>
+            <Text style={s.sheetTitle}>Establish Parameter</Text>
           </View>
 
           <View style={s.field}>
@@ -208,7 +220,7 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
             </View>
             <Switch
               value={isPrivate}
-              onValueChange={setIsPrivate}
+              onValueChange={(val) => { Haptics.selectionAsync(); setIsPrivate(val); }}
               trackColor={{ false: colors.ash, true: colors.sepia }}
               thumbColor={colors.parchment}
               ios_backgroundColor={colors.ash}
@@ -216,20 +228,20 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
           </View>
 
           <View style={s.sheetActions}>
-            <TouchableOpacity style={s.sheetBtnGhost} onPress={onClose} disabled={creating} activeOpacity={0.7}>
-              <Text style={s.sheetBtnGhostText}>CANCEL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            <PressableScale style={s.sheetBtnGhost} onPress={onClose} disabled={creating} haptic="selection">
+              <Text style={s.sheetBtnGhostText} numberOfLines={1}>[ ABORT ]</Text>
+            </PressableScale>
+            <PressableScale
               style={[s.sheetBtnPrimary, (!name.trim() || creating) && s.sheetBtnDisabled]}
               onPress={handleCreate}
               disabled={!name.trim() || creating}
-              activeOpacity={0.8}
+              haptic="medium"
             >
               {creating
                 ? <ActivityIndicator size="small" color={colors.ink} />
-                : <Text style={s.sheetBtnPrimaryText}>OPEN LOUNGE</Text>
+                : <Text style={s.sheetBtnPrimaryText} numberOfLines={1}>[ INITIATE ]</Text>
               }
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </AnimatedView>
       </KeyboardAvoidingView>
@@ -242,19 +254,31 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
 // ════════════════════════════════════════════════════════════
 const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; index: number }) => {
   const router = useRouter();
+  const pulse = useSharedValue(0.4);
+
+  useEffect(() => {
+    pulse.value = withRepeat(
+      withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
+      -1, true
+    );
+    return () => cancelAnimation(pulse);
+  }, []);
+
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+
   const coverUrl = lounge.cover_image
     ? tmdb.backdrop(lounge.cover_image, 'w500')
     : null;
   const hasUnread = Boolean(lounge.unread_count && lounge.unread_count > 0);
 
   return (
-    <AnimatedView entering={FadeInUp.duration(400).delay(index * 80)}>
+    <View>
       <PressableScale
         style={s.joinedCard}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push(`/lounge/${lounge.id}`);
-        }}
+        onPress={() => router.push(`/lounge/${lounge.id}`)}
+        haptic="light"
+        accessibilityRole="button"
+        accessibilityLabel={`Enter screening room ${lounge.name}`}
       >
         {/* Cover or atmospheric placeholder */}
         <View style={s.joinedImgWrap}>
@@ -276,24 +300,27 @@ const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
           />
 
           {/* Unread pulse */}
-          {hasUnread && <View style={s.unreadDot} />}
+          {hasUnread && <AnimatedView style={[s.unreadDot, pulseStyle]} />}
 
           {/* Embedded name overlay */}
           <View style={s.joinedNameOverlay}>
-            <Text style={s.joinedNameText} numberOfLines={1}>{lounge.name}</Text>
+            <Text style={s.joinedNameText} numberOfLines={2}>{lounge.name}</Text>
             <View style={s.joinedMetaRow}>
-              <Users size={8} color={colors.fog} strokeWidth={1.5} />
-              <Text style={s.joinedMetaText}>
+              <Users size={10} color={colors.fog} strokeWidth={1.5} />
+              <Text style={s.joinedMetaText} numberOfLines={1}>
                 {lounge.member_count || 0}
               </Text>
               {lounge.is_private && (
-                <Lock size={8} color={colors.sepia} strokeWidth={1.5} />
+                <>
+                  <View style={s.joinedMetaLine} />
+                  <Lock size={10} color={colors.sepia} strokeWidth={1.5} />
+                </>
               )}
             </View>
           </View>
         </View>
       </PressableScale>
-    </AnimatedView>
+    </View>
   );
 });
 
@@ -307,46 +334,56 @@ const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
     : null;
 
   return (
-    <AnimatedView entering={FadeInUp.duration(350).delay(index * 60)}>
+    <View>
       <PressableScale
         style={s.publicCard}
-        onPress={() => {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-          router.push(`/lounge/${lounge.id}`);
-        }}
+        onPress={() => router.push(`/lounge/${lounge.id}`)}
+        haptic="light"
+        accessibilityRole="button"
+        accessibilityLabel={`Enter salon ${lounge.name}${lounge.is_private ? ', approval required' : ''}`}
       >
-        <View style={s.publicLeft}>
-          <Text style={s.publicName} numberOfLines={1}>{lounge.name}</Text>
-          <Text style={s.publicDesc} numberOfLines={2}>
+        <View style={s.publicAccentBar} />
+        
+        {coverUrl && (
+          <View style={s.publicImgTop}>
+            <Image source={{ uri: coverUrl }} style={s.publicImgContent} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
+            <LinearGradient
+              colors={['transparent', 'rgba(255,255,255,0.015)']}
+              style={StyleSheet.absoluteFillObject}
+            />
+          </View>
+        )}
+
+        <View style={s.publicBody}>
+          <Text style={s.publicName} numberOfLines={2}>{lounge.name}</Text>
+          {lounge.is_private && (
+            <View style={s.publicPrivateBadge}>
+              <Lock size={10} color={colors.sepia} strokeWidth={1.5} />
+              <Text style={s.publicPrivateText}>APPROVAL REQUIRED</Text>
+            </View>
+          )}
+          <Text style={s.publicDesc} numberOfLines={3}>
             {lounge.description || 'A cinematic gathering place.'}
           </Text>
+          
           <View style={s.publicFooter}>
             <View style={s.publicMetaRow}>
-              <Users size={10} color={colors.fog} strokeWidth={1.5} />
-              <Text style={s.publicMetaText}>{lounge.member_count || 0} Members</Text>
+              <Users size={12} color={colors.fog} strokeWidth={1.5} />
+              <Text style={s.publicMetaText} numberOfLines={1}>{lounge.member_count || 0} SEATS TAKEN</Text>
             </View>
             <View style={s.publicEnterTag}>
-              <Text style={s.publicEnterText}>ENTER</Text>
-              <ChevronRight size={10} color={colors.sepia} strokeWidth={2} />
+              <Text style={[s.publicEnterText, { flexShrink: 1 }]} numberOfLines={1}>
+                {lounge.is_private ? '[ REQUEST INTELLIGENCE ]' : '[ GRANT ACCESS ]'}
+              </Text>
+              {lounge.is_private 
+                ? <Lock size={12} color={colors.sepia} strokeWidth={2} />
+                : <ChevronRight size={12} color={colors.sepia} strokeWidth={2} />
+              }
             </View>
           </View>
         </View>
-        {coverUrl ? (
-          <View style={s.publicRight}>
-            <Image source={{ uri: coverUrl }} style={s.publicImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
-            <LinearGradient
-              colors={['rgba(11,10,8,0.5)', 'transparent']}
-              start={{ x: 0, y: 0.5 }} end={{ x: 1, y: 0.5 }}
-              style={s.publicImgFade}
-            />
-          </View>
-        ) : (
-          <View style={s.publicRightEmpty}>
-            <FilmIcon size={16} color={colors.sepia} strokeWidth={1} />
-          </View>
-        )}
       </PressableScale>
-    </AnimatedView>
+    </View>
   );
 });
 
@@ -385,14 +422,20 @@ export default function LoungeScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const isArchivist = user?.role === 'archivist' || user?.role === 'auteur';
+  const isPollingRef = useRef(false);
 
   useEffect(() => {
     if (isAuthenticated && isArchivist) {
       fetchLounges();
-      const interval = setInterval(fetchLounges, 30000);
+      const interval = setInterval(async () => {
+        if (isPollingRef.current) return;
+        isPollingRef.current = true;
+        await fetchLounges();
+        isPollingRef.current = false;
+      }, 30000);
       return () => clearInterval(interval);
     }
-  }, [isAuthenticated, isArchivist]);
+  }, [isAuthenticated, isArchivist, fetchLounges]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -402,7 +445,6 @@ export default function LoungeScreen() {
 
   const handleJoinByCode = async () => {
     if (!inviteCode.trim()) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setJoining(true);
     const success = await useLoungeStore.getState().joinLounge(inviteCode.trim());
     setJoining(false);
@@ -419,7 +461,7 @@ export default function LoungeScreen() {
     (l.description && l.description.toLowerCase().includes(query))
   );
   const myLounges = filteredLounges.filter(l => typeof l.unread_count === 'number');
-  const publicLounges = filteredLounges.filter(l => typeof l.unread_count !== 'number' && !l.is_private);
+  const browsableLounges = filteredLounges.filter(l => typeof l.unread_count !== 'number');
 
   return (
     <View style={s.container}>
@@ -447,7 +489,7 @@ export default function LoungeScreen() {
           <Search size={14} color={colors.fog} strokeWidth={1.5} />
           <TextInput
             style={s.searchInput}
-            placeholder="Search screening rooms..."
+            placeholder="[ ENTER SURVEILLANCE PARAMETERS ]"
             placeholderTextColor={colors.fog}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -455,22 +497,22 @@ export default function LoungeScreen() {
             selectionColor={colors.sepia}
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <PressableScale onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection">
               <X size={14} color={colors.fog} strokeWidth={1.5} />
-            </TouchableOpacity>
+            </PressableScale>
           )}
         </View>
 
         {/* Actions */}
         <View style={s.actionsRow}>
-          <TouchableOpacity
+          <PressableScale
             style={s.btnPrimary}
-            onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowCreate(true); }}
-            activeOpacity={0.8}
+            onPress={() => setShowCreate(true)}
+            haptic="medium"
           >
             <Plus size={13} color={colors.ink} strokeWidth={2.5} />
-            <Text style={s.btnPrimaryText}>OPEN ROOM</Text>
-          </TouchableOpacity>
+            <Text style={s.btnPrimaryText}>[ ESTABLISH ]</Text>
+          </PressableScale>
           <View style={s.inviteWrap}>
             <TextInput
               style={s.inviteInput}
@@ -479,20 +521,20 @@ export default function LoungeScreen() {
               maxLength={8}
               autoCapitalize="characters"
               value={inviteCode}
-              onChangeText={setInviteCode}
+              onChangeText={(t) => setInviteCode(t.toUpperCase())}
               selectionColor={colors.sepia}
             />
-            <TouchableOpacity
+            <PressableScale
               style={[s.btnJoin, (!inviteCode.trim() || joining) && s.btnJoinDisabled]}
               onPress={handleJoinByCode}
               disabled={!inviteCode.trim() || joining}
-              activeOpacity={0.7}
+              haptic="medium"
             >
               {joining
                 ? <ActivityIndicator size="small" color={colors.parchment} />
-                : <Text style={s.btnJoinText}>JOIN</Text>
+                : <Text style={s.btnJoinText} numberOfLines={1}>[ INFILTRATE ]</Text>
               }
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </View>
       </AnimatedView>
@@ -540,13 +582,13 @@ export default function LoungeScreen() {
         <View style={s.section}>
           <View style={s.sectionTitleRow}>
             <View style={s.sectionTitleLine} />
-            <Text style={s.sectionLabel}>OPEN SALONS</Text>
+            <Text style={s.sectionLabel}>ALL SALONS</Text>
             <View style={s.sectionTitleLine} />
           </View>
-          <Text style={s.sectionSubtext}>Public discourse. Take a seat.</Text>
+          <Text style={s.sectionSubtext}>Public discourse and private gatherings. Take a seat.</Text>
           <View style={s.publicList}>
-            {publicLounges.length > 0 ? (
-              publicLounges.map((l, i) => (
+            {browsableLounges.length > 0 ? (
+              browsableLounges.map((l, i) => (
                 <PublicLoungeCard key={`pub-${l.id}`} lounge={l} index={i} />
               ))
             ) : (
@@ -627,13 +669,13 @@ const s = StyleSheet.create({
   },
   gateTitle: {
     fontFamily: fonts.display,
-    fontSize: 28,
+    fontSize: 24,
     color: colors.parchment,
     marginBottom: 6,
   },
   gateEst: {
     fontFamily: fonts.uiMedium,
-    fontSize: 9,
+    fontSize: 8,
     letterSpacing: 6,
     color: colors.sepia,
     marginBottom: 4,
@@ -641,16 +683,16 @@ const s = StyleSheet.create({
   },
   gateSub: {
     fontFamily: fonts.uiMedium,
-    fontSize: 9,
+    fontSize: 8, // to 8
     letterSpacing: 3,
     color: colors.sepia,
     marginBottom: 20,
   },
   gateDesc: {
     fontFamily: fonts.body,
-    fontSize: 12.5,
+    fontSize: 11,
     color: colors.bone,
-    lineHeight: 22,
+    lineHeight: 18,
     textAlign: 'center',
     marginBottom: 32,
     opacity: 0.8,
@@ -667,7 +709,7 @@ const s = StyleSheet.create({
   },
   gateCtaText: {
     fontFamily: fonts.uiBold,
-    fontSize: 10,
+    fontSize: 9,
     letterSpacing: 2.5,
     color: colors.ink,
   },
@@ -704,14 +746,14 @@ const s = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: fonts.display,
-    fontSize: 28,
+    fontSize: 24,
     color: colors.parchment,
     textAlign: 'center',
-    lineHeight: 32,
+    lineHeight: 28,
   },
   headerEst: {
     fontFamily: fonts.uiMedium,
-    fontSize: 8,
+    fontSize: 7,
     letterSpacing: 6,
     color: colors.sepia,
     opacity: 0.6,
@@ -721,7 +763,7 @@ const s = StyleSheet.create({
   },
   headerSubtitle: {
     fontFamily: fonts.bodyItalic,
-    fontSize: 11.5,
+    fontSize: 10,
     color: colors.bone,
     opacity: 0.6,
     textAlign: 'center',
@@ -752,20 +794,22 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     alignSelf: 'stretch',
-    backgroundColor: 'rgba(14,13,10,0.6)',
+    backgroundColor: 'rgba(5,4,3,0.95)',
     borderRadius: 2,
     paddingHorizontal: 14,
-    height: 40,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    height: 46,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(139,105,20,0.3)',
     gap: 10,
   },
   searchInput: {
     flex: 1,
-    fontFamily: fonts.ui,
-    fontSize: 12,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 10,
     color: colors.parchment,
-    letterSpacing: 0.5,
+    letterSpacing: 2,
   },
 
   // ── Actions ──
@@ -783,12 +827,16 @@ const s = StyleSheet.create({
     gap: 7,
     backgroundColor: colors.sepia,
     borderRadius: 2,
-    height: 40,
+    borderWidth: 1,
+    borderColor: colors.sepia,
+    height: 46,
+    ...effects.shadowSurface,
   },
   btnPrimaryText: {
-    fontFamily: fonts.uiBold,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 2.5,
     color: colors.ink,
   },
   inviteWrap: {
@@ -798,17 +846,19 @@ const s = StyleSheet.create({
   },
   inviteInput: {
     flex: 1,
-    backgroundColor: 'rgba(14,13,10,0.6)',
+    backgroundColor: 'rgba(5,4,3,0.95)',
     borderRadius: 2,
-    height: 40,
+    height: 46,
     paddingHorizontal: 12,
-    fontFamily: fonts.uiMedium,
-    fontSize: 11,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 10,
     color: colors.parchment,
     textAlign: 'center',
-    letterSpacing: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    letterSpacing: 6,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(139,105,20,0.3)',
   },
   btnJoin: {
     backgroundColor: colors.ash,
@@ -816,13 +866,15 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 2,
-    height: 40,
+    height: 46,
+    ...effects.shadowSurface,
   },
   btnJoinDisabled: { opacity: 0.35 },
   btnJoinText: {
-    fontFamily: fonts.uiBold,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 2.5,
     color: colors.parchment,
   },
 
@@ -865,13 +917,13 @@ const s = StyleSheet.create({
   },
   sectionLabel: {
     fontFamily: fonts.uiMedium,
-    fontSize: 8,
+    fontSize: 7,
     letterSpacing: 3,
     color: colors.fog,
   },
   sectionSubtext: {
     fontFamily: fonts.bodyItalic,
-    fontSize: 11,
+    fontSize: 9,
     color: colors.fog,
     opacity: 0.5,
     paddingHorizontal: 20,
@@ -881,22 +933,24 @@ const s = StyleSheet.create({
 
   // ── Joined Cards ──
   joinedStrip: {
-    gap: 14,
+    gap: 16,
     paddingHorizontal: 20,
     paddingTop: 12,
-    paddingBottom: 4,
+    paddingBottom: 24,
   },
   joinedCard: {
     width: JOINED_CARD_W,
-    borderRadius: 4,
+    borderRadius: 2,
     overflow: 'hidden',
     backgroundColor: colors.soot,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    borderWidth: 1.5,
+    borderColor: 'rgba(139,105,20,0.3)',
+    ...effects.shadowSurface,
+    elevation: 8,
   },
   joinedImgWrap: {
     width: JOINED_CARD_W,
-    height: JOINED_CARD_W * 1.25,
+    height: JOINED_CARD_W * 1.35,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -914,16 +968,16 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: '55%',
+    height: '75%',
   },
   unreadDot: {
     position: 'absolute',
     top: 10,
     right: 10,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.sepia,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.bloodReel,
     borderWidth: 2,
     borderColor: colors.ink,
     zIndex: 10,
@@ -934,107 +988,132 @@ const s = StyleSheet.create({
     left: 0,
     right: 0,
     paddingHorizontal: 12,
-    paddingBottom: 12,
+    paddingBottom: 14,
     paddingTop: 4,
   },
   joinedNameText: {
-    fontFamily: fonts.sub,
-    fontSize: 13,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    letterSpacing: 1,
+    fontSize: 14,
     color: colors.parchment,
-    marginBottom: 4,
+    marginBottom: 8,
+    lineHeight: 18,
   },
   joinedMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 8,
   },
   joinedMetaText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
     fontSize: 9,
-    letterSpacing: 0.5,
+    letterSpacing: 2,
     color: colors.fog,
+  },
+  joinedMetaLine: {
+    height: 10,
+    width: 1.5,
+    backgroundColor: colors.ash,
   },
 
   // ── Public Cards ──
   publicList: {
     paddingHorizontal: 20,
-    gap: 10,
+    gap: 24,
   },
   publicCard: {
-    flexDirection: 'row',
-    backgroundColor: colors.soot,
-    borderRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    padding: 24, paddingLeft: 28,
+    backgroundColor: 'rgba(12,9,7,0.85)',
+    borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)', borderStyle: 'dashed',
+    borderRadius: 4, position: 'relative',
     overflow: 'hidden',
-    minHeight: 96,
+    ...effects.shadowSurface,
   },
-  publicLeft: {
-    flex: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
+  publicAccentBar: {
+    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
+    backgroundColor: colors.sepia, zIndex: 2,
   },
+  publicImgTop: {
+    width: '100%',
+    height: 120,
+    marginBottom: 20,
+    borderRadius: 2,
+    overflow: 'hidden',
+    borderColor: 'rgba(139,105,20,0.2)',
+    borderWidth: 1.5,
+  },
+  publicImgContent: { width: '100%', height: '100%' },
+  publicBody: { flex: 1 },
   publicName: {
-    fontFamily: fonts.sub,
-    fontSize: 15,
+    fontFamily: fonts.display,
+    fontSize: 22,
     color: colors.parchment,
-    marginBottom: 4,
+    marginBottom: 10,
+    lineHeight: 26,
   },
   publicDesc: {
-    fontFamily: fonts.body,
-    fontSize: 11.5,
+    fontFamily: fonts.mono,
+    fontSize: 11,
     color: colors.bone,
-    lineHeight: 17,
-    marginBottom: 12,
-    opacity: 0.6,
+    lineHeight: 20,
+    marginBottom: 24,
+    opacity: 0.8,
+  },
+  publicPrivateBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    backgroundColor: 'rgba(196,150,26,0.04)',
+    borderRadius: 2,
+    alignSelf: 'flex-start',
+    borderWidth: 1,
+    borderColor: 'rgba(196,150,26,0.3)',
+    borderStyle: 'dashed',
+  },
+  publicPrivateText: {
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 8,
+    letterSpacing: 2.5,
+    color: colors.sepia,
   },
   publicFooter: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(139,105,20,0.15)',
+    paddingTop: 16,
+    marginTop: 8,
   },
   publicMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 8,
   },
   publicMetaText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
     fontSize: 9,
-    letterSpacing: 0.5,
+    letterSpacing: 2.5,
     color: colors.fog,
   },
   publicEnterTag: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: 6,
   },
   publicEnterText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 8,
-    letterSpacing: 2,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 9,
+    letterSpacing: 2.5,
     color: colors.sepia,
-  },
-  publicRight: {
-    width: 88,
-    backgroundColor: colors.ash,
-    position: 'relative',
-  },
-  publicRightEmpty: {
-    width: 88,
-    backgroundColor: 'rgba(196,150,26,0.03)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderLeftWidth: StyleSheet.hairlineWidth,
-    borderLeftColor: colors.ash,
-  },
-  publicImg: {
-    width: '100%',
-    height: '100%',
-  },
-  publicImgFade: {
-    ...StyleSheet.absoluteFillObject,
   },
 
   // ── Empty States ──
@@ -1057,15 +1136,15 @@ const s = StyleSheet.create({
   },
   emptyTitle: {
     fontFamily: fonts.display,
-    fontSize: 17,
+    fontSize: 15,
     color: colors.parchment,
     textAlign: 'center',
   },
   emptyDesc: {
     fontFamily: fonts.body,
-    fontSize: 11.5,
+    fontSize: 10,
     color: colors.fog,
-    lineHeight: 20,
+    lineHeight: 16,
     textAlign: 'center',
     opacity: 0.7,
   },
@@ -1081,7 +1160,7 @@ const s = StyleSheet.create({
   },
   emptyPublicText: {
     fontFamily: fonts.bodyItalic,
-    fontSize: 12,
+    fontSize: 10,
     color: colors.fog,
   },
   emptyPublicHint: {
@@ -1100,55 +1179,60 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.soot,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    backgroundColor: 'rgba(7,5,4,0.98)',
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
     padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 44 : 28,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderBottomWidth: 0,
-    borderColor: 'rgba(196,150,26,0.12)',
+    borderColor: 'rgba(139,105,20,0.3)',
+    ...effects.shadowSurface,
+    elevation: 20,
   },
   sheetHandle: {
-    width: 36,
-    height: 3,
-    borderRadius: 1.5,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    width: 48,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'rgba(139,105,20,0.2)',
     alignSelf: 'center',
     marginBottom: 24,
   },
-  sheetHeaderWrap: { marginBottom: 24 },
+  sheetHeaderWrap: { marginBottom: 28 },
   sheetEyebrow: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 7,
-    letterSpacing: 3,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 8,
+    letterSpacing: 4,
     color: colors.fog,
     marginBottom: 8,
-    opacity: 0.6,
   },
   sheetTitle: {
     fontFamily: fonts.display,
     fontSize: 24,
     color: colors.parchment,
+    letterSpacing: 1,
   },
-  field: { marginBottom: 18 },
+  field: { marginBottom: 22 },
   fieldLabel: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 8,
-    letterSpacing: 2,
-    color: colors.fog,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 9,
+    letterSpacing: 3,
+    color: colors.sepia,
     marginBottom: 8,
   },
   fieldInput: {
-    backgroundColor: colors.ink,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(139,105,20,0.3)',
+    backgroundColor: 'rgba(255,255,255,0.02)',
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 14,
+    color: colors.parchment,
     borderRadius: 2,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontFamily: fonts.body,
-    fontSize: 13,
-    color: colors.bone,
   },
   fieldTextarea: {
     height: 80,
@@ -1192,31 +1276,35 @@ const s = StyleSheet.create({
   },
   sheetBtnGhost: {
     flex: 1,
-    height: 46,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 2,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: 'rgba(139,105,20,0.3)',
   },
   sheetBtnGhostText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 3,
     color: colors.parchment,
   },
   sheetBtnPrimary: {
     flex: 1,
-    height: 46,
+    height: 48,
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 2,
     backgroundColor: colors.sepia,
+    ...effects.shadowSurface,
   },
   sheetBtnPrimaryText: {
-    fontFamily: fonts.uiBold,
-    fontSize: 9,
-    letterSpacing: 2,
+    fontFamily: fonts.mono,
+    fontWeight: '700',
+    fontSize: 10,
+    letterSpacing: 3,
     color: colors.ink,
   },
   sheetBtnDisabled: { opacity: 0.35 },

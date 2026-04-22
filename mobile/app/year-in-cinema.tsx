@@ -153,7 +153,7 @@ export default function YearInCinemaScreen() {
 
         {isActive && (
           <Animated.View entering={FadeIn} style={s.bottomRow}>
-             <TouchableOpacity style={s.navBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }}>
+             <TouchableOpacity style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }}>
                 <Text style={s.navText}>EXIT</Text>
              </TouchableOpacity>
              <View style={s.paginator}>
@@ -179,6 +179,9 @@ export default function YearInCinemaScreen() {
         keyExtractor={(_, i) => `slide-${i}`}
         horizontal
         pagingEnabled
+        initialNumToRender={1}
+        windowSize={3}
+        maxToRenderPerBatch={1}
         showsHorizontalScrollIndicator={false}
         bounces={false}
         onMomentumScrollEnd={(e) => {
@@ -190,7 +193,7 @@ export default function YearInCinemaScreen() {
         }}
         renderItem={renderSlide}
       />
-      <TouchableOpacity style={s.globalCloseBtn} onPress={() => router.back()}>
+      <TouchableOpacity style={s.globalCloseBtn} onPress={() => router.back()} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
         <X size={24} color={colors.bone} />
       </TouchableOpacity>
     </View>

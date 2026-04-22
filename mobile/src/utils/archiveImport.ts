@@ -416,8 +416,9 @@ export async function importArchiveZip(
 
   for (let i = 0; i < watchedToInsert.length; i += 50) {
     const chunk = watchedToInsert.slice(i, i + 50);
-    await supabase.from('logs').insert(chunk);
-    result.logs += chunk.length;
+    const { error } = await supabase.from('logs').insert(chunk);
+    if (!error) result.logs += chunk.length;
+    else result.errors.push(`Watched batch ${Math.floor(i / 50)}: ${error.message}`);
   }
 
   // ── Step 10: Import Watchlist ──

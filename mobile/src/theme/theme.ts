@@ -34,6 +34,7 @@ export const fonts = {
   ui: 'Inter_400Regular',           // Clean sans — UI elements
   uiMedium: 'Inter_500Medium',
   uiBold: 'Inter_700Bold',
+  mono: 'Courier',                   // System monospace — decorative eyebrows, tab pills
 } as const;
 
 export const spacing = {
@@ -117,15 +118,15 @@ export const effects = {
 export const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
 export const typography = {
-  jumbo: { fontSize: 64, lineHeight: 68, fontFamily: fonts.display, letterSpacing: 1.28 },
-  h1: { fontSize: 45, lineHeight: 50, fontFamily: fonts.display, letterSpacing: 0.9 },
-  h2: { fontSize: 32, lineHeight: 36, fontFamily: fonts.display, letterSpacing: 0.64 },
-  h3: { fontSize: 24, lineHeight: 28, fontFamily: fonts.display, letterSpacing: 0.48 },
-  lg: { fontSize: 18, lineHeight: 28, fontFamily: fonts.body },
-  sub: { fontSize: 13, lineHeight: 20, fontFamily: fonts.sub, letterSpacing: 0.65 },
-  body: { fontSize: 15, lineHeight: 25, fontFamily: fonts.body },
-  bodyBold: { fontSize: 15, lineHeight: 25, fontFamily: fonts.bodyBold },
-  caption: { fontSize: 11, lineHeight: 16, fontFamily: fonts.body },
+  jumbo: { fontSize: 56, lineHeight: 60, fontFamily: fonts.display, letterSpacing: 1.12 },
+  h1: { fontSize: 40, lineHeight: 46, fontFamily: fonts.display, letterSpacing: 0.8 },
+  h2: { fontSize: 28, lineHeight: 32, fontFamily: fonts.display, letterSpacing: 0.56 },
+  h3: { fontSize: 22, lineHeight: 26, fontFamily: fonts.display, letterSpacing: 0.44 },
+  lg: { fontSize: 16, lineHeight: 26, fontFamily: fonts.body },
+  sub: { fontSize: 12, lineHeight: 18, fontFamily: fonts.sub, letterSpacing: 0.6 },
+  body: { fontSize: 14, lineHeight: 24, fontFamily: fonts.body },
+  bodyBold: { fontSize: 14, lineHeight: 24, fontFamily: fonts.bodyBold },
+  caption: { fontSize: 10, lineHeight: 15, fontFamily: fonts.body },
   micro: { fontSize: 8, lineHeight: 12, fontFamily: fonts.ui, letterSpacing: 2 },
-  label: { fontSize: 10, lineHeight: 14, fontFamily: fonts.uiMedium, letterSpacing: 3, textTransform: 'uppercase' as const },
+  label: { fontSize: 9, lineHeight: 12, fontFamily: fonts.uiMedium, letterSpacing: 3, textTransform: 'uppercase' as const },
 } as const;

@@ -165,7 +165,7 @@ export default function TribunalScreen() {
                 )}
                 
                 <Text style={[s.contextLabel, { marginTop: 12 }]}>REPORTED BY</Text>
-                <Text style={s.contextValue}>@{item.reporter?.username || 'unknown'}</Text>
+                <Text style={s.contextValue}>@{Array.isArray(item.reporter) ? item.reporter[0]?.username : item.reporter?.username || 'unknown'}</Text>
               </View>
 
               <View style={s.actionRow}>

@@ -10,7 +10,7 @@ export interface LoungeRoom {
   description: string;
   is_private: boolean;
   invite_code: string | null;
-  created_by: string;
+  creator_id: string;
   created_at: string;
   cover_image?: string | null;
   member_count?: number;
@@ -79,23 +79,54 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
       const myLoungeIds = (memberRows ?? []).map(r => r.lounge_id);
 
-      // Fetch all non-private lounges + my private ones
-      let query = supabase.from('lounges').select('id, name, description, is_private, invite_code, created_by, created_at').order('created_at', { ascending: false }).limit(50);
+      // Fetch from three sources to guarantee visibility:
+      // 1) Public lounges (browsable by anyone)
+      // 2) Lounges user has explicitly joined (via lounge_members)
+      // 3) Lounges user created (fallback if lounge_members insert failed)
+      // Fetch ALL browsable lounges (public + private — both are visible, private just needs approval)
+      const browsablePromise = supabase.from('lounges')
+        .select('id, name, description, is_private, invite_code, creator_id, created_at, member_count')
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      const { data: lounges } = await query;
-      if (!lounges) { set({ loading: false }); return; }
+      const myJoinedPromise = myLoungeIds.length > 0 
+        ? supabase.from('lounges')
+            .select('id, name, description, is_private, invite_code, creator_id, created_at, member_count')
+            .in('id', myLoungeIds)
+        : Promise.resolve({ data: [] as Array<{ id: string; name: string; description: string; is_private: boolean; invite_code: string | null; creator_id: string; created_at: string; member_count: number }> });
 
-      // Enrich with last message and unread counts
-      const enriched: LoungeRoom[] = lounges.map((l) => ({
+      const myCreatedPromise = supabase.from('lounges')
+        .select('id, name, description, is_private, invite_code, creator_id, created_at, member_count')
+        .eq('creator_id', user.id);
+
+      const [browsableRes, myJoinedRes, myCreatedRes] = await Promise.all([
+        browsablePromise, myJoinedPromise, myCreatedPromise,
+      ]);
+
+      // Merge all three, deduplicating by id
+      const allLoungesMap = new Map<string, { id: string; name: string; description: string; is_private: boolean; invite_code: string | null; creator_id: string; created_at: string; member_count: number }>();
+      if (browsableRes.data) browsableRes.data.forEach(l => allLoungesMap.set(l.id, l));
+      if (myJoinedRes.data) myJoinedRes.data.forEach(l => allLoungesMap.set(l.id, l));
+      if (myCreatedRes.data) myCreatedRes.data.forEach(l => allLoungesMap.set(l.id, l));
+
+      // Build the combined set of IDs the user "owns or joined"
+      const ownedOrJoinedIds = new Set(myLoungeIds);
+      if (myCreatedRes.data) myCreatedRes.data.forEach(l => ownedOrJoinedIds.add(l.id));
+
+      const loungesList = Array.from(allLoungesMap.values());
+      loungesList.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      // Enrich — rooms the user owns or joined get unread_count = 0 (shows in "YOUR SCREENING ROOMS")
+      const enriched: LoungeRoom[] = loungesList.map((l) => ({
         id: l.id,
         name: l.name,
         description: l.description ?? '',
         is_private: l.is_private ?? false,
         invite_code: l.invite_code ?? null,
-        created_by: l.created_by,
+        creator_id: l.creator_id,
         created_at: l.created_at,
-        member_count: 0,
-        unread_count: myLoungeIds.includes(l.id) ? 0 : undefined,
+        member_count: l.member_count ?? 0,
+        unread_count: ownedOrJoinedIds.has(l.id) ? 0 : undefined,
       }));
 
       set({ lounges: enriched, loading: false });
@@ -214,7 +245,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       description,
       is_private: isPrivate,
       invite_code: inviteCode,
-      created_by: user.id,
+      creator_id: user.id,
+      member_count: 1,
     }]).select().single();
     
     if (error || !data) {
@@ -319,13 +351,18 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             created_at: msg.created_at,
           };
 
-          // Remove optimistic duplicate and insert real message
-          set(s => ({
-            currentMessages: [
-              ...s.currentMessages.filter(m => !m.id.startsWith('optimistic-')),
-              newMsg,
-            ],
-          }));
+          // Find the exact optimistic message and replace it
+          set(s => {
+            const optMatch = s.currentMessages.find(
+              m => m.id.startsWith('optimistic-') && m.user_id === msg.user_id && m.content === msg.content
+            );
+            return {
+              currentMessages: [
+                ...s.currentMessages.filter(m => m.id !== optMatch?.id),
+                newMsg,
+              ],
+            };
+          });
         }
       )
       .on(

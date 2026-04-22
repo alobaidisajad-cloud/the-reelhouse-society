@@ -17,7 +17,7 @@ import {
     Dimensions, Platform, KeyboardAvoidingView, FlatList,
 } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeInUp, Easing } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -27,9 +27,12 @@ import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
-import { ReelRating } from '@/src/components/Decorative';
+import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import NitrateCalendar from '@/src/components/NitrateCalendar';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
+import LogSearchEngine from '@/src/components/log/LogSearchEngine';
+import EditorialDesk from '@/src/components/log/EditorialDesk';
+import AuteurToolkit from '@/src/components/log/AuteurToolkit';
 import {
     Search, X, Clock, Eye, History, Lock, Archive,
     ChevronDown, ChevronUp, Trash2, Check, Sparkles, Star,
@@ -82,14 +85,6 @@ export default function LogModalScreen() {
     // ── Step state ──
     const [step, setStep] = useState(params.filmId ? 1 : 0);
 
-    // ── Search state (Step 0) ──
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState<LogSearchResult[]>([]);
-    const [searching, setSearching] = useState(false);
-    const [searchType, setSearchType] = useState('');
-    const [searchContext, setSearchContext] = useState('');
-    const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
-
     // ── Film state ──
     const [film, setFilm] = useState<SelectedFilm | null>(params.filmId ? {
         id: parseInt(params.filmId), title: params.filmTitle ?? '',
@@ -139,7 +134,7 @@ export default function LogModalScreen() {
             tmdb.movieImages(film.id).then((imgs: { posters?: Array<{ file_path: string }>; backdrops?: Array<{ file_path: string }> }) => {
                 if (imgs?.posters) setAvailablePosters(imgs.posters.slice(0, 20));
                 if (imgs?.backdrops) setAvailableBackdrops(imgs.backdrops.slice(0, 10));
-            }).catch(() => {});
+            }).catch((err: unknown) => { if (__DEV__) console.warn('[LogModal] image prefetch failed:', err); });
         }
     }, [film?.id, isAuteur, isPremium]);
 
@@ -159,7 +154,7 @@ export default function LogModalScreen() {
         setAbandonedReason(log.abandonedReason ?? '');
         if (log.autopsy) {
             try { setAutopsy(typeof log.autopsy === 'string' ? JSON.parse(log.autopsy) : log.autopsy); }
-            catch { setAutopsy({ ...AUTOPSY_INIT }); }
+            catch (err: unknown) { setAutopsy({ ...AUTOPSY_INIT }); }
         }
         setAltPoster(log.altPoster ?? null);
         setEditorialHeader(log.editorialHeader ?? null);
@@ -182,7 +177,7 @@ export default function LogModalScreen() {
                 if (draft.review) setReview(draft.review);
                 if (draft.rating) setRating(draft.rating);
                 if (draft.privateNotes) setPrivateNotes(draft.privateNotes);
-            } catch {}
+            } catch (err: unknown) { if (__DEV__) console.warn('[LogModal] draft restore failed:', err); }
         });
     }, []);
 
@@ -197,26 +192,10 @@ export default function LogModalScreen() {
         return () => clearTimeout(timer);
     }, [review, rating, privateNotes, film?.id, editLogId]);
 
-    // ── SEARCH HANDLER ──
-    const handleSearch = useCallback((q: string) => {
-        setQuery(q);
-        if (!q.trim()) { setResults([]); setSearching(false); return; }
-        setSearching(true);
-        if (searchTimeout.current) clearTimeout(searchTimeout.current);
-        searchTimeout.current = setTimeout(async () => {
-            try {
-                const res = await tmdb.search(q, 1);
-                const filtered = (res.results || []).filter((r) => r.media_type !== 'person').slice(0, 8) as LogSearchResult[];
-                setResults(filtered);
-                setSearchType(res.searchType || 'exact');
-                setSearchContext(res.matchedContext || '');
-            } catch { setResults([]); }
-            finally { setSearching(false); }
-        }, 400);
-    }, []);
-
+    // ── DRAFT HANDLERS ──
     const selectFilm = (f: LogSearchResult) => {
-        setFilm(f); setStep(1); setQuery(''); setResults([]);
+        setFilm({ id: f.id, title: f.title, name: f.name, poster_path: f.poster_path, release_date: f.release_date }); 
+        setStep(1);
         Haptics.selectionAsync();
     };
 
@@ -250,7 +229,7 @@ export default function LogModalScreen() {
             AsyncStorage.removeItem(DRAFT_KEY);
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             router.back();
-        } catch { reelToast.error('The record could not be sealed. Try again.'); }
+        } catch (err: unknown) { reelToast.error('The record could not be sealed. Try again.'); }
         setSubmitting(false);
     };
 
@@ -297,11 +276,11 @@ export default function LogModalScreen() {
 
                 {/* Header */}
                 <View style={st.header}>
-                    <View>
+                    <View style={{flex: 1, paddingRight: 16}}>
                         {isEditing && <View style={st.editBadge}><Text style={st.editBadgeText}>EDITING</Text></View>}
-                        <Text style={st.headerTitle} numberOfLines={1}>{step === 0 ? 'Log a Film' : (film?.title || 'Log')}</Text>
+                        <Text style={st.headerTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{step === 0 ? 'Log a Film' : (film?.title || 'Log')}</Text>
                     </View>
-                    <TouchableOpacity onPress={() => router.back()} style={st.closeBtn} activeOpacity={0.7}>
+                    <TouchableOpacity onPress={() => { Haptics.selectionAsync(); router.back(); }} style={st.closeBtn} activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                         <X size={16} color={colors.fog} />
                         <Text style={st.closeBtnText}>CLOSE</Text>
                     </TouchableOpacity>
@@ -309,59 +288,7 @@ export default function LogModalScreen() {
 
                 {/* ════ STEP 0: SEARCH ════ */}
                 {step === 0 && (
-                    <Animated.View entering={FadeIn.duration(200)} style={st.searchStep}>
-                        <View style={st.searchWrap}>
-                            <Search size={16} color={colors.fog} style={st.searchIcon} />
-                            <TextInput
-                                style={st.searchInput}
-                                placeholder="Search for a film..."
-                                placeholderTextColor={colors.fog}
-                                value={query}
-                                onChangeText={handleSearch}
-                                autoFocus
-                                returnKeyType="search"
-                                maxLength={120}
-                            />
-                        </View>
-                        {searching && (
-                            <View style={st.searchingWrap}><Text style={st.searchingText}>TRANSMITTING QUERY...</Text></View>
-                        )}
-                        {results.length > 0 && searchType === 'person' && (
-                            <View style={st.searchBadgeRow}>
-                                <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
-                                <Text style={[st.searchBadge, st.searchBadgeSepia]}>ACTOR/DIRECTOR MATCH: {searchContext.toUpperCase()}</Text>
-                            </View>
-                        )}
-                        {results.length > 0 && searchType === 'typo' && (
-                            <View style={st.searchBadgeRow}>
-                                <Sparkles size={8} color={colors.flicker} strokeWidth={1.5} />
-                                <Text style={[st.searchBadge, st.searchBadgeFlicker]}>FUZZY RESCUE: {searchContext.toUpperCase()}</Text>
-                            </View>
-                        )}
-                        <FlatList
-                            data={results}
-                            keyExtractor={r => String(r.id)}
-                            style={st.searchResults}
-                            contentContainerStyle={st.searchResultsContent}
-                            renderItem={({ item: r }) => (
-                                <TouchableOpacity style={st.resultRow} onPress={() => selectFilm(r)} activeOpacity={0.7}>
-                                    {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} contentFit="cover" cachePolicy="memory-disk" />}
-                                    <View style={st.resultFlex}>
-                                        <Text style={st.resultTitle}>{r.title || r.name}</Text>
-                                        <View style={st.resultMetaRow}>
-                                            <Text style={st.resultMeta}>{r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)}</Text>
-                                            <Star size={8} color={colors.sepia} fill={colors.sepia} />
-                                        </View>
-                                    </View>
-                                </TouchableOpacity>
-                            )}
-                        />
-                        {!searching && query.length > 0 && results.length === 0 && (
-                            <View style={st.noResultsWrap}>
-                                <Text style={st.noResultsText}>No films found for "{query}"</Text>
-                            </View>
-                        )}
-                    </Animated.View>
+                    <LogSearchEngine onSelectFilm={selectFilm} />
                 )}
 
                 {/* ════ STEP 1: LOG FORM ════ */}
@@ -370,7 +297,7 @@ export default function LogModalScreen() {
 
                         {/* DELETE ZONE */}
                         {isEditing && !showDeleteConfirm && (
-                            <TouchableOpacity style={st.deleteBtn} onPress={() => setShowDeleteConfirm(true)} activeOpacity={0.7}>
+                            <TouchableOpacity style={st.deleteBtn} onPress={() => { Haptics.selectionAsync(); setShowDeleteConfirm(true); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                                 <Trash2 size={14} color={colors.danger} />
                                 <Text style={st.deleteBtnText}>DELETE THIS ENTIRE LOG</Text>
                             </TouchableOpacity>
@@ -379,8 +306,8 @@ export default function LogModalScreen() {
                             <View style={st.deleteConfirm}>
                                 <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
                                 <View style={st.deleteConfirmRow}>
-                                    <TouchableOpacity style={st.deleteYes} onPress={handleDelete}><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></TouchableOpacity>
-                                    <TouchableOpacity style={st.deleteNo} onPress={() => setShowDeleteConfirm(false)}><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></TouchableOpacity>
+                                    <TouchableOpacity style={st.deleteYes} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); handleDelete(); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></TouchableOpacity>
+                                    <TouchableOpacity style={st.deleteNo} onPress={() => { Haptics.selectionAsync(); setShowDeleteConfirm(false); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></TouchableOpacity>
                                 </View>
                             </View>
                         )}
@@ -394,7 +321,7 @@ export default function LogModalScreen() {
                                 </View>
                             )}
                             <View style={st.filmInfoCol}>
-                                <Text style={st.filmTitle}>{film.title ?? film.name}</Text>
+                                <Text style={st.filmTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.8}>{film.title ?? film.name}</Text>
                                 <Text style={st.filmYear}>{film.release_date?.slice(0, 4) || '—'}</Text>
                             </View>
                         </View>
@@ -422,7 +349,7 @@ export default function LogModalScreen() {
                                     </View>
                                 )}
                                 {previousLog.review ? (
-                                    <Text style={st.prevTakeReview} numberOfLines={6}>
+                                    <Text style={st.prevTakeReview} numberOfLines={6} adjustsFontSizeToFit minimumFontScale={0.8}>
                                         "{(previousLog.review ?? '').replace(/<[^>]+>/g, '').trim()}"
                                     </Text>
                                 ) : null}
@@ -436,10 +363,10 @@ export default function LogModalScreen() {
 
                         {/* STATUS */}
                         <View style={st.sec}>
-                            <Text style={st.secLabel}>STATUS</Text>
+                            <SectionDivider label="STATUS" />
                             <View style={st.statusRow}>
                                 {(['watched', 'rewatched', 'abandoned'] as const).map(s => (
-                                    <TouchableOpacity key={s} style={[st.statusBtn, status === s && st.statusActive]} onPress={() => { setStatus(s); Haptics.selectionAsync(); }} activeOpacity={0.7}>
+                                    <TouchableOpacity key={s} style={[st.statusBtn, status === s && st.statusActive]} onPress={() => { setStatus(s); Haptics.selectionAsync(); }} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                         {s === 'watched' && <Eye size={14} color={status === s ? colors.ink : colors.fog} />}
                                         {s === 'rewatched' && <History size={14} color={status === s ? colors.ink : colors.fog} />}
                                         {s === 'abandoned' && <X size={14} color={status === s ? colors.ink : colors.fog} />}
@@ -452,10 +379,10 @@ export default function LogModalScreen() {
                         {/* ABANDONED REASON */}
                         {status === 'abandoned' && (
                             <View style={st.sec}>
-                                <Text style={st.secLabel}>REASON</Text>
+                                <SectionDivider label="REASON" />
                                 <View style={st.tagRow}>
                                     {ABANDONED_REASONS.map(r => (
-                                        <TouchableOpacity key={r} style={[st.tag, abandonedReason === r && st.tagActive]} onPress={() => setAbandonedReason(r)} activeOpacity={0.7}>
+                                        <TouchableOpacity key={r} style={[st.tag, abandonedReason === r && st.tagActive]} onPress={() => { Haptics.selectionAsync(); setAbandonedReason(r); }} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                             <Text style={[st.tagText, abandonedReason === r && st.tagTextActive]}>{r}</Text>
                                         </TouchableOpacity>
                                     ))}
@@ -483,7 +410,7 @@ export default function LogModalScreen() {
                         )}
 
                         {/* MORE DETAILS Toggle */}
-                        <TouchableOpacity style={st.moreToggle} onPress={() => setMoreOpen(!moreOpen)} activeOpacity={0.7}>
+                        <TouchableOpacity style={st.moreToggle} onPress={() => { Haptics.selectionAsync(); setMoreOpen(!moreOpen); }} activeOpacity={0.7}>
                             <View style={st.moreToggleInner}>
                                 {moreOpen ? <ChevronUp size={14} color={colors.sepia} /> : <ChevronDown size={14} color={colors.sepia} />}
                                 <Text style={st.moreText}>{moreOpen ? 'COLLAPSE DETAILS' : 'MORE DETAILS'}</Text>
@@ -502,14 +429,14 @@ export default function LogModalScreen() {
                                         <Text style={st.secLabel}>DATE WATCHED</Text>
                                     </View>
                                     <View style={st.quickDateRow}>
-                                        <TouchableOpacity style={[st.qDateBtn, date === todayStr && st.qDateActive]} onPress={() => { setDate(todayStr); setCalendarOpen(false); }}>
+                                        <TouchableOpacity style={[st.qDateBtn, date === todayStr && st.qDateActive]} onPress={() => { Haptics.selectionAsync(); setDate(todayStr); setCalendarOpen(false); }} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                             <Text style={[st.qDateText, date === todayStr && st.qDateTextActive]}>TODAY</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity style={[st.qDateBtn, date === yesterday && st.qDateActive]} onPress={() => { setDate(yesterday); setCalendarOpen(false); }}>
+                                        <TouchableOpacity style={[st.qDateBtn, date === yesterday && st.qDateActive]} onPress={() => { Haptics.selectionAsync(); setDate(yesterday); setCalendarOpen(false); }} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                             <Text style={[st.qDateText, date === yesterday && st.qDateTextActive]}>YESTERDAY</Text>
                                         </TouchableOpacity>
                                     </View>
-                                    <TouchableOpacity style={st.dateDisplay} onPress={() => setCalendarOpen(!calendarOpen)} activeOpacity={0.7}>
+                                    <TouchableOpacity style={st.dateDisplay} onPress={() => { Haptics.selectionAsync(); setCalendarOpen(!calendarOpen); }} activeOpacity={0.7}>
                                         <Text style={st.dateText}>{new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
                                         <Text style={[st.dateToggle, calendarOpen && st.dateToggleActive]}>{calendarOpen ? '▲ CLOSE' : '▼ CHANGE'}</Text>
                                     </TouchableOpacity>
@@ -518,8 +445,8 @@ export default function LogModalScreen() {
 
                                 {/* Watched With — #8: Social-aware autocomplete */}
                                 <View style={st.sec}>
-                                    <Text style={st.secLabel}>WATCHED WITH</Text>
-                                    <TextInput style={st.input} placeholder="A name, a memory, or @username..." placeholderTextColor={colors.fog} value={watchedWith} onChangeText={setWatchedWith} maxLength={60} />
+                                    <SectionDivider label="WATCHED WITH" />
+                                    <TextInput style={st.input} placeholder="A name, a memory, or @username..." placeholderTextColor={colors.fog} value={watchedWith} onChangeText={setWatchedWith} maxLength={60} selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} autoCorrect={false} autoCapitalize="none" />
                                     {watchedWith.includes('@') && user?.following && user.following.length > 0 && (() => {
                                         const atMatch = watchedWith.match(/@(\w*)$/);
                                         if (!atMatch) return null;
@@ -548,10 +475,10 @@ export default function LogModalScreen() {
 
                                 {/* Review Editor */}
                                 <View style={st.sec}>
-                                    <Text style={st.secLabel}>REVIEW (OPTIONAL)</Text>
-                                    <TextInput style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" />
+                                    <SectionDivider label="REVIEW (OPTIONAL)" />
+                                    <TextInput style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} />
                                     <View style={st.reviewFooter}>
-                                        <TouchableOpacity style={st.spoilerRow} onPress={() => setIsSpoiler(!isSpoiler)}>
+                                        <TouchableOpacity style={st.spoilerRow} onPress={() => { Haptics.selectionAsync(); setIsSpoiler(!isSpoiler); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                                             <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
                                             <Text style={st.spoilerText}>CONTAINS SPOILERS</Text>
                                         </TouchableOpacity>
@@ -561,81 +488,31 @@ export default function LogModalScreen() {
 
                                 {/* Editorial Desk (Archivist+) */}
                                 {isPremium && review.length > 0 && (
-                                    <View style={st.editDesk}>
-                                        <Sparkles size={10} color={colors.sepia} strokeWidth={1.5} />
-                                        <Text style={st.editDeskTitle}>The Editorial Desk</Text>
-                                        <View style={st.editRow}>
-                                            <Text style={st.editLabel}>STYLIZED DROP CAP</Text>
-                                            <TouchableOpacity style={st.spoilerRow} onPress={() => setDropCap(!dropCap)}>
-                                                <View style={[st.cbox, dropCap && st.cboxSepia]}>{dropCap && <Check size={10} color={colors.ink} />}</View>
-                                                <Text style={st.editToggleText}>ENABLE</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                        <View>
-                                            <Text style={st.editLabel}>PULL QUOTE</Text>
-                                            <TextInput style={st.pullQuoteInput} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={120} />
-                                        </View>
-                                        <View>
-                                            <Text style={st.editLabel}>ARTICLE HEADER (STILL)</Text>
-                                            {availableBackdrops.length > 0 ? (
-                                                <FlatList horizontal data={[{ file_path: '__none__' }, ...availableBackdrops]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGap}
-                                                    renderItem={({ item: p }) => p.file_path === '__none__' ? (
-                                                        <TouchableOpacity onPress={() => setEditorialHeader(null)} style={[st.stillThumb, editorialHeader === null && st.stillActive]}>
-                                                            <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
-                                                        </TouchableOpacity>
-                                                    ) : (
-                                                        <TouchableOpacity onPress={() => setEditorialHeader(p.file_path)}>
-                                                            <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
-                                                        </TouchableOpacity>
-                                                    )}
-                                                />
-                                            ) : <Text style={st.noData}>No stills found.</Text>}
-                                        </View>
-                                    </View>
+                                    <EditorialDesk
+                                        dropCap={dropCap}
+                                        setDropCap={setDropCap}
+                                        pullQuote={pullQuote}
+                                        setPullQuote={setPullQuote}
+                                        editorialHeader={editorialHeader}
+                                        setEditorialHeader={setEditorialHeader}
+                                        availableBackdrops={availableBackdrops}
+                                    />
                                 )}
 
                                 {/* Auteur Toolkit */}
-                                <View style={[st.auteurBox, !isAuteur && st.auteurLocked]} pointerEvents={isAuteur ? 'auto' : 'box-none'}>
-                                    <TouchableOpacity style={st.auteurHead} onPress={() => { if (!isAuteur) { router.push('/membership'); return; } setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); }} activeOpacity={0.7}>
-                                        <Text style={st.auteurHeadText}>{autopsyOpen ? '[-] HIDE DEEP AUTOPSY' : '[+] PERFORM DEEP AUTOPSY'}</Text>
-                                        {!isAuteur && <View style={st.upgradeLockRow}><Lock size={10} color={colors.bloodReel} /><Text style={st.upgradeLink}>UPGRADE</Text></View>}
-                                    </TouchableOpacity>
-                                    {autopsyOpen && isAuteur && (
-                                        <Animated.View entering={FadeInDown.duration(200)} style={st.autopContent}>
-                                            <View>
-                                                <Text style={st.editLabel}>THE AUTOPSY ENGINE (1-10)</Text>
-                                                {Object.keys(autopsy).map(axis => (
-                                                    <View key={axis} style={st.sliderRow}>
-                                                        <Text style={st.sliderLabel}>{AUTOPSY_LABELS[axis] || axis.toUpperCase()}</Text>
-                                                        <View style={st.sliderTrack}>
-                                                            {[0,1,2,3,4,5,6,7,8,9,10].map(v => (
-                                                                <TouchableOpacity key={v} onPress={() => setAutopsy({ ...autopsy, [axis]: v })} style={[st.sliderSeg, v <= autopsy[axis] && st.sliderSegOn]} />
-                                                            ))}
-                                                        </View>
-                                                        <Text style={st.sliderVal}>{autopsy[axis] || '-'}</Text>
-                                                    </View>
-                                                ))}
-                                            </View>
-                                            <AutopsyGauge autopsy={autopsy} />
-                                            <View>
-                                                <Text style={st.editLabel}>CURATORIAL CONTROL (ALT POSTER)</Text>
-                                                {availablePosters.length > 0 ? (
-                                                    <FlatList horizontal data={[{ file_path: '__default__' }, ...availablePosters]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGapPad}
-                                                        renderItem={({ item: p }) => p.file_path === '__default__' ? (
-                                                            <TouchableOpacity onPress={() => setAltPoster(null)} style={[st.pThumb, altPoster === null && st.pThumbActive]}>
-                                                                <Text style={[st.pDefault, altPoster === null && st.pDefaultActive]}>DEFAULT</Text>
-                                                            </TouchableOpacity>
-                                                        ) : (
-                                                            <TouchableOpacity onPress={() => setAltPoster(p.file_path)}>
-                                                                <Image source={{ uri: tmdb.poster(p.file_path, 'w92') }} style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && st.pImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
-                                                            </TouchableOpacity>
-                                                        )}
-                                                    />
-                                                ) : <Text style={st.noData}>No alternative posters found on TMDB.</Text>}
-                                            </View>
-                                        </Animated.View>
-                                    )}
-                                </View>
+                                <AuteurToolkit
+                                    isAuteur={isAuteur}
+                                    autopsyOpen={autopsyOpen}
+                                    setAutopsyOpen={setAutopsyOpen}
+                                    isAutopsied={isAutopsied}
+                                    setIsAutopsied={setIsAutopsied}
+                                    autopsy={autopsy}
+                                    setAutopsy={setAutopsy}
+                                    availablePosters={availablePosters}
+                                    altPoster={altPoster}
+                                    setAltPoster={setAltPoster}
+                                    onUpgradePress={() => router.push('/membership')}
+                                />
 
                                 {/* Physical Media */}
                                 <View style={st.sec}>
@@ -645,13 +522,13 @@ export default function LogModalScreen() {
                                     </View>
                                     <View style={[st.tagRow, !isPremium && st.premiumLocked]} pointerEvents={isPremium ? 'auto' : 'none'}>
                                         {PHYSICAL_OPTIONS.map(opt => (
-                                            <TouchableOpacity key={opt} style={[st.tag, physicalMedia === opt && st.tagActive]} onPress={() => setPhysicalMedia(opt)} activeOpacity={0.7}>
+                                            <TouchableOpacity key={opt} style={[st.tag, physicalMedia === opt && st.tagActive]} onPress={() => { Haptics.selectionAsync(); setPhysicalMedia(opt); }} activeOpacity={0.7}>
                                                 <Text style={[st.tagText, physicalMedia === opt && st.tagTextActive]}>{opt}</Text>
                                             </TouchableOpacity>
                                         ))}
                                     </View>
                                     {!isPremium && (
-                                        <TouchableOpacity style={st.upgradeRow} onPress={() => router.push('/membership')} activeOpacity={0.7}>
+                                        <TouchableOpacity style={st.upgradeRow} onPress={() => router.push('/membership')} activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                                             <Lock size={10} color={colors.sepia} /><Text style={st.upgradeRowText}>UNLOCK WITH ARCHIVIST</Text>
                                         </TouchableOpacity>
                                     )}
@@ -668,7 +545,7 @@ export default function LogModalScreen() {
                                     ) : (
                                         <View style={st.lockedBox}>
                                             <Lock size={20} color={colors.sepia} />
-                                            <TouchableOpacity onPress={() => router.push('/membership')}>
+                                            <TouchableOpacity onPress={() => { Haptics.selectionAsync(); router.push('/membership'); }} activeOpacity={0.7} hitSlop={{top: 10, bottom: 10, left: 20, right: 20}}>
                                                 <Text style={st.lockedText}>UNLOCK WITH ARCHIVIST</Text>
                                             </TouchableOpacity>
                                         </View>
@@ -685,7 +562,7 @@ export default function LogModalScreen() {
                                     renderItem={({ item: list }) => {
                                         const isIn = list.films.some(f => f.id === film.id);
                                         return (
-                                            <TouchableOpacity style={[st.listChip, isIn && st.listChipOn]} onPress={() => toggleList(list.id)} activeOpacity={0.7}>
+                                            <TouchableOpacity style={[st.listChip, isIn && st.listChipOn]} onPress={() => { Haptics.selectionAsync(); toggleList(list.id); }} activeOpacity={0.7}>
                                                 {isIn && <Check size={12} color={colors.ink} />}
                                                 <Text style={[st.listChipText, isIn && st.listChipTextActive]} numberOfLines={1}>{list.title}</Text>
                                             </TouchableOpacity>
@@ -697,10 +574,10 @@ export default function LogModalScreen() {
 
                         {/* SUBMIT */}
                         <View style={st.submitRow}>
-                            <TouchableOpacity style={[st.submitBtn, submitting && st.submitBtnSubmitting]} onPress={handleLog} disabled={submitting} activeOpacity={0.8}>
-                                <Text style={st.submitText}>{submitting ? 'SEALING RECORD…' : (isEditing ? 'SAVE CHANGES' : 'LOG THIS FILM')}</Text>
+                            <TouchableOpacity style={[st.submitBtn, submitting && st.submitBtnSubmitting]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); handleLog(); }} disabled={submitting} activeOpacity={0.8} hitSlop={{top: 15, bottom: 15}}>
+                                <Text style={st.submitText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{submitting ? 'SEALING RECORD…' : (isEditing ? 'EDIT CRITIQUE' : 'CERTIFY CRITIQUE')}</Text>
                             </TouchableOpacity>
-                            <TouchableOpacity style={st.cancelBtn} onPress={() => router.back()} activeOpacity={0.7}>
+                            <TouchableOpacity style={st.cancelBtn} onPress={() => { Haptics.selectionAsync(); router.back(); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                                 <Text style={st.cancelText}>CANCEL</Text>
                             </TouchableOpacity>
                         </View>

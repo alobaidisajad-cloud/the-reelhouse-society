@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>ReelHouse Official Master Pipeline</title>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime&display=swap" rel="stylesheet">
+<style>
+  /* Tool Interface */
+  body {
+    background: #111;
+    color: #C4961A;
+    font-family: 'Courier Prime', monospace;
+    text-align: center;
+    padding: 30px;
+    margin: 0;
+  }
+  .controls {
+    margin-bottom: 40px;
+    background: #0A0A0A;
+    padding: 30px;
+    border: 1px dashed rgba(196,150,26,0.5);
+  }
+  .btn {
+    background: #C4961A;
+    color: #000;
+    padding: 15px 30px;
+    font-size: 20px;
+    font-family: 'Special Elite';
+    border: none;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.2s;
+  }
+  .btn:hover { background: #E6B63A; }
+  
+  /* Slides Hide out of view but must be rendered for html2canvas */
+  .canvas-workspace {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    /* Zoom out so it doesn't take up the whole screen, but maintains resolution */
+    transform-origin: top center;
+    transform: scale(0.25);
+  }
+
+  /* Core Master Format CSS from "Light Mode Incident" */
+  .slide {
+    width: 1080px;
+    height: 1080px;
+    background-color: #080808; 
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  /* Thin corner brackets */
+  .bracket {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(196,150,26,0.3);
+  }
+  .tl { top: 35px; left: 35px; border-right: none; border-bottom: none; }
+  .tr { top: 35px; right: 35px; border-left: none; border-bottom: none; }
+  .bl { bottom: 35px; left: 35px; border-right: none; border-top: none; }
+  .br { bottom: 35px; right: 35px; border-left: none; border-top: none; }
+
+  /* Vintage Logo Tint */
+  .logo {
+    width: 120px;
+    margin-bottom: 50px;
+    filter: sepia(100%) hue-rotate(5deg) saturate(200%) brightness(0.85);
+  }
+
+  /* Slanted Banner */
+  .banner-wrap {
+    border: 1px solid rgba(196,150,26,0.6);
+    padding: 10px 25px;
+    transform: rotate(-1.5deg);
+    margin-bottom: 40px;
+  }
+  .banner-text {
+    font-family: 'Special Elite', cursive;
+    color: #C4961A;
+    font-size: 18px;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+  }
+
+  /* Titles */
+  .title-w {
+    font-family: 'Rye', serif;
+    color: #EDE5D8;
+    font-size: 80px;
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+  .title-g {
+    font-family: 'Rye', serif;
+    color: #C4961A;
+    font-size: 80px;
+    letter-spacing: 2px;
+    line-height: 1;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+  }
+  .subtitle {
+    font-family: 'Special Elite', cursive;
+    color: #C4961A;
+    font-size: 20px;
+    letter-spacing: 0.3em;
+    margin-top: 30px;
+    opacity: 0.9;
+  }
+
+  .divider {
+    width: 200px;
+    height: 1px;
+    background: radial-gradient(circle, rgba(196,150,26,0.4) 0%, transparent 100%);
+    margin-top: 40px;
+  }
+
+  .footer {
+    font-family: 'Special Elite', cursive;
+    color: #4a423a;
+    font-size: 15px;
+    letter-spacing: 0.5em;
+    position: absolute;
+    bottom: 55px;
+  }
+
+  /* Screenshot cropping logic! */
+  .ss-container {
+    width: 600px;
+    height: 480px;
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 40px;
+  }
+  .ss-img {
+    width: 100%;
+    /* Push the top 15% out of view to slice off the iphone battery! */
+    transform: translateY(-13%);
+  }
+
+  /* Fade edges into the black abyss */
+  .ss-fade-layer {
+    position: absolute;
+    inset: 0;
+    box-shadow: inset 0 0 60px 40px #080808;
+    z-index: 2;
+    pointer-events: none;
+  }
+
+  /* Body */
+  .feat-body {
+    font-family: 'Courier Prime', monospace;
+    color: #EDE5D8;
+    opacity: 0.8;
+    font-size: 24px;
+    text-align: center;
+    max-width: 700px;
+    line-height: 1.6;
+  }
+
+  /* Subtitle specific spacing */
+  .feat-title {
+    font-size: 65px;
+    margin-bottom: 40px;
+  }
+</style>
+</head>
+<body>
+
+  <div class="controls">
+    <h1 style="margin-top:0;">1-Click Architecture Generation</h1>
+    <p>1. Ensure your 4 screenshots are ready.<br>
+       2. Click the button below, select ALL 4 screenshots at once.<br>
+       3. The system will auto-crop the battery, apply the Master Design, and instantly download the 5 finished PNG files to your PC.</p>
+    <button class="btn" onclick="document.getElementById('fileIn').click()">EXECUTE GENERATION</button>
+    <input type="file" id="fileIn" multiple accept="image/*" style="display:none;">
+    <div id="status" style="margin-top: 15px; color: #EDE5D8;">Waiting for input...</div>
+  </div>
+
+  <div class="canvas-workspace">
+    
+    <!-- SLIDE 1 -->
+    <div class="slide" id="s1">
+      <div class="bracket tl"></div><div class="bracket tr"></div><div class="bracket bl"></div><div class="bracket br"></div>
+      <img class="logo" src="public/reelhouse-logo-transparent.png" onerror="this.src='public/reelhouse-logo.svg'">
+      <div class="banner-wrap"><span class="banner-text">PUBLIC INQUIRY RESPONSE</span></div>
+      <div class="title-w">THE POCKET ARCHIVE</div>
+      <div class="title-g">DECLASSIFIED</div>
+      <div class="subtitle">WHAT EXACTLY ARE WE BUILDING? &rarr;</div>
+      <div class="divider"></div>
+      <div class="footer">SOCIETY ARCHIVES</div>
+    </div>
+
+    <!-- SLIDE 2 -->
+    <div class="slide" id="s2">
+      <div class="bracket tl"></div><div class="bracket tr"></div><div class="bracket bl"></div><div class="bracket br"></div>
+      <div class="banner-wrap"><span class="banner-text">F U N C T I O N &nbsp; N O . &nbsp; 1</span></div>
+      <div class="title-w feat-title">LOG YOUR CINEMA</div>
+      <div class="ss-container">
+        <img class="ss-img" id="img1">
+        <div class="ss-fade-layer"></div>
+      </div>
+      <div class="feat-body">Digitize your viewing history. Relying on your biological memory is highly inefficient and strictly forbidden by the Society. The darkroom requires a permanent paper trail.</div>
+    </div>
+
+    <!-- SLIDE 3 -->
+    <div class="slide" id="s3">
+      <div class="bracket tl"></div><div class="bracket tr"></div><div class="bracket bl"></div><div class="bracket br"></div>
+      <div class="banner-wrap"><span class="banner-text">F U N C T I O N &nbsp; N O . &nbsp; 2</span></div>
+      <div class="title-w feat-title">SUBMIT DOSSIERS</div>
+      <div class="ss-container">
+        <img class="ss-img" id="img2">
+        <div class="ss-fade-layer"></div>
+      </div>
+      <div class="feat-body">Write merciless Dossiers. Rate films on a strict scale from "Generational Masterpiece" to "I am actively seeking financial compensation from the director." Do not hold back.</div>
+    </div>
+
+    <!-- SLIDE 4 -->
+    <div class="slide" id="s4">
+      <div class="bracket tl"></div><div class="bracket tr"></div><div class="bracket bl"></div><div class="bracket br"></div>
+      <div class="banner-wrap"><span class="banner-text">F U N C T I O N &nbsp; N O . &nbsp; 3</span></div>
+      <div class="title-w feat-title">BUILD THE STACKS</div>
+      <div class="ss-container">
+        <img class="ss-img" id="img3">
+        <div class="ss-fade-layer"></div>
+      </div>
+      <div class="feat-body">Curate custom Stacks purely to establish your cinematic superiority in online arguments. We will keep your highly specific 47-movie list of "Atmospheric Rain Scenes" perfectly secure.</div>
+    </div>
+
+    <!-- SLIDE 5 -->
+    <div class="slide" id="s5">
+      <div class="bracket tl"></div><div class="bracket tr"></div><div class="bracket bl"></div><div class="bracket br"></div>
+      <div class="banner-wrap"><span class="banner-text">F U N C T I O N &nbsp; N O . &nbsp; 4</span></div>
+      <div class="title-g feat-title">INFILTRATE THE LOUNGE</div>
+      <div class="ss-container">
+        <img class="ss-img" id="img4">
+        <div class="ss-fade-layer"></div>
+      </div>
+      <div class="feat-body">Step into the chat rooms. Defending a financially disastrous 1970s sci-fi film against complete strangers in real-time is the highest form of cinematic appreciation.</div>
+      <div class="footer">*Buster is tracking the deployment. Stop asking for a release date.</div>
+    </div>
+
+  </div>
+
+  <script>
+    document.getElementById('fileIn').addEventListener('change', async function(e) {
+      const files = e.target.files;
+      if (files.length === 0) return;
+      document.getElementById('status').innerText = "Processing files...";
+
+      // Load files into images
+      for (let i = 0; i < Math.min(files.length, 4); i++) {
+        const file = files[i];
+        const objUrl = URL.createObjectURL(file);
+        document.getElementById('img' + (i + 1)).src = objUrl;
+      }
+
+      // Wait a moment for images and fonts to fully paint in the hidden DOM
+      await document.fonts.ready;
+      await new Promise(r => setTimeout(r, 1000));
+      
+      document.getElementById('status').innerText = "Generating post graphics via html2canvas...";
+
+      for (let i = 1; i <= 5; i++) {
+        const slide = document.getElementById('s' + i);
+        const canvas = await html2canvas(slide, {
+          scale: 1, // Keep exact 1080x1080
+          backgroundColor: '#080808',
+          logging: false
+        });
+        
+        // Trigger auto-download
+        const link = document.createElement('a');
+        link.download = 'reelhouse-post-slide-' + i + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+      }
+
+      document.getElementById('status').innerText = "Mission Accomplished! 5 beautifully cropped and styled PNGs have been downloaded.";
+    });
+  </script>
+</body>
+</html>

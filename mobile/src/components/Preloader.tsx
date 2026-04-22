@@ -302,7 +302,10 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transformOrigin: 'left center', // Note: React Native handling of this is intrinsic here due to translateY/X order, but we fake it by setting translation in view
+    width: 2,
+    height: SCREEN_W * 0.35,
+    backgroundColor: '#C4961A',
+    transformOrigin: 'left center',
   },
   digitsWrapper: {
     ...StyleSheet.absoluteFillObject,

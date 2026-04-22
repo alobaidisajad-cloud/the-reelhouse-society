@@ -5,6 +5,7 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Camera, Image as ImageIcon, X, Check } from 'lucide-react-native';
 import { decode } from 'base64-arraybuffer';
 
@@ -20,6 +21,7 @@ interface Props {
 export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   const { user } = useAuthStore();
   const [uploading, setUploading] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const handlePick = async (source: 'camera' | 'library') => {
     Haptics.selectionAsync();
@@ -82,10 +84,10 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   return (
     <View style={StyleSheet.absoluteFill}>
       <BlurView intensity={20} tint="dark" style={StyleSheet.absoluteFill} />
-      <Animated.View entering={FadeInUp.springify().damping(15)} exiting={FadeOutDown} style={s.sheet}>
+      <Animated.View entering={FadeInUp.springify().damping(15)} exiting={FadeOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
         <View style={s.header}>
           <Text style={s.title}>UPDATE IDENTITY</Text>
-          <TouchableOpacity onPress={onClose} style={s.closeBtn}>
+          <TouchableOpacity onPress={() => { Haptics.selectionAsync(); onClose(); }} style={s.closeBtn}>
             <X size={20} color={colors.fog} />
           </TouchableOpacity>
         </View>
@@ -121,7 +123,7 @@ const s = StyleSheet.create({
   sheet: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     backgroundColor: colors.soot, borderTopLeftRadius: 16, borderTopRightRadius: 16,
-    paddingHorizontal: 20, paddingBottom: 40, paddingTop: 20,
+    paddingHorizontal: 20, paddingTop: 20,
     borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.2)',
     shadowColor: '#000', shadowOffset: { width: 0, height: -10 }, shadowOpacity: 0.8, shadowRadius: 20,
   },

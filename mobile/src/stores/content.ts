@@ -65,7 +65,9 @@ export const useDispatchStore = create<DispatchState>((set) => ({
           })),
         });
       }
-    } catch {}
+    } catch (err) {
+      if (__DEV__) console.error('[Dispatch] fetchDossiers failed:', err);
+    }
     set({ loading: false });
   },
 
@@ -83,7 +85,7 @@ export const useDispatchStore = create<DispatchState>((set) => ({
         full_content: dossier.fullContent ?? '',
         is_published: true,
       }])
-      .select()
+      .select('id, title, excerpt, full_content, author_username, user_id, views, certify_count, created_at')
       .single();
 
     if (error || !data) throw error || new Error('Failed to file dossier');

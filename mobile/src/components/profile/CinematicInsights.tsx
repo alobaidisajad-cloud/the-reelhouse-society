@@ -267,7 +267,7 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
                         return (
                             <Animated.View key={genre.name} entering={FadeInRight.delay(i * 50).duration(300)} style={s.genreRow}>
                                 <View style={s.genreHeader}>
-                                    <Text style={[s.genreName, i === 0 && { color: colors.parchment }]}>{genre.name}</Text>
+                                    <Text style={[s.genreName, i === 0 && { color: colors.parchment }]} numberOfLines={1}>{genre.name}</Text>
                                     <View style={s.genreCountWrap}>
                                         <Text style={[s.countText, i === 0 && { color: colors.sepia }]}>{genre.count}</Text>
                                         <Text style={s.pctText}>{pct}%</Text>
@@ -287,10 +287,10 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
 
 const s = StyleSheet.create({
     container: { gap: 16 },
-    metaNote: { textAlign: 'center', fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.ash, marginBottom: 4 },
+    metaNote: { textAlign: 'center', fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.6, marginBottom: 4 },
     card: {
-        padding: 20, backgroundColor: colors.soot,
-        borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
+        padding: 20, backgroundColor: 'rgba(8,6,4,0.98)',
+        borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 4,
     },
     sectionTitle: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
     emptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
@@ -304,20 +304,20 @@ const s = StyleSheet.create({
     rankText: { fontFamily: fonts.uiBold, fontSize: 9, color: colors.fog },
     avatar: {
         width: 36, height: 36, borderRadius: 18, overflow: 'hidden',
-        borderWidth: 1, borderColor: colors.ash, backgroundColor: colors.soot,
+        borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', backgroundColor: '#050402',
         alignItems: 'center', justifyContent: 'center',
     },
     avatarImg: { width: '100%', height: '100%' } as any,
     avatarFallback: { fontFamily: fonts.display, fontSize: 14, color: colors.ash },
     personInfo: { flex: 1 },
     personName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, marginBottom: 4 },
-    barTrack: { height: 4, backgroundColor: colors.ash, borderRadius: 2, overflow: 'hidden' },
+    barTrack: { height: 4, backgroundColor: 'rgba(139,105,20,0.15)', borderRadius: 2, overflow: 'hidden' },
     barFill: { height: '100%', backgroundColor: colors.sepia, borderRadius: 2 },
     countText: { fontFamily: fonts.display, fontSize: 16, color: colors.fog, minWidth: 24, textAlign: 'right' },
     // Genre rows
     genreRow: { marginBottom: 10 },
-    genreHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4 },
-    genreName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone },
+    genreHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, gap: 8 },
+    genreName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, flex: 1 },
     genreCountWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
     pctText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.ash },
     loaderMargin: { marginVertical: 16 },

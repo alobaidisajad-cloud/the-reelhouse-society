@@ -2,7 +2,8 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
 import { Alert, Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { MMKV } from 'react-native-mmkv';
+export const storage = new MMKV();
 import * as Linking from 'expo-linking';
 
 export interface AuthState {
@@ -63,10 +64,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   restoreSession: async () => {
     try {
       // ── IRON VAULT CACHE: Instant RAM memory restoration before network ping ──
-      const vaultData = await AsyncStorage.getItem('ironvault_user_cache');
+      let cachedFollowing: string[] = [];
+      const vaultData = storage.getString('ironvault_user_cache');
       if (vaultData) {
         try {
           const parsedUser = JSON.parse(vaultData);
+          cachedFollowing = parsedUser.following ?? [];
           set({ user: parsedUser, isAuthenticated: true, loading: false });
         } catch {}
       }
@@ -76,15 +79,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         const { data: profile } = await supabase
           .from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', session.user.id).single();
         if (profile) {
-          const completeUser = { ...session.user, ...profile, following: [] } as unknown as User;
-          AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(completeUser));
+          // CRITICAL: Preserve the cached following list — don't overwrite with []
+          const completeUser = { ...session.user, ...profile, following: cachedFollowing } as unknown as User;
+          storage.set('ironvault_user_cache', JSON.stringify(completeUser));
           set({ user: completeUser, isAuthenticated: true, loading: false });
-          // Hydrate following in background
+          // Hydrate following from DB in background (authoritative source)
           hydrateFollowing();
           return;
         }
       }
-    } catch { /* session restore failed silently */ }
+    } catch (err: unknown) {
+      console.warn('[restoreSession] Failed:', err instanceof Error ? err.message : String(err));
+    }
     set({ loading: false });
   },
 
@@ -104,7 +110,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     // Set auth immediately
     const completeUser = { ...data.user, following: [] } as unknown as User;
-    AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(completeUser));
+    storage.set('ironvault_user_cache', JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true });
 
     // Enrich with profile in background
@@ -113,7 +119,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         if (res.data) {
            set((s) => {
              const updatedUser = s.user ? { ...s.user, ...res.data } : null;
-             if (updatedUser) AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(updatedUser));
+             if (updatedUser) storage.set('ironvault_user_cache', JSON.stringify(updatedUser));
              return { user: updatedUser };
            });
         }
@@ -139,7 +145,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       await supabase.from('profiles').update({ username, persona }).eq('id', data.user!.id);
       const { data: profile } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user!.id).single();
       const completeUser = { ...data.user, ...profile, following: [] } as User;
-      AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(completeUser));
+      storage.set('ironvault_user_cache', JSON.stringify(completeUser));
       set({ user: completeUser, isAuthenticated: true });
       return { needsConfirmation: false };
     }
@@ -154,17 +160,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // 2. Clear zustand auth state
     set({ user: null, isAuthenticated: false });
 
-    // 3. Clear all Supabase auth tokens from AsyncStorage (native)
+    // 3. Clear user cache
     if (Platform.OS !== 'web') {
-      try {
-        const allKeys = await AsyncStorage.getAllKeys();
-        const authKeys = allKeys.filter(key =>
-          key.startsWith('sb-') || key.includes('supabase') || key.includes('auth') || key === 'ironvault_user_cache'
-        );
-        if (authKeys.length > 0) {
-          await AsyncStorage.multiRemove(authKeys);
-        }
-      } catch { /* cleanup is non-critical */ }
+      storage.delete('ironvault_user_cache');
     }
   },
 
@@ -194,7 +192,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     const { role: _stripped, ...safeUpdates } = updates as Partial<User> & { role?: unknown };
     set((state) => {
       const updatedUser = state.user ? { ...state.user, ...safeUpdates } : null;
-      if (updatedUser) AsyncStorage.setItem('ironvault_user_cache', JSON.stringify(updatedUser));
+      if (updatedUser) storage.set('ironvault_user_cache', JSON.stringify(updatedUser));
       return { user: updatedUser };
     });
   },
@@ -231,27 +229,48 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     _actionThrottles.set(throttleKey, Date.now());
 
     const userId = state.user?.id;
-    const fromUsername = state.user?.username ?? 'someone';
+    if (!userId) {
+      console.warn('[followUser] No userId — user not authenticated');
+      return;
+    }
 
-    // Optimistic update
-    set((s) => ({ user: s.user ? { ...s.user, following: [...(s.user.following ?? []), targetUsername] } : null }));
+    // Optimistic update + persist to cache immediately
+    const newFollowing = [...(state.user?.following ?? []), targetUsername];
+    set((s) => ({ user: s.user ? { ...s.user, following: newFollowing } : null }));
+    _persistFollowingToCache(newFollowing, state.user!);
 
     try {
-      if (userId) {
-        const targetId = await resolveUsernameToId(targetUsername);
-        if (!targetId) throw new Error('User not found');
-        const { error } = await supabase.from('interactions').insert([{
-          user_id: userId, target_user_id: targetId, type: 'follow',
-        }]);
-        if (error && !error.message?.includes('duplicate')) throw error;
-        if (!error) {
-          // DB trigger handles notification generation
-        }
+      const targetId = await resolveUsernameToId(targetUsername);
+      if (!targetId) throw new Error(`User "${targetUsername}" not found in profiles table`);
+
+      // CHECK if follow already exists in DB before inserting
+      const { data: existing } = await supabase
+        .from('interactions')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('target_user_id', targetId)
+        .eq('type', 'follow')
+        .maybeSingle();
+
+      if (existing) {
+        // Follow already exists in DB — just keep the optimistic update, no insert needed
+        console.warn(`[followUser] Already following @${targetUsername} in DB, syncing state`);
+        return;
       }
-    } catch {
-      // Rollback
-      set((s) => ({ user: s.user ? { ...s.user, following: (s.user.following ?? []).filter(u => u !== targetUsername) } : null }));
-      Alert.alert('Error', 'Follow failed — please try again.');
+
+      const { error } = await supabase.from('interactions').insert([{
+        user_id: userId, target_user_id: targetId, type: 'follow',
+      }]);
+      if (error && !error.message?.includes('duplicate')) throw error;
+      // Success — DB trigger handles notification generation
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[followUser] FAILED for @${targetUsername}: ${msg}`);
+      // Rollback optimistic update + cache
+      const rolledBack = (get().user?.following ?? []).filter(u => u !== targetUsername);
+      set((s) => ({ user: s.user ? { ...s.user, following: rolledBack } : null }));
+      _persistFollowingToCache(rolledBack, get().user!);
+      Alert.alert('Follow Failed', `Could not follow @${targetUsername}. Please try again.`);
     }
   },
 
@@ -264,41 +283,77 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     const prevFollowing = get().user?.following ?? [];
     const userId = get().user?.id;
+    if (!userId) {
+      console.warn('[unfollowUser] No userId — user not authenticated');
+      return;
+    }
 
-    set((s) => ({ user: s.user ? { ...s.user, following: (s.user.following ?? []).filter(u => u !== targetUsername) } : null }));
+    // Optimistic update + persist to cache immediately
+    const newFollowing = prevFollowing.filter(u => u !== targetUsername);
+    set((s) => ({ user: s.user ? { ...s.user, following: newFollowing } : null }));
+    _persistFollowingToCache(newFollowing, get().user!);
 
     try {
-      if (userId) {
-        const targetId = await resolveUsernameToId(targetUsername);
-        if (targetId) {
-          const { error } = await supabase.from('interactions').delete()
-            .eq('user_id', userId).eq('target_user_id', targetId).eq('type', 'follow');
-          if (error) throw error;
-        }
+      const targetId = await resolveUsernameToId(targetUsername);
+      if (targetId) {
+        const { error } = await supabase.from('interactions').delete()
+          .eq('user_id', userId).eq('target_user_id', targetId).eq('type', 'follow');
+        if (error) throw error;
+      } else {
+        console.warn(`[unfollowUser] Could not resolve ID for @${targetUsername}`);
       }
-    } catch {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.warn(`[unfollowUser] FAILED for @${targetUsername}: ${msg}`);
+      // Rollback
       set((s) => ({ user: s.user ? { ...s.user, following: prevFollowing } : null }));
-      Alert.alert('Error', 'Unfollow failed — please try again.');
+      _persistFollowingToCache(prevFollowing, get().user!);
+      Alert.alert('Unfollow Failed', `Could not unfollow @${targetUsername}. Please try again.`);
     }
   },
 }));
 
-// ── Hydrate following list from interactions table ──
-async function hydrateFollowing() {
-  const userId = useAuthStore.getState().user?.id;
-  if (!userId) return;
+// ── Persist following array to ironvault cache (fire-and-forget) ──
+function _persistFollowingToCache(following: string[], user: Record<string, unknown>) {
   try {
-    const { data: followRows } = await supabase
+    const cached = { ...user, following };
+    storage.set('ironvault_user_cache', JSON.stringify(cached));
+  } catch { /* non-critical */ }
+}
+
+// ── Hydrate following list from interactions table ──
+export async function hydrateFollowing() {
+  const userId = useAuthStore.getState().user?.id;
+  if (!userId) {
+    console.warn('[hydrateFollowing] No userId — skipping');
+    return;
+  }
+  try {
+    const { data: followRows, error: followErr } = await supabase
       .from('interactions').select('target_user_id')
       .eq('user_id', userId).eq('type', 'follow').limit(5000);
+    if (followErr) {
+      console.warn('[hydrateFollowing] Query error:', followErr.message);
+      return;
+    }
     if (!followRows || followRows.length === 0) {
       useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: [] } : null }));
       return;
     }
     const targetIds = followRows.map(r => r.target_user_id);
-    const { data: profiles } = await supabase
+    const { data: profiles, error: profileErr } = await supabase
       .from('profiles').select('username').in('id', targetIds).limit(5000);
+    if (profileErr) {
+      console.warn('[hydrateFollowing] Profile resolve error:', profileErr.message);
+      return;
+    }
     const usernames = (profiles ?? []).map(p => p.username).filter(Boolean);
     useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: usernames } : null }));
-  } catch { /* silently fail */ }
+    // Persist to cache so next session loads instantly
+    const currentUser = useAuthStore.getState().user;
+    if (currentUser) _persistFollowingToCache(usernames, currentUser as unknown as Record<string, unknown>);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn('[hydrateFollowing] Unexpected error:', msg);
+  }
 }

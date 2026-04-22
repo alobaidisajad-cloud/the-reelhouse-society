@@ -75,7 +75,7 @@ export const FilmStripRow = memo(function FilmStripRow({ films = [], title, labe
                 windowSize={3}
                 maxToRenderPerBatch={8}
                 initialNumToRender={5}
-                removeClippedSubviews={true}
+                removeClippedSubviews={false}
                 renderItem={({ item, index }) => (
                     <Animated.View entering={FadeInRight.delay(index * 50).duration(400)}>
                         <TouchableOpacity

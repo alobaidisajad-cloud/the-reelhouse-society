@@ -136,7 +136,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                             .eq('user_id', user.id).eq('target_log_id', targetId).eq('type', 'endorse_log')
                         if (error) throw error
                     } else {
-                        const { error } = await supabase.from('interactions').insert([
+                        const { error } = await supabase.from('interactions_queue_buffer').insert([
                             { user_id: user.id, target_log_id: targetId, type: 'endorse_log' }
                         ])
                         if (error && !error.message?.includes('duplicate')) throw error
@@ -207,7 +207,7 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                             .eq('user_id', user.id).eq('target_list_id', listId).eq('type', 'endorse_list')
                         if (error) throw error
                     } else {
-                        const { error } = await supabase.from('interactions').insert([
+                        const { error } = await supabase.from('interactions_queue_buffer').insert([
                             { user_id: user.id, target_list_id: listId, type: 'endorse_list' }
                         ])
                         if (error && !error.message?.includes('duplicate')) throw error
@@ -315,11 +315,12 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 }))
 
                 const nextLogs = loadMore ? [...state.logs, ...newLogs] : newLogs
+                const cappedLogs = nextLogs.slice(0, 500)
                 const idx: Record<number, FilmLog> = {}
-                nextLogs.forEach(l => { if (l.filmId && !idx[l.filmId]) idx[l.filmId] = l as FilmLog })
+                cappedLogs.forEach(l => { if (l.filmId && !idx[l.filmId]) idx[l.filmId] = l as FilmLog })
 
                 set({ 
-                    logs: nextLogs as FilmLog[], 
+                    logs: cappedLogs as FilmLog[], 
                     _loggedIndex: idx,
                     logsPage: page + 1,
                     logsHasMore: hasMore,
@@ -348,10 +349,11 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 const hasMore = data.length === PAGE_SIZE
                 const newItems = data.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path ?? null, year: w.year ?? null }))
                 const nextWatchlist = loadMore ? [...state.watchlist, ...newItems] : newItems
+                const cappedWatchlist = nextWatchlist.slice(0, 500)
                 const idx: Record<number, true> = {}
-                nextWatchlist.forEach(w => { idx[w.id] = true })
+                cappedWatchlist.forEach(w => { idx[w.id] = true })
                 set({
-                    watchlist: nextWatchlist,
+                    watchlist: cappedWatchlist,
                     _watchlistIndex: idx,
                     watchlistPage: page + 1,
                     watchlistHasMore: hasMore,
@@ -379,8 +381,11 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                     const hasMore = data.length === PAGE_SIZE
                     const newVault = data.map((v) => ({ id: v.film_id, title: v.film_title, poster_path: v.poster_path ?? null, year: v.year ?? null, format: v.format ?? 'Digital' }))
                     
+                    const nextVault = loadMore ? [...state.vault, ...newVault] : newVault
+                    const cappedVault = nextVault.slice(0, 500)
+
                     set({ 
-                        vault: loadMore ? [...state.vault, ...newVault] : newVault,
+                        vault: cappedVault,
                         vaultPage: page + 1,
                         vaultHasMore: hasMore,
                         _fetchingVault: false,
@@ -430,8 +435,11 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                         films: (itemsByList.get(list.id) ?? []).map((i) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path ?? null })),
                     }))
                     
+                    const nextLists = loadMore ? [...state.lists, ...fullLists] : fullLists
+                    const cappedLists = nextLists.slice(0, 100) // Lower cap for lists due to heavy nested items
+
                     set({ 
-                        lists: loadMore ? [...state.lists, ...fullLists] : fullLists,
+                        lists: cappedLists,
                         listsPage: page + 1,
                         listsHasMore: hasMore,
                         _fetchingLists: false,
@@ -499,7 +507,22 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 if (get()._addLogMutex) return
                 set({ _addLogMutex: true })
 
-                const existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined
+                // Fetch directly from server as a pre-flight if missing in client paginated cache
+                let existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined
+                if (!existingLog && log.filmId) {
+                    const { data: serverCheck } = await supabase.from('logs')
+                        .select('id, rating, review, watched_date, watched_with, view_count, viewing_history, created_at, status')
+                        .eq('user_id', user.id).eq('film_id', log.filmId).maybeSingle()
+                    if (serverCheck) {
+                        existingLog = {
+                            id: serverCheck.id, filmId: log.filmId, rating: serverCheck.rating, review: serverCheck.review, 
+                            watchedDate: serverCheck.watched_date, watchedWith: serverCheck.watched_with, 
+                            viewCount: serverCheck.view_count, viewingHistory: serverCheck.viewing_history,
+                            createdAt: serverCheck.created_at, status: serverCheck.status
+                        } as FilmLog
+                    }
+                }
+
                 if (existingLog) {
                     const oldHistory = existingLog.viewingHistory ?? []
                     const archivedEntry = {
@@ -572,7 +595,13 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
             markAsWatched: async (film, status = 'watched') => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const existingLog = get()._loggedIndex[film.id]
+                
+                let existingLog = get()._loggedIndex[film.id]
+                if (!existingLog) {
+                    const { data: serverCheck } = await supabase.from('logs').select('id, status').eq('user_id', user.id).eq('film_id', film.id).maybeSingle()
+                    if (serverCheck) existingLog = { id: serverCheck.id, status: serverCheck.status } as FilmLog
+                }
+
                 if (existingLog) {
                     await get().updateLog(existingLog.id, { status } as Partial<FilmLog>)
                     return
@@ -621,9 +650,9 @@ export const useFilmStore = create<FilmState>()((set, get) => ({
                 await get().removeLog(existingLog.id)
             },
 
-            getCinephileStats: () => {
+            getCinephileStats: (overrideCount?: number) => {
                 const logs = get().logs
-                const count = logs.length
+                const count = overrideCount ?? logs.length
                 let level = 'FIRST REEL'
                 let color = colors.fog
                 if (count > 50) { level = 'THE ORACLE'; color = colors.sepia }

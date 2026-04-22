@@ -4,13 +4,14 @@
  * Matches web's 116-line component exactly.
  */
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
+import PressableScale from '../PressableScale';
 
 interface RouletteFilm {
     id?: number;
@@ -82,6 +83,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     }, [watchlist]);
 
     const handleSelect = useCallback(() => {
+        Haptics.selectionAsync();
         if (!result) return;
         const filmId = result.id ?? result.filmId;
         onClose?.();
@@ -102,9 +104,9 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     };
 
     return (
-        <Modal visible transparent animationType="fade" onRequestClose={onClose}>
-            <TouchableOpacity style={s.overlay} activeOpacity={1} onPress={onClose}>
-                <TouchableOpacity activeOpacity={1} style={s.card}>
+        <Modal visible transparent animationType="fade" onRequestClose={() => { Haptics.selectionAsync(); onClose?.(); }}>
+            <Pressable style={s.overlay} onPress={() => { Haptics.selectionAsync(); onClose?.(); }}>
+                <Pressable style={s.card} onPress={() => {}}>
                     {/* Scanlines when picking */}
                     {picking && <View style={s.scanlines} pointerEvents="none" />}
 
@@ -113,9 +115,9 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                         <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
                             <Text style={s.title}>The Oracle's Choice</Text>
                             <Text style={s.subtitle}>Can't decide? Let the Archive choose your next obsession.</Text>
-                            <TouchableOpacity style={s.spinBtn} onPress={spin} activeOpacity={0.7}>
+                            <PressableScale style={s.spinBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium">
                                 <Text style={s.spinBtnText}>✦ Consult the Oracle</Text>
-                            </TouchableOpacity>
+                            </PressableScale>
                         </Animated.View>
                     )}
 
@@ -139,29 +141,27 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     {!picking && result && (
                         <Animated.View entering={ZoomIn.duration(400)} style={s.centerContent}>
                             <Text style={s.oracleSpoken}>THE ORACLE HAS SPOKEN</Text>
-                            <TouchableOpacity onPress={handleSelect} activeOpacity={0.8}>
+                            <PressableScale onPress={handleSelect} haptic>
                                 {posterUri(result) && (
                                     <View style={s.resultPosterWrap}>
                                         <Image source={{ uri: posterUri(result)! }} style={s.poster} />
                                     </View>
                                 )}
-                            </TouchableOpacity>
-                            <TouchableOpacity onPress={handleSelect}>
-                                <Text style={s.resultTitle}>{result.title ?? result.name}</Text>
-                            </TouchableOpacity>
+                                <Text style={s.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{result.title ?? result.name}</Text>
+                            </PressableScale>
                             <Text style={s.resultReason}>"{reason}"</Text>
-                            <TouchableOpacity style={s.rerollBtn} onPress={spin} activeOpacity={0.7}>
+                            <PressableScale style={s.rerollBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic>
                                 <Text style={s.rerollText}>↻ RE-ROLL INCANTATION</Text>
-                            </TouchableOpacity>
+                            </PressableScale>
                         </Animated.View>
                     )}
 
                     {/* Close button */}
-                    <TouchableOpacity style={s.closeBtn} onPress={onClose} activeOpacity={0.7}>
+                    <PressableScale style={s.closeBtn} onPress={() => { Haptics.selectionAsync(); onClose?.(); }} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic>
                         <Text style={s.closeBtnText}>✕</Text>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            </TouchableOpacity>
+                    </PressableScale>
+                </Pressable>
+            </Pressable>
         </Modal>
     );
 }
@@ -173,7 +173,7 @@ const s = StyleSheet.create({
     },
     card: {
         width: '100%', maxWidth: 400, padding: 32,
-        backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash,
+        backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
         borderTopWidth: 2, borderTopColor: colors.sepia, borderRadius: 8,
         position: 'relative', overflow: 'hidden',
     },

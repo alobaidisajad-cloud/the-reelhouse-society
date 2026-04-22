@@ -22,7 +22,7 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay}>
                 <View style={s.card}>
-                    <TouchableOpacity style={s.closeBtn} onPress={onClose} activeOpacity={0.7}>
+                    <TouchableOpacity style={s.closeBtn} onPress={onClose} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                         <Text style={s.closeBtnText}>✕</Text>
                     </TouchableOpacity>
 

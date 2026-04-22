@@ -127,7 +127,7 @@ function CardContent({ data }: { data: ShareCardData }) {
                                 <View style={s.statusChip}>
                                     <Text style={s.statusText}>{statusLabel}</Text>
                                 </View>
-                                <Text style={s.editorialTitle} numberOfLines={3}>{data.filmTitle}</Text>
+                                <Text style={s.editorialTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{data.filmTitle}</Text>
                                 {yearDisplay ? <Text style={s.editorialYear}>{yearDisplay}</Text> : null}
                                 <ReelRating rating={data.rating} size={14} />
                             </View>
@@ -175,7 +175,7 @@ function CardContent({ data }: { data: ShareCardData }) {
                         </View>
 
                         {/* Title */}
-                        <Text style={s.cinematicTitle}>{data.filmTitle}</Text>
+                        <Text style={s.cinematicTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{data.filmTitle}</Text>
                         {yearDisplay ? <Text style={s.cinematicYear}>{yearDisplay}</Text> : null}
 
                         {/* Rating */}

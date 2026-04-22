@@ -3,9 +3,11 @@
  * Collapsible section matching web's 82-line component.
  */
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { Globe } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 interface ReleaseDate {
     release_date: string;
@@ -44,12 +46,15 @@ export default function CountryReleases({ releaseDates }: { releaseDates: Releas
 
     return (
         <View style={s.card}>
-            <TouchableOpacity style={s.header} onPress={() => setOpen(!open)} activeOpacity={0.7}>
-                <Text style={s.sectionTitle}>🌍 INTERNATIONAL RELEASES</Text>
+            <PressableScale style={s.header} onPress={() => setOpen(!open)} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                <View style={s.headerLeft}>
+                    <Globe size={12} color={colors.sepia} strokeWidth={1.5} />
+                    <Text style={s.sectionTitle}>INTERNATIONAL RELEASES</Text>
+                </View>
                 <Text style={[s.toggleText, open && s.toggleActive]}>
                     {open ? '▲ CLOSE' : `▼ ${releases.length} COUNTRIES`}
                 </Text>
-            </TouchableOpacity>
+            </PressableScale>
 
             {open && (
                 <Animated.View entering={FadeIn.duration(300)}>
@@ -62,7 +67,7 @@ export default function CountryReleases({ releaseDates }: { releaseDates: Releas
                             <View key={iso_3166_1} style={s.row}>
                                 <View style={s.rowLeft}>
                                     <Text style={s.countryCode}>{iso_3166_1}</Text>
-                                    {cert ? <View style={s.certBadge}><Text style={s.certText}>{cert}</Text></View> : null}
+                                    {cert ? <View style={s.certBadge}><Text style={s.certText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{cert}</Text></View> : null}
                                     <Text style={s.typeText}>{RELEASE_TYPES[mainRelease.type] ?? ''}</Text>
                                 </View>
                                 <Text style={s.dateText}>
@@ -73,11 +78,11 @@ export default function CountryReleases({ releaseDates }: { releaseDates: Releas
                     })}
 
                     {releases.length > 6 && (
-                        <TouchableOpacity onPress={() => setExpanded(!expanded)} style={s.showMoreBtn}>
+                        <PressableScale onPress={() => setExpanded(!expanded)} style={s.showMoreBtn} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                             <Text style={s.showMoreText}>
                                 {expanded ? '↑ SHOW LESS' : `↓ ${releases.length - 6} MORE COUNTRIES`}
                             </Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                     )}
                 </Animated.View>
             )}
@@ -86,24 +91,34 @@ export default function CountryReleases({ releaseDates }: { releaseDates: Releas
 }
 
 const s = StyleSheet.create({
-    card: { padding: 16, backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
+    card: {
+        padding: 16,
+        backgroundColor: 'rgba(8,6,4,0.98)',
+        borderWidth: 1,
+        borderColor: 'rgba(139,105,20,0.3)',
+        borderRadius: 4,
+        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6,
+    },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     sectionTitle: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia },
     toggleText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog },
     toggleActive: { color: colors.sepia },
     row: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        paddingVertical: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(255,255,255,0.04)',
+        paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)',
     },
     rowLeft: { flexDirection: 'row', alignItems: 'center', gap: 6 },
     countryCode: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1, color: colors.sepia, minWidth: 28 },
-    certBadge: { backgroundColor: colors.fog, paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 },
-    certText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.ink },
-    typeText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.ash },
+    certBadge: { backgroundColor: 'rgba(139,105,20,0.3)', paddingHorizontal: 4, paddingVertical: 1, borderRadius: 2 },
+    certText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia },
+    typeText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog },
     dateText: { fontFamily: fonts.body, fontSize: 12, color: colors.bone },
     showMoreBtn: {
-        marginTop: 10, paddingVertical: 8, borderWidth: 1,
-        borderStyle: 'dashed', borderColor: colors.ash, borderRadius: 2, alignItems: 'center',
+        marginTop: 10, paddingVertical: 8,
+        borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2,
+        alignItems: 'center',
+        backgroundColor: 'rgba(8,6,4,0.98)',
     },
     showMoreText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
 });

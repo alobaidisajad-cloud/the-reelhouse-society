@@ -1,15 +1,20 @@
 import 'react-native-url-polyfill/auto';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
 import { Platform, AppState } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+
+const ExpoSecureStoreAdapter = {
+  getItem: (key: string) => SecureStore.getItemAsync(key),
+  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+};
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
-    // Use AsyncStorage on native, localStorage on web
-    ...(Platform.OS !== 'web' ? { storage: AsyncStorage } : {}),
+    ...(Platform.OS !== 'web' ? { storage: ExpoSecureStoreAdapter } : {}),
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
@@ -19,13 +24,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 supabase.auth.onAuthStateChange(async (event, _session) => {
     if (event === 'TOKEN_REFRESH_FAILED') {
         supabase.auth.signOut({ scope: 'local' }).catch(() => { });
-        if (Platform.OS !== 'web') {
-            const keys = await AsyncStorage.getAllKeys();
-            const authKeys = keys.filter(key => key.startsWith('supabase.auth.token'));
-            if (authKeys.length > 0) {
-                await AsyncStorage.multiRemove(authKeys);
-            }
-        }
     }
 });
 

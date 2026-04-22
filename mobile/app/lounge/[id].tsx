@@ -1,6 +1,6 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
+  View, Text, StyleSheet, TextInput,
   KeyboardAvoidingView, Platform, FlatList, Modal,
   AppState, ActivityIndicator,
 } from 'react-native';
@@ -20,6 +20,8 @@ import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { supabase } from '@/src/lib/supabase';
 import { LoungeMember } from '@/src/types';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import PressableScale from '@/src/components/PressableScale';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -37,7 +39,7 @@ const SharedCard = React.memo(({ msg }: { msg: LoungeMessage }) => {
       <View style={s.sharedInfo}>
         <View style={s.sharedTypeBadge}>
           <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
-          <Text style={s.sharedTypeText}>{typeLabel}</Text>
+          <Text style={s.sharedTypeText} numberOfLines={1}>{typeLabel}</Text>
         </View>
         <Text style={s.sharedTitle} numberOfLines={2}>{msg.film_title}</Text>
       </View>
@@ -66,23 +68,23 @@ const MessageBubble = React.memo(({ msg, isSelf, showAuthor, onLongPress }: {
       <View style={[s.msgContentCol, isSelf && s.msgContentColSelf]}>
         {showAuthor && (
           <View style={[s.msgHeader, isSelf && s.msgHeaderSelf]}>
-            <Text style={s.msgAuthor}>{isSelf ? 'You' : msg.username}</Text>
+            <Text style={[s.msgAuthor, { flexShrink: 1 }]} numberOfLines={1}>{isSelf ? 'You' : msg.username}</Text>
             <Text style={s.msgTime}>
               {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
         )}
 
-        <TouchableOpacity
-          activeOpacity={0.8}
-          onLongPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); onLongPress(msg); }}
+        <PressableScale
+          onLongPress={() => onLongPress(msg)}
           style={[s.msgBubble, isSelf ? s.msgBubbleSelf : s.msgBubbleOther]}
+          haptic="medium"
         >
           {Boolean(msg.reply_to_content) && (
             <View style={s.replyQuote}>
               <View style={s.replyQuoteHeader}>
                 <Reply size={9} color={colors.sepia} strokeWidth={2} />
-                <Text style={s.replyQuoteAuthor}>{msg.reply_to_username || 'Unknown'}</Text>
+                <Text style={[s.replyQuoteAuthor, { flexShrink: 1 }]} numberOfLines={1}>{msg.reply_to_username || 'Unknown'}</Text>
               </View>
               <Text style={s.replyQuoteContent} numberOfLines={2}>{msg.reply_to_content}</Text>
             </View>
@@ -90,7 +92,7 @@ const MessageBubble = React.memo(({ msg, isSelf, showAuthor, onLongPress }: {
 
           {Boolean(msg.content) && <Text style={s.msgText}>{msg.content}</Text>}
           {msg.type !== 'text' && <SharedCard msg={msg} />}
-        </TouchableOpacity>
+        </PressableScale>
       </View>
     </View>
   );
@@ -109,6 +111,8 @@ interface ActionSheetProps {
 }
 
 function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete }: ActionSheetProps) {
+  const insets = useSafeAreaInsets();
+  
   if (!visible || !msg) return null;
 
   const handleCopy = async () => {
@@ -120,30 +124,31 @@ function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete }: Actio
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
-        <TouchableOpacity activeOpacity={1} style={s.actionBackdrop} onPress={onClose} />
+        <PressableScale style={s.actionBackdrop} onPress={onClose} />
       </BlurView>
-      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={s.actionSheet}>
+      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.actionSheet, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
         <View style={s.actionHandle} />
-        <TouchableOpacity style={s.actionBtn} onPress={() => { onReply(msg); onClose(); }}>
+        <PressableScale style={s.actionBtn} onPress={() => { onReply(msg); onClose(); }} haptic="selection" accessibilityRole="button">
           <Reply size={18} color={colors.bone} strokeWidth={1.5} />
           <Text style={s.actionBtnText}>REPLY</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={s.actionBtn} onPress={handleCopy}>
+        </PressableScale>
+        <PressableScale style={s.actionBtn} onPress={handleCopy} accessibilityRole="button">
           <Copy size={18} color={colors.bone} strokeWidth={1.5} />
           <Text style={s.actionBtnText}>COPY TEXT</Text>
-        </TouchableOpacity>
+        </PressableScale>
         {isSelf && (
-          <TouchableOpacity
+          <PressableScale
             style={[s.actionBtn, s.actionBtnLast]}
             onPress={() => {
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
               onDelete(msg.id);
               onClose();
             }}
+            accessibilityRole="button"
           >
             <Trash2 size={18} color={colors.sepia} strokeWidth={1.5} />
             <Text style={[s.actionBtnText, s.actionBtnDanger]}>DELETE MESSAGE</Text>
-          </TouchableOpacity>
+          </PressableScale>
         )}
       </AnimatedView>
     </Modal>
@@ -163,6 +168,7 @@ interface LoungeSettingsPanelProps {
 
 function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: LoungeSettingsPanelProps) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { leaveLounge } = useLoungeStore();
   const [copied, setCopied] = useState(false);
 
@@ -187,15 +193,15 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
-        <TouchableOpacity activeOpacity={1} style={s.actionBackdrop} onPress={onClose} />
+        <PressableScale style={s.actionBackdrop} onPress={onClose} />
       </BlurView>
-      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={s.settingsSheet}>
+      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.settingsSheet, { paddingBottom: insets.bottom }]}>
         <View style={s.actionHandle} />
         <View style={s.settingsHeaderRow}>
           <Text style={s.settingsTitle}>Lounge Settings</Text>
-          <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}>
+          <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close Settings">
             <X size={20} color={colors.fog} strokeWidth={1.5} />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
 
         <FlatList
@@ -207,13 +213,13 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
               {lounge.is_private && lounge.invite_code && (
                 <View style={s.settingsSection}>
                   <Text style={s.settingsLabel}>INVITE CODE</Text>
-                  <TouchableOpacity style={s.inviteCodeBtn} onPress={handleCopyCode} activeOpacity={0.7}>
+                  <PressableScale style={s.inviteCodeBtn} onPress={handleCopyCode} accessibilityRole="button">
                     <Text style={s.inviteCodeText}>{lounge.invite_code}</Text>
                     {copied
                       ? <Check size={16} color={colors.sepia} strokeWidth={2} />
                       : <Copy size={16} color={colors.fog} strokeWidth={1.5} />
                     }
-                  </TouchableOpacity>
+                  </PressableScale>
                 </View>
               )}
               <Text style={s.settingsLabel}>MEMBERS ({members?.length || 0})</Text>
@@ -227,21 +233,21 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
                   : <Users size={13} color={colors.fog} strokeWidth={1.5} />
                 }
               </View>
-              <Text style={s.memberName}>@{item.username?.toUpperCase()}</Text>
-              {item.user_id === lounge.created_by && (
+              <Text style={[s.memberName, { flexShrink: 1, marginRight: 8 }]} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
+              {item.user_id === lounge.creator_id && (
                 <View style={s.memberBadge}>
                   <Crown size={9} color={colors.sepia} strokeWidth={2} />
-                  <Text style={s.memberBadgeText}>FOUNDER</Text>
+                  <Text style={s.memberBadgeText} numberOfLines={1}>FOUNDER</Text>
                 </View>
               )}
             </View>
           )}
           ListFooterComponent={
             <View style={s.settingsFooter}>
-              <TouchableOpacity style={s.leaveBtn} onPress={handleLeave} activeOpacity={0.7}>
+              <PressableScale style={s.leaveBtn} onPress={handleLeave} accessibilityRole="button">
                 <LogOut size={14} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.leaveBtnText}>STEP OUT OF LOUNGE</Text>
-              </TouchableOpacity>
+                <Text style={s.leaveBtnText} numberOfLines={1}>STEP OUT OF LOUNGE</Text>
+              </PressableScale>
             </View>
           }
         />
@@ -257,13 +263,14 @@ export default function LoungeRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const user = useAuthStore(s => s.user);
+  const insets = useSafeAreaInsets();
 
   const {
     lounges, currentMessages, fetchMessages, sendMessage,
     deleteMessage, subscribeToLounge, sending, markRead,
   } = useLoungeStore();
   const activeLounge = lounges.find(l => l.id === id);
-  const isCreator = activeLounge?.created_by === user?.id;
+  const isCreator = activeLounge?.creator_id === user?.id;
 
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<LoungeMessage | null>(null);
@@ -315,7 +322,6 @@ export default function LoungeRoomScreen() {
 
   const handleSend = useCallback(() => {
     if (!input.trim() || sending || !id) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     sendMessage(id, input.trim(), 'text', {
       reply_to_id: replyTo?.id,
       reply_to_username: replyTo?.username,
@@ -324,6 +330,8 @@ export default function LoungeRoomScreen() {
     setInput('');
     setReplyTo(null);
   }, [input, sending, id, replyTo]);
+
+  const reversedMessages = useMemo(() => [...currentMessages].reverse(), [currentMessages]);
 
   if (!activeLounge) {
     return (
@@ -337,15 +345,15 @@ export default function LoungeRoomScreen() {
   return (
     <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
       {/* Header */}
-      <View style={s.roomHeader}>
-        <TouchableOpacity style={s.headerBtn} onPress={() => router.back()} activeOpacity={0.7}>
+      <View style={[s.roomHeader, { paddingTop: Math.max(insets.top + 10, 44) }]}>
+        <PressableScale style={s.headerBtn} onPress={() => router.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
           <ArrowLeft size={20} color={colors.parchment} strokeWidth={1.5} />
-        </TouchableOpacity>
+        </PressableScale>
         <View style={s.headerCenter}>
           <Text style={s.roomTitle} numberOfLines={1}>{activeLounge.name}</Text>
           <View style={s.roomMeta}>
             <Users size={10} color={colors.fog} strokeWidth={1.5} />
-            <Text style={s.roomMetaText}>
+            <Text style={s.roomMetaText} numberOfLines={1}>
               {members.length || activeLounge.member_count || 0} Members
             </Text>
             {activeLounge.is_private && (
@@ -357,29 +365,30 @@ export default function LoungeRoomScreen() {
             )}
           </View>
         </View>
-        <TouchableOpacity
+        <PressableScale
           style={s.headerBtn}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setSettingsOpen(true); }}
-          activeOpacity={0.7}
+          onPress={() => setSettingsOpen(true)}
+          haptic="selection"
+          accessibilityRole="button" accessibilityLabel="Lounge Settings"
         >
           <Settings size={18} color={colors.parchment} strokeWidth={1.5} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       {/* Messages */}
       <FlatList
         ref={flatListRef}
-        data={currentMessages}
+        data={reversedMessages}
         keyExtractor={item => item.id}
         contentContainerStyle={s.messagesList}
-        inverted={false}
-        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
+        inverted={true}
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         renderItem={({ item, index }) => {
           const isSelf = item.user_id === user?.id;
-          const prev = currentMessages[index - 1];
-          const showAuthor = !prev || prev.user_id !== item.user_id ||
-            (new Date(item.created_at).getTime() - new Date(prev.created_at).getTime() > 300000);
+          const olderMessage = reversedMessages[index + 1];
+          const showAuthor = !olderMessage || olderMessage.user_id !== item.user_id ||
+            (new Date(item.created_at).getTime() - new Date(olderMessage.created_at).getTime() > 300000);
 
           return (
             <MessageBubble
@@ -400,17 +409,17 @@ export default function LoungeRoomScreen() {
       />
 
       {/* Input */}
-      <View style={s.inputWrapper}>
+      <View style={[s.inputWrapper, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
         {replyTo && (
           <AnimatedView entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={s.replyBanner}>
             <View style={s.replyBannerLeft}>
               <Reply size={10} color={colors.sepia} strokeWidth={2} />
-              <Text style={s.replyBannerAuthor}>{replyTo.username}</Text>
+              <Text style={[s.replyBannerAuthor, { flexShrink: 1 }]} numberOfLines={1}>{replyTo.username}</Text>
             </View>
             <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
-            <TouchableOpacity onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <PressableScale onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button">
               <X size={14} color={colors.fog} strokeWidth={1.5} />
-            </TouchableOpacity>
+            </PressableScale>
           </AnimatedView>
         )}
         <View style={s.inputRow}>
@@ -424,14 +433,15 @@ export default function LoungeRoomScreen() {
             maxLength={500}
             selectionColor={colors.sepia}
           />
-          <TouchableOpacity
+          <PressableScale
             style={[s.sendBtn, (!input.trim() || sending) && s.sendBtnDisabled]}
             onPress={handleSend}
             disabled={!input.trim() || sending}
-            activeOpacity={0.8}
+            haptic="medium"
+            accessibilityRole="button"
           >
             <Send size={16} color={colors.ink} strokeWidth={2} />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </View>
 
@@ -477,7 +487,7 @@ const s = StyleSheet.create({
 
   // ── Room Header ──
   roomHeader: {
-    paddingTop: Platform.OS === 'ios' ? 54 : 24,
+    paddingTop: 0,
     paddingBottom: 14,
     paddingHorizontal: 16,
     flexDirection: 'row',
@@ -685,7 +695,6 @@ const s = StyleSheet.create({
     backgroundColor: colors.ink,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.ash,
-    paddingBottom: Platform.OS === 'ios' ? 30 : 12,
   },
   replyBanner: {
     flexDirection: 'row',
@@ -758,7 +767,6 @@ const s = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 44 : 28,
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: 'rgba(196,150,26,0.15)',

@@ -78,6 +78,47 @@ function TabIcon({
   );
 }
 
+function LobbyTabIcon({ focused }: { focused: boolean }) {
+  const scale = useSharedValue(1);
+  const iconOpacity = useSharedValue(0.35);
+
+  React.useEffect(() => {
+    scale.value = withSpring(focused ? 1.15 : 1, {
+      damping: 15,
+      stiffness: 220,
+      mass: 0.5,
+    });
+    iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: 200 });
+  }, [focused]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: iconOpacity.value,
+  }));
+
+  const iconColor = focused ? colors.flicker : colors.bone;
+  return (
+    <View style={s.tabIconRoot}>
+      <Animated.View style={[s.tabIconInner, animatedStyle]}>
+        <ReelEyeIcon
+          size={26}
+          color={iconColor}
+          strokeWidth={focused ? 2 : 1.5}
+        />
+      </Animated.View>
+      <View style={s.indicatorSlot}>
+        {focused && (
+          <View style={[
+            s.indicatorDot,
+            { backgroundColor: colors.flicker },
+            s.centerGlow,
+          ]} />
+        )}
+      </View>
+    </View>
+  );
+}
+
 // ════════════════════════════════════════════════════════════════
 //  TAB BAR BACKGROUND — Frosted ink glass
 // ════════════════════════════════════════════════════════════════
@@ -146,46 +187,9 @@ export default function TabLayout() {
         name="index"
         options={{
           title: 'Lobby',
-          tabBarIcon: ({ focused }) => {
-            const scale = useSharedValue(1);
-            const iconOpacity = useSharedValue(0.35);
-
-            React.useEffect(() => {
-              scale.value = withSpring(focused ? 1.15 : 1, {
-                damping: 15,
-                stiffness: 220,
-                mass: 0.5,
-              });
-              iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: 200 });
-            }, [focused]);
-
-            const animatedStyle = useAnimatedStyle(() => ({
-              transform: [{ scale: scale.value }],
-              opacity: iconOpacity.value,
-            }));
-
-            const iconColor = focused ? colors.flicker : colors.bone;
-            return (
-              <View style={s.tabIconRoot}>
-                <Animated.View style={[s.tabIconInner, animatedStyle]}>
-                  <ReelEyeIcon
-                    size={26}
-                    color={iconColor}
-                    strokeWidth={focused ? 2 : 1.5}
-                  />
-                </Animated.View>
-                <View style={s.indicatorSlot}>
-                  {focused && (
-                    <View style={[
-                      s.indicatorDot,
-                      { backgroundColor: colors.flicker },
-                      s.centerGlow,
-                    ]} />
-                  )}
-                </View>
-              </View>
-            );
-          },
+          tabBarIcon: ({ focused }) => (
+            <LobbyTabIcon focused={focused} />
+          ),
         }}
       />
 

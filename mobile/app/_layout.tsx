@@ -1,4 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { queryClient, mmkvPersister } from '@/src/lib/queryClient';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -17,27 +20,15 @@ import Preloader from '@/src/components/Preloader';
 import FilmGrainOverlay from '@/src/components/FilmGrainOverlay';
 import { ToastOverlay } from '@/src/components/ToastOverlay';
 import ErrorBoundary from '@/src/components/ErrorBoundary';
-import { initSentry, setSentryUser } from '@/src/lib/sentry';
+// Sentry removed temporarily to isolate Hermes crash
 import 'react-native-reanimated';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, withDelay } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, withDelay, useAnimatedSensor, SensorType } from 'react-native-reanimated';
 import { DeviceEventEmitter } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { flushOfflineQueue } from '@/src/utils/offlineQueue';
-import { Gyroscope } from 'expo-sensors';
 import { LinearGradient } from 'expo-linear-gradient';
 
-// Initialize Sentry before any rendering
-initSentry();
-
-// Option 2: The Golden Ratio Lock (Typography)
-// Locks all typography on the platform to prevent accessibility bloat from destroying layout borders
-import { Text as RNText, TextInput as RNTextInput } from 'react-native';
-interface GlobalComponentWithDefaultProps { defaultProps?: any; }
-((RNText as unknown) as GlobalComponentWithDefaultProps).defaultProps = ((RNText as unknown) as GlobalComponentWithDefaultProps).defaultProps || {};
-((RNText as unknown) as GlobalComponentWithDefaultProps).defaultProps.maxFontSizeMultiplier = 1.15;
-((RNTextInput as unknown) as GlobalComponentWithDefaultProps).defaultProps = ((RNTextInput as unknown) as GlobalComponentWithDefaultProps).defaultProps || {};
-((RNTextInput as unknown) as GlobalComponentWithDefaultProps).defaultProps.maxFontSizeMultiplier = 1.15;
-
+// Font scaling lock removed temporarily to prevent React Native Hermes segfault.
 // Prevent splash from hiding until fonts + auth are ready
 SplashScreen.preventAutoHideAsync();
 
@@ -67,8 +58,6 @@ export default function RootLayout() {
         await restoreSession();
         // Set Sentry user context after auth is restored
         const currentUser = useAuthStore.getState().user;
-        setSentryUser(currentUser ? { id: currentUser.id, username: currentUser.username, role: currentUser.role } : null);
-        
         // Wake up the Real-time Notification Service — The "Live Wire"
         if (currentUser) {
             import('@/src/stores/social').then(({ useNotificationStore }) => {
@@ -174,9 +163,14 @@ export default function RootLayout() {
   if (!appReady || !fontsLoaded) return null;
 
   return (
-    <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady}>
-      <ErrorBoundary>
-      <Stack
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady}>
+        <ErrorBoundary>
+        <PersistQueryClientProvider
+          client={queryClient}
+          persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000 }}
+        >
+        <Stack
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.ink },
@@ -184,12 +178,12 @@ export default function RootLayout() {
         }}
       >
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="film/[id]" options={{ animation: 'ios_from_right' }} />
-        <Stack.Screen name="person/[id]" options={{ animation: 'ios_from_right' }} />
-        <Stack.Screen name="lounge/[id]" options={{ animation: 'ios_from_right' }} />
-        <Stack.Screen name="user/[username]" options={{ animation: 'ios_from_right' }} />
-        <Stack.Screen name="settings" options={{ animation: 'ios_from_right' }} />
-        <Stack.Screen name="log/[id]" options={{ animation: 'ios_from_right' }} />
+        <Stack.Screen name="film/[id]" options={{ animation: 'fade' }} />
+        <Stack.Screen name="person/[id]" options={{ animation: 'fade' }} />
+        <Stack.Screen name="lounge/[id]" options={{ animation: 'fade' }} />
+        <Stack.Screen name="user/[username]" options={{ animation: 'fade' }} />
+        <Stack.Screen name="settings" options={{ animation: 'fade' }} />
+        <Stack.Screen name="log/[id]" options={{ animation: 'fade' }} />
         <Stack.Screen name="search-modal" options={{ presentation: 'modal', animation: 'fade', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="log-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="notifications-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
@@ -197,26 +191,25 @@ export default function RootLayout() {
         <Stack.Screen name="vault-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="login" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="social-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-        <Stack.Screen name="reset-password" options={{ animation: 'ios_from_right' }} />
+        <Stack.Screen name="reset-password" options={{ animation: 'fade' }} />
         <Stack.Screen name="auth-callback" options={{ animation: 'fade' }} />
         <Stack.Screen name="membership" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="oracle" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-        <Stack.Screen name="tribunal" options={{ animation: 'ios_from_right' }} />
-        <Stack.Screen name="year-in-cinema" options={{ animation: 'ios_from_right' }} />
-        <Stack.Screen name="stacks/[id]" options={{ animation: 'ios_from_right' }} />
-        <Stack.Screen name="dispatch/[id]" options={{ animation: 'ios_from_right' }} />
+        <Stack.Screen name="tribunal" options={{ animation: 'fade' }} />
+        <Stack.Screen name="year-in-cinema" options={{ animation: 'fade' }} />
+        <Stack.Screen name="stacks/[id]" options={{ animation: 'fade' }} />
+        {/* <Stack.Screen name="dispatch/[id]" options={{ animation: 'fade' }} /> */}
       </Stack>
+      </PersistQueryClientProvider>
       </ErrorBoundary>
+
       {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
-      <GyroscopicVignette />
       <FilmGrainOverlay />
       <ToastOverlay />
       
-      {/* Option 1: The Projectionist's Mark (Analog Cue) */}
-      <ProjectionistMark />
-      
       <StatusBar style="light" />
-    </GestureHandlerRootView>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
 
@@ -258,37 +251,3 @@ function ProjectionistMark() {
   );
 }
 
-// ── Studio Lighting (Gyroscopic Rig) ──
-function GyroscopicVignette() {
-  const tX = useSharedValue(0);
-  const tY = useSharedValue(0);
-
-  useEffect(() => {
-    Gyroscope.setUpdateInterval(60); // Fluid 60fps refresh
-    const sub = Gyroscope.addListener(({ x, y }) => {
-      // Map gyro rads to screen pixels subtly
-      tX.value = withTiming(y * 30, { duration: 60 });
-      tY.value = withTiming(x * 30, { duration: 60 });
-    });
-    return () => sub.remove();
-  }, []);
-
-  const sz = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: tX.value },
-      { translateY: tY.value }
-    ]
-  }));
-
-  return (
-    <Animated.View style={[{ position: 'absolute', top: '-10%', left: '-10%', right: '-10%', bottom: '-10%', pointerEvents: 'none', zIndex: -1 }, sz]}>
-      {/* Mimics a physical projector beam shifting inside the device */}
-      <LinearGradient
-        colors={['transparent', 'rgba(139,105,20,0.025)', 'transparent']}
-        start={{ x: 0, y: 0.1 }}
-        end={{ x: 1, y: 0.9 }}
-        style={StyleSheet.absoluteFillObject}
-      />
-    </Animated.View>
-  );
-}

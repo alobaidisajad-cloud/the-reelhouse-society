@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, Share, Alert } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '../PressableScale';
 
 interface CinephileStats {
     count: number;
@@ -31,7 +32,7 @@ function StatDial({ count, color }: { count: number; color: string }) {
                 {/* Background track */}
                 <Circle
                     cx={size / 2} cy={size / 2} r={radius}
-                    fill="none" stroke={colors.ash} strokeWidth={strokeWidth}
+                    fill="none" stroke="rgba(139,105,20,0.15)" strokeWidth={strokeWidth}
                 />
                 {/* Progress arc */}
                 <Circle
@@ -102,9 +103,9 @@ export function ProjectorRoom({ stats, user }: { stats?: CinephileStats; user?: 
 
             {/* CSV Export button */}
             <AnimatedView entering={FadeInDown.delay(400).duration(600)} style={s.exportWrap}>
-                <TouchableOpacity style={s.exportBtn} onPress={handleCSVExport} activeOpacity={0.7}>
+                <PressableScale style={s.exportBtn} onPress={handleCSVExport} haptic>
                     <Text style={s.exportText}>DOWNLOAD ARCHIVAL RECORD</Text>
-                </TouchableOpacity>
+                </PressableScale>
             </AnimatedView>
         </View>
     );
@@ -122,15 +123,15 @@ const s = StyleSheet.create({
     dialWrap: { alignItems: 'center' },
     dialCard: {
         width: '100%', alignItems: 'center', padding: 32,
-        backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
+        backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 4,
     },
     rankLabel: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 3, color: colors.fog, marginBottom: 8 },
     rankValue: { fontFamily: fonts.display, fontSize: 28, marginBottom: 20 },
-    progressTrack: { width: '100%', height: 4, backgroundColor: colors.ash, borderRadius: 2, overflow: 'hidden' },
+    progressTrack: { width: '100%', height: 4, backgroundColor: 'rgba(139,105,20,0.15)', borderRadius: 2, overflow: 'hidden' },
     progressFill: { height: '100%', borderRadius: 2 },
 
     certCard: {
-        padding: 32, alignItems: 'center', backgroundColor: colors.soot,
+        padding: 32, alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.98)',
         borderWidth: 2, borderColor: colors.sepia, borderRadius: 4, position: 'relative',
     },
     certCornerTL: { position: 'absolute', top: 10, left: 12, fontFamily: fonts.display, fontSize: 32, color: colors.sepia, opacity: 0.15 },

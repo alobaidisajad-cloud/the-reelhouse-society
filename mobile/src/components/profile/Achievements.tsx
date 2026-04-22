@@ -142,9 +142,9 @@ export function Achievements({ logs }: { logs: AchievementLog[] }) {
 
 const s = StyleSheet.create({
   container: {
-    backgroundColor: colors.soot,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    backgroundColor: 'rgba(8,6,4,0.98)',
+    borderWidth: 1,
+    borderColor: 'rgba(139,105,20,0.2)',
     borderRadius: 4,
     padding: 20,
     marginTop: 16,

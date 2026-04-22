@@ -38,8 +38,8 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
         try {
             await supabase.from('reports').insert({
                 reporter_id: user.id,
-                target_id: targetId,
-                target_type: targetType,
+                content_id: targetId,
+                content_type: targetType,
                 reason: selectedReason,
                 details: details.trim() || null,
             });
@@ -56,7 +56,7 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
 
     return (
         <>
-            <TouchableOpacity onPress={() => setVisible(true)} activeOpacity={0.7} style={s.triggerBtn}>
+            <TouchableOpacity onPress={() => setVisible(true)} activeOpacity={0.7} style={s.triggerBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                 <Text style={s.triggerText}>⚑</Text>
             </TouchableOpacity>
 
@@ -65,7 +65,7 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
                     <View style={s.card}>
                         <View style={s.header}>
                             <Text style={s.title}>Report Content</Text>
-                            <TouchableOpacity onPress={() => setVisible(false)}>
+                            <TouchableOpacity onPress={() => setVisible(false)} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                                 <Text style={s.closeText}>✕</Text>
                             </TouchableOpacity>
                         </View>

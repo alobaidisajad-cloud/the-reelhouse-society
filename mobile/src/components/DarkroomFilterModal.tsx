@@ -49,6 +49,7 @@ const Chip = ({ active, label, onPress }: { active: boolean; label: string; onPr
         style={[s.chip, active && s.chipActive]}
         onPress={onPress}
         activeOpacity={0.7}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
         <Text style={[s.chipText, active && s.chipTextActive]}>{label}</Text>
     </TouchableOpacity>
@@ -75,7 +76,7 @@ export function DarkroomFilterModal({ visible, onClose }: DarkroomFilterModalPro
                         <View style={s.headerLeft}>
                             <Text style={s.title}>ARCHIVE FILTERS</Text>
                             {hasFilters && (
-                                <TouchableOpacity onPress={clearFilters} style={s.clearBtn}>
+                                <TouchableOpacity onPress={clearFilters} style={s.clearBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                                     <Text style={s.clearBtnText}>CLEAR ALL</Text>
                                 </TouchableOpacity>
                             )}
@@ -166,7 +167,7 @@ export function DarkroomFilterModal({ visible, onClose }: DarkroomFilterModalPro
                     
                     {/* Apply Button */}
                     <View style={s.footer}>
-                        <TouchableOpacity style={s.applyBtn} onPress={onClose} activeOpacity={0.8}>
+                        <TouchableOpacity style={s.applyBtn} onPress={onClose} activeOpacity={0.8} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                             <Text style={s.applyBtnText}>APPLY & SEARCH</Text>
                         </TouchableOpacity>
                     </View>

@@ -60,7 +60,7 @@ export default function DossierReaderScreen() {
                         .maybeSingle();
                     setCertified(!!cert);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 reelToast.error('Dossier not found or encrypted.');
                 router.back();
             } finally {
@@ -90,7 +90,7 @@ export default function DossierReaderScreen() {
                 setComments(prev => [...prev, data]);
                 setNewComment('');
             }
-        } catch { 
+        } catch (err: unknown) { 
             reelToast.error('Failed to annotate.');
         } finally {
             setPosting(false);
@@ -102,7 +102,7 @@ export default function DossierReaderScreen() {
         try {
             await supabase.from('dossier_comments').delete().eq('id', commentId);
             setComments(prev => prev.filter(c => c.id !== commentId));
-        } catch {}
+        } catch (err: unknown) {}
     };
 
     const handleCertify = async () => {
@@ -115,7 +115,7 @@ export default function DossierReaderScreen() {
         
         try {
             await supabase.rpc('toggle_dossier_certify', { dossier_uuid: id });
-        } catch {
+        } catch (err: unknown) {
             setCertified(wasCertified);
             setCertifyCount(prev => wasCertified ? prev + 1 : Math.max(0, prev - 1));
             reelToast.error('Certification failed');

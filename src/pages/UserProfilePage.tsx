@@ -372,7 +372,6 @@ export default function UserProfilePage() {
     const profileLists = isOwnProfile ? currentLists : otherUserLists
     const profileWatchlist = isOwnProfile ? currentWatchlist : otherUserWatchlist
     const profileProgrammes = isOwnProfile ? currentProgrammes : otherUserProgrammes
-    // Fallback if RPC hasn't loaded:
     const finalMetrics = profileMetrics || { total_logs: profileLogs.length, avg_rating: 0 }
     const cineStats = {
         count: finalMetrics.total_logs,
@@ -380,7 +379,7 @@ export default function UserProfilePage() {
         color: finalMetrics.total_logs > 50 ? 'var(--sepia)' : finalMetrics.total_logs > 20 ? 'var(--blood-reel)' : 'var(--flicker)',
         progress: (finalMetrics.total_logs % 20) * 5,
     }
-    const stats = isOwnProfile && getCinephileStats ? getCinephileStats() : cineStats
+    const stats = isOwnProfile && getCinephileStats ? getCinephileStats(finalMetrics.total_logs) : cineStats
 
 
 
@@ -482,13 +481,13 @@ export default function UserProfilePage() {
     const isArchivistPlus = ['archivist', 'auteur'].includes((profileUser as any)?.role || '')
 
     const TABS = [
-        { id: 'diary', label: 'The Ledger', count: isOwnProfile ? filteredLogs.length : profileLogs.filter((l: any) => l.rating > 0 || (l.review && l.review.length > 0)).length },
+        { id: 'diary', label: 'The Ledger', count: finalMetrics.total_logs },
         { id: 'passport', label: 'Passport', count: null },
         { id: 'projector', label: 'Projector Room', count: null },
         { id: 'lists', label: 'Lists', count: profileLists.length },
         { id: 'watchlist', label: 'Watchlist', count: profileWatchlist.length },
         { id: 'physical', label: isArchivistPlus ? 'Physical Archive' : <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> Physical Archive</>, count: isArchivistPlus ? (physicalArchive.length > 0 ? physicalArchive.length : null) : 'LOCKED' },
-        { id: 'archive', label: 'The Archive', count: profileLogs.length > 0 ? profileLogs.length : null },
+        { id: 'archive', label: 'The Archive', count: finalMetrics.total_logs > 0 ? finalMetrics.total_logs : null },
         ...(isOwnProfile ? [{ id: 'calendar', label: isPremium ? '✦ The Calendar' : <><Lock size={10} style={{ display: "inline-block", verticalAlign: "middle" }} /> The Calendar</>, count: null }] : []),
     ]
 

@@ -180,7 +180,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                             style={[s.submitBtn, (submitting || !text.trim()) && s.submitBtnDisabled]}
                         >
                             <Text style={s.submitText}>SUBMIT CRITIQUE</Text>
-                            <Send size={14} color={colors.ink} style={s.submitIcon} />
+                            <Send size={14} color={colors.sepia} style={s.submitIcon} />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -199,11 +199,11 @@ const s = StyleSheet.create({
         paddingTop: 16,
     },
     header: {
-        fontFamily: fonts.ui,
-        fontSize: 10,
+        fontFamily: fonts.display,
+        fontSize: 12,
         letterSpacing: 2,
-        color: colors.sepia,
-        marginBottom: 12,
+        color: colors.parchment,
+        marginBottom: 16,
     },
     loading: {
         fontFamily: fonts.ui,
@@ -248,6 +248,9 @@ const s = StyleSheet.create({
         fontSize: 14,
         color: colors.bone,
         lineHeight: 22,
+        borderLeftWidth: StyleSheet.hairlineWidth,
+        borderLeftColor: 'rgba(139,105,20,0.3)',
+        paddingLeft: 10,
     },
     userActions: {
         flexDirection: 'row',
@@ -323,16 +326,21 @@ const s = StyleSheet.create({
         gap: 12,
     },
     input: {
-        backgroundColor: 'rgba(10,7,3,0.5)',
-        borderWidth: 1,
-        borderColor: colors.ash,
-        borderRadius: 4,
+        backgroundColor: '#030201',
+        borderWidth: StyleSheet.hairlineWidth,
+        borderColor: 'rgba(255,255,255,0.05)',
+        borderRadius: 2,
         color: colors.bone,
-        fontFamily: fonts.sub,
-        fontSize: 15,
-        padding: 12,
-        minHeight: 90,
+        fontFamily: fonts.body,
+        fontSize: 14,
+        padding: 16,
+        minHeight: 100,
         textAlignVertical: 'top',
+        shadowColor: '#000',
+        shadowOpacity: 1,
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        elevation: 2,
     },
     submitRow: {
         flexDirection: 'row',
@@ -341,18 +349,20 @@ const s = StyleSheet.create({
     submitBtn: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: colors.sepia,
-        paddingVertical: 10,
-        paddingHorizontal: 16,
-        borderRadius: 4,
+        backgroundColor: 'rgba(139,105,20,0.1)',
+        borderWidth: 1,
+        borderColor: 'rgba(139,105,20,0.3)',
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        borderRadius: 2,
     },
     submitText: {
         fontFamily: fonts.uiBold,
         fontSize: 10,
-        color: colors.ink,
+        color: colors.sepia,
         letterSpacing: 2,
     },
-    submitIcon: { marginLeft: 6 },
+    submitIcon: { marginLeft: 8, tintColor: colors.sepia },
     submitBtnDisabled: { opacity: 0.4 },
     updateBtnDisabled: { opacity: 0.5 },
     loginPrompt: {

@@ -104,7 +104,18 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
                 (payload) => {
-                    const newNotif = payload.new as AppNotification;
+                    const raw = payload.new as Record<string, unknown>;
+                    // Defensive: validate required fields before injecting
+                    if (!raw || typeof raw.id !== 'string' || typeof raw.message !== 'string') return;
+                    const newNotif: AppNotification = {
+                      id: raw.id as string,
+                      user_id: raw.user_id as string,
+                      type: (raw.type as string) ?? 'system',
+                      message: raw.message as string,
+                      from_username: raw.from_username as string | undefined,
+                      read: (raw.read as boolean) ?? false,
+                      created_at: (raw.created_at as string) ?? new Date().toISOString(),
+                    };
                     set((state) => {
                         // Prevent duplicate injects
                         if (state.notifications.some(n => n.id === newNotif.id)) return state;

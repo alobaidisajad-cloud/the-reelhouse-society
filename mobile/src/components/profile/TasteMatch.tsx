@@ -77,7 +77,7 @@ export function TasteMatch({ myLogs = [], theirLogs = [], theirUsername }: Taste
 
       <Text style={[s.label, { color }]}>{label}</Text>
 
-      <Text style={s.description}>
+      <Text style={s.description} numberOfLines={2} adjustsFontSizeToFit>
         You and <Text style={{ color: colors.bone }}>@{theirUsername}</Text> share a {match}% cinematic overlap
       </Text>
     </View>
@@ -86,9 +86,9 @@ export function TasteMatch({ myLogs = [], theirLogs = [], theirUsername }: Taste
 
 const s = StyleSheet.create({
   container: {
-    backgroundColor: colors.soot,
+    backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    borderColor: 'rgba(139,105,20,0.2)',
     borderRadius: 4,
     padding: 20,
     alignItems: 'center',

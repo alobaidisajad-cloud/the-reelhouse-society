@@ -59,7 +59,7 @@ export const TasteDNA = memo(function TasteDNA({ logs }: TasteDNAProps) {
                     const barWidth = `${(count / maxCount) * 100}%`;
                     return (
                         <Animated.View key={genre} entering={FadeInRight.delay(i * 60).duration(300)} style={s.row}>
-                            <Text style={s.genreLabel}>{genre.toUpperCase()}</Text>
+                            <Text style={s.genreLabel} numberOfLines={1} adjustsFontSizeToFit>{genre.toUpperCase()}</Text>
                             <View style={s.barTrack}>
                                 <View style={[s.barFill, { width: `${(count / maxCount) * 100}%`, backgroundColor: dnaColors[i] ?? colors.sepia }]} />
                             </View>
@@ -80,8 +80,8 @@ export const TasteDNA = memo(function TasteDNA({ logs }: TasteDNAProps) {
 
 const s = StyleSheet.create({
     container: {
-        padding: 20, backgroundColor: colors.soot,
-        borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
+        padding: 20, backgroundColor: 'rgba(8,6,4,0.98)',
+        borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 4,
         position: 'relative', overflow: 'hidden',
     },
     title: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 4 },
@@ -89,7 +89,7 @@ const s = StyleSheet.create({
     dnaStrip: { gap: 10 },
     row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     genreLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog, minWidth: 70 },
-    barTrack: { flex: 1, height: 6, backgroundColor: colors.ash, borderRadius: 3, overflow: 'hidden' },
+    barTrack: { flex: 1, height: 6, backgroundColor: 'rgba(139,105,20,0.15)', borderRadius: 3, overflow: 'hidden' },
     barFill: { height: '100%', borderRadius: 3 },
     pctLabel: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, minWidth: 28, textAlign: 'right' },
     helixDecor: { position: 'absolute', bottom: 6, left: 0, right: 0, height: 4, flexDirection: 'row' },

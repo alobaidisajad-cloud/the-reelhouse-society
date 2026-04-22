@@ -34,7 +34,7 @@ export const useNotificationStore = create<NotificationState>()(
                             read: false,
                             timestamp: new Date().toISOString(),
                             ...notif,
-                        } as unknown as Notification,
+                        } as Notification,
                         ...state.notifications,
                     ].slice(0, 50), // Cap at 50 — prevents unbounded localStorage growth
                 }

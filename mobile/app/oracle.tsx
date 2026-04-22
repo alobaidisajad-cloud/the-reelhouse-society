@@ -4,12 +4,12 @@ import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated'
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
-import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, Sparkles, Film, ArrowRight } from 'lucide-react-native';
 
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
+import reelToast from '@/src/utils/reelToast';
 
 interface OracleFilm {
   id: number;
@@ -49,8 +49,8 @@ export default function OracleScreen() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }, 1500); // Simulate Oracle "thinking" for dramatic effect
     } catch (e) {
-      console.error(e);
       setLoading(false);
+      reelToast.error('The Oracle's connection to the archive was severed. Try again.');
     }
   };
 
@@ -63,7 +63,7 @@ export default function OracleScreen() {
       />
       
       <View style={s.navBar}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={s.backBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
           <ArrowLeft size={20} color={colors.bone} />
         </TouchableOpacity>
       </View>
@@ -99,6 +99,7 @@ export default function OracleScreen() {
             onPress={askOracle}
             disabled={!mood.trim() || loading}
             activeOpacity={0.8}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             {loading ? (
               <ActivityIndicator color={colors.ink} size="small" />
@@ -125,6 +126,7 @@ export default function OracleScreen() {
                     style={s.resultCard}
                     onPress={() => router.push(`/film/${item.id}`)}
                     activeOpacity={0.8}
+                    hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
                   >
                     {posterUri ? (
                       <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" placeholder={blurhash} transition={300} />

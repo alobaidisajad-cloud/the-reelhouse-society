@@ -1,21 +1,24 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, KeyboardAvoidingView, Platform, ScrollView, Dimensions, Keyboard } from 'react-native';
+import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Dimensions, Keyboard } from 'react-native';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
 import Markdown from 'react-native-markdown-display';
 import * as Haptics from 'expo-haptics';
 
 import { useAuthStore } from '@/src/stores/auth';
-import { supabase } from '@/src/lib/supabase';
+import { useDispatchStore } from '@/src/stores/content';
 import { colors, fonts, spacing } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
+import PressableScale from '@/src/components/PressableScale';
 
 const { width } = Dimensions.get('window');
 
 export default function ComposeDossierScreen() {
     const { edit } = useLocalSearchParams<{ edit?: string }>();
     const { user } = useAuthStore();
+    const insets = useSafeAreaInsets();
     const canWrite = user?.role === 'auteur';
 
     const [title, setTitle] = useState('');
@@ -39,7 +42,6 @@ export default function ComposeDossierScreen() {
     }, [content]);
 
     const insertFormatting = (before: string, after: string) => {
-        Haptics.selectionAsync();
         setContent(prev => `${prev}${before}${after}`);
         // In a real advanced editor, we'd handle cursor position, but React Native TextInput selection handling is tricky.
         // We just append for now to ensure stability.
@@ -52,21 +54,16 @@ export default function ComposeDossierScreen() {
         setIsPublishing(true);
 
         try {
-            const payload = {
-                title: title.trim(),
-                excerpt: content.trim().substring(0, 150) + (content.length > 150 ? '...' : ''),
-                full_content: content.trim(),
-            };
+            const excerpt = content.trim().substring(0, 150) + (content.length > 150 ? '...' : '');
 
             if (edit) {
-                // Ignore edit functionality for now in mobile to keep it simple
+                // Edit functionality reserved for future release
             } else {
-                const { error } = await supabase.from('dispatch_dossiers').insert([{
-                    author_id: user?.id,
-                    author: user?.username,
-                    ...payload
-                }]);
-                if (error) throw error;
+                await useDispatchStore.getState().addDossier({
+                    title: title.trim(),
+                    excerpt,
+                    fullContent: content.trim(),
+                });
                 reelToast.success('Dossier published');
             }
             router.replace('/(tabs)/dispatch');
@@ -81,23 +78,23 @@ export default function ComposeDossierScreen() {
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
             
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} hitSlop={{top:10,bottom:10,left:10,right:10}}>
-                    <Text style={styles.cancelBtn}>CANCEL</Text>
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>THE WRITING ROOM</Text>
-                <TouchableOpacity 
+            <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
+                <PressableScale onPress={() => router.back()} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic>
+                    <Text style={styles.cancelBtn} numberOfLines={1}>CANCEL</Text>
+                </PressableScale>
+                <Text style={styles.headerTitle} numberOfLines={1}>THE WRITING ROOM</Text>
+                <PressableScale 
                     onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
                         setIsPreview(!isPreview);
                     }}
+                    haptic="medium"
                 >
-                    <Text style={styles.previewBtn}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
-                </TouchableOpacity>
+                    <Text style={styles.previewBtn} numberOfLines={1}>{isPreview ? 'EDIT' : 'PREVIEW'}</Text>
+                </PressableScale>
             </View>
 
             {isPreview ? (
-                <ScrollView style={styles.workspace} contentContainerStyle={styles.previewContent}>
+                <ScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false}>
                     <Text style={styles.previewEyebrow}>LIVE PREVIEW</Text>
                     {title ? <Text style={styles.previewTitle}>{title}</Text> : null}
                     {content ? (
@@ -120,6 +117,8 @@ export default function ComposeDossierScreen() {
                             value={title}
                             onChangeText={setTitle}
                             maxLength={100}
+                            cursorColor={colors.sepia}
+                            selectionColor="rgba(139,105,20,0.3)"
                         />
                         <TextInput
                             ref={inputRef}
@@ -130,44 +129,47 @@ export default function ComposeDossierScreen() {
                             onChangeText={setContent}
                             multiline
                             textAlignVertical="top"
+                            cursorColor={colors.sepia}
+                            selectionColor="rgba(139,105,20,0.3)"
                         />
                     </ScrollView>
 
                     <View style={styles.toolbar}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll}>
-                            <TouchableOpacity style={styles.toolBtn} onPress={() => insertFormatting('**', '**')}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">
+                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('**', '**')} haptic="selection" accessibilityRole="button" accessibilityLabel="Bold">
                                 <Bold size={18} color={colors.parchment} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.toolBtn} onPress={() => insertFormatting('*', '*')}>
+                            </PressableScale>
+                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('*', '*')} haptic="selection" accessibilityRole="button" accessibilityLabel="Italic">
                                 <Italic size={18} color={colors.parchment} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')}>
+                            </PressableScale>
+                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('\n## ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Heading">
                                 <Type size={18} color={colors.parchment} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')}>
+                            </PressableScale>
+                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('\n> ', '\n')} haptic="selection" accessibilityRole="button" accessibilityLabel="Block quote">
                                 <Quote size={18} color={colors.parchment} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')}>
+                            </PressableScale>
+                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('\n---\n', '')} haptic="selection" accessibilityRole="button" accessibilityLabel="Horizontal rule">
                                 <Minus size={18} color={colors.parchment} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')}>
+                            </PressableScale>
+                            <PressableScale style={styles.toolBtn} onPress={() => insertFormatting('[', '](url)')} haptic="selection" accessibilityRole="button" accessibilityLabel="Insert link">
                                 <Link2 size={18} color={colors.parchment} />
-                            </TouchableOpacity>
+                            </PressableScale>
                         </ScrollView>
                     </View>
 
                     <BlurView intensity={90} tint="dark" style={styles.footer}>
                         <View style={styles.stats}>
-                            <Text style={styles.statText}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
-                            <Text style={styles.statText}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
+                            <Text style={styles.statText} numberOfLines={1}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
+                            <Text style={styles.statText} numberOfLines={1}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
                         </View>
-                        <TouchableOpacity 
+                        <PressableScale 
                             style={[styles.publishBtn, (!title || !content || isPublishing) && styles.publishBtnDisabled]}
                             disabled={!title || !content || isPublishing}
                             onPress={handlePublish}
+                            haptic="medium"
                         >
-                            <Text style={styles.publishBtnText}>{isPublishing ? 'TRANSMITTING' : 'PUBLISH'}</Text>
-                        </TouchableOpacity>
+                            <Text style={styles.publishBtnText} numberOfLines={1}>{isPublishing ? 'TRANSMITTING' : 'PUBLISH'}</Text>
+                        </PressableScale>
                     </BlurView>
                 </KeyboardAvoidingView>
             )}
@@ -184,11 +186,10 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 60,
         paddingBottom: 16,
         paddingHorizontal: 20,
         borderBottomWidth: 1,
-        borderBottomColor: colors.ash,
+        borderBottomColor: 'rgba(139,105,20,0.2)',
         backgroundColor: colors.ink,
     },
     cancelBtn: {
@@ -232,7 +233,7 @@ const styles = StyleSheet.create({
     },
     toolbar: {
         borderTopWidth: 1,
-        borderTopColor: colors.ash,
+        borderTopColor: 'rgba(139,105,20,0.2)',
         backgroundColor: 'rgba(10,7,3,0.9)',
         paddingVertical: 8,
     },
@@ -242,7 +243,7 @@ const styles = StyleSheet.create({
     },
     toolBtn: {
         padding: 8,
-        backgroundColor: 'rgba(255,255,255,0.05)',
+        backgroundColor: 'rgba(139,105,20,0.1)',
         borderRadius: 4,
     },
     footer: {
@@ -253,7 +254,7 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         paddingBottom: 40,
         borderTopWidth: 1,
-        borderTopColor: colors.ash,
+        borderTopColor: 'rgba(139,105,20,0.2)',
     },
     stats: {
         flex: 1,

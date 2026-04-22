@@ -80,8 +80,9 @@ export default function ResetPasswordScreen() {
       setTimeout(() => {
         router.replace('/(tabs)');
       }, 2500);
-    } catch (err: any) {
-      reelToast.error(err.message || 'Failed to reset password.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to reset password.';
+      reelToast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -306,7 +307,7 @@ const s = StyleSheet.create({
   strengthSegment: { flex: 1, height: 3, borderRadius: 2 },
   strengthLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, marginLeft: 8, minWidth: 80 },
   checksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
-  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '48%' as any },
+  checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '48%' as import('react-native').DimensionValue },
   checkIcon: { fontFamily: fonts.ui, fontSize: 11 },
   checkLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5 },
 

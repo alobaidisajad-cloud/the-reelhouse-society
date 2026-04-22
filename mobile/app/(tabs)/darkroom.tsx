@@ -1,36 +1,56 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity,
-  Dimensions, Modal, ActivityIndicator, Keyboard, FlatList,
+  View, Text, StyleSheet, TextInput,
+  Keyboard, FlatList,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import Animated, { FadeInDown, FadeInUp, Layout, SlideInDown, SlideOutDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
+import Animated, { FadeInDown, SlideOutDown, useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Search, X, SlidersHorizontal, ChevronDown, Bookmark, Heart, Skull, Sparkles, Sun, Flame, Laugh } from 'lucide-react-native';
+import { Search, X, SlidersHorizontal, Bookmark, Heart, Skull, Sparkles, Sun, Flame, Laugh } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Buster from '@/src/components/Buster';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { EmptyOffline } from '@/src/components/EmptyStates';
-import { Gyroscope } from 'expo-sensors';
 
 import { colors, fonts, spacing, SEPIA_HASH } from '@/src/theme/theme';
-import { tmdb, obscurityScore } from '@/src/lib/tmdb';
+import { tmdb } from '@/src/lib/tmdb';
 import { useDiscoverStore } from '@/src/stores/discover';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import PressableScale from '@/src/components/PressableScale';
 import { setScrollY } from '@/src/utils/scrollBridge';
+import { effects } from '@/src/theme/theme';
+
+// ══════════════════════════════════════════════════════════════
+//  DARKROOM SAFELIGHT ATMOSPHERICS
+// ══════════════════════════════════════════════════════════════
+const DarkroomAtmo = React.memo(function DarkroomAtmo() {
+  const pulse = useSharedValue(0.15);
+  useEffect(() => {
+    // A slow, rhythmic breathing of amber/red darkroom safelight
+    pulse.value = withRepeat(
+      withSequence(
+        withTiming(0.25, { duration: 6000, easing: Easing.inOut(Easing.sin) }),
+        withTiming(0.12, { duration: 6000, easing: Easing.inOut(Easing.sin) })
+      ), -1, true
+    );
+  }, []);
+  const style = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  return (
+    <Animated.View style={[StyleSheet.absoluteFillObject, style, { zIndex: 0 }]} pointerEvents="none">
+      <LinearGradient
+        colors={['rgba(180,45,45,0.4)', 'rgba(139,105,20,0.1)', 'transparent']}
+        locations={[0, 0.5, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
+    </Animated.View>
+  );
+});
 
 const AnimatedView = Animated.createAnimatedComponent(View);
-const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
-
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
-const POSTER_W = (SCREEN_W - spacing.md * 4) / 3;
-const POSTER_H = POSTER_W * 1.5;
 
 
 
@@ -81,15 +101,26 @@ const MOODS = [
 
 const MOOD_ICONS: Record<string, typeof Heart> = { Heart, Skull, Sparkles, Sun, Flame, Laugh };
 
-const AnimatedTouchableOpacity = Animated.createAnimatedComponent(TouchableOpacity);
-
 // === COMPONENTS ===
+
+// Breathing skeleton for loading states — hoisted to module scope for stable reference
+const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton() {
+  const op = useSharedValue(0.4);
+  useEffect(() => {
+    op.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), -1, true);
+  }, []);
+  const animStyle = useAnimatedStyle(() => ({ opacity: op.value }));
+  return (
+    <Animated.View style={[s.posterWrap, animStyle, { backgroundColor: 'rgba(14,11,8,0.7)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.06)' }]} />
+  );
+});
 
 const Chip = React.memo(function Chip({ active, onPress, children, color }: { active: boolean; onPress: () => void; children: React.ReactNode; color?: string }) {
   return (
-    <TouchableOpacity
+    <PressableScale
       onPress={onPress}
-      activeOpacity={0.7}
+      haptic="light"
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       style={[
         s.chip,
         {
@@ -98,10 +129,10 @@ const Chip = React.memo(function Chip({ active, onPress, children, color }: { ac
         }
       ]}
     >
-      <Text style={[s.chipText, { color: active ? colors.ink : colors.bone }]}>
+      <Text style={[s.chipText, { color: active ? colors.ink : colors.bone, ...(active ? effects.textGlowSepia : {}) }]}>
         {children}
       </Text>
-    </TouchableOpacity>
+    </PressableScale>
   );
 });
 
@@ -135,7 +166,6 @@ const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: Discover
   };
 
   const toggleWatchlist = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (isSaved) {
       removeFromWatchlist(item.id);
     } else {
@@ -143,55 +173,41 @@ const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: Discover
     }
   };
 
-  // Option 1: Silver Halide Shift (Gyroscope Parallax)
-  const gyroX = useSharedValue(0);
-  const gyroY = useSharedValue(0);
-
-  useEffect(() => {
-    let subscription: ReturnType<typeof Gyroscope.addListener>;
-    Gyroscope.isAvailableAsync().then((available) => {
-      if (available) {
-        Gyroscope.setUpdateInterval(32); // 30fps smooth
-        subscription = Gyroscope.addListener(data => {
-          gyroX.value = data.y * 10;
-          gyroY.value = data.x * 10;
-        });
-      }
-    });
-    return () => { if (subscription) subscription.remove(); };
-  }, []);
-
-  const parallaxStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: withSpring(gyroX.value, { damping: 20, stiffness: 90 }) },
-      { translateY: withSpring(gyroY.value, { damping: 20, stiffness: 90 }) }
-    ]
-  }));
-
   return (
-    <AnimatedView 
-      style={[s.posterWrap, parallaxStyle]} 
-      entering={FadeInDown.duration(400)}
-    >
+    <View style={s.posterWrap}>
     <PressableScale
       onPress={handlePress}
       haptic
+      accessibilityRole="button"
+      accessibilityLabel={isPerson ? item.name : (item.title || 'Film')}
     >
       <View style={[s.posterImg, !posterUri && s.posterPlaceholder]}>
         {posterUri ? (
-          <AnimatedExpoImage sharedTransitionTag={`poster-${item.id}`} source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={100} />
+          <>
+            <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
+            {/* Soft tactical tungsten edge mapping */}
+            <LinearGradient 
+              colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(10,5,3,0.9)']} 
+              locations={[0, 0.4, 1]} 
+              style={StyleSheet.absoluteFillObject} 
+              pointerEvents="none" 
+            />
+            <View style={s.posterBorderEngrave} pointerEvents="none" />
+          </>
         ) : (
           <Text style={s.posterPlaceholderGlyph}>✦</Text>
         )}
       </View>
 
       {!isPerson && (
-        <TouchableOpacity 
+        <PressableScale 
           style={[s.quickSaveIcon, isSaved ? s.quickSaveIconActive : s.quickSaveIconInactive]} 
           onPress={toggleWatchlist}
+          haptic="light"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Bookmark size={12} color={isSaved ? colors.ink : colors.parchment} fill={isSaved ? colors.ink : 'transparent'} />
-        </TouchableOpacity>
+        </PressableScale>
       )}
 
       {isLogged && (
@@ -201,12 +217,12 @@ const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: Discover
       )}
 
       {isPerson && (
-        <Text style={s.personName} numberOfLines={2}>
+        <Text style={s.personName} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
           {item.name}
         </Text>
       )}
     </PressableScale>
-    </AnimatedView>
+    </View>
   );
 });
 
@@ -226,9 +242,32 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
 
   // Keep local inputs synced with global clears
   useEffect(() => {
-    setLocalYearFrom(filters.yearFrom ? String(filters.yearFrom) : '');
-    setLocalYearTo(filters.yearTo ? String(filters.yearTo) : '');
+    if (!filters.yearFrom && localYearFrom !== '') setLocalYearFrom('');
+    if (!filters.yearTo && localYearTo !== '') setLocalYearTo('');
   }, [filters.yearFrom, filters.yearTo]);
+
+  // Auto-apply year filters when exactly 4 digits (bypasses iOS number-pad lacking "Done" key)
+  useEffect(() => {
+    if (localYearFrom === '' || localYearFrom.length === 4) {
+      const numFrom = parseInt(localYearFrom, 10);
+      const validFrom = isNaN(numFrom) ? null : numFrom;
+      if (validFrom !== filters.yearFrom) {
+        updateFilter({ yearFrom: validFrom, decade: null });
+        setPage(1);
+      }
+    }
+  }, [localYearFrom]);
+
+  useEffect(() => {
+    if (localYearTo === '' || localYearTo.length === 4) {
+      const numTo = parseInt(localYearTo, 10);
+      const validTo = isNaN(numTo) ? null : numTo;
+      if (validTo !== filters.yearTo) {
+        updateFilter({ yearTo: validTo, decade: null });
+        setPage(1);
+      }
+    }
+  }, [localYearTo]);
   const isSearching = !!query;
   const activeFilterCount = [
     filters.genreId, filters.decade, filters.language,
@@ -297,20 +336,18 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
 
   const handleSearchSubmit = () => {
     Keyboard.dismiss();
-    Haptics.selectionAsync();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setQuery(inputVal);
     setPage(1);
     setSuggestions([]);
   };
 
   const handleClearSearch = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     clearSearch();
     setPage(1);
   };
 
   const handleSelectMood = (m: typeof MOODS[number]) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (mood?.label === m.label) {
       setMood(null);
       clearFilters();
@@ -325,16 +362,17 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
   return (
     <View style={s.headerContainer}>
       <View style={s.heroContainer}>
+        <DarkroomAtmo />
         <LinearGradient
-          colors={['rgba(139,105,20,0.12)', 'rgba(139,105,20,0.03)', 'transparent']}
-          locations={[0, 0.5, 1]}
+          colors={['rgba(10,7,3,0.8)', 'rgba(5,3,2,0.9)', 'transparent']}
+          locations={[0, 0.6, 1]}
           style={StyleSheet.absoluteFillObject}
         />
-        <View style={s.heroContent}>
-          <Text style={s.heroEyebrow}>
+        <Animated.View entering={FadeInDown.springify().mass(0.8).damping(18)} style={s.heroContent}>
+          <Text style={s.heroEyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
             {new Date().getHours() >= 2 && new Date().getHours() < 6 ? "THE ARCHIVE IS HAUNTED" : "THE REELHOUSE SOCIETY"}
           </Text>
-          <Text style={s.heroTitle} accessibilityRole="header">
+          <Text style={s.heroTitle} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
             {new Date().getHours() >= 2 && new Date().getHours() < 6 ? "Late Night Projection" : "The Darkroom"}
           </Text>
 
@@ -345,7 +383,7 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={s.estRule}
             />
-            <Text style={s.heroEst}>Est. 1924</Text>
+            <Text style={s.heroEst} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Est. 1924</Text>
             <LinearGradient
               colors={['rgba(139,105,20,0.35)', 'transparent']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
@@ -370,9 +408,9 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
               accessibilityLabel="Search films by title, director, or actor"
             />
             {query.length > 0 && (
-              <TouchableOpacity onPress={handleClearSearch} style={s.clearBtn} accessibilityRole="button" accessibilityLabel="Clear search">
+              <PressableScale onPress={handleClearSearch} style={s.clearBtn} accessibilityRole="button" accessibilityLabel="Clear search" hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }} haptic="light">
                 <X size={16} color={colors.fog} />
-              </TouchableOpacity>
+              </PressableScale>
             )}
 
             {/* Autocomplete Suggestions */}
@@ -384,7 +422,7 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
                   const imgUri = imgPath ? (isPerson ? tmdb.profile(imgPath, 'w185') : tmdb.poster(imgPath)) : null;
 
                   return (
-                    <TouchableOpacity 
+                    <PressableScale 
                       key={`${item.media_type}-${item.id}`} 
                       style={s.suggestionRow}
                       onPress={() => {
@@ -392,29 +430,29 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
                         Keyboard.dismiss();
                         router.push(isPerson ? `/person/${item.id}` : `/film/${item.id}`);
                       }}
-                      activeOpacity={0.7}
+                      haptic="light"
                     >
                       {imgUri ? (
                         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm]}>
-                          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={150} />
+                          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
                         </View>
                       ) : (
                         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, s.suggestionImgPlaceholder]} />
                       )}
                       
                       <View style={s.suggestionInfo}>
-                        <Text style={s.suggestionTitle} numberOfLines={1}>{isPerson ? item.name : item.title}</Text>
-                        <Text style={s.suggestionSubTitle}>
+                        <Text style={s.suggestionTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{isPerson ? item.name : item.title}</Text>
+                        <Text style={s.suggestionSubTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                           {isPerson ? 'ARTIST' : `${item.release_date?.slice(0, 4) ?? 'TBA'} · FILM`}
                         </Text>
                       </View>
-                    </TouchableOpacity>
+                    </PressableScale>
                   );
                 })}
               </View>
             )}
           </View>
-        </View>
+        </Animated.View>
       </View>
 
       {!isSearching && (
@@ -429,22 +467,23 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
             renderItem={({ item }) => {
               const active = mood?.label === item.label;
               return (
-                <TouchableOpacity
+                <PressableScale
                   onPress={() => handleSelectMood(item)}
                   style={[
                     s.moodCard,
                     active && { backgroundColor: item.color, borderColor: item.accent }
                   ]}
+                  haptic="medium"
                 >
                   {(() => {
                     const IconComp = MOOD_ICONS[item.icon];
                     return IconComp ? <IconComp size={16} color={active ? item.accent : colors.bone} strokeWidth={1.5} /> : null;
                   })()}
-                  <View>
-                    <Text style={[s.moodLabel, active && s.moodLabelActive]}>{item.label}</Text>
-                    <Text style={[s.moodSub, active && s.moodSubActive]}>{item.sub}</Text>
+                  <View style={{ flexShrink: 1 }}>
+                    <Text style={[s.moodLabel, active && s.moodLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{item.label}</Text>
+                    <Text style={[s.moodSub, active && s.moodSubActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{item.sub}</Text>
                   </View>
-                </TouchableOpacity>
+                </PressableScale>
               );
             }}
           />
@@ -453,32 +492,33 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
 
       {/* Filter Toggle */}
       <View style={s.filterHeader}>
-        <TouchableOpacity 
+        <PressableScale 
           style={[s.filterToggle, filtersVisible && s.filterToggleActive]}
           onPress={() => {
-            Haptics.selectionAsync();
             setFiltersVisible(!filtersVisible);
           }}
+          haptic="medium"
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <SlidersHorizontal size={14} color={filtersVisible ? colors.sepia : colors.fog} />
-          <Text style={[s.filterToggleText, filtersVisible && s.filterToggleTextActive]}>
+          <Text style={[s.filterToggleText, filtersVisible && s.filterToggleTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
             {filtersVisible ? 'HIDE FILTERS' : 'EXPAND FILTERS'}
           </Text>
           {activeFilterCount > 0 && (
             <View style={s.filterBadge}><Text style={s.filterBadgeText}>{activeFilterCount}</Text></View>
           )}
-        </TouchableOpacity>
+        </PressableScale>
 
         {activeFilterCount > 0 && (
-          <TouchableOpacity onPress={() => { clearFilters(); setPage(1); }}>
+          <PressableScale onPress={() => { clearFilters(); setPage(1); }} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
             <Text style={s.clearFiltersText}>CLEAR</Text>
-          </TouchableOpacity>
+          </PressableScale>
         )}
       </View>
 
       {/* Expanded Filters */}
       {filtersVisible && (
-        <AnimatedView entering={FadeInDown.duration(300)} style={s.filterPanel}>
+        <AnimatedView entering={FadeInDown.duration(300)} exiting={SlideOutDown.duration(200)} style={s.filterPanel}>
           <Text style={s.filterSectionTitle}>GENRE</Text>
           <View style={s.chipRow}>
             {GENRES.map(g => (
@@ -505,13 +545,17 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
               placeholder="FROM"
               placeholderTextColor={colors.fog}
               keyboardType="number-pad"
+              keyboardAppearance="dark"
               maxLength={4}
               value={localYearFrom}
               onChangeText={setLocalYearFrom}
               onEndEditing={() => {
                 const num = parseInt(localYearFrom, 10);
-                updateFilter({ yearFrom: isNaN(num) ? null : num, decade: null });
-                setPage(1);
+                const valid = isNaN(num) ? null : num;
+                if (valid !== filters.yearFrom) {
+                  updateFilter({ yearFrom: valid, decade: null });
+                  setPage(1);
+                }
               }}
               returnKeyType="done"
             />
@@ -521,20 +565,29 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
               placeholder="TO"
               placeholderTextColor={colors.fog}
               keyboardType="number-pad"
+              keyboardAppearance="dark"
               maxLength={4}
               value={localYearTo}
               onChangeText={setLocalYearTo}
               onEndEditing={() => {
                 const num = parseInt(localYearTo, 10);
-                updateFilter({ yearTo: isNaN(num) ? null : num, decade: null });
-                setPage(1);
+                const valid = isNaN(num) ? null : num;
+                if (valid !== filters.yearTo) {
+                  updateFilter({ yearTo: valid, decade: null });
+                  setPage(1);
+                }
               }}
               returnKeyType="done"
             />
             {(filters.yearFrom || filters.yearTo) && (
-              <TouchableOpacity onPress={() => { updateFilter({ yearFrom: null, yearTo: null }); setPage(1); }} style={s.yearClearBtn}>
+              <PressableScale 
+                onPress={() => { updateFilter({ yearFrom: null, yearTo: null }); setPage(1); }} 
+                style={s.yearClearBtn}
+                hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+                haptic="light"
+              >
                 <X size={12} color={colors.fog} />
-              </TouchableOpacity>
+              </PressableScale>
             )}
           </View>
 
@@ -575,12 +628,12 @@ const DarkroomHeader = React.memo(({ filtersVisible, setFiltersVisible }: { filt
       />
 
       <View style={s.sectionHeaderWrap}>
-        <Text style={s.sectionLabel}>
+        <Text style={s.sectionLabel} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.7}>
           {isSearching 
             ? `ARCHIVE SEARCH: "${query.toUpperCase()}"` 
             : (mood ? `MOOD: ${mood.label.toUpperCase()}` : 'THE ARCHIVE')}
         </Text>
-        <Text style={s.sectionTitle}>
+        <Text style={s.sectionTitle} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.7}>
           {isSearching 
             ? `${accumulatedFilms.length} Matches Found` 
             : (mood ? mood.sub : 'Discover Titles')}
@@ -677,15 +730,28 @@ export default function DarkRoomScreen() {
     if (loading && page > 1) {
       return (
         <View style={s.footerLoading}>
-          <ActivityIndicator color={colors.sepia} size="small" />
+           <Animated.Text entering={FadeInDown} style={s.paginationRetrieving}>
+             [ ACCESSING ARCHIVES... ]
+           </Animated.Text>
         </View>
       );
     }
     return <View style={s.footerSpacer} />;
   };
 
+
   const renderEmpty = () => {
-    if (loading) return null;
+    if (loading) {
+      return (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', width: '100%' }}>
+          {Array.from({ length: 15 }).map((_, i) => (
+            <View key={i} style={{ width: '33.33%', padding: 4 }}>
+              <AnimatedPosterSkeleton />
+            </View>
+          ))}
+        </View>
+      );
+    }
     
     if (network.isConnected === false) {
       return (
@@ -697,7 +763,9 @@ export default function DarkRoomScreen() {
 
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={s.emptyWrap}>
-        <Buster size={56} mood="crying" />
+        <PressableScale onPress={() => {}} haptic="light">
+          <Buster size={56} mood="crying" />
+        </PressableScale>
         <Text style={s.emptyTitle}>
           {isSearching ? 'The vault is sealed.' : 'No films surfaced.'}
         </Text>
@@ -710,18 +778,32 @@ export default function DarkRoomScreen() {
     );
   };
 
-  const renderFilmItem = useCallback(({ item }: { item: DiscoverFilm }) => <FilmGridCard item={item} />, []);
+  const renderFilmItem = useCallback(({ item }: { item: DiscoverFilm }) => (
+    <View style={{ flex: 1, padding: 4 }}>
+      <FilmGridCard item={item} />
+    </View>
+  ), []);
 
-  // Mind Reader Pre-Fetching Engine
+  // Mind Reader Pre-Fetching Engine (Velocity Throttled)
   const viewabilityConfig = useRef({
-    minimumViewTime: 800,
+    minimumViewTime: 400, // Forces user to actually pause, heavily limits scroll spam
     itemVisiblePercentThreshold: 80,
   }).current;
 
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: any[] }) => {
+  // Use a ref queue to ensure we don't duplicate inflight detail requests and throttle execution
+  const inflightFetches = useRef(new Set<number>());
+
+  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: import('react-native').ViewToken[] }) => {
     viewableItems.forEach((vi) => {
-      if (vi.item && vi.item.id) {
-        tmdb.detail(vi.item.id).catch(() => {});
+      if (vi.item && vi.item.id && !inflightFetches.current.has(vi.item.id)) {
+        inflightFetches.current.add(vi.item.id);
+        // Fire request to prime the cache
+        tmdb.detail(vi.item.id)
+          .catch(() => {})
+          .finally(() => {
+            // Remove from inflight queue after 10 seconds to allow retry if needed later
+            setTimeout(() => { inflightFetches.current.delete(vi.item.id!); }, 10000);
+          });
       }
     });
   }).current;
@@ -743,11 +825,12 @@ export default function DarkRoomScreen() {
             setPage(page + 1);
           }
         }}
-        estimatedItemSize={POSTER_H + spacing.md}
+        estimatedItemSize={195}
         onEndReachedThreshold={0.5}
         onScroll={(e) => setScrollY(e.nativeEvent.contentOffset.y)}
         scrollEventThrottle={32}
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         viewabilityConfig={viewabilityConfig}
         onViewableItemsChanged={onViewableItemsChanged}
       />
@@ -787,25 +870,26 @@ const s = StyleSheet.create({
   },
   // Web: heroEyebrow fontSize 0.65rem=10.4px, ls 0.4em=4.16px, color var(--sepia)
   heroEyebrow: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
-    letterSpacing: 5,
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    letterSpacing: 12,
     color: colors.sepia,
     marginBottom: spacing.sm,
-    opacity: 0.7,
+    opacity: 0.6,
+    fontWeight: '700',
   },
-  // Web mobile: clamp(1.8rem,7vw,2.5rem) ≈ 28px on 390px, lineHeight 1
+  // Lux, Nitrate Noir Clean Display font
   heroTitle: {
     fontFamily: fonts.display,
     fontSize: 34,
-    color: colors.parchment,
-    marginBottom: 12,
+    color: '#F2ECD8',
+    marginBottom: 8,
     textAlign: 'center',
-    lineHeight: 36,
-    letterSpacing: 1,
-    textShadowColor: 'rgba(0,0,0,0.5)',
-    textShadowOffset: { width: 0, height: 4 },
-    textShadowRadius: 12,
+    lineHeight: 38,
+    letterSpacing: 2,
+    ...effects.textGlowSepia, 
+    textShadowRadius: 20, 
+    textShadowColor: 'rgba(180,45,45, 0.6)', // Safelight red ambient
   },
   estRow: {
     flexDirection: 'row',
@@ -819,17 +903,17 @@ const s = StyleSheet.create({
   },
   heroEst: {
     fontFamily: fonts.ui,
-    fontSize: 8,
+    fontSize: 7,
     letterSpacing: 5,
     color: colors.fog,
     opacity: 0.6,
   },
   heroSub: {
     fontFamily: fonts.body,
-    fontSize: 13,
+    fontSize: 11,
     color: colors.fog,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 18,
     marginBottom: 20,
     opacity: 0.6,
     paddingHorizontal: 20,
@@ -847,23 +931,25 @@ const s = StyleSheet.create({
     opacity: 0.8,
     zIndex: 1,
   },
-  // Web mobile search: fontSize 1rem=16px, padding 0.9rem 2.5rem 0.9rem 3rem = 14.4px 40px 14.4px 48px
   searchInput: {
     width: '100%',
-    backgroundColor: 'rgba(14,11,8,0.95)',
-    borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.12)',
-    borderRadius: 4,
-    paddingVertical: 14,
+    backgroundColor: 'rgba(10,8,5,0.95)', // Deeper inset
+    borderWidth: 1.5,
+    borderColor: 'rgba(139,105,20,0.2)',
+    borderRadius: 6,
+    paddingVertical: 16,
     paddingLeft: 46,
     paddingRight: 40,
-    color: colors.parchment,
-    fontFamily: fonts.sub,
-    fontSize: 15,
-    letterSpacing: 0.3,
+    color: '#F2ECD8',
+    fontFamily: fonts.mono, // Archival feel
+    fontSize: 12,
+    letterSpacing: 2,
+    fontWeight: '700',
+    ...effects.shadowSurface, // recessed
   },
   searchInputActive: {
-    borderColor: colors.sepia,
+    borderColor: 'rgba(180,45,45,0.5)', // Safelight red border interaction
+    backgroundColor: 'rgba(5,3,2,0.95)',
   },
   clearBtn: {
     position: 'absolute',
@@ -876,16 +962,18 @@ const s = StyleSheet.create({
     top: 55,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(10,7,3,0.98)',
+    backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: colors.ash,
-    borderRadius: 8,
+    borderColor: 'rgba(139,105,20,0.5)',
+    borderStyle: 'solid',
+    borderRadius: 6,
     overflow: 'hidden',
     zIndex: 20,
+    elevation: 25,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.5,
-    shadowRadius: 15,
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.8,
+    shadowRadius: 30,
   },
   suggestionRow: {
     flexDirection: 'row',
@@ -945,18 +1033,19 @@ const s = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 4,
   },
-  // Web mobile mood button: padding 0.5rem 1rem = 8px 16px, borderRadius 2px, fontSize 0.55rem=8.8px ls 0.1em
+  // Nitrate Noir plaque design
   moodCard: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderWidth: 1,
+    paddingVertical: 14,
+    borderWidth: 1.5,
     borderRadius: 4,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.soot,
-    borderColor: 'rgba(139,105,20,0.1)',
-    minWidth: 130,
+    gap: 12,
+    backgroundColor: 'rgba(10,8,5,0.8)',
+    borderColor: 'rgba(139,105,20,0.15)',
+    minWidth: 140,
+    ...effects.shadowSurface,
   },
   moodGlyph: {
     fontFamily: fonts.display,
@@ -964,24 +1053,27 @@ const s = StyleSheet.create({
     color: colors.bone,
   },
   moodLabel: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
-    letterSpacing: 1.5,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 3,
     color: colors.bone,
     textTransform: 'uppercase',
+    fontWeight: '700',
   },
   moodLabelActive: {
-    color: colors.flicker,
+    color: '#F2ECD8',
+    ...effects.textGlowSepia, textShadowRadius: 8
   },
   moodSub: {
     fontFamily: fonts.body,
-    fontSize: 9,
+    fontSize: 10,
     color: colors.fog,
-    marginTop: 2,
-    opacity: 0.5,
+    marginTop: 4,
+    opacity: 0.6,
   },
   moodSubActive: {
-    opacity: 0.8,
+    opacity: 0.9,
+    color: '#f2e8a0'
   },
   filterHeader: {
     flexDirection: 'row',
@@ -989,30 +1081,33 @@ const s = StyleSheet.create({
     alignItems: 'center',
     marginBottom: spacing.md,
   },
-  // Web: filter toggle fontSize 0.6rem=9.6px, ls 0.12em=1.15px, padding 0.55rem 1rem = 8.8px 16px, borderRadius 2px
+  // Physical Toggle Switch
   filterToggle: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 9,
-    paddingHorizontal: 16,
-    backgroundColor: colors.soot,
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    backgroundColor: 'rgba(18,14,9,0.8)',
     borderWidth: 1,
-    borderColor: colors.ash,
-    borderRadius: 4,
+    borderColor: 'rgba(139,105,20,0.2)',
+    borderRadius: 6,
+    ...effects.shadowSurface,
   },
   filterToggleActive: {
-    backgroundColor: 'rgba(139,105,20,0.15)',
-    borderColor: colors.sepia,
+    backgroundColor: 'rgba(10,8,5,0.95)',
+    borderColor: 'rgba(139,105,20,0.4)',
   },
   filterToggleText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.mono,
     fontSize: 10,
-    letterSpacing: 1.5,
+    letterSpacing: 3,
     color: colors.fog,
+    fontWeight: '700',
   },
   filterToggleTextActive: {
-    color: colors.sepia,
+    color: '#F2ECD8',
+    ...effects.textGlowSepia, textShadowRadius: 8
   },
   filterBadge: {
     backgroundColor: colors.sepia,
@@ -1031,10 +1126,11 @@ const s = StyleSheet.create({
     color: colors.sepia,
     letterSpacing: 1,
   },
+  // Recessed filing-cabinet drawer — Obsidian Glass density without floating shadow
   filterPanel: {
-    backgroundColor: colors.soot,
+    backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: colors.ash,
+    borderColor: 'rgba(139,105,20,0.35)',
     padding: spacing.md,
     borderRadius: 8,
     marginBottom: spacing.lg,
@@ -1087,18 +1183,20 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  // Web chip: padding 0.35rem 0.75rem = 5.6px 12px, fontSize 0.55rem=8.8px ls 0.1em, borderRadius 2px
+  // Physical Chip 
   chip: {
-    borderWidth: 1,
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 2,
+    borderWidth: 1.5,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    ...effects.shadowSurface,
   },
   chipText: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
-    letterSpacing: 1,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 2,
     textTransform: 'uppercase',
+    fontWeight: '700'
   },
   sectionDividerLine: {
     height: 1,
@@ -1119,19 +1217,30 @@ const s = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.display,
-    fontSize: 22,
+    fontSize: 18,
     color: colors.parchment,
     textAlign: 'center',
   },
-  // Web grid card: borderRadius 2px, border 1px solid var(--ash)
+  // Physical 3D edges for posters (Obsidian Glass)
   posterWrap: {
-    width: POSTER_W,
-    height: POSTER_H,
-    borderRadius: 2,
+    width: '100%',
+    aspectRatio: 2/3,
+    borderRadius: 6,
     overflow: 'hidden',
-    backgroundColor: colors.soot,
+    backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: colors.ash,
+    borderColor: 'rgba(139,105,20,0.5)',
+    elevation: 25,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.8,
+    shadowRadius: 30,
+  },
+  posterBorderEngrave: {
+    ...StyleSheet.absoluteFillObject,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.06)',
+    borderRadius: 6,
   },
   posterImg: {
     width: '100%',
@@ -1199,6 +1308,13 @@ const s = StyleSheet.create({
   footerSpacer: {
     height: 100,
   },
+  paginationRetrieving: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 4,
+    color: colors.sepia,
+    opacity: 0.6,
+  },
 
   // ── Empty State (Buster) ──
   emptyWrap: {
@@ -1210,18 +1326,20 @@ const s = StyleSheet.create({
   emptyTitle: {
     fontFamily: fonts.display,
     fontSize: 18,
-    color: colors.parchment,
+    color: colors.sepia,
     textAlign: 'center',
-    marginTop: 16,
-    letterSpacing: 0.5,
+    marginTop: 20,
+    letterSpacing: 1,
+    opacity: 0.9,
   },
   emptySub: {
     fontFamily: fonts.body,
     fontSize: 12,
-    color: colors.fog,
+    color: colors.bone,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: 12,
     lineHeight: 18,
-    opacity: 0.6,
+    opacity: 0.5,
+    fontStyle: 'italic',
   },
 });

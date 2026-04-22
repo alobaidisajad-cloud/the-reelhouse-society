@@ -57,13 +57,17 @@ export function SectionDivider({ label }: { label?: string }) {
   return (
     <View style={s.dividerWrap}>
       <LinearGradient 
-        colors={['transparent', 'rgba(139, 105, 20, 0.4)']} 
+        colors={['transparent', 'rgba(196,150,26,0.6)']} 
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
         style={s.dividerLine} 
       />
-      {label && <Text style={s.dividerLabel}>{label}</Text>}
+      {label && (
+        <View style={s.dividerLabelWrap}>
+            <Text style={s.dividerLabel}>{label}</Text>
+        </View>
+      )}
       <LinearGradient 
-        colors={['rgba(139, 105, 20, 0.4)', 'transparent']} 
+        colors={['rgba(196,150,26,0.6)', 'transparent']} 
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
         style={s.dividerLine} 
       />
@@ -145,20 +149,25 @@ const s = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 12,
+    gap: 8,
     marginVertical: 20,
   },
   dividerLine: {
     flex: 1,
-    height: 1,
+    height: StyleSheet.hairlineWidth,
+  },
+  dividerLabelWrap: {
+    paddingHorizontal: 8,
   },
   dividerLabel: {
-    fontFamily: fonts.sub,
-    fontSize: 10,
-    letterSpacing: 3,
-    color: colors.sepia,
+    fontFamily: fonts.ui,
+    fontWeight: '700',
+    fontSize: 11,
+    letterSpacing: 10,
+    color: '#E4DFCC',
     textTransform: 'uppercase',
     ...effects.textGlowSepia,
+    textShadowRadius: 10,
   },
 
   // Reel Rating

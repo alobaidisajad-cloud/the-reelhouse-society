@@ -80,7 +80,7 @@ export default function SocialModal() {
             <View style={styles.header}>
                 <View style={{ width: 40 }} />
                 <Text style={styles.title}>{type === 'followers' ? 'FOLLOWERS' : 'FOLLOWING'}</Text>
-                <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                     <X size={20} color={colors.parchment} />
                 </TouchableOpacity>
             </View>

@@ -24,14 +24,15 @@
  *  • Zero cheap emoji — all Lucide vector icons
  *  • Zero performance regression — all animations native thread
  */
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, FlatList,
-  Dimensions, RefreshControl, Platform,
+  View, Text, StyleSheet,
+  Dimensions, RefreshControl,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import Animated, {
-  FadeInDown, FadeIn, useSharedValue, useAnimatedStyle,
+  useSharedValue, useAnimatedStyle,
   withRepeat, withTiming, Easing,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -44,8 +45,10 @@ import { SectionDivider, MarqueeLights } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import {
   Film as FilmIcon, ArrowLeft, Star, MessageCircle,
-  ChevronDown, ChevronUp, MapPin, Calendar, Skull, Clock,
+  MapPin, Calendar, Skull, Clock,
 } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
 
 const { width: SCREEN_W } = Dimensions.get('window');
 const PORTRAIT_W = 130;
@@ -53,7 +56,7 @@ const POSTER_GRID_GAP = 10;
 const POSTER_COL = 3;
 const POSTER_W = (SCREEN_W - 40 - POSTER_GRID_GAP * (POSTER_COL - 1)) / POSTER_COL;
 const AnimatedView = Animated.createAnimatedComponent(View);
-const PERF_COUNT = 14;
+const PERF_COUNT = 40;
 
 /** Warm sepia-toned blurhash — used as placeholder while images load */
 const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
@@ -90,7 +93,7 @@ function ShimmerBlock({ style }: { style: StyleProp<ViewStyle> }) {
   const opacity = useSharedValue(0.3);
   useEffect(() => {
     opacity.value = withRepeat(
-      withTiming(0.7, { duration: 900, easing: Easing.inOut(Easing.ease) }),
+      withTiming(0.7, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
       -1, true,
     );
   }, []);
@@ -105,8 +108,8 @@ function ObscurityBadge({ score }: { score: number }) {
   const color = score > 70 ? colors.sepia : score > 40 ? colors.bone : colors.fog;
   return (
     <View style={[st.obsBadge, { borderColor: color }]}>
-      <Text style={[st.obsScore, { color }]}>{score}</Text>
-      <Text style={st.obsLabel}>{label}</Text>
+      <Text style={[st.obsScore, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{score}</Text>
+      <Text style={st.obsLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{label}</Text>
     </View>
   );
 }
@@ -123,13 +126,13 @@ function FilmStripPerforations() {
 }
 
 // ── Film Poster Card (grid item) ─────────────────────────────
-function FilmPosterCard({ film, width }: { film: PersonCredit; width: number }) {
+const FilmPosterCard = memo(function FilmPosterCard({ film, width }: { film: PersonCredit; width: number }) {
   const router = useRouter();
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w185') : null;
   return (
     <PressableScale
       style={st.gridCard}
-      onPress={() => router.push(`/film/${film.id}`)}
+      onPress={() => { Haptics.selectionAsync(); router.push(`/film/${film.id}`); }}
     >
       {posterUri ? (
         <Image
@@ -138,32 +141,32 @@ function FilmPosterCard({ film, width }: { film: PersonCredit; width: number }) 
           contentFit="cover"
           cachePolicy="memory-disk"
           placeholder={{ blurhash: SEPIA_HASH }}
-          transition={200}
+          transition={50}
         />
       ) : (
         <View style={[st.gridPoster, st.gridPosterPlaceholder, { width, height: width * 1.5 }]}>
           <FilmIcon size={16} color={colors.fog} strokeWidth={1} />
         </View>
       )}
-      <Text style={st.gridTitle} numberOfLines={1}>{film.title}</Text>
+      <Text style={st.gridTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{film.title}</Text>
       <Text style={st.gridYear}>{getYear(film.release_date) || 'TBA'}</Text>
     </PressableScale>
   );
-}
+});
 
 // ── Defining Work Card ───────────────────────────────────────
-function DefiningCard({ film }: { film: PersonCredit }) {
+const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }) {
   const router = useRouter();
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w342') : null;
   const score = obscurityScore(film);
   return (
     <PressableScale
       style={st.defCard}
-      onPress={() => router.push(`/film/${film.id}`)}
+      onPress={() => { Haptics.selectionAsync(); router.push(`/film/${film.id}`); }}
     >
       <View style={st.defPosterWrap}>
         {posterUri ? (
-          <Image source={{ uri: posterUri }} style={st.defPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
+          <Image source={{ uri: posterUri }} style={st.defPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
         ) : (
           <View style={[st.defPoster, st.defPosterPlaceholder]}>
             <FilmIcon size={20} color={colors.fog} strokeWidth={1} />
@@ -174,7 +177,7 @@ function DefiningCard({ film }: { film: PersonCredit }) {
           locations={[0, 0.45, 1]}
           style={st.defOverlay}
         >
-          <Text style={st.defTitle} numberOfLines={2}>{film.title}</Text>
+          <Text style={st.defTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{film.title}</Text>
           <View style={st.defMetaRow}>
             <Text style={st.defYear}>{getYear(film.release_date) || 'TBA'}</Text>
             {film.vote_average > 0 && (
@@ -191,7 +194,7 @@ function DefiningCard({ film }: { film: PersonCredit }) {
       </View>
     </PressableScale>
   );
-}
+});
 
 // ════════════════════════════════════════════════════════════
 //  UTILITY — career span in years
@@ -218,6 +221,7 @@ export default function PersonDetailScreen() {
   const [showFullBio, setShowFullBio] = useState(false);
   const { logs } = useFilmStore();
   const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   const personId = Number(id);
   const isArchivist = user && ['archivist', 'auteur'].includes(user.role);
@@ -257,13 +261,19 @@ export default function PersonDetailScreen() {
   const directedFilms = useMemo(() => allCredits.filter((c) => c.job === 'Director' || (isDirector && c.character)), [allCredits, isDirector]);
   const seenCount = useMemo(() => {
     if (!isDirector || directedFilms.length === 0) return 0;
-    return logs.filter((l) => directedFilms.some((f) => f.id === l.filmId)).length;
+    const seenFilmIds = new Set(logs.map(l => l.filmId));
+    return directedFilms.filter(f => seenFilmIds.has(f.id)).length;
   }, [logs, directedFilms, isDirector]);
   const auteurPct = directedFilms.length > 0 ? Math.round((seenCount / directedFilms.length) * 100) : 0;
 
   // ── Loading ──
   if (loading) return (
     <View style={s.container}>
+      <AnimatedView style={[s.floatingBack, { top: Math.max(insets.top + 10, 20), zIndex: 100 }]}>
+        <PressableScale onPress={() => { Haptics.selectionAsync(); router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+          <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
+        </PressableScale>
+      </AnimatedView>
       <View style={s.shimmerBackdrop}>
         <ShimmerBlock style={StyleSheet.absoluteFillObject} />
         <LinearGradient colors={['rgba(11,10,8,0.1)', 'rgba(11,10,8,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
@@ -289,12 +299,12 @@ export default function PersonDetailScreen() {
       <Text style={s.notFoundBody}>
         This person does not exist in the TMDB archive, or the reel was lost.
       </Text>
-      <TouchableOpacity style={s.backBtnBottom} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
+      <PressableScale style={s.backBtnBottom} onPress={() => { Haptics.selectionAsync(); router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
         <View style={s.backBtnRow}>
           <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
           <Text style={s.backBtnBottomText}>GO BACK</Text>
         </View>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 
@@ -303,21 +313,24 @@ export default function PersonDetailScreen() {
   return (
     <View style={s.container}>
       {/* ── Floating Back Button ── */}
-      <TouchableOpacity style={s.floatingBack} onPress={() => router.back()} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Go back">
+      <PressableScale style={[s.floatingBack, { top: Math.max(insets.top + 10, 20) }]} onPress={() => { Haptics.selectionAsync(); router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
         <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
-      </TouchableOpacity>
+      </PressableScale>
 
-      <ScrollView
+      <FlashList
+        data={remainingCredits}
+        numColumns={3}
+        estimatedItemSize={POSTER_W * 1.5 + 40}
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor={colors.sepia} />}
-      >
+        ListHeaderComponent={<>
         {/* ═══════════════════════════════════════════════════════
             CINEMATIC HERO BACKDROP
         ═══════════════════════════════════════════════════════ */}
         <View style={s.heroWrap}>
           {heroBackdrop ? (
-            <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={400} />
+            <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
           ) : (
             <LinearGradient
               colors={['rgba(139,105,20,0.12)', 'rgba(10,7,3,0.95)']}
@@ -341,11 +354,11 @@ export default function PersonDetailScreen() {
         ═══════════════════════════════════════════════════════ */}
         <View style={s.dossierSection}>
           {/* Portrait with sepia glow */}
-          <AnimatedView entering={FadeIn.duration(600)} style={s.portraitWrap}>
+          <AnimatedView style={s.portraitWrap}>
             <View style={s.portraitGlow} />
             <View style={s.portraitCard}>
               {photoUri ? (
-                <Image source={{ uri: photoUri }} style={s.portrait} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${person.name} portrait photo`} />
+                <Image source={{ uri: photoUri }} style={s.portrait} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} accessibilityLabel={`${person.name} portrait photo`} />
               ) : (
                 <View style={[s.portrait, s.portraitPlaceholder]}>
                   <Text style={s.portraitInitial}>{person.name?.charAt(0) || '?'}</Text>
@@ -355,25 +368,25 @@ export default function PersonDetailScreen() {
           </AnimatedView>
 
           {/* Society watermark */}
-          <AnimatedView entering={FadeIn.duration(800).delay(200)}>
+          <AnimatedView>
             <Text style={s.societyMark}>THE REELHOUSE SOCIETY · EST. 1924</Text>
           </AnimatedView>
 
           {/* Department badge */}
           {person.known_for_department && (
-            <AnimatedView entering={FadeIn.duration(400).delay(100)} style={s.deptBadge}>
+            <AnimatedView style={s.deptBadge}>
               <FilmIcon size={8} color={colors.sepia} strokeWidth={1.5} />
               <Text style={s.deptLabel}>{person.known_for_department.toUpperCase()}</Text>
             </AnimatedView>
           )}
 
           {/* Name */}
-          <AnimatedView entering={FadeInDown.duration(500).delay(50)}>
-            <Text style={s.personName} accessibilityRole="header">{person.name}</Text>
+          <AnimatedView>
+            <Text style={s.personName} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={2} minimumFontScale={0.6}>{person.name}</Text>
           </AnimatedView>
 
           {/* Birth / Death / Place */}
-          <AnimatedView entering={FadeInDown.duration(400).delay(100)} style={s.dateRow}>
+          <AnimatedView style={s.dateRow}>
             {person.birthday && (
               <View style={s.dateItem}>
                 <Calendar size={9} color={colors.fog} strokeWidth={1.5} />
@@ -400,19 +413,19 @@ export default function PersonDetailScreen() {
 
           {/* Career stats strip */}
           {totalFilms > 0 && (
-            <AnimatedView entering={FadeInDown.duration(400).delay(150)} style={s.statsStrip}>
+            <AnimatedView style={s.statsStrip}>
               <View style={s.statChip}>
                 <FilmIcon size={11} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.statText}>{totalFilms} CREDITS</Text>
+                <Text style={s.statText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{totalFilms} CREDITS</Text>
               </View>
               {careerSpan > 0 && (
                 <View style={s.statChip}>
                   <Clock size={10} color={colors.sepia} strokeWidth={1.5} />
-                  <Text style={s.statText}>{careerSpan} YEARS IN CINEMA</Text>
+                  <Text style={s.statText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{careerSpan} YEARS IN CINEMA</Text>
                 </View>
               )}
               {definingFilm && (
-                <Text style={s.knownForText}>
+                <Text style={s.knownForText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                   KNOWN FOR: <Text style={s.knownForTitle}>{definingFilm.title}</Text>
                 </Text>
               )}
@@ -421,10 +434,11 @@ export default function PersonDetailScreen() {
 
           {/* Share to Lounge — archivist+ only */}
           {isArchivist && (
-            <AnimatedView entering={FadeInDown.duration(400).delay(175)}>
-              <TouchableOpacity
+            <AnimatedView>
+              <PressableScale
                 style={s.loungeBtn}
                 onPress={() => {
+                  Haptics.selectionAsync();
                   router.push({
                     pathname: '/(tabs)/lounge',
                     params: {
@@ -435,27 +449,28 @@ export default function PersonDetailScreen() {
                     },
                   });
                 }}
-                activeOpacity={0.7}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                haptic="light"
               >
                 <MessageCircle size={11} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.loungeBtnText}>SHARE TO LOUNGE</Text>
-              </TouchableOpacity>
+                <Text style={s.loungeBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SHARE TO LOUNGE</Text>
+              </PressableScale>
             </AnimatedView>
           )}
 
           {/* Auteur Hunt (directors only) */}
           {isDirector && directedFilms.length > 0 && (
-            <AnimatedView entering={FadeInDown.duration(400).delay(200)} style={s.auteurHuntWrap}>
+            <AnimatedView style={s.auteurHuntWrap}>
               <View style={s.auteurHunt}>
                 <View style={s.auteurHuntHeader}>
-                  <Text style={s.auteurHuntTitle}>THE AUTEUR HUNT</Text>
-                  <Text style={s.auteurHuntCount}>{seenCount} OF {directedFilms.length} SEEN</Text>
+                  <Text style={s.auteurHuntTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>THE AUTEUR HUNT</Text>
+                  <Text style={s.auteurHuntCount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{seenCount} OF {directedFilms.length} SEEN</Text>
                 </View>
                 <View style={s.auteurHuntTrack}>
-                  <View style={[s.auteurHuntFill, { width: `${auteurPct}%` as any }]} />
+                  <View style={[s.auteurHuntFill, { width: `${auteurPct}%` as import('react-native').DimensionValue }, auteurPct >= 100 && s.auteurHuntMastery]} />
                 </View>
                 {auteurPct >= 100 && (
-                  <Text style={s.auteurComplete}>AUTEUR MASTERY — COMPLETE</Text>
+                  <Text style={s.auteurComplete} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>AUTEUR MASTERY — COMPLETE</Text>
                 )}
               </View>
             </AnimatedView>
@@ -464,31 +479,51 @@ export default function PersonDetailScreen() {
 
         {/* ═══ CLASSIFIED DOSSIER — BIOGRAPHY ═══ */}
         {person.biography ? (
-          <AnimatedView entering={FadeInDown.delay(100).duration(500)} style={s.bioSection}>
+          <AnimatedView style={s.bioSection}>
             <LinearGradient
               colors={['rgba(139,105,20,0.4)', 'transparent']}
               start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
               style={s.bioTopLine}
             />
             <Text style={s.bioLabel}>CLASSIFIED DOSSIER — BIOGRAPHY</Text>
-            <Text style={s.bioText}>{person.biography}</Text>
+            <View style={s.bioTextWrap}>
+              <Text style={s.bioText} numberOfLines={showFullBio ? undefined : 6}>{person.biography}</Text>
+              {!showFullBio && (
+                <LinearGradient
+                  colors={['transparent', 'rgba(11,10,8,0.7)', colors.ink]}
+                  style={s.bioFadeMask}
+                  pointerEvents="none"
+                />
+              )}
+            </View>
+            <PressableScale 
+              style={s.toggleTicketBtn} 
+              onPress={() => { Haptics.selectionAsync(); setShowFullBio(!showFullBio); }}
+              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              haptic="light"
+            >
+              <Text style={s.toggleTicketText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{showFullBio ? '[ SEAL EXTRACT ]' : '[ READ EXTRACT ]'}</Text>
+            </PressableScale>
           </AnimatedView>
         ) : null}
 
         {/* ═══ DEFINING WORKS ═══ */}
         {definingWorks.length > 0 && (
-          <AnimatedView entering={FadeInDown.delay(200).duration(500)} style={s.sectionFlush}>
+          <AnimatedView style={s.sectionFlush}>
             <View style={s.sectionPadded}>
               <SectionDivider label="DEFINING WORKS" />
               <Text style={s.sectionSubtitle}>The Legacy</Text>
             </View>
-            <FlatList
+            <FlashList
               horizontal
               showsHorizontalScrollIndicator={false}
               data={definingWorks}
               keyExtractor={(item) => String(item.id)}
               contentContainerStyle={s.definingList}
-              initialNumToRender={4}
+              estimatedItemSize={140}
+              snapToInterval={152}
+              snapToAlignment="start"
+              decelerationRate="fast"
               renderItem={({ item }) => <DefiningCard film={item} />}
             />
           </AnimatedView>
@@ -501,7 +536,7 @@ export default function PersonDetailScreen() {
 
         {/* ═══ COMPLETE FILMOGRAPHY ═══ */}
         {remainingCredits.length > 0 && (
-          <AnimatedView entering={FadeInDown.delay(300).duration(500)} style={s.section}>
+          <AnimatedView style={s.section}>
             {/* Gold gradient separator */}
             <LinearGradient
               colors={['transparent', 'rgba(139,105,20,0.35)', 'transparent']}
@@ -510,23 +545,20 @@ export default function PersonDetailScreen() {
             />
             <SectionDivider label="COMPLETE FILMOGRAPHY" />
             <Text style={s.sectionSubtitle}>The Full Archive</Text>
-            <FlatList
-              data={remainingCredits}
-              keyExtractor={(item) => String(item.id)}
-              numColumns={3}
-              columnWrapperStyle={s.filmGridRow}
-              scrollEnabled={false}
-              initialNumToRender={12}
-              maxToRenderPerBatch={12}
-              windowSize={3}
-              renderItem={({ item }) => <FilmPosterCard film={item} width={POSTER_W} />}
-            />
           </AnimatedView>
         )}
+        </>}
+        renderItem={({ item, index }) => (
+          <View style={GRID_COL_STYLES[index % 3]}>
+            <FilmPosterCard film={item} width={POSTER_W} />
+          </View>
+        )}
+        keyExtractor={(item) => String(item.id)}
+        ListFooterComponent={<>
 
         {/* ── Empty state ── */}
         {allCredits.length === 0 && !loading && (
-          <AnimatedView entering={FadeInDown.duration(600)} style={s.emptyState}>
+          <AnimatedView style={s.emptyState}>
             <Text style={s.emptyLabel}>THE VAULT IS SEALED</Text>
             <Text style={s.emptyTitle}>No Known Works Found</Text>
             <Text style={s.emptyBody}>The archive has no film records on file for this artist.</Text>
@@ -542,7 +574,8 @@ export default function PersonDetailScreen() {
           />
           <Text style={s.closingText}>THE REELHOUSE SOCIETY</Text>
         </View>
-      </ScrollView>
+        </>}
+      />
     </View>
   );
 }
@@ -555,7 +588,7 @@ const s = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
 
   // ── Shimmer ──
-  shimmerBackdrop: { height: SCREEN_W * 0.55, maxHeight: 280, backgroundColor: colors.soot, position: 'relative' },
+  shimmerBackdrop: { height: SCREEN_W * 0.55, maxHeight: 280, backgroundColor: 'rgba(8,6,4,0.98)', position: 'relative' },
   shimmerContent: { alignItems: 'center', marginTop: -70 },
   shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 4, marginBottom: 14 },
   shimmerBadge: { width: 90, height: 14, borderRadius: 2, marginBottom: 10 },
@@ -580,7 +613,7 @@ const s = StyleSheet.create({
 
   // ── Hero Backdrop ──
   heroWrap: { height: SCREEN_W * 0.6, minHeight: 240, maxHeight: 300, position: 'relative', overflow: 'hidden' },
-  heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' } as any,
+  heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' } as import('react-native').ViewStyle,
   heroSepia: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.5)' },
   perfBar: { position: 'absolute', bottom: 4, left: 0, right: 0, zIndex: 2 },
 
@@ -590,17 +623,18 @@ const s = StyleSheet.create({
   // ── Portrait ──
   portraitWrap: { marginBottom: 10, position: 'relative' },
   portraitGlow: {
-    position: 'absolute', top: -8, left: -8, right: -8, bottom: -8,
-    borderRadius: 10,
-    ...effects.glowSepia,
+    position: 'absolute', top: -10, left: -10, right: -10, bottom: -10,
+    backgroundColor: 'rgba(139,105,20,0.15)',
+    borderRadius: 8, shadowColor: colors.sepia,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6, shadowRadius: 20, elevation: 15,
   },
   portraitCard: {
-    width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 4, overflow: 'hidden',
-    borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)',
-    ...effects.shadowSurfaceHover,
+    width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, overflow: 'hidden',
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
   },
-  portrait: { width: '100%', height: '100%' } as any,
-  portraitPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  portrait: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
+  portraitPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
   portraitInitial: { fontFamily: fonts.display, fontSize: 40, color: colors.fog },
 
   // ── Society Watermark ──
@@ -613,17 +647,15 @@ const s = StyleSheet.create({
   deptBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 12, paddingVertical: 5, borderRadius: 2,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.35)',
-    backgroundColor: 'rgba(139,105,20,0.08)',
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
     marginBottom: 10,
   },
-  deptLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3.5, color: colors.sepia },
+  deptLabel: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 3.5, color: colors.sepia },
 
   // ── Name ──
   personName: {
     fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
     textAlign: 'center', lineHeight: 34, marginBottom: 12,
-    ...effects.textGlowSepia,
   },
 
   // ── Dates ──
@@ -641,14 +673,14 @@ const s = StyleSheet.create({
   statChip: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.bone },
   knownForText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
-  knownForTitle: { color: colors.bone, textDecorationLine: 'underline', textDecorationColor: 'rgba(139,105,20,0.3)' } as any,
+  knownForTitle: { color: colors.bone, textDecorationLine: 'underline', textDecorationColor: 'rgba(139,105,20,0.3)' } as import('react-native').TextStyle,
 
   // ── Share to Lounge ──
   loungeBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 16, paddingVertical: 9,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.4)', borderRadius: 3,
-    backgroundColor: 'rgba(139,105,20,0.06)',
+    paddingHorizontal: 16, paddingVertical: 12,
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2,
+    backgroundColor: 'rgba(14,11,8,0.9)',
     marginBottom: 14,
   },
   loungeBtnText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
@@ -662,15 +694,15 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)',
     marginBottom: 8,
   },
-  auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 } as any,
+  auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 } as import('react-native').ViewStyle,
   auteurHuntTitle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
   auteurHuntCount: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1, color: colors.parchment },
-  auteurHuntTrack: { height: 4, backgroundColor: colors.ash, borderRadius: 2, overflow: 'hidden' },
-  auteurHuntFill: { height: '100%', backgroundColor: colors.sepia, borderRadius: 2 } as any,
+  auteurHuntTrack: { height: 4, backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 2, overflow: 'hidden' },
+  auteurHuntFill: { height: '100%', backgroundColor: colors.sepia, borderRadius: 2 } as import('react-native').ViewStyle,
+  auteurHuntMastery: { shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 10, elevation: 10 } as import('react-native').ViewStyle,
   auteurComplete: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5,
+    fontFamily: fonts.uiBold, fontSize: 7, letterSpacing: 2.5,
     color: colors.flicker, marginTop: 6, textAlign: 'center',
-    ...effects.textGlowFlicker,
   },
 
   // ── Biography ──
@@ -683,9 +715,17 @@ const s = StyleSheet.create({
     borderRadius: 4, borderTopLeftRadius: 0,
     position: 'relative', overflow: 'hidden',
   },
-  bioTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 } as any,
+  bioTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 } as import('react-native').ViewStyle,
   bioLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 12, opacity: 0.8 },
+  bioTextWrap: { position: 'relative' },
   bioText: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, lineHeight: 24 },
+  bioFadeMask: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
+  toggleTicketBtn: {
+    marginTop: 16, paddingVertical: 12, alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    backgroundColor: 'rgba(14,11,8,0.9)', borderRadius: 2,
+  },
+  toggleTicketText: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 3, color: colors.sepia },
 
   // ── Sections ──
   section: { marginTop: 8, marginBottom: 16, paddingHorizontal: 20 },
@@ -705,7 +745,7 @@ const s = StyleSheet.create({
   // ── Empty State ──
   emptyState: {
     padding: 32, marginHorizontal: 20, alignItems: 'center',
-    borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(139,105,20,0.2)',
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
     borderRadius: 4, backgroundColor: 'rgba(18,14,9,0.4)',
   },
   emptyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8 },
@@ -713,8 +753,8 @@ const s = StyleSheet.create({
   emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
 
   // ── Back Button ──
-  backBtnBottom: { marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 4 },
-  backBtnBottomText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.bone },
+  backBtnBottom: { marginTop: 24, paddingVertical: 14, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2 },
+  backBtnBottomText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.bone },
   backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
   // ── Closing Bar ──
@@ -727,12 +767,12 @@ const s = StyleSheet.create({
 //  SHARED SUB-COMPONENT STYLES
 // ═══════════════════════════════════════════════════════════
 const st = StyleSheet.create({
-  shimmer: { backgroundColor: colors.ash, borderRadius: 3 },
+  shimmer: { backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 3 },
 
   // ── Obscurity Badge ──
-  obsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 2, borderWidth: 1, borderRadius: 2 },
+  obsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 4, borderWidth: 1, borderRadius: 2 },
   obsScore: { fontFamily: fonts.uiBold, fontSize: 10 },
-  obsLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog },
+  obsLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog },
 
   // ── Film-strip Perforations ──
   perfRow: {
@@ -746,10 +786,9 @@ const st = StyleSheet.create({
   // ── Grid Poster Cards ──
   gridCard: { width: POSTER_W, marginBottom: 8 },
   gridPoster: {
-    borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
-    ...effects.shadowPrimary,
+    borderRadius: 2, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
   },
-  gridPosterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  gridPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
   gridTitle: {
     fontFamily: fonts.sub, fontSize: 10, color: colors.bone,
     marginTop: 5, width: POSTER_W,
@@ -757,20 +796,24 @@ const st = StyleSheet.create({
   gridMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 },
   gridYear: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1 },
 
+  // ── Grid Column Spacing (pre-computed for FlashList hot path) ──
+  gridColLeft: { flex: 1, paddingRight: 5, marginBottom: 10 } as import('react-native').ViewStyle,
+  gridColCenter: { flex: 1, paddingHorizontal: 5, marginBottom: 10 } as import('react-native').ViewStyle,
+  gridColRight: { flex: 1, paddingLeft: 5, marginBottom: 10 } as import('react-native').ViewStyle,
+
   // ── Defining Work Cards ──
   defCard: { width: 140 },
   defPosterWrap: {
     width: 140, height: 210, borderRadius: 4, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)',
-    ...effects.shadowSurfaceHover,
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
     position: 'relative',
   },
-  defPoster: { width: '100%', height: '100%' } as any,
-  defPosterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  defPoster: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
+  defPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
   defOverlay: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
     paddingHorizontal: 8, paddingBottom: 8, paddingTop: 50,
-  } as any,
+  } as import('react-native').ViewStyle,
   defTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 16 },
   defMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
   defYear: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog },
@@ -778,3 +821,6 @@ const st = StyleSheet.create({
   defRatingText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.5, color: colors.fog },
   defBadgeWrap: { marginTop: 6 },
 });
+
+/** Pre-computed column styles for FlashList grid — zero allocations in hot path */
+const GRID_COL_STYLES = [st.gridColLeft, st.gridColCenter, st.gridColRight];

@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TouchableOpacity,
-  RefreshControl, TextInput, Dimensions, Linking, Animated as RNAnimated,
+  View, Text, StyleSheet, ScrollView,
+  RefreshControl, TextInput, Dimensions, Linking,
 } from 'react-native';
 import { Image } from 'expo-image';
-import AnimatedRN, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import AnimatedRN, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
@@ -24,6 +24,11 @@ import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
 import { TasteMatch } from '@/src/components/profile/TasteMatch';
 import { TasteDNA } from '@/src/components/profile/TasteDNA';
 import { Achievements } from '@/src/components/profile/Achievements';
+import ProfileArchiveTab from '@/src/components/profile/ProfileArchiveTab';
+import ProfileLedgerTab from '@/src/components/profile/ProfileLedgerTab';
+import ProfileWatchlistTab from '@/src/components/profile/ProfileWatchlistTab';
+import ProfileListsTab from '@/src/components/profile/ProfileListsTab';
+import ProfilePhysicalTab from '@/src/components/profile/ProfilePhysicalTab';
 import {
   Archive, BookOpen, Bookmark, LayoutList, Disc, LineChart,
   Star, Lock, Settings, ChevronLeft, Globe, Sparkles, Film as FilmIcon,
@@ -32,6 +37,7 @@ import {
 } from 'lucide-react-native';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
 const SCREEN_W = Dimensions.get('window').width;
@@ -142,10 +148,10 @@ interface ProfileUser {
 function StatCard({ label, value, onPress, isLast }: { label: string; value: string | number; onPress?: () => void; isLast?: boolean }) {
   return (
     <>
-      <TouchableOpacity style={s.statCard} activeOpacity={onPress ? 0.7 : 1} onPress={onPress} disabled={!onPress}>
-        <Text style={s.statValue}>{value}</Text>
-        <Text style={s.statLabel}>{label}</Text>
-      </TouchableOpacity>
+      <PressableScale style={s.statCard} onPress={() => { if (onPress) { onPress(); } }} disabled={!onPress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic>
+        <Text style={s.statValue} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{value}</Text>
+        <Text style={s.statLabel} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{label}</Text>
+      </PressableScale>
       {!isLast && <View style={s.statDivider} />}
     </>
   );
@@ -189,6 +195,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   const router = useRouter();
   const { user, isAuthenticated, followUser, unfollowUser } = useAuthStore();
   const { logs: myLogs } = useFilmStore();
+  const insets = useSafeAreaInsets();
 
   // ── State ──
   const [targetUser, setTargetUser] = useState<ProfileUser | null>(null);
@@ -206,16 +213,15 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   const [watchlistSort, setWatchlistSort] = useState<'default' | 'az' | 'za'>('default');
   const [physicalFilter, setPhysicalFilter] = useState<string | null>(null);
 
-  // Breathing avatar animation
-  const breatheAnim = useRef(new RNAnimated.Value(0)).current;
+  // Breathing avatar animation — purely on native thread
+  const breatheAnim = useSharedValue(0.4);
   useEffect(() => {
-    RNAnimated.loop(
-      RNAnimated.sequence([
-        RNAnimated.timing(breatheAnim, { toValue: 1, duration: 2400, useNativeDriver: false }),
-        RNAnimated.timing(breatheAnim, { toValue: 0, duration: 2400, useNativeDriver: false }),
-      ])
-    ).start();
+    breatheAnim.value = withRepeat(
+      withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      -1, true
+    );
   }, []);
+  const pulseStyle = useAnimatedStyle(() => ({ opacity: breatheAnim.value }));
 
   // Tab sync from route
   useEffect(() => {
@@ -276,7 +282,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
         watchedWith: l.watched_with ?? null, createdAt: l.created_at,
       })));
       setTabDataLoaded(prev => ({ ...prev, archive: true, ledger: true }));
-    } catch { }
+    } catch (err: unknown) { }
   }, [username, isSelf]);
 
   // ── Lazy tab data loader — fetches data only when a tab is first opened ──
@@ -322,7 +328,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
         })));
         setTabDataLoaded(prev => ({ ...prev, lists: true }));
       }
-    } catch { }
+    } catch (err: unknown) { }
   }, [targetUser, tabDataLoaded]);
 
   // Trigger lazy load when tab changes
@@ -339,11 +345,18 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
     setRefreshing(false);
   }, [fetchUserData]);
 
+  const [followLoading, setFollowLoading] = useState(false);
   const toggleFollow = useCallback(async () => {
     if (!isAuthenticated) return router.push('/login');
+    if (followLoading) return; // Guard against double-taps
+    setFollowLoading(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    if (isFollowing) { await unfollowUser(username); } else { await followUser(username); }
-  }, [isAuthenticated, isFollowing, username]);
+    try {
+      if (isFollowing) { await unfollowUser(username); } else { await followUser(username); }
+    } finally {
+      setFollowLoading(false);
+    }
+  }, [isAuthenticated, isFollowing, username, followUser, unfollowUser, followLoading]);
 
   // ── Computed Values ──
   const tier = targetUser?.role ?? targetUser?.tier ?? 'free';
@@ -463,9 +476,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
     return [] as SocialLink[];
   }, [targetUser]);
 
-  // Breathing glow interpolation
-  const breatheShadowRadius = breatheAnim.interpolate({ inputRange: [0, 1], outputRange: [20, 40] });
-  const breatheShadowOpacity = breatheAnim.interpolate({ inputRange: [0, 1], outputRange: [0.3, 0.6] });
+  // Legacy JS interpolations removed for native thread performance
 
   // ── Collection Cards (use server-side counts for instant display, zero data transfer) ──
   const COLLECTION_CARDS = [
@@ -501,12 +512,12 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
       <FilmIcon size={48} color={colors.sepia} strokeWidth={1} style={s.notFoundIcon} />
       <Text style={s.notFoundTitle}>Member Not Found</Text>
       <Text style={s.notFoundBody}>This member doesn't exist yet, or has been removed.</Text>
-      <TouchableOpacity style={s.ghostBtn} onPress={() => router.back()} accessibilityRole="button" accessibilityLabel="Go back">
+      <PressableScale style={s.ghostBtn} onPress={() => { router.back(); }} accessibilityRole="button" accessibilityLabel="Go back" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
         <View style={s.ghostBtnRow}>
           <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
-          <Text style={s.ghostBtnText}>GO BACK</Text>
+          <Text style={s.ghostBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>GO BACK</Text>
         </View>
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 
@@ -519,9 +530,9 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
         This profile is private. Only the owner can view their activity.
       </Text>
       {isAuthenticated && (
-        <TouchableOpacity style={s.primaryBtn} onPress={toggleFollow} accessibilityRole="button" accessibilityLabel="Follow to view profile">
-          <Text style={s.primaryBtnText}>FOLLOW TO VIEW</Text>
-        </TouchableOpacity>
+        <PressableScale style={s.primaryBtn} onPress={toggleFollow} accessibilityRole="button" accessibilityLabel="Follow to view profile" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
+          <Text style={s.primaryBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>FOLLOW TO VIEW</Text>
+        </PressableScale>
       )}
     </View>
   );
@@ -580,331 +591,190 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
     return (
       <View style={s.container}>
         {/* ── Tab Header ── */}
-        <View style={s.tabPageHeader}>
-          <TouchableOpacity onPress={() => router.push(`/user/${username}`)} style={s.topNavBtn} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Back to profile">
+        <View style={[s.tabPageHeader, { paddingTop: Math.max(insets.top + 10, 40) }]}>
+          <PressableScale onPress={() => router.push(`/user/${username}`)} style={s.topNavBtn} accessibilityRole="button" accessibilityLabel="Back to profile" hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic>
             <ChevronLeft size={22} color={colors.sepia} />
-          </TouchableOpacity>
+          </PressableScale>
           <View style={s.tabHeaderTextWrap}>
-            <Text style={s.tabHeaderUsername}>@{username}</Text>
-            <Text style={s.tabHeaderTitle} accessibilityRole="header">{tabTitles[activeTab] ?? activeTab}</Text>
+            <Text style={s.tabHeaderUsername} adjustsFontSizeToFit numberOfLines={1}>@{username}</Text>
+            <Text style={s.tabHeaderTitle} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={1}>{tabTitles[activeTab] ?? activeTab}</Text>
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={s.tabScrollContent} showsVerticalScrollIndicator={false}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}>
+        {['archive', 'ledger', 'watchlist'].includes(activeTab) ? (
+          <View style={{ flex: 1 }}>
+            {/* ═══ ARCHIVE TAB ═══ */}
+            {activeTab === 'archive' && (
+              <ProfileArchiveTab
+                logs={logs}
+                isSelf={isSelf}
+                archiveSieve={archiveSieve}
+                setArchiveSieve={setArchiveSieve}
+                archiveFiltered={archiveFiltered}
+                renderPosterCard={renderPosterCard}
+                groupByMonth={groupByMonth}
+                POSTER_COL_4={POSTER_COL_4}
+              />
+            )}
 
-          {/* ═══ ARCHIVE TAB ═══ */}
-          {activeTab === 'archive' && (
-            <View style={s.tabContentPad}>
-              {logs.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScrollMargin} contentContainerStyle={s.filterChipRow}>
-                  {[{ id: 'all', label: 'All' }, { id: 'watched', label: 'Watched' }, { id: 'rewatched', label: 'Rewatched' }, { id: 'abandoned', label: 'Abandoned' }].map(sv => (
-                    <TouchableOpacity key={sv.id} style={[s.filterChip, archiveSieve === sv.id && s.filterChipActive]} onPress={() => setArchiveSieve(sv.id)}>
-                      <Text style={[s.filterChipText, archiveSieve === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-              {archiveFiltered.length === 0 ? (
-                <View style={s.emptyState}>
-                  <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-                  <Text style={s.emptyTitle}>The Archive is Empty</Text>
-                  <Text style={s.emptyDesc}>{logs.length === 0 ? (isSelf ? 'No films watched yet.' : "This member hasn't watched any films yet.") : 'No films match this filter.'}</Text>
-                </View>
-              ) : (
-                <View style={s.tabGap}>
-                  {Object.entries(groupByMonth(archiveFiltered)).map(([month, items]) => (
-                    <View key={month}>
-                      <Text style={s.monthHeader}>{month}</Text>
-                      <View style={s.grid4}>
-                        {(items as ProfileLog[]).map((log: ProfileLog) => renderPosterCard(log, POSTER_COL_4))}
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
+            {/* ═══ LEDGER TAB ═══ */}
+            {activeTab === 'ledger' && (
+              <ProfileLedgerTab
+                logs={logs}
+                ledgerSearch={ledgerSearch}
+                setLedgerSearch={setLedgerSearch}
+                ledgerRatingFilter={ledgerRatingFilter}
+                setLedgerRatingFilter={setLedgerRatingFilter}
+                ledgerFiltered={ledgerFiltered}
+                halfLifeMap={halfLifeMap}
+                renderPosterCard={renderPosterCard}
+                groupByMonth={groupByMonth}
+                POSTER_COL_4={POSTER_COL_4}
+              />
+            )}
 
-          {/* ═══ LEDGER TAB ═══ */}
-          {activeTab === 'ledger' && (
-            <View style={s.tabContentPad}>
-              {logs.length > 0 && (
-                <View style={s.filterGroupCol}>
-                  <View style={s.searchWrap}>
-                    <Search size={12} color={colors.fog} strokeWidth={1.5} style={s.searchIconStyle} />
-                    <TextInput style={s.searchInput} value={ledgerSearch} onChangeText={setLedgerSearch} placeholder="Search your archive..." placeholderTextColor={colors.fog} />
-                    {ledgerSearch.length > 0 && <TouchableOpacity onPress={() => setLedgerSearch('')} style={s.searchClear}><X size={14} color={colors.fog} strokeWidth={1.5} /></TouchableOpacity>}
-                  </View>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filterChipRowTight}>
-                    {(['all', 1, 2, 3, 4, 5] as const).map(r => (
-                      <TouchableOpacity key={String(r)} style={[s.filterChip, ledgerRatingFilter === r && s.filterChipActive]} onPress={() => setLedgerRatingFilter(r)}>
-                        {r === 'all' ? (
-                          <Text style={[s.filterChipText, ledgerRatingFilter === r && s.filterChipTextActive]}>ALL</Text>
-                        ) : (
-                          <ReelRating rating={r} size={8} />
-                        )}
-                      </TouchableOpacity>
-                    ))}
-                  </ScrollView>
-                </View>
-              )}
-              {ledgerFiltered.length === 0 ? (
-                <View style={s.emptyState}>
-                  <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-                  <Text style={s.emptyTitle}>{ledgerSearch ? 'No Results' : 'The Ledger is Empty'}</Text>
-                  <Text style={s.emptyDesc}>{ledgerSearch ? `No entries match "${ledgerSearch}"` : 'No rated or reviewed films yet.'}</Text>
-                </View>
-              ) : (
-                <View style={s.tabGap}>
-                  {Object.entries(groupByMonth(ledgerFiltered)).map(([month, items]) => (
-                    <View key={month}>
-                      <Text style={s.monthHeader}>{month}</Text>
-                      <View style={s.grid4}>
-                        {(items as ProfileLog[]).map((log: ProfileLog) => {
-                          const hl = halfLifeMap[log.filmId];
-                          return (
-                            <View key={log.id} style={s.posterCardWrap}>
-                              {renderPosterCard(log, POSTER_COL_4, false, false, true)}
-                              {hl && (
-                                <View style={s.halfLifeBadge}>
-                                  <View style={s.halfLifeContent}>
-                                    {hl.trajectory === 'ASCENDING' ? <TrendingUp size={7} color="#22c55e" strokeWidth={2} /> : hl.trajectory === 'DECAYING' ? <TrendingDown size={7} color="#ef4444" strokeWidth={2} /> : <Minus size={7} color={colors.sepia} strokeWidth={2} />}
-                                    <Text style={[s.halfLifeText, { color: hl.trajectory === 'ASCENDING' ? '#22c55e' : hl.trajectory === 'DECAYING' ? '#ef4444' : colors.sepia }]}>x{hl.count}</Text>
-                                  </View>
-                                </View>
-                              )}
-                            </View>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
+            {/* ═══ WATCHLIST TAB ═══ */}
+            {activeTab === 'watchlist' && (
+              <ProfileWatchlistTab
+                watchlist={watchlist}
+                watchlistFiltered={watchlistFiltered}
+                isSelf={isSelf}
+                watchlistSearch={watchlistSearch}
+                setWatchlistSearch={setWatchlistSearch}
+                watchlistSort={watchlistSort}
+                setWatchlistSort={setWatchlistSort}
+                setRouletteOpen={setRouletteOpen}
+                renderPosterCard={renderPosterCard}
+                POSTER_COL_3={POSTER_COL_3}
+              />
+            )}
+          </View>
+        ) : (
+          <ScrollView contentContainerStyle={[s.tabScrollContent, { paddingBottom: Math.max(insets.bottom + 80, 80) }]} showsVerticalScrollIndicator={false}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}>
 
-          {/* ═══ WATCHLIST TAB ═══ */}
-          {activeTab === 'watchlist' && (
-            <View style={s.tabContentPad}>
-              {watchlist.length === 0 ? (
-                <View style={s.emptyState}>
-                  <Bookmark size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-                  <Text style={s.emptyTitle}>The Queue is Empty</Text>
-                  <Text style={s.emptyDesc}>{isSelf ? 'No films saved yet.' : "This member hasn't saved any films yet."}</Text>
+            {/* ═══ STACKS/LISTS TAB ═══ */}
+            {activeTab === 'lists' && (
+              <ProfileListsTab lists={lists} />
+            )}
+
+            {/* ═══ PHYSICAL ARCHIVE TAB ═══ */}
+            {activeTab === 'physical' && (
+              <ProfilePhysicalTab
+                isSelf={isSelf}
+                vault={vault}
+                physicalFilter={physicalFilter}
+                setPhysicalFilter={setPhysicalFilter}
+                physicalFormatCounts={physicalFormatCounts}
+                physicalFiltered={physicalFiltered}
+                groupByMonth={groupByMonth}
+              />
+            )}
+
+            {/* ═══ PASSPORT TAB ═══ */}
+            {activeTab === 'passport' && <View style={s.tabContentPad}><NoirPassport user={targetUser} logs={logs} /></View>}
+
+            {/* ═══ PROJECTOR / ANALYTICS TAB ═══ */}
+            {activeTab === 'projector' && (
+              <View style={s.projectorGap}>
+                {/* Header */}
+                <View style={s.projectorHeader}>
+                  <Text style={s.projectorSuper}>GLOBAL ANALYTICS</Text>
+                  <Text style={s.projectorTitle}>The Projector Room</Text>
+                  <Text style={s.projectorSub}>Lifetime cinematic data & achievements.</Text>
                 </View>
-              ) : (<>
-                {isSelf && watchlist.length > 1 && (
-                  <TouchableOpacity style={s.ctaBtn} onPress={() => setRouletteOpen(true)} activeOpacity={0.7}>
+
+                {/* Cinema DNA CTA */}
+                <View style={s.tabContentPad}>
+                  <PressableScale style={s.ctaBtn} onPress={() => setDnaCardOpen(true)} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
                     <View style={s.ctaBtnRow}>
-                      <Dice5 size={12} color={colors.sepia} strokeWidth={1.5} />
-                      <Text style={s.ctaBtnText}>SPIN WATCHLIST ROULETTE</Text>
+                      <Dna size={12} color={colors.sepia} strokeWidth={1.5} />
+                      <Text style={s.ctaBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>VIEW CINEMA DNA</Text>
                     </View>
-                  </TouchableOpacity>
-                )}
-                {watchlist.length > 5 && (
-                  <View style={s.watchlistControlRow}>
-                    <View style={[s.searchWrap, s.searchWrapFlex]}>
-                      <Search size={12} color={colors.fog} strokeWidth={1.5} style={s.searchIconStyle} />
-                      <TextInput style={s.searchInput} value={watchlistSearch} onChangeText={setWatchlistSearch} placeholder="Search watchlist..." placeholderTextColor={colors.fog} />
-                      {watchlistSearch.length > 0 && <TouchableOpacity onPress={() => setWatchlistSearch('')} style={s.searchClear}><X size={14} color={colors.fog} strokeWidth={1.5} /></TouchableOpacity>}
-                    </View>
-                    <View style={s.sortRow}>
-                      {([{ id: 'default' as const, label: 'RECENT' }, { id: 'az' as const, label: 'A-Z' }, { id: 'za' as const, label: 'Z-A' }]).map(sv => (
-                        <TouchableOpacity key={sv.id} style={[s.filterChip, watchlistSort === sv.id && s.filterChipActive]} onPress={() => setWatchlistSort(sv.id)}>
-                          <Text style={[s.filterChipText, watchlistSort === sv.id && s.filterChipTextActive]}>{sv.label}</Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-                )}
-                {watchlistFiltered.length === 0 && watchlistSearch ? (
-                  <Text style={s.searchNoResults}>No films match "{watchlistSearch}"</Text>
-                ) : (
-                  <View style={s.grid3}>
-                    {watchlistFiltered.map((film: ProfileWatchlistItem) => renderPosterCard(film, POSTER_COL_3))}
-                  </View>
-                )}
-              </>)}
-            </View>
-          )}
-
-          {/* ═══ STACKS/LISTS TAB ═══ */}
-          {activeTab === 'lists' && (
-            <View style={s.tabContentPad}>
-              {lists.length === 0 ? (
-                <View style={s.emptyState}><LayoutList size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} /><Text style={s.emptyTitle}>The Stacks are Empty</Text><Text style={s.emptyDesc}>No lists yet.</Text></View>
-              ) : (
-                <View style={s.stacksGrid}>
-                  {lists.map((list: ProfileList) => {
-                    const posters = (list.films || []).filter((f: ProfileListFilm) => f.poster).slice(0, 3).map((f: ProfileListFilm) => tmdb.poster(f.poster || '', 'w185'));
-                    return (
-                      <TouchableOpacity key={list.id} style={s.stackCard} activeOpacity={0.7} onPress={() => router.push({ pathname: '/list-modal', params: { listId: list.id } })}>
-                        <View style={s.stackPosterWrap}>
-                          {posters.length > 0 ? posters.map((uri: string, i: number) => <Image key={i} source={{ uri }} style={[s.stackPosterPanel, { left: `${(i * 100) / posters.length}%`, width: `${100 / posters.length}%` }]} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />) : <View style={s.stackEmptyBg} />}
-                          <View style={s.stackOverlay} />
-                        </View>
-                        <View style={s.stackContent}>
-                          <Text style={s.stackBadge}>{(list.films || []).length} FILMS</Text>
-                          <Text style={s.stackTitle} numberOfLines={2}>{(list.title || '').toUpperCase()}</Text>
-                          {list.description ? <Text style={s.stackDesc} numberOfLines={2}>{list.description}</Text> : null}
-                        </View>
-                      </TouchableOpacity>
-                    );
-                  })}
+                  </PressableScale>
                 </View>
-              )}
-            </View>
-          )}
 
-          {/* ═══ PHYSICAL ARCHIVE TAB ═══ */}
-          {activeTab === 'physical' && (
-            <View style={s.tabContentPad}>
-              {physicalFormatCounts.length > 0 && (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterScrollMargin} contentContainerStyle={s.filterChipRowTight}>
-                  <TouchableOpacity style={[s.filterChip, !physicalFilter && s.filterChipActive]} onPress={() => setPhysicalFilter(null)}>
-                    <Text style={[s.filterChipText, !physicalFilter && s.filterChipTextActive]}>ALL ({vault.length})</Text>
-                  </TouchableOpacity>
-                  {physicalFormatCounts.map((f: FormatCount) => (
-                    <TouchableOpacity key={f.id} style={[s.filterChip, physicalFilter === f.id && { borderColor: f.color, backgroundColor: `${f.color}15` }]} onPress={() => setPhysicalFilter(physicalFilter === f.id ? null : f.id)}>
-                      <Text style={[s.filterChipText, physicalFilter === f.id && { color: f.color }]}>{f.label} ({f.count})</Text>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
-              {physicalFiltered.length === 0 ? (
-                <View style={s.emptyState}><Disc size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} /><Text style={s.emptyTitle}>Physical Archive is Empty</Text>
-                  <Text style={s.emptyDesc}>{isSelf ? 'No physical media catalogued yet.' : 'No physical media.'}</Text></View>
-              ) : (
-                <View style={s.tabGap}>
-                  {Object.entries(groupByMonth(physicalFiltered, 'created_at')).map(([month, items]) => (
-                    <View key={month}>
-                      <Text style={s.monthHeader}>{month}</Text>
-                      <View style={s.grid4}>
-                        {(items as ProfileVaultItem[]).map((item: ProfileVaultItem) => {
-                          const posterUri = tmdb.poster(item.poster_path, 'w185');
-                          const fmt = (item.formats || [])[0];
-                          const FC: Record<string, string> = { '4k': '#a855f7', bluray: '#3b82f6', dvd: '#f59e0b', vhs: '#ef4444', laserdisc: '#10b981', steelbook: '#6366f1', criterion: colors.sepia };
-                          const FL: Record<string, string> = { '4k': '4K', bluray: 'BD', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LD', steelbook: 'SB', criterion: 'CC' };
+                {/* Projector Room */}
+                <ProjectorRoom stats={{ count: logs.length, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} />
+
+                <View style={s.projectorSectionsWrap}>
+                  {/* Taste DNA */}
+                  <View>
+                    <SectionLabel text="TASTE FINGERPRINT" />
+                    <TasteDNA logs={logs} />
+                  </View>
+
+                  {/* Cinematic Insights */}
+                  <View>
+                    <SectionLabel text="REAL ANALYTICS" />
+                    <CinematicInsights logs={logs} />
+                  </View>
+
+                  {/* Society Honors */}
+                  <View>
+                    <SectionLabel text="SOCIETY HONORS" />
+                    <Achievements logs={logs} />
+                  </View>
+
+                  {/* Your Favourites */}
+                  {logs.filter((l: ProfileLog) => l.rating >= 4).length > 0 && (
+                    <View>
+                      <SectionLabel text="HIGHEST RATED" />
+                      <View style={s.card}>
+                        {logs.filter((l: ProfileLog) => l.rating >= 4).slice(0, 6).map((log: ProfileLog) => {
+                          const posterUri = tmdb.poster(log.poster, 'w185');
                           return (
-                            <TouchableOpacity key={item.id} style={s.posterCardWrap} activeOpacity={0.7} onPress={() => item.film_id && router.push(`/film/${item.film_id}`)}>
-                              {posterUri ? <Image source={{ uri: posterUri }} style={s.posterImg} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} /> : <View style={[s.posterImg, s.posterPlaceholder]}><FilmIcon size={14} color={colors.sepia} strokeWidth={1} /></View>}
-                              {fmt && <View style={[s.formatBadge, { borderColor: FC[fmt] || colors.sepia }]}><Text style={[s.formatBadgeText, { color: FC[fmt] || colors.sepia }]}>{FL[fmt] || fmt.toUpperCase()}</Text></View>}
-                            </TouchableOpacity>
+                            <PressableScale key={log.id} style={s.favouriteRow} onPress={() => log.filmId && router.push(`/film/${log.filmId}`)} haptic>
+                              {posterUri && <Image source={{ uri: posterUri }} style={s.favPosterThumb} transition={50} />}
+                              <View style={s.favTextWrap}>
+                                <Text style={s.favTitle} numberOfLines={1}>{log.title}</Text>
+                                <View style={s.favRatingRow}>
+                                  <ReelRating rating={log.rating} size={10} />
+                                </View>
+                              </View>
+                            </PressableScale>
                           );
                         })}
                       </View>
                     </View>
-                  ))}
-                </View>
-              )}
-            </View>
-          )}
+                  )}
 
-          {/* ═══ PASSPORT TAB ═══ */}
-          {activeTab === 'passport' && <View style={s.tabContentPad}><NoirPassport user={targetUser} logs={logs} /></View>}
-
-          {/* ═══ PROJECTOR / ANALYTICS TAB ═══ */}
-          {activeTab === 'projector' && (
-            <View style={s.projectorGap}>
-              {/* Header */}
-              <View style={s.projectorHeader}>
-                <Text style={s.projectorSuper}>GLOBAL ANALYTICS</Text>
-                <Text style={s.projectorTitle}>The Projector Room</Text>
-                <Text style={s.projectorSub}>Lifetime cinematic data & achievements.</Text>
-              </View>
-
-              {/* Cinema DNA CTA */}
-              <View style={s.tabContentPad}>
-                <TouchableOpacity style={s.ctaBtn} onPress={() => setDnaCardOpen(true)} activeOpacity={0.7}>
-                  <View style={s.ctaBtnRow}>
-                    <Dna size={12} color={colors.sepia} strokeWidth={1.5} />
-                    <Text style={s.ctaBtnText}>VIEW CINEMA DNA</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-
-              {/* Projector Room */}
-              <ProjectorRoom stats={{ count: logs.length, level: statsLevel, color: statsColor, progress: statsProgress }} user={targetUser} />
-
-              <View style={s.projectorSectionsWrap}>
-                {/* Taste DNA */}
-                <View>
-                  <SectionLabel text="TASTE FINGERPRINT" />
-                  <TasteDNA logs={logs} />
-                </View>
-
-                {/* Cinematic Insights */}
-                <View>
-                  <SectionLabel text="REAL ANALYTICS" />
-                  <CinematicInsights logs={logs} />
-                </View>
-
-                {/* Society Honors */}
-                <View>
-                  <SectionLabel text="SOCIETY HONORS" />
-                  <Achievements logs={logs} />
-                </View>
-
-                {/* Your Favourites */}
-                {logs.filter((l: ProfileLog) => l.rating >= 4).length > 0 && (
+                  {/* Passport */}
                   <View>
-                    <SectionLabel text="HIGHEST RATED" />
-                    <View style={s.card}>
-                      {logs.filter((l: ProfileLog) => l.rating >= 4).slice(0, 6).map((log: ProfileLog) => {
-                        const posterUri = tmdb.poster(log.poster, 'w185');
-                        return (
-                          <TouchableOpacity key={log.id} style={s.favouriteRow} onPress={() => log.filmId && router.push(`/film/${log.filmId}`)} activeOpacity={0.7}>
-                            {posterUri && <Image source={{ uri: posterUri }} style={s.favPosterThumb} />}
-                            <View style={s.favTextWrap}>
-                              <Text style={s.favTitle} numberOfLines={1}>{log.title}</Text>
-                              <View style={s.favRatingRow}>
-                                <ReelRating rating={log.rating} size={10} />
-                              </View>
-                            </View>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
+                    <SectionLabel text="CINEMATIC PASSPORT" />
+                    <NoirPassport user={targetUser} logs={logs} />
+                  </View>
+
+                  {/* Taste Match (other users only) */}
+                  {!isSelf && myLogs.length >= 5 && (
+                    <TasteMatch myLogs={myLogs} theirLogs={logs} theirUsername={targetUser.username} />
+                  )}
+
+                  {/* Programmes */}
+                  <ProgrammesSection programmes={[]} user={targetUser} uniqueFilms={logs.map((l: ProfileLog) => ({ id: l.filmId, title: l.title, poster_path: l.poster || '' }))} isOwnProfile={isSelf} />
+                </View>
+              </View>
+            )}
+
+            {/* ═══ CALENDAR TAB ═══ */}
+            {activeTab === 'calendar' && (
+              <View style={s.tabContentPad}>
+                {isArchivistPlus ? (
+                  <View>
+                    <SectionLabel text="VIEWING HISTORY" />
+                    <Text style={s.comingSoonText}>Activity calendar coming soon.</Text>
+                  </View>
+                ) : (
+                  <View style={s.emptyState}>
+                    <Lock size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
+                    <Text style={s.emptyTitle}>Archivist+ Feature</Text>
+                    <Text style={s.emptyDesc}>Upgrade to Archivist or Auteur to unlock the viewing calendar.</Text>
                   </View>
                 )}
-
-                {/* Passport */}
-                <View>
-                  <SectionLabel text="CINEMATIC PASSPORT" />
-                  <NoirPassport user={targetUser} logs={logs} />
-                </View>
-
-                {/* Taste Match (other users only) */}
-                {!isSelf && myLogs.length >= 5 && (
-                  <TasteMatch myLogs={myLogs} theirLogs={logs} theirUsername={targetUser.username} />
-                )}
-
-                {/* Programmes */}
-                <ProgrammesSection programmes={[]} user={targetUser} uniqueFilms={logs.map((l: ProfileLog) => ({ id: l.filmId, title: l.title, poster_path: l.poster || '' }))} isOwnProfile={isSelf} />
               </View>
-            </View>
-          )}
-
-          {/* ═══ CALENDAR TAB ═══ */}
-          {activeTab === 'calendar' && (
-            <View style={s.tabContentPad}>
-              {isArchivistPlus ? (
-                <View>
-                  <SectionLabel text="VIEWING HISTORY" />
-                  <Text style={s.comingSoonText}>Activity calendar coming soon.</Text>
-                </View>
-              ) : (
-                <View style={s.emptyState}>
-                  <Lock size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-                  <Text style={s.emptyTitle}>Archivist+ Feature</Text>
-                  <Text style={s.emptyDesc}>Upgrade to Archivist or Auteur to unlock the viewing calendar.</Text>
-                </View>
-              )}
-            </View>
-          )}
-        </ScrollView>
+            )}
+          </ScrollView>
+        )}
 
         {dnaCardOpen && <CinemaDNACard logs={logs} user={targetUser} onClose={() => setDnaCardOpen(false)} />}
         <WatchlistRoulette visible={rouletteOpen} watchlist={watchlist} onClose={() => setRouletteOpen(false)} onSelect={(id: number) => { setRouletteOpen(false); router.push(`/film/${id}`); }} />
@@ -919,46 +789,51 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
     <View style={s.container}>
       {/* Back button (only when navigated to, not on own tab) */}
       {!usernameOverride && (
-        <View style={s.topNav}>
-          <TouchableOpacity onPress={() => router.back()} style={s.topNavBtn} activeOpacity={0.7} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+        <View style={[s.topNav, { paddingTop: Math.max(insets.top + 10, 40) }]}>
+          <PressableScale onPress={() => router.back()} style={s.topNavBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic>
             <ChevronLeft size={24} color={colors.parchment} strokeWidth={1.5} />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       )}
 
-      <ScrollView contentContainerStyle={s.mainScrollContent} showsVerticalScrollIndicator={false}
+      <ScrollView contentContainerStyle={[s.mainScrollContent, { paddingBottom: Math.max(insets.bottom + 60, 60) }]} showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}>
 
         {/* ═══ ATMOSPHERIC HEADER ═══ */}
         <View style={s.headerWrap}>
-          {/* Auteur backdrop or dark base */}
+          {/* Tier-specific backdrop rendering */}
           {tier === 'auteur' ? (
             <ProfileBackdrop user={targetUser} logs={logs} />
+          ) : tier === 'archivist' ? (
+            <View style={s.headerArchivistBase}>
+               <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(10,8,5,0.95)', colors.ink]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
+               <AnimatedView style={[StyleSheet.absoluteFillObject, pulseStyle]} pointerEvents="none">
+                 <LinearGradient colors={['rgba(196,150,26,0.1)', 'transparent']} style={StyleSheet.absoluteFillObject} />
+               </AnimatedView>
+            </View>
           ) : (
             <View style={s.headerDarkBase} />
           )}
 
-          {/* Projector spotlight — golden radial glow from top center */}
-          <View style={s.projectorSpotlight} />
+          {/* Projector spotlight — dynamic per tier */}
+          <View style={[s.projectorSpotlight, tier === 'auteur' && s.spotlightAuteur, tier === 'archivist' && s.spotlightArchivist]} />
 
           {/* Film grain texture overlay */}
           <View style={s.filmGrainOverlay} />
 
-          {/* Bottom gold edge */}
+          {/* Bottom structural edge */}
           <View style={s.headerGoldEdge} />
 
           {/* ── Header Content ── */}
           <View style={s.headerContent}>
 
-            {/* ── Avatar with Breathing Glow ── */}
+            {/* ── Avatar with Tier-Specific Enclosure ── */}
             <View style={s.avatarWrap}>
-              <RNAnimated.View style={[s.avatarRing, {
-                borderColor: statsColor,
-                shadowColor: statsColor,
-                shadowRadius: breatheShadowRadius,
-                shadowOpacity: breatheShadowOpacity,
-                shadowOffset: { width: 0, height: 0 },
-              }]}>
+              <AnimatedView style={[
+                s.avatarRing, 
+                tier === 'auteur' ? s.avatarRingAuteur : tier === 'archivist' ? s.avatarRingArchivist : s.avatarRingCinephile,
+                pulseStyle
+              ]}>
                 {targetUser.avatar_url ? (
                   <Image source={{ uri: targetUser.avatar_url }} style={s.avatar} />
                 ) : (
@@ -966,30 +841,30 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                     <Text style={s.avatarInitial}>{(targetUser.username || '?')[0].toUpperCase()}</Text>
                   </View>
                 )}
-              </RNAnimated.View>
+              </AnimatedView>
 
               {/* Level badge */}
               <View style={[s.levelBadge, { borderColor: statsColor }]}>
                 <View style={s.levelBadgeRow}>
                   <Sparkles size={7} color={statsColor} strokeWidth={1.5} />
-                  <Text style={[s.levelBadgeText, { color: statsColor }]}>{statsLevel}</Text>
+                  <Text style={[s.levelBadgeText, { color: statsColor }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{statsLevel}</Text>
                 </View>
               </View>
             </View>
 
             {/* ── Username + Tier Badge ── */}
             <View style={s.usernameRow}>
-              <Text style={s.displayName}>@{targetUser.username.toUpperCase()}</Text>
+              <Text style={s.displayName} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.5}>@{targetUser.username.toUpperCase()}</Text>
               {tier === 'auteur' && (
                 <View style={s.auteurBadge}>
-                  <Star size={9} color={colors.ink} fill={colors.ink} />
-                  <Text style={s.auteurBadgeText}>AUTEUR</Text>
+                  <Star size={9} color={'#FFB3B3'} fill={'#FFB3B3'} />
+                  <Text style={s.auteurBadgeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>AUTEUR</Text>
                 </View>
               )}
               {tier === 'archivist' && (
                 <View style={s.archivistBadge}>
-                  <Archive size={8} color={colors.sepia} strokeWidth={1.5} />
-                  <Text style={s.archivistBadgeText}>ARCHIVIST</Text>
+                  <Archive size={8} color={'#F2ECD8'} strokeWidth={1.5} />
+                  <Text style={s.archivistBadgeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>ARCHIVIST</Text>
                 </View>
               )}
             </View>
@@ -1009,7 +884,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
             )}
 
             {/* ── Bio ── */}
-            <Text style={s.bio}>
+            <Text style={s.bio} numberOfLines={4} adjustsFontSizeToFit>
               {targetUser.bio || (isSelf ? "No bio yet. Tell the society who you are." : "No bio on file.")}
             </Text>
 
@@ -1017,10 +892,10 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
             {socialLinks.length > 0 && (
               <View style={s.socialLinksRow}>
                 {socialLinks.map((link: SocialLink, i: number) => (
-                  <TouchableOpacity key={i} style={s.socialLinkChip} onPress={() => Linking.openURL(link.url.startsWith('http') ? link.url : `https://${link.url}`)} activeOpacity={0.7}>
+                  <PressableScale key={i} style={s.socialLinkChip} onPress={() => Linking.openURL(link.url.startsWith('http') ? link.url : `https://${link.url}`)} haptic>
                     <Globe size={10} color={colors.fog} />
-                    <Text style={s.socialLinkText}>{(link.title || '').toUpperCase()}</Text>
-                  </TouchableOpacity>
+                    <Text style={s.socialLinkText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(link.title || '').toUpperCase()}</Text>
+                  </PressableScale>
                 ))}
               </View>
             )}
@@ -1028,26 +903,26 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
             {/* ── Follow / Edit Buttons ── */}
             {isSelf ? (
               <View style={s.editRow}>
-                <TouchableOpacity style={s.editBtn} onPress={() => router.push('/settings')} activeOpacity={0.7}>
-                  <Text style={s.editBtnText}>EDIT PROFILE</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={s.settingsBtn} onPress={() => router.push('/settings')} activeOpacity={0.7}>
+                <PressableScale style={s.editBtn} onPress={() => router.push('/edit-profile')} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic>
+                  <Text style={s.editBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>EDIT PROFILE</Text>
+                </PressableScale>
+                <PressableScale style={s.settingsBtn} onPress={() => router.push('/settings')} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic>
                   <Settings size={14} color={colors.fog} />
-                </TouchableOpacity>
+                </PressableScale>
               </View>
             ) : (
-              <TouchableOpacity style={[s.followBtn, isFollowing && s.followingBtn]} onPress={toggleFollow} activeOpacity={0.7}>
-                <Text style={[s.followBtnText, isFollowing && s.followingBtnText]}>{isFollowing ? 'UNFOLLOW' : '+ FOLLOW'}</Text>
-              </TouchableOpacity>
+              <PressableScale style={[s.followBtn, isFollowing && s.followingBtn, followLoading && { opacity: 0.5 }]} onPress={toggleFollow} disabled={followLoading} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic>
+                <Text style={[s.followBtnText, isFollowing && s.followingBtnText]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{followLoading ? '...' : isFollowing ? 'UNFOLLOW' : '+ FOLLOW'}</Text>
+              </PressableScale>
             )}
 
             {/* ── Stats Row ── */}
-            <AnimatedView entering={FadeInDown.duration(500).delay(100)} style={s.statsGrid}>
+            <View style={s.statsGrid}>
               <StatCard label="FILMS" value={totalFilms} />
               <StatCard label="FOLLOWERS" value={targetUser.followers_count || 0} onPress={() => router.push({ pathname: '/social-modal', params: { userId: targetUser.id, type: 'followers' } })} />
               <StatCard label="FOLLOWING" value={targetUser.following_count || 0} onPress={() => router.push({ pathname: '/social-modal', params: { userId: targetUser.id, type: 'following' } })} />
               <StatCard label="WATCHLIST" value={counts.watchlist} isLast />
-            </AnimatedView>
+            </View>
 
             {/* ── Streak ── */}
             {streak > 1 && (
@@ -1100,55 +975,46 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           <SectionDivider label="COLLECTION" />
 
           {/* ── Collection Grid ── */}
-          <AnimatedView entering={FadeInDown.duration(500).delay(200)} style={s.collectionSection}>
+          <View style={s.collectionSection}>
             <SectionLabel text="THE COLLECTION" />
             <View style={s.collectionGrid}>
               {COLLECTION_CARDS.map((item, idx) => (
-                <AnimatedView
-                  key={item.id}
-                  entering={FadeInDown.duration(400).delay(300 + idx * 60)}
-                >
-                <TouchableOpacity
+                <View key={item.id}>
+                <PressableScale
                   style={[s.collectionCard, item.disabled && s.collectionCardDisabled, item.highlight && s.collectionCardHighlight]}
-                  activeOpacity={0.7}
                   disabled={item.disabled}
-                  onPress={() => {
-                    Haptics.selectionAsync();
-                    router.push({ pathname: `/user/${username}` as any, params: { tab: item.id } });
-                  }}
+                  onPress={() => router.push({ pathname: `/user/${username}` as import('expo-router').Href, params: { tab: item.id } })}
+                  haptic
                 >
                   {/* Icon circle */}
                   <View style={[s.collectionIconCircle, item.highlight && s.collectionIconHighlight]}>
                     <item.Icon size={16} strokeWidth={1.5} color={item.highlight ? colors.sepia : colors.bone} />
                   </View>
                   {/* Label */}
-                  <Text style={[s.collectionCardLabel, item.highlight && s.collectionHighlightText]} numberOfLines={1}>{item.label}</Text>
+                  <Text style={[s.collectionCardLabel, item.highlight && s.collectionHighlightText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.label}</Text>
                   {/* Description */}
-                  <Text style={s.collectionCardDesc}>{item.desc}</Text>
+                  <Text style={s.collectionCardDesc} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.desc}</Text>
                   {/* Count */}
-                  <Text style={[s.collectionCardCount, item.highlight && s.collectionHighlightText]} numberOfLines={1} adjustsFontSizeToFit>{item.count}</Text>
-                </TouchableOpacity>
-                </AnimatedView>
+                  <Text style={[s.collectionCardCount, item.highlight && s.collectionHighlightText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.count}</Text>
+                </PressableScale>
+                </View>
               ))}
             </View>
-          </AnimatedView>
+          </View>
 
           {/* Calendar card for Archivist+ */}
           {isSelf && (
             <View style={s.calendarCtaWrap}>
-              <TouchableOpacity
+              <PressableScale
                 style={[s.collectionCardWide, !isArchivistPlus && s.collectionCardDisabled]}
-                activeOpacity={0.7}
                 disabled={!isArchivistPlus}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  router.push({ pathname: `/user/${username}` as any, params: { tab: 'calendar' } });
-                }}
+                onPress={() => router.push({ pathname: `/user/${username}` as import('expo-router').Href, params: { tab: 'calendar' } })}
+                haptic
               >
                 {!isArchivistPlus && <Lock size={12} color={colors.fog} strokeWidth={1.5} style={s.lockIconMr} />}
                 {isArchivistPlus && <CalendarDays size={12} color={colors.sepia} strokeWidth={1.5} style={s.lockIconMr} />}
                 <Text style={[s.calendarCtaText, isArchivistPlus && s.collectionHighlightText]}>THE AUTEUR'S CALENDAR</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           )}
 
@@ -1156,14 +1022,14 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           {isSelf && (
             <View style={s.accountSection}>
               <SectionDivider label="ACCOUNT & SETTINGS" />
-              <TouchableOpacity style={s.accountRow} onPress={() => router.push('/membership')} activeOpacity={0.7}>
+              <PressableScale style={s.accountRow} onPress={() => router.push('/membership')} haptic>
                 <Crown size={13} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={s.accountRowText}>THE SOCIETY RANKS</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[s.accountRow, s.accountRowLast]} onPress={() => router.push('/settings')} activeOpacity={0.7}>
+              </PressableScale>
+              <PressableScale style={[s.accountRow, s.accountRowLast]} onPress={() => router.push('/settings')} haptic>
                 <Settings size={13} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={s.accountRowText}>SETTINGS & PROFILE</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           )}
         </View>
@@ -1190,7 +1056,7 @@ const s = StyleSheet.create({
   tabPageHeader: {
     paddingTop: 56, paddingHorizontal: 16, paddingBottom: 12,
     flexDirection: 'row', alignItems: 'center', gap: 10,
-    backgroundColor: colors.soot,
+    backgroundColor: 'rgba(8,6,4,0.98)',
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.15)',
   },
 
@@ -1203,18 +1069,24 @@ const s = StyleSheet.create({
     ...StyleSheet.absoluteFillObject, zIndex: 0,
     backgroundColor: colors.ink,
   },
+  headerArchivistBase: {
+    ...StyleSheet.absoluteFillObject, zIndex: 0,
+    backgroundColor: colors.ink,
+  },
   projectorSpotlight: {
     position: 'absolute', top: -40, left: '10%', right: '10%', height: 300,
     backgroundColor: 'rgba(139,105,20,0.12)',
     borderRadius: 200, zIndex: 1, opacity: 0.7,
   },
+  spotlightAuteur: { backgroundColor: 'rgba(180,45,45,0.15)', height: 400 },
+  spotlightArchivist: { backgroundColor: 'rgba(196,150,26,0.15)', height: 350 },
   filmGrainOverlay: {
     ...StyleSheet.absoluteFillObject, zIndex: 2, opacity: 0.03,
     backgroundColor: 'rgba(139,105,20,0.05)',
   },
   headerGoldEdge: {
-    position: 'absolute', bottom: 0, left: '10%', right: '10%', height: 1,
-    backgroundColor: 'rgba(139,105,20,0.35)', zIndex: 3,
+    position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1.5,
+    backgroundColor: 'rgba(139,105,20,0.3)', zIndex: 3,
   },
   headerContent: {
     position: 'relative', zIndex: 4,
@@ -1222,47 +1094,60 @@ const s = StyleSheet.create({
   },
 
   // ── Avatar ──
-  avatarWrap: { position: 'relative', marginBottom: 10 },
+  avatarWrap: { position: 'relative', marginBottom: 12 },
   avatarRing: {
-    width: 110, height: 110, borderRadius: 55, borderWidth: 2,
-    alignItems: 'center', justifyContent: 'center',
-    backgroundColor: colors.ink, overflow: 'hidden', elevation: 10,
+    width: 116, height: 116, borderRadius: 58, 
+    alignItems: 'center', justifyContent: 'center', overflow: 'hidden', 
+    backgroundColor: '#050402',
   },
-  avatar: { width: 102, height: 102, borderRadius: 51 },
+  avatarRingAuteur: {
+    borderWidth: 3, borderColor: '#8B1A1A', // Auteur Ruby
+    ...effects.shadowPrimary, shadowColor: '#8B1A1A', shadowRadius: 15,
+  },
+  avatarRingArchivist: {
+    borderWidth: 3, borderColor: '#C4961A', // Archivist Champagne Gold
+    ...effects.shadowSurface, shadowColor: '#C4961A', shadowRadius: 10,
+  },
+  avatarRingCinephile: {
+    borderWidth: 2, borderColor: colors.soot,
+  },
+  avatar: { width: 108, height: 108, borderRadius: 54 },
 
   // ── Level Badge ──
   levelBadge: {
     position: 'absolute', bottom: -8, alignSelf: 'center',
-    backgroundColor: 'rgba(11,10,8,0.95)', paddingHorizontal: 12, paddingVertical: 3,
-    borderWidth: 1, borderRadius: 3, zIndex: 5,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10,
+    backgroundColor: '#050402', paddingHorizontal: 14, paddingVertical: 4,
+    borderWidth: 1.5, borderRadius: 4, zIndex: 5, borderColor: 'rgba(139,105,20,0.5)',
+    ...effects.shadowSurface,
   },
-  levelBadgeText: { fontFamily: fonts.uiBold, fontSize: 7, letterSpacing: 2 },
+  levelBadgeText: { fontFamily: fonts.mono, fontSize: 9, letterSpacing: 3, fontWeight: '700' },
 
   // ── Display Name ──
   displayName: {
-    fontFamily: fonts.display, fontSize: 26, color: colors.parchment, textAlign: 'center',
-    letterSpacing: 0.5,
-    textShadowColor: 'rgba(196,150,26,0.25)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 16,
+    fontFamily: fonts.display, fontSize: 26, color: '#F2ECD8', textAlign: 'center',
+    letterSpacing: 2, ...effects.textGlowSepia, textShadowRadius: 12,
   },
 
   // ── Tier Badges ──
   auteurBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: colors.bloodReel, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: '#2A0505', paddingHorizontal: 10, paddingVertical: 4, 
+    borderRadius: 4, borderWidth: 1.5, borderColor: '#8B1A1A',
+    ...effects.shadowPrimary, shadowColor: '#8B1A1A',
   },
-  auteurBadgeText: { fontFamily: fonts.uiBold, fontSize: 7, letterSpacing: 2, color: colors.ink },
+  auteurBadgeText: { fontFamily: fonts.mono, fontWeight: '700', fontSize: 9, letterSpacing: 3, color: '#FFB3B3', ...effects.textGlowSepia, textShadowColor: '#8B1A1A' },
   archivistBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 3,
-    backgroundColor: 'rgba(196,150,26,0.15)', borderWidth: 1, borderColor: colors.sepia,
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2,
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: 'rgba(20,15,10,0.95)', borderWidth: 1.5, borderColor: '#C4961A',
+    paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4,
+    ...effects.shadowSurface, shadowColor: '#C4961A',
   },
-  archivistBadgeText: { fontFamily: fonts.uiBold, fontSize: 7, letterSpacing: 2, color: colors.sepia },
+  archivistBadgeText: { fontFamily: fonts.mono, fontWeight: '700', fontSize: 9, letterSpacing: 3, color: '#F2ECD8' },
 
   // ── Bio ──
   bio: {
-    fontFamily: fonts.body, fontSize: 14, color: colors.bone, textAlign: 'center',
-    lineHeight: 22, marginTop: 10, paddingHorizontal: 24, fontStyle: 'italic', opacity: 0.85,
+    fontFamily: fonts.body, fontSize: 12, color: colors.bone, textAlign: 'center',
+    lineHeight: 18, marginTop: 10, paddingHorizontal: 24, fontStyle: 'italic', opacity: 0.85,
   },
 
   // ── Social Links ──
@@ -1276,31 +1161,41 @@ const s = StyleSheet.create({
 
   // ── Buttons ──
   editBtn: {
-    backgroundColor: 'rgba(15,10,5,0.65)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)',
-    paddingVertical: 10, paddingHorizontal: 20, borderRadius: 2,
+    backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)',
+    borderRadius: 4, paddingVertical: 12, paddingHorizontal: 24, ...effects.shadowSurface,
   },
-  editBtnText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 2, color: colors.sepia },
+  editBtnText: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 3, color: colors.sepia, fontWeight: '700' },
   settingsBtn: {
-    backgroundColor: 'rgba(15,10,5,0.65)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
-    paddingVertical: 10, paddingHorizontal: 12, borderRadius: 2, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)',
+    borderRadius: 4, paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'center', alignItems: 'center', ...effects.shadowSurface,
   },
-  followBtn: { marginTop: 14, backgroundColor: colors.sepia, borderRadius: 2, paddingVertical: 12, paddingHorizontal: 28 },
-  followingBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.ash },
-  followBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.ink, textAlign: 'center' },
-  followingBtnText: { color: colors.fog },
-  ghostBtn: { paddingVertical: 12, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2 },
-  ghostBtnText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2, color: colors.bone },
-  primaryBtn: { backgroundColor: colors.sepia, paddingVertical: 14, paddingHorizontal: 28, borderRadius: 2 },
-  primaryBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.ink },
-  ctaBtn: { borderWidth: 1, borderColor: colors.sepia, backgroundColor: 'rgba(196,150,26,0.1)', paddingVertical: 12, alignItems: 'center', borderRadius: 2, marginBottom: 16 },
-  ctaBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.sepia },
+  followBtn: { 
+    marginTop: 14, backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', 
+    borderRadius: 4, paddingVertical: 14, paddingHorizontal: 32, ...effects.shadowSurface,
+  },
+  followingBtn: { backgroundColor: 'rgba(5,3,2,0.95)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.2)' },
+  followBtnText: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 3, color: '#F2ECD8', textAlign: 'center', fontWeight: '700', ...effects.textGlowSepia },
+  followingBtnText: { color: colors.fog, textShadowRadius: 0 },
+  ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,8,5,0.8)' },
+  ghostBtnText: { fontFamily: fonts.mono, fontWeight: '700', fontSize: 10, letterSpacing: 3, color: '#F2ECD8' },
+  primaryBtn: { backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowSurface },
+  primaryBtnText: { fontFamily: fonts.mono, fontWeight: '700', fontSize: 10, letterSpacing: 3, color: '#F2ECD8', ...effects.textGlowSepia },
+  ctaBtn: { borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', backgroundColor: 'rgba(14,11,8,0.9)', paddingVertical: 14, alignItems: 'center', borderRadius: 4, marginBottom: 16, ...effects.shadowSurface },
+  ctaBtnText: { fontFamily: fonts.mono, fontWeight: '700', fontSize: 10, letterSpacing: 3, color: '#F2ECD8', ...effects.textGlowSepia },
 
   // ── Stats ──
-  statsGrid: { flexDirection: 'row', width: '100%', marginTop: 20, justifyContent: 'center', alignItems: 'center' },
-  statCard: { flex: 1, paddingVertical: 12, alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)' },
-  statValue: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, lineHeight: 26, ...effects.textGlowSepia },
-  statLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, marginTop: 4, opacity: 0.8 },
-  statDivider: { width: StyleSheet.hairlineWidth, height: 24, backgroundColor: 'rgba(139,105,20,0.2)' },
+  statsGrid: { 
+    flexDirection: 'row', width: '100%', marginTop: 24, 
+    justifyContent: 'center', alignItems: 'center',
+    backgroundColor: 'rgba(10,8,5,0.85)',
+    borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.15)',
+    borderRadius: 6,
+    ...effects.shadowSurface,
+  },
+  statCard: { flex: 1, paddingVertical: 16, paddingHorizontal: 4, alignItems: 'center' },
+  statValue: { fontFamily: fonts.mono, fontSize: 18, color: '#F2ECD8', lineHeight: 22, ...effects.textGlowSepia, fontWeight: '700' },
+  statLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginTop: 4, opacity: 0.8 },
+  statDivider: { width: 1.5, height: 32, backgroundColor: 'rgba(139,105,20,0.15)' },
 
   // ── Streak ──
   streakBadge: {
@@ -1323,41 +1218,42 @@ const s = StyleSheet.create({
   posterImg: { width: '100%', height: '100%', borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.2)' },
   posterBottomGrad: {
     position: 'absolute', bottom: 0, left: 0, right: 0,
-    padding: 6, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
+    padding: 4, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.65)', borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
+    overflow: 'hidden', flexWrap: 'wrap',
   },
   posterRating: { fontFamily: fonts.uiBold, fontSize: 9, color: colors.sepia },
   posterTimeAgo: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1, color: colors.fog },
 
-  // ── Tier Glow Effects ──
+  // ── Tier Borders (Shadows Purged) ──
   auteurGlow: {
-    borderWidth: 1, borderColor: 'rgba(107,26,10,0.4)', borderRadius: 4,
-    shadowColor: '#6B1A0A', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 4,
+    borderWidth: 1, borderColor: 'rgba(107,26,10,0.8)', borderRadius: 2, borderStyle: 'solid',
   },
   archivistGlow: {
-    borderWidth: 1, borderColor: 'rgba(196,150,26,0.3)', borderRadius: 4,
-    shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 4,
+    borderWidth: 1, borderColor: 'rgba(196,150,26,0.5)', borderRadius: 2, borderStyle: 'solid',
   },
 
   // ── Collection Grid ──
-  collectionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  collectionGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   collectionCard: {
-    width: (SCREEN_W - 32 - 16) / 3, alignItems: 'center', justifyContent: 'center', gap: 8,
-    paddingVertical: 16, paddingHorizontal: 4,
-    backgroundColor: 'rgba(15,10,5,0.85)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', borderRadius: 2,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 10, elevation: 3,
+    width: (SCREEN_W - 32 - 20) / 3, alignItems: 'center', justifyContent: 'center', gap: 10,
+    paddingVertical: 18, paddingHorizontal: 4,
+    backgroundColor: 'rgba(10,8,5,0.85)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 6,
+    ...effects.shadowSurface,
   },
   collectionIconCircle: {
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(255,255,255,0.03)', alignItems: 'center', justifyContent: 'center',
+    width: 38, height: 38, borderRadius: 19, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.2)',
+    backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center',
+    ...effects.shadowSurface,
   },
-  collectionCardLabel: { fontFamily: fonts.display, fontSize: 13, color: colors.parchment, textAlign: 'center', letterSpacing: 0.5 },
-  collectionCardDesc: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
-  collectionCardCount: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment },
+  collectionCardLabel: { fontFamily: fonts.mono, fontSize: 10, color: '#F2ECD8', textAlign: 'center', letterSpacing: 1.5, fontWeight: '700' },
+  collectionCardDesc: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog, fontStyle: 'italic' },
+  collectionCardCount: { fontFamily: fonts.display, fontSize: 16, color: colors.sepia },
   collectionCardWide: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 14, borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
-    borderRadius: 2, backgroundColor: 'rgba(15,10,5,0.85)',
+    paddingVertical: 16, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.2)',
+    borderRadius: 6, backgroundColor: 'rgba(15,10,5,0.85)',
+    ...effects.shadowSurface,
   },
 
   // ── Tab Content: Grids ──
@@ -1380,14 +1276,14 @@ const s = StyleSheet.create({
   filterChipTextActive: { color: colors.sepia },
   searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(22,18,12,0.6)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', borderRadius: 2, paddingHorizontal: 10 },
   searchIcon: { fontSize: 14, color: colors.fog, opacity: 0.5, marginRight: 6 },
-  searchInput: { flex: 1, fontFamily: fonts.sub, fontSize: 13, color: colors.parchment, paddingVertical: 10 },
+  searchInput: { flex: 1, fontFamily: fonts.sub, fontSize: 11, color: colors.parchment, paddingVertical: 10 },
   searchClear: { padding: 4 },
 
   // ── Empty State ──
-  emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, backgroundColor: colors.soot },
+  emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderStyle: 'dashed', borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2, backgroundColor: 'rgba(14,11,8,0.7)' },
   emptyIcon: { fontSize: 40, color: colors.sepia, marginBottom: 16, opacity: 0.6 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8 },
-  emptyDesc: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center', lineHeight: 20, fontStyle: 'italic' },
+  emptyTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, marginBottom: 8 },
+  emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, textAlign: 'center', lineHeight: 16, fontStyle: 'italic' },
 
   // ── Stacks ──
   stacksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
@@ -1397,11 +1293,11 @@ const s = StyleSheet.create({
   stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.55)' },
   stackContent: { padding: 12 },
   stackBadge: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, backgroundColor: 'rgba(196,150,26,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 1, alignSelf: 'flex-start', overflow: 'hidden', marginBottom: 4 },
-  stackTitle: { fontFamily: fonts.display, fontSize: 13, color: colors.parchment, letterSpacing: 0.5, lineHeight: 17 },
-  stackDesc: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic', lineHeight: 16, marginTop: 4 },
+  stackTitle: { fontFamily: fonts.display, fontSize: 11, color: colors.parchment, letterSpacing: 0.5, lineHeight: 14 },
+  stackDesc: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, fontStyle: 'italic', lineHeight: 13, marginTop: 4 },
 
   // ── Projector Tab ──
-  card: { backgroundColor: colors.soot, borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', borderRadius: 2, padding: 16, gap: 10 },
+  card: { backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 2, padding: 16, gap: 10 },
   favouriteRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
   // ── Account Section ──
@@ -1419,9 +1315,9 @@ const s = StyleSheet.create({
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   loadingText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.sepia },
   notFoundIcon: { marginBottom: 16, opacity: 0.4 },
-  notFoundTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8 },
-  notFoundBody: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', textAlign: 'center', marginBottom: 24 },
-  privateBody: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, opacity: 0.7, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  notFoundTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8 },
+  notFoundBody: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic', textAlign: 'center', marginBottom: 24 },
+  privateBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.7, textAlign: 'center', lineHeight: 18, marginBottom: 24 },
   ghostBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
   // ── NEW: SectionLabel ──
@@ -1429,8 +1325,8 @@ const s = StyleSheet.create({
 
   // ── NEW: Tab Header ──
   tabHeaderTextWrap: { flex: 1 },
-  tabHeaderUsername: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.fog },
-  tabHeaderTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, lineHeight: 24 },
+  tabHeaderUsername: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5, color: colors.fog },
+  tabHeaderTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, lineHeight: 22 },
   tabScrollContent: { paddingBottom: 80, paddingTop: 8 },
   tabContentPad: { paddingHorizontal: 16 },
   tabGap: { gap: 28 },
@@ -1440,10 +1336,10 @@ const s = StyleSheet.create({
   filterChipRowTight: { gap: 6 },
   searchIconStyle: { opacity: 0.5, marginRight: 6 },
   searchWrapFlex: { flex: 1 },
-  searchNoResults: { textAlign: 'center', padding: 24, color: colors.fog, fontFamily: fonts.body, fontSize: 13 },
+  searchNoResults: { textAlign: 'center', padding: 24, color: colors.fog, fontFamily: fonts.body, fontSize: 11 },
 
   // ── NEW: Poster Cards ──
-  posterPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  posterPlaceholder: { backgroundColor: '#050402', justifyContent: 'center', alignItems: 'center' },
   posterRatingRow: { flexDirection: 'row', gap: 2 },
   posterCardWrap: { width: POSTER_COL_4, aspectRatio: 2 / 3, position: 'relative' },
   statusBadgeAbandoned: { borderColor: 'rgba(139,30,30,0.4)' },
@@ -1459,28 +1355,28 @@ const s = StyleSheet.create({
   ctaBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
   // ── NEW: Stacks ──
-  stackEmptyBg: { flex: 1, backgroundColor: colors.soot },
+  stackEmptyBg: { flex: 1, backgroundColor: 'rgba(8,6,4,0.98)' },
 
   // ── NEW: Projector Tab ──
   projectorGap: { gap: 32 },
   projectorHeader: { alignItems: 'center', paddingHorizontal: 16, paddingTop: 8 },
   projectorSuper: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2.5, color: colors.sepia, marginBottom: 6 },
-  projectorTitle: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 32, textAlign: 'center' },
-  projectorSub: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', marginTop: 6 },
+  projectorTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, lineHeight: 28, textAlign: 'center' },
+  projectorSub: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic', marginTop: 6 },
   projectorSectionsWrap: { paddingHorizontal: 16, gap: 32 },
 
   // ── NEW: Favourites ──
   favPosterThumb: { width: 28, height: 42, borderRadius: 2 },
   favTextWrap: { flex: 1 },
-  favTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 16 },
+  favTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.parchment, lineHeight: 14 },
   favRatingRow: { flexDirection: 'row', gap: 2, marginTop: 2 },
 
   // ── NEW: Calendar ──
-  comingSoonText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center', fontStyle: 'italic' },
+  comingSoonText: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, textAlign: 'center', fontStyle: 'italic' },
   emptyLockIcon: { marginBottom: 12, opacity: 0.5 },
 
   // ── NEW: Avatar ──
-  avatarPlaceholder: { backgroundColor: colors.soot, justifyContent: 'center', alignItems: 'center' },
+  avatarPlaceholder: { backgroundColor: '#050402', justifyContent: 'center', alignItems: 'center' },
   avatarInitial: { fontFamily: fonts.display, fontSize: 36, color: colors.sepia },
 
   // ── NEW: Level Badge ──

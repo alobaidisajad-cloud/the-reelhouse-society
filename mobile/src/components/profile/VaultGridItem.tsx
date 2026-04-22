@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { VaultItem } from '@/src/types';
@@ -13,7 +14,7 @@ interface VaultGridItemProps {
 export const VaultGridItem = memo(function VaultGridItem({ item, onPress }: VaultGridItemProps) {
     const posterUri = item.poster_path ? tmdb.poster(item.poster_path, 'w185') : null;
     return (
-        <TouchableOpacity style={s.container} onPress={onPress}>
+        <TouchableOpacity style={s.container} onPress={() => { Haptics.selectionAsync(); onPress(); }} activeOpacity={0.7}>
             {posterUri ? (
                 <Image source={{ uri: posterUri }} style={s.image} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`vault-${item.id}`} />
             ) : (

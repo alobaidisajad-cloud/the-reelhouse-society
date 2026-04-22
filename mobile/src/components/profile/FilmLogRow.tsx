@@ -1,6 +1,7 @@
 import React, { memo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Image } from 'expo-image';
+import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import { tmdb } from '@/src/lib/tmdb';
@@ -23,14 +24,14 @@ interface FilmLogRowProps {
 export const FilmLogRow = memo(function FilmLogRow({ log, onPress, isOwnProfile }: FilmLogRowProps) {
     const posterUri = log.poster_path ? tmdb.poster(log.poster_path, 'w92') : null;
     return (
-        <TouchableOpacity style={s.container} onPress={onPress} activeOpacity={0.7}>
+        <TouchableOpacity style={s.container} onPress={() => { Haptics.selectionAsync(); onPress?.(); }} activeOpacity={0.7}>
             {posterUri ? (
                 <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`log-${log.id}`} />
             ) : (
                 <View style={[s.poster, s.posterPlaceholder]} />
             )}
             <View style={s.info}>
-                <Text style={s.title}>{log.film_title}</Text>
+                <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{log.film_title}</Text>
                 <View style={s.meta}>
                     <Text style={s.year}>{log.year}</Text>
                     {log.rating > 0 && <ReelRating rating={log.rating} size={10} />}

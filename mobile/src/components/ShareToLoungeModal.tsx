@@ -72,7 +72,7 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
                 <View style={s.card}>
                     <View style={s.header}>
                         <Text style={s.title}>Share to Lounge</Text>
-                        <TouchableOpacity onPress={onClose}>
+                        <TouchableOpacity onPress={() => { Haptics.selectionAsync(); onClose(); }} activeOpacity={0.7} hitSlop={{top:10,bottom:10,left:10,right:10}}>
                             <Text style={s.closeText}>✕</Text>
                         </TouchableOpacity>
                     </View>
@@ -116,6 +116,7 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
                                 style={[s.sendBtn, (!selectedLounge || sending) && s.sendBtnDisabled]}
                                 onPress={handleSend}
                                 disabled={!selectedLounge || sending}
+                                activeOpacity={0.8}
                             >
                                 <Text style={s.sendText}>{sending ? 'SENDING...' : 'SHARE TO LOUNGE'}</Text>
                             </TouchableOpacity>

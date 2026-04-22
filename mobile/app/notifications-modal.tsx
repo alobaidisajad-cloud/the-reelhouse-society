@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, FlatList, Platform } from 're
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useNotificationStore, AppNotification } from '@/src/stores/social';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import { Heart, MessageCircle, UserPlus, Star, Award, Bell } from 'lucide-react-native';
@@ -18,7 +18,7 @@ const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
   default: { Icon: Award, color: colors.fog },
 };
 
-function NotificationItem({ item, index, onRead, onDismiss }: { item: AppNotification; index: number; onRead: (id: string) => void; onDismiss: (id: string) => void }) {
+const NotificationItem = React.memo(function NotificationItem({ item, index, onRead, onDismiss }: { item: AppNotification; index: number; onRead: (id: string) => void; onDismiss: (id: string) => void }) {
   const isRead = item.read;
   const router = useRouter();
   const typeInfo = TYPE_ICONS[item.type] || TYPE_ICONS.default;
@@ -26,12 +26,15 @@ function NotificationItem({ item, index, onRead, onDismiss }: { item: AppNotific
   
   const handlePress = () => {
     if (!isRead) {
-      Haptics.selectionAsync();
       onRead(item.id);
     }
     // Navigate to film or user if available
     if (item.film_id) router.push(`/film/${item.film_id}`);
     else if (item.from_username) router.push(`/user/${item.from_username}`);
+  };
+
+  const handlePressIn = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   };
 
   const posterUri = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null;
@@ -40,8 +43,9 @@ function NotificationItem({ item, index, onRead, onDismiss }: { item: AppNotific
     <Animated.View entering={FadeInUp.duration(300).delay(index * 50)} exiting={FadeOutDown.duration(200)}>
       <TouchableOpacity 
         style={[s.itemWrap, !isRead && s.itemUnread]} 
+        onPressIn={handlePressIn}
         onPress={handlePress}
-        activeOpacity={0.7}
+        activeOpacity={0.85}
       >
         {/* Action icon */}
         <View style={[s.iconCircle, { borderColor: typeInfo.color }]}>
@@ -50,18 +54,22 @@ function NotificationItem({ item, index, onRead, onDismiss }: { item: AppNotific
 
         {/* Content */}
         <View style={s.itemContent}>
-          <Text style={s.itemMessage}>
+          <Text style={s.itemMessage} numberOfLines={3} ellipsizeMode="tail">
             <Text style={s.itemUser}>@{item.from_username || 'system'}</Text> {item.message}
           </Text>
-          <Text style={s.itemTime}>{new Date(item.created_at).toLocaleDateString()}</Text>
+          <Text style={s.itemTime} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{new Date(item.created_at).toLocaleDateString()}</Text>
         </View>
 
         {/* Mini poster thumbnail */}
-        {posterUri && (
-          <Image source={{ uri: posterUri }} style={s.miniPoster} contentFit="cover" />
-        )}
+        {posterUri ? (
+          <Image source={{ uri: posterUri }} style={s.miniPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
+        ) : item.film_id ? (
+          <View style={[s.miniPoster, { alignItems: 'center', justifyContent: 'center' }]}>
+            <Star size={10} color={colors.fog} />
+          </View>
+        ) : null}
 
-        <TouchableOpacity style={s.dismissBtn} onPress={() => {
+        <TouchableOpacity style={s.dismissBtn} hitSlop={{top: 20, bottom: 20, left: 15, right: 15}} activeOpacity={0.6} onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onDismiss(item.id);
         }}>
@@ -70,7 +78,7 @@ function NotificationItem({ item, index, onRead, onDismiss }: { item: AppNotific
       </TouchableOpacity>
     </Animated.View>
   );
-}
+});
 
 export default function NotificationsModal() {
   const router = useRouter();
@@ -87,16 +95,18 @@ export default function NotificationsModal() {
       <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
 
       <View style={s.header}>
-        <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
-          <Text style={s.closeText}>CLOSE</Text>
+        <TouchableOpacity style={s.closeBtn} onPress={() => { Haptics.selectionAsync(); router.back(); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+          <Text style={s.closeText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>CLOSE</Text>
         </TouchableOpacity>
         <Text style={s.title}>Dispatches</Text>
         <TouchableOpacity 
            style={s.markReadBtn} 
            onPress={handleMarkAllRead}
            disabled={notifications.every(n => n.read)}
+           activeOpacity={0.7}
+           hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
         >
-          <Text style={[s.markReadText, notifications.every(n => n.read) && { opacity: 0.3 }]}>READ ALL</Text>
+          <Text style={[s.markReadText, notifications.every(n => n.read) && { opacity: 0.3 }]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>READ ALL</Text>
         </TouchableOpacity>
       </View>
 
@@ -144,7 +154,7 @@ const s = StyleSheet.create({
   markReadBtn: { width: 80, alignItems: 'flex-end' },
   markReadText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, color: colors.sepia },
 
-  listContent: { paddingBottom: 40 },
+  listContent: { paddingBottom: 40, flexGrow: 1 },
   
   itemWrap: {
     flexDirection: 'row', alignItems: 'center', padding: 14,

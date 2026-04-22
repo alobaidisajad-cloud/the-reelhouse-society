@@ -80,7 +80,7 @@ export default function ListModal() {
                     .filter((r) => !films.some(f => f.id === r.id))
                     .slice(0, 6) as SearchResult[];
                 setResults(filtered);
-            } catch { setResults([]); }
+            } catch (err: unknown) { setResults([]); }
             finally { setSearching(false); }
         }, 400);
     }, [films]);
@@ -150,8 +150,8 @@ export default function ListModal() {
                 >
                     <GripVertical size={16} color={isActive ? colors.sepia : colors.fog} style={{ opacity: 0.5 }} />
                     {item.poster_path && <Image source={{ uri: tmdb.poster(item.poster_path, 'w92') }} style={s.filmPoster} />}
-                    <Text style={s.filmTitle} numberOfLines={1}>{item.title}</Text>
-                    <TouchableOpacity onPress={() => removeFilm(item.id)} style={s.removeBtn}>
+                    <Text style={s.filmTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{item.title}</Text>
+                    <TouchableOpacity onPress={() => removeFilm(item.id)} style={s.removeBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} activeOpacity={0.6}>
                         <X size={14} color={colors.danger} />
                     </TouchableOpacity>
                 </TouchableOpacity>
@@ -170,9 +170,9 @@ export default function ListModal() {
             <View style={s.header}>
                 <View>
                     <Text style={s.headerLabel}>NEW STACK</Text>
-                    <Text style={s.headerTitle}>Curate a Stack</Text>
+                    <Text style={s.headerTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Curate a Stack</Text>
                 </View>
-                <TouchableOpacity onPress={() => router.back()} style={s.closeBtn} activeOpacity={0.7}>
+                <TouchableOpacity onPress={() => { Haptics.selectionAsync(); router.back(); }} style={s.closeBtn} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                     <X size={16} color={colors.fog} />
                     <Text style={s.closeBtnText}>CLOSE</Text>
                 </TouchableOpacity>
@@ -189,6 +189,9 @@ export default function ListModal() {
                     placeholderTextColor={colors.fog}
                     autoFocus
                     maxLength={100}
+                    selectionColor={'rgba(218,165,32,0.3)'}
+                    cursorColor={colors.sepia}
+                    disableFullscreenUI={true}
                 />
             </View>
 
@@ -204,6 +207,12 @@ export default function ListModal() {
                         value={query}
                         onChangeText={handleSearch}
                         returnKeyType="search"
+                        selectionColor={'rgba(218,165,32,0.3)'}
+                        cursorColor={colors.sepia}
+                        disableFullscreenUI={true}
+                        autoCorrect={false}
+                        spellCheck={false}
+                        autoCapitalize="words"
                     />
                 </View>
 
@@ -214,7 +223,7 @@ export default function ListModal() {
                             <TouchableOpacity key={r.id} style={s.dropRow} onPress={() => addFilm(r)} activeOpacity={0.7}>
                                 {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={s.dropPoster} cachePolicy="memory-disk" />}
                                 <View style={s.dropFlex}>
-                                    <Text style={s.dropTitle} numberOfLines={1}>{r.title ?? r.name}</Text>
+                                    <Text style={s.dropTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{r.title ?? r.name}</Text>
                                     <Text style={s.dropMeta}>{r.release_date?.slice(0, 4) ?? '—'}</Text>
                                 </View>
                                 <Plus size={16} color={colors.sepia} />
@@ -240,6 +249,9 @@ export default function ListModal() {
                     multiline
                     textAlignVertical="top"
                     maxLength={500}
+                    selectionColor={'rgba(218,165,32,0.3)'}
+                    cursorColor={colors.sepia}
+                    disableFullscreenUI={true}
                 />
             </View>
 
@@ -251,6 +263,7 @@ export default function ListModal() {
                         style={[s.toggleBtn, !isPrivate && s.toggleActive]}
                         onPress={() => { setIsPrivate(false); Haptics.selectionAsync(); }}
                         activeOpacity={0.7}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         <Globe size={14} color={!isPrivate ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, !isPrivate && s.toggleTextActive]}>PUBLIC</Text>
@@ -259,6 +272,7 @@ export default function ListModal() {
                         style={[s.toggleBtn, isPrivate && s.toggleActive]}
                         onPress={() => { setIsPrivate(true); Haptics.selectionAsync(); }}
                         activeOpacity={0.7}
+                        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     >
                         <Lock size={14} color={isPrivate ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, isPrivate && s.toggleTextActive]}>PRIVATE</Text>
@@ -273,13 +287,14 @@ export default function ListModal() {
                     onPress={handleSave}
                     disabled={saving || !title.trim()}
                     activeOpacity={0.8}
+                    hitSlop={{ top: 15, bottom: 15 }}
                 >
-                    <Text style={s.submitText}>
+                    <Text style={s.submitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                         {saving ? 'SAVING...' : (editList ? 'SAVE CHANGES' : 'CREATE LIST')}
                     </Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={s.cancelBtn} onPress={() => router.back()} activeOpacity={0.7}>
-                    <Text style={s.cancelText}>Cancel</Text>
+                <TouchableOpacity style={s.cancelBtn} onPress={() => router.back()} activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                    <Text style={s.cancelText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Cancel</Text>
                 </TouchableOpacity>
             </View>
         </>
@@ -299,6 +314,9 @@ export default function ListModal() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
                 containerStyle={{flex: 1}}
+                initialNumToRender={10}
+                maxToRenderPerBatch={10}
+                windowSize={3}
             />
         </KeyboardAvoidingView>
     );

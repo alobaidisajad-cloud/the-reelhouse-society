@@ -1,10 +1,13 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Buster from '@/src/components/Buster';
 import { RadarChart } from '@/src/components/profile/RadarChart';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '../PressableScale';
 
 interface DNALog {
     year?: number | string;
@@ -20,6 +23,7 @@ interface DNAUser {
 const { width } = Dimensions.get('window');
 
 export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }: { logs: DNALog[]; user: DNAUser; onClose: () => void }) {
+    const insets = useSafeAreaInsets();
     if (!logs || logs.length < 5) return null;
 
     const decades: Record<string, number> = {};
@@ -52,9 +56,9 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
 
     return (
         <Animated.View entering={FadeInDown} exiting={FadeOut} style={s.overlay}>
-            <TouchableOpacity onPress={onClose} style={s.closeBtn}>
+            <PressableScale onPress={() => { onClose(); }} style={[s.closeBtn, { top: Math.max(insets.top + 10, 40) }]} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic>
                 <X size={16} color={colors.parchment} />
-            </TouchableOpacity>
+            </PressableScale>
 
             <View style={s.card}>
                 <View style={s.grainOverlay} />
@@ -63,9 +67,9 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
                     <View style={s.avatarWrap}>
                         <Buster size={24} mood="smiling" />
                     </View>
-                    <View>
-                        <Text style={s.username}>@{user?.username ?? 'cinephile'}</Text>
-                        <Text style={s.subtext}>THE REELHOUSE SOCIETY</Text>
+                    <View style={s.userInfoWrap}>
+                        <Text style={s.username} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>@{user?.username ?? 'cinephile'}</Text>
+                        <Text style={s.subtext} numberOfLines={1}>THE REELHOUSE SOCIETY</Text>
                     </View>
                 </View>
 
@@ -75,8 +79,8 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
                 </View>
 
                 <View style={s.archetypeWrap}>
-                    <Text style={s.archetypeLabel}>{archetype}</Text>
-                    <Text style={s.archetypeSub}>SCHOOL OF {tones.toUpperCase()}</Text>
+                    <Text style={s.archetypeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{archetype}</Text>
+                    <Text style={s.archetypeSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SCHOOL OF {tones.toUpperCase()}</Text>
                 </View>
 
                 {avgAutopsy && (
@@ -87,12 +91,12 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
 
                 <View style={s.statsGrid}>
                     <View style={s.statBox}>
-                        <Text style={s.statVal}>{logs.length}</Text>
-                        <Text style={s.statLabel}>FILMS</Text>
+                        <Text style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{logs.length}</Text>
+                        <Text style={s.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>FILMS</Text>
                     </View>
                     <View style={s.statBox}>
-                        <Text style={s.statVal}>{avgRating}</Text>
-                        <Text style={s.statLabel}>AVG RATING</Text>
+                        <Text style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{avgRating}</Text>
+                        <Text style={s.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>AVG RATING</Text>
                     </View>
                 </View>
 
@@ -103,8 +107,8 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
                             const pct = Math.round((count / logs.length) * 100);
                             return (
                                 <View key={decade} style={s.decadeBox}>
-                                    <Text style={s.decadeLabel}>{decade}</Text>
-                                    <Text style={s.decadePct}>{pct}%</Text>
+                                    <Text style={s.decadeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{decade}</Text>
+                                    <Text style={s.decadePct} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{pct}%</Text>
                                 </View>
                             );
                         })}
@@ -149,9 +153,10 @@ const s = StyleSheet.create({
         zIndex: -1,
     },
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 10 },
-    avatarWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.ash, alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia },
+    avatarWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#050402', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia },
     username: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.parchment },
     subtext: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia, marginTop: 2 },
+    userInfoWrap: { flex: 1, paddingRight: 10 },
     titleWrap: { alignItems: 'center', marginBottom: 16 },
     eyebrow: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.sepia, marginBottom: 8 },
     title: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment },
@@ -172,7 +177,7 @@ const s = StyleSheet.create({
     obscurityWrap: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)', paddingVertical: 10, marginBottom: 10 },
     obscurityLabel: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.fog },
     obscurityVal: { fontFamily: fonts.display, fontSize: 24, color: colors.sepia },
-    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: colors.ash, paddingTop: 16 },
+    footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)', paddingTop: 16 },
     logo: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia },
     footerSub: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, letterSpacing: 1, textAlign: 'right' }
 });

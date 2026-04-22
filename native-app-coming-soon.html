@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>ReelHouse — Native App Coming Soon</title>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Bungee+Shade&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════
+   EXACT CSS FROM PUBLISHED REELHOUSE SLIDES
+   Source: slide-count-lightmode-01.html, slide4-rule-one.html, slide-buster-dev-02.html
+   ═══════════════════════════════════════════════ */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+  --ink: #0B0A08;
+  --parchment: #EDE5D8;
+  --sepia: #C4961A;
+  --soot: #0E0D0A;
+  --flicker: #F8F0C0;
+  --blood-reel: #6B1A0A;
+  --ash: #2A2118;
+  --bone: #C8B99A;
+  --fog: #6B6055;
+}
+
+body {
+  background: #000;
+  display: flex;
+  gap: 30px;
+  padding: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+  font-family: 'Courier Prime', monospace;
+}
+
+.canvas {
+  position: relative;
+  width: 1080px;
+  height: 1080px;
+  overflow: hidden;
+  background: linear-gradient(155deg, #1a150e 0%, #0B0A08 35%, #12100b 60%, #0B0A08 100%);
+  zoom: 0.6;
+  flex-shrink: 0;
+}
+
+.grain {
+  position: absolute; inset: 0; z-index: 2; pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 156px 156px;
+}
+
+.vignette {
+  position: absolute; inset: 0; z-index: 3; pointer-events: none;
+  background: radial-gradient(ellipse 85% 80% at center,
+    transparent 35%,
+    rgba(0,0,0,0.35) 65%,
+    rgba(0,0,0,0.8) 100%);
+}
+
+.scanlines {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  background: repeating-linear-gradient(0deg,
+    transparent, transparent 2px,
+    rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
+}
+
+.aged-border {
+  position: absolute; inset: 24px; z-index: 5;
+  border: 1px solid rgba(200, 185, 154, 0.12);
+  pointer-events: none;
+}
+.aged-border::before {
+  content: '';
+  position: absolute; inset: 8px;
+  border: 1px solid rgba(200, 185, 154, 0.06);
+}
+
+.corner { position: absolute; width: 35px; height: 35px; z-index: 6; pointer-events: none; opacity: 0.35; }
+.corner.tl { top: 20px; left: 20px; border-top: 2px solid var(--sepia); border-left: 2px solid var(--sepia); }
+.corner.tr { top: 20px; right: 20px; border-top: 2px solid var(--sepia); border-right: 2px solid var(--sepia); }
+.corner.bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--sepia); border-left: 2px solid var(--sepia); }
+.corner.br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--sepia); border-right: 2px solid var(--sepia); }
+
+.content {
+  position: absolute; inset: 0; z-index: 10;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 100px 80px;
+  text-align: center;
+}
+
+/* ═══════════════════════════════════════════════
+   COVER SLIDE TYPOGRAPHY
+   Source: slide-count-lightmode-01.html
+   ═══════════════════════════════════════════════ */
+.logo {
+  width: 140px; height: auto;
+  margin-bottom: 40px;
+  filter: drop-shadow(0 0 50px rgba(196, 150, 26, 0.3));
+  opacity: 0.8;
+}
+
+.stamp {
+  font-family: 'Special Elite', cursive;
+  font-size: 16px; letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--bone);
+  border: 2px solid var(--bone);
+  padding: 10px 32px;
+  transform: rotate(-1.5deg);
+  margin-bottom: 50px;
+  opacity: 0.8;
+}
+
+.title {
+  font-family: 'Rye', serif;
+  font-size: 58px;
+  color: var(--parchment);
+  line-height: 1.2;
+  text-shadow: 0 3px 25px rgba(0,0,0,0.7);
+  margin-bottom: 25px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.title em {
+  font-style: normal;
+  color: var(--sepia);
+}
+
+.subtitle {
+  font-family: 'Special Elite', cursive;
+  font-size: 22px;
+  color: var(--bone);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 40px;
+  opacity: 0.8;
+}
+
+.divider {
+  width: 180px; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--sepia), transparent);
+  margin-bottom: 30px;
+}
+
+.archives-label {
+  font-family: 'Courier Prime', monospace;
+  font-size: 14px;
+  color: var(--fog);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════
+   FACT SLIDE TYPOGRAPHY
+   Source: slide4-rule-one.html
+   ═══════════════════════════════════════════════ */
+.logo-sm {
+  width: 100px; height: auto;
+  margin-bottom: 30px;
+  filter: drop-shadow(0 0 30px rgba(196, 150, 26, 0.3));
+}
+
+.fact-number {
+  font-family: 'Special Elite', cursive;
+  font-size: 14px; letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--sepia);
+  margin-bottom: 30px;
+  opacity: 0.9;
+}
+
+.fact-title {
+  font-family: 'Rye', serif;
+  font-size: 36px;
+  color: var(--parchment);
+  line-height: 1.2;
+  text-shadow: 0 3px 30px rgba(0,0,0,0.9);
+  margin-bottom: 10px;
+  letter-spacing: 0.02em;
+}
+.fact-title em {
+  font-style: normal;
+  color: var(--sepia);
+}
+
+.fact-text {
+  font-family: 'Special Elite', cursive;
+  font-size: 21px;
+  color: var(--bone);
+  line-height: 1.7;
+  max-width: 720px;
+  text-shadow: 0 2px 15px rgba(0,0,0,0.8);
+}
+.fact-text .punchline {
+  display: block;
+  margin-top: 16px;
+  color: var(--flicker);
+  font-size: 23px;
+}
+
+.footer-abs {
+  font-family: 'Courier Prime', monospace;
+  font-size: 12px;
+  color: var(--fog);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  position: absolute;
+  bottom: 45px;
+  z-index: 10;
+}
+
+/* Buster lurking — exact from slide4 */
+.buster {
+  position: absolute;
+  bottom: 50px; right: 55px;
+  z-index: 11;
+  opacity: 0.035;
+  transform: rotate(5deg);
+  filter: brightness(0.5);
+}
+
+/* ═══════════════════════════════════════════════
+   TERMINAL / MEMO FORMAT
+   Source: slide-buster-dev-02.html
+   ═══════════════════════════════════════════════ */
+.photo-frame {
+  background: var(--ink);
+  border: 2px solid rgba(196, 150, 26, 0.3);
+  padding: 40px;
+  display: flex; flex-direction: column;
+  align-items: flex-start; justify-content: center;
+  position: relative; overflow: hidden;
+  width: 600px; margin-bottom: 50px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+}
+
+.memo-box {
+  width: 700px;
+  padding: 50px;
+  background: rgba(14, 13, 10, 0.7);
+  border: 1px solid rgba(196, 150, 26, 0.2);
+  border-left: 4px solid var(--sepia);
+  text-align: left;
+}
+
+.body-text {
+  font-family: 'Courier Prime', monospace;
+  font-size: 26px;
+  color: var(--bone);
+  line-height: 1.7;
+  margin-bottom: 25px;
+}
+.body-text:last-child { margin-bottom: 0; }
+.fade-text { color: var(--fog); }
+
+.stamp-small {
+  position: absolute;
+  top: 50px; right: 50px;
+  font-family: 'Special Elite', cursive;
+  font-size: 14px; letter-spacing: 0.1em;
+  color: var(--blood-reel);
+  border: 1px solid var(--blood-reel);
+  padding: 5px 12px;
+  transform: rotate(4deg);
+  opacity: 0.6;
+  z-index: 15;
+}
+
+/* Download controls */
+.controls {
+  width: 100%;
+  text-align: center;
+  padding: 25px;
+  background: #0A0A0A;
+  border-bottom: 1px dashed rgba(196,150,26,0.4);
+  position: sticky;
+  top: 0;
+  z-index: 999;
+}
+.dl-btn {
+  background: var(--sepia);
+  color: #000;
+  padding: 14px 35px;
+  font-size: 18px;
+  font-family: 'Special Elite', cursive;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  transition: 0.2s;
+}
+.dl-btn:hover { background: #E6B63A; }
+.dl-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+#status {
+  font-family: 'Courier Prime', monospace;
+  color: var(--bone);
+  font-size: 14px;
+  margin-top: 12px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="controls">
+  <button class="dl-btn" onclick="downloadAll()">DOWNLOAD ALL 5 SLIDES AS PNG</button>
+  <div id="status">Ready. Click to export 1080×1080 PNGs.</div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SLIDE 1 — COVER
+     Source format: slide-count-lightmode-01.html
+     ════════════════════════════════════════════════════ -->
+<div class="canvas" id="s1">
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+  <div class="aged-border"></div>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+
+  <div class="content">
+    <img class="logo" src="public/reelhouse-logo-transparent.png" alt="The ReelHouse Society">
+    <div class="stamp">Public Service Announcement</div>
+    <h1 class="title">THE NATIVE APP<br><em>IS COMING</em></h1>
+    <p class="subtitle">Here's what we're building. →</p>
+    <div class="divider"></div>
+    <p class="archives-label">Society Archives</p>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SLIDE 2 — CAPABILITIES I & II
+     Source format: slide4-rule-one.html
+     ════════════════════════════════════════════════════ -->
+<div class="canvas" id="s2">
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+  <div class="aged-border"></div>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+
+  <div class="content">
+    <img class="logo-sm" src="public/reelhouse-logo-transparent.png" alt="The ReelHouse Society">
+    <div class="fact-number">INTERNAL MEMO</div>
+    <h1 class="fact-title"><em>Native Capabilities</em></h1>
+    <div style="font-family: 'Special Elite', cursive; font-size: 16px; color: var(--fog); margin-bottom: 35px; letter-spacing: 0.1em;">Declassified for Public Distribution.</div>
+    <div class="divider"></div>
+
+    <p class="fact-text">
+      <strong style="color: var(--sepia);">I. Track Films.</strong> Log every film you watch. A member once forgot an entire Tarkovsky phase. The Society does not forgive this.
+      <br><br>
+      <strong style="color: var(--sepia);">II. Write Reviews.</strong> Rate from half a reel to five. Honesty is mandatory. Kindness is not.
+      <span class="punchline">* The average review takes 45 minutes to write. We have concerns but also respect.</span>
+    </p>
+  </div>
+
+  <p class="footer-abs">The ReelHouse Society Archives</p>
+
+  <svg class="buster" viewBox="0 0 100 140" width="100" height="140" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="#E8DFC8" opacity="0.92"/>
+    <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="none" stroke="rgba(242,232,160,0.15)" stroke-width="3"/>
+    <ellipse cx="38" cy="52" rx="6" ry="7" fill="#0A0703"/>
+    <ellipse cx="62" cy="52" rx="6" ry="7" fill="#0A0703"/>
+    <circle cx="40" cy="50" r="2" fill="white"/>
+    <circle cx="64" cy="50" r="2" fill="white"/>
+    <path d="M 34 68 Q 50 80 66 68" stroke="#0A0703" stroke-width="2.5" fill="none"/>
+    <rect x="40" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+    <rect x="46" y="69" width="4" height="6" fill="#0A0703" rx="0.5"/>
+    <rect x="52" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+    <rect x="58" y="67" width="3" height="4" fill="#0A0703" rx="0.5"/>
+  </svg>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SLIDE 3 — CAPABILITIES III & IV
+     Source format: slide4-rule-one.html
+     ════════════════════════════════════════════════════ -->
+<div class="canvas" id="s3">
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+  <div class="aged-border"></div>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+
+  <div class="content">
+    <img class="logo-sm" src="public/reelhouse-logo-transparent.png" alt="The ReelHouse Society">
+    <div class="fact-number">INTERNAL MEMO (CONT.)</div>
+    <h1 class="fact-title"><em>Native Capabilities</em></h1>
+    <div style="font-family: 'Special Elite', cursive; font-size: 16px; color: var(--fog); margin-bottom: 35px; letter-spacing: 0.1em;">Page 2 of 2. Handle with discretion.</div>
+    <div class="divider"></div>
+
+    <p class="fact-text">
+      <strong style="color: var(--sepia);">III. Build The Stacks.</strong> Curate lists so specific they become a personality trait. Your 41-film 'Rain Window Stares' collection is safe here.
+      <br><br>
+      <strong style="color: var(--sepia);">IV. The Lounge.</strong> Real-time chat rooms. Arguing about Kubrick at 3 AM with a stranger in another timezone is not a problem. It is the point.
+      <span class="punchline">* One member has more lists than films watched. We did not think this was possible.</span>
+    </p>
+  </div>
+
+  <p class="footer-abs">The ReelHouse Society Archives</p>
+
+  <svg class="buster" viewBox="0 0 100 140" width="100" height="140" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="#E8DFC8" opacity="0.92"/>
+    <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="none" stroke="rgba(242,232,160,0.15)" stroke-width="3"/>
+    <ellipse cx="38" cy="52" rx="6" ry="7" fill="#0A0703"/>
+    <ellipse cx="62" cy="52" rx="6" ry="7" fill="#0A0703"/>
+    <circle cx="40" cy="50" r="2" fill="white"/>
+    <circle cx="64" cy="50" r="2" fill="white"/>
+    <path d="M 34 68 Q 50 80 66 68" stroke="#0A0703" stroke-width="2.5" fill="none"/>
+    <rect x="40" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+    <rect x="46" y="69" width="4" height="6" fill="#0A0703" rx="0.5"/>
+    <rect x="52" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+    <rect x="58" y="67" width="3" height="4" fill="#0A0703" rx="0.5"/>
+  </svg>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SLIDE 4 — BUSTER STATUS REPORT
+     Source format: slide-buster-dev-02.html
+     ════════════════════════════════════════════════════ -->
+<div class="canvas" id="s4">
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+  <div class="aged-border"></div>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+
+  <div class="content">
+    <div class="stamp-small">CONFIDENTIAL</div>
+
+    <!-- Terminal -->
+    <div class="photo-frame">
+      <div style="font-family: 'Courier Prime', monospace; color: var(--sepia); font-size: 18px; margin-bottom: 20px;">> COMPILE REELHOUSE_NATIVE.APK...</div>
+      <div style="width: 100%; height: 20px; border: 1px solid var(--sepia); position: relative; margin-bottom: 10px;">
+        <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 34%; background: var(--sepia); opacity: 0.8;"></div>
+      </div>
+      <div style="font-family: 'Courier Prime', monospace; color: var(--fog); font-size: 14px;">> STATUS: 34% (Buster's shift: Hour 2,847)</div>
+
+      <!-- Buster SVG inside terminal -->
+      <svg viewBox="0 0 100 140" width="120" height="auto" style="position: absolute; bottom: -20px; right: 20px; transform: rotate(-10deg); opacity: 0.8;" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="#E8DFC8" opacity="0.92"/>
+        <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="none" stroke="rgba(242,232,160,0.15)" stroke-width="3"/>
+        <ellipse cx="38" cy="52" rx="6" ry="7" fill="#0A0703"/>
+        <ellipse cx="62" cy="52" rx="6" ry="7" fill="#0A0703"/>
+        <circle cx="40" cy="50" r="2" fill="white"/>
+        <circle cx="64" cy="50" r="2" fill="white"/>
+        <path d="M 34 68 Q 50 80 66 68" stroke="#0A0703" stroke-width="2.5" fill="none"/>
+        <rect x="40" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+        <rect x="46" y="69" width="4" height="6" fill="#0A0703" rx="0.5"/>
+        <rect x="52" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+        <rect x="58" y="67" width="3" height="4" fill="#0A0703" rx="0.5"/>
+      </svg>
+
+      <!-- Scanlines over terminal -->
+      <div style="position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(196, 150, 26, 0.05) 2px, rgba(196, 150, 26, 0.05) 4px);"></div>
+    </div>
+
+    <!-- Memo text -->
+    <div class="memo-box">
+      <p class="body-text">Buster is building the native app alone.</p>
+      <p class="body-text">It is difficult to write code without physical hands. He is managing.</p>
+      <p class="body-text"><span class="fade-text">The web beta is live. The app is next.</span></p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════════════════════
+     SLIDE 5 — CTA
+     Source format: slide-count-lightmode-01.html
+     ════════════════════════════════════════════════════ -->
+<div class="canvas" id="s5">
+  <div class="grain"></div>
+  <div class="vignette"></div>
+  <div class="scanlines"></div>
+  <div class="aged-border"></div>
+  <div class="corner tl"></div><div class="corner tr"></div>
+  <div class="corner bl"></div><div class="corner br"></div>
+
+  <div class="content">
+    <img class="logo" src="public/reelhouse-logo-transparent.png" alt="The ReelHouse Society">
+    <div class="stamp">Transmission Ends</div>
+    <h1 class="title">THE WEB BETA<br><em>IS LIVE NOW</em></h1>
+    <p class="subtitle">The app is next. →</p>
+    <div class="divider"></div>
+    <div style="border: 2px solid var(--bone); padding: 12px 40px; margin-bottom: 25px; opacity: 0.8;">
+      <span style="font-family: 'Rye', serif; font-size: 26px; color: var(--sepia); letter-spacing: 0.05em;">JOIN THE SOCIETY</span>
+    </div>
+    <p class="archives-label">THEREELHOUSESOCIETY.COM</p>
+    <p style="font-family: 'Courier Prime', monospace; font-size: 13px; color: var(--fog); font-style: italic; margin-top: 20px; opacity: 0.6;">* Buster will notify you when the app drops. He has your information.</p>
+  </div>
+
+  <!-- Buster lurking -->
+  <svg class="buster" viewBox="0 0 100 140" width="100" height="140" xmlns="http://www.w3.org/2000/svg">
+    <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="#E8DFC8" opacity="0.92"/>
+    <path d="M 10 55 Q 10 10 50 10 Q 90 10 90 55 L 90 100 Q 82 90 74 100 Q 66 110 58 100 Q 50 90 42 100 Q 34 110 26 100 Q 18 90 10 100 Z" fill="none" stroke="rgba(242,232,160,0.15)" stroke-width="3"/>
+    <ellipse cx="38" cy="52" rx="6" ry="7" fill="#0A0703"/>
+    <ellipse cx="62" cy="52" rx="6" ry="7" fill="#0A0703"/>
+    <circle cx="40" cy="50" r="2" fill="white"/>
+    <circle cx="64" cy="50" r="2" fill="white"/>
+    <path d="M 34 68 Q 50 80 66 68" stroke="#0A0703" stroke-width="2.5" fill="none"/>
+    <rect x="40" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+    <rect x="46" y="69" width="4" height="6" fill="#0A0703" rx="0.5"/>
+    <rect x="52" y="68" width="4" height="5" fill="#0A0703" rx="0.5"/>
+    <rect x="58" y="67" width="3" height="4" fill="#0A0703" rx="0.5"/>
+  </svg>
+</div>
+
+
+<script>
+async function downloadAll() {
+  const btn = document.querySelector('.dl-btn');
+  const status = document.getElementById('status');
+  btn.disabled = true;
+
+  // Wait for fonts
+  await document.fonts.ready;
+  status.textContent = 'Fonts loaded. Generating PNGs...';
+
+  const names = ['cover', 'capabilities-1', 'capabilities-2', 'buster-status', 'cta'];
+
+  for (let i = 1; i <= 5; i++) {
+    status.textContent = `Rendering slide ${i} of 5...`;
+    const el = document.getElementById('s' + i);
+
+    // Temporarily remove zoom for accurate capture
+    el.style.zoom = '1';
+
+    const canvas = await html2canvas(el, {
+      scale: 1,
+      width: 1080,
+      height: 1080,
+      backgroundColor: '#0B0A08',
+      logging: false
+    });
+
+    // Restore zoom
+    el.style.zoom = '0.6';
+
+    const link = document.createElement('a');
+    link.download = `reelhouse-native-${names[i-1]}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    // Small delay between downloads
+    await new Promise(r => setTimeout(r, 500));
+  }
+
+  status.textContent = '✓ All 5 slides downloaded! Send them to WhatsApp and post.';
+  btn.disabled = false;
+}
+</script>
+
+</body>
+</html>

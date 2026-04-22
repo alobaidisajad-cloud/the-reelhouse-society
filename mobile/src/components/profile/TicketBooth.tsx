@@ -25,7 +25,7 @@ export function TicketBooth({ username, memberSince, filmCount = 0 }: TicketBoot
 
             <View style={s.ticketBody}>
                 <Text style={s.eyebrow}>THE REELHOUSE SOCIETY</Text>
-                <Text style={s.nameText}>@{username}</Text>
+                <Text style={s.nameText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>@{username}</Text>
 
                 <View style={s.ticketRow}>
                     <View style={s.ticketField}>

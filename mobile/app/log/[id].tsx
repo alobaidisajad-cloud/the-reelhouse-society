@@ -1,10 +1,11 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, TextInput, KeyboardAvoidingView, Platform, Share, ImageBackground, Alert, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeInDown, SlideInUp, Easing } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import { supabase } from '@/src/lib/supabase';
@@ -33,15 +34,111 @@ function timeAgo(dateStr: string | Date | undefined): string {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
 }
 
+interface LogDetail {
+  id: string;
+  film_id: number;
+  film_title: string;
+  poster_path: string | null;
+  year?: number | null;
+  rating: number;
+  review?: string | null;
+  pull_quote?: string | null;
+  drop_cap?: boolean;
+  status: string;
+  is_spoiler: boolean;
+  watched_date?: string | null;
+  watched_with?: string | null;
+  private_notes?: string | null;
+  physical_media?: boolean;
+  abandoned_reason?: string | null;
+  autopsied: boolean;
+  is_autopsied?: boolean;
+  isAutopsied?: boolean;
+  autopsy?: {
+    story?: number;
+    screenplay?: number;
+    script?: number;
+    acting?: number;
+    direction?: number;
+    cinematography?: number;
+    editing?: number;
+    pacing?: number;
+    sound?: number;
+  };
+  user_id: string;
+  created_at: string;
+  editorial_header?: string | null;
+  viewing_history?: unknown;
+}
+
+interface LogProfile {
+  id: string;
+  username: string;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  role?: string;
+}
+
+interface LogComment {
+  id: string;
+  user_id: string;
+  username: string;
+  body: string;
+  created_at: string;
+}
+
+interface ViewingHistoryEntry {
+  date?: string;
+  rating: number;
+  review?: string;
+  watchedWith?: string;
+}
+
 export default function LogDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user, isAuthenticated } = useAuthStore();
 
-  const [log, setLog] = useState<Record<string, any> | null>(null);
-  const [profile, setProfile] = useState<Record<string, any> | null>(null);
-  const [comments, setComments] = useState<Record<string, any>[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  // ── React Query: MMKV-cached log detail (instant revisits) ──
+  const { data: logQueryData, isLoading: logQueryLoading } = useQuery({
+    queryKey: ['log', id],
+    queryFn: async () => {
+      const { data: logData, error } = await supabase
+        .from('logs')
+        .select(`
+          id, film_id, film_title, poster_path, year, 
+          rating, review, status, is_spoiler, 
+          watched_date, watched_with, private_notes, physical_media, 
+          abandoned_reason, is_autopsied, autopsy, editorial_header, drop_cap, pull_quote, viewing_history, 
+          user_id, created_at,
+          profiles!logs_user_id_fkey(username, avatar_url, display_name)
+        `)
+        .eq('id', id)
+        .single();
+
+      if (error) console.error('Log fetch error:', error);
+
+      const profile = logData ? (Array.isArray(logData.profiles) ? logData.profiles[0] : logData.profiles) : null;
+
+      // Fetch comments (included in the query for initial load)
+      const { data: commData } = await supabase
+        .from('log_comments')
+        .select('id, body, created_at, user_id, profiles(username, avatar_url, display_name)')
+        .eq('log_id', id)
+        .order('created_at', { ascending: true });
+
+      return { log: logData as LogDetail | null, profile: profile as LogProfile | null, comments: (commData || []) as LogComment[] };
+    },
+    staleTime: 5 * 60 * 1000,  // 5 min — logs can get new comments
+    enabled: !!id,
+  });
+
+  const log = logQueryData?.log ?? null;
+  const profile = logQueryData?.profile ?? null;
+  const [comments, setComments] = useState<LogComment[]>([]);
+  const loading = logQueryLoading;
   const [refreshing, setRefreshing] = useState(false);
   const [autopsyOpen, setAutopsyOpen] = useState(false);
   const [newComment, setNewComment] = useState('');
@@ -57,41 +154,18 @@ export default function LogDetailScreen() {
   const { hasEndorsed, toggleEndorse } = useFilmStore();
   const endorsed = hasEndorsed(id);
 
-  const fetchData = useCallback(async () => {
-    if (!id) return;
-    try {
-      // Fetch Log + User Info
-      const { data: logData } = await supabase
-        .from('logs')
-        .select('*, profiles!logs_user_id_fkey(username, avatar_url, display_name)')
-        .eq('id', id)
-        .single();
-      
-      if (logData) {
-        setLog(logData);
-        setProfile(Array.isArray(logData.profiles) ? logData.profiles[0] : logData.profiles);
-      }
-
-      // Fetch Comments
-      const { data: commData } = await supabase
-        .from('log_comments')
-        .select('*')
-        .eq('log_id', id)
-        .order('created_at', { ascending: true });
-        
-      setComments(commData || []);
-    } catch { }
-  }, [id]);
-
+  // Sync comments from query data (but allow local mutations)
   useEffect(() => {
-    fetchData().finally(() => setLoading(false));
-  }, [fetchData]);
+    if (logQueryData?.comments) {
+      setComments(logQueryData.comments);
+    }
+  }, [logQueryData?.comments]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchData();
+    await queryClient.invalidateQueries({ queryKey: ['log', id] });
     setRefreshing(false);
-  }, [fetchData]);
+  }, [queryClient, id]);
 
   const handlePostComment = async () => {
     if (!isAuthenticated) return router.push('/login');
@@ -156,7 +230,7 @@ export default function LogDetailScreen() {
       <View style={[s.container, s.centerFull]}>
         <FilmIcon size={40} color={colors.sepia} strokeWidth={1} />
         <Text style={s.notFoundText}>Log not found.</Text>
-        <TouchableOpacity style={s.backBtnRow} onPress={() => router.back()}>
+        <TouchableOpacity style={s.backBtnRow} onPress={() => { Haptics.selectionAsync(); router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}>
             <ChevronLeft size={12} color={colors.bone} strokeWidth={1.5} />
             <Text style={s.backBtnText}>GO BACK</Text>
         </TouchableOpacity>
@@ -167,12 +241,13 @@ export default function LogDetailScreen() {
   const posterUri = log.poster_path ? `${TMDB_IMG}${log.poster_path}` : null;
   const isPoster = user?.id === log.user_id;
 
-  const isAuteur = profile?.role === 'auteur' || (profile as any)?.role === 'god';
+  const isAuteur = profile?.role === 'auteur' || profile?.role === 'god';
   const isArchivist = profile?.role === 'archivist';
 
   return (
     <KeyboardAvoidingView 
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 60 : 0}
       style={s.container}
     >
       {/* ── IMMERSIVE FULL-BLEED BACKDROP (BEHIND SCROLLVIEW) ── */}
@@ -199,13 +274,13 @@ export default function LogDetailScreen() {
       )}
 
       <View style={s.header}>
-        <TouchableOpacity style={s.backBtn} onPress={() => router.back()} activeOpacity={0.7} hitSlop={{top:10,bottom:10,left:10,right:10}}>
+        <TouchableOpacity style={s.backBtn} onPress={() => { Haptics.selectionAsync(); router.back(); }} activeOpacity={0.7} hitSlop={{top:20,bottom:20,left:20,right:20}}>
           <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
         </TouchableOpacity>
         <Text style={s.headerTitle} />
-        <TouchableOpacity style={s.shareBtn} onPress={handleShare} activeOpacity={0.7}>
+        <TouchableOpacity style={s.shareBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); handleShare(); }} activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
            <Share2 size={14} color={colors.sepia} strokeWidth={1.5} />
-           <Text style={s.shareBtnText}>{sharing ? '...' : 'SHARE'}</Text>
+           <Text style={s.shareBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{sharing ? '...' : 'SHARE'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -243,14 +318,14 @@ export default function LogDetailScreen() {
             <LinearGradient colors={['rgba(125,31,31,0.08)', 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
           )}
         
-        <AnimatedView entering={FadeInDown.duration(600)} style={s.logCardInner}>
+        <AnimatedView entering={SlideInUp.duration(500).easing(Easing.out(Easing.cubic))} style={s.logCardInner}>
           
           <View style={s.logCenter}>
             {/* TOP: User Info — Web: fontSize 0.75rem=12px, ls 0.15em=1.8px, color var(--sepia) */}
             <View style={s.userRow}>
               <View style={s.userRowLeft}>
-                <TouchableOpacity onPress={() => isPoster ? router.push(`/user/${profile?.username}`) : null} activeOpacity={0.7}>
-                  <Text style={s.userRefText} numberOfLines={1}>@{(profile?.username || 'unknown').toUpperCase()}</Text>
+                <TouchableOpacity style={{ flexShrink: 1 }} onPress={() => { if (isPoster) { Haptics.selectionAsync(); router.push(`/user/${profile?.username}`); } }} activeOpacity={0.7}>
+                  <Text style={s.userRefText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>@{(profile?.username || 'unknown').toUpperCase()}</Text>
                 </TouchableOpacity>
                 {isArchivist && (
                   <View style={s.archivistBadge}>
@@ -274,7 +349,7 @@ export default function LogDetailScreen() {
               {(isAuteur || isArchivist) && posterUri && (
                 <View style={[s.posterGlow, isAuteur ? s.posterGlowAuteur : s.posterGlowArchivist]} />
               )}
-              <TouchableOpacity onPress={() => router.push(`/film/${log.film_id}`)} activeOpacity={0.8} style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]}>
+              <TouchableOpacity onPress={() => { Haptics.selectionAsync(); router.push(`/film/${log.film_id}`); }} activeOpacity={0.8} style={[s.posterBounds, isAuteur && s.posterBoundsAuteur]}>
                 {posterUri ? (
                   <Image source={{ uri: posterUri }} style={s.posterCentered} contentFit="cover" cachePolicy="memory-disk" />
                 ) : (
@@ -287,8 +362,8 @@ export default function LogDetailScreen() {
 
             {/* BOTTOM: Title & Meta — Web: clamp(2rem,8vw,2.75rem), lineHeight 1.1, textShadow 0 4px 12px */}
             <View style={s.titleSection}>
-              <TouchableOpacity onPress={() => router.push(`/film/${log.film_id}`)} activeOpacity={0.8}>
-                 <Text style={s.logFilmTitle}>{log.film_title}</Text>
+              <TouchableOpacity onPress={() => { Haptics.selectionAsync(); router.push(`/film/${log.film_id}`); }} activeOpacity={0.8}>
+                 <Text style={s.logFilmTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{log.film_title}</Text>
               </TouchableOpacity>
               {log.year && <Text style={s.logFilmYear}>{log.year}</Text>}
             </View>
@@ -310,7 +385,7 @@ export default function LogDetailScreen() {
                    <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} style={s.ornamentalStar} />
                    <View style={s.ornamentalLine} />
                  </View>
-                 <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur]}>« {log.pull_quote} »</Text>
+                 <Text style={[s.featuredQuote, isAuteur && s.featuredQuoteAuteur]} adjustsFontSizeToFit numberOfLines={6} minimumFontScale={0.7}>« {log.pull_quote} »</Text>
                  {/* Ornamental divider bottom */}
                  <View style={s.ornamentalRow}>
                    <View style={s.ornamentalLine} />
@@ -326,11 +401,13 @@ export default function LogDetailScreen() {
                   const cleanReview = log.review.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '').trim();
                   if (!cleanReview) return null;
                   return (
-                    <Text style={s.review}>
+                    <Text style={[s.review, log.drop_cap && { lineHeight: undefined }]}>
                       {log.drop_cap ? (
                         <Text style={s.dropCapLetter}>{cleanReview.charAt(0)}</Text>
                       ) : null}
-                      {log.drop_cap ? cleanReview.slice(1) : cleanReview}
+                      <Text style={log.drop_cap ? { lineHeight: 24 } : undefined}>
+                        {log.drop_cap ? cleanReview.slice(1) : cleanReview}
+                      </Text>
                     </Text>
                   );
                 })()}
@@ -341,7 +418,7 @@ export default function LogDetailScreen() {
           {/* ═══ VIEWING CHRONICLE — Horizontal swipeable carousel ═══ */}
           {(() => {
             const rawHist = log.viewing_history;
-            const history: any[] = Array.isArray(rawHist)
+            const history: ViewingHistoryEntry[] = Array.isArray(rawHist)
               ? rawHist
               : (typeof rawHist === 'string'
                 ? (() => { try { return JSON.parse(rawHist); } catch { return []; } })()
@@ -359,7 +436,7 @@ export default function LogDetailScreen() {
                 isCurrent: true,
               }] : []),
               // Past reviews
-              ...history.map((entry: any, idx: number) => ({
+              ...history.map((entry: ViewingHistoryEntry, idx: number) => ({
                 label: idx === history.length - 1 ? '◆ FIRST WATCH' : `VIEWING ${history.length - idx}`,
                 date: entry.date,
                 rating: entry.rating,
@@ -384,7 +461,10 @@ export default function LogDetailScreen() {
                 {/* Horizontal scroll */}
                 <ScrollView
                   horizontal
-                  pagingEnabled
+                  pagingEnabled={false}
+                  snapToInterval={cardWidth}
+                  snapToAlignment="start"
+                  decelerationRate="fast"
                   showsHorizontalScrollIndicator={false}
                   onMomentumScrollEnd={(e) => {
                     const page = Math.round(e.nativeEvent.contentOffset.x / cardWidth);
@@ -416,7 +496,7 @@ export default function LogDetailScreen() {
                       {/* Review */}
                       {entry.review ? (
                         <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-                          <Text style={[s.chronicleReviewText, entry.isCurrent && s.chronicleReviewTextCurrent, !entry.isCurrent && s.chronicleReviewTextPast]}>
+                          <Text style={[s.chronicleReviewText, entry.isCurrent && s.chronicleReviewTextCurrent, !entry.isCurrent && s.chronicleReviewTextPast]} adjustsFontSizeToFit minimumFontScale={0.8}>
                             {entry.isCurrent ? '' : '"'}{(entry.review || '').replace(/<[^>]+>/g, '').trim()}{entry.isCurrent ? '' : '"'}
                           </Text>
                         </ScrollView>
@@ -450,6 +530,7 @@ export default function LogDetailScreen() {
                   onPress={() => { Haptics.selectionAsync(); setAutopsyOpen(!autopsyOpen); }} 
                   activeOpacity={0.7} 
                   style={s.autopsyToggle}
+                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                 >
                   <View style={s.autopsyToggleInner}>
                      <View style={s.autopsyPulse} />
@@ -489,33 +570,33 @@ export default function LogDetailScreen() {
           <View style={s.actionDeckWrap}>
             <View style={s.actionDeck}>
                {/* CERTIFY — wired to toggleEndorse */}
-               <TouchableOpacity style={s.deckBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); toggleEndorse(id); }} activeOpacity={0.6}>
+               <TouchableOpacity style={s.deckBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); toggleEndorse(id); }} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                   <Heart size={16} strokeWidth={2} color={endorsed ? colors.sepia : colors.fog} fill={endorsed ? colors.sepia : 'transparent'} />
-                  <Text style={[s.deckLabel, endorsed && s.deckLabelActive]}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
+                  <Text style={[s.deckLabel, endorsed && s.deckLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
                </TouchableOpacity>
 
                {/* CRITIQUE — scrolls to comment input */}
-               <TouchableOpacity style={s.deckBtn} onPress={() => { Haptics.selectionAsync(); critiqueInputRef.current?.focus(); }} activeOpacity={0.6}>
+               <TouchableOpacity style={s.deckBtn} onPress={() => { Haptics.selectionAsync(); critiqueInputRef.current?.focus(); }} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                   <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
-                  <Text style={s.deckLabel}>CRITIQUE</Text>
+                  <Text style={s.deckLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>CRITIQUE</Text>
                </TouchableOpacity>
 
-               {/* EDIT — only for the poster (owner) */}
                {isPoster && (
                  <TouchableOpacity style={s.deckBtn} onPress={() => {
                    if (log.film_id) {
-                     router.push({ pathname: '/log-modal', params: { editLogId: id, filmId: String(log.film_id), filmTitle: log.film_title, filmPoster: log.poster_path } } as any);
+                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                     router.push({ pathname: '/log-modal', params: { editLogId: id, filmId: String(log.film_id), filmTitle: log.film_title, filmPoster: log.poster_path } } as import('expo-router').Href);
                    }
-                 }} activeOpacity={0.6}>
+                 }} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                     <Edit3 size={16} strokeWidth={2} color={colors.sepia} />
-                    <Text style={[s.deckLabel, s.deckLabelActive]}>EDIT</Text>
+                    <Text style={[s.deckLabel, s.deckLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>EDIT</Text>
                  </TouchableOpacity>
                )}
 
                {/* LOUNGE — opens ShareToLoungeModal with this log's film */}
-               <TouchableOpacity style={s.deckBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowLoungeShare(true); }} activeOpacity={0.6}>
+               <TouchableOpacity style={s.deckBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setShowLoungeShare(true); }} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                   <MessageCircle size={16} strokeWidth={2} color={colors.fog} />
-                  <Text style={s.deckLabel}>LOUNGE</Text>
+                  <Text style={s.deckLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>LOUNGE</Text>
                </TouchableOpacity>
             </View>
           </View>
@@ -527,18 +608,18 @@ export default function LogDetailScreen() {
         <View style={s.commentsSection}>
           <SectionDivider label={`CRITIQUES (${comments.length})`} />
           
-          {comments.map((c: any) => (
+          {comments.map((c: LogComment) => (
              <View key={c.id} style={s.commentItem}>
                <View style={s.userInfoRow}>
-                 <TouchableOpacity onPress={() => router.push(`/user/${c.username}`)} activeOpacity={0.7}>
-                   <Text style={s.commUsername}>@{c.username}</Text>
+                 <TouchableOpacity style={{ flexShrink: 1 }} onPress={() => { Haptics.selectionAsync(); router.push(`/user/${c.username}`); }} activeOpacity={0.7}>
+                   <Text style={s.commUsername} numberOfLines={1}>@{c.username}</Text>
                  </TouchableOpacity>
                  <Text style={s.commDate}>{new Date(c.created_at).toLocaleDateString()}</Text>
                </View>
           <Text style={s.commBody} selectable>{c.body}</Text>
                {user?.id === c.user_id && (
-                 <TouchableOpacity onPress={() => handleDeleteComment(c.id)} style={s.commDeleteBtn}>
-                   <Text style={s.commDelete}>DELETE</Text>
+                 <TouchableOpacity onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); handleDeleteComment(c.id); }} style={s.commDeleteBtn} activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                   <Text style={s.commDelete} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>DELETE</Text>
                  </TouchableOpacity>
                )}
              </View>
@@ -559,15 +640,17 @@ export default function LogDetailScreen() {
               onChangeText={setNewComment}
               multiline
               maxLength={500}
-              selectionColor={colors.sepia}
+              selectionColor={'rgba(218,165,32,0.3)'}
+              cursorColor={colors.sepia}
+              disableFullscreenUI={true}
             />
             <TouchableOpacity 
               style={[s.critiqueSubmitBtn, !newComment.trim() && s.critiqueSubmitDisabled]} 
               onPress={handlePostComment} 
               disabled={!newComment.trim() || posting} 
-              activeOpacity={0.7}
+              activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             >
-              <Text style={s.critiqueSubmitText}>{posting ? 'FILING...' : 'SUBMIT CRITIQUE'}</Text>
+              <Text style={s.critiqueSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{posting ? 'FILING...' : 'SUBMIT CRITIQUE'}</Text>
               <Sparkles size={10} color={colors.ink} strokeWidth={1.5} />
             </TouchableOpacity>
           </View>
@@ -644,9 +727,9 @@ const s = StyleSheet.create({
   featuredQuote: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, fontStyle: 'italic', lineHeight: 27, textAlign: 'center', textShadowColor: 'rgba(139,105,20,0.15)', textShadowOffset: {width:0, height:2}, textShadowRadius: 12 },
   featuredQuoteAuteur: { color: 'rgba(180,45,45,0.9)', textShadowColor: 'rgba(125,31,31,0.15)' },
   reviewBodyWrap: { paddingHorizontal: 0, marginTop: 0 },
-  review: { fontFamily: fonts.body, fontSize: 15, color: colors.bone, lineHeight: 28, opacity: 0.9 },
+  review: { fontSize: 13, color: colors.bone, lineHeight: 22, opacity: 0.9 },
   dropCapRow: { flexDirection: 'row', alignItems: 'flex-start' },
-  dropCapLetter: { fontFamily: fonts.display, fontSize: 40, color: colors.sepia, lineHeight: 35, marginRight: 8, marginTop: -3, textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: {width:0, height:2}, textShadowRadius: 8 },
+  dropCapLetter: { fontFamily: fonts.display, fontSize: 34, color: colors.sepia, lineHeight: 36, marginRight: 6, marginTop: -2, textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: {width:0, height:2}, textShadowRadius: 6 },
   dropCapBody: { flex: 1, paddingTop: 3, fontFamily: fonts.body, fontSize: 15, color: colors.bone, lineHeight: 28, opacity: 0.9 },
 
   // Editorial Badge
@@ -654,9 +737,9 @@ const s = StyleSheet.create({
   editorialBadgeText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.2, color: 'rgba(218,165,32,0.85)' },
 
   // Viewing Chronicle
-  chronicleWrap: { marginHorizontal: 16, marginTop: 8, marginBottom: 16, backgroundColor: 'rgba(139,105,20,0.05)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.18)', borderRadius: 6, overflow: 'hidden' },
-  chronicleHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)' },
-  chronicleDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia },
+  chronicleWrap: { marginHorizontal: 16, marginTop: 8, marginBottom: 16, backgroundColor: '#050403', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.18)', borderRadius: 2, overflow: 'hidden' },
+  chronicleHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.1)' },
+  chronicleDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia },
   chronicleTitle: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
   chronicleCard: { padding: 14 },
   chronicleLabelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 },
@@ -671,8 +754,8 @@ const s = StyleSheet.create({
   chronicleReviewTextPast: { fontStyle: 'italic' },
   chronicleWatchedWith: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 6 },
   chronicleDots: { flexDirection: 'row', justifyContent: 'center', gap: 6, paddingBottom: 10, paddingTop: 4 },
-  chronicleDotIndicator: { width: 5, height: 5, borderRadius: 2.5, backgroundColor: 'rgba(139,105,20,0.25)' },
-  chronicleDotActive: { backgroundColor: colors.sepia },
+  chronicleDotIndicator: { width: 6, height: 2, borderRadius: 1, backgroundColor: 'rgba(139,105,20,0.25)' },
+  chronicleDotActive: { backgroundColor: colors.sepia, width: 12 },
 
   // Autopsy
   autopsyWrap: { paddingHorizontal: 16 },
@@ -692,9 +775,9 @@ const s = StyleSheet.create({
 
   // Action Deck
   actionDeckWrap: { paddingHorizontal: 16, marginTop: 8 },
-  actionDeck: { flexDirection: 'row', backgroundColor: 'rgba(139,105,20,0.15)', borderRadius: 6, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', marginBottom: 16, overflow: 'hidden', padding: 1, gap: 1, zIndex: 1 },
-  deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 16, gap: 8, backgroundColor: colors.ink, borderRadius: 4 },
-  deckLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.1, color: colors.fog },
+  actionDeck: { flexDirection: 'row', backgroundColor: '#050403', borderRadius: 2, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.1)', marginBottom: 16, overflow: 'hidden', padding: 1, gap: StyleSheet.hairlineWidth, zIndex: 1 },
+  deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 18, gap: 6, backgroundColor: colors.ink, borderRadius: 1 },
+  deckLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog },
   deckLabelActive: { color: colors.sepia },
 
   // Comments
@@ -711,13 +794,13 @@ const s = StyleSheet.create({
   // Critique Input
   critiqueInputWrap: { 
     marginTop: 32, paddingTop: 24, 
-    borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)',
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,105,20,0.15)',
   },
   critiqueInput: {
-    backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
+    backgroundColor: '#050403', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.2)',
     borderRadius: 2, paddingHorizontal: 16, paddingVertical: 16,
-    color: colors.parchment, fontFamily: fonts.body, fontSize: 14, lineHeight: 22,
-    minHeight: 80, textAlignVertical: 'top',
+    color: colors.bone, fontFamily: fonts.body, fontSize: 13, lineHeight: 22,
+    minHeight: 120, textAlignVertical: 'top',
   },
   critiqueSubmitBtn: { 
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,

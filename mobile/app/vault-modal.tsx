@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, ActivityIndicator, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -28,20 +28,24 @@ export default function VaultModal() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const handleSearch = useCallback(async (text: string) => {
-    setQuery(text);
-    if (!text.trim()) {
+  // Debounced search — 300ms after last keystroke, not on every character
+  useEffect(() => {
+    if (!query.trim()) {
       setResults([]);
+      setLoading(false);
       return;
     }
     setLoading(true);
-    try {
-      const resp = await tmdb.search(text);
-      const movies = (resp.results || []).filter((r) => r.media_type === 'movie' || r.media_type === undefined) as VaultSearchResult[];
-      setResults(movies);
-    } catch { }
-    setLoading(false);
-  }, []);
+    const timer = setTimeout(async () => {
+      try {
+        const resp = await tmdb.search(query);
+        const movies = (resp.results || []).filter((r) => r.media_type === 'movie' || r.media_type === undefined) as VaultSearchResult[];
+        setResults(movies);
+      } catch { }
+      setLoading(false);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [query]);
 
   const handleSelectFormat = (film: VaultSearchResult) => {
     Alert.alert('Select Format', `What format of ${film.title} do you own?`, [
@@ -84,8 +88,8 @@ export default function VaultModal() {
       <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
 
       <View style={s.header}>
-        <TouchableOpacity style={s.closeBtn} onPress={() => router.back()}>
-          <Text style={s.closeText}>CANCEL</Text>
+        <TouchableOpacity style={s.closeBtn} onPress={() => router.back()} activeOpacity={0.7} hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}>
+          <Text style={s.closeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>CANCEL</Text>
         </TouchableOpacity>
         <Text style={s.title}>Add to Vault</Text>
         <View style={{ width: 70 }} />
@@ -97,7 +101,7 @@ export default function VaultModal() {
           <TextInput
             style={s.searchInput}
             value={query}
-            onChangeText={handleSearch}
+            onChangeText={setQuery}
             placeholder="Search films to catalog..."
             placeholderTextColor={colors.fog}
             autoFocus
@@ -128,7 +132,7 @@ export default function VaultModal() {
                   <View style={[s.poster, { backgroundColor: colors.ash }]} />
                 )}
                 <View style={s.resultInfo}>
-                  <Text style={s.resultTitle} numberOfLines={2}>{item.title}</Text>
+                  <Text style={s.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.85}>{item.title}</Text>
                   <Text style={s.resultYear}>{item.release_date?.substring(0, 4)}</Text>
                 </View>
               </TouchableOpacity>

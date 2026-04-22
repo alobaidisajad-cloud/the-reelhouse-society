@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Pressable, Modal, TextInput, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeInUp, FadeInDown, Layout, ZoomIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,6 +9,8 @@ import { useAuthStore } from '@/src/stores/auth';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import * as Haptics from 'expo-haptics';
+import PressableScale from '../PressableScale';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -116,6 +118,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     
     const favorites = (user?.preferences?.favorites as TriptychFilm[]) ?? [];
     const slots: Array<TriptychFilm | null> = [favorites[0] ?? null, favorites[1] ?? null, favorites[2] ?? null];
+    const insets = useSafeAreaInsets();
 
     const [isEditing, setIsEditing] = useState(false);
     const [editingSlotIndex, setEditingSlotIndex] = useState<number | null>(null);
@@ -136,7 +139,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                 const data = await tmdb.search(searchQuery);
                 const movies = (data?.results ?? []).filter((r: TriptychSearchResult) => r.media_type === 'movie' && r.poster_path);
                 setSearchResults(movies.slice(0, 10));
-            } catch (err) {
+            } catch (err: unknown) {
             } finally {
                 setIsSearching(false);
             }
@@ -204,7 +207,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
             <View style={s.grid}>
                 {slots.map((film, i) => {
                     const slotContent = (
-                        <TouchableOpacity 
+                        <PressableScale 
                             key={i}
                             style={[
                                 s.slot,
@@ -214,8 +217,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                 // Remove border when TierSlotGlow handles it
                                 film && (isArchivist || isAuteur) && s.slotNoBorder,
                             ]}
-                            activeOpacity={isOwnProfile ? 0.7 : 1}
                             onPress={() => handleSelectSlot(i)}
+                            disabled={!isOwnProfile}
+                            haptic
                         >
                             {film ? (
                                 <>
@@ -225,15 +229,15 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                         contentFit="cover"
                                     />
                                     {isOwnProfile && (
-                                        <TouchableOpacity style={s.clearBtn} onPress={() => handleClearSlot(i)}>
+                                        <PressableScale style={s.clearBtn} onPress={() => handleClearSlot(i)} haptic="medium" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                                             <X size={16} color={colors.parchment} />
-                                        </TouchableOpacity>
+                                        </PressableScale>
                                     )}
                                 </>
                             ) : (
                                 isOwnProfile && <Plus size={24} color={colors.sepia} style={{ opacity: 0.5 }} />
                             )}
-                        </TouchableOpacity>
+                        </PressableScale>
                     );
 
                     // Wrap filled slots in TierSlotGlow for archivist/auteur
@@ -249,8 +253,8 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
             {/* Selection Modal */}
             <Modal visible={isEditing} transparent animationType="slide">
-                <View style={s.modalOverlay}>
-                    <TouchableOpacity style={StyleSheet.absoluteFillObject} onPress={() => setIsEditing(false)} />
+                <View style={[s.modalOverlay, { paddingBottom: insets.bottom }]}>
+                    <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { Haptics.selectionAsync(); setIsEditing(false); }} />
                     <View style={s.modalContent}>
                         <View style={s.modalHeader}>
                             <Text style={s.modalEyebrow}>CURATE DOSSIER SLOT {editingSlotIndex !== null ? editingSlotIndex + 1 : ''}</Text>
@@ -272,10 +276,11 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                 <ActivityIndicator size="large" color={colors.sepia} style={{ marginTop: 40 }} />
                             ) : searchResults.length > 0 ? (
                                 searchResults.map(film => (
-                                    <TouchableOpacity 
+                                    <PressableScale 
                                         key={film.id}
                                         style={s.resultItem}
                                         onPress={() => handleSetFilm(film)}
+                                        haptic
                                     >
                                         {film.poster_path ? (
                                             <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} contentFit="cover" />
@@ -285,10 +290,10 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                             </View>
                                         )}
                                         <View style={s.resultInfo}>
-                                            <Text style={s.resultTitle} numberOfLines={2}>{film.title}</Text>
-                                            {film.release_date && <Text style={s.resultYear}>{film.release_date.slice(0, 4)}</Text>}
+                                            <Text style={s.resultTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.title}</Text>
+                                            {film.release_date && <Text style={s.resultYear} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.release_date.slice(0, 4)}</Text>}
                                         </View>
-                                    </TouchableOpacity>
+                                    </PressableScale>
                                 ))
                             ) : searchQuery ? (
                                 <Text style={s.noResults}>NO MATCHES FOUND</Text>
@@ -437,7 +442,7 @@ const s = StyleSheet.create({
     },
     // ── Extracted from inline ──
     shimmerTop: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, borderRadius: 6, zIndex: 4 },
-    glyphWrap: { position: 'absolute', top: 5, right: 6, zIndex: 5 },
+    glyphWrap: { position: 'absolute', top: 6, left: 8, zIndex: 5 },
     glyphText: { fontSize: 9, textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 8 },
     slotNoBorder: { borderWidth: 0 },
     slotFlexWrap: { flex: 1 },

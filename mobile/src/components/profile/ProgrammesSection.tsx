@@ -100,7 +100,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
             {/* Create button */}
             {isOwnProfile && isAuteur && !isCreating && (
                 <TouchableOpacity style={s.createBtn} onPress={() => { setIsCreating(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }} activeOpacity={0.7}>
-                    <Text style={s.createBtnText}>+ CURATE NIGHTLY PROGRAMME</Text>
+                    <Text style={s.createBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>+ CURATE NIGHTLY PROGRAMME</Text>
                 </TouchableOpacity>
             )}
 
@@ -134,14 +134,14 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                             <View key={label} style={s.filmSelectBox}>
                                 <Text style={s.filmSelectLabel}>{label}</Text>
                                 {selected ? (
-                                    <TouchableOpacity style={s.selectedFilm} onPress={() => { setSelectingFor(slot); setSearchText(''); }}>
+                                    <TouchableOpacity style={s.selectedFilm} onPress={() => { Haptics.selectionAsync(); setSelectingFor(slot); setSearchText(''); }}>
                                         {posterUri(selected.poster_path ?? selected.poster) && (
                                             <Image source={{ uri: posterUri(selected.poster_path ?? selected.poster)! }} style={s.selectedPoster} contentFit="cover" />
                                         )}
                                         <Text style={s.selectedTitle} numberOfLines={2}>{selected.title ?? selected.name}</Text>
                                     </TouchableOpacity>
                                 ) : (
-                                    <TouchableOpacity style={s.filmSelectTrigger} onPress={() => { setSelectingFor(slot); setSearchText(''); }}>
+                                    <TouchableOpacity style={s.filmSelectTrigger} onPress={() => { Haptics.selectionAsync(); setSelectingFor(slot); setSearchText(''); }}>
                                         <Text style={s.filmSelectTriggerText}>Select from Archive...</Text>
                                     </TouchableOpacity>
                                 )}
@@ -176,7 +176,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                                     </TouchableOpacity>
                                 ))}
                             </ScrollView>
-                            <TouchableOpacity onPress={() => setSelectingFor(null)} style={s.pickerCancel}>
+                            <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setSelectingFor(null); }} style={s.pickerCancel} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                                 <Text style={s.pickerCancelText}>CLOSE</Text>
                             </TouchableOpacity>
                         </View>
@@ -184,15 +184,16 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
 
                     {/* Form actions */}
                     <View style={s.formActions}>
-                        <TouchableOpacity onPress={() => setIsCreating(false)} style={s.cancelBtn}>
-                            <Text style={s.cancelBtnText}>CANCEL</Text>
+                        <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setIsCreating(false); }} style={s.cancelBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                            <Text style={s.cancelBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>CANCEL</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
                             style={[s.publishBtn, (!title || !playbill || !film1 || !film2) && { opacity: 0.4 }]}
                             onPress={handleCreate}
                             disabled={!title || !playbill || !film1 || !film2}
+                            hitSlop={{ top: 15, bottom: 15 }}
                         >
-                            <Text style={s.publishBtnText}>PUBLISH PROGRAMME</Text>
+                            <Text style={s.publishBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>PUBLISH PROGRAMME</Text>
                         </TouchableOpacity>
                     </View>
                 </Animated.View>
@@ -212,11 +213,11 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                     </View>
                     <View style={s.progInfo}>
                         <Text style={s.progEyebrow}>THE NIGHTLY PROGRAMME</Text>
-                        <Text style={s.progTitle}>{prog.title}</Text>
+                        <Text style={s.progTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{prog.title}</Text>
                         <View style={s.progFilmsRow}>
-                            <Text style={s.progFilmName}>{prog.films?.[0]?.title ?? 'Unknown Film'}</Text>
+                            <Text style={[s.progFilmName, { flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{prog.films?.[0]?.title ?? 'Unknown Film'}</Text>
                             <Text style={s.progPlus}> + </Text>
-                            <Text style={s.progFilmName}>{prog.films?.[1]?.title ?? 'Unknown Film'}</Text>
+                            <Text style={[s.progFilmName, { flexShrink: 1 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{prog.films?.[1]?.title ?? 'Unknown Film'}</Text>
                         </View>
                         <Text style={s.progDesc} numberOfLines={4}>{prog.description}</Text>
                     </View>

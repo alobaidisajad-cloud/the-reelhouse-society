@@ -77,7 +77,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
         <View style={s.container}>
             {/* Header: Month navigator */}
             <View style={s.header}>
-                <TouchableOpacity onPress={prevMonth} style={s.navBtn} activeOpacity={0.6}>
+                <TouchableOpacity onPress={prevMonth} style={s.navBtn} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                     <ChevronLeft size={16} color={colors.sepia} />
                 </TouchableOpacity>
 
@@ -86,7 +86,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
                     <Text style={s.yearLabel}>{viewYear}</Text>
                 </View>
 
-                <TouchableOpacity onPress={nextMonth} style={s.navBtn} activeOpacity={0.6}>
+                <TouchableOpacity onPress={nextMonth} style={s.navBtn} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                     <ChevronRight size={16} color={colors.sepia} />
                 </TouchableOpacity>
             </View>

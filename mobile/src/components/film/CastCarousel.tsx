@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { tmdb } from '@/src/lib/tmdb';
@@ -30,7 +31,7 @@ export function CastCarousel({ cast }: { cast: CastMember[] }) {
                 <View style={s.castPhotoWrap}>
                     {photoUri ? (
                         <>
-                            <Image source={{ uri: photoUri }} style={s.castPhoto} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
+                            <Image source={{ uri: photoUri }} style={s.castPhoto} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
                             {/* Sepia tint — matches web filter: sepia(0.15) */}
                             <View style={s.sepiaTint} />
                         </>
@@ -42,31 +43,34 @@ export function CastCarousel({ cast }: { cast: CastMember[] }) {
                         </View>
                     )}
                 </View>
-                <Text style={s.castName} numberOfLines={1}>{item.name}</Text>
-                <Text style={s.castRole} numberOfLines={1}>{item.character}</Text>
+                <Text style={s.castName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.name}</Text>
+                <Text style={s.castRole} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.character}</Text>
             </PressableScale>
         );
     };
 
     return (
-        <FlatList
-            data={cast}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={s.listContent}
-            keyExtractor={item => item.id.toString()}
-            renderItem={renderItem}
-        />
+        <View style={{ height: 195 }}>
+            <FlashList
+                data={cast}
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={s.listContent}
+                keyExtractor={item => item.id.toString()}
+                estimatedItemSize={116}
+                renderItem={renderItem}
+            />
+        </View>
     );
 }
 
 const s = StyleSheet.create({
     listContent: { paddingHorizontal: 16, gap: 16 },
     castCard: { width: 100 },
-    castPhotoWrap: { width: 100, height: 150, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: colors.ash, marginBottom: 8 },
+    castPhotoWrap: { width: 100, height: 150, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', marginBottom: 8 },
     castPhoto: { width: '100%', height: '100%' },
     sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.12)', zIndex: 1 },
-    castPhotoPlaceholder: { backgroundColor: colors.ash, justifyContent: 'center', alignItems: 'center' },
+    castPhotoPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
     castPhotoPlaceholderText: { fontFamily: fonts.display, fontSize: 32, color: colors.fog },
     castName: { fontFamily: fonts.display, fontSize: 14, color: colors.parchment, marginBottom: 2 },
     castRole: { fontFamily: fonts.ui, fontSize: 10, color: colors.sepia }

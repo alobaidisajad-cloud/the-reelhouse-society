@@ -7,6 +7,7 @@ import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, Edit3, Trash2, CheckCircle2, Award, MessageCircle, Send } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
@@ -25,21 +26,95 @@ const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
+interface FilmItem {
+  id: number;
+  title: string;
+  poster_path: string | null;
+}
+
+interface ListDetail {
+  id: string;
+  title: string;
+  description: string;
+  userId: string;
+  user: string;
+  createdAt: string;
+  films: FilmItem[];
+  isPrivate: boolean;
+}
+
+interface ListComment {
+  id: string;
+  user_id: string;
+  username: string;
+  content: string;
+  created_at: string;
+}
+
+interface LoungeItem {
+  id: string;
+  name: string;
+  cover_image: string | null;
+  is_private: boolean;
+}
+
 export default function StackDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuthStore();
   const { logs, toggleListEndorse, hasListEndorsed } = useFilmStore();
 
-  const [list, setList] = useState<Record<string, any> | null>(null);
-  const [loading, setLoading] = useState(true);
+  // ── React Query: MMKV-cached stack detail (instant revisits) ──
+  const { data: stackQueryData, isLoading: stackQueryLoading } = useQuery({
+    queryKey: ['stack', id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('lists')
+        .select('id, title, description, created_at, user_id, is_private')
+        .eq('id', id)
+        .single();
+
+      if (error || !data) throw error;
+
+      const [profileRes, itemsRes, endorseRes] = await Promise.all([
+        supabase.from('profiles').select('username').eq('id', data.user_id).single(),
+        supabase.from('list_items').select('film_id, film_title, poster_path').eq('list_id', id),
+        supabase.from('interactions').select('user_id', { count: 'exact', head: false }).eq('target_list_id', id).eq('type', 'endorse_list'),
+      ]);
+
+      const endorseCount = endorseRes.count || endorseRes.data?.length || 0;
+
+      const listDetail: ListDetail = {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        userId: data.user_id,
+        user: profileRes.data?.username || 'anonymous',
+        createdAt: data.created_at,
+        films: (itemsRes.data || []).map((item: { film_id: number; film_title: string; poster_path: string | null; }) => ({
+          id: item.film_id,
+          title: item.film_title,
+          poster_path: item.poster_path,
+        })),
+        isPrivate: data.is_private,
+      };
+
+      return { list: listDetail, endorseCount };
+    },
+    staleTime: 10 * 60 * 1000,  // 10 min
+    enabled: !!id,
+  });
+
+  const list = stackQueryData?.list ?? null;
+  const loading = stackQueryLoading;
   const [certifyCount, setCertifyCount] = useState(0);
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<Record<string, any>[]>([]);
+  const [comments, setComments] = useState<ListComment[]>([]);
   const [commentText, setCommentText] = useState('');
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showLoungeShare, setShowLoungeShare] = useState(false);
-  const [lounges, setLounges] = useState<Record<string, any>[]>([]);
+  const [loadingLounges, setLoadingLounges] = useState(false);
+  const [lounges, setLounges] = useState<LoungeItem[]>([]);
   const [sharingTo, setSharingTo] = useState<string | null>(null);
 
   // Scroll animations
@@ -66,48 +141,12 @@ export default function StackDetailScreen() {
     };
   });
 
-  const fetchDetail = useCallback(async () => {
-    try {
-      const { data, error } = await supabase
-        .from('lists')
-        .select('id, title, description, created_at, user_id, is_private')
-        .eq('id', id)
-        .single();
-
-      if (error || !data) throw error;
-
-      const [profileRes, itemsRes, endorseRes] = await Promise.all([
-        supabase.from('profiles').select('username').eq('id', data.user_id).single(),
-        supabase.from('list_items').select('film_id, film_title, poster_path').eq('list_id', id),
-        supabase.from('interactions').select('user_id', { count: 'exact', head: false }).eq('target_list_id', id).eq('type', 'endorse_list'),
-      ]);
-
-      setCertifyCount(endorseRes.count || endorseRes.data?.length || 0);
-
-      setList({
-        id: data.id,
-        title: data.title,
-        description: data.description,
-        userId: data.user_id,
-        user: profileRes.data?.username || 'anonymous',
-        createdAt: data.created_at,
-        films: (itemsRes.data || []).map((item: any) => ({
-          id: item.film_id,
-          title: item.film_title,
-          poster_path: item.poster_path,
-        })),
-        isPrivate: data.is_private,
-      });
-    } catch (err) {
-      console.error('List detail error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
+  // Sync endorsement count from query data
   useEffect(() => {
-    fetchDetail();
-  }, [fetchDetail]);
+    if (stackQueryData?.endorseCount !== undefined) {
+      setCertifyCount(stackQueryData.endorseCount);
+    }
+  }, [stackQueryData?.endorseCount]);
 
   const isOwner = user?.id === list?.userId;
   const isCertified = hasListEndorsed(id);
@@ -135,10 +174,10 @@ export default function StackDetailScreen() {
       .order('created_at', { ascending: true })
       .limit(30);
     if (!data || data.length === 0) { setComments([]); return; }
-    const uids = [...new Set(data.map((c: any) => c.user_id))];
+    const uids = [...new Set(data.map((c: { user_id: string }) => c.user_id))];
     const { data: profiles } = await supabase.from('profiles').select('id, username').in('id', uids);
-    const umap = Object.fromEntries((profiles || []).map((p: any) => [p.id, p.username]));
-    setComments(data.map((c: any) => ({ ...c, username: umap[c.user_id] || 'anon' })));
+    const umap = Object.fromEntries((profiles || []).map((p: { id: string; username: string }) => [p.id, p.username]));
+    setComments(data.map((c: { id: string; user_id: string; content: string; created_at: string; }) => ({ ...c, username: umap[c.user_id] || 'anon' })));
   };
 
   const handleToggleComments = () => {
@@ -172,7 +211,7 @@ export default function StackDetailScreen() {
           read: false,
         });
       }
-    } catch {
+    } catch (err: unknown) {
       reelToast.error('Your critique could not be filed.');
     }
     setSubmittingComment(false);
@@ -181,13 +220,15 @@ export default function StackDetailScreen() {
   // ── SHARE TO LOUNGE ──
   const handleOpenShareLounge = async () => {
     Haptics.selectionAsync();
+    setShowLoungeShare(true);
+    setLoadingLounges(true);
     try {
       const { data } = await supabase
         .from('lounge_members')
         .select('lounge_id')
         .eq('user_id', user?.id);
       if (data && data.length > 0) {
-        const loungeIds = data.map((r: any) => r.lounge_id);
+        const loungeIds = data.map((r: { lounge_id: string }) => r.lounge_id);
         const { data: loungeData } = await supabase
           .from('lounges')
           .select('id, name, cover_image, is_private')
@@ -196,10 +237,10 @@ export default function StackDetailScreen() {
       } else {
         setLounges([]);
       }
-      setShowLoungeShare(true);
-    } catch {
+    } catch (err: unknown) {
       setLounges([]);
-      setShowLoungeShare(true);
+    } finally {
+      setLoadingLounges(false);
     }
   };
 
@@ -219,19 +260,20 @@ export default function StackDetailScreen() {
           title: list.title,
           filmCount: list.films.length,
           curator: list.user,
-          topPosters: list.films.slice(0, 4).map((f: any) => f.poster_path),
+          topPosters: list.films.slice(0, 4).map((f: FilmItem) => f.poster_path),
         },
       });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       reelToast.success('Dispatched to the parlour.');
       setTimeout(() => setShowLoungeShare(false), 800);
-    } catch {
+    } catch (err: unknown) {
       reelToast.error('Dispatch failed. The courier is delayed.');
     }
     setSharingTo(null);
   };
 
   const handleDelete = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     Alert.alert(
       'Incinerate Stack',
       'This will permanently destroy this collection. This action is irreversible.',
@@ -246,7 +288,7 @@ export default function StackDetailScreen() {
               await supabase.from('lists').delete().eq('id', id);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
               router.back();
-            } catch {
+            } catch (err: unknown) {
               reelToast.error('The collection resists destruction.');
             }
           },
@@ -270,7 +312,7 @@ export default function StackDetailScreen() {
     );
   }
 
-  const renderItem = ({ item, index }: { item: any; index: number }) => {
+  const renderItem = ({ item, index }: { item: FilmItem; index: number }) => {
     const isLogged = loggedIds.has(item.id);
     const posterUri = item.poster_path ? tmdb.poster(item.poster_path, 'w342') : null;
 
@@ -290,7 +332,7 @@ export default function StackDetailScreen() {
               <View style={[s.poster, s.noPoster]} />
             )}
             <View style={s.indexBadge}>
-              <Text style={s.indexText}>{index + 1}</Text>
+              <Text style={s.indexText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{index + 1}</Text>
             </View>
             {isLogged && (
               <BlurView intensity={40} tint="dark" style={s.loggedBadge}>
@@ -298,7 +340,7 @@ export default function StackDetailScreen() {
               </BlurView>
             )}
           </View>
-          <Text style={s.filmTitle} numberOfLines={2}>{item.title}</Text>
+          <Text style={s.filmTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{item.title}</Text>
         </TouchableOpacity>
       </Animated.View>
     );
@@ -309,20 +351,24 @@ export default function StackDetailScreen() {
     : null;
 
   return (
-    <View style={s.container}>
+    <KeyboardAvoidingView 
+      style={s.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+    >
       {/* Absolute Dynamic Nav Bar */}
       <View style={s.navBar}>
         <AnimatedBlurView intensity={80} tint="dark" style={[StyleSheet.absoluteFill, navBlurStyle]} />
         <View style={s.navInner}>
-          <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+          <TouchableOpacity onPress={() => router.back()} style={s.backBtn} activeOpacity={0.7} hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}>
             <ArrowLeft size={20} color={colors.bone} />
           </TouchableOpacity>
           {isOwner && (
             <View style={s.headerActions}>
-              <TouchableOpacity style={s.actionBtn} onPress={() => router.push({ pathname: '/list-modal', params: { editId: id } } as any)}>
+              <TouchableOpacity style={s.actionBtn} onPress={() => { Haptics.selectionAsync(); router.push({ pathname: '/list-modal', params: { editId: id } } as import('expo-router').Href); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                 <Edit3 size={18} color={colors.fog} />
               </TouchableOpacity>
-              <TouchableOpacity style={s.actionBtn} onPress={handleDelete}>
+              <TouchableOpacity style={s.actionBtn} onPress={handleDelete} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
                 <Trash2 size={18} color="rgba(231,76,60,0.8)" />
               </TouchableOpacity>
             </View>
@@ -332,18 +378,22 @@ export default function StackDetailScreen() {
 
       <AnimatedFlatList
         data={list.films}
-        keyExtractor={(item: any) => String(item.id)}
+        keyExtractor={(item: FilmItem) => String(item.id)}
         numColumns={3}
         contentContainerStyle={s.scrollContent}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
+        initialNumToRender={12}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        removeClippedSubviews={true}
         ListHeaderComponent={
           <>
             {/* Parallax Image Background */}
             <Animated.View style={[s.parallaxHeader, headerStyle]}>
               {heroPoster && (
-                <Image source={heroPoster} style={StyleSheet.absoluteFillObject} contentFit="cover" blurRadius={20} />
+                <Image source={heroPoster} style={StyleSheet.absoluteFillObject} contentFit="cover" blurRadius={20} cachePolicy="memory-disk" />
               )}
               <LinearGradient 
                 colors={['rgba(10, 7, 3, 0.4)', 'rgba(10, 7, 3, 0.9)', colors.ink]}
@@ -355,13 +405,14 @@ export default function StackDetailScreen() {
             {/* Content Overlaid on Header */}
             <View style={s.headerContentWrap}>
 
-              <Animated.Text entering={FadeInDown.duration(600).delay(100)} style={s.title}>
+              <Animated.Text entering={FadeInDown.duration(600).delay(100)} style={s.title} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {list.title.toUpperCase()}
               </Animated.Text>
               
               <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.metaRow}>
                 <View style={s.curatorDot} />
-                <Text style={s.metaText}>@{list.user.toUpperCase()}  ·  {list.films.length} ENTRIES</Text>
+                <Text style={[s.metaText, { flexShrink: 1, marginRight: 8 }]} numberOfLines={1}>@{list.user.toUpperCase()}</Text>
+                <Text style={s.metaText}>·  {list.films.length} ENTRIES</Text>
               </Animated.View>
               
               {list.description && (
@@ -374,7 +425,7 @@ export default function StackDetailScreen() {
               <Animated.View entering={FadeInDown.duration(600).delay(350)} style={s.actionBar}>
                 <TouchableOpacity style={s.actionItem} onPress={handleCertify} activeOpacity={0.7}>
                   <Award size={16} color={isCertified ? colors.sepia : colors.fog} fill={isCertified ? colors.sepia : 'none'} />
-                  <Text style={[s.actionLabel, isCertified && s.actionLabelActive]}>
+                  <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                     {certifyCount > 0 ? `${certifyCount} ` : ''}{isCertified ? 'CERTIFIED' : 'CERTIFY'}
                   </Text>
                 </TouchableOpacity>
@@ -383,26 +434,26 @@ export default function StackDetailScreen() {
 
                 <TouchableOpacity style={s.actionItem} onPress={handleToggleComments} activeOpacity={0.7}>
                   <MessageCircle size={14} color={showComments ? colors.sepia : colors.fog} />
-                  <Text style={[s.actionLabel, showComments && s.actionLabelActive]}>CRITIC</Text>
+                  <Text style={[s.actionLabel, showComments && s.actionLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>CRITIC</Text>
                 </TouchableOpacity>
 
                 <View style={s.actionDivider} />
 
                 <TouchableOpacity style={s.actionItem} onPress={handleOpenShareLounge} activeOpacity={0.7}>
                   <Send size={14} color={colors.fog} />
-                  <Text style={s.actionLabel}>LOUNGE</Text>
+                  <Text style={s.actionLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LOUNGE</Text>
                 </TouchableOpacity>
               </Animated.View>
 
               {/* ── COMMENTS PANEL ── */}
               {showComments && (
-                <View style={s.commentsPanel}>
+                <Animated.View entering={FadeInDown.duration(300)} style={s.commentsPanel}>
                   {comments.length === 0 && (
                     <Text style={s.commentEmpty}>No remarks yet. Be the first to speak.</Text>
                   )}
                   {comments.map(c => (
                     <View key={c.id} style={s.commentRow}>
-                      <Text style={s.commentUser}>@{c.username}</Text>
+                      <Text style={s.commentUser} numberOfLines={1}>@{c.username}</Text>
                       <Text style={s.commentBody}>{c.content}</Text>
                     </View>
                   ))}
@@ -417,13 +468,16 @@ export default function StackDetailScreen() {
                         returnKeyType="send"
                         onSubmitEditing={handleSubmitComment}
                         maxLength={500}
+                        selectionColor={'rgba(218,165,32,0.3)'}
+                        cursorColor={colors.sepia}
+                        disableFullscreenUI={true}
                       />
                       <TouchableOpacity onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.commentSendBtn, (!commentText.trim()) && s.sendBtnDisabled]}>
                         <Send size={14} color={colors.sepia} />
                       </TouchableOpacity>
                     </View>
                   )}
-                </View>
+                </Animated.View>
               )}
 
               <View style={s.trackRow}>
@@ -450,11 +504,15 @@ export default function StackDetailScreen() {
             <View style={s.loungeHeader}>
               <Send size={14} color={colors.sepia} />
               <Text style={s.loungeTitle}>SHARE TO LOUNGE</Text>
-              <TouchableOpacity onPress={() => setShowLoungeShare(false)}>
+              <TouchableOpacity onPress={() => setShowLoungeShare(false)} hitSlop={{top: 20, bottom: 20, left: 20, right: 20}}>
                 <Text style={s.loungeClose}>✕</Text>
               </TouchableOpacity>
             </View>
-            {lounges.length === 0 ? (
+            {loadingLounges ? (
+              <View style={s.loungeEmptyWrap}>
+                <ActivityIndicator size="small" color={colors.sepia} />
+              </View>
+            ) : lounges.length === 0 ? (
               <View style={s.loungeEmptyWrap}>
                 <Text style={s.loungeEmptyText}>No lounges found. Join or create one first.</Text>
               </View>
@@ -474,7 +532,7 @@ export default function StackDetailScreen() {
                       <MessageCircle size={12} color={colors.sepia} />
                     )}
                   </View>
-                  <Text style={s.loungeName} numberOfLines={1}>{lounge.name}</Text>
+                  <Text style={s.loungeName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{lounge.name}</Text>
                   <View style={s.loungeSendIcon}>
                     {sharingTo === lounge.id ? (
                       <ActivityIndicator size="small" color={colors.sepia} />
@@ -488,7 +546,7 @@ export default function StackDetailScreen() {
           </View>
         </View>
       )}
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -534,7 +592,7 @@ const s = StyleSheet.create({
   },
   commentEmpty: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, textAlign: 'center', paddingVertical: 8, opacity: 0.7 },
   commentRow: { flexDirection: 'row', gap: 6, marginBottom: 8, alignItems: 'baseline' },
-  commentUser: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5, color: colors.sepia, flexShrink: 0 },
+  commentUser: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5, color: colors.sepia, flexShrink: 1, maxWidth: '40%' },
   commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, flex: 1 },
   commentInputRow: { flexDirection: 'row', gap: 8, marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,105,20,0.1)', paddingTop: 8 },
   commentInput: { flex: 1, backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', borderRadius: 4, paddingHorizontal: 10, paddingVertical: 8, fontFamily: fonts.body, fontSize: 12, color: colors.bone },

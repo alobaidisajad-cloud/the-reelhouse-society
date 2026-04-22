@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rye&family=La+Belle+Aurore&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+
+body { margin: 0; overflow: hidden; background: #070605; } /* Deepest warm charcoal, not pure black */
+.viewport { width: 1080px; height: 1920px; position: relative; background: #070605; }
+
+/* Elegant Analog Texture */
+.texture { 
+  position: absolute; inset: 0; z-index: 100; opacity: 0.15; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.6' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); 
+  animation: filmDrift 5s infinite alternate; mix-blend-mode: soft-light; 
+}
+@keyframes filmDrift { 0% { opacity: 0.1; } 100% { opacity: 0.15; transform: scale(1.02); } }
+
+/* A very soft, wealthy golden hour corner flare */
+.flare {
+  position: absolute; top: -200px; right: -200px; width: 800px; height: 800px;
+  background: radial-gradient(circle, rgba(202, 177, 113, 0.1) 0%, transparent 70%);
+  z-index: 90; animation: flareBreathe 8s ease-in-out infinite alternate; pointer-events: none;
+}
+@keyframes flareBreathe { 0% { transform: scale(1); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 1; } }
+
+.vignette { position: absolute; inset: 0; box-shadow: inset 0 0 400px rgba(0,0,0,0.8); z-index: 95; pointer-events: none; }
+
+/* Typographic Systems */
+.body-elegant { font-family: 'Courier Prime', monospace; color: rgba(255,255,255,0.7); font-size: 34px; text-transform: uppercase; letter-spacing: 0.25em; text-align: center; font-weight: 400; line-height: 2; }
+.title-elegant { font-family: 'Rye', serif; color: #cab171; text-align: center; text-transform: uppercase; font-weight: normal; letter-spacing: 0.05em; }
+
+/* Container Dynamics */
+.layer { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; }
+
+/* SCENE 1: The Society Logo (0s - 4s) */
+.scene-1 { animation: elegantFadeInOut 4s ease-in-out forwards; }
+.logo-center { width: 140px; filter: sepia(0.6) saturate(1.2) brightness(1.2); margin-bottom: 40px; animation: gentleRise 4s ease-out forwards; }
+.society-name { font-size: 50px; animation: gentleRise 4s ease-out forwards 0.2s; letter-spacing: 0.1em; color: #cab171; }
+
+/* SCENE 2: The Core Prestige (4s - 8s) */
+.scene-2 { animation: elegantFadeInOut 4s ease-in-out forwards 4s; z-index: 10; }
+.prestige-statement { font-size: 36px; animation: subtleExpand 4s ease-out forwards; color: #cab171; margin-bottom: 30px; letter-spacing: 0.3em; }
+
+/* SCENE 3: The Architecture (8s - 12s) */
+.scene-3 { animation: elegantFadeInOut 4s ease-in-out forwards 8s; z-index: 20; }
+.arch-block { display: flex; flex-direction: column; gap: 40px; }
+.arch-item { font-size: 44px; color: #fff; letter-spacing: 0.2em; border-bottom: 1px solid rgba(202, 177, 113, 0.3); padding-bottom: 10px; opacity: 0; }
+.ai-1 { animation: revealUp 3s ease-out forwards 8.2s; }
+.ai-2 { animation: revealUp 3s ease-out forwards 8.8s; }
+.ai-3 { animation: revealUp 3s ease-out forwards 9.4s; }
+
+/* SCENE 4: Arrival (12s - 17s) */
+.scene-4 { animation: elegantFadeIn 2s ease-out forwards 12s; z-index: 30; }
+.final-title { font-size: 85px; margin-bottom: 30px; animation: elegantFloat 5s ease-out forwards; text-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+.final-sub { font-size: 28px; color: rgba(255,255,255,0.5); font-style: italic; animation: elegantFadeIn 2s ease-out forwards 13s; opacity: 0; }
+.final-signature { position: absolute; bottom: 100px; font-family: 'La Belle Aurore', cursive; color: #cab171; font-size: 55px; opacity: 0; transform: rotate(-4deg); animation: elegantFadeIn 3s ease-in-out forwards 14s; }
+
+/* Animations */
+@keyframes elegantFadeInOut {
+  0% { opacity: 0; filter: blur(10px); }
+  20% { opacity: 1; filter: blur(0); }
+  80% { opacity: 1; filter: blur(0); transform: scale(1.02); }
+  100% { opacity: 0; filter: blur(10px); transform: scale(1.05); }
+}
+@keyframes elegantFadeIn {
+  0% { opacity: 0; filter: blur(10px); transform: scale(0.95); }
+  100% { opacity: 1; filter: blur(0); transform: scale(1); }
+}
+@keyframes gentleRise { 0% { transform: translateY(20px); } 100% { transform: translateY(0px); } }
+@keyframes subtleExpand { 0% { letter-spacing: 0.2em; } 100% { letter-spacing: 0.4em; } }
+@keyframes revealUp { 0% { opacity: 0; transform: translateY(20px); } 20% { opacity: 1; } 100% { opacity: 1; transform: translateY(0); } }
+@keyframes elegantFloat { 0% { transform: scale(0.95); } 100% { transform: scale(1); } }
+
+</style>
+</head>
+<body>
+<div class="viewport">
+  <div class="texture"></div>
+  <div class="flare"></div>
+  <div class="vignette"></div>
+  
+  <!-- SCENE 1 -->
+  <div class="layer scene-1">
+    <img class="logo-center" src="public/reelhouse-logo-transparent.png" onerror="this.src='public/reelhouse-logo.svg'">
+    <div class="title-elegant society-name">THE REELHOUSE SOCIETY</div>
+  </div>
+
+  <!-- SCENE 2 -->
+  <div class="layer scene-2">
+    <div class="body-elegant prestige-statement">The Archive Is Expanding.</div>
+  </div>
+
+  <!-- SCENE 3 -->
+  <div class="layer scene-3">
+    <div class="arch-block title-elegant">
+      <div class="arch-item ai-1">The Dark Room.</div>
+      <div class="arch-item ai-2">The Breakdown Engine.</div>
+      <div class="arch-item ai-3">The Stacks.</div>
+    </div>
+  </div>
+
+  <!-- SCENE 4 -->
+  <div class="layer scene-4">
+    <div class="title-elegant final-title">The Native App</div>
+    <div class="body-elegant final-sub">A society for those who live and breathe cinema.</div>
+    <div class="final-signature">Arriving Soon</div>
+  </div>
+</div>
+</body>
+</html>

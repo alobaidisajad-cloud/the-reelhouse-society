@@ -160,8 +160,9 @@ export const useFilmStore = create<FilmState>()(
                         
                         // Database level trigger handles interaction notifications beautifully
                     }
-                } catch (e: any) {
-                    if (e?.message?.toLowerCase().includes('fetch') || e?.message?.toLowerCase().includes('network')) {
+                } catch (e: unknown) {
+                    const err = e as Error
+                    if (err?.message?.toLowerCase().includes('fetch') || err?.message?.toLowerCase().includes('network')) {
                         // Offline Background Queue — Keep the optimistic UI, sync later
                         if (!exists) {
                             enqueueMutation({ type: 'endorse_log', payload: { user_id: user.id, target_log_id: targetId } }).catch(() => {})
@@ -230,8 +231,9 @@ export const useFilmStore = create<FilmState>()(
                         
                         // Database level trigger handles list endorsement notifications beautifully
                     }
-                } catch (e: any) {
-                    if (e?.message?.toLowerCase().includes('fetch') || e?.message?.toLowerCase().includes('network')) {
+                } catch (e: unknown) {
+                    const err = e as Error
+                    if (err?.message?.toLowerCase().includes('fetch') || err?.message?.toLowerCase().includes('network')) {
                         // Offline queueing
                         if (!exists) {
                             enqueueMutation({ type: 'endorse_list', payload: { user_id: user.id, target_list_id: listId } }).catch(() => {})
@@ -342,7 +344,7 @@ export const useFilmStore = create<FilmState>()(
             fetchWatchlist: async () => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                let allItems: any[] = []
+                let allItems: { film_id: number; film_title: string; poster_path: string | null; year: number | null; created_at: string }[] = []
                 let page = 0
                 const PAGE_SIZE = 1000
                 while (true) {
@@ -406,7 +408,7 @@ export const useFilmStore = create<FilmState>()(
 
                     // ── Batched fetch: single query for ALL list items instead of N+1 ──
                     const listIds = lists.map(l => l.id)
-                    let allItems: any[] = []
+                    let allItems: { list_id: string; film_id: number; film_title: string; poster_path: string | null }[] = []
                     if (listIds.length > 0) {
                         const { data: items } = await supabase
                             .from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).limit(1000)
@@ -422,7 +424,7 @@ export const useFilmStore = create<FilmState>()(
                     const fullLists = lists.map((list) => ({
                         id: list.id, title: list.title, description: list.description,
                         isRanked: list.is_ranked, isPrivate: list.is_private || false, createdAt: list.created_at,
-                        films: (itemsByList.get(list.id) || []).map((i: any) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path || null })),
+                        films: (itemsByList.get(list.id) || []).map((i) => ({ id: i.film_id, title: i.film_title, poster: i.poster_path || null })),
                     }))
                     
                     set({ 
@@ -486,8 +488,23 @@ export const useFilmStore = create<FilmState>()(
                 const user = useAuthStore.getState().user
                 if (!user) return
 
+                // Fetch directly from server as a pre-flight if missing in client paginated cache
+                let existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined
+                if (!existingLog && log.filmId) {
+                    const { data: serverCheck } = await supabase.from('logs')
+                        .select('id, rating, review, watched_date, watched_with, view_count, viewing_history, created_at, status')
+                        .eq('user_id', user.id).eq('film_id', log.filmId).maybeSingle()
+                    if (serverCheck) {
+                        existingLog = {
+                            id: serverCheck.id, filmId: log.filmId, rating: serverCheck.rating, review: serverCheck.review, 
+                            watchedDate: serverCheck.watched_date, watchedWith: serverCheck.watched_with, 
+                            viewCount: serverCheck.view_count, viewingHistory: serverCheck.viewing_history,
+                            createdAt: serverCheck.created_at, status: serverCheck.status
+                        } as FilmLog
+                    }
+                }
+
                 // ── Rewatch: if a log already exists for this film, archive old review into viewing_history ──
-                const existingLog = log.filmId ? get()._loggedIndex[log.filmId] : undefined
                 if (existingLog) {
                     const oldHistory = existingLog.viewingHistory || []
                     const archivedEntry = {
@@ -559,7 +576,13 @@ export const useFilmStore = create<FilmState>()(
             markAsWatched: async (film, status = 'watched') => {
                 const user = useAuthStore.getState().user
                 if (!user) return
-                const existingLog = get()._loggedIndex[film.id]
+                
+                let existingLog = get()._loggedIndex[film.id]
+                if (!existingLog) {
+                    const { data: serverCheck } = await supabase.from('logs').select('id, status').eq('user_id', user.id).eq('film_id', film.id).maybeSingle()
+                    if (serverCheck) existingLog = { id: serverCheck.id, status: serverCheck.status } as FilmLog
+                }
+
                 // If already logged, just update the status on the existing log
                 if (existingLog) {
                     await get().updateLog(existingLog.id, { status } as Partial<FilmLog>)
@@ -612,9 +635,9 @@ export const useFilmStore = create<FilmState>()(
                 await get().removeLog(existingLog.id)
             },
 
-            getCinephileStats: () => {
+            getCinephileStats: (overrideCount?: number) => {
                 const logs = get().logs
-                const count = logs.length
+                const count = overrideCount ?? logs.length
                 let level = 'FIRST REEL'
                 let color = 'var(--fog)'
                 if (count > 50) { level = 'THE ORACLE'; color = 'var(--sepia)' }
@@ -868,7 +891,7 @@ export const useFilmStore = create<FilmState>()(
                     .from('physical_archive').select('id, user_id, film_id, film_title, poster_path, year, formats, notes, condition, created_at').eq('user_id', uid)
                     .order('created_at', { ascending: false }).limit(2000)
                 if (!error && data) {
-                    const items = data.map((item: any) => ({
+                    const items = data.map((item) => ({
                         id: item.id,
                         filmId: item.film_id,
                         title: item.film_title,
@@ -920,7 +943,7 @@ export const useFilmStore = create<FilmState>()(
                 if (!error) set((state) => ({ physicalArchive: state.physicalArchive.filter(a => a.filmId !== filmId) }))
             },
 
-            updatePhysicalArchiveItem: async (filmId: number, updates: any) => {
+            updatePhysicalArchiveItem: async (filmId: number, updates: Partial<PhysicalArchiveItem>) => {
                 const user = useAuthStore.getState().user
                 if (!user) return
                 const dbUpdates: Record<string, unknown> = {}

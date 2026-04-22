@@ -45,7 +45,7 @@ export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalPr
         mimeType: 'image/jpeg',
         dialogTitle: 'Share Cinematic Dossier',
       });
-    } catch (err) {
+    } catch (err: unknown) {
       console.log('Share failed:', err);
     } finally {
       setSharing(false);
