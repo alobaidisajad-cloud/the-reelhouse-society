@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import Animated, { FadeInDown, FadeInUp, Layout } from 'react-native-reanimated';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TextInput, ActivityIndicator, ScrollView } from 'react-native';
+import Animated, { FadeInDown, FadeInUp, useSharedValue, useAnimatedStyle, withTiming, useAnimatedKeyboard } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ArrowLeft, Sparkles, Film, ArrowRight } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import reelToast from '@/src/utils/reelToast';
+import PressableScale from '@/src/components/PressableScale';
 
 interface OracleFilm {
   id: number;
@@ -24,15 +26,43 @@ const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
 
 export default function OracleScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  
+  const keyboard = useAnimatedKeyboard();
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    paddingBottom: keyboard.height.value,
+  }));
+  
   const [mood, setMood] = useState('');
   const [loading, setLoading] = useState(false);
   const [recommendations, setRecommendations] = useState<OracleFilm[]>([]);
+  // FIX #7: Track whether a search has been submitted to show empty state
+  const [hasSearched, setHasSearched] = useState(false);
+  const mountedRef = React.useRef(true);
+  // FIX #6: Track the 'thinking' setTimeout so it can be cleaned up on unmount
+  const thinkingTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+  React.useEffect(() => { return () => { mountedRef.current = false; if (thinkingTimerRef.current) clearTimeout(thinkingTimerRef.current); }; }, []);
 
-  const askOracle = async () => {
+  // Nitrate Noir Breathing Ember Protocol
+  const oracleEmberOpacity = useSharedValue(0.5);
+  const oracleEmberStyle = useAnimatedStyle(() => ({
+    opacity: oracleEmberOpacity.value,
+  }));
+
+  // Callback isolation: stabilize input handler
+  const handleMoodChange = useCallback((text: string) => {
+    setMood(text);
+  }, []);
+
+  const askOracle = useCallback(async () => {
     if (!mood.trim()) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     setRecommendations([]);
+    setHasSearched(true);
+
+    // Activate Breathing Ember during Oracle divination
+    oracleEmberOpacity.value = withTiming(1, { duration: 600 });
 
     try {
       // In a real env, this hits a custom Supabase edge function or OpenAI API.
@@ -40,32 +70,36 @@ export default function OracleScreen() {
       // We will perform a keyword TMDB search based on the mood.
       const searchRes = await tmdb.search(mood);
       const movies = (searchRes?.results || [])
-        .filter((r) => r.media_type === 'movie' || r.media_type === undefined) // TMDB search endpoints sometime omit media_type for keyword endpoints
+        .filter((r: any) => r.media_type === 'movie' || r.media_type === undefined) // TMDB search endpoints sometime omit media_type for keyword endpoints
         .slice(0, 5) as OracleFilm[];
       
-      setTimeout(() => {
+      thinkingTimerRef.current = setTimeout(() => {
+        if (!mountedRef.current) return; // Guard: skip if unmounted
         setRecommendations(movies);
         setLoading(false);
+        oracleEmberOpacity.value = withTiming(0.5, { duration: 300 });
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       }, 1500); // Simulate Oracle "thinking" for dramatic effect
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (e) {
       setLoading(false);
-      reelToast.error('The Oracle's connection to the archive was severed. Try again.');
+      oracleEmberOpacity.value = withTiming(0.5, { duration: 300 });
+      reelToast.error('The Oracle\'s connection to the archive was severed. Try again.');
     }
-  };
+  }, [mood, oracleEmberOpacity]);
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={s.container}>
+    <Animated.View style={[s.container, animatedContainerStyle]}>
       <LinearGradient 
         colors={['#1a1510', colors.ink]} 
         locations={[0, 0.4]}
         style={StyleSheet.absoluteFillObject} 
       />
       
-      <View style={s.navBar}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+      <View style={[s.navBar, { paddingTop: insets.top + 12 }]}>
+        <PressableScale onPress={() => router.back()} style={s.backBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">
           <ArrowLeft size={20} color={colors.bone} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
       <ScrollView 
@@ -80,33 +114,39 @@ export default function OracleScreen() {
           <Text style={s.eyebrow}>THE ORACLE</Text>
           <Text style={s.title}>Consult the Archives</Text>
           <Text style={s.subtitle}>
-            Describe the exact feeling, genre, or aesthetic you desire. The Oracle will parse the vault to find your perfect cinema.
+            Enter a keyword, mood, or genre. The Archive will surface films that match your cinematic craving.
           </Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(800).delay(200).springify()} style={s.inputSection}>
-          <TextInput
-            style={s.input}
-            placeholder="E.g. A melancholic neon-soaked thriller in Tokyo..."
-            placeholderTextColor={colors.fog}
-            value={mood}
-            onChangeText={setMood}
-            multiline
-            textAlignVertical="top"
-          />
-          <TouchableOpacity 
+          <Animated.View style={[{ borderRadius: 2, overflow: 'hidden' }, oracleEmberStyle]}>
+            <TextInput
+              style={s.input}
+              placeholder="E.g. A melancholic neon-soaked thriller in Tokyo..."
+              placeholderTextColor={colors.fog}
+              value={mood}
+              onChangeText={handleMoodChange}
+              multiline
+              textAlignVertical="top"
+              selectionColor={'rgba(218,165,32,0.3)'}
+              cursorColor={colors.sepia}
+              keyboardAppearance="dark"
+              accessibilityLabel="Describe your desired film mood or aesthetic"
+            />
+          </Animated.View>
+          <PressableScale 
             style={[s.submitBtn, (!mood.trim() || loading) && s.submitBtnDisabled]} 
             onPress={askOracle}
             disabled={!mood.trim() || loading}
-            activeOpacity={0.8}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            pressedScale={0.97}
           >
             {loading ? (
               <ActivityIndicator color={colors.ink} size="small" />
             ) : (
               <Text style={s.submitText}>DIVINE</Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </Animated.View>
 
         {loading && (
@@ -116,20 +156,21 @@ export default function OracleScreen() {
         )}
 
         {recommendations.length > 0 && (
-          <Animated.View entering={FadeInUp.duration(600).springify()} style={s.resultsSection} layout={Layout.springify()}>
+          <Animated.View entering={FadeInUp.duration(600).springify()} style={s.resultsSection}>
             <Text style={s.resultsHeader}>THE ORACLE PROPOSES:</Text>
             {recommendations.map((item, index) => {
               const posterUri = item.poster_path ? tmdb.poster(item.poster_path, 'w342') : null;
               return (
-                <Animated.View key={item.id} entering={FadeInUp.delay(index * 150)}>
-                  <TouchableOpacity 
+                <Animated.View key={item.id} entering={FadeInUp.delay(index * 150)}
+                  onLayout={() => { if (index === 0) Haptics.selectionAsync(); }}
+                >
+                  <PressableScale 
                     style={s.resultCard}
-                    onPress={() => router.push(`/film/${item.id}`)}
-                    activeOpacity={0.8}
+                    onPress={() => router.push(`/film/${item.id}` as any)}
                     hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
                   >
                     {posterUri ? (
-                      <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" placeholder={blurhash} transition={300} />
+                      <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" cachePolicy="memory-disk" placeholder={blurhash} transition={300} />
                     ) : (
                       <View style={[s.poster, s.noPoster]}>
                         <Film size={24} color={colors.fog} />
@@ -141,21 +182,27 @@ export default function OracleScreen() {
                       <Text style={s.resultDesc} numberOfLines={3}>{item.overview}</Text>
                     </View>
                     <ArrowRight size={16} color={colors.sepia} style={{ marginRight: 16 }} />
-                  </TouchableOpacity>
+                  </PressableScale>
                 </Animated.View>
               );
             })}
           </Animated.View>
         )}
+
+        {/* FIX #7: Empty result state when Oracle finds nothing */}
+        {!loading && hasSearched && recommendations.length === 0 && (
+          <Animated.View entering={FadeInUp.duration(400)} style={s.emptyResult}>
+            <Text style={s.emptyResultText}>The Oracle found no films matching that description. Try different keywords or broaden your request.</Text>
+          </Animated.View>
+        )}
       </ScrollView>
-    </KeyboardAvoidingView>
+    </Animated.View>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   navBar: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 20,
     paddingHorizontal: 16, paddingBottom: 16, zIndex: 10,
   },
   backBtn: { padding: 8, marginLeft: -8 },
@@ -202,4 +249,7 @@ const s = StyleSheet.create({
   resultTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 4 },
   resultYear: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.sepia, marginBottom: 8 },
   resultDesc: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, lineHeight: 18 },
+  // FIX #7: Empty result styles
+  emptyResult: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
+  emptyResultText: { fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 22 },
 });

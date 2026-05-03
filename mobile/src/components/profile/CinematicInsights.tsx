@@ -9,6 +9,7 @@ import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
+import { FilmSchema } from '@/src/lib/schemas';
 
 interface InsightLog {
     filmId?: number;
@@ -16,11 +17,11 @@ interface InsightLog {
 }
 
 interface TMDBMovieDetail {
-    genres?: Array<{ id: number; name: string }>;
+    genres?: { id: number; name: string }[];
     genre_ids?: number[];
     credits?: {
-        cast?: Array<{ id: number; name: string; profile_path: string | null }>;
-        crew?: Array<{ id: number; name: string; profile_path: string | null; job: string }>;
+        cast?: { id: number; name: string; profile_path?: string | null }[];
+        crew?: { id: number; name: string; profile_path?: string | null; job: string }[];
     };
 }
 
@@ -35,7 +36,7 @@ const GENRE_MAP: Record<number, string> = {
 interface PersonCount {
     id: number;
     name: string;
-    profile_path: string | null;
+    profile_path?: string | null;
     count: number;
 }
 
@@ -51,6 +52,9 @@ interface Insights {
     totalFilms: number;
     fetchedFilms: number;
 }
+
+// Global cache to persist TMDB details across tab unmounts, drastically reducing network payloads.
+export const GLOBAL_TMDB_CACHE = new Map<number, TMDBMovieDetail>();
 
 export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
     const [insights, setInsights] = useState<Insights | null>(null);
@@ -77,21 +81,40 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
             const BATCH_DELAY = 400;
 
             const allMovies: TMDBMovieDetail[] = [];
+            const idsToNetworkFetch: number[] = [];
 
-            for (let i = 0; i < idsToFetch.length; i += BATCH_SIZE) {
+            // Hydrate instantly from cache
+            for (const id of idsToFetch) {
+                if (GLOBAL_TMDB_CACHE.has(id)) {
+                    allMovies.push(GLOBAL_TMDB_CACHE.get(id)!);
+                } else {
+                    idsToNetworkFetch.push(id);
+                }
+            }
+
+            // Only fetch what isn't cached
+            for (let i = 0; i < idsToNetworkFetch.length; i += BATCH_SIZE) {
                 if (cancelled) return;
-                const batch = idsToFetch.slice(i, i + BATCH_SIZE);
+                const batch = idsToNetworkFetch.slice(i, i + BATCH_SIZE);
                 const results = await Promise.allSettled(
                     batch.map(id => tmdb.detail(id))
                 );
 
-                for (const result of results) {
+                for (let j = 0; j < results.length; j++) {
+                    const result = results[j];
                     if (result.status === 'fulfilled' && result.value) {
-                        allMovies.push(result.value);
+                        const parsed = FilmSchema.safeParse(result.value);
+                        if (parsed.success) {
+                            GLOBAL_TMDB_CACHE.set(batch[j], parsed.data as any);
+                            allMovies.push(parsed.data as any);
+                        } else {
+                            GLOBAL_TMDB_CACHE.set(batch[j], result.value as any);
+                            allMovies.push(result.value as any);
+                        }
                     }
                 }
 
-                if (i + BATCH_SIZE < idsToFetch.length) {
+                if (i + BATCH_SIZE < idsToNetworkFetch.length) {
                     await new Promise(r => setTimeout(r, BATCH_DELAY));
                 }
             }
@@ -307,7 +330,7 @@ const s = StyleSheet.create({
         borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', backgroundColor: '#050402',
         alignItems: 'center', justifyContent: 'center',
     },
-    avatarImg: { width: '100%', height: '100%' } as any,
+    avatarImg: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
     avatarFallback: { fontFamily: fonts.display, fontSize: 14, color: colors.ash },
     personInfo: { flex: 1 },
     personName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, marginBottom: 4 },

@@ -1,21 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform,
-  Dimensions, Linking,
+  View, Text, StyleSheet, ScrollView, Platform,
+  useWindowDimensions, AppState
 } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
+import { ToastOverlay } from '@/src/components/ToastOverlay';
+import { restorePurchases as restoreIAP, purchaseTier, ReelHouseTier } from '@/src/lib/revenueCat';
+import { safeOpenURL } from '@/src/utils/linking';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const CARD_W = SCREEN_W * 0.78;
-const CARD_GAP = 12;
 
 // ── Tier Data (matches web MembershipPage.tsx exactly) ──
 const TIERS = [
@@ -95,44 +97,62 @@ const TIERS = [
 
 export default function MembershipScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { user, isAuthenticated } = useAuthStore();
   const [isRedirecting, setIsRedirecting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  const [isRestoring, setIsRestoring] = useState(false);
+
+  // P7-FIX #5: Refresh session tier when returning from external payment browser
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && isRedirecting) {
+        setIsRedirecting(false);
+        // Re-fetch user profile to pick up tier upgrade from webhook
+        useAuthStore.getState().restoreSession?.();
+      }
+    });
+    return () => sub.remove();
+  }, [isRedirecting]);
+
+  const { width } = useWindowDimensions();
+  const cardWidth = width * 0.78;
+  const cardGap = 12;
 
   const userRole = (user?.role as string) ?? 'cinephile';
 
   const handleCheckout = async (tier: string) => {
     if (!isAuthenticated || !user) {
-      router.push('/login');
+      router.push('/login' as any);
       return;
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setIsRedirecting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {
-        body: { checkout_type: 'membership', user_id: user.id, tier },
-      });
-      if (error || !data?.redirect_url) throw error;
-      await Linking.openURL(data.redirect_url);
+      const entitlement = await purchaseTier(tier as ReelHouseTier);
+      if (entitlement?.isActive) {
+        reelToast.success(`Welcome to the ${tier.toUpperCase()} rank!`);
+        useAuthStore.getState().restoreSession?.();
+      }
     } catch {
-      reelToast.error('Checkout unavailable. Please try again.');
+      reelToast.error('Checkout unavailable. Please check your App Store account.');
     } finally {
       setIsRedirecting(false);
     }
   };
 
   const handleFoundingCheckout = async () => {
-    if (!isAuthenticated || !user) { router.push('/login'); return; }
+    if (!isAuthenticated || !user) { router.push('/login' as any); return; }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     setIsRedirecting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('paytabs-handler/create', {
-        body: { checkout_type: 'membership', user_id: user.id, tier: 'founding' },
-      });
-      if (error || !data?.redirect_url) throw error;
-      await Linking.openURL(data.redirect_url);
+      const entitlement = await purchaseTier('founding');
+      if (entitlement?.isActive) {
+        reelToast.success(`Welcome to the Founding Board!`);
+        useAuthStore.getState().restoreSession?.();
+      }
     } catch {
-      reelToast.error('Checkout unavailable. Please try again.');
+      reelToast.error('Checkout unavailable. Please check your App Store account.');
     } finally {
       setIsRedirecting(false);
     }
@@ -145,14 +165,15 @@ export default function MembershipScreen() {
 
   return (
     <View style={st.container}>
+      <ToastOverlay />
       {/* Nav */}
-      <View style={st.navBar}>
-        <TouchableOpacity onPress={() => router.back()} style={st.navBackBtn} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+      <View style={[st.navBar, { paddingTop: insets.top + 8 }]}>
+        <PressableScale onPress={() => router.back()} style={st.navBackBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Go back">
           <ChevronLeft size={22} color={colors.bone} />
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
-      <ScrollView contentContainerStyle={st.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: Math.max(insets.bottom, 80) }]} showsVerticalScrollIndicator={false}>
 
         {/* ── Header ── */}
         <Animated.View entering={FadeInDown.duration(700)} style={st.header}>
@@ -170,14 +191,14 @@ export default function MembershipScreen() {
             horizontal
             pagingEnabled={false}
             decelerationRate="fast"
-            snapToInterval={CARD_W + CARD_GAP}
+            snapToInterval={cardWidth + cardGap}
             snapToAlignment="center"
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={st.tiersScroll}
-            contentOffset={{ x: CARD_W + CARD_GAP - (SCREEN_W - CARD_W) / 2, y: 0 }}
+            contentContainerStyle={[st.tiersScroll, { paddingHorizontal: (width - cardWidth) / 2, gap: cardGap }]}
+            contentOffset={{ x: cardWidth + cardGap - (width - cardWidth) / 2, y: 0 }}
           >
             {TIERS.map((tier, idx) => (
-              <View key={tier.id} style={[st.tierCardOuter, tier.popular && st.tierCardOuterPopular]}>
+              <View key={tier.id} style={[st.tierCardOuter, { width: cardWidth }, tier.popular && st.tierCardOuterPopular]}>
                 {/* Popular badge — outside clippped card */}
                 {tier.popular && (
                   <View style={st.popularBadgeWrap}>
@@ -256,23 +277,25 @@ export default function MembershipScreen() {
                     </Text>
                   </View>
                 ) : (
-                  <TouchableOpacity
+                  <PressableScale
                     style={[
                       st.tierCta,
                       tier.ctaStyle === 'ghost' && st.tierCtaGhost,
                       tier.ctaStyle === 'primary' && st.tierCtaPrimary,
                       tier.ctaStyle === 'auteur' && st.tierCtaAuteur,
                     ]}
-                    activeOpacity={0.7}
                     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                     disabled={isRedirecting}
                     onPress={() => {
                       if (tier.id === 'cinephile') {
-                        if (!isAuthenticated) router.push('/login');
+                        if (!isAuthenticated) router.push('/login' as any);
                       } else {
                         handleCheckout(tier.id);
                       }
                     }}
+                    pressedScale={0.97}
+                    accessibilityRole="button"
+                    accessibilityLabel={isRedirecting ? 'Processing purchase' : tier.cta}
                   >
                     {tier.ctaStyle === 'auteur' && (
                       <LinearGradient colors={['#7d1f1f', '#a83232']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
@@ -282,9 +305,9 @@ export default function MembershipScreen() {
                       tier.ctaStyle === 'ghost' && { color: colors.fog },
                       tier.ctaStyle === 'auteur' && { color: colors.parchment },
                     ]}>
-                      {isRedirecting ? 'SECURING LEDGER...' : tier.cta}
+                      {isRedirecting ? 'PROCESSING…' : tier.cta}
                     </Text>
-                  </TouchableOpacity>
+                  </PressableScale>
                 )}
                 </View>
               </View>
@@ -321,12 +344,12 @@ export default function MembershipScreen() {
             Compare to $19.99/yr recurring {'\u2014'} this pays for itself in under 3 years and never charges again.
           </Text>
 
-          <TouchableOpacity style={st.foundingBtn} activeOpacity={0.7} disabled={isRedirecting} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} onPress={handleFoundingCheckout}>
+          <PressableScale style={st.foundingBtn} disabled={isRedirecting} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} onPress={handleFoundingCheckout} pressedScale={0.97} accessibilityRole="button" accessibilityLabel={isRedirecting ? 'Processing purchase' : 'Claim a founding seat'}>
             <LinearGradient colors={[colors.sepia, '#b89530']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
-            <Text style={st.foundingBtnText}>{isRedirecting ? 'SECURING LEDGER...' : 'CLAIM A FOUNDING SEAT'}</Text>
-          </TouchableOpacity>
+            <Text style={st.foundingBtnText}>{isRedirecting ? 'PROCESSING…' : 'CLAIM A FOUNDING SEAT'}</Text>
+          </PressableScale>
 
-          <Text style={st.foundingFooter}>POWERED BY PAYTABS {'\u00B7'} SECURE CHECKOUT {'\u00B7'} SEATS FILLING FAST</Text>
+          <Text style={st.foundingFooter}>IN-APP PURCHASE {'\u00B7'} SECURE CHECKOUT {'\u00B7'} SEATS FILLING FAST</Text>
         </Animated.View>
 
         {/* ── Philosophy Section ── */}
@@ -343,6 +366,58 @@ export default function MembershipScreen() {
           </View>
         </Animated.View>
 
+        {/* ── Restore Purchases & Manage Subscription (Apple Requirement) ── */}
+        <Animated.View entering={FadeInDown.duration(600).delay(500)} style={st.restoreSection}>
+          <PressableScale
+            style={st.restoreBtn}
+            disabled={isRestoring}
+            onPress={async () => {
+              setIsRestoring(true);
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              try {
+                const result = await restoreIAP();
+                if (result.isActive) {
+                  reelToast.success(`Restored: ${result.tier.toUpperCase()} tier`);
+                } else {
+                  reelToast.info('No active subscriptions found.');
+                }
+              } catch {
+                reelToast.error('Restore failed. Please try again.');
+              } finally {
+                setIsRestoring(false);
+              }
+            }}
+            haptic="light"
+            accessibilityRole="button"
+            accessibilityLabel={isRestoring ? 'Restoring purchases' : 'Restore purchases'}
+          >
+            <Text style={st.restoreBtnText}>{isRestoring ? 'RESTORING…' : 'RESTORE PURCHASES'}</Text>
+          </PressableScale>
+
+          {Platform.OS === 'ios' && (
+            <PressableScale
+              style={st.manageBtn}
+              onPress={() => safeOpenURL('https://apps.apple.com/account/subscriptions')}
+              haptic="light"
+              accessibilityRole="link"
+              accessibilityLabel="Manage subscription in App Store"
+            >
+              <Text style={st.manageBtnText}>MANAGE SUBSCRIPTION</Text>
+            </PressableScale>
+          )}
+          {Platform.OS === 'android' && (
+            <PressableScale
+              style={st.manageBtn}
+              onPress={() => safeOpenURL('https://play.google.com/store/account/subscriptions')}
+              haptic="light"
+              accessibilityRole="link"
+              accessibilityLabel="Manage subscription in Google Play"
+            >
+              <Text style={st.manageBtnText}>MANAGE SUBSCRIPTION</Text>
+            </PressableScale>
+          )}
+        </Animated.View>
+
       </ScrollView>
     </View>
   );
@@ -352,7 +427,6 @@ const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   scrollContent: { paddingBottom: 80 },
   navBar: {
-    paddingTop: Platform.OS === 'ios' ? 56 : 32,
     paddingHorizontal: 16, paddingBottom: 8,
     zIndex: 10,
   },
@@ -377,7 +451,7 @@ const st = StyleSheet.create({
   },
 
   // ── Tiers Carousel ──
-  tiersScroll: { paddingHorizontal: (SCREEN_W - CARD_W) / 2, gap: CARD_GAP, paddingVertical: 20 },
+  tiersScroll: { paddingVertical: 20 },
 
   tierCard: {
     borderWidth: 1, borderRadius: 3, overflow: 'hidden',
@@ -403,7 +477,7 @@ const st = StyleSheet.create({
   // Tier name & label
   tierName: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, lineHeight: 28, marginBottom: 4 },
   tierNameAuteur: { color: '#a83232' },
-  tierCardOuter: { width: CARD_W },
+  tierCardOuter: { },
   tierCardOuterPopular: { paddingTop: 12 },
   tierLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, marginBottom: 18 },
 
@@ -525,4 +599,27 @@ const st = StyleSheet.create({
   },
   philosophyDivider: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   philosophyLine: { width: 40, height: 1, backgroundColor: colors.flicker, opacity: 0.5 },
+
+  // ── Restore & Manage ──
+  restoreSection: {
+    alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16,
+    borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.08)',
+    marginHorizontal: 16, marginTop: 8,
+  },
+  restoreBtn: {
+    paddingVertical: 12, paddingHorizontal: 28,
+    borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', borderRadius: 3,
+    marginBottom: 12,
+  },
+  restoreBtnText: {
+    fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2,
+    color: colors.sepia, textAlign: 'center',
+  },
+  manageBtn: {
+    paddingVertical: 8, paddingHorizontal: 20,
+  },
+  manageBtnText: {
+    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5,
+    color: colors.fog, textDecorationLine: 'underline', opacity: 0.7,
+  },
 });

@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
+import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import { tmdb } from '@/src/lib/tmdb';
@@ -24,7 +24,7 @@ interface FilmLogRowProps {
 export const FilmLogRow = memo(function FilmLogRow({ log, onPress, isOwnProfile }: FilmLogRowProps) {
     const posterUri = log.poster_path ? tmdb.poster(log.poster_path, 'w92') : null;
     return (
-        <TouchableOpacity style={s.container} onPress={() => { Haptics.selectionAsync(); onPress?.(); }} activeOpacity={0.7}>
+        <PressableScale style={s.container} onPress={() => { onPress?.(); }} pressedScale={0.98} haptic="selection">
             {posterUri ? (
                 <Image source={{ uri: posterUri }} style={s.poster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`log-${log.id}`} />
             ) : (
@@ -36,9 +36,10 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onPress, isOwnProfile 
                     <Text style={s.year}>{log.year}</Text>
                     {log.rating > 0 && <ReelRating rating={log.rating} size={10} />}
                 </View>
+                {/* eslint-disable-next-line react/no-unescaped-entities */}
                 {log.review && <Text style={s.review} numberOfLines={2}>"{log.review}"</Text>}
             </View>
-        </TouchableOpacity>
+        </PressableScale>
     );
 });
 

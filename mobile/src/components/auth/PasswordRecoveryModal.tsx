@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Modal, TextInput } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
 interface Props {
   visible: boolean;
@@ -14,6 +16,11 @@ interface Props {
 }
 
 export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgotLoading, onClose, onEmailChange, onSubmit, onBackToSignIn }: Props) {
+  const keyboard = useAnimatedKeyboard();
+  const animatedOverlayStyle = useAnimatedStyle(() => ({
+    paddingBottom: keyboard.height.value + 24,
+  }));
+
   return (
     <Modal
       visible={visible}
@@ -21,21 +28,21 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
       animationType="fade"
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView style={s.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <TouchableOpacity
+      <Animated.View style={[s.modalOverlay, animatedOverlayStyle]}>
+        <Pressable
           style={StyleSheet.absoluteFill}
-          activeOpacity={1}
           onPress={onClose}
         />
         <View style={s.modalContent}>
           {/* Close */}
-          <TouchableOpacity
+          <PressableScale
             style={s.modalCloseBtn}
             onPress={onClose}
             hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+            haptic="light"
           >
             <Text style={s.modalCloseText}>✕</Text>
-          </TouchableOpacity>
+          </PressableScale>
 
           {/* Header */}
           <View style={s.modalHeader}>
@@ -58,19 +65,22 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                 .
               </Text>
               <Text style={s.modalSubText}>
+                {/* eslint-disable-next-line react/no-unescaped-entities */}
                 Check your spam folder if it doesn't arrive within 2 minutes.
               </Text>
-              <TouchableOpacity
+              <PressableScale
                 style={s.modalSubmitBtn}
                 onPress={onBackToSignIn}
-                activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                pressedScale={0.97}
               >
                 <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>BACK TO SIGN IN</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           ) : (
             <View style={s.forgotFormBody}>
               <Text style={s.modalBodyText}>
+                {/* eslint-disable-next-line react/no-unescaped-entities */}
                 Enter the email associated with your account and we'll send you a classified reset link.
               </Text>
               <View style={s.inputWrap}>
@@ -87,13 +97,16 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                   onSubmitEditing={onSubmit}
                   autoCorrect={false}
                   maxLength={254}
+                  keyboardAppearance="dark"
+                  accessibilityLabel="Recovery email address"
                 />
               </View>
-              <TouchableOpacity
+              <PressableScale
                 style={[s.modalSubmitBtn, forgotLoading && s.submitDisabled]}
                 onPress={onSubmit}
                 disabled={forgotLoading}
-                activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                pressedScale={0.97}
               >
                 {forgotLoading ? (
                   <View style={s.submitLoading}>
@@ -103,11 +116,11 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                 ) : (
                   <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SEND RESET LINK</Text>
                 )}
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           )}
         </View>
-      </KeyboardAvoidingView>
+      </Animated.View>
     </Modal>
   );
 }

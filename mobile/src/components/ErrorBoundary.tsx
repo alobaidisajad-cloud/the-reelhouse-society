@@ -7,8 +7,11 @@
  * Usage: Wrap the root <Stack /> in _layout.tsx
  */
 import React, { Component, type ReactNode } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { colors, fonts } from '../theme/theme';
+import { captureError } from '../lib/sentry';
+import PressableScale from './PressableScale';
+import { router } from 'expo-router';
 
 interface Props {
   children: ReactNode;
@@ -34,19 +37,15 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log for diagnostics — in production, send to crash reporting
     if (__DEV__) {
       console.error(`[ErrorBoundary] [${this.state.errorId}] Caught render error:`, error, errorInfo.componentStack);
     } else {
-      // Production: structured crash log (ready for Sentry/Crashlytics integration)
-      console.error(JSON.stringify({
+      // M-07 AUDIT FIX: Use static import instead of dynamic require()
+      captureError(error, {
         errorId: this.state.errorId,
-        message: error.message,
-        stack: error.stack?.slice(0, 500),
-        component: errorInfo.componentStack?.slice(0, 200),
-        timestamp: new Date().toISOString(),
+        componentStack: errorInfo.componentStack?.slice(0, 200),
         retryCount: this.state.retryCount,
-      }));
+      });
     }
   }
 
@@ -54,6 +53,24 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (this.state.retryCount >= MAX_RETRIES) {
       // Max retries reached — don't allow infinite loops
       return;
+    }
+    // #10 AUDIT FIX: Clear potentially corrupt cached data before retry
+    try {
+      const { queryClient } = require('../lib/queryClient');
+      queryClient.clear();
+    } catch {
+      // queryClient may not be available — proceed with retry anyway
+    }
+    // E-01 AUDIT FIX: Reset navigation to known-good state.
+    // If the router context itself is corrupt (e.g., the error was in the
+    // navigation tree), this will throw — but we still reset the boundary
+    // state so the component tree can attempt a clean re-mount.
+    try {
+      router.replace('/(tabs)');
+    } catch {
+      // Router context may be corrupt — the state reset below will
+      // still allow the component tree to re-mount cleanly.
+      if (__DEV__) console.warn('[ErrorBoundary] Router reset failed — falling back to tree re-mount');
     }
     this.setState((prev) => ({
       hasError: false,
@@ -92,16 +109,18 @@ export default class ErrorBoundary extends Component<Props, State> {
               </Text>
             )}
 
-            <TouchableOpacity
+            <PressableScale
               style={[styles.retryButton, retriesExhausted && styles.retryButtonDisabled]}
               onPress={this.handleRetry}
-              activeOpacity={0.7}
               disabled={retriesExhausted}
+              pressedScale={0.97}
+              accessibilityRole="button"
+              accessibilityLabel="Retry loading the screen"
             >
               <Text style={styles.retryText}>
                 {retriesExhausted ? '◆ PLEASE RESTART APP' : `◆ RETRY SCREENING (${MAX_RETRIES - this.state.retryCount} left)`}
               </Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         </View>
       );

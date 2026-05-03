@@ -1,7 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Modal, TextInput, ScrollView, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, Pressable, Modal, TextInput, ScrollView, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeInUp, FadeInDown, Layout, ZoomIn, useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Plus, X } from 'lucide-react-native';
 import { supabase } from '@/src/lib/supabase';
@@ -9,10 +9,15 @@ import { useAuthStore } from '@/src/stores/auth';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import PressableScale from '../PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { enqueueMutation } from '@/src/utils/offlineQueue';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
+
+// Module-scoped: prevents remount on every render cycle
+const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
 // ── Tier Slot Glow — Web's archivist-card-glow / auteur-card-glow ──
 // 4s breathing border animation, shimmer top line, ✦/★ glyph
@@ -28,15 +33,17 @@ function TierSlotGlow({ tier, children }: { tier: 'archivist' | 'auteur'; childr
                 withTiming(0.55, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
                 withTiming(0.30, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
             ),
-            -1, false,
+            30, false,
         );
         shadowRadius.value = withRepeat(
             withSequence(
                 withTiming(30, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
                 withTiming(15, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
             ),
-            -1, false,
+            30, false,
         );
+        return () => { cancelAnimation(borderOpacity); cancelAnimation(shadowRadius); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const animStyle = useAnimatedStyle(() => ({
@@ -101,7 +108,7 @@ interface TriptychSearchResult {
     media_type?: string;
 }
 
-interface TriptychUser {
+export interface TriptychUser {
     id: string;
     preferences?: {
         favorites?: TriptychFilm[];
@@ -109,15 +116,36 @@ interface TriptychUser {
     } | null;
 }
 
-const { width: SCREEN_W } = Dimensions.get('window');
+ 
+const TriptychResultRow = React.memo(({ film, handleSetFilm }: { film: TriptychSearchResult, handleSetFilm: (film: TriptychSearchResult) => void }) => (
+    <PressableScale 
+        style={s.resultItem}
+        onPress={() => handleSetFilm(film)}
+        haptic
+    >
+        {film.poster_path ? (
+            <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} contentFit="cover" cachePolicy="memory-disk" />
+        ) : (
+            <View style={[s.resultPoster, s.resultPosterPlaceholder]}>
+                <Search size={16} color={colors.ash} />
+            </View>
+        )}
+        <View style={s.resultInfo}>
+            <Text style={s.resultTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.title}</Text>
+            {film.release_date && <Text style={s.resultYear} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.release_date.slice(0, 4)}</Text>}
+        </View>
+    </PressableScale>
+));
+
 
 export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: TriptychUser, isOwnProfile: boolean, userRole?: string }) {
     const { updateUser } = useAuthStore();
+    const router = useRouter();
     const isArchivist = userRole === 'archivist';
     const isAuteur = userRole === 'auteur';
     
     const favorites = (user?.preferences?.favorites as TriptychFilm[]) ?? [];
-    const slots: Array<TriptychFilm | null> = [favorites[0] ?? null, favorites[1] ?? null, favorites[2] ?? null];
+    const slots: (TriptychFilm | null)[] = [favorites[0] ?? null, favorites[1] ?? null, favorites[2] ?? null];
     const insets = useSafeAreaInsets();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -127,6 +155,28 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     const [isSearching, setIsSearching] = useState(false);
     const searchRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Nitrate Noir Breathing Ember Protocol for Search Modal
+    const searchEmberOpacity = useSharedValue(0.5);
+    useEffect(() => {
+        if (isSearching) {
+            searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true);
+        } else {
+            searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
+        }
+        return () => cancelAnimation(searchEmberOpacity);
+    }, [isSearching, searchEmberOpacity]);
+
+    const animatedSearchProps = useAnimatedProps(() => ({
+        color: isSearching ? colors.bloodReel : colors.sepia,
+    }));
+    const animatedSearchStyle = useAnimatedStyle(() => ({
+        opacity: searchEmberOpacity.value,
+    }));
+
+    const handleSearchQueryChange = React.useCallback((text: string) => {
+        setSearchQuery(text);
+    }, [setSearchQuery]);
+
     useEffect(() => {
         if (!searchQuery.trim()) {
             setSearchResults([]);
@@ -134,23 +184,27 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         }
         setIsSearching(true);
         if (searchRef.current) clearTimeout(searchRef.current);
+        
+        let cancelled = false;
+
         searchRef.current = setTimeout(async () => {
             try {
                 const data = await tmdb.search(searchQuery);
-                const movies = (data?.results ?? []).filter((r: TriptychSearchResult) => r.media_type === 'movie' && r.poster_path);
+                if (cancelled) return;
+                const movies = ((data as any)?.results ?? []).filter((r: TriptychSearchResult) => r.media_type === 'movie' && r.poster_path);
                 setSearchResults(movies.slice(0, 10));
             } catch (err: unknown) {
+                if (__DEV__) console.error('[ProfileTriptych] Search timeout/error:', err);
             } finally {
-                setIsSearching(false);
+                if (!cancelled) setIsSearching(false);
             }
         }, 400);
-    }, [searchQuery]);
 
-    useEffect(() => {
         return () => {
+            cancelled = true;
             if (searchRef.current) clearTimeout(searchRef.current);
         };
-    }, []);
+    }, [searchQuery]);
 
     const handleSelectSlot = (index: number) => {
         if (!isOwnProfile) return;
@@ -166,7 +220,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         
         const newFavs = [...slots];
-        newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path };
+        newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path as string };
         
         const currentPrefs = user?.preferences ?? {};
         const updatedPrefs = { ...currentPrefs, favorites: newFavs };
@@ -176,7 +230,13 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
         try {
             await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id);
-        } catch (_e: unknown) {
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : '';
+            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+                enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
+            } else {
+                if (__DEV__) console.error('[ProfileTriptych] Failed to set film:', e);
+            }
         }
     };
 
@@ -192,7 +252,13 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
         try {
             await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id);
-        } catch (_e: unknown) {
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : '';
+            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+                enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
+            } else {
+                if (__DEV__) console.error('[ProfileTriptych] Failed to clear slot:', e);
+            }
         }
     };
 
@@ -217,8 +283,14 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                 // Remove border when TierSlotGlow handles it
                                 film && (isArchivist || isAuteur) && s.slotNoBorder,
                             ]}
-                            onPress={() => handleSelectSlot(i)}
-                            disabled={!isOwnProfile}
+                            onPress={() => {
+                                if (film && !isOwnProfile) {
+                                    router.push(`/film/${film.id}` as never);
+                                } else if (isOwnProfile) {
+                                    handleSelectSlot(i);
+                                }
+                            }}
+                            disabled={!film && !isOwnProfile}
                             haptic
                         >
                             {film ? (
@@ -227,6 +299,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                         source={{ uri: tmdb.poster(film.poster_path, 'w342') }} 
                                         style={s.poster}
                                         contentFit="cover"
+                                        cachePolicy="memory-disk"
                                     />
                                     {isOwnProfile && (
                                         <PressableScale style={s.clearBtn} onPress={() => handleClearSlot(i)} haptic="medium" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
@@ -259,14 +332,18 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                         <View style={s.modalHeader}>
                             <Text style={s.modalEyebrow}>CURATE DOSSIER SLOT {editingSlotIndex !== null ? editingSlotIndex + 1 : ''}</Text>
                             <View style={s.searchWrap}>
-                                <Search size={18} color={colors.sepia} style={s.searchIcon} />
+                                <AnimatedSearchIcon size={18} animatedProps={animatedSearchProps} style={[s.searchIcon, animatedSearchStyle]} />
                                 <TextInput 
                                     autoFocus
                                     placeholder="Search cinematic archives..."
                                     placeholderTextColor={colors.fog}
                                     value={searchQuery}
-                                    onChangeText={setSearchQuery}
+                                    onChangeText={handleSearchQueryChange}
                                     style={s.searchInput}
+                                    selectionColor={colors.sepia}
+                                    keyboardAppearance="dark"
+                                    accessibilityLabel="Search films for triptych slot"
+                                    returnKeyType="search"
                                 />
                             </View>
                         </View>
@@ -276,24 +353,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                 <ActivityIndicator size="large" color={colors.sepia} style={{ marginTop: 40 }} />
                             ) : searchResults.length > 0 ? (
                                 searchResults.map(film => (
-                                    <PressableScale 
-                                        key={film.id}
-                                        style={s.resultItem}
-                                        onPress={() => handleSetFilm(film)}
-                                        haptic
-                                    >
-                                        {film.poster_path ? (
-                                            <Image source={{ uri: tmdb.poster(film.poster_path, 'w92') }} style={s.resultPoster} contentFit="cover" />
-                                        ) : (
-                                            <View style={[s.resultPoster, s.resultPosterPlaceholder]}>
-                                                <Search size={16} color={colors.ash} />
-                                            </View>
-                                        )}
-                                        <View style={s.resultInfo}>
-                                            <Text style={s.resultTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.title}</Text>
-                                            {film.release_date && <Text style={s.resultYear} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{film.release_date.slice(0, 4)}</Text>}
-                                        </View>
-                                    </PressableScale>
+                                    <TriptychResultRow key={film.id} film={film} handleSetFilm={handleSetFilm} />
                                 ))
                             ) : searchQuery ? (
                                 <Text style={s.noResults}>NO MATCHES FOUND</Text>
@@ -448,3 +508,6 @@ const s = StyleSheet.create({
     slotFlexWrap: { flex: 1 },
     resultPosterPlaceholder: { backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center' },
 });
+
+
+TriptychResultRow.displayName = 'TriptychResultRow';

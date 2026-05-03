@@ -1,17 +1,20 @@
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
   View, Text, StyleSheet, TextInput,
-  KeyboardAvoidingView, Platform, FlatList, Modal,
+  Platform, Modal, Alert, InteractionManager,
   AppState, ActivityIndicator,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import * as ExpoClipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import {
   ArrowLeft, Users, Settings, Send, Reply, Copy, Trash2,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   LogOut, X, Lock, Globe, Crown, Sparkles, Check, MessageCircle,
 } from 'lucide-react-native';
 import { useLoungeStore, LoungeMessage, LoungeRoom } from '@/src/stores/lounge';
@@ -20,14 +23,15 @@ import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { supabase } from '@/src/lib/supabase';
 import { LoungeMember } from '@/src/types';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PressableScale from '@/src/components/PressableScale';
+import Buster from '@/src/components/Buster';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 // ════════════════════════════════════════════════════════════
 // SHARED CONTENT CARD — Film/Log share embed
 // ════════════════════════════════════════════════════════════
+ 
 const SharedCard = React.memo(({ msg }: { msg: LoungeMessage }) => {
   if (!msg.film_title && !msg.film_id) return null;
   const typeLabel = msg.type === 'film_share' ? 'FILM' : msg.type.toUpperCase().replace('_SHARE', '');
@@ -50,6 +54,7 @@ const SharedCard = React.memo(({ msg }: { msg: LoungeMessage }) => {
 // ════════════════════════════════════════════════════════════
 // MESSAGE BUBBLE
 // ════════════════════════════════════════════════════════════
+ 
 const MessageBubble = React.memo(({ msg, isSelf, showAuthor, onLongPress }: {
   msg: LoungeMessage; isSelf: boolean; showAuthor: boolean;
   onLongPress: (msg: LoungeMessage) => void;
@@ -124,7 +129,7 @@ function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete }: Actio
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
-        <PressableScale style={s.actionBackdrop} onPress={onClose} />
+        <PressableScale style={s.actionBackdrop} onPress={onClose}><View /></PressableScale>
       </BlurView>
       <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.actionSheet, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
         <View style={s.actionHandle} />
@@ -140,13 +145,18 @@ function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete }: Actio
           <PressableScale
             style={[s.actionBtn, s.actionBtnLast]}
             onPress={() => {
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-              onDelete(msg.id);
               onClose();
+              Alert.alert('Delete Message?', 'This message will be permanently removed.', [
+                { text: 'Cancel', style: 'cancel' },
+                { text: 'Delete', style: 'destructive', onPress: () => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                  onDelete(msg.id);
+                }},
+              ]);
             }}
             accessibilityRole="button"
           >
-            <Trash2 size={18} color={colors.sepia} strokeWidth={1.5} />
+            <Trash2 size={18} color={colors.bloodReel} strokeWidth={1.5} />
             <Text style={[s.actionBtnText, s.actionBtnDanger]}>DELETE MESSAGE</Text>
           </PressableScale>
         )}
@@ -169,23 +179,49 @@ interface LoungeSettingsPanelProps {
 function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: LoungeSettingsPanelProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { leaveLounge } = useLoungeStore();
+  const { leaveLounge, deleteLounge } = useLoungeStore();
   const [copied, setCopied] = useState(false);
+
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   const handleCopyCode = async () => {
     if (lounge.invite_code) {
       ExpoClipboard.setStringAsync(lounge.invite_code);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  const handleLeave = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    await leaveLounge(lounge.id);
-    onClose();
-    router.replace('/(tabs)/lounge');
+  const handleLeave = () => {
+    Alert.alert('Leave Lounge?', 'You will need a new invite to rejoin a private lounge.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Leave', style: 'destructive', onPress: async () => {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        await leaveLounge(lounge.id);
+        onClose();
+        InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as any));
+      }},
+    ]);
+  };
+
+  const handleDelete = () => {
+    Alert.alert('Incinerate Lounge?', 'All messages and member history will be permanently destroyed.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Incinerate', style: 'destructive', onPress: async () => {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        await deleteLounge(lounge.id);
+        onClose();
+        InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as any));
+      }},
+    ]);
   };
 
   if (!visible) return null;
@@ -193,9 +229,9 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
       <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
-        <PressableScale style={s.actionBackdrop} onPress={onClose} />
+        <PressableScale style={s.actionBackdrop} onPress={onClose}><View /></PressableScale>
       </BlurView>
-      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.settingsSheet, { paddingBottom: insets.bottom }]}>
+      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.settingsSheet, { paddingBottom: Math.max(insets.bottom, 28) }]}>
         <View style={s.actionHandle} />
         <View style={s.settingsHeaderRow}>
           <Text style={s.settingsTitle}>Lounge Settings</Text>
@@ -204,10 +240,12 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
           </PressableScale>
         </View>
 
-        <FlatList
+        <FlashList
           data={members}
           keyExtractor={item => item.user_id}
           showsVerticalScrollIndicator={false}
+          /* estimatedItemSize for member rows */
+          estimatedItemSize={56}
           ListHeaderComponent={
             <View style={s.settingsListHeader}>
               {lounge.is_private && lounge.invite_code && (
@@ -225,11 +263,11 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
               <Text style={s.settingsLabel}>MEMBERS ({members?.length || 0})</Text>
             </View>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item }: { item: LoungeMember }) => (
             <View style={s.memberRow}>
               <View style={s.memberAvatar}>
                 {item.avatar_url
-                  ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" />
+                  ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
                   : <Users size={13} color={colors.fog} strokeWidth={1.5} />
                 }
               </View>
@@ -244,10 +282,17 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
           )}
           ListFooterComponent={
             <View style={s.settingsFooter}>
-              <PressableScale style={s.leaveBtn} onPress={handleLeave} accessibilityRole="button">
-                <LogOut size={14} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.leaveBtnText} numberOfLines={1}>STEP OUT OF LOUNGE</Text>
-              </PressableScale>
+              {isCreator ? (
+                <PressableScale style={s.leaveBtn} onPress={handleDelete} accessibilityRole="button">
+                  <Trash2 size={14} color={colors.sepia} strokeWidth={1.5} />
+                  <Text style={s.leaveBtnText} numberOfLines={1}>INCINERATE LOUNGE</Text>
+                </PressableScale>
+              ) : (
+                <PressableScale style={s.leaveBtn} onPress={handleLeave} accessibilityRole="button">
+                  <LogOut size={14} color={colors.sepia} strokeWidth={1.5} />
+                  <Text style={s.leaveBtnText} numberOfLines={1}>STEP OUT OF LOUNGE</Text>
+                </PressableScale>
+              )}
             </View>
           }
         />
@@ -265,24 +310,84 @@ export default function LoungeRoomScreen() {
   const user = useAuthStore(s => s.user);
   const insets = useSafeAreaInsets();
 
+  const keyboard = useAnimatedKeyboard();
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    paddingBottom: keyboard.height.value,
+  }));
+
   const {
     lounges, currentMessages, fetchMessages, sendMessage,
     deleteMessage, subscribeToLounge, sending, markRead,
   } = useLoungeStore();
-  const activeLounge = lounges.find(l => l.id === id);
-  const isCreator = activeLounge?.creator_id === user?.id;
-
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<LoungeMessage | null>(null);
   const [actionSheetMsg, setActionSheetMsg] = useState<LoungeMessage | null>(null);
+
+  // Callback isolation: stabilize chat input handler
+  const handleInputChange = useCallback((text: string) => {
+    setInput(text);
+  }, []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [members, setMembers] = useState<LoungeMember[]>([]);
+  const [localLounge, setLocalLounge] = useState<LoungeRoom & { is_member?: boolean } | null>(null);
+  const [joining, setJoining] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<any>(null);
+
+  // Autonomous hydration & Membership Check
+  useEffect(() => {
+    if (!id) return;
+
+    const loadLounge = async () => {
+      // 1. Fetch lounge data
+      const { data: loungeData, error } = await supabase
+        .from('lounges')
+        .select('*')
+        .eq('id', id)
+        .single();
+        
+      if (!loungeData || error) {
+        setNotFound(true);
+        return;
+      }
+
+      // 2. Fetch membership status
+      let isMember = false;
+      if (user) {
+        const { data: memberCheck } = await supabase
+          .from('lounge_members')
+          .select('id')
+          .eq('lounge_id', id)
+          .eq('user_id', user.id)
+          .single();
+        isMember = !!memberCheck;
+      }
+
+      setLocalLounge({ ...loungeData, is_member: isMember });
+
+      // Trigger global state sync if not present
+      const store = useLoungeStore.getState();
+      const loungeExists = store.lounges.some(l => l.id === id);
+      if (!loungeExists && isMember) {
+        store.fetchLounges();
+      }
+    };
+
+    loadLounge();
+  }, [id, user]);
+
+  const activeLounge = localLounge || lounges.find(l => l.id === id);
+  const isCreator = activeLounge?.creator_id === user?.id;
+  const isMember = localLounge?.is_member !== false; // Default to true if not loaded yet, or false if explicitly known
+
+  const handleLongPress = useCallback((msg: LoungeMessage) => {
+    setActionSheetMsg(msg);
+  }, []);
 
   // App state handling
   useEffect(() => {
-    let timeout: NodeJS.Timeout;
+    let timeout: ReturnType<typeof setTimeout>;
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'background') {
         timeout = setTimeout(() => {
@@ -290,16 +395,21 @@ export default function LoungeRoomScreen() {
         }, 30000);
       } else if (state === 'active') {
         clearTimeout(timeout);
-        if (id) fetchMessages(id);
+        if (id) {
+          fetchMessages(id);
+          markRead(id);
+        }
       }
     });
     return () => sub.remove();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   // Subscribe & fetch
   useEffect(() => {
     if (id) {
       fetchMessages(id);
+      markRead(id); // Clear unread pulse
       const unsub = subscribeToLounge(id);
 
       supabase
@@ -308,16 +418,20 @@ export default function LoungeRoomScreen() {
         .eq('lounge_id', id)
         .then(({ data }) => {
           if (data) {
-            setMembers(data.map((m: { user_id: string; profiles?: { username?: string; avatar_url?: string } | null }) => ({
-              user_id: m.user_id,
-              username: m.profiles?.username ?? 'user',
-              avatar_url: m.profiles?.avatar_url,
-            })));
+            setMembers(data.map((m: any) => {
+              const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
+              return {
+                user_id: m.user_id,
+                username: profile?.username ?? 'user',
+                avatar_url: profile?.avatar_url,
+              };
+            }));
           }
         });
 
       return () => { unsub(); markRead(id); };
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const handleSend = useCallback(() => {
@@ -329,9 +443,26 @@ export default function LoungeRoomScreen() {
     });
     setInput('');
     setReplyTo(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, sending, id, replyTo]);
 
-  const reversedMessages = useMemo(() => [...currentMessages].reverse(), [currentMessages]);
+  // FIX #4: Removed manual .reverse() — FlashList inverted={true} handles display order.
+  // currentMessages is already chronological (oldest→newest) from the store.
+
+  if (notFound) {
+    return (
+      <View style={s.emptyContainer}>
+        <View style={s.headerCrest}>
+          <X size={18} color={colors.sepia} strokeWidth={1.5} />
+        </View>
+        <Text style={s.emptyChatTitle}>Signal Lost</Text>
+        <Text style={s.emptyChatDesc}>This screening room has been incinerated or does not exist.</Text>
+        <PressableScale style={[s.previewBtn, { marginTop: 24, width: 'auto' }]} onPress={() => router.back()} haptic="medium">
+          <Text style={s.previewBtnText}>RETURN TO LOBBY</Text>
+        </PressableScale>
+      </View>
+    );
+  }
 
   if (!activeLounge) {
     return (
@@ -342,8 +473,20 @@ export default function LoungeRoomScreen() {
     );
   }
 
+  // Handle joining public lounge
+  const handleTakeSeat = async () => {
+    if (!id) return;
+    setJoining(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const success = await useLoungeStore.getState().joinLoungeById(id);
+    if (success) {
+      setLocalLounge(prev => prev ? { ...prev, is_member: true } : null);
+    }
+    setJoining(false);
+  };
+
   return (
-    <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+    <Animated.View style={[s.container, animatedContainerStyle]}>
       {/* Header */}
       <View style={[s.roomHeader, { paddingTop: Math.max(insets.top + 10, 44) }]}>
         <PressableScale style={s.headerBtn} onPress={() => router.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
@@ -376,74 +519,102 @@ export default function LoungeRoomScreen() {
       </View>
 
       {/* Messages */}
-      <FlatList
-        ref={flatListRef}
-        data={reversedMessages}
-        keyExtractor={item => item.id}
-        contentContainerStyle={s.messagesList}
-        inverted={true}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        renderItem={({ item, index }) => {
-          const isSelf = item.user_id === user?.id;
-          const olderMessage = reversedMessages[index + 1];
-          const showAuthor = !olderMessage || olderMessage.user_id !== item.user_id ||
-            (new Date(item.created_at).getTime() - new Date(olderMessage.created_at).getTime() > 300000);
+      <FlashList
+        {...{
+          ref: flatListRef,
+          data: currentMessages,
+          keyExtractor: (item: any) => item.id,
+          contentContainerStyle: s.messagesList,
+          inverted: true,
+          keyboardShouldPersistTaps: "handled",
+          showsVerticalScrollIndicator: false,
+          estimatedItemSize: 100,
+          onEndReached: () => {
+            if (id) useLoungeStore.getState().loadMoreMessages(id);
+          },
+          onEndReachedThreshold: 0.5,
+          renderItem: ({ item, index }: any) => {
+            const isSelf = item.user_id === user?.id;
+            const olderMessage = currentMessages[index + 1];
+            const showAuthor = !olderMessage || olderMessage.user_id !== item.user_id ||
+              (new Date(item.created_at).getTime() - new Date(olderMessage.created_at).getTime() > 300000);
 
-          return (
-            <MessageBubble
-              msg={item}
-              isSelf={isSelf}
-              showAuthor={showAuthor}
-              onLongPress={(msg) => setActionSheetMsg(msg)}
-            />
-          );
-        }}
-        ListEmptyComponent={
-          <View style={s.emptyChat}>
-            <MessageCircle size={32} color={colors.sepia} strokeWidth={1} />
-            <Text style={s.emptyChatTitle}>The Conversation Begins</Text>
-            <Text style={s.emptyChatDesc}>Be the first to break the silence.</Text>
-          </View>
-        }
+            return (
+              <MessageBubble
+                msg={item}
+                isSelf={isSelf}
+                showAuthor={showAuthor}
+                onLongPress={handleLongPress}
+              />
+            );
+          },
+          ListEmptyComponent: (
+            <View style={s.emptyChat}>
+              <Buster size={48} mood="peeking" />
+              <Text style={s.emptyChatTitle}>The Conversation Begins</Text>
+              <Text style={s.emptyChatDesc}>Be the first to break the silence.</Text>
+            </View>
+          )
+        } as any}
       />
 
-      {/* Input */}
-      <View style={[s.inputWrapper, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
-        {replyTo && (
-          <AnimatedView entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={s.replyBanner}>
-            <View style={s.replyBannerLeft}>
-              <Reply size={10} color={colors.sepia} strokeWidth={2} />
-              <Text style={[s.replyBannerAuthor, { flexShrink: 1 }]} numberOfLines={1}>{replyTo.username}</Text>
-            </View>
-            <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
-            <PressableScale onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button">
-              <X size={14} color={colors.fog} strokeWidth={1.5} />
+      {/* Input or Preview Banner */}
+      {isMember ? (
+        <View style={[s.inputWrapper, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+          {replyTo && (
+            <AnimatedView entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={s.replyBanner}>
+              <View style={s.replyBannerLeft}>
+                <Reply size={10} color={colors.sepia} strokeWidth={2} />
+                <Text style={[s.replyBannerAuthor, { flexShrink: 1 }]} numberOfLines={1}>{replyTo.username}</Text>
+              </View>
+              <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
+              <PressableScale onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button">
+                <X size={14} color={colors.fog} strokeWidth={1.5} />
+              </PressableScale>
+            </AnimatedView>
+          )}
+          <View style={s.inputRow}>
+            <TextInput
+              style={s.chatInput}
+              placeholder="Say something about cinema..."
+              placeholderTextColor={colors.ash}
+              value={input}
+              onChangeText={handleInputChange}
+              multiline
+              maxLength={500}
+              selectionColor={colors.sepia}
+              keyboardAppearance="dark"
+              accessibilityLabel="Chat message input"
+            />
+            <PressableScale
+              style={[s.sendBtn, (!input.trim() || sending) && s.sendBtnDisabled]}
+              onPress={handleSend}
+              disabled={!input.trim() || sending}
+              haptic="medium"
+              accessibilityRole="button"
+            >
+              <Send size={16} color={colors.ink} strokeWidth={2} />
             </PressableScale>
-          </AnimatedView>
-        )}
-        <View style={s.inputRow}>
-          <TextInput
-            style={s.chatInput}
-            placeholder="Say something about cinema..."
-            placeholderTextColor={colors.ash}
-            value={input}
-            onChangeText={setInput}
-            multiline
-            maxLength={500}
-            selectionColor={colors.sepia}
-          />
+          </View>
+        </View>
+      ) : (
+        <AnimatedView entering={SlideInDown.duration(300)} style={[s.previewBanner, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+          <Text style={s.previewBannerText}>You are previewing this salon.</Text>
           <PressableScale
-            style={[s.sendBtn, (!input.trim() || sending) && s.sendBtnDisabled]}
-            onPress={handleSend}
-            disabled={!input.trim() || sending}
+            style={[s.previewBtn, joining && s.previewBtnDisabled]}
+            onPress={handleTakeSeat}
+            disabled={joining}
             haptic="medium"
             accessibilityRole="button"
           >
-            <Send size={16} color={colors.ink} strokeWidth={2} />
+            {joining ? (
+              <ActivityIndicator size="small" color={colors.ink} />
+            ) : (
+              <Text style={s.previewBtnText}>TAKE A SEAT</Text>
+            )}
           </PressableScale>
-        </View>
-      </View>
+        </AnimatedView>
+      )}
 
       {/* Overlays */}
       <ActionSheet
@@ -461,7 +632,7 @@ export default function LoungeRoomScreen() {
         onClose={() => setSettingsOpen(false)}
         isCreator={isCreator}
       />
-    </KeyboardAvoidingView>
+    </Animated.View>
   );
 }
 
@@ -483,6 +654,36 @@ const s = StyleSheet.create({
     fontSize: 9,
     letterSpacing: 3,
     color: colors.fog,
+  },
+  headerCrest: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(196,150,26,0.35)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(196,150,26,0.03)',
+    marginBottom: 8,
+  },
+  emptyChat: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 80,
+    gap: 10,
+  },
+  emptyChatTitle: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    color: colors.parchment,
+    marginBottom: 4,
+  },
+  emptyChatDesc: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    color: colors.fog,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 
   // ── Room Header ──
@@ -670,24 +871,6 @@ const s = StyleSheet.create({
     lineHeight: 17,
   },
 
-  // ── Empty Chat ──
-  emptyChat: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    gap: 10,
-  },
-  emptyChatTitle: {
-    fontFamily: fonts.display,
-    fontSize: 16,
-    color: colors.parchment,
-  },
-  emptyChatDesc: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 12,
-    color: colors.fog,
-  },
-
   // ── Input ──
   inputWrapper: {
     paddingVertical: 10,
@@ -728,22 +911,23 @@ const s = StyleSheet.create({
   inputRow: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 10,
+    gap: 8,
   },
   chatInput: {
     flex: 1,
-    backgroundColor: colors.soot,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: Platform.OS === 'ios' ? 12 : 8,
-    paddingBottom: 12,
     minHeight: 40,
     maxHeight: 120,
+    backgroundColor: colors.soot,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
+    color: colors.bone,
     fontFamily: fonts.body,
-    color: colors.parchment,
     fontSize: 14,
+    lineHeight: 18,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.ash,
   },
   sendBtn: {
     width: 40,
@@ -752,9 +936,49 @@ const s = StyleSheet.create({
     backgroundColor: colors.sepia,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+    shadowColor: colors.sepia,
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 },
   },
-  sendBtnDisabled: { opacity: 0.35 },
+  sendBtnDisabled: {
+    backgroundColor: colors.ash,
+    shadowOpacity: 0,
+  },
+
+  // ── Preview Banner ──
+  previewBanner: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    backgroundColor: 'rgba(11,10,8,0.97)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.ash,
+    alignItems: 'center',
+    gap: 12,
+  },
+  previewBannerText: {
+    fontFamily: fonts.ui,
+    fontSize: 11,
+    color: colors.fog,
+    letterSpacing: 0.5,
+  },
+  previewBtn: {
+    backgroundColor: colors.sepia,
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 4,
+    width: '100%',
+    alignItems: 'center',
+  },
+  previewBtnDisabled: {
+    opacity: 0.5,
+  },
+  previewBtnText: {
+    fontFamily: fonts.uiMedium,
+    fontSize: 11,
+    letterSpacing: 2,
+    color: colors.ink,
+  },
 
   // ── Action Sheet ──
   actionBackdrop: { flex: 1 },
@@ -794,7 +1018,7 @@ const s = StyleSheet.create({
     letterSpacing: 2,
     color: colors.parchment,
   },
-  actionBtnDanger: { color: colors.sepia },
+  actionBtnDanger: { color: colors.bloodReel },
 
   // ── Settings Sheet ──
   settingsSheet: {
@@ -807,7 +1031,7 @@ const s = StyleSheet.create({
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     padding: 24,
-    paddingBottom: Platform.OS === 'ios' ? 44 : 28,
+    paddingBottom: 28,
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: 'rgba(196,150,26,0.15)',
@@ -915,3 +1139,8 @@ const s = StyleSheet.create({
     color: colors.sepia,
   },
 });
+
+
+MessageBubble.displayName = 'MessageBubble';
+
+SharedCard.displayName = 'SharedCard';

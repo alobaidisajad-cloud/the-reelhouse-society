@@ -1,20 +1,24 @@
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { memo } from 'react';
+import { View, Text, StyleSheet, Modal, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
-export function TrailerModal({ visible, videoId, onClose }: { visible: boolean; videoId: string; onClose: () => void }) {
+export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClose }: { visible: boolean; videoId: string; onClose: () => void }) {
+    const insets = useSafeAreaInsets();
     if (!visible || !videoId) return null;
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay}>
                 {/* Close button — matches web: "X CLOSE" text button above video */}
-                <TouchableOpacity style={s.closeBtn} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                <PressableScale style={[s.closeBtn, { top: Math.max(insets.top + 10, 50) }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}>
                     <X size={12} color={colors.parchment} />
                     <Text style={s.closeBtnText}>CLOSE</Text>
-                </TouchableOpacity>
+                </PressableScale>
                 <View style={s.videoWrap}>
                     {/* Nitrate Projector Overlay: Tints the raw YouTube feed sepia */}
                     <View style={{ position: 'absolute', zIndex: 2, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
@@ -39,7 +43,7 @@ export function TrailerModal({ visible, videoId, onClose }: { visible: boolean; 
             </View>
         </Modal>
     );
-}
+})
 
 const s = StyleSheet.create({
     overlay: {

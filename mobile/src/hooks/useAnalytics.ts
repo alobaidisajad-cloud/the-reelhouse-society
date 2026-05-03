@@ -6,6 +6,7 @@
  */
 import { useCallback, useEffect, useRef } from 'react'
 import { usePathname } from 'expo-router'
+import { AppState } from 'react-native'
 import { supabase } from '../lib/supabase'
 import { useAuthStore } from '../stores/auth'
 
@@ -59,10 +60,14 @@ export function useAnalytics() {
     }
   }, [])
 
-  // Auto-flush on interval — NO cleanup flush to avoid stale-closure issues
+  // Auto-flush on interval + flush on app background
   useEffect(() => {
     const timer = setInterval(flush, FLUSH_INTERVAL)
-    return () => clearInterval(timer)
+    // #2 AUDIT FIX: Flush buffer when app goes to background to prevent data loss
+    const sub = AppState.addEventListener('change', (state: string) => {
+      if (state === 'inactive' || state === 'background') flush()
+    })
+    return () => { clearInterval(timer); sub.remove() }
   }, [flush])
 
   // Track page views automatically

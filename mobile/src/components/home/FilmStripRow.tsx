@@ -1,170 +1,169 @@
-import React, { memo, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+/**
+ * FilmStripRow — FlashList horizontal poster carousel with tactile card details.
+ */
+import { memo, useCallback } from 'react';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
-import { useRouter } from 'expo-router';
-import Animated, { FadeInRight } from 'react-native-reanimated';
-import { ArrowRight } from 'lucide-react-native';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors, fonts } from '@/src/theme/theme';
+import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { SectionDivider } from '@/src/components/Decorative';
+import PressableScale from '@/src/components/PressableScale';
+import type { TMDBFilm } from './types';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
+ 
 
-interface StripFilm {
-    id: number;
-    poster_path: string | null;
-    title?: string;
-    [key: string]: unknown;
-}
+const MemoizedBox16 = memo(() => <View style={{ width: 16 }} />);
 
-interface FilmStripRowProps {
-    films: StripFilm[];
-    title: string;
-    label: string;
-    description?: string;
-}
+const FilmCard = memo(function FilmCard({ film, onPress }: { film: TMDBFilm; onPress: (id: number) => void; index?: number }) {
+  const { width } = useWindowDimensions();
+  const posterWidth = width * 0.29;
+  const posterHeight = posterWidth * 1.5;
+  const posterUri = film.poster_path ? `${TMDB_IMG_W185}${film.poster_path}` : null;
+  return (
+    <PressableScale style={[s.filmCard, { width: posterWidth }]} onPress={() => onPress(film.id)}>
+      <View style={[s.posterWrap, { width: posterWidth, height: posterHeight }, !posterUri && s.posterEmpty]}>
+        {posterUri ? (
+          <Image source={{ uri: posterUri }} style={s.posterImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
+        ) : (
+          <Text style={s.posterPlaceholder}>✦</Text>
+        )}
+        
+        {/* Tactile Overlay Lighting */}
+        <LinearGradient 
+          colors={['rgba(255,255,255,0.05)', 'transparent', 'rgba(10,7,3,0.8)']} 
+          locations={[0, 0.4, 1]} 
+          style={StyleSheet.absoluteFillObject} 
+          pointerEvents="none" 
+        />
+        
+        {/* Physical Edge Details */}
+        <View style={s.posterEdgeHighlight} pointerEvents="none" />
+      </View>
+    </PressableScale>
+  );
+}, (prev, next) => prev.film.id === next.film.id);
 
-export const FilmStripRow = memo(function FilmStripRow({ films = [], title, label, description }: FilmStripRowProps) {
-    const router = useRouter();
-    const handleFilmPress = useCallback((filmId: number) => {
-        Haptics.selectionAsync();
-        router.push(`/film/${filmId}`);
-    }, [router]);
+export const FilmStripRow = memo(function FilmStripRow({ title, label, films }: { title: string; label: string; films: TMDBFilm[] }) {
+  const router = useRouter();
+  const handlePress = useCallback((filmId: number) => {
+    Haptics.selectionAsync();
+    router.push(`/film/${filmId}` as any);
+  }, [router]);
 
-    return (
-        <View style={s.container}>
-            {/* Header Layout */}
-            <View style={s.headerRow}>
-                <View style={s.headerLeft}>
-                    <LinearGradient 
-                        colors={[colors.sepia, 'rgba(139,105,20,0.3)']} 
-                        style={s.indicator} 
-                    />
-                    <View>
-                        <Text style={s.label}>{label.toUpperCase()}</Text>
-                        <Text style={s.title}>{title}</Text>
-                    </View>
-                </View>
+  const renderFilmCard = useCallback(({ item, index }: { item: TMDBFilm; index: number }) => (
+    <FilmCard film={item} index={index} onPress={handlePress} />
+  ), [handlePress]);
 
-                <TouchableOpacity 
-                    style={s.viewAllBtn}
-                    onPress={() => router.push('/explore')}
-                    activeOpacity={0.6}
-                >
-                    <Text style={s.viewAllText}>VIEW ALL</Text>
-                    <ArrowRight size={10} color={colors.sepia} style={{ opacity: 0.85 }} />
-                </TouchableOpacity>
-            </View>
+  const filmKeyExtractor = useCallback((item: TMDBFilm, i: number) => `${title}-${item.id}-${i}`, [title]);
 
-            {/* Description */}
-            {description && (
-                <View style={s.descWrap}>
-                    <Text style={s.description}>{description}</Text>
-                </View>
-            )}
+  const { width } = useWindowDimensions();
+  const posterWidth = width * 0.29;
+  const posterHeight = posterWidth * 1.5;
 
-            {/* Carousel */}
-            <FlatList
-                horizontal
-                data={films.slice(0, 15)}
-                keyExtractor={(item) => item.id.toString()}
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={s.listContent}
-                snapToInterval={120 + 16} // card width + gap
-                decelerationRate="fast"
-                windowSize={3}
-                maxToRenderPerBatch={8}
-                initialNumToRender={5}
-                removeClippedSubviews={false}
-                renderItem={({ item, index }) => (
-                    <Animated.View entering={FadeInRight.delay(index * 50).duration(400)}>
-                        <TouchableOpacity
-                            activeOpacity={0.8}
-                            onPress={() => handleFilmPress(item.id)}
-                            style={s.card}
-                        >
-                            <Image 
-                                source={{ uri: `${TMDB_IMG_W185}${item.poster_path}` }} 
-                                style={s.poster}
-                                contentFit="cover"
-                            />
-                        </TouchableOpacity>
-                    </Animated.View>
-                )}
-            />
+  if (!films || films.length === 0) return null;
+
+  return (
+    <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.filmStripSection}>
+      <SectionDivider label={label} />
+      <View style={s.stripHeader}>
+        <View style={s.stripTitleRow}>
+          <View style={s.sectionBeacon} />
+          <Text style={s.stripTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>
         </View>
-    );
+      </View>
+
+      <View style={[s.flashListStripWrap, { height: posterHeight + 3 }]}>
+        <FlashList
+          horizontal
+          data={films}
+          keyExtractor={filmKeyExtractor}
+          renderItem={renderFilmCard}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={s.stripScroll}
+          decelerationRate="normal"
+          snapToInterval={posterWidth + 16}
+          snapToAlignment="start"
+          disableIntervalMomentum={false}
+          estimatedItemSize={posterWidth + 16}
+          drawDistance={200}
+          ItemSeparatorComponent={MemoizedBox16}
+        />
+      </View>
+    </Animated.View>
+  );
 });
 
 const s = StyleSheet.create({
-    container: {
-        marginVertical: 24,
-    },
-    headerRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        marginBottom: 16,
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 12,
-    },
-    indicator: {
-        width: 3,
-        height: 28,
-        borderRadius: 2,
-    },
-    label: {
-        fontFamily: fonts.ui,
-        fontSize: 9,
-        letterSpacing: 2,
-        color: colors.sepia,
-        marginBottom: 2,
-    },
-    title: {
-        fontFamily: fonts.display,
-        fontSize: 20,
-        color: colors.parchment,
-    },
-    viewAllBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    viewAllText: {
-        fontFamily: fonts.uiMedium,
-        fontSize: 9,
-        letterSpacing: 2,
-        color: colors.fog,
-    },
-    descWrap: {
-        paddingLeft: 35,
-        paddingRight: 16,
-        marginBottom: 20,
-    },
-    description: {
-        fontFamily: fonts.body,
-        fontSize: 13,
-        color: colors.bone,
-        opacity: 0.75,
-        lineHeight: 20,
-    },
-    listContent: {
-        paddingHorizontal: 16,
-        gap: 16,
-    },
-    card: {
-        width: 120,
-    },
-    poster: {
-        width: 120,
-        height: 180,
-        borderRadius: 6,
-        borderWidth: 1,
-        borderColor: 'rgba(139,105,20,0.1)',
-        backgroundColor: colors.soot,
-    },
+  filmStripSection: {
+    marginBottom: 6,
+  },
+  stripHeader: {
+    paddingHorizontal: 16,
+    marginBottom: 14,
+  },
+  stripTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  sectionBeacon: {
+    width: 3,
+    height: 16,
+    backgroundColor: colors.sepia,
+    borderRadius: 1.5,
+    opacity: 0.6,
+  },
+  stripTitle: {
+    fontFamily: fonts.sub,
+    fontSize: 16,
+    color: colors.parchment,
+    letterSpacing: 0.5,
+    flex: 1,
+  },
+  flashListStripWrap: {
+  },
+  stripScroll: {
+    paddingHorizontal: 16,
+  },
+  filmCard: {
+  },
+  posterWrap: {
+    borderRadius: 4,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(139,105,20,0.12)',
+    backgroundColor: colors.ink,
+  },
+  posterEmpty: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderStyle: 'dashed',
+    borderColor: 'rgba(139,105,20,0.2)',
+  },
+  posterImg: {
+    width: '100%',
+    height: '100%',
+  },
+  posterPlaceholder: {
+    fontFamily: fonts.display,
+    fontSize: 20,
+    color: colors.sepia,
+    opacity: 0.3,
+  },
+  posterEdgeHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.06)',
+  },
 });
+
+
+MemoizedBox16.displayName = 'MemoizedBox16';

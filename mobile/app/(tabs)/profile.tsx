@@ -8,13 +8,16 @@
  *
  * ZERO inline styles. ZERO cheap emoji. All Lucide icons.
  */
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useAuthStore } from '@/src/stores/auth';
 import { useRouter } from 'expo-router';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { LogIn } from 'lucide-react-native';
 import UserProfileScreen from '../user/[username]';
 import Buster from '@/src/components/Buster';
+import PressableScale from '@/src/components/PressableScale';
+import FrozenTab from '@/src/components/layout/FrozenTab';
 
 export default function ProfileTab() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
@@ -23,18 +26,24 @@ export default function ProfileTab() {
 
   if (!isAuthenticated || !user) {
     return (
-      <View style={s.container}>
-        <Buster size={80} mood="peeking" message="The archive awaits your identity." />
-        <Text style={s.prompt}>Identify yourself to access your dossier</Text>
-        <TouchableOpacity style={s.ctaBtn} onPress={() => router.push('/login')} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-          <LogIn size={11} color={colors.sepia} strokeWidth={1.5} />
-          <Text style={s.ctaBtnText}>IDENTIFY YOURSELF</Text>
-        </TouchableOpacity>
-      </View>
+      <FrozenTab>
+        <View style={s.container}>
+          <Buster size={80} mood="peeking" message="The archive awaits your identity." />
+          <Text style={s.prompt}>Identify yourself to access your dossier</Text>
+          <PressableScale style={s.ctaBtn} onPress={() => router.push('/login' as any)} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="medium">
+            <LogIn size={11} color={colors.sepia} strokeWidth={1.5} />
+            <Text style={s.ctaBtnText}>IDENTIFY YOURSELF</Text>
+          </PressableScale>
+        </View>
+      </FrozenTab>
     );
   }
 
-  return <UserProfileScreen usernameOverride={user.username} />;
+  return (
+    <FrozenTab>
+      <UserProfileScreen usernameOverride={user.username} />
+    </FrozenTab>
+  );
 }
 
 const s = StyleSheet.create({

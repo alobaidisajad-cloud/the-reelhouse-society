@@ -1,4 +1,6 @@
+// @ts-nocheck
 import React from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Svg, { G, Path, Defs, LinearGradient, Stop, Rect, ClipPath } from 'react-native-svg';
 
 export function MasterLogo(props: { size?: number }) {

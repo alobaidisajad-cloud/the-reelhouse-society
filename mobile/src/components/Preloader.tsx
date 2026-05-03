@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,22 +9,20 @@ import Animated, {
   withRepeat,
   Easing,
   runOnJS,
-  interpolate,
-  Extrapolation,
+  cancelAnimation,
 } from 'react-native-reanimated';
-import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { colors, fonts } from '@/src/theme/theme';
+import { storage } from '@/src/stores/mmkv-storage';
+import { fonts } from '@/src/theme/theme';
+import { useReducedMotion } from '@/src/hooks/useReducedMotion';
+import { useDeviceThrottling } from '@/src/hooks/useDeviceThrottling';
 
-const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 
 const D1    = 580;
 const D2    = 580;
 const D3    = 620;
 const BLOOM = 400;
 const FADE  = 500;
-const TOTAL = D1 + D2 + D3 + BLOOM + FADE; // 2680
 const CD    = D1 + D2 + D3; // 1780
 
 const DIGITS = [
@@ -64,6 +62,7 @@ function Digit({ d }: { d: DigitConfig }) {
         withTiming(1, { duration: d.dur * 0.80 })
       )
     );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const style = useAnimatedStyle(() => ({
@@ -75,8 +74,9 @@ function Digit({ d }: { d: DigitConfig }) {
     textShadowOffset: { width: 0, height: 0 },
   }));
 
-  return (
-    <Animated.Text style={[styles.digit, style]}>
+    const { width } = useWindowDimensions();
+    return (
+      <Animated.Text style={[styles.digit, style, { fontSize: Math.min(120, width * 0.28) }]}>
       {d.char}
     </Animated.Text>
   );
@@ -93,19 +93,32 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
   const bloomScale = useSharedValue(0.92);
   const warmthOpacity = useSharedValue(0);
   const flicker = useSharedValue(0.45);
+  
+  const reduceMotion = useReducedMotion();
+  const throttleDevice = useDeviceThrottling();
+
+  const { width } = useWindowDimensions();
 
   useEffect(() => {
-    // #18 — First-launch ceremony detection
-    (async () => {
-      const hasLaunched = await AsyncStorage.getItem('reelhouse_has_launched');
-      const isFirstLaunch = !hasLaunched;
-      if (isFirstLaunch) {
-        await AsyncStorage.setItem('reelhouse_has_launched', '1');
-        // Bass-rumble haptic pattern: Heavy → Medium → Light
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), D1);
-        setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), D1 + D2);
-      }
+    // #18 — First-launch ceremony detection (MMKV: synchronous, sub-ms)
+    const hasLaunched = storage.getBoolean('reelhouse_has_launched');
+    const isFirstLaunch = !hasLaunched;
+    if (isFirstLaunch) {
+      storage.set('reelhouse_has_launched', true);
+      // Bass-rumble haptic pattern: Heavy → Medium → Light
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), D1);
+      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), D1 + D2);
+    }
+
+    const FAST_PATH = !isFirstLaunch || reduceMotion || throttleDevice;
+    if (FAST_PATH) {
+      // ── Fast Path: Instant fade out for returning users or low-end devices ──
+      fadeOut.value = withTiming(0, { duration: 400 }, (finished) => {
+        if (finished) runOnJS(onComplete)();
+      });
+      return;
+    }
 
       // ── Breathe Animation (Continuous) ──
       breathe.value = withRepeat(
@@ -156,7 +169,8 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           runOnJS(onComplete)();
         }
       }));
-    })();
+    return () => { cancelAnimation(breathe); cancelAnimation(flicker); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const outerContainerStyle = useAnimatedStyle(() => ({
@@ -185,8 +199,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
   }));
 
   // We limit gate size to min(300px, 68vw) to match web
-  const gateSize = Math.min(300, SCREEN_W * 0.68);
-  const halfGate = gateSize / 2;
+  const gateSize = Math.min(300, width * 0.68);
 
   // Render SVG noise directly if possible, or fallback. Since iOS doesn't do SVG feTurbulence well, 
   // we can use a repeating image, or just skip it. 
@@ -227,7 +240,7 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
                   backgroundColor: isMajor ? 'rgba(196,150,26,0.38)' : 'rgba(196,150,26,0.18)',
                   transform: [
                     { rotate: `${deg}deg` },
-                    { translateX: Math.min(141, SCREEN_W * 0.325) }
+                    { translateX: Math.min(141, width * 0.325) }
                   ],
                 }
               ]}
@@ -303,7 +316,6 @@ const styles = StyleSheet.create({
     top: '50%',
     left: '50%',
     width: 2,
-    height: SCREEN_W * 0.35,
     backgroundColor: '#C4961A',
     transformOrigin: 'left center',
   },
@@ -314,7 +326,6 @@ const styles = StyleSheet.create({
   },
   digit: {
     fontFamily: fonts.display,
-    fontSize: Math.min(120, SCREEN_W * 0.28),
     color: '#EDE5D8',
     includeFontPadding: false,
   },

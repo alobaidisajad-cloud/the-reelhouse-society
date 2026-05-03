@@ -1,0 +1,18 @@
+appId: com.reelhouse.society
+---
+- launchApp
+- assertVisible:
+    id: "vault-tab"
+- tapOn:
+    id: "vault-tab"
+- assertVisible:
+    text: "THE VAULT"
+- swipe:
+    direction: DOWN
+- assertVisible:
+    id: "film-card"
+- tapOn:
+    id: "film-card"
+    index: 0
+- assertVisible:
+    text: "LOG FILM"

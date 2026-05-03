@@ -14,7 +14,7 @@ export function getPasswordChecks(pw: string) {
 }
 
 export type PwCheckKey = keyof ReturnType<typeof getPasswordChecks>;
-export const PW_CHECK_LABELS: Array<[PwCheckKey, string]> = [
+export const PW_CHECK_LABELS: [PwCheckKey, string][] = [
   ['length', '8+ characters'],
   ['uppercase', 'Uppercase letter'],
   ['lowercase', 'Lowercase letter'],

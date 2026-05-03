@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import React, { useMemo, memo } from 'react';
 import Svg, { Circle, Text as SvgText, Line } from 'react-native-svg';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -12,8 +12,6 @@ interface PassportLog {
     status?: string;
 }
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const STAMP_SIZE = (SCREEN_W - 64) / 2.5; // fit ~2.5 stamps per row
 
 const PASSPORT_STAMPS = [
     { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', test: (logs: PassportLog[]) => logs.length >= 100 },
@@ -26,10 +24,9 @@ const PASSPORT_STAMPS = [
     { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↻', test: (logs: PassportLog[]) => { const seen = new Set<number>(); return logs.some((l) => { if (l.filmId && seen.has(l.filmId)) return true; if (l.filmId) seen.add(l.filmId); return false; }); } },
 ];
 
-const PassportStamp = memo(function PassportStamp({ stamp, earned, index }: { stamp: { id: string; label: string; sub: string; glyph: string }; earned: boolean; index: number }) {
+const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }: { stamp: { id: string; label: string; sub: string; glyph: string }; earned: boolean; index: number; size: number }) {
     const rotations = [-4, 3, -2, 5, -3, 2, -5, 4];
     const rotation = rotations[index % 8];
-    const size = STAMP_SIZE;
     const center = size / 2;
     const outerR = center * 0.93;
     const innerR = center * 0.8;
@@ -105,6 +102,7 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index }: { st
 });
 
 export const NoirPassport = memo(function NoirPassport({ logs }: { logs?: PassportLog[] }) {
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     const safeLogs = logs ?? [];
 
     const earned = useMemo(() =>
@@ -112,6 +110,9 @@ export const NoirPassport = memo(function NoirPassport({ logs }: { logs?: Passpo
         [safeLogs]);
 
     const earnedCount = earned.filter(s => s.earned).length;
+
+    const { width } = useWindowDimensions();
+    const stampSize = (width - 64) / 2.5;
 
     return (
         <Animated.View entering={FadeIn.duration(600)} style={s.container}>
@@ -131,7 +132,7 @@ export const NoirPassport = memo(function NoirPassport({ logs }: { logs?: Passpo
                 {/* Stamps grid */}
                 <View style={s.stampsGrid}>
                     {earned.map((stamp, i) => (
-                        <PassportStamp key={stamp.id} stamp={stamp} earned={stamp.earned} index={i} />
+                        <PassportStamp key={stamp.id} stamp={stamp} earned={stamp.earned} index={i} size={stampSize} />
                     ))}
                 </View>
 

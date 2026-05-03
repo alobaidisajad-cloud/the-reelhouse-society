@@ -8,6 +8,19 @@ const TMDB_BASE = 'https://api.themoviedb.org/3';
 const TMDB_IMG = 'https://image.tmdb.org/t/p';
 
 // ── Response interfaces ──
+interface TMDBWatchProvider {
+    provider_id: number;
+    provider_name: string;
+    logo_path: string;
+}
+
+export interface TMDBWatchProviderResult {
+    link?: string;
+    flatrate?: TMDBWatchProvider[];
+    rent?: TMDBWatchProvider[];
+    buy?: TMDBWatchProvider[];
+}
+
 interface TMDBSearchResult {
     id: number;
     title?: string;
@@ -33,6 +46,28 @@ interface TMDBSearchResponse {
     matchedContext?: string;
 }
 
+export interface CrewMember {
+    id: number;
+    job: string;
+    name: string;
+    profile_path?: string | null;
+}
+
+export interface CastMember {
+    id: number;
+    character: string;
+    name: string;
+    profile_path?: string | null;
+}
+
+export interface VideoResult {
+    id: string;
+    site: string;
+    key: string;
+    type: string;
+    name?: string;
+}
+
 interface TMDBMovieDetail {
     id: number;
     title: string;
@@ -42,21 +77,24 @@ interface TMDBMovieDetail {
     release_date?: string;
     runtime?: number;
     vote_average?: number;
-    genres?: Array<{ id: number; name: string }>;
-    credits?: { cast?: unknown[]; crew?: unknown[] };
-    videos?: { results?: unknown[] };
-    similar?: { results?: unknown[] };
-    production_countries?: Array<{ iso_3166_1: string; name: string }>;
-    production_companies?: Array<{ id: number; name: string; logo_path?: string | null; origin_country?: string }>;
+    genres?: { id: number; name: string }[];
+    credits?: { cast?: CastMember[]; crew?: CrewMember[] };
+    videos?: { results?: VideoResult[] };
+    similar?: { results?: TMDBSearchResult[] };
+    production_countries?: { iso_3166_1: string; name: string }[];
+    production_companies?: { id: number; name: string; logo_path?: string | null; origin_country?: string }[];
     status?: string;
     original_language?: string;
     budget?: number;
     revenue?: number;
     tagline?: string;
     vote_count?: number;
-    'watch/providers'?: { results?: Record<string, unknown> };
-    release_dates?: unknown;
+    'watch/providers'?: { results?: Record<string, TMDBWatchProviderResult> };
+    release_dates?: { results?: { iso_3166_1: string; release_dates: { certification: string }[] }[] };
+    popularity?: number;
 }
+
+export type { TMDBMovieDetail };
 
 interface TMDBMovieListResponse {
     results: TMDBSearchResult[];
@@ -84,8 +122,8 @@ interface TMDBPersonCredits {
 
 // ── Simple LRU cache (memory-only, 200 entries, 5min TTL) ──
 const _cache = new Map<string, { data: unknown; ts: number }>();
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes — optimized for high-traffic scalability
-const MAX_CACHE = 500;             // 500 entries — supports 10M+ concurrent users
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const MAX_CACHE = 200;             // M-01 AUDIT FIX: Reduced from 500 — mobile memory safety
 
 function cacheGet(key: string): unknown | undefined {
   const entry = _cache.get(key);
@@ -95,9 +133,10 @@ function cacheGet(key: string): unknown | undefined {
 }
 
 function cacheSet(key: string, data: unknown) {
+  // L-12 FIX: Batch prune oldest 50 entries to prevent single-eviction linear growth
   if (_cache.size >= MAX_CACHE) {
-    const oldest = _cache.keys().next().value;
-    if (oldest !== undefined) _cache.delete(oldest);
+    const keys = [..._cache.keys()].slice(0, 50);
+    keys.forEach(k => _cache.delete(k));
   }
   _cache.set(key, { data, ts: Date.now() });
 }
@@ -146,20 +185,20 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
 export const tmdb = {
   // ── Search ──
   search: async (query: string, page = 1) => {
-    // TIER 1: Omni-Search
-    const res = await fetch(
-        `${TMDB_BASE}/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false&api_key=${TMDB_API_KEY}`
+    // TIER 1: Omni-Search — routed through hardened fetchTMDB (timeout + retry + dedup)
+    let data = await fetchTMDB<TMDBSearchResponse>(
+        `/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`,
+        { results: [], total_results: 0, total_pages: 0, page: 1 }
     );
-    if (!res.ok) return { searchType: 'failed', results: [] };
-    let data = await res.json();
+    if (!data) return { searchType: 'failed', results: [] } as TMDBSearchResponse;
 
-    let items = [];
-    let topPerson = null;
+    let items: TMDBSearchResult[] = [];
+    let topPerson: string | null = null;
 
     if (data.results?.length > 0) {
-        const sortedResults = [...data.results].sort((a: Record<string, unknown>, b: Record<string, unknown>) => {
-            const aName = (a.name || a.title || '').toLowerCase();
-            const bName = (b.name || b.title || '').toLowerCase();
+        const sortedResults = [...data.results].sort((a: TMDBSearchResult, b: TMDBSearchResult) => {
+            const aName = ((a.name || a.title) ?? '').toLowerCase();
+            const bName = ((b.name || b.title) ?? '').toLowerCase();
             const queryLower = query.toLowerCase();
 
             const aExact = aName === queryLower;
@@ -170,7 +209,7 @@ export const tmdb = {
             if (a.media_type === 'person' && b.media_type !== 'person') return -1;
             if (a.media_type !== 'person' && b.media_type === 'person') return 1;
 
-            return (b.popularity || 0) - (a.popularity || 0);
+            return ((b.popularity ?? 0) - (a.popularity ?? 0));
         });
 
         for (const item of sortedResults) {
@@ -182,20 +221,20 @@ export const tmdb = {
                 const isHighPop = (item.popularity || 0) > 5;
 
                 if (isExact || hasPhoto || isHighPop) {
-                    if (!topPerson) topPerson = item.name;
+                    if (!topPerson) topPerson = item.name ?? null;
                     items.push({ ...item, media_type: 'person' });
                 }
 
                 if (hasPhoto || isHighPop || isExact) {
-                    const knownFor = item.known_for?.filter((k: Record<string, unknown>) => k.media_type === 'movie') || [];
-                    items.push(...knownFor.map((m: Record<string, unknown>) => ({ ...m, media_type: 'movie' })));
+                    const knownFor = item.known_for?.filter((k: TMDBSearchResult) => k.media_type === 'movie') || [];
+                    items.push(...knownFor.map((m: TMDBSearchResult) => ({ ...m, media_type: 'movie' })));
                 }
             }
         }
 
         if (items.length > 0 || page > 1) {
             const ids = new Set<string>();
-            const unique = items.filter((m) => {
+            const unique = items.filter((m: TMDBSearchResult) => {
                 const key = `${m.media_type || 'movie'}-${m.id}`;
                 if (ids.has(key)) return false;
                 ids.add(key);
@@ -218,7 +257,7 @@ export const tmdb = {
         }
     }
 
-    // TIER 2: Typo Fallback
+    // TIER 2: Typo Fallback — also routed through fetchTMDB
     const cleanWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter((w) => w.length > 0);
     if (cleanWords.length > 1) {
         const fallbacks = [];
@@ -233,13 +272,13 @@ export const tmdb = {
 
         const fallbackResults = await Promise.all(fallbacks.map(async (fb) => {
             try {
-                const fRes = await fetch(`${TMDB_BASE}/search/multi?query=${encodeURIComponent(fb.text)}&page=1&api_key=${TMDB_API_KEY}`);
-                if (fRes.ok) {
-                    const fData = await fRes.json();
-                    if (fData.results?.length > 0) {
-                        const bestItem = fData.results.sort((a: Record<string, unknown>, b: Record<string, unknown>) => ((b.popularity as number) || 0) - ((a.popularity as number) || 0))[0];
-                        return { data: fData, fallback: fb, bestItem };
-                    }
+                const fData = await fetchTMDB<TMDBSearchResponse>(
+                    `/search/multi?query=${encodeURIComponent(fb.text)}&page=1&include_adult=false`,
+                    null
+                );
+                if (fData?.results?.length) {
+                    const bestItem = [...fData.results].sort((a: TMDBSearchResult, b: TMDBSearchResult) => ((b.popularity ?? 0) - (a.popularity ?? 0)))[0];
+                    return { data: fData, fallback: fb, bestItem };
                 }
             } catch { }
             return null;
@@ -247,25 +286,25 @@ export const tmdb = {
 
         let winner = null;
         let highestPop = -1;
-        for (const res of fallbackResults) {
-            if (res && res.bestItem && res.bestItem.popularity > highestPop) {
-                highestPop = res.bestItem.popularity;
-                winner = res;
+        for (const fbResult of fallbackResults) {
+            if (fbResult && fbResult.bestItem && (fbResult.bestItem.popularity ?? 0) > highestPop) {
+                highestPop = fbResult.bestItem.popularity ?? 0;
+                winner = fbResult;
             }
         }
 
         if (winner) {
-            const items = [];
+            const typoItems: TMDBSearchResult[] = [];
             for (const item of winner.data.results) {
-                if (item.media_type === 'movie') items.push({ ...item, media_type: 'movie' });
+                if (item.media_type === 'movie') typoItems.push({ ...item, media_type: 'movie' });
                 else if (item.media_type === 'person') {
-                    items.push({ ...item, media_type: 'person' });
-                    const known = item.known_for?.filter((k: Record<string, unknown>) => k.media_type === 'movie') || [];
-                    items.push(...known.map((k: Record<string, unknown>) => ({ ...k, media_type: 'movie' })));
+                    typoItems.push({ ...item, media_type: 'person' });
+                    const known = item.known_for?.filter((k: TMDBSearchResult) => k.media_type === 'movie') || [];
+                    typoItems.push(...known.map((k: TMDBSearchResult) => ({ ...k, media_type: 'movie' })));
                 }
             }
             const ids = new Set<string>();
-            winner.data.results = items.filter((m: Record<string, unknown>) => {
+            winner.data.results = typoItems.filter((m: TMDBSearchResult) => {
                 const key = `${m.media_type || 'movie'}-${m.id}`;
                 if (ids.has(key)) return false;
                 ids.add(key); return true;
@@ -276,26 +315,30 @@ export const tmdb = {
         }
     }
 
-    // TIER 3: Semantic Logic
+    // TIER 3: Semantic Logic — also routed through fetchTMDB
     const words = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter((w: string) => w.length > 2);
     if (words.length > 0) {
         const keywordIds: number[] = [];
         await Promise.all(words.map(async (word: string) => {
             try {
-                const kwRes = await fetch(`${TMDB_BASE}/search/keyword?query=${encodeURIComponent(word)}&api_key=${TMDB_API_KEY}`);
-                const kwData = await kwRes.json();
-                if (kwData.results?.length > 0) keywordIds.push(kwData.results[0].id);
+                const kwData = await fetchTMDB<{ results: { id: number }[] }>(
+                    `/search/keyword?query=${encodeURIComponent(word)}`,
+                    null
+                );
+                if (kwData?.results?.length) keywordIds.push(kwData.results[0].id);
             } catch { }
         }));
         if (keywordIds.length > 0) {
-            const discoverRes = await fetch(`${TMDB_BASE}/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1&api_key=${TMDB_API_KEY}`);
-            if (discoverRes.ok) {
-                const discoverData = await discoverRes.json();
-                if (discoverData.results?.length > 0) {
-                    discoverData.searchType = 'semantic';
-                    discoverData.matchedContext = words.join(', ');
-                    return discoverData;
-                }
+            const discoverData = await fetchTMDB<TMDBMovieListResponse>(
+                `/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1`,
+                null
+            );
+            if (discoverData?.results?.length) {
+                return {
+                    ...discoverData,
+                    searchType: 'semantic',
+                    matchedContext: words.join(', '),
+                } as TMDBSearchResponse;
             }
         }
     }
@@ -345,7 +388,7 @@ export const tmdb = {
 
   // ── Extended Missing Query Methods ──
   watchProviders: async (id: number) => {
-      const data = await fetchTMDB<{ results: Record<string, unknown> }>(`/movie/${id}/watch/providers`, { results: {} });
+      const data = await fetchTMDB<{ results: Record<string, TMDBWatchProviderResult> }>(`/movie/${id}/watch/providers`, { results: {} });
       return data?.results || {};
   },
   releaseDates: async (id: number) => {
@@ -356,7 +399,7 @@ export const tmdb = {
       const data = await fetchTMDB<{ results: unknown[] }>(`/search/company?query=${encodeURIComponent(query)}`, { results: [] });
       return data?.results || [];
   },
-  movieImages: async (id: number) => fetchTMDB(`/movie/${id}/images`, { posters: [], backdrops: [], logos: [] }),
+  movieImages: async (id: number) => fetchTMDB<{ posters: { file_path: string }[]; backdrops: { file_path: string }[]; logos: { file_path: string }[] }>(`/movie/${id}/images`, { posters: [], backdrops: [], logos: [] }),
 
   // ── Discover ──
   discover: async (params: Record<string, string> = {}) => {
@@ -419,12 +462,17 @@ export const tmdb = {
 
             const decodeEntities = (s: string) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'");
 
-            const allItems = liveItems
-                .sort((a: Record<string, unknown>, b: Record<string, unknown>) => new Date(b.pubDate as string).getTime() - new Date(a.pubDate as string).getTime())
-                .map((item: Record<string, unknown>) => ({
+            interface RSSItem {
+                guid?: string; link?: string; title: string; description?: string;
+                pubDate: string; categories?: string[]; enclosure?: { link?: string };
+                thumbnail?: string; author?: string;
+            }
+            const allItems = (liveItems as RSSItem[])
+                .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
+                .map((item) => ({
                     id: item.guid || item.link,
                     title: decodeEntities(item.title),
-                    excerpt: decodeEntities(item.description?.replace(/<[^>]*>?/gm, '')?.slice(0, 160) || '') + '...',
+                    excerpt: decodeEntities((item.description?.replace(/<[^>]*>?/gm, '') ?? '').slice(0, 160)) + '...',
                     date: new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase(),
                     time: new Date(item.pubDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
                     category: item.categories?.[0]?.toUpperCase() || 'WIRE',
@@ -434,7 +482,8 @@ export const tmdb = {
                 }));
 
             return [...allItems, ...FALLBACK_NEWS];
-        } catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (e: unknown) {
             return FALLBACK_NEWS;
         }
     },

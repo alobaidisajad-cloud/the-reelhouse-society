@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, InteractionManager } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, router } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -23,8 +24,12 @@ export default function SocialModal() {
     const [loading, setLoading] = useState(true);
     const [profiles, setProfiles] = useState<SocialProfile[]>([]);
 
+    // FIX #7: Defer back-navigation to avoid animation conflict on mount
     useEffect(() => {
-        if (!userId || !type) return;
+        if (!userId || (type !== 'followers' && type !== 'following')) {
+            InteractionManager.runAfterInteractions(() => router.back());
+            return;
+        }
 
         const fetchSocial = async () => {
             setLoading(true);
@@ -55,6 +60,7 @@ export default function SocialModal() {
                         .in('id', ids);
                     setProfiles(profs || []);
                 }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (err) {
                 reelToast.error('The telegraph to the archive is disrupted.');
             } finally {
@@ -65,12 +71,32 @@ export default function SocialModal() {
         fetchSocial();
     }, [userId, type]);
 
-    const handleProfilePress = (username: string) => {
-        router.back();
-        setTimeout(() => {
-            router.push(`/user/${username}`);
-        }, 300);
-    };
+    // FIX #1: Include router in deps to prevent stale closure
+    const handleProfilePress = useCallback((username: string) => {
+        router.dismiss();
+        InteractionManager.runAfterInteractions(() => {
+            router.push(`/user/${username}` as any);
+        });
+    }, [router]);
+
+    // FIX #2: Stable renderItem reference to prevent FlashList cell reconciliation
+    const renderSocialItem = useCallback(({ item, index }: { item: SocialProfile; index: number }) => (
+        <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index * 40, 400))}>
+            <PressableScale onPress={() => handleProfilePress(item.username)} accessibilityRole="button" accessibilityLabel={`View ${item.username}'s profile`}>
+                <View style={styles.userRow}>
+                    {item.avatar_url && item.avatar_url.startsWith('http') ? (
+                        <Image source={{ uri: item.avatar_url }} style={styles.avatar} contentFit="cover" cachePolicy="memory-disk" />
+                    ) : (
+                        <View style={styles.avatarPlaceholder}><User size={20} color={colors.parchment} /></View>
+                    )}
+                    <View style={styles.userInfo}>
+                        <Text style={styles.username}>@{item.username.toUpperCase()}</Text>
+                        <Text style={styles.role}>{(item.role ?? 'member').toUpperCase()}</Text>
+                    </View>
+                </View>
+            </PressableScale>
+        </Animated.View>
+    ), [handleProfilePress]);
 
     return (
         <BlurView intensity={90} tint="dark" style={styles.container}>
@@ -80,9 +106,9 @@ export default function SocialModal() {
             <View style={styles.header}>
                 <View style={{ width: 40 }} />
                 <Text style={styles.title}>{type === 'followers' ? 'FOLLOWERS' : 'FOLLOWING'}</Text>
-                <TouchableOpacity onPress={() => router.back()} style={styles.closeBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+                <PressableScale onPress={() => router.back()} style={styles.closeBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.92} accessibilityRole="button" accessibilityLabel="Close social modal">
                     <X size={20} color={colors.parchment} />
-                </TouchableOpacity>
+                </PressableScale>
             </View>
 
             {loading ? (
@@ -98,27 +124,12 @@ export default function SocialModal() {
                     />
                 </View>
             ) : (
-                <FlatList 
+                <FlashList 
                     data={profiles}
+                    estimatedItemSize={68}
                     keyExtractor={item => item.id}
                     contentContainerStyle={{ padding: 16 }}
-                    renderItem={({ item, index }) => (
-                        <Animated.View entering={FadeInUp.duration(300).delay(index * 40)}>
-                            <PressableScale onPress={() => handleProfilePress(item.username)}>
-                                <View style={styles.userRow}>
-                                    {item.avatar_url && item.avatar_url.startsWith('http') ? (
-                                        <Image source={{ uri: item.avatar_url }} style={styles.avatar} contentFit="cover" />
-                                    ) : (
-                                        <View style={styles.avatarPlaceholder}><User size={20} color={colors.parchment} /></View>
-                                    )}
-                                    <View style={styles.userInfo}>
-                                        <Text style={styles.username}>@{item.username.toUpperCase()}</Text>
-                                        <Text style={styles.role}>{(item.role ?? 'member').toUpperCase()}</Text>
-                                    </View>
-                                </View>
-                            </PressableScale>
-                        </Animated.View>
-                    )}
+                    renderItem={renderSocialItem}
                 />
             )}
         </BlurView>
@@ -126,7 +137,7 @@ export default function SocialModal() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
+    container: { flex: 1, backgroundColor: colors.ink },
     dragHandleWrap: { alignItems: 'center', paddingTop: 10 },
     dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
     header: {

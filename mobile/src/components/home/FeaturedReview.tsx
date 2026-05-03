@@ -1,11 +1,12 @@
 import React, { useEffect, useState, memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
+import PressableScale from '@/src/components/PressableScale';
 
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -49,15 +50,17 @@ export const FeaturedReview = memo(function FeaturedReview() {
         } else {
           const { data: fallback } = await supabase
             .from('logs')
-            .select('id, film_id, film_title, poster_path, rating, review, created_at, profiles!logs_user_id_fkey(username, role)')
+            .select('id, film_id, film_title, poster_path, rating, review, created_at, user_id, profiles!logs_user_id_fkey(username, role)')
             .not('review', 'is', null)
             .neq('review', '')
             .order('created_at', { ascending: false })
             .limit(1)
             .single();
-          if (fallback) setFeatured(fallback);
+          if (fallback) setFeatured(fallback as any);
         }
-      } catch {}
+      } catch (e: unknown) {
+        if (__DEV__) console.error('[FeaturedReview] Sync error:', e);
+      }
     })();
   }, []);
 
@@ -71,19 +74,22 @@ export const FeaturedReview = memo(function FeaturedReview() {
     <AnimatedView entering={FadeInDown.duration(800)}>
       <View style={s.featuredContainer}>
         <Text style={s.featuredEyebrow}>✦ HOTTEST DISPATCH ✦</Text>
-        <TouchableOpacity
-          activeOpacity={0.85}
-          onPress={() => router.push(`/log/${featured.id}`)}
+        <PressableScale
+          onPress={() => router.push(`/log/${featured.id}` as any)}
           style={[s.featuredCard, role === 'auteur' && s.featuredAuteur, role === 'archivist' && s.featuredArchivist]}
+          haptic="selection"
+          pressedScale={0.98}
         >
           <View style={s.featuredQuoteWrap}>
+            {/* eslint-disable-next-line react/no-unescaped-entities */}
             <Text style={s.featuredQuoteIcon}>"</Text>
           </View>
           <View style={s.featuredContent}>
             {posterUri && (
-              <Image source={{ uri: posterUri }} style={s.featuredPoster} contentFit="cover" />
+              <Image source={{ uri: posterUri }} style={s.featuredPoster} contentFit="cover" cachePolicy="memory-disk" />
             )}
             <View style={s.featuredTextWrap}>
+               {/* eslint-disable-next-line react/no-unescaped-entities */}
                <Text style={s.featuredReview} numberOfLines={5}>"{featured.review}"</Text>
                <View style={s.featuredMetaRow}>
                  <Text style={s.featuredAuthor}>@{username}</Text>
@@ -92,13 +98,15 @@ export const FeaturedReview = memo(function FeaturedReview() {
             </View>
           </View>
           
-          <TouchableOpacity 
+          <PressableScale 
             style={s.featuredBtn}
-            onPress={() => router.push(`/film/${featured.film_id}`)}
+            onPress={() => router.push(`/film/${featured.film_id}` as any)}
+            haptic="medium"
+            pressedScale={0.96}
           >
              <Text style={s.featuredBtnText}>LOG THIS FILM +</Text>
-          </TouchableOpacity>
-        </TouchableOpacity>
+          </PressableScale>
+        </PressableScale>
       </View>
     </AnimatedView>
   );

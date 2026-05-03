@@ -5,14 +5,15 @@
  * Each empty state tells a story — not just "no data" but an invitation.
  * Uses the official Buster mascot with mood-aware personality + lore fragments.
  */
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
     FadeIn, useSharedValue, useAnimatedStyle,
-    withRepeat, withSequence, withTiming, Easing,
+    withRepeat, withSequence, withTiming, Easing, cancelAnimation,
 } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import Buster, { BusterMood } from '@/src/components/Buster';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { pickRandom, EMPTY, BUSTER } from '@/src/lore/fragments';
 
 interface EmptyStateProps {
@@ -32,18 +33,24 @@ function BreathingIcon({ children }: { children: React.ReactNode }) {
     const scale = useSharedValue(0.95);
 
     useEffect(() => {
+        // ADV-01 FIX: Finite repeats (6 iterations ≈ 24s) to allow UI thread idling
         opacity.value = withRepeat(
             withSequence(
                 withTiming(0.7, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
                 withTiming(0.4, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-            ), -1, true
+            ), 6, true
         );
         scale.value = withRepeat(
             withSequence(
                 withTiming(1.05, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
                 withTiming(0.95, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-            ), -1, true
+            ), 6, true
         );
+        return () => {
+            cancelAnimation(opacity);
+            cancelAnimation(scale);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const style = useAnimatedStyle(() => ({
@@ -78,11 +85,12 @@ export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, bust
 // ── Pre-built variants with Buster + lore poetry ──
 
 export function EmptyLedger() {
-    const lore = useMemo(() => pickRandom([
+    // #12 AUDIT FIX: No useMemo — fresh random lore on each visit
+    const lore = pickRandom([
         'The ledger is empty. Buster is staring at you. He\'s not angry. He\'s disappointed.',
         'Every great archivist begins with a single entry.',
         'The ink is dry. The pen awaits your hand.',
-    ]), []);
+    ]);
     return (
         <EmptyState
             useBuster
@@ -94,11 +102,11 @@ export function EmptyLedger() {
 }
 
 export function EmptyWatchlist() {
-    const lore = useMemo(() => pickRandom([
+    const lore = pickRandom([
         'Nothing queued? Even the founding members had a backlog.',
         'Save films you intend to watch — the Archive remembers what you haven\'t seen yet.',
         'Your future screenings list stands empty. For now.',
-    ]), []);
+    ]);
     return (
         <EmptyState
             useBuster
@@ -110,11 +118,11 @@ export function EmptyWatchlist() {
 }
 
 export function EmptyVault() {
-    const lore = useMemo(() => pickRandom([
+    const lore = pickRandom([
         'Your vault stands ready. The first addition is the hardest.',
         'This shelf is bare. Every great collection starts with one.',
         'The vault has never been breached. It just needs filling.',
-    ]), []);
+    ]);
     return (
         <EmptyState
             useBuster
@@ -126,11 +134,11 @@ export function EmptyVault() {
 }
 
 export function EmptyLists() {
-    const lore = useMemo(() => pickRandom([
+    const lore = pickRandom([
         'A stack is not a list. It is a thesis. Write yours.',
         'Curate your first stack — a collection of films that tells your story.',
         'The Society\'s shelves are organized by devotion, not alphabet.',
-    ]), []);
+    ]);
     return (
         <EmptyState
             useBuster
@@ -142,11 +150,11 @@ export function EmptyLists() {
 }
 
 export function EmptyReviews() {
-    const lore = useMemo(() => pickRandom([
+    const lore = pickRandom([
         'Your voice has weight here. The tribunal awaits your first critique.',
         'All critiques are permanent. Choose your words with care.',
         'The critic\'s chair is warm. Someone was here before you.',
-    ]), []);
+    ]);
     return (
         <EmptyState
             useBuster
@@ -158,11 +166,11 @@ export function EmptyReviews() {
 }
 
 export function EmptyFeed() {
-    const lore = useMemo(() => pickRandom([
+    const lore = pickRandom([
         'The foyer is quiet tonight. The portraits on the wall are watching.',
         'Follow fellow archivists to see their screenings and discoveries.',
         'No dispatches have arrived yet. The courier is en route.',
-    ]), []);
+    ]);
     return (
         <EmptyState
             useBuster
@@ -174,11 +182,11 @@ export function EmptyFeed() {
 }
 
 export function EmptyOffline() {
-    const lore = useMemo(() => pickRandom([
+    const lore = pickRandom([
         'The transmission has been severed. We are operating in the dark.',
         'No signal from the Society. Hold your ground.',
         'The projector requires a connection. We wait.'
-    ]), []);
+    ]);
     return (
         <EmptyState
             useBuster

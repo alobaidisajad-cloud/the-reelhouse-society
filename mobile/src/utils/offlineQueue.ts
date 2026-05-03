@@ -13,13 +13,17 @@
  *   • Network errors keep mutations for retry; constraint
  *     errors (duplicates) discard them permanently
  */
-import { storage } from '../stores/auth';
+import { storage } from '../stores/mmkv-storage';
 import { supabase } from '../lib/supabase';
 import reelToast from './reelToast';
+import { logger } from './logger';
 
 export interface QueuedMutation {
     id: string;
-    type: 'endorse_log' | 'endorse_list' | 'mark_watched';
+    // H-01 AUDIT FIX: Expanded type union to cover all domain slices
+    type: 'endorse_log' | 'endorse_list' | 'mark_watched' | 'remove_log' | 'remove_watchlist' | 'remove_endorsement' | 'add_log' | 'update_log' | 'update_profile'
+        | 'add_watchlist' | 'create_list' | 'delete_list' | 'add_film_to_list' | 'remove_film_from_list'
+        | 'add_archive' | 'remove_archive' | 'update_archive';
     payload: Record<string, unknown>;
     timestamp: number;
 }
@@ -34,7 +38,7 @@ function readQueue(): QueuedMutation[] {
         const stored = storage.getString(QUEUE_KEY);
         if (stored) return JSON.parse(stored);
     } catch (e) {
-        console.error('[OfflineSync] Failed to read queue:', e);
+        if (__DEV__) console.error('[OfflineSync] Failed to read queue:', e);
     }
     return [];
 }
@@ -44,7 +48,7 @@ function writeQueue(queue: QueuedMutation[]) {
     try {
         storage.set(QUEUE_KEY, JSON.stringify(queue));
     } catch (e) {
-        console.error('[OfflineSync] Failed to write queue:', e);
+        if (__DEV__) console.error('[OfflineSync] Failed to write queue:', e);
     }
 }
 
@@ -69,10 +73,18 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     }
 
     writeQueue(queue);
-    console.log(`[OfflineSync] Queued ${mutation.type} for background sync.`);
+    logger.debug(`[OfflineSync] Queued ${mutation.type} for background sync.`);
 }
 
+let isFlushing = false;
+
 export async function flushOfflineQueue() {
+    if (isFlushing) {
+        logger.debug('[OfflineSync] Flush already in progress. Skipping duplicate call.');
+        return;
+    }
+    isFlushing = true;
+    try {
     let queue = readQueue();
 
     if (queue.length === 0) return;
@@ -81,35 +93,125 @@ export async function flushOfflineQueue() {
     const now = Date.now();
     queue = queue.filter(m => now - m.timestamp < STALE_THRESHOLD_MS);
 
-    console.log(`[OfflineSync] Flushing ${queue.length} queued mutations...`);
+    logger.debug(`[OfflineSync] Flushing ${queue.length} queued mutations...`);
 
     const remainingQueue: QueuedMutation[] = [];
+    const deadLetterQueue: QueuedMutation[] = [];
+
+    let successCount = 0;
 
     for (const mutation of queue) {
         try {
+            const throwIfError = (res: { error: any, data?: any }) => { if (res.error) throw res.error; return res; };
+
             if (mutation.type === 'endorse_log') {
                 const { user_id, target_log_id } = mutation.payload;
-                await supabase.from('interactions').insert([{ user_id, target_log_id, type: 'endorse_log' }]);
+                throwIfError(await supabase.from('interactions_queue_buffer').insert([{ user_id, target_log_id, type: 'endorse_log' }]));
             } else if (mutation.type === 'endorse_list') {
                 const { user_id, target_list_id } = mutation.payload;
-                await supabase.from('interactions').insert([{ user_id, target_list_id, type: 'endorse_list' }]);
+                throwIfError(await supabase.from('interactions_queue_buffer').insert([{ user_id, target_list_id, type: 'endorse_list' }]));
             } else if (mutation.type === 'mark_watched') {
-                await supabase.from('logs').insert([mutation.payload]);
+                throwIfError(await supabase.from('logs').insert([mutation.payload]));
+            } else if (mutation.type === 'update_profile') {
+                const { user_id, preferences } = mutation.payload;
+                throwIfError(await supabase.from('profiles').update({ preferences }).eq('id', user_id));
+            } else if (mutation.type === 'remove_log') {
+                const { log_id } = mutation.payload;
+                throwIfError(await supabase.from('logs').delete().eq('id', log_id));
+            } else if (mutation.type === 'remove_watchlist') {
+                const { user_id, film_id } = mutation.payload;
+                throwIfError(await supabase.from('watchlists').delete().eq('user_id', user_id).eq('film_id', film_id));
+            } else if (mutation.type === 'remove_endorsement') {
+                const { user_id, target_log_id } = mutation.payload;
+                throwIfError(await supabase.from('interactions').delete().eq('user_id', user_id).eq('target_log_id', target_log_id).eq('type', 'endorse_log'));
+            } else if (mutation.type === 'add_log') {
+                throwIfError(await supabase.from('logs').insert([mutation.payload]));
+            } else if (mutation.type === 'update_log') {
+                const { id, updates } = mutation.payload;
+                throwIfError(await supabase.from('logs').update(updates as any).eq('id', id));
+
+            // ── C-01 FIX: Watchlist offline handler ──
+            } else if (mutation.type === 'add_watchlist') {
+                throwIfError(await supabase.from('watchlists').insert([mutation.payload]));
+
+            // ── C-02 FIX: List offline handlers ──
+            } else if (mutation.type === 'create_list') {
+                const { films, ...listPayload } = mutation.payload as Record<string, any>;
+                const { data } = throwIfError(await supabase.from('lists').upsert([listPayload], { onConflict: 'id' }).select().single());
+                if (data && Array.isArray(films) && films.length > 0) {
+                    const items = films.map((f: any) => ({ list_id: data.id, film_id: f.film_id, film_title: f.film_title, poster_path: f.poster_path, position: f.position }));
+                    throwIfError(await supabase.from('list_items').delete().eq('list_id', data.id));
+                    throwIfError(await supabase.from('list_items').insert(items));
+                }
+            } else if (mutation.type === 'delete_list') {
+                const { list_id, user_id } = mutation.payload;
+                throwIfError(await supabase.from('list_items').delete().eq('list_id', list_id));
+                throwIfError(await supabase.from('lists').delete().eq('id', list_id).eq('user_id', user_id));
+            } else if (mutation.type === 'add_film_to_list') {
+                const { list_id, film_id, film_title, poster_path, position } = mutation.payload;
+                throwIfError(await supabase.from('list_items').insert([{ list_id, film_id, film_title, poster_path, position }]));
+            } else if (mutation.type === 'remove_film_from_list') {
+                const { list_id, film_id } = mutation.payload;
+                throwIfError(await supabase.from('list_items').delete().eq('list_id', list_id).eq('film_id', film_id));
+
+            // ── C-03 FIX: Archive offline handlers ──
+            } else if (mutation.type === 'add_archive') {
+                const { user_id, film_id, film_title, poster_path, year, formats, notes, condition } = mutation.payload;
+                throwIfError(await supabase.from('physical_archive').upsert([{
+                    user_id, film_id, film_title, poster_path, year, formats, notes, condition,
+                }], { onConflict: 'user_id, film_id' }));
+            } else if (mutation.type === 'remove_archive') {
+                const { user_id, film_id } = mutation.payload;
+                throwIfError(await supabase.from('physical_archive').delete().eq('user_id', user_id).eq('film_id', film_id));
+            } else if (mutation.type === 'update_archive') {
+                const { user_id, film_id, updates } = mutation.payload;
+                throwIfError(await supabase.from('physical_archive').update(updates as any).eq('user_id', user_id).eq('film_id', film_id));
+
+            // ── H-01 FIX: Catch-all for unrecognized mutation types ──
+            } else {
+                if (__DEV__) console.warn(`[OfflineSync] Unknown mutation type: ${mutation.type} — moving to dead letter queue`);
+                deadLetterQueue.push(mutation);
+                continue;
             }
-            // Add more cases as needed...
+            successCount++;
         } catch (error: unknown) {
             const errMsg = error instanceof Error ? error.message : '';
-            console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
-            // If it failed due to network, keep it in the queue. If it failed due to constraint (like duplicate), discard it.
-            if (errMsg.toLowerCase().includes('fetch') || errMsg.toLowerCase().includes('network')) {
+            const errLower = errMsg.toLowerCase();
+            if (__DEV__) console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
+
+            if (errLower.includes('fetch') || errLower.includes('network')) {
+                // Network failure — retry later
                 remainingQueue.push(mutation);
+            } else if (errLower.includes('duplicate') || errLower.includes('unique') || errLower.includes('23505')) {
+                // Constraint violation — safely discard (already synced)
+                if (__DEV__) console.warn(`[OfflineSync] Discarding duplicate mutation: ${mutation.type}`);
+            } else {
+                // Unknown failure — log to dead-letter queue for diagnostics
+                deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: errMsg, _failedAt: new Date().toISOString() } });
             }
         }
     }
 
-    if (queue.length > remainingQueue.length) {
+    if (successCount > 0) {
         reelToast(`Archive updated with offline actions.`);
     }
 
+    // Persist dead-letter mutations for post-mortem inspection
+    if (deadLetterQueue.length > 0) {
+        try {
+            const existing = storage.getString(QUEUE_KEY + '_dead_letter');
+            let prev: QueuedMutation[] = existing ? JSON.parse(existing) : [];
+            // M-02 AUDIT FIX: Prune dead-letter entries older than 7 days
+            const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+            prev = prev.filter(m => m.timestamp > sevenDaysAgo);
+            const combined = [...prev, ...deadLetterQueue].slice(-50); // Cap at 50
+            storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify(combined));
+        } catch { /* storage write failure — nothing we can do */ }
+        reelToast.error(`${deadLetterQueue.length} offline action(s) couldn't be synced.`);
+    }
+
     writeQueue(remainingQueue);
+    } finally {
+        isFlushing = false;
+    }
 }

@@ -1,0 +1,20 @@
+appId: com.reelhouse.society
+---
+- launchApp:
+    clearState: true
+- assertVisible:
+    id: "sign-in-button"
+- tapOn:
+    id: "sign-in-button"
+- assertVisible:
+    text: "Enter your email"
+- inputText: "test@reelhouse.app"
+- tapOn:
+    id: "continue-button"
+- assertVisible:
+    text: "Enter your password"
+- inputText: "password123"
+- tapOn:
+    id: "sign-in-submit"
+- assertVisible:
+    id: "home-tab"

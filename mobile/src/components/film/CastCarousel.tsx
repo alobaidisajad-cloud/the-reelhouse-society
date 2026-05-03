@@ -1,13 +1,11 @@
+import { useCallback, memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { tmdb } from '@/src/lib/tmdb';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
-
-/** Warm sepia-toned blurhash — used as placeholder while images load */
-const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
 interface CastMember {
     id: number;
@@ -16,38 +14,44 @@ interface CastMember {
     profile_path?: string | null;
 }
 
-export function CastCarousel({ cast }: { cast: CastMember[] }) {
+const keyExtractor = (item: CastMember) => item.id.toString();
+
+const CastCard = memo(function CastCard({ item }: { item: CastMember }) {
     const router = useRouter();
 
-    if (!cast || cast.length === 0) return null;
+    const photoUri = item.profile_path ? tmdb.profile(item.profile_path) : null;
+    return (
+        <PressableScale
+            style={s.castCard}
+            onPress={() => router.push(`/person/${item.id}` as any)}
+        >
+            <View style={s.castPhotoWrap}>
+                {photoUri ? (
+                    <>
+                        <Image source={{ uri: photoUri }} style={s.castPhoto} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
+                        {/* Sepia tint — matches web filter: sepia(0.15) */}
+                        <View style={s.sepiaTint} />
+                    </>
+                ) : (
+                    <View style={[s.castPhoto, s.castPhotoPlaceholder]}>
+                        <Text style={s.castPhotoPlaceholderText}>
+                            {item.name?.charAt(0)?.toUpperCase() ?? '?'}
+                        </Text>
+                    </View>
+                )}
+            </View>
+            <Text style={s.castName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.name}</Text>
+            <Text style={s.castRole} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.character}</Text>
+        </PressableScale>
+    );
+});
 
-    const renderItem = ({ item }: { item: CastMember }) => {
-        const photoUri = item.profile_path ? tmdb.profile(item.profile_path) : null;
-        return (
-            <PressableScale
-                style={s.castCard}
-                onPress={() => router.push(`/person/${item.id}`)}
-            >
-                <View style={s.castPhotoWrap}>
-                    {photoUri ? (
-                        <>
-                            <Image source={{ uri: photoUri }} style={s.castPhoto} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
-                            {/* Sepia tint — matches web filter: sepia(0.15) */}
-                            <View style={s.sepiaTint} />
-                        </>
-                    ) : (
-                        <View style={[s.castPhoto, s.castPhotoPlaceholder]}>
-                            <Text style={s.castPhotoPlaceholderText}>
-                                {item.name?.charAt(0)?.toUpperCase() ?? '?'}
-                            </Text>
-                        </View>
-                    )}
-                </View>
-                <Text style={s.castName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.name}</Text>
-                <Text style={s.castRole} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.character}</Text>
-            </PressableScale>
-        );
-    };
+export const CastCarousel = memo(function CastCarousel({ cast }: { cast: CastMember[] }) {
+    const renderItem = useCallback(({ item }: { item: CastMember }) => {
+        return <CastCard item={item} />;
+    }, []);
+
+    if (!cast || cast.length === 0) return null;
 
     return (
         <View style={{ height: 195 }}>
@@ -56,13 +60,13 @@ export function CastCarousel({ cast }: { cast: CastMember[] }) {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={s.listContent}
-                keyExtractor={item => item.id.toString()}
-                estimatedItemSize={116}
+                keyExtractor={keyExtractor}
+                estimatedItemSize={100}
                 renderItem={renderItem}
             />
         </View>
     );
-}
+})
 
 const s = StyleSheet.create({
     listContent: { paddingHorizontal: 16, gap: 16 },

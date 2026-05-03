@@ -1,8 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 interface Director {
     id: number;
@@ -18,15 +19,14 @@ export function DirectorPanel({ director }: { director: Director | null }) {
     const photoUri = director.profile_path ? tmdb.profile(director.profile_path, 'w185') : null;
 
     return (
-        <TouchableOpacity 
+        <PressableScale 
             style={s.container}
-            onPress={() => router.push(`/person/${director.id}`)}
-            activeOpacity={0.8}
+            onPress={() => { router.push(`/person/${director.id}` as any); }}
         >
             <View style={s.content}>
                 <View style={s.photoWrap}>
                     {photoUri ? (
-                        <Image source={{ uri: photoUri }} style={s.photo} contentFit="cover" />
+                        <Image source={{ uri: photoUri }} style={s.photo} contentFit="cover" cachePolicy="memory-disk" />
                     ) : (
                         <View style={[s.photo, s.placeholder]}>
                             <Text style={s.placeholderText}>{director.name?.charAt(0)?.toUpperCase() ?? '?'}</Text>
@@ -39,7 +39,7 @@ export function DirectorPanel({ director }: { director: Director | null }) {
                     <Text style={s.viewText}>VIEW DOSSIER ↗</Text>
                 </View>
             </View>
-        </TouchableOpacity>
+        </PressableScale>
     );
 }
 

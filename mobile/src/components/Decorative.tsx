@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
-import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing } from 'react-native-reanimated';
+import React, { useEffect, memo } from 'react';
+import { View, Text, StyleSheet, Image, Pressable } from 'react-native';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, cancelAnimation } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, effects } from '../theme/theme';
 
@@ -8,7 +8,7 @@ import { colors, fonts, effects } from '../theme/theme';
  * MarqueeLights — A row of golden dots mimicking theater marquee bulbs.
  * Exact replica of the web's dotted divider decoration.
  */
-function MarqueeBulb({ index }: { index: number }) {
+const MarqueeBulb = memo(function MarqueeBulb({ index }: { index: number }) {
   const isBright = index % 3 === 0;
   const opacity = useSharedValue(isBright ? 1 : 0.4);
   
@@ -18,8 +18,10 @@ function MarqueeBulb({ index }: { index: number }) {
         withTiming(isBright ? 0.3 : 1, { duration: 800 + Math.random() * 500, easing: Easing.inOut(Easing.ease) }),
         withTiming(isBright ? 1 : 0.4, { duration: 800 + Math.random() * 500, easing: Easing.inOut(Easing.ease) })
       ), 
-      -1, true
+      20, true
     );
+    return () => cancelAnimation(opacity);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const style = useAnimatedStyle(() => ({
@@ -37,9 +39,9 @@ function MarqueeBulb({ index }: { index: number }) {
       ]}
     />
   );
-}
+})
 
-export function MarqueeLights({ count = 18 }: { count?: number }) {
+export const MarqueeLights = memo(function MarqueeLights({ count = 18 }: { count?: number }) {
   // We use slightly offset timing to make a chaotic mechanical wave effect
   return (
     <View style={s.container}>
@@ -48,12 +50,12 @@ export function MarqueeLights({ count = 18 }: { count?: number }) {
       ))}
     </View>
   );
-}
+})
 
 /**
  * SectionDivider — A thin sepia rule with optional label.
  */
-export function SectionDivider({ label }: { label?: string }) {
+export const SectionDivider = memo(function SectionDivider({ label }: { label?: string }) {
   return (
     <View style={s.dividerWrap}>
       <LinearGradient 
@@ -73,9 +75,9 @@ export function SectionDivider({ label }: { label?: string }) {
       />
     </View>
   );
-}
+})
 
-export function ReelRating({ rating, size = 16, onChange }: { rating: number; size?: number; onChange?: (rating: number) => void }) {
+export const ReelRating = memo(function ReelRating({ rating, size = 16, onChange }: { rating: number; size?: number; onChange?: (rating: number) => void }) {
   return (
     <View style={s.reelRow}>
       {[1, 2, 3, 4, 5].map((reel) => {
@@ -102,14 +104,12 @@ export function ReelRating({ rating, size = 16, onChange }: { rating: number; si
                 <View key={reel} style={[s.reelTouchWrap, { width: size, height: size }]}>
                     {reelImage}
                     <View style={s.reelSplitRow}>
-                        <TouchableOpacity 
-                            activeOpacity={1} 
+                        <Pressable 
                             onPress={() => onChange(rating === halfVal ? 0 : halfVal)}
                             style={s.reelHalf}
                             hitSlop={{ top: 4, bottom: 4, left: 2, right: 0 }}
                         />
-                        <TouchableOpacity 
-                            activeOpacity={1} 
+                        <Pressable 
                             onPress={() => onChange(rating === fullVal ? 0 : fullVal)}
                             style={s.reelHalf}
                             hitSlop={{ top: 4, bottom: 4, left: 0, right: 2 }}
@@ -123,7 +123,7 @@ export function ReelRating({ rating, size = 16, onChange }: { rating: number; si
       })}
     </View>
   );
-}
+})
 
 const s = StyleSheet.create({
   // Marquee

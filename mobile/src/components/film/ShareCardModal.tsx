@@ -1,15 +1,17 @@
-import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useRef, useState, memo } from 'react';
+import { View, Text, StyleSheet, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { ReelRating } from '@/src/components/Decorative';
+import PressableScale from '@/src/components/PressableScale';
 
-const { width } = Dimensions.get('window');
+
 
 interface ShareFilm {
+  id?: number | string;
   title: string;
   overview?: string;
   poster_path?: string | null;
@@ -23,6 +25,7 @@ interface ShareLog {
   status?: string;
   watchedDate?: string;
   altPoster?: string;
+  abandonedReason?: string | null;
 }
 
 interface ShareCardModalProps {
@@ -32,21 +35,24 @@ interface ShareCardModalProps {
   log?: ShareLog | null;
 }
 
-export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalProps) {
+export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, film, log }: ShareCardModalProps) {
   const viewShotRef = useRef<ViewShot>(null);
   const [sharing, setSharing] = useState(false);
+  const { width: windowWidth } = useWindowDimensions();
 
   const handleShare = async () => {
-    if (!viewShotRef.current?.capture) return;
+    if (!viewShotRef.current?.capture || !film) return;
     setSharing(true);
     try {
       const uri = await viewShotRef.current.capture();
+      const deepLink = `https://reelhouse.app/film/${film.id}`;
+      
       await Sharing.shareAsync(uri, {
         mimeType: 'image/jpeg',
-        dialogTitle: 'Share Cinematic Dossier',
+        dialogTitle: `Share Cinematic Dossier - ${deepLink}`,
       });
     } catch (err: unknown) {
-      console.log('Share failed:', err);
+      if (__DEV__) console.warn('[ShareCard] Share failed:', err);
     } finally {
       setSharing(false);
       onClose();
@@ -58,19 +64,19 @@ export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalPr
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={s.overlay}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <Pressable style={StyleSheet.absoluteFill} onPress={onClose} />
         
         <View style={s.modalContent}>
           <View style={s.header}>
             <Text style={s.title}>GENERATE CLASSIFIED DOSSIER</Text>
-            <TouchableOpacity onPress={onClose} hitSlop={{top:10,right:10,bottom:10,left:10}}>
+            <PressableScale onPress={onClose} hitSlop={{top:10,right:10,bottom:10,left:10}} haptic="light" pressedScale={0.96}>
               <Text style={s.closeText}>✕</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
 
           {/* This is the card that we screenshot. It simulates the Web's Nitrate Noir export. */}
           <View style={s.cardWrapper}>
-            <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }} style={s.cardContainer}>
+            <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }} style={[s.cardContainer, { width: windowWidth - 72 }]}>
               {/* Backing gradient for the cinematic look */}
               <View style={StyleSheet.absoluteFill}>
                 <Image 
@@ -89,7 +95,7 @@ export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalPr
 
               <View style={s.filmInfoRow}>
                 {film.poster_path ? (
-                  <Image source={{ uri: tmdb.poster(log?.altPoster ?? film.poster_path, 'w185') }} style={s.cardPoster} contentFit="cover" />
+                  <Image source={{ uri: tmdb.poster(log?.altPoster ?? film.poster_path, 'w185') }} style={s.cardPoster} contentFit="cover" cachePolicy="memory-disk" />
                 ) : (
                   <View style={[s.cardPoster, s.cardPosterPlaceholder]}>
                     <Text style={s.placeholderGlyph}>∅</Text>
@@ -107,7 +113,7 @@ export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalPr
                   )}
                   {log && log.status === 'abandoned' && (
                     <View style={s.abandonedBadge}>
-                      <Text style={s.abandonedText}>✕ ABANDONED</Text>
+                      <Text style={s.abandonedText}>✕ ABANDONED{log.abandonedReason ? ` — ${log.abandonedReason.toUpperCase()}` : ''}</Text>
                     </View>
                   )}
                 </View>
@@ -115,6 +121,7 @@ export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalPr
 
               {log?.review ? (
                 <View style={s.reviewContainer}>
+                  {/* eslint-disable-next-line react/no-unescaped-entities */}
                   <Text style={s.reviewText} numberOfLines={5}>"{log.review}"</Text>
                 </View>
               ) : (
@@ -125,20 +132,23 @@ export function ShareCardModal({ visible, onClose, film, log }: ShareCardModalPr
               
               <View style={s.cardFooter}>
                 <Text style={s.footerLabel}>CLASSIFIED ARCHIVE RECORD</Text>
+                {film.id && (
+                  <Text style={s.footerLink}>reelhouse.app/film/{film.id}</Text>
+                )}
               </View>
             </ViewShot>
           </View>
 
-          <TouchableOpacity style={s.shareButton} onPress={handleShare} disabled={sharing}>
+          <PressableScale style={s.shareButton} onPress={handleShare} disabled={sharing} haptic="medium" pressedScale={0.98}>
             <Text style={s.shareButtonText}>
               {sharing ? 'TRANSMITTING...' : 'SHARE TO SOCIALS'}
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </View>
     </Modal>
   );
-}
+})
 
 const s = StyleSheet.create({
   overlay: {
@@ -181,7 +191,6 @@ const s = StyleSheet.create({
     marginBottom: 24,
   },
   cardContainer: {
-    width: width - 72,
     backgroundColor: colors.ink,
     borderWidth: 1,
     borderColor: colors.ash,
@@ -309,6 +318,12 @@ const s = StyleSheet.create({
     letterSpacing: 3,
     color: colors.sepia,
     opacity: 0.8,
+  },
+  footerLink: {
+    fontFamily: fonts.ui,
+    fontSize: 6,
+    color: colors.fog,
+    marginTop: 4,
   },
   shareButton: {
     backgroundColor: colors.sepia,

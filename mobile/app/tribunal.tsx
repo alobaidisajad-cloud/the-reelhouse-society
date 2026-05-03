@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Alert, RefreshControl, Platform } from 'react-native';
+import { View, Text, StyleSheet, Alert, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import Animated, { FadeInDown, FadeInUp, SlideOutRight } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -10,6 +11,8 @@ import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import { LinearGradient } from 'expo-linear-gradient';
+import PressableScale from '@/src/components/PressableScale';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface TribunalReport {
   id: string;
@@ -27,6 +30,7 @@ const ADMIN_ID = 'd1c40ed8-10bc-4a6e-b51a-b6d3559bf755';
 export default function TribunalScreen() {
   const router = useRouter();
   const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const [reports, setReports] = useState<TribunalReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,7 +56,9 @@ export default function TribunalScreen() {
       if (error) throw error;
       setReports(data || []);
     } catch (e) {
-      console.error(e);
+      if (__DEV__) console.error(e);
+      // FIX #9: Surface error to admin instead of silent empty state
+      reelToast.error('Failed to retrieve tribunal reports.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -94,7 +100,7 @@ export default function TribunalScreen() {
                     // Just removing from local log mapping if necessary, or purging log
                     break;
                   case 'dispatch':
-                    await supabase.from('dispatches').delete().eq('id', report.content_id);
+                    await supabase.from('dispatch_dossiers').delete().eq('id', report.content_id);
                     break;
                 }
               }
@@ -128,23 +134,24 @@ export default function TribunalScreen() {
         style={StyleSheet.absoluteFillObject}
       />
 
-      <Animated.View entering={FadeInDown.duration(600)} style={s.header}>
-        <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+      <Animated.View entering={FadeInDown.duration(600)} style={[s.header, { paddingTop: insets.top + 12 }]}>
+        <PressableScale onPress={() => router.back()} style={s.backBtn} haptic="selection" pressedScale={0.92} hitSlop={{top:10,bottom:10,left:10,right:10}} accessibilityRole="button" accessibilityLabel="Go back">
           <ArrowLeft size={20} color={colors.bone} />
-        </TouchableOpacity>
+        </PressableScale>
         <ShieldAlert size={28} color={colors.danger} style={{ marginBottom: 16 }} />
         <Text style={s.eyebrow}>ADMINISTRATION</Text>
         <Text style={s.title}>The Tribunal</Text>
         <Text style={s.subtitle}>{reports.length} pending infractions</Text>
       </Animated.View>
 
-      <FlatList
+      <FlashList
         data={reports}
+        estimatedItemSize={220}
         keyExtractor={(item) => item.id}
         contentContainerStyle={s.listContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.danger} />}
         renderItem={({ item, index }) => (
-          <Animated.View entering={FadeInUp.duration(400).delay(index * 50)} exiting={SlideOutRight}>
+          <Animated.View entering={FadeInUp.duration(400).delay(Math.min(index * 50, 400))} exiting={SlideOutRight}>
             <View style={s.reportCard}>
               <View style={s.cardHeader}>
                 <Text style={s.reportMeta}>REPORTED EXACTLY {new Date(item.created_at).toLocaleDateString()}</Text>
@@ -169,21 +176,29 @@ export default function TribunalScreen() {
               </View>
 
               <View style={s.actionRow}>
-                <TouchableOpacity 
+                <PressableScale 
                   style={[s.actionBtn, { borderColor: colors.ash }]} 
                   onPress={() => handleResolve(item.id, 'dismiss', item)}
+                  haptic="selection"
+                  pressedScale={0.95}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Dismiss report on ${item.content_type}`}
                 >
                   <Check size={14} color={colors.fog} />
                   <Text style={[s.actionText, { color: colors.fog }]}>DISMISS</Text>
-                </TouchableOpacity>
+                </PressableScale>
 
-                <TouchableOpacity 
+                <PressableScale 
                   style={[s.actionBtn, { borderColor: colors.danger, backgroundColor: 'rgba(231,76,60,0.1)' }]} 
                   onPress={() => handleResolve(item.id, item.content_type === 'user' ? 'ban_user' : 'delete', item)}
+                  haptic="medium"
+                  pressedScale={0.95}
+                  accessibilityRole="button"
+                  accessibilityLabel={item.content_type === 'user' ? "Ban user" : `Delete ${item.content_type}`}
                 >
                   {item.content_type === 'user' ? <Ban size={14} color={colors.danger} /> : <Trash2 size={14} color={colors.danger} />}
                   <Text style={[s.actionText, { color: colors.danger }]}>{item.content_type === 'user' ? 'BAN USER' : 'DESTROY TARGET'}</Text>
-                </TouchableOpacity>
+                </PressableScale>
               </View>
             </View>
           </Animated.View>
@@ -203,7 +218,7 @@ export default function TribunalScreen() {
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   header: { 
-    paddingTop: Platform.OS === 'ios' ? 60 : 30, 
+    paddingTop: 20, 
     paddingHorizontal: 20, paddingBottom: 20, 
     borderBottomWidth: 1, borderBottomColor: 'rgba(231,76,60,0.2)' 
   },

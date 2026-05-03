@@ -2,12 +2,13 @@
  * EditProfileScreen — "Edit Profile"
  * Pixel-exact match of web EditProfilePage.tsx + settings.css
  */
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView,
-  ActivityIndicator, Platform,
+  View, Text, StyleSheet, TextInput, ScrollView,
+  ActivityIndicator, Alert, InteractionManager
 } from 'react-native';
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, Easing, cancelAnimation, useAnimatedKeyboard } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -18,10 +19,13 @@ import { useAuthStore } from '@/src/stores/auth';
 import reelToast from '@/src/utils/reelToast';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 import AvatarCropSheet from '@/src/components/profile/AvatarCropSheet';
 import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import Buster from '@/src/components/Buster';
 import { Image } from 'expo-image';
+
+
 
 interface SocialLink {
   id: string;
@@ -30,10 +34,10 @@ interface SocialLink {
 }
 
 function generateId() {
-  return Math.random().toString(36).slice(2, 9);
+  return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
 }
 
-const AnimatedView = Animated.createAnimatedComponent(View);
+// Removed redundant AnimatedView definition
 
 // ── Ornamental Divider ──◇── ──
 function OrnamentalRule() {
@@ -46,9 +50,37 @@ function OrnamentalRule() {
   );
 }
 
+// ── Module-level Section Components (extracted from inline to prevent re-mount on keystroke) ──
+const SectionCard = React.memo(({ children, danger }: { children: React.ReactNode; danger?: boolean }) => (
+  <View style={[st.sectionCard, danger && st.sectionCardDanger]}>
+    <LinearGradient
+      colors={danger ? ['transparent', 'rgba(162,36,36,0.2)', 'transparent'] : ['transparent', 'rgba(139,105,20,0.2)', 'transparent']}
+      start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+      style={st.sectionTopLine}
+    />
+    <LinearGradient
+      colors={['rgba(139,105,20,0.03)', 'transparent']}
+      style={StyleSheet.absoluteFillObject}
+    />
+    {children}
+  </View>
+));
+SectionCard.displayName = 'SectionCard';
+
+const SectionHead = React.memo(({ icon: Icon, label, danger }: { icon: import('lucide-react-native').LucideIcon; label: string; danger?: boolean }) => (
+  <View style={st.sectionHeaderWrap}>
+    <View style={st.sectionHeaderRow}>
+      <Icon size={14} color={danger ? 'rgba(162,36,36,0.7)' : colors.sepia} style={st.sectionHeaderIcon} />
+      <Text style={[st.sectionHeaderText, danger && st.sectionHeaderTextDanger]}>{label}</Text>
+    </View>
+  </View>
+));
+SectionHead.displayName = 'SectionHead';
+
 export default function EditProfileScreen() {
   const router = useRouter();
   const { user, updateUser } = useAuthStore();
+  const insets = useSafeAreaInsets();
 
   // ── Profile Fields ──
   const [username, setUsername] = useState(user?.username ?? '');
@@ -65,19 +97,20 @@ export default function EditProfileScreen() {
   useEffect(() => {
     if (!user) return;
     setUsername(user.username ?? '');
-    setDisplayName((user as Record<string, unknown>).display_name as string ?? (user as Record<string, unknown>).displayName as string ?? user.username ?? '');
+    setDisplayName(user.display_name ?? user.displayName ?? user.username ?? '');
     setBio(user.bio ?? '');
     setAvatarPreview(user.avatar_url ?? null);
 
-    const stored = (user as Record<string, unknown>).social_links;
+    const stored = user.social_links as Record<string, string> | { title?: string; url?: string }[] | undefined;
     if (Array.isArray(stored)) {
-        setLinks(stored.map((l: Record<string, string>) => ({ id: generateId(), title: l.title || '', url: l.url || '' })));
+        setLinks(stored.map(l => ({ id: generateId(), title: l.title || '', url: l.url || '' })));
     } else if (stored && typeof stored === 'object') {
-        const converted = Object.entries(stored as Record<string, string>)
-            .filter(([, v]) => v && (v as string).trim())
-            .map(([k, v]) => ({ id: generateId(), title: k.charAt(0).toUpperCase() + k.slice(1), url: v as string }));
+        const converted = Object.entries(stored)
+            .filter(([, v]) => v && v.trim())
+            .map(([k, v]) => ({ id: generateId(), title: k.charAt(0).toUpperCase() + k.slice(1), url: v }));
         if (converted.length > 0) setLinks(converted);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   // ── Link Management ──
@@ -119,7 +152,7 @@ export default function EditProfileScreen() {
     if (!user) return;
     
     if (displayName.trim().length > 50) { reelToast.error('Display name must be 50 or fewer characters.'); return; }
-    if (bio.trim().length > 500) { reelToast.error('Bio must be 500 or fewer characters.'); return; }
+    if (bio.trim().length > 300) { reelToast.error('Bio must be 300 or fewer characters.'); return; }
 
     const _username = username.trim().toLowerCase();
     if (_username !== user.username) {
@@ -134,7 +167,7 @@ export default function EditProfileScreen() {
           .filter(l => l.url && l.url.trim())
           .map(l => ({ title: l.title.trim() || 'Link', url: l.url.trim() }));
           
-      const updateData: Record<string, unknown> = {
+      const updateData = {
           display_name: displayName.trim(),
           bio: bio.trim(),
           avatar_url: avatarPreview,
@@ -149,16 +182,23 @@ export default function EditProfileScreen() {
           
       if (error) throw error;
       
-      await updateUser({
-        username: _username,
-        display_name: displayName.trim(),
-        bio: bio.trim(),
-        avatar_url: avatarPreview,
-        social_links: cleanedLinks,
-      });
+      // FIX #3: If local update fails after DB success, log breadcrumb but still show success
+      // (restoreSession on next launch will reconcile)
+      try {
+        await updateUser({
+          username: _username,
+          display_name: displayName.trim(),
+          bio: bio.trim(),
+          avatar_url: avatarPreview ?? undefined,
+          social_links: cleanedLinks,
+        });
+      } catch (localErr: unknown) {
+        if (__DEV__) console.warn('[EditProfile] Local updateUser failed after DB success:', localErr);
+      }
 
       reelToast.success('Profile updated ✦');
-      router.back();
+      // FIX #2: Defer navigation to prevent animation conflict with success toast
+      InteractionManager.runAfterInteractions(() => router.back());
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Update failed — please try again.';
       reelToast.error(msg);
@@ -167,44 +207,67 @@ export default function EditProfileScreen() {
     }
   };
 
-  if (!user) return null;
+  const isDirty = React.useMemo(() => {
+    if (!user) return false;
+    const origUsername = user.username ?? '';
+    const origDisplayName = user.display_name ?? user.displayName ?? user.username ?? '';
+    const origBio = user.bio ?? '';
+    const origAvatar = user.avatar_url ?? null;
 
-  // ═══ REUSABLE COMPONENTS ═══
-  const SectionCard = ({ children, danger }: { children: React.ReactNode; danger?: boolean }) => (
-    <View style={[st.sectionCard, danger && st.sectionCardDanger]}>
-      <LinearGradient
-        colors={danger ? ['transparent', 'rgba(162,36,36,0.2)', 'transparent'] : ['transparent', 'rgba(139,105,20,0.2)', 'transparent']}
-        start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-        style={st.sectionTopLine}
-      />
-      <LinearGradient
-        colors={['rgba(139,105,20,0.03)', 'transparent']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      {children}
-    </View>
-  );
+    if (username !== origUsername) return true;
+    if (displayName !== origDisplayName) return true;
+    if (bio !== origBio) return true;
+    if (avatarPreview !== origAvatar) return true;
 
-  const SectionHead = ({ icon: Icon, label, danger }: { icon: any; label: string; danger?: boolean }) => (
-    <View style={[st.sectionHeaderWrap]}>
-      <View style={st.sectionHeaderRow}>
-        <Icon size={14} color={danger ? 'rgba(162,36,36,0.7)' : colors.sepia} style={st.sectionHeaderIcon} />
-        <Text style={[st.sectionHeaderText, danger && st.sectionHeaderTextDanger]}>{label}</Text>
-      </View>
-    </View>
-  );
+    const currentLinks = links.map(l => ({ title: l.title, url: l.url }));
+    let origLinks: { title: string; url: string }[] = [];
+    const stored = user.social_links as any;
+    if (Array.isArray(stored)) {
+        origLinks = stored.map(l => ({ title: l.title || '', url: l.url || '' }));
+    } else if (stored && typeof stored === 'object') {
+        origLinks = Object.entries(stored)
+            .filter(([, v]) => v && (v as string).trim())
+            .map(([k, v]) => ({ title: k.charAt(0).toUpperCase() + k.slice(1), url: v as string }));
+    }
+    
+    return JSON.stringify(currentLinks) !== JSON.stringify(origLinks);
+  }, [user, username, displayName, bio, avatarPreview, links]);
+
+  const handleBack = () => {
+    if (isDirty) {
+      Alert.alert(
+        'Discard Changes',
+        'You have unsaved changes. Are you sure you want to discard them?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Discard', style: 'destructive', onPress: () => router.back() }
+        ]
+      );
+    } else {
+      router.back();
+    }
+  };
+
+
+
+
 
   const glowOpacity = useSharedValue(0.04);
   useEffect(() => {
-    glowOpacity.value = withRepeat(
-      withTiming(0.08, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-      -1, true
-    );
+    // Round 6: Removed infinite loop to allow UI thread idling
+    glowOpacity.value = withTiming(0.08, { duration: 3000, easing: Easing.inOut(Easing.ease) });
+    return () => cancelAnimation(glowOpacity);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
 
+  const keyboard = useAnimatedKeyboard();
+  const animatedKeyboardStyle = useAnimatedStyle(() => ({ paddingBottom: keyboard.height.value }));
+
+  if (!user) return null;
+
   return (
-    <View style={st.container}>
+    <Animated.View style={[st.container, animatedKeyboardStyle]}>
       <Animated.View style={[st.ambientGlow, glowStyle]}>
         <LinearGradient
           colors={['rgba(139,105,20,0.15)', 'transparent', 'transparent']}
@@ -213,20 +276,20 @@ export default function EditProfileScreen() {
         />
       </Animated.View>
       
-      <View style={st.navBar}>
-        <TouchableOpacity onPress={() => router.back()} style={st.navBackBtn} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+      <View style={[st.navBar, { paddingTop: insets.top + 8 }]}>
+        <PressableScale onPress={handleBack} style={st.navBackBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light">
           <ChevronLeft size={22} color={colors.bone} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+        </PressableScale>
+        <PressableScale onPress={handleSave} disabled={saving} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" accessibilityRole="button" accessibilityLabel={saving ? 'Saving profile' : 'Save profile changes'}>
           {saving ? <ActivityIndicator size="small" color={colors.sepia} /> : (
             <Text style={st.navSaveText}>SAVE</Text>
           )}
-        </TouchableOpacity>
+        </PressableScale>
       </View>
 
-      <ScrollView contentContainerStyle={st.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[st.scrollContent, { paddingBottom: Math.max(insets.bottom, 100) }]} showsVerticalScrollIndicator={false}>
 
-        <AnimatedView entering={FadeInDown.duration(600)} style={st.hero}>
+        <Animated.View entering={FadeInDown.duration(600)} style={st.hero}>
           <View style={st.heroRuleTop} />
           <View style={st.heroEyebrowRow}>
             <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
@@ -236,18 +299,19 @@ export default function EditProfileScreen() {
           <Text style={st.heroTitle}>Edit Profile</Text>
           <Text style={st.heroDesc}>Shape how the society sees you.</Text>
           <View style={st.heroRuleBottom} />
-        </AnimatedView>
+        </Animated.View>
 
 
         {/* ════ PROFILE PICTURE ════ */}
-        <AnimatedView entering={FadeInDown.duration(500).delay(50)}>
+        <Animated.View entering={FadeInDown.duration(500).delay(50)}>
           <SectionCard>
             <SectionHead icon={Camera} label="PROFILE PICTURE" />
             <View style={st.avatarSection}>
-              <TouchableOpacity 
+              <PressableScale 
                 style={st.avatarWrap} 
-                activeOpacity={0.8}
                 onPress={() => setShowCropModal(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Change profile picture"
               >
                 {avatarPreview ? (
                     <Image source={{ uri: avatarPreview }} style={st.avatarImg} contentFit="cover" />
@@ -257,18 +321,18 @@ export default function EditProfileScreen() {
                 <View style={st.avatarOverlay}>
                     <Camera size={24} color={colors.parchment} />
                 </View>
-              </TouchableOpacity>
+              </PressableScale>
               
-              <Text style={st.avatarHint}>Click portrait to change</Text>
+              <Text style={st.avatarHint}>Tap portrait to change</Text>
               <Text style={st.avatarSpec}>JPG, PNG, or WEBP · MAX 5MB</Text>
             </View>
           </SectionCard>
-        </AnimatedView>
+        </Animated.View>
         
         <OrnamentalRule />
 
         {/* ════ IDENTITY ════ */}
-        <AnimatedView entering={FadeInDown.duration(500).delay(100)}>
+        <Animated.View entering={FadeInDown.duration(500).delay(100)}>
           <SectionCard>
             <SectionHead icon={User} label="IDENTITY" />
 
@@ -277,7 +341,7 @@ export default function EditProfileScreen() {
               <View style={st.usernameWrap}>
                 <Text style={st.usernameAt}>@</Text>
                 <TextInput style={st.usernameInput} value={username} onChangeText={(v: string) => { setUsername(v.toLowerCase().replace(/[^a-z0-9_]/g, '')); setUsernameError(''); }}
-                  autoCapitalize="none" autoCorrect={false} placeholderTextColor={colors.ash} maxLength={20} />
+                  autoCapitalize="none" autoCorrect={false} placeholderTextColor={colors.ash} maxLength={20} keyboardAppearance="dark" accessibilityLabel="Username" selectionColor={colors.sepia} />
               </View>
               {!!usernameError && <Text style={st.errorText}>{usernameError}</Text>}
               <Text style={st.helperText}>Letters, numbers, and underscores only · 3-20 characters</Text>
@@ -286,34 +350,34 @@ export default function EditProfileScreen() {
             <View style={st.fieldWrap}>
               <Text style={st.fieldLabel}>DISPLAY NAME</Text>
               <TextInput style={st.fieldInput} value={displayName} onChangeText={setDisplayName}
-                placeholderTextColor={colors.ash} placeholder="Your name in the credits..." maxLength={30} />
+                placeholderTextColor={colors.ash} placeholder="Your name in the credits..." maxLength={50} keyboardAppearance="dark" accessibilityLabel="Display name" selectionColor={colors.sepia} />
             </View>
 
             <View style={st.fieldWrap}>
               <Text style={st.fieldLabel}>BIO</Text>
               <TextInput style={st.bioInput}
-                value={bio} onChangeText={setBio} multiline maxLength={160}
-                placeholderTextColor={colors.ash} placeholder="A brief dispatch about your cinematic journey..." />
-              <Text style={st.charCount}>{bio.length}/160</Text>
+                value={bio} onChangeText={setBio} multiline maxLength={300}
+                placeholderTextColor={colors.ash} placeholder="A brief dispatch about your cinematic journey..." keyboardAppearance="dark" accessibilityLabel="Bio" selectionColor={colors.sepia} returnKeyType="done" blurOnSubmit={true} />
+              <Text style={st.charCount}>{bio.length}/300</Text>
             </View>
           </SectionCard>
-        </AnimatedView>
+        </Animated.View>
         
         <OrnamentalRule />
 
         {/* ════ FAVORITE FILMS ════ */}
-        <AnimatedView entering={FadeInDown.duration(500).delay(150)}>
+        <Animated.View entering={FadeInDown.duration(500).delay(150)}>
             <SectionCard>
                 <SectionHead icon={Film} label="FAVORITE FILMS" />
                 <Text style={st.fieldBody}>Choose 3 films that define your cinematic identity. Tap a slot to search and select.</Text>
-                <ProfileTriptych user={user as any} isOwnProfile={true} userRole={user?.role as string} />
+                <ProfileTriptych user={user as unknown as import('@/src/components/profile/ProfileTriptych').TriptychUser} isOwnProfile={true} userRole={user?.role as string} />
             </SectionCard>
-        </AnimatedView>
+        </Animated.View>
 
         <OrnamentalRule />
 
         {/* ════ LINKS ════ */}
-        <AnimatedView entering={FadeInDown.duration(500).delay(200)}>
+        <Animated.View entering={FadeInDown.duration(500).delay(200)}>
             <SectionCard>
                 <SectionHead icon={Link2} label="LINKS" />
                 <Text style={st.fieldBody}>Add links to your profile. They will be visible to anyone who visits your page.</Text>
@@ -322,59 +386,43 @@ export default function EditProfileScreen() {
                     {links.map((link, index) => (
                         <View key={link.id} style={st.linkItem}>
                             <View style={st.linkItemHeader}>
-                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                                    <GripVertical size={12} color={colors.ash} style={{ opacity: 0.4 }} />
+                                <View style={st.linkDragHandleRow}>
+                                    <GripVertical size={12} color={colors.ash} style={st.linkDragHandleIcon} />
                                     <Text style={st.linkItemTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LINK {index + 1}</Text>
                                 </View>
-                                <TouchableOpacity onPress={() => removeLink(link.id)} style={st.linkRemoveBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                                <PressableScale onPress={() => removeLink(link.id)} style={st.linkRemoveBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light">
                                     <X size={14} color={colors.ash} />
-                                </TouchableOpacity>
+                                </PressableScale>
                             </View>
                             
                             <View style={st.fieldWrap}>
                                 <Text style={st.fieldLabel}>TITLE</Text>
-                                <TextInput style={st.fieldInput} value={link.title} onChangeText={(t) => updateLink(link.id, 'title', t)} placeholder="e.g. My Portfolio, Blog, Channel..." placeholderTextColor={colors.ash} maxLength={40} />
+                                <TextInput style={st.fieldInput} value={link.title} onChangeText={(t) => updateLink(link.id, 'title', t)} placeholder="e.g. My Portfolio, Blog, Channel..." placeholderTextColor={colors.ash} maxLength={40} keyboardAppearance="dark" accessibilityLabel="Link title" selectionColor={colors.sepia} />
                             </View>
                             
                             <View style={st.fieldWrap}>
                                 <Text style={st.fieldLabel}>URL</Text>
-                                <TextInput style={st.fieldInput} value={link.url} onChangeText={(t) => updateLink(link.id, 'url', t)} placeholder="https://..." placeholderTextColor={colors.ash} keyboardType="url" autoCapitalize="none" autoCorrect={false} />
+                                <TextInput style={st.fieldInput} value={link.url} onChangeText={(t) => updateLink(link.id, 'url', t)} placeholder="https://..." placeholderTextColor={colors.ash} keyboardType="url" autoCapitalize="none" autoCorrect={false} keyboardAppearance="dark" accessibilityLabel="Link URL" selectionColor={colors.sepia} />
                             </View>
                         </View>
                     ))}
                 </View>
 
-                <TouchableOpacity style={st.addLinkBtn} onPress={addLink}>
+                <PressableScale style={st.addLinkBtn} onPress={addLink} haptic="selection">
                     <Plus size={14} color={colors.sepia} />
                     <Text style={st.addLinkText}>ADD LINK</Text>
-                </TouchableOpacity>
+                </PressableScale>
 
                 {links.length > 0 && <Text style={st.linksCount}>{links.length}/10 LINKS</Text>}
             </SectionCard>
-        </AnimatedView>
+        </Animated.View>
 
 
         {/* ── Heritage Footer ── */}
-        <AnimatedView entering={FadeInDown.duration(500).delay(250)} style={st.heritageFooter}>
+        <Animated.View entering={FadeInDown.duration(500).delay(250)} style={st.heritageFooter}>
           <OrnamentalRule />
 
-          <TouchableOpacity
-            style={[st.globalSaveBtn, saving && st.disabledBtn]}
-            onPress={handleSave} disabled={saving} activeOpacity={0.7}
-          >
-            <LinearGradient
-              colors={['rgba(139,105,20,0.2)', 'rgba(139,105,20,0.1)']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-              style={StyleSheet.absoluteFillObject}
-            />
-            <View style={st.saveBtnContent}>
-              {!saving && <Sparkles size={10} color={colors.sepia} strokeWidth={2} />}
-              <Text style={st.globalSaveBtnText}>
-                {saving ? 'ARCHIVING PROFILE\u2026' : 'SAVE PROFILE'}
-              </Text>
-              {!saving && <Sparkles size={10} color={colors.sepia} strokeWidth={2} />}
-            </View>
-          </TouchableOpacity>
+          {/* H-08 AUDIT FIX: Duplicate save button removed — nav bar SAVE is the single action */}
 
           <Text style={st.memberSince}>
             MEMBER SINCE {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'THE BEGINNING'}
@@ -385,7 +433,7 @@ export default function EditProfileScreen() {
             <Sparkles size={8} color={colors.sepia} strokeWidth={1.5} />
             <View style={st.endMarkLine} />
           </View>
-        </AnimatedView>
+        </Animated.View>
 
       </ScrollView>
 
@@ -399,7 +447,7 @@ export default function EditProfileScreen() {
            }}
         />
       )}
-    </View>
+    </Animated.View>
   );
 }
 
@@ -422,7 +470,6 @@ const st = StyleSheet.create({
     transform: [{ rotate: '45deg' }],
   },
   navBar: {
-    paddingTop: Platform.OS === 'ios' ? 56 : 36,
     paddingHorizontal: 16, paddingBottom: 12,
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
@@ -493,4 +540,6 @@ const st = StyleSheet.create({
   memberSince: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 20 },
   endMarkRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 20, width: '40%', alignSelf: 'center', opacity: 0.3 },
   endMarkLine: { flex: 1, height: 1, backgroundColor: colors.sepia },
+  linkDragHandleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  linkDragHandleIcon: { opacity: 0.4 },
 });

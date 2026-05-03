@@ -1,9 +1,10 @@
 /**
  * HandbookModal — User handbook / guide.
  */
-import { View, Text, StyleSheet, TouchableOpacity, Modal, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 const SECTIONS = [
     { title: 'THE RATING SCALE', body: '1 Reel — Abysmal\n2 Reels — Below Average\n3 Reels — Decent\n4 Reels — Excellent\n5 Reels — Masterpiece' },
@@ -20,9 +21,9 @@ export default function HandbookModal({ visible, onClose }: { visible: boolean; 
                 <View style={s.card}>
                     <View style={s.header}>
                         <Text style={s.title}>The Society Handbook</Text>
-                        <TouchableOpacity onPress={onClose} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+                        <PressableScale onPress={onClose} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" pressedScale={0.94}>
                             <Text style={s.closeText}>✕</Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                     </View>
                     <ScrollView style={s.scrollContent} showsVerticalScrollIndicator={false}>
                         {SECTIONS.map((section, i) => (

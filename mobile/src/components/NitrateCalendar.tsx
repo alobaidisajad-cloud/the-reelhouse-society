@@ -11,10 +11,11 @@
  *  - Selected date display at bottom
  */
 import React, { useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 const DAY_LABELS = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -77,18 +78,18 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
         <View style={s.container}>
             {/* Header: Month navigator */}
             <View style={s.header}>
-                <TouchableOpacity onPress={prevMonth} style={s.navBtn} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                <PressableScale onPress={prevMonth} style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection">
                     <ChevronLeft size={16} color={colors.sepia} />
-                </TouchableOpacity>
+                </PressableScale>
 
                 <View style={s.headerCenter}>
                     <Text style={s.monthLabel}>{MONTH_NAMES[viewMonth].toUpperCase()}</Text>
                     <Text style={s.yearLabel}>{viewYear}</Text>
                 </View>
 
-                <TouchableOpacity onPress={nextMonth} style={s.navBtn} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                <PressableScale onPress={nextMonth} style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection">
                     <ChevronRight size={16} color={colors.sepia} />
-                </TouchableOpacity>
+                </PressableScale>
             </View>
 
             {/* Day-of-week labels */}
@@ -112,16 +113,16 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
                         const future = isFuture(day);
 
                         return (
-                            <TouchableOpacity
+                            <PressableScale
                                 key={ci}
                                 disabled={future}
                                 onPress={() => selectDay(day)}
-                                activeOpacity={0.6}
                                 style={[
                                     s.dayCell,
                                     isSelected && s.daySelected,
                                     isToday && !isSelected && s.dayToday,
                                 ]}
+                                pressedScale={0.9}
                             >
                                 {isSelected ? (
                                     <LinearGradient
@@ -141,7 +142,7 @@ export default function NitrateCalendar({ value, onChange }: NitrateCalendarProp
                                         {day}
                                     </Text>
                                 )}
-                            </TouchableOpacity>
+                            </PressableScale>
                         );
                     })}
                 </View>

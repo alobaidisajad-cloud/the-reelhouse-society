@@ -32,7 +32,7 @@ export function CommunityReviews({ reviews }: { reviews: CommunityReview[] }) {
                         {review.rating > 0 && <ReelRating rating={review.rating} size={11} />}
                     </View>
                     {review.review ? (
-                        <Text style={s.reviewText} numberOfLines={4}>"{review.review}"</Text>
+                        <Text style={s.reviewText} numberOfLines={4}>&quot;{review.review}&quot;</Text>
                     ) : null}
                 </View>
             ))}

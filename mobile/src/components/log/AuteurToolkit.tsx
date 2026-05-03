@@ -1,12 +1,15 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Haptics from 'expo-haptics';
 import { Lock } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
+import PressableScale from '@/src/components/PressableScale';
 
 const AUTOPSY_LABELS: Record<string, string> = {
     story: 'STORY', script: 'SCRIPT/DIALOGUE', acting: 'ACTING/CHAR',
@@ -21,7 +24,7 @@ interface Props {
     setIsAutopsied: (v: boolean) => void;
     autopsy: Record<string, number>;
     setAutopsy: (v: Record<string, number>) => void;
-    availablePosters: Array<{ file_path: string }>;
+    availablePosters: { file_path: string }[];
     altPoster: string | null;
     setAltPoster: (v: string | null) => void;
     onUpgradePress: () => void;
@@ -33,10 +36,10 @@ export default function AuteurToolkit({
 }: Props) {
     return (
         <View style={[st.auteurBox, !isAuteur && st.auteurLocked]} pointerEvents={isAuteur ? 'auto' : 'box-none'}>
-            <TouchableOpacity style={st.auteurHead} onPress={() => { if (!isAuteur) { onUpgradePress(); return; } setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); Haptics.selectionAsync(); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+            <PressableScale style={st.auteurHead} onPress={() => { if (!isAuteur) { onUpgradePress(); return; } setAutopsyOpen(!autopsyOpen); setIsAutopsied(!autopsyOpen); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.96}>
                 <Text style={st.auteurHeadText}>{autopsyOpen ? '[-] HIDE DEEP AUTOPSY' : '[+] PERFORM DEEP AUTOPSY'}</Text>
                 {!isAuteur && <View style={st.upgradeLockRow}><Lock size={10} color={colors.bloodReel} /><Text style={st.upgradeLink}>UPGRADE</Text></View>}
-            </TouchableOpacity>
+            </PressableScale>
             
             {autopsyOpen && isAuteur && (
                 <Animated.View entering={FadeInDown.duration(200)} style={st.autopContent}>
@@ -47,7 +50,7 @@ export default function AuteurToolkit({
                                 <Text style={st.sliderLabel}>{AUTOPSY_LABELS[axis] || axis.toUpperCase()}</Text>
                                 <View style={st.sliderTrack}>
                                     {[0,1,2,3,4,5,6,7,8,9,10].map(v => (
-                                        <TouchableOpacity key={v} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setAutopsy({ ...autopsy, [axis]: v }); }} style={[st.sliderSeg, v <= autopsy[axis] && st.sliderSegOn]} activeOpacity={0.9} hitSlop={{top: 10, bottom: 10}} />
+                                        <PressableScale key={v} onPress={() => { setAutopsy({ ...autopsy, [axis]: v }); }} style={[st.sliderSeg, v <= autopsy[axis] && st.sliderSegOn]} hitSlop={{top: 10, bottom: 10}} haptic="light" pressedScale={0.9} />
                                     ))}
                                 </View>
                                 <Text style={st.sliderVal}>{autopsy[axis] || '-'}</Text>
@@ -60,15 +63,17 @@ export default function AuteurToolkit({
                     <View>
                         <Text style={st.editLabel}>CURATORIAL CONTROL (ALT POSTER)</Text>
                         {availablePosters.length > 0 ? (
-                            <FlatList horizontal data={[{ file_path: '__default__' }, ...availablePosters]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGapPad}
+                            <FlashList horizontal data={[{ file_path: '__default__' }, ...availablePosters]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGapPad}
+                                estimatedItemSize={52}
+                                ListFooterComponent={<View style={{ width: 16 }} />}
                                 renderItem={({ item: p }) => p.file_path === '__default__' ? (
-                                    <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} activeOpacity={0.7}>
+                                    <PressableScale onPress={() => { setAltPoster(null); }} style={[st.pThumb, altPoster === null && st.pThumbActive]} haptic="selection" pressedScale={0.96}>
                                         <Text style={[st.pDefault, altPoster === null && st.pDefaultActive]}>DEFAULT</Text>
-                                    </TouchableOpacity>
+                                    </PressableScale>
                                 ) : (
-                                    <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setAltPoster(p.file_path); }} activeOpacity={0.7}>
+                                    <PressableScale onPress={() => { setAltPoster(p.file_path); }} haptic="selection" pressedScale={0.96}>
                                         <Image source={{ uri: tmdb.poster(p.file_path, 'w92') }} style={[st.pImg, altPoster === p.file_path && st.pImgActive, altPoster && altPoster !== p.file_path && st.pImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
-                                    </TouchableOpacity>
+                                    </PressableScale>
                                 )}
                             />
                         ) : <Text style={st.noData}>No alternative posters found on TMDB.</Text>}

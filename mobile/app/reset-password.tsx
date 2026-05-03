@@ -1,16 +1,19 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, ActivityIndicator,
+  View, Text, TextInput, StyleSheet,
+  ScrollView, ActivityIndicator,
 } from 'react-native';
 import Animated, {
-  FadeInDown, FadeIn, useSharedValue, useAnimatedStyle,
-  withTiming, withSequence, withRepeat, Easing, ReduceMotion,
+  FadeInDown, FadeIn, ReduceMotion,
 } from 'react-native-reanimated';
 import { supabase } from '@/src/lib/supabase';
 import { useRouter } from 'expo-router';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
+import { useAuthStore } from '@/src/stores/auth';
+import * as Haptics from 'expo-haptics';
+import PressableScale from '@/src/components/PressableScale';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -25,7 +28,7 @@ function getChecks(pw: string) {
   };
 }
 
-const CHECK_LABELS: Array<[keyof ReturnType<typeof getChecks>, string]> = [
+const CHECK_LABELS: [keyof ReturnType<typeof getChecks>, string][] = [
   ['length', '8+ characters'],
   ['uppercase', 'Uppercase letter'],
   ['lowercase', 'Lowercase letter'],
@@ -46,40 +49,59 @@ export default function ResetPasswordScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+  const insets = useSafeAreaInsets();
+  // BUG FIX #4: Session guard
+  const [hasSession, setHasSession] = useState<boolean | null>(null); // null = checking
 
   const confirmRef = useRef<TextInput>(null);
+  // FIX #1: Redirect timer ref for cleanup on unmount
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => { return () => { if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current); }; }, []);
 
   const checks = getChecks(password);
   const passed = Object.values(checks).filter(Boolean).length;
   const strong = passed === 5;
   const { label: strengthLabel, color: strengthColor } = getStrength(passed);
 
+  // BUG FIX #4: Check for active session on mount
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.getSession();
+      setHasSession(!!data?.session);
+    })();
+  }, []);
+
   const handleReset = async () => {
     if (!strong) {
-      reelToast('Password does not meet security requirements.');
+      reelToast.error('Password does not meet security requirements.');
       return;
     }
     if (password !== confirm) {
-      reelToast('Passwords do not match.');
+      reelToast.error('Passwords do not match.');
       return;
     }
 
     setLoading(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setSuccess(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
-      // Re-trigger auth so the user gets properly logged in with new password
+      // IMP #3: Re-trigger auth + fully hydrate the auth store
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         await supabase.auth.refreshSession();
+        // Hydrate the Zustand auth store so the user is fully logged in
+        await useAuthStore.getState().restoreSession();
       }
 
-      // Navigate home after brief delay
-      setTimeout(() => {
+      // M-12 AUDIT FIX: Timer now matches the "3 SECONDS" copy
+      // FIX #1: Store timer ref so cleanup on unmount prevents stale navigation
+      redirectTimerRef.current = setTimeout(() => {
         router.replace('/(tabs)');
-      }, 2500);
+      }, 3000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to reset password.';
       reelToast.error(msg);
@@ -109,18 +131,82 @@ export default function ResetPasswordScreen() {
     );
   }
 
+  // BUG FIX #4: Session guard — checking state
+  if (hasSession === null) {
+    return (
+      <View style={s.container}>
+        <View style={s.successWrap}>
+          <ActivityIndicator size="large" color={colors.sepia} />
+        </View>
+      </View>
+    );
+  }
+
+  // BUG FIX #4: No session — show recovery options instead of dead-end form
+  if (hasSession === false) {
+    return (
+      <View style={s.container}>
+        <View style={s.successWrap}>
+          <Animated.View entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.successContent}>
+            <View style={[s.successIconWrap, { backgroundColor: 'rgba(107, 26, 10, 0.15)', borderColor: colors.bloodReel }]}>
+              <Text style={[s.successIcon, { color: colors.bloodReel }]}>✕</Text>
+            </View>
+            <Text style={[s.successEyebrow, { color: colors.bloodReel }]}>SESSION EXPIRED</Text>
+            <Text style={s.successTitle}>No Active Session</Text>
+            <Text style={s.successBody}>
+              Your reset link has expired or was already used.{"\n"}Please request a new one.
+            </Text>
+            <PressableScale
+              style={[s.submitBtn, { marginTop: 20 }]}
+              onPress={() => router.replace({ pathname: '/login', params: { action: 'forgot_password' } })}
+              pressedScale={0.97}
+              accessibilityRole="button"
+              accessibilityLabel="Request new reset link"
+            >
+              <Text style={s.submitText}>REQUEST NEW RESET LINK</Text>
+            </PressableScale>
+            <PressableScale
+              style={{ marginTop: 16, padding: 8 }}
+              onPress={() => router.replace('/(tabs)')}
+              pressedScale={0.95}
+              haptic="light"
+              accessibilityRole="button"
+              accessibilityLabel="Return to lobby"
+            >
+              <Text style={[s.submitText, { color: colors.fog }]}>RETURN TO LOBBY</Text>
+            </PressableScale>
+          </Animated.View>
+        </View>
+      </View>
+    );
+  }
+
   // ── Main Form ──
   return (
-    <KeyboardAvoidingView style={s.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-      <ScrollView contentContainerStyle={s.scroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <ScrollView 
+      style={s.container} 
+      contentContainerStyle={[s.scroll, { paddingTop: Math.max(insets.top + 10, 60) }]} 
+      showsVerticalScrollIndicator={false} 
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets={true}
+    >
         {/* Close / Back */}
-        <TouchableOpacity
-          style={s.backBtn}
-          onPress={() => router.back()}
+        <PressableScale
+          style={[s.backBtn, { top: Math.max(insets.top + 16, 56) }]}
+          onPress={() => {
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              router.replace('/(tabs)');
+            }
+          }}
           hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}
+          haptic="light"
+          accessibilityRole="button"
+          accessibilityLabel="Back to lobby"
         >
           <Text style={s.backText}>← BACK TO LOBBY</Text>
-        </TouchableOpacity>
+        </PressableScale>
 
         {/* Header */}
         <AnimatedView entering={FadeInDown.duration(800).reduceMotion(ReduceMotion.Never)} style={s.header}>
@@ -157,14 +243,19 @@ export default function ResetPasswordScreen() {
                 onSubmitEditing={() => confirmRef.current?.focus()}
                 blurOnSubmit={false}
                 maxLength={128}
+                keyboardAppearance="dark"
+                accessibilityLabel="New password"
               />
-              <TouchableOpacity
+              <PressableScale
                 style={s.showBtn}
                 onPress={() => setShowPassword(v => !v)}
                 hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+                pressedScale={0.92}
+                accessibilityRole="button"
+                accessibilityLabel={showPassword ? "Hide password" : "Show password"}
               >
                 <Text style={s.showText}>{showPassword ? 'HIDE' : 'SHOW'}</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           </View>
 
@@ -219,6 +310,8 @@ export default function ResetPasswordScreen() {
                 returnKeyType="go"
                 onSubmitEditing={handleReset}
                 maxLength={128}
+                keyboardAppearance="dark"
+                accessibilityLabel="Confirm new password"
               />
             </View>
             {confirm.length > 0 && password !== confirm && (
@@ -227,11 +320,13 @@ export default function ResetPasswordScreen() {
           </View>
 
           {/* Submit */}
-          <TouchableOpacity
+          <PressableScale
             style={[s.submitBtn, (!strong || password !== confirm || loading) && s.submitDisabled]}
             onPress={handleReset}
             disabled={loading || !strong || password !== confirm}
-            activeOpacity={0.7}
+            pressedScale={0.97}
+            accessibilityRole="button"
+            accessibilityLabel="Submit new password"
           >
             {loading ? (
               <View style={s.submitLoading}>
@@ -241,10 +336,9 @@ export default function ResetPasswordScreen() {
             ) : (
               <Text style={s.submitText}>RESET PASSWORD</Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </AnimatedView>
       </ScrollView>
-    </KeyboardAvoidingView>
   );
 }
 
@@ -253,10 +347,10 @@ export default function ResetPasswordScreen() {
 // ══════════════════════════════════════════════════════════════
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
-  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 40, paddingTop: 60 },
+  scroll: { flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 40 },
 
   // Back
-  backBtn: { position: 'absolute', top: 56, left: 0, zIndex: 10, padding: 8 },
+  backBtn: { position: 'absolute', left: 0, zIndex: 10, padding: 8 },
   backText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
 
   // Header

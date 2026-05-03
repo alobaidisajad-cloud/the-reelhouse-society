@@ -2,7 +2,7 @@
  * CountryReleases — International release dates with certification badges.
  * Collapsible section matching web's 82-line component.
  */
-import { useState } from 'react';
+import { useState, memo, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Globe } from 'lucide-react-native';
@@ -26,9 +26,12 @@ const RELEASE_TYPES: Record<number, string> = {
     1: 'PREMIERE', 2: 'LIMITED', 3: 'THEATRICAL', 4: 'DIGITAL', 5: 'PHYSICAL', 6: 'TV',
 };
 
-export default function CountryReleases({ releaseDates }: { releaseDates: ReleaseDatesResponse | null }) {
+export default memo(function CountryReleases({ releaseDates }: { releaseDates: ReleaseDatesResponse | null }) {
     const [open, setOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
+
+    const handleToggleOpen = useCallback(() => setOpen(o => !o), []);
+    const handleToggleExpanded = useCallback(() => setExpanded(e => !e), []);
 
     if (!releaseDates?.results?.length) return null;
 
@@ -46,7 +49,7 @@ export default function CountryReleases({ releaseDates }: { releaseDates: Releas
 
     return (
         <View style={s.card}>
-            <PressableScale style={s.header} onPress={() => setOpen(!open)} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+            <PressableScale style={s.header} onPress={handleToggleOpen} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                 <View style={s.headerLeft}>
                     <Globe size={12} color={colors.sepia} strokeWidth={1.5} />
                     <Text style={s.sectionTitle}>INTERNATIONAL RELEASES</Text>
@@ -78,7 +81,7 @@ export default function CountryReleases({ releaseDates }: { releaseDates: Releas
                     })}
 
                     {releases.length > 6 && (
-                        <PressableScale onPress={() => setExpanded(!expanded)} style={s.showMoreBtn} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+                        <PressableScale onPress={handleToggleExpanded} style={s.showMoreBtn} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                             <Text style={s.showMoreText}>
                                 {expanded ? '↑ SHOW LESS' : `↓ ${releases.length - 6} MORE COUNTRIES`}
                             </Text>
@@ -88,7 +91,7 @@ export default function CountryReleases({ releaseDates }: { releaseDates: Releas
             )}
         </View>
     );
-}
+})
 
 const s = StyleSheet.create({
     card: {

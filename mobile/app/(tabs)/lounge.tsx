@@ -1,15 +1,18 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, StyleSheet, ScrollView, TextInput,
-  Modal, KeyboardAvoidingView, Platform, Switch, Dimensions,
-  RefreshControl, ActivityIndicator,
+  Modal, Platform, Switch, Keyboard,
+  RefreshControl, ActivityIndicator, AppState,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { FlashList } from '@shopify/flash-list';
 import { useRouter } from 'expo-router';
 import Animated, {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   FadeInDown, FadeIn, FadeInUp, SlideInDown, SlideOutDown,
-  useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation,
+  useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing, cancelAnimation, useAnimatedProps, SharedValue, runOnJS, useAnimatedKeyboard
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Rect, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
@@ -20,18 +23,24 @@ import {
 } from 'lucide-react-native';
 import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
+import FrozenTab from '@/src/components/layout/FrozenTab';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width: SCREEN_W } = Dimensions.get('window');
-const JOINED_CARD_W = SCREEN_W * 0.42;
+// Module-scoped: prevents remount on every render cycle
+const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
-/** Warm sepia-toned blurhash — used as placeholder while images load */
-const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
+
+// F-09 FIX: Shared pulse animation context — single driver for all cards
+const PulseContext = React.createContext<{ pulse: SharedValue<number>, isScrolling: SharedValue<boolean> } | null>(null);
+function usePulse() {
+  return React.useContext(PulseContext);
+}
+
+
 
 // ════════════════════════════════════════════════════════════
 // ORNAMENTAL DIVIDER — Cinematic rules with center motif
@@ -65,11 +74,10 @@ function CrestGlow() {
   const glow = useSharedValue(0.1);
 
   useEffect(() => {
-    glow.value = withRepeat(
-      withTiming(0.9, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-      -1, true
-    );
+    // Round 6: Removed infinite loop to allow UI thread idling
+    glow.value = withTiming(0.9, { duration: 1500, easing: Easing.inOut(Easing.ease) });
     return () => cancelAnimation(glow);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const glowStyle = useAnimatedStyle(() => ({
@@ -77,9 +85,9 @@ function CrestGlow() {
   }));
 
   return (
-    <AnimatedView style={[s.crestGlow, glowStyle]}>
+    <Animated.View style={[s.crestGlow, glowStyle]}>
       <View style={s.crestGlowInner} />
-    </AnimatedView>
+    </Animated.View>
   );
 }
 
@@ -89,8 +97,9 @@ function CrestGlow() {
 function LoungeGate() {
   const router = useRouter();
   return (
+    <FrozenTab>
     <View style={s.gateContainer}>
-      <AnimatedView entering={FadeInDown.duration(900).delay(200)} style={s.gateCard}>
+      <Animated.View entering={FadeInDown.duration(900).delay(200)} style={s.gateCard}>
         {/* Crest */}
         <View style={s.gateCrestWrap}>
           <CrestGlow />
@@ -115,7 +124,7 @@ function LoungeGate() {
 
         <PressableScale
           style={s.gateCta}
-          onPress={() => router.push('/membership')}
+          onPress={() => router.push('/membership' as any)}
           haptic="medium"
           accessibilityRole="button" accessibilityLabel="Become an Archivist to access The Lounge"
         >
@@ -126,8 +135,9 @@ function LoungeGate() {
         <Text style={s.gateFootnote}>
           PRIVATE SCREENING ROOMS / PUBLIC SALONS / CINEMA DISCOURSE
         </Text>
-      </AnimatedView>
+      </Animated.View>
     </View>
+    </FrozenTab>
   );
 }
 
@@ -153,20 +163,49 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
       setDescription('');
       setIsPrivate(false);
       onClose();
-      router.push(`/lounge/${id}`);
+      router.push(`/lounge/${id}` as any);
     }
   };
+
+  const translateY = useSharedValue(0);
+
+  const keyboard = useAnimatedKeyboard();
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    paddingBottom: keyboard.height.value,
+  }));
+
+  // Reset translateY when opened
+  useEffect(() => {
+    if (visible) translateY.value = 0;
+  }, [visible, translateY]);
+
+  const pan = Gesture.Pan()
+    .onChange((e) => {
+      if (e.translationY > 0) translateY.value = e.translationY;
+    })
+    .onEnd((e) => {
+      if (e.translationY > 100 || e.velocityY > 500) {
+        runOnJS(onClose)();
+      } else {
+        translateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
+      }
+    });
 
   if (!visible) return null;
 
   return (
     <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={s.sheetKeyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <Animated.View style={[s.sheetKeyboard, animatedContainerStyle]}>
         <BlurView intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(5,3,1,0.6)' }]}>
-          <PressableScale style={s.sheetBackdrop} onPress={onClose} />
+          <PressableScale style={s.sheetBackdrop} onPress={() => { Keyboard.dismiss(); onClose(); }} />
         </BlurView>
 
-        <AnimatedView entering={SlideInDown.duration(350).easing(Easing.out(Easing.cubic))} exiting={SlideOutDown.duration(250)} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
+        <GestureDetector gesture={pan}>
+          <Animated.View 
+            entering={SlideInDown.duration(350).easing(Easing.out(Easing.cubic))} 
+            exiting={SlideOutDown.duration(250)} 
+            style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 24), transform: [{ translateY }] }]}
+          >
           <View style={s.sheetHandle} />
 
           <View style={s.sheetHeaderWrap}>
@@ -184,6 +223,8 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
               onChangeText={setName}
               maxLength={60}
               selectionColor={colors.sepia}
+              keyboardAppearance="dark"
+              accessibilityLabel="Salon name"
             />
             <Text style={s.fieldCharCount}>{name.length}/60</Text>
           </View>
@@ -199,6 +240,8 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
               maxLength={300}
               multiline
               selectionColor={colors.sepia}
+              keyboardAppearance="dark"
+              accessibilityLabel="Salon description"
             />
             <Text style={s.fieldCharCount}>{description.length}/300</Text>
           </View>
@@ -243,8 +286,9 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
               }
             </PressableScale>
           </View>
-        </AnimatedView>
-      </KeyboardAvoidingView>
+          </Animated.View>
+        </GestureDetector>
+      </Animated.View>
     </Modal>
   );
 }
@@ -254,17 +298,11 @@ function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: ()
 // ════════════════════════════════════════════════════════════
 const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; index: number }) => {
   const router = useRouter();
-  const pulse = useSharedValue(0.4);
+  const ctx = usePulse();
 
-  useEffect(() => {
-    pulse.value = withRepeat(
-      withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-      -1, true
-    );
-    return () => cancelAnimation(pulse);
-  }, []);
-
-  const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  const pulseStyle = useAnimatedStyle(() => ({ 
+    opacity: ctx?.isScrolling.value ? 1 : (ctx?.pulse.value ?? 0.7) 
+  }));
 
   const coverUrl = lounge.cover_image
     ? tmdb.backdrop(lounge.cover_image, 'w500')
@@ -275,7 +313,7 @@ const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
     <View>
       <PressableScale
         style={s.joinedCard}
-        onPress={() => router.push(`/lounge/${lounge.id}`)}
+        onPress={() => router.push(`/lounge/${lounge.id}` as any)}
         haptic="light"
         accessibilityRole="button"
         accessibilityLabel={`Enter screening room ${lounge.name}`}
@@ -300,7 +338,7 @@ const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
           />
 
           {/* Unread pulse */}
-          {hasUnread && <AnimatedView style={[s.unreadDot, pulseStyle]} />}
+          {hasUnread && <Animated.View style={[s.unreadDot, pulseStyle]} />}
 
           {/* Embedded name overlay */}
           <View style={s.joinedNameOverlay}>
@@ -323,12 +361,19 @@ const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
     </View>
   );
 });
+JoinedLoungeCard.displayName = 'JoinedLoungeCard';
 
 // ════════════════════════════════════════════════════════════
 // PUBLIC LOUNGE CARD — Cinematic list entry
 // ════════════════════════════════════════════════════════════
 const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; index: number }) => {
   const router = useRouter();
+  const ctx = usePulse();
+
+  const pulseStyle = useAnimatedStyle(() => ({ 
+    opacity: ctx?.isScrolling.value ? 1 : (ctx?.pulse.value ?? 0.7) 
+  }));
+
   const coverUrl = lounge.cover_image
     ? tmdb.backdrop(lounge.cover_image, 'w500')
     : null;
@@ -337,7 +382,7 @@ const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
     <View>
       <PressableScale
         style={s.publicCard}
-        onPress={() => router.push(`/lounge/${lounge.id}`)}
+        onPress={() => router.push(`/lounge/${lounge.id}` as any)}
         haptic="light"
         accessibilityRole="button"
         accessibilityLabel={`Enter salon ${lounge.name}${lounge.is_private ? ', approval required' : ''}`}
@@ -372,6 +417,7 @@ const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
               <Text style={s.publicMetaText} numberOfLines={1}>{lounge.member_count || 0} SEATS TAKEN</Text>
             </View>
             <View style={s.publicEnterTag}>
+              {!lounge.is_private && <Animated.View style={[s.liveIndicator, pulseStyle]} />}
               <Text style={[s.publicEnterText, { flexShrink: 1 }]} numberOfLines={1}>
                 {lounge.is_private ? '[ REQUEST INTELLIGENCE ]' : '[ GRANT ACCESS ]'}
               </Text>
@@ -386,13 +432,14 @@ const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; in
     </View>
   );
 });
+PublicLoungeCard.displayName = 'PublicLoungeCard';
 
 // ════════════════════════════════════════════════════════════
 // EMPTY STATE — "The Velvet Seats Await"
 // ════════════════════════════════════════════════════════════
 function EmptyMyLounges() {
   return (
-    <AnimatedView entering={FadeInDown.duration(600).delay(200)} style={s.emptyHero}>
+    <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.emptyHero}>
       <View style={s.emptyCrestWrap}>
         <MessageCircle size={32} color={colors.sepia} strokeWidth={1} />
       </View>
@@ -403,7 +450,7 @@ function EmptyMyLounges() {
         Open your own screening room or take a seat{'\n'}
         in a public salon below.
       </Text>
-    </AnimatedView>
+    </Animated.View>
   );
 }
 
@@ -414,6 +461,7 @@ export default function LoungeScreen() {
   const user = useAuthStore(s => s.user);
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const { lounges, fetchLounges, loading } = useLoungeStore();
+  const insets = useSafeAreaInsets();
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -424,24 +472,65 @@ export default function LoungeScreen() {
   const isArchivist = user?.role === 'archivist' || user?.role === 'auteur';
   const isPollingRef = useRef(false);
 
+  // Nitrate Noir Search Activity State
+  const searchEmberOpacity = useSharedValue(0.5);
   useEffect(() => {
-    if (isAuthenticated && isArchivist) {
-      fetchLounges();
-      const interval = setInterval(async () => {
+    if (searchQuery.length > 0) {
+      searchEmberOpacity.value = withTiming(1, { duration: 300 });
+    } else {
+      searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
+
+  const animatedSearchProps = useAnimatedProps(() => ({
+    color: searchQuery.length > 0 ? colors.bloodReel : colors.fog,
+  }));
+  const animatedSearchStyle = useAnimatedStyle(() => ({
+    opacity: searchEmberOpacity.value,
+  }));
+
+  const handleSearchQueryChange = useCallback((text: string) => {
+    setSearchQuery(text);
+  }, []);
+
+  // F-08 FIX: AppState-aware polling — pauses when app is backgrounded
+  useEffect(() => {
+    if (!isAuthenticated || !isArchivist) return;
+    fetchLounges();
+
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const startPolling = () => {
+      if (interval) return;
+      interval = setInterval(async () => {
         if (isPollingRef.current) return;
         isPollingRef.current = true;
         await fetchLounges();
         isPollingRef.current = false;
       }, 30000);
-      return () => clearInterval(interval);
-    }
+    };
+    const stopPolling = () => {
+      if (interval) { clearInterval(interval); interval = null; }
+    };
+
+    startPolling();
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'active') startPolling();
+      else stopPolling();
+    });
+
+    return () => {
+      stopPolling();
+      subscription.remove();
+    };
   }, [isAuthenticated, isArchivist, fetchLounges]);
 
+  // S3-05 FIX: fetchLounges is a stable zustand selector — safe to include in deps
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchLounges();
     setRefreshing(false);
-  }, []);
+  }, [fetchLounges]);
 
   const handleJoinByCode = async () => {
     if (!inviteCode.trim()) return;
@@ -451,22 +540,49 @@ export default function LoungeScreen() {
     if (success) setInviteCode('');
   };
 
+  // Memoized filtering — prevents O(n) recomputation on unrelated re-renders
+  const { myLounges, browsableLounges } = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    const filtered = lounges.filter(l =>
+      l.name.toLowerCase().includes(q) ||
+      (l.description && l.description.toLowerCase().includes(q))
+    );
+    return {
+      myLounges: filtered.filter(l => typeof l.unread_count === 'number'),
+      browsableLounges: filtered.filter(l => typeof l.unread_count !== 'number'),
+    };
+  }, [lounges, searchQuery]);
+
+  // F-09 FIX: Single shared pulse animation for all cards
+  const sharedPulse = useSharedValue(0.4);
+  const isScrolling = useSharedValue(false);
+
+  useEffect(() => {
+    // P2-04 AUDIT FIX: Capped to 30 iterations (~42s) to prevent permanent UI-thread timer
+    sharedPulse.value = withRepeat(
+      withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
+      30,
+      true
+    );
+    return () => cancelAnimation(sharedPulse);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // F-05 FIX: Memoized renderItem for FlashList
+  const renderPublicCard = useCallback(({ item, index: i }: { item: LoungeRoom; index: number }) => (
+    <PublicLoungeCard lounge={item} index={i} />
+  ), []);
+
   if (!isAuthenticated || !isArchivist) {
     return <LoungeGate />;
   }
 
-  const query = searchQuery.toLowerCase().trim();
-  const filteredLounges = lounges.filter(l =>
-    l.name.toLowerCase().includes(query) ||
-    (l.description && l.description.toLowerCase().includes(query))
-  );
-  const myLounges = filteredLounges.filter(l => typeof l.unread_count === 'number');
-  const browsableLounges = filteredLounges.filter(l => typeof l.unread_count !== 'number');
-
   return (
+    <FrozenTab>
+    <PulseContext.Provider value={{ pulse: sharedPulse, isScrolling }}>
     <View style={s.container}>
       {/* ── Cinematic Header ── */}
-      <AnimatedView entering={FadeIn.duration(700)} style={s.header}>
+      <Animated.View entering={FadeIn.duration(700)} style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
         {/* Crest and title lockup */}
         <View style={s.headerCrestRow}>
           <View style={s.headerCrest}>
@@ -486,15 +602,17 @@ export default function LoungeScreen() {
 
         {/* Search */}
         <View style={s.searchWrap}>
-          <Search size={14} color={colors.fog} strokeWidth={1.5} />
+          <AnimatedSearchIcon size={14} animatedProps={animatedSearchProps} style={animatedSearchStyle} strokeWidth={1.5} />
           <TextInput
             style={s.searchInput}
             placeholder="[ ENTER SURVEILLANCE PARAMETERS ]"
             placeholderTextColor={colors.fog}
             value={searchQuery}
-            onChangeText={setSearchQuery}
+            onChangeText={handleSearchQueryChange}
             maxLength={120}
             selectionColor={colors.sepia}
+            keyboardAppearance="dark"
+            accessibilityLabel="Search screening rooms"
           />
           {searchQuery.length > 0 && (
             <PressableScale onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection">
@@ -523,6 +641,8 @@ export default function LoungeScreen() {
               value={inviteCode}
               onChangeText={(t) => setInviteCode(t.toUpperCase())}
               selectionColor={colors.sepia}
+              keyboardAppearance="dark"
+              accessibilityLabel="Invite code"
             />
             <PressableScale
               style={[s.btnJoin, (!inviteCode.trim() || joining) && s.btnJoinDisabled]}
@@ -537,74 +657,80 @@ export default function LoungeScreen() {
             </PressableScale>
           </View>
         </View>
-      </AnimatedView>
+      </Animated.View>
 
       {/* ── Body ── */}
-      <ScrollView
-        style={s.scrollView}
-        contentContainerStyle={s.scrollContent}
+      <FlashList
+        data={browsableLounges}
+        keyExtractor={(item) => item.id}
+        estimatedItemSize={220}
+        renderItem={renderPublicCard}
         showsVerticalScrollIndicator={false}
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={s.scrollContent}
+        onScrollBeginDrag={() => { isScrolling.value = true; }}
+        onMomentumScrollEnd={() => { isScrolling.value = false; }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />
         }
-      >
-        {/* Loading */}
-        {loading && lounges.length === 0 && (
-          <View style={s.loadingWrap}>
-            <ActivityIndicator size="small" color={colors.sepia} />
-            <Text style={s.loadingText}>RETRIEVING SALONS</Text>
-          </View>
-        )}
-
-        {/* My Screening Rooms */}
-        {myLounges.length > 0 ? (
-          <View style={s.section}>
-            <View style={s.sectionTitleRow}>
-              <View style={s.sectionTitleLine} />
-              <Text style={s.sectionLabel}>YOUR SCREENING ROOMS</Text>
-              <View style={s.sectionTitleLine} />
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={s.joinedStrip}
-            >
-              {myLounges.map((l, i) => (
-                <JoinedLoungeCard key={`my-${l.id}`} lounge={l} index={i} />
-              ))}
-            </ScrollView>
-          </View>
-        ) : (
-          !loading && !searchQuery && <EmptyMyLounges />
-        )}
-
-        {/* Public Salons */}
-        <View style={s.section}>
-          <View style={s.sectionTitleRow}>
-            <View style={s.sectionTitleLine} />
-            <Text style={s.sectionLabel}>ALL SALONS</Text>
-            <View style={s.sectionTitleLine} />
-          </View>
-          <Text style={s.sectionSubtext}>Public discourse and private gatherings. Take a seat.</Text>
-          <View style={s.publicList}>
-            {browsableLounges.length > 0 ? (
-              browsableLounges.map((l, i) => (
-                <PublicLoungeCard key={`pub-${l.id}`} lounge={l} index={i} />
-              ))
-            ) : (
-              <View style={s.emptyPublic}>
-                <Globe size={22} color={colors.fog} strokeWidth={1} />
-                <Text style={s.emptyPublicText}>No open salons at this time.</Text>
-                <Text style={s.emptyPublicHint}>Be the first to open one.</Text>
+        ListHeaderComponent={
+          <>
+            {/* Loading */}
+            {loading && lounges.length === 0 && (
+              <View style={s.loadingWrap}>
+                <ActivityIndicator size="small" color={colors.sepia} />
+                <Text style={s.loadingText}>RETRIEVING SALONS</Text>
               </View>
             )}
+
+            {/* My Screening Rooms */}
+            {myLounges.length > 0 ? (
+              <View style={s.section}>
+                <View style={s.sectionTitleRow}>
+                  <View style={s.sectionTitleLine} />
+                  <Text style={s.sectionLabel}>YOUR SCREENING ROOMS</Text>
+                  <View style={s.sectionTitleLine} />
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={s.joinedStrip}
+                >
+                  {myLounges.map((l, i) => (
+                    <JoinedLoungeCard key={`my-${l.id}`} lounge={l} index={i} />
+                  ))}
+                </ScrollView>
+              </View>
+            ) : (
+              !loading && !searchQuery && <EmptyMyLounges />
+            )}
+
+            {/* Public Salons Header */}
+            <View style={[s.section, { paddingBottom: 0 }]}>
+              <View style={s.sectionTitleRow}>
+                <View style={s.sectionTitleLine} />
+                <Text style={s.sectionLabel}>ALL SALONS</Text>
+                <View style={s.sectionTitleLine} />
+              </View>
+              <Text style={s.sectionSubtext}>Public discourse and private gatherings. Take a seat.</Text>
+            </View>
+          </>
+        }
+        ListEmptyComponent={
+          <View style={s.emptyPublic}>
+            <Globe size={22} color={colors.fog} strokeWidth={1} />
+            <Text style={s.emptyPublicText}>No open salons at this time.</Text>
+            <Text style={s.emptyPublicHint}>Be the first to open one.</Text>
           </View>
-        </View>
-      </ScrollView>
+        }
+      />
 
       {/* ── Create Sheet ── */}
       <CreateLoungeSheet visible={showCreate} onClose={() => setShowCreate(false)} />
     </View>
+    </PulseContext.Provider>
+    </FrozenTab>
   );
 }
 
@@ -724,7 +850,6 @@ const s = StyleSheet.create({
 
   // ── Header ──
   header: {
-    paddingTop: Platform.OS === 'ios' ? 56 : 44,
     paddingHorizontal: 20,
     paddingBottom: 18,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -939,7 +1064,7 @@ const s = StyleSheet.create({
     paddingBottom: 24,
   },
   joinedCard: {
-    width: JOINED_CARD_W,
+    width: '42%',
     borderRadius: 2,
     overflow: 'hidden',
     backgroundColor: colors.soot,
@@ -949,8 +1074,8 @@ const s = StyleSheet.create({
     elevation: 8,
   },
   joinedImgWrap: {
-    width: JOINED_CARD_W,
-    height: JOINED_CARD_W * 1.35,
+    width: '42%',
+    aspectRatio: 1 / 1.35,
     overflow: 'hidden',
     position: 'relative',
   },
@@ -990,6 +1115,13 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingBottom: 14,
     paddingTop: 4,
+  },
+  liveIndicator: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.bloodReel,
+    marginRight: 6,
   },
   joinedNameText: {
     fontFamily: fonts.mono,

@@ -1,11 +1,16 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, ScrollView, Text, TextInput, StyleSheet } from 'react-native';
+import React, { useMemo, useCallback, useEffect } from 'react';
+import { View, ScrollView, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import { Film as FilmIcon, Search, X, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
+import { PenTool, Film as FilmIcon, Search, X, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
 import { ReelRating } from '../Decorative';
 import type { ProfileLog, HalfLifeEntry } from '../../types';
+
+// Module-scoped: prevents remount on every render cycle
+const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
 interface ProfileLedgerTabProps {
   logs: ProfileLog[];
@@ -18,6 +23,9 @@ interface ProfileLedgerTabProps {
   renderPosterCard: (log: ProfileLog, width: number, showRating: boolean, showTimeAgo: boolean, navigateToLog: boolean) => React.ReactNode;
   groupByMonth: (items: ProfileLog[], dateKey?: string) => Record<string, ProfileLog[]>;
   POSTER_COL_4: number;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  isSelf?: boolean;
 }
 
 type LedgerItem = 
@@ -34,8 +42,48 @@ export default function ProfileLedgerTab({
   halfLifeMap,
   renderPosterCard,
   groupByMonth,
-  POSTER_COL_4
+  POSTER_COL_4,
+  onLoadMore,
+  isLoadingMore,
+  isSelf
 }: ProfileLedgerTabProps) {
+  const router = useRouter();
+
+  const breatheAnim = useSharedValue(0.1);
+  useEffect(() => {
+    breatheAnim.value = withRepeat(
+      withTiming(0.4, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+      20, true
+    );
+    return () => cancelAnimation(breatheAnim);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const pulseStyle = useAnimatedStyle(() => ({
+    borderColor: `rgba(196,150,26,${0.2 + breatheAnim.value})`,
+    backgroundColor: `rgba(15,12,8,${0.8 + (breatheAnim.value * 0.2)})`,
+  }));
+
+  // Nitrate Noir Breathing Ember Protocol for Search
+  const searchEmberOpacity = useSharedValue(0.5);
+  useEffect(() => {
+      if (ledgerSearch.length > 0) {
+          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true);
+      } else {
+          searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
+      }
+      return () => cancelAnimation(searchEmberOpacity);
+  }, [ledgerSearch.length, searchEmberOpacity]);
+
+  const animatedSearchProps = useAnimatedProps(() => ({
+      color: ledgerSearch.length > 0 ? colors.bloodReel : colors.fog,
+  }));
+  const animatedSearchStyle = useAnimatedStyle(() => ({
+      opacity: searchEmberOpacity.value,
+  }));
+
+  const handleSearchChange = useCallback((val: string) => {
+      setLedgerSearch(val);
+  }, [setLedgerSearch]); // setLedgerSearch comes from props, not a stable setter
 
   // Flatten month groupings into a predictable FlashList array
   const flashData = useMemo(() => {
@@ -57,6 +105,20 @@ export default function ProfileLedgerTab({
     
     return result;
   }, [ledgerFiltered, groupByMonth]);
+
+  // Pre-fetch next-page posters using expo-image for zero-latency scroll
+  useEffect(() => {
+    const urlsToPrefetch = ledgerFiltered
+      .slice(0, 40) // aggressive prefetch of first 40 items
+      .map(item => item.poster || item.altPoster) // ProfileLog uses poster / altPoster, which are TMDB urls mapped previously
+      .filter((url): url is string => !!url);
+    
+    if (urlsToPrefetch.length > 0) {
+      import('expo-image').then(({ Image }) => {
+        Image.prefetch(urlsToPrefetch);
+      });
+    }
+  }, [ledgerFiltered]);
 
   const renderItem = useCallback(({ item }: { item: LedgerItem }) => {
     if (item.type === 'header') {
@@ -93,13 +155,17 @@ export default function ProfileLedgerTab({
     return (
       <View style={s.filterGroupCol}>
         <View style={s.searchWrap}>
-          <Search size={12} color={colors.fog} strokeWidth={1.5} style={s.searchIconStyle} />
+          <AnimatedSearchIcon size={12} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />
           <TextInput 
             style={s.searchInput} 
             value={ledgerSearch} 
-            onChangeText={setLedgerSearch} 
+            onChangeText={handleSearchChange} 
             placeholder="Search your ledger..." 
-            placeholderTextColor={colors.fog} 
+            placeholderTextColor={colors.fog}
+            selectionColor={colors.sepia}
+            keyboardAppearance="dark"
+            accessibilityLabel="Filter your film log"
+            returnKeyType="search"
           />
           {ledgerSearch.length > 0 && (
             <PressableScale onPress={() => setLedgerSearch('')} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
@@ -126,10 +192,24 @@ export default function ProfileLedgerTab({
         </ScrollView>
       </View>
     );
-  }, [logs.length, ledgerSearch, setLedgerSearch, ledgerRatingFilter, setLedgerRatingFilter]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logs.length, ledgerSearch, handleSearchChange, ledgerRatingFilter, setLedgerRatingFilter, animatedSearchProps, animatedSearchStyle]);
 
   const ListEmptyComponent = useMemo(() => {
     if (logs.length > 0 && ledgerFiltered.length > 0) return null;
+
+    if (logs.length === 0 && !ledgerSearch && isSelf) {
+      return (
+        <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
+          <PenTool size={32} color="#C4921E" strokeWidth={1} style={s.emptyLockIcon} />
+          <Text style={s.emptyTitleSelf}>A Blank Ledger</Text>
+          <PressableScale style={s.ctaBtn} onPress={() => router.push('/search-modal' as never)} haptic>
+            <Text style={s.ctaBtnText}>DRAFT A CRITIQUE</Text>
+          </PressableScale>
+        </Animated.View>
+      );
+    }
+
     return (
       <View style={s.emptyState}>
         <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
@@ -137,19 +217,23 @@ export default function ProfileLedgerTab({
         <Text style={s.emptyDesc}>{ledgerSearch ? `No entries match "${ledgerSearch}"` : 'No rated or reviewed films yet.'}</Text>
       </View>
     );
-  }, [logs.length, ledgerFiltered.length, ledgerSearch]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logs.length, ledgerFiltered.length, ledgerSearch, pulseStyle, router]);
 
   return (
     <View style={s.container}>
-      <FlashList
+      <FlashList<LedgerItem>
         data={flashData}
         renderItem={renderItem}
-        keyExtractor={(item) => item.type === 'header' ? `header-${item.title}` : `row-${item.id}`}
+        keyExtractor={(item: LedgerItem) => item.type === 'header' ? `header-${item.title}` : `row-${(item as any).id}`}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
-        estimatedItemSize={140}
+        estimatedItemSize={250}
         contentContainerStyle={s.listContent}
         showsVerticalScrollIndicator={false}
+        onEndReached={onLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={isLoadingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
       />
     </View>
   );
@@ -169,9 +253,13 @@ const s = StyleSheet.create({
   filterChipText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
   filterChipTextActive: { color: colors.sepia },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 2, marginTop: 12 },
-  emptyLockIcon: { marginBottom: 16, opacity: 0.6 },
+  emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, borderWidth: 1, borderRadius: 4, marginTop: 12 },
+  emptyLockIcon: { marginBottom: 16, opacity: 0.8 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
+  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: '#C4921E', marginBottom: 24, textAlign: 'center' },
   emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
+  ctaBtn: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(196,150,26,0.4)', borderRadius: 2, backgroundColor: 'rgba(196,150,26,0.05)' },
+  ctaBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: '#C4921E' },
   monthHeader: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 4, color: colors.sepia, opacity: 0.8, marginBottom: 16, marginTop: 24 },
   grid4: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   halfLifeBadge: { position: 'absolute', top: -4, right: -4, zIndex: 10, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.5)', borderRadius: 2, padding: 2 },

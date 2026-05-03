@@ -5,14 +5,16 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet } from 'react-native';
+// H-10 AUDIT FIX: View removed — was unused
+import { StyleSheet, AppState, InteractionManager } from 'react-native';
 import { useFonts, Rye_400Regular } from '@expo-google-fonts/rye';
 import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite';
 import { CourierPrime_400Regular, CourierPrime_700Bold, CourierPrime_400Regular_Italic } from '@expo-google-fonts/courier-prime';
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import * as Linking from 'expo-linking';
-import { useRouter } from 'expo-router';
+// Used indirectly via dynamic store imports in prepare() — do not remove
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors } from '@/src/theme/theme';
@@ -20,13 +22,18 @@ import Preloader from '@/src/components/Preloader';
 import FilmGrainOverlay from '@/src/components/FilmGrainOverlay';
 import { ToastOverlay } from '@/src/components/ToastOverlay';
 import ErrorBoundary from '@/src/components/ErrorBoundary';
-// Sentry removed temporarily to isolate Hermes crash
-import 'react-native-reanimated';
-import Animated, { useSharedValue, useAnimatedStyle, withSequence, withTiming, withDelay, useAnimatedSensor, SensorType } from 'react-native-reanimated';
-import { DeviceEventEmitter } from 'react-native';
+import OfflineBanner from '@/src/components/OfflineBanner';
+import { initSentry, setSentryUser } from '@/src/lib/sentry';
+import { initRevenueCat, identifyUser as identifyRevenueCatUser } from '@/src/lib/revenueCat';
+// Called inside prepare() — linter false-positive due to dynamic import pattern
+import { registerForPushNotifications } from '@/src/lib/pushNotifications';
+import Animated, {
+  ZoomOut,
+  Easing,
+} from 'react-native-reanimated';
 import NetInfo from '@react-native-community/netinfo';
 import { flushOfflineQueue } from '@/src/utils/offlineQueue';
-import { LinearGradient } from 'expo-linear-gradient';
+import { storage } from '@/src/stores/mmkv-storage';
 
 // Font scaling lock removed temporarily to prevent React Native Hermes segfault.
 // Prevent splash from hiding until fonts + auth are ready
@@ -40,6 +47,7 @@ export default function RootLayout() {
   const { restoreSession } = useAuthStore();
   const [appReady, setAppReady] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
+  const [isSplashProxyVisible, setSplashProxyVisible] = useState(true);
 
   const [fontsLoaded] = useFonts({
     Rye_400Regular,
@@ -52,19 +60,47 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
+  // Initialize Sentry before any rendering (Synchronous Injection)
+  useEffect(() => { 
+    initSentry(); 
+    try {
+      const authData = storage.getString('auth-storage');
+      if (authData) {
+        const parsed = JSON.parse(authData);
+        if (parsed?.state?.user) {
+          const u = parsed.state.user;
+          setSentryUser({ id: u.id, username: u.username ?? '', role: u.role ?? 'cinephile' });
+        }
+      }
+    } catch (e) {
+      if (__DEV__) console.warn('[Layout] Failed to parse MMKV for Sentry:', e);
+    }
+  }, []);
+
   useEffect(() => {
     async function prepare() {
       try {
         await restoreSession();
-        // Set Sentry user context after auth is restored
         const currentUser = useAuthStore.getState().user;
-        // Wake up the Real-time Notification Service — The "Live Wire"
         if (currentUser) {
+            // ── Sentry User Context ──
+            setSentryUser({ id: currentUser.id, username: currentUser.username ?? '', role: (currentUser.role as string) ?? 'cinephile' });
+
+            // ── RevenueCat — IAP Entitlements ──
+            await initRevenueCat(currentUser.id);
+            identifyRevenueCatUser(currentUser.id);
+
+            // ── Push Notifications — The Overnight Programme ──
+            registerForPushNotifications(currentUser.id);
+
+            // ── Real-time Notification Service — The "Live Wire" ──
             import('@/src/stores/social').then(({ useNotificationStore }) => {
                 useNotificationStore.getState().setupRealtime();
             });
         }
-      } catch {} finally {
+      } catch (err) {
+        if (__DEV__) console.warn('[Layout] prepare() error:', err);
+      } finally {
         setAppReady(true);
       }
     }
@@ -78,29 +114,23 @@ export default function RootLayout() {
       }
     });
 
+    // Round 8: Foreground Syncing
+    // Flush the queue immediately when the app returns to the foreground.
+    const appStateSub = AppState.addEventListener('change', (nextAppState) => {
+      if (nextAppState === 'active') {
+        flushOfflineQueue();
+      }
+    });
+
     return () => {
       unsubscribeNet();
+      appStateSub.remove();
     };
-  }, []);
+  }, [restoreSession]);
 
   // ── Deep link handler for auth callbacks ──
   // Intercepts reelhouse://auth/callback and reelhouse://reset-password deep links
-  useEffect(() => {
-    function handleDeepLink(event: { url: string }) {
-      handleAuthDeepLink(event.url);
-    }
-
-    // Handle the URL that launched the app (cold start)
-    Linking.getInitialURL().then(url => {
-      if (url) handleAuthDeepLink(url);
-    });
-
-    // Handle URLs while the app is already open (warm start)
-    const subscription = Linking.addEventListener('url', handleDeepLink);
-    return () => subscription.remove();
-  }, [appReady]);
-
-  async function handleAuthDeepLink(url: string) {
+  const handleAuthDeepLink = useCallback(async (url: string) => {
     if (!url) return;
 
     try {
@@ -114,59 +144,64 @@ export default function RootLayout() {
         const type = queryParams.type as string;
 
         if (tokenHash && type) {
-          if (type === 'recovery') {
-            // Exchange token first, then navigate to reset-password
-            const { error } = await supabase.auth.verifyOtp({
-              token_hash: tokenHash,
-              type: 'recovery',
+          // Route EVERYTHING to auth-callback so it can handle success, error, and recovery flows flawlessly
+          InteractionManager.runAfterInteractions(() => {
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            const router = require('expo-router').router;
+            // Audit Fix #3: Dismiss all screens to prevent ghost listeners
+            router.dismissAll();
+            router.replace({
+              pathname: '/auth-callback',
+              params: { token_hash: tokenHash, type },
             });
-            if (!error) {
-              // Small delay to ensure the router is ready
-              setTimeout(() => {
-                const router = require('expo-router').router;
-                router.push('/reset-password');
-              }, 300);
-            }
-          } else {
-            // Email verification — navigate to auth-callback screen which handles the exchange
-            setTimeout(() => {
-              const router = require('expo-router').router;
-              router.push({
-                pathname: '/auth-callback',
-                params: { token_hash: tokenHash, type },
-              });
-            }, 300);
-          }
+          });
         }
         return;
       }
 
       // Handle: reelhouse://reset-password (direct deep link)
       if (path.includes('reset-password')) {
-        setTimeout(() => {
+        InteractionManager.runAfterInteractions(() => {
+          // eslint-disable-next-line @typescript-eslint/no-require-imports
           const router = require('expo-router').router;
           router.push('/reset-password');
-        }, 300);
+        });
         return;
       }
     } catch {
       // Deep link parsing failed — silently ignore
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    function handleDeepLink(event: { url: string }) {
+      handleAuthDeepLink(event.url);
+    }
+
+    // Handle the URL that launched the app (cold start)
+    Linking.getInitialURL().then(url => {
+      if (url) handleAuthDeepLink(url);
+    });
+
+    // Handle URLs while the app is already open (warm start)
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    return () => subscription.remove();
+  }, [appReady, handleAuthDeepLink]);
 
   const onLayoutReady = useCallback(async () => {
     if (appReady && fontsLoaded) {
       await SplashScreen.hideAsync();
+      setTimeout(() => setSplashProxyVisible(false), 50);
     }
   }, [appReady, fontsLoaded]);
 
   if (!appReady || !fontsLoaded) return null;
 
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady}>
-        <ErrorBoundary>
-        <PersistQueryClientProvider
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady}>
+          <PersistQueryClientProvider
           client={queryClient}
           persistOptions={{ persister: mmkvPersister, maxAge: 24 * 60 * 60 * 1000 }}
         >
@@ -174,16 +209,16 @@ export default function RootLayout() {
         screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: colors.ink },
-          animation: 'fade',
+          animation: 'none', // Shutter-Cut Navigation: Instant mechanical cut
         }}
       >
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="film/[id]" options={{ animation: 'fade' }} />
-        <Stack.Screen name="person/[id]" options={{ animation: 'fade' }} />
-        <Stack.Screen name="lounge/[id]" options={{ animation: 'fade' }} />
-        <Stack.Screen name="user/[username]" options={{ animation: 'fade' }} />
-        <Stack.Screen name="settings" options={{ animation: 'fade' }} />
-        <Stack.Screen name="log/[id]" options={{ animation: 'fade' }} />
+        <Stack.Screen name="film/[id]" options={{ animation: 'none' }} />
+        <Stack.Screen name="person/[id]" options={{ animation: 'none' }} />
+        <Stack.Screen name="lounge/[id]" options={{ animation: 'none' }} />
+        <Stack.Screen name="user/[username]" options={{ animation: 'none' }} />
+        <Stack.Screen name="settings" options={{ animation: 'none' }} />
+        <Stack.Screen name="log/[id]" options={{ animation: 'none' }} />
         <Stack.Screen name="search-modal" options={{ presentation: 'modal', animation: 'fade', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="log-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="notifications-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
@@ -191,25 +226,36 @@ export default function RootLayout() {
         <Stack.Screen name="vault-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="login" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="social-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-        <Stack.Screen name="reset-password" options={{ animation: 'fade' }} />
-        <Stack.Screen name="auth-callback" options={{ animation: 'fade' }} />
+        <Stack.Screen name="reset-password" options={{ animation: 'none' }} />
+        <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
         <Stack.Screen name="membership" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
         <Stack.Screen name="oracle" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-        <Stack.Screen name="tribunal" options={{ animation: 'fade' }} />
-        <Stack.Screen name="year-in-cinema" options={{ animation: 'fade' }} />
-        <Stack.Screen name="stacks/[id]" options={{ animation: 'fade' }} />
-        {/* <Stack.Screen name="dispatch/[id]" options={{ animation: 'fade' }} /> */}
+        <Stack.Screen name="tribunal" options={{ animation: 'none' }} />
+        <Stack.Screen name="year-in-cinema" options={{ animation: 'none' }} />
+        <Stack.Screen name="stacks/[id]" options={{ animation: 'none' }} />
+        <Stack.Screen name="film-reviews/[id]" options={{ animation: 'none' }} />
+        <Stack.Screen name="dossier/[id]" options={{ animation: 'none' }} />
+        <Stack.Screen name="edit-profile" options={{ animation: 'none' }} />
+        <Stack.Screen name="dispatch/compose" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
       </Stack>
       </PersistQueryClientProvider>
-      </ErrorBoundary>
 
       {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
       <FilmGrainOverlay />
       <ToastOverlay />
+      <OfflineBanner />
       
-      <StatusBar style="light" />
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+      {isSplashProxyVisible && (
+        <Animated.View 
+           exiting={ZoomOut.duration(600).easing(Easing.out(Easing.cubic))} 
+           style={[StyleSheet.absoluteFill, { backgroundColor: colors.ink, zIndex: 9999 }]} 
+           pointerEvents="none"
+        />
+      )}
+        <StatusBar style="light" />
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -219,35 +265,3 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
   },
 });
-
-function ProjectionistMark() {
-  const opacity = useSharedValue(0);
-  
-  useEffect(() => {
-    const sub = DeviceEventEmitter.addListener('reelhouse:projection-mark', () => {
-      // 4 frames = ~66ms
-      opacity.value = withSequence(
-        withTiming(0.8, { duration: 0 }),
-        withDelay(66, withTiming(0, { duration: 100 }))
-      );
-    });
-    return () => sub.remove();
-  }, []);
-
-  const sz = useAnimatedStyle(() => ({ opacity: opacity.value }));
-
-  return (
-    <Animated.View style={[{
-      position: 'absolute',
-      top: 48,
-      right: 24,
-      width: 14,
-      height: 18,
-      borderRadius: 14,
-      backgroundColor: '#E8E3D2',
-      zIndex: 9999,
-      pointerEvents: 'none'
-    }, sz]} />
-  );
-}
-

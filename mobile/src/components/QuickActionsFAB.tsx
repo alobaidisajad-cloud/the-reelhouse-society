@@ -1,43 +1,57 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions, Platform } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { View, Text, StyleSheet, Modal, Pressable, InteractionManager } from 'react-native';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
 import { colors, fonts } from '@/src/theme/theme';
 import { BlurView } from 'expo-blur';
 import { Plus, Film, ListPlus, Sparkles } from 'lucide-react-native';
+import PressableScale from '@/src/components/PressableScale';
 
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 export default function QuickActionsFAB() {
     const [open, setOpen] = useState(false);
     const router = useRouter();
+    const insets = useSafeAreaInsets();
+    // #10 AUDIT FIX: Derive from actual tab bar height safely via Context instead of throw
+    const tabBarHeightContext = React.useContext(BottomTabBarHeightContext);
+    const tabBarHeight = tabBarHeightContext ?? 60;
+
+    // Fix #7: Animated rotation for premium feel
+    const rotation = useSharedValue(0);
+    const iconStyle = useAnimatedStyle(() => ({
+        transform: [{ rotate: `${rotation.value}deg` }],
+    }));
 
     const handlePress = () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        rotation.value = withSpring(open ? 0 : 45, { damping: 14, stiffness: 200 });
         setOpen(!open);
     };
 
-    const handleAction = (route: string) => {
+    const handleAction = (route: import('expo-router').Href) => {
         Haptics.selectionAsync();
         setOpen(false);
-        setTimeout(() => {
+        InteractionManager.runAfterInteractions(() => {
             router.push(route);
-        }, 100);
+        });
     };
 
     return (
         <>
             {/* The FAB */}
-            <TouchableOpacity
-                style={[s.fab, open && s.fabActive]}
+            <PressableScale
+                style={[s.fab, { bottom: Math.max(insets.bottom, 16) + tabBarHeight }, open && s.fabActive]}
                 onPress={handlePress}
-                activeOpacity={0.8}
+                pressedScale={0.9}
             >
-                <Animated.View style={{ transform: [{ rotate: open ? '45deg' : '0deg' }] }}>
+                <Animated.View style={iconStyle}>
                     <Plus size={24} color={open ? colors.bloodReel : colors.ink} strokeWidth={3} />
                 </Animated.View>
-            </TouchableOpacity>
+            </PressableScale>
 
             {/* The Bottom Sheet Modal */}
             <Modal visible={open} transparent animationType="none" onRequestClose={() => setOpen(false)}>
@@ -48,19 +62,19 @@ export default function QuickActionsFAB() {
                     intensity={70} 
                     style={StyleSheet.absoluteFill}
                 >
-                    <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setOpen(false)} />
+                    <Pressable style={StyleSheet.absoluteFillObject} onPress={() => setOpen(false)} accessible={false} importantForAccessibility="no-hide-descendants" />
                 </AnimatedBlurView>
 
                 <Animated.View 
                     entering={SlideInDown.springify().damping(20).stiffness(200)} 
                     exiting={SlideOutDown.duration(200)} 
-                    style={s.sheet}
+                    style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}
                 >
                     <View style={s.knob} />
                     
                     <Text style={s.sheetTitle}>QUICK ACTIONS</Text>
 
-                    <TouchableOpacity style={s.actionRow} onPress={() => handleAction('/log-modal')} activeOpacity={0.7}>
+                    <PressableScale style={s.actionRow} onPress={() => handleAction('/log-modal')} accessibilityRole="button" accessibilityLabel="Log a film">
                         <View style={[s.actionIconWrap, s.actionIconLog]}>
                             <Film size={20} color={colors.sepia} />
                         </View>
@@ -68,9 +82,9 @@ export default function QuickActionsFAB() {
                             <Text style={s.actionTitle}>Log a Film</Text>
                             <Text style={s.actionDesc}>Search the archive and document your reel.</Text>
                         </View>
-                    </TouchableOpacity>
+                    </PressableScale>
 
-                    <TouchableOpacity style={s.actionRow} onPress={() => handleAction('/list-modal')} activeOpacity={0.7}>
+                    <PressableScale style={s.actionRow} onPress={() => handleAction('/list-modal')} accessibilityRole="button" accessibilityLabel="Create a curated list">
                         <View style={[s.actionIconWrap, s.actionIconList]}>
                             <ListPlus size={20} color={colors.bone} />
                         </View>
@@ -78,9 +92,9 @@ export default function QuickActionsFAB() {
                             <Text style={s.actionTitle}>Create Curated List</Text>
                             <Text style={s.actionDesc}>Compile your thematic favourites.</Text>
                         </View>
-                    </TouchableOpacity>
+                    </PressableScale>
 
-                    <TouchableOpacity style={[s.actionRow, s.actionRowLast]} onPress={() => handleAction('/darkroom')} activeOpacity={0.7}>
+                    <PressableScale style={[s.actionRow, s.actionRowLast]} onPress={() => handleAction('/oracle')} accessibilityRole="button" accessibilityLabel="Consult the Oracle">
                         <View style={[s.actionIconWrap, s.actionIconOracle]}>
                             <Sparkles size={20} color={colors.bloodReel} />
                         </View>
@@ -88,7 +102,7 @@ export default function QuickActionsFAB() {
                             <Text style={s.actionTitle}>Consult the Oracle</Text>
                             <Text style={s.actionDesc}>Find esoteric cinema based on feelings.</Text>
                         </View>
-                    </TouchableOpacity>
+                    </PressableScale>
 
                 </Animated.View>
             </Modal>
@@ -99,7 +113,7 @@ export default function QuickActionsFAB() {
 const s = StyleSheet.create({
     fab: {
         position: 'absolute',
-        bottom: Platform.OS === 'ios' ? 24 : 16,
+        bottom: 24, // Overridden by inline style with safe area insets
         right: 16,
         width: 56,
         height: 56,
@@ -129,7 +143,6 @@ const s = StyleSheet.create({
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         padding: 24,
-        paddingBottom: Platform.OS === 'ios' ? 40 : 24,
         borderTopWidth: 1,
         borderColor: colors.ash,
     },

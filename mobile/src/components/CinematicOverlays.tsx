@@ -1,16 +1,17 @@
 import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { colors } from '../theme/theme';
+import SkiaFilmGrain from './FilmGrain';
 
-const { width, height } = Dimensions.get('window');
+
 
 /**
  * FilmGrain — A persistent noise overlay that simulates 35mm film grain.
- * Matches the web's body::before SVG turbulence filter at 3% opacity.
- * Uses a dotted pattern approximation for native perf.
+ * Powered by React Native Skia for mathematically pure mathematical grain.
  */
 export function FilmGrain() {
-  return <View style={styles.grain} pointerEvents="none" />;
+  return <SkiaFilmGrain intensity={0.05} pointerEvents="none" />;
 }
 
 /**
@@ -44,7 +45,7 @@ const styles = StyleSheet.create({
     // Approximate radial vignette with border shadows
     borderWidth: 60,
     borderColor: 'rgba(0,0,0,0.15)',
-    borderRadius: width,
+    borderRadius: 9999,
     backgroundColor: 'transparent',
   },
 });

@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Alert, ActivityIndicator, Linking, Platform,
+  View, Text, StyleSheet, ScrollView,
+  Alert,
 } from 'react-native';
-import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withTiming, Easing, withRepeat } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -11,17 +12,26 @@ import { ChevronLeft, LogOut, Trash2, Shield, FileText, Download, Sparkles } fro
 
 import { useAuthStore } from '@/src/stores/auth';
 import reelToast from '@/src/utils/reelToast';
+import { safeOpenURL } from '@/src/utils/linking';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import DataVault from '@/src/components/settings/DataVault';
-
-const AnimatedView = Animated.createAnimatedComponent(View);
+import PressableScale from '@/src/components/PressableScale';
 
 import { PatronageSection, AccountSection, PrivacySection, NotificationsSection, SectionCard, SectionHead, ActionBtn } from '@/src/components/settings/SettingsSections';
+
+const AnimatedView = Animated.createAnimatedComponent(View);
+const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
 
 export default function SettingsScreen() {
   const router = useRouter();
   const { user, updateUser, logout } = useAuthStore();
+  const insets = useSafeAreaInsets();
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
 
   // ── Privacy ──
   const [socialVisibility, setSocialVisibility] = useState<string>('public');
@@ -47,55 +57,76 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     if (!user) return;
-    const p: Record<string, unknown> = (user.preferences ?? {}) as Record<string, unknown>;
-    setSocialVisibility(p.social_visibility ?? (user.is_social_private ? 'private' : 'public'));
-    setPrivacyEndorsements(p.privacy_endorsements ?? 'everyone');
-    setPrivacyAnnotations(p.privacy_annotations ?? 'everyone');
+    const p = user.preferences ?? {};
+    setSocialVisibility(typeof p.social_visibility === 'string' ? p.social_visibility : (user.is_social_private ? 'private' : 'public'));
+    setPrivacyEndorsements(typeof p.privacy_endorsements === 'string' ? p.privacy_endorsements : 'everyone');
+    setPrivacyAnnotations(typeof p.privacy_annotations === 'string' ? p.privacy_annotations : 'everyone');
     setNotifFollows(p.notif_follows !== undefined ? !!p.notif_follows : true);
     setNotifEndorsements(p.notif_endorsements !== undefined ? !!p.notif_endorsements : true);
     setNotifComments(p.notif_comments !== undefined ? !!p.notif_comments : true);
     setNotifSystem(p.notif_system !== undefined ? !!p.notif_system : true);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id, user?.preferences]);
 
   const handleSave = async () => {
     if (!user) return;
     setSaving(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // FIX #8: Capture previous state for rollback on DB failure
+    const prevPrefs = useAuthStore.getState().user?.preferences ?? {};
+    const prevIsSocialPrivate = useAuthStore.getState().user?.is_social_private;
     try {
       await updateUser({
         isSocialPrivate: socialVisibility === 'private',
       });
-      const setP = useAuthStore.getState().setPreference;
-      await setP('notif_follows', notifFollows);
-      await setP('notif_endorsements', notifEndorsements);
-      await setP('notif_comments', notifComments);
-      await setP('notif_system', notifSystem);
-      await setP('social_visibility', socialVisibility);
-      await setP('privacy_endorsements', privacyEndorsements);
-      await setP('privacy_annotations', privacyAnnotations);
-      reelToast.success('Your dossier has been amended.');
+      // Batch all preferences into a single write — prevents 7 parallel setState + DB calls
+      const batchedPrefs = {
+        notif_follows: notifFollows,
+        notif_endorsements: notifEndorsements,
+        notif_comments: notifComments,
+        notif_system: notifSystem,
+        social_visibility: socialVisibility,
+        privacy_endorsements: privacyEndorsements,
+        privacy_annotations: privacyAnnotations,
+      };
+      // Merge into existing preferences and write once
+      const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
+      const mergedPrefs = { ...currentPrefs, ...batchedPrefs };
+      // Update local state atomically
+      useAuthStore.setState((s) => ({
+        user: s.user ? { ...s.user, preferences: mergedPrefs } : null,
+      }));
+      // Single DB write
+      await supabase.from('profiles').update({ preferences: mergedPrefs }).eq('id', user.id);
+      if (isMountedRef.current) reelToast.success('Your dossier has been amended.');
     } catch (err: unknown) {
-      reelToast.error(err instanceof Error ? err.message : 'Amendment failed — please try again.');
+      // Rollback local state on failure to prevent local/remote desync
+      useAuthStore.setState((s) => ({
+        user: s.user ? { ...s.user, preferences: prevPrefs, is_social_private: prevIsSocialPrivate } : null,
+      }));
+      if (isMountedRef.current) reelToast.error(err instanceof Error ? err.message : 'Amendment failed — please try again.');
     } finally {
-      setSaving(false);
+      if (isMountedRef.current) setSaving(false);
     }
   };
 
   const handlePasswordChange = async () => {
-    if (newPassword.length < 8) { reelToast('Cipher must be at least 8 characters.'); return; }
-    if (newPassword !== confirmPassword) { reelToast('Ciphers do not match.'); return; }
+    if (newPassword.length < 8) { reelToast.error('Cipher must be at least 8 characters.'); return; }
+    if (newPassword !== confirmPassword) { reelToast.error('Ciphers do not match.'); return; }
     setChangingPassword(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      reelToast.success('Credentials re-encrypted.');
-      setNewPassword('');
-      setConfirmPassword('');
-      setShowPasswordChange(false);
+      if (isMountedRef.current) {
+        reelToast.success('Credentials re-encrypted.');
+        setNewPassword('');
+        setConfirmPassword('');
+        setShowPasswordChange(false);
+      }
     } catch (e: unknown) {
-      reelToast.error(e instanceof Error ? e.message : 'Re-encryption failed.');
+      if (isMountedRef.current) reelToast.error(e instanceof Error ? e.message : 'Re-encryption failed.');
     } finally {
-      setChangingPassword(false);
+      if (isMountedRef.current) setChangingPassword(false);
     }
   };
 
@@ -105,7 +136,7 @@ export default function SettingsScreen() {
       { text: 'SIGN OUT', style: 'destructive', onPress: async () => {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         await logout();
-        router.replace('/');
+        router.replace('/login');
       }},
     ]);
   };
@@ -116,8 +147,16 @@ export default function SettingsScreen() {
       'This will permanently destroy your dossier, all logs, stacks, and critiques. This action is irreversible.',
       [
         { text: 'CANCEL', style: 'cancel' },
-        { text: 'DELETE', style: 'destructive', onPress: () => {
-          Alert.alert('Contact Support', 'Account deletion requires admin intervention. Contact support@reelhouse.app');
+        { text: 'DELETE', style: 'destructive', onPress: async () => {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          try {
+            const { error } = await supabase.rpc('request_account_deletion');
+            if (error) throw error;
+            await logout();
+            router.replace('/login');
+          } catch {
+            reelToast.error('Account deletion failed. Please contact support.');
+          }
         }},
       ]
     );
@@ -125,9 +164,25 @@ export default function SettingsScreen() {
 
   const glowOpacity = useSharedValue(0.04);
   useEffect(() => {
-    glowOpacity.value = withRepeat(withTiming(0.08, { duration: 3000, easing: Easing.inOut(Easing.ease) }), -1, true);
+    // Round 7: Removed infinite loop to allow UI thread idling
+    glowOpacity.value = withTiming(0.08, { duration: 3000, easing: Easing.inOut(Easing.ease) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const glowStyle = useAnimatedStyle(() => ({ opacity: glowOpacity.value }));
+
+  const spinValue = useSharedValue(0);
+  useEffect(() => {
+    if (saving) {
+      // D2-01 FIX: Finite repeats (30s max) instead of infinite loop to allow UI thread idling
+      spinValue.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.linear }), 20);
+    } else {
+      spinValue.value = 0;
+    }
+  }, [saving, spinValue]);
+
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${spinValue.value * 360}deg` }]
+  }));
 
   if (!user) return null;
 
@@ -136,13 +191,13 @@ export default function SettingsScreen() {
       <Animated.View style={[st.ambientGlow, glowStyle]}>
         <LinearGradient colors={['rgba(139,105,20,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
       </Animated.View>
-      <View style={st.navBar}>
-        <TouchableOpacity onPress={() => router.back()} style={st.navBackBtn} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+      <View style={[st.navBar, { paddingTop: insets.top + 12 }]}>
+        <PressableScale onPress={() => router.back()} style={st.navBackBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.92} accessibilityRole="button" accessibilityLabel="Go back">
           <ChevronLeft size={22} color={colors.bone} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={handleSave} disabled={saving} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
-          {saving ? <ActivityIndicator size="small" color={colors.sepia} /> : <Text style={st.navSaveText}>SAVE</Text>}
-        </TouchableOpacity>
+        </PressableScale>
+        <PressableScale onPress={handleSave} disabled={saving} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" pressedScale={0.95} accessibilityRole="button" accessibilityLabel="Save settings">
+          {saving ? <AnimatedSparkles size={12} color={colors.sepia} style={spinStyle} /> : <Text style={st.navSaveText}>SAVE</Text>}
+        </PressableScale>
       </View>
 
       <ScrollView contentContainerStyle={st.scrollContent} showsVerticalScrollIndicator={false}>
@@ -196,8 +251,8 @@ export default function SettingsScreen() {
           <SectionCard>
             <SectionHead icon={FileText} label="LEGAL" />
             <View style={st.legalActions}>
-              <ActionBtn icon={Shield} label="PRIVACY POLICY" onPress={() => Linking.openURL('https://www.thereelhousesociety.com/privacy')} />
-              <ActionBtn icon={FileText} label="TERMS OF SERVICE" onPress={() => Linking.openURL('https://www.thereelhousesociety.com/terms')} />
+              <ActionBtn icon={Shield} label="PRIVACY POLICY" onPress={() => safeOpenURL('https://www.thereelhousesociety.com/privacy')} />
+              <ActionBtn icon={FileText} label="TERMS OF SERVICE" onPress={() => safeOpenURL('https://www.thereelhousesociety.com/terms')} />
             </View>
           </SectionCard>
         </AnimatedView>
@@ -215,25 +270,17 @@ export default function SettingsScreen() {
 
         <AnimatedView entering={FadeInDown.duration(500).delay(450)} style={st.heritageFooter}>
           <View style={st.ornRule}><View style={st.ornLine} /><View style={st.ornDiamond} /><View style={st.ornLine} /></View>
-          <TouchableOpacity style={[st.globalSaveBtn, saving && st.disabledBtn]} onPress={handleSave} disabled={saving} activeOpacity={0.7}>
-            <LinearGradient colors={['rgba(139,105,20,0.2)', 'rgba(139,105,20,0.1)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
-            <View style={st.saveBtnContent}>
-              {!saving && <Sparkles size={10} color={colors.sepia} strokeWidth={2} />}
-              <Text style={st.globalSaveBtnText}>{saving ? 'ARCHIVING SETTINGS\u2026' : 'SAVE SETTINGS'}</Text>
-              {!saving && <Sparkles size={10} color={colors.sepia} strokeWidth={2} />}
-            </View>
-          </TouchableOpacity>
           <View style={st.legalFooter}>
-            <TouchableOpacity onPress={() => Linking.openURL('https://www.thereelhousesociety.com/privacy')}><Text style={st.legalFooterLink}>PRIVACY POLICY</Text></TouchableOpacity>
+            <PressableScale onPress={() => safeOpenURL('https://www.thereelhousesociety.com/privacy')} haptic="selection" pressedScale={0.96} accessibilityRole="link" accessibilityLabel="Privacy Policy"><Text style={st.legalFooterLink}>PRIVACY POLICY</Text></PressableScale>
             <View style={st.footerDot} />
-            <TouchableOpacity onPress={() => Linking.openURL('https://www.thereelhousesociety.com/terms')}><Text style={st.legalFooterLink}>TERMS OF SERVICE</Text></TouchableOpacity>
+            <PressableScale onPress={() => safeOpenURL('https://www.thereelhousesociety.com/terms')} haptic="selection" pressedScale={0.96} accessibilityRole="link" accessibilityLabel="Terms of Service"><Text style={st.legalFooterLink}>TERMS OF SERVICE</Text></PressableScale>
           </View>
           <Text style={st.memberSince}>MEMBER SINCE {user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase() : 'THE BEGINNING'}</Text>
           <View style={st.endMarkRow}>
             <View style={st.endMarkLine} /><Sparkles size={8} color={colors.sepia} strokeWidth={1.5} /><View style={st.endMarkLine} />
           </View>
           <Text style={st.heritageMark}>EST. 1924 · THE REELHOUSE SOCIETY</Text>
-          <Text style={st.heritageCopyright}>© 1924–2026 The ReelHouse Society. All dossiers are classified.</Text>
+          <Text style={st.heritageCopyright}>© 1924–{new Date().getFullYear()} The ReelHouse Society. All dossiers are classified.</Text>
         </AnimatedView>
       </ScrollView>
     </View>
@@ -243,7 +290,7 @@ export default function SettingsScreen() {
 const st = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   ambientGlow: { position: 'absolute', top: 0, left: 0, right: 0, height: 350, zIndex: 0 },
-  navBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 60 : 40, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)', zIndex: 10, backgroundColor: 'rgba(5,3,1,0.85)' },
+  navBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)', zIndex: 10, backgroundColor: 'rgba(5,3,1,0.85)' },
   navBackBtn: { padding: 4 },
   navSaveText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2, color: colors.sepia },
   scrollContent: { paddingBottom: 100 },

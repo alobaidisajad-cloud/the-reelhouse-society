@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity, ScrollView, Dimensions, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, Modal, ScrollView, Pressable, useWindowDimensions } from 'react-native';
 import { X } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import { useDiscoverStore } from '@/src/stores/discover';
+import PressableScale from '@/src/components/PressableScale';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 
 export const GENRES = [
     { id: 28, name: 'Action' }, { id: 27, name: 'Horror' }, { id: 878, name: 'Sci-Fi' },
@@ -45,18 +46,20 @@ interface DarkroomFilterModalProps {
 }
 
 const Chip = ({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) => (
-    <TouchableOpacity
+    <PressableScale
         style={[s.chip, active && s.chipActive]}
         onPress={onPress}
-        activeOpacity={0.7}
+        haptic="light"
+        pressedScale={0.96}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
     >
         <Text style={[s.chipText, active && s.chipTextActive]}>{label}</Text>
-    </TouchableOpacity>
+    </PressableScale>
 );
 
 export function DarkroomFilterModal({ visible, onClose }: DarkroomFilterModalProps) {
     const { filters, updateFilter, clearFilters } = useDiscoverStore();
+    const { height: screenHeight } = useWindowDimensions();
 
     const hasFilters = filters.genreId || filters.decade || filters.language || filters.minRating > 0;
 
@@ -68,22 +71,20 @@ export function DarkroomFilterModal({ visible, onClose }: DarkroomFilterModalPro
             onRequestClose={onClose}
         >
             <View style={s.overlay}>
-                <TouchableWithoutFeedback onPress={onClose}>
-                    <View style={StyleSheet.absoluteFill} />
-                </TouchableWithoutFeedback>
-                <View style={s.sheet}>
+                <Pressable onPress={onClose} style={StyleSheet.absoluteFill} />
+                <View style={[s.sheet, { maxHeight: screenHeight * 0.85, minHeight: screenHeight * 0.5 }]}>
                     <View style={s.header}>
                         <View style={s.headerLeft}>
                             <Text style={s.title}>ARCHIVE FILTERS</Text>
                             {hasFilters && (
-                                <TouchableOpacity onPress={clearFilters} style={s.clearBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+                                <PressableScale onPress={clearFilters} style={s.clearBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" pressedScale={0.96}>
                                     <Text style={s.clearBtnText}>CLEAR ALL</Text>
-                                </TouchableOpacity>
+                                </PressableScale>
                             )}
                         </View>
-                        <TouchableOpacity style={s.closeBtn} onPress={onClose} hitSlop={20}>
+                        <PressableScale style={s.closeBtn} onPress={onClose} hitSlop={20} haptic="light" pressedScale={0.94}>
                             <X size={20} color={colors.fog} />
-                        </TouchableOpacity>
+                        </PressableScale>
                     </View>
 
                     <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
@@ -167,9 +168,9 @@ export function DarkroomFilterModal({ visible, onClose }: DarkroomFilterModalPro
                     
                     {/* Apply Button */}
                     <View style={s.footer}>
-                        <TouchableOpacity style={s.applyBtn} onPress={onClose} activeOpacity={0.8} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+                        <PressableScale style={s.applyBtn} onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium" pressedScale={0.98}>
                             <Text style={s.applyBtnText}>APPLY & SEARCH</Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                     </View>
                 </View>
             </View>
@@ -187,8 +188,7 @@ const s = StyleSheet.create({
         backgroundColor: colors.ink,
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
-        maxHeight: SCREEN_HEIGHT * 0.85,
-        minHeight: SCREEN_HEIGHT * 0.5,
+
         borderWidth: 1,
         borderColor: colors.ash,
         borderBottomWidth: 0,

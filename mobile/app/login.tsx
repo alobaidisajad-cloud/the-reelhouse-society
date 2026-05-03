@@ -1,35 +1,37 @@
-import { useState, useRef, useEffect } from 'react';
+import { useRef, useEffect, useCallback } from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity, StyleSheet,
-  KeyboardAvoidingView, Platform, ScrollView, Modal,
+  View, Text, TextInput, StyleSheet,
+  ScrollView,
   ActivityIndicator,
+  KeyboardAvoidingView, Platform
 } from 'react-native';
+import { X, Sparkles } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import Animated, {
   FadeInDown, FadeInUp, FadeIn,
-  useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence,
+  useSharedValue, useAnimatedStyle, withTiming, withRepeat,
   Easing, interpolate, ReduceMotion,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { supabase } from '@/src/lib/supabase';
 import { useRouter } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
-import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts, effects } from '@/src/theme/theme';
-import reelToast from '@/src/utils/reelToast';
+import PressableScale from '@/src/components/PressableScale';
 import { pickAny } from '@/src/lore/fragments';
+import { useAuthFlow } from '@/src/hooks/useAuthFlow';
+
+import { PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
+import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
+import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
+import { ToastOverlay } from '@/src/components/ToastOverlay';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedText = Animated.createAnimatedComponent(Text);
+const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
 
 WebBrowser.maybeCompleteAuthSession();
-
-import { PasswordStrengthMeter, getPasswordChecks } from '@/src/components/auth/PasswordStrengthMeter';
-import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
-import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
 
 // ── Decorative film-strip perforations ──
 function FilmPerforations({ side }: { side: 'left' | 'right' }) {
@@ -61,13 +63,9 @@ const perfStyles = StyleSheet.create({
 function PulsingRule() {
   const opacity = useSharedValue(0.35);
   useEffect(() => {
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.35, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-      ),
-      -1, false,
-    );
+    // Round 7: Removed infinite loop to allow UI thread idling
+    opacity.value = withTiming(0.8, { duration: 2000, easing: Easing.inOut(Easing.ease) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const style = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return <Animated.View style={[s.rule, style]} />;
@@ -76,35 +74,24 @@ function PulsingRule() {
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { login, signup } = useAuthStore();
+  
+  const {
+    isLogin,
+    emailOrUsername, setEmailOrUsername,
+    password, setPassword,
+    username, setUsername,
+    submitting,
+    showPassword, setShowPassword,
+    forgotModalVisible, setForgotModalVisible,
+    forgotEmail, setForgotEmail,
+    forgotLoading, forgotSent, setForgotSent,
+    awaitingConfirmation, setAwaitingConfirmation, confirmedEmail, resending, resendCooldown,
+    usernameStatus, checkUsernameAvailability, handleResend,
+    handleLoginSubmit, handleForgotPassword, toggleMode
+  } = useAuthFlow();
 
-
-  const [isLogin, setIsLogin] = useState(true);
-  const [emailOrUsername, setEmailOrUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-
-  const [forgotModalVisible, setForgotModalVisible] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotLoading, setForgotLoading] = useState(false);
-  const [forgotSent, setForgotSent] = useState(false);
-
-  // Email confirmation state (resend flow)
-  const [awaitingConfirmation, setAwaitingConfirmation] = useState(false);
-  const [confirmedEmail, setConfirmedEmail] = useState('');
-  const [resending, setResending] = useState(false);
-
-  // Username availability
-  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken'>('idle');
-  const usernameCheckTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Login rate limiting
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [lockoutUntil, setLockoutUntil] = useState(0);
-  const MAX_LOGIN_ATTEMPTS = 5;
-  const LOCKOUT_DURATION_MS = 30000;
+  // Memoize lore fragment so it doesn't change on every keystroke re-render
+  const loreQuote = useRef(pickAny()).current;
 
   // Refs for input focus chaining
   const passwordRef = useRef<TextInput>(null);
@@ -112,14 +99,26 @@ export default function LoginScreen() {
 
   // ── Animated title glow ──
   const titleGlow = useSharedValue(0);
+
+  // ── Animated Submit Spinner ──
+  const spinValue = useSharedValue(0);
   useEffect(() => {
-    titleGlow.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-      ),
-      -1, false,
-    );
+    if (submitting) {
+      // D2-01 FIX: Finite repeats instead of infinite loop to allow UI thread idling
+      spinValue.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.linear }), 20);
+    } else {
+      spinValue.value = 0;
+    }
+  }, [submitting, spinValue]);
+
+  const spinStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${spinValue.value * 360}deg` }]
+  }));
+
+  useEffect(() => {
+    // Round 7: Removed infinite loop to allow UI thread idling
+    titleGlow.value = withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const titleGlowStyle = useAnimatedStyle(() => ({
     textShadowColor: `rgba(196, 150, 26, ${interpolate(titleGlow.value, [0, 1], [0.15, 0.55])})`,
@@ -127,207 +126,10 @@ export default function LoginScreen() {
     textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, 18]),
   }));
 
-  // Password strength for signup mode
-  const pwChecks = getPasswordChecks(password);
-  const pwPassed = Object.values(pwChecks).filter(Boolean).length;
-  const pwStrong = pwPassed === 5;
-
-  // ── DEBOUNCED USERNAME AVAILABILITY CHECK ──
-  useEffect(() => {
-    return () => { if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current); };
+  // IMP #1: Haptic feedback on input focus
+  const onInputFocus = useCallback(() => {
+    Haptics.selectionAsync();
   }, []);
-
-  const checkUsernameAvailability = (value: string) => {
-    if (usernameCheckTimer.current) clearTimeout(usernameCheckTimer.current);
-    const trimmed = value.trim().toLowerCase().replace(/\s+/g, '_');
-    if (trimmed.length < 3) { setUsernameStatus('idle'); return; }
-    setUsernameStatus('checking');
-    usernameCheckTimer.current = setTimeout(async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('username')
-          .eq('username', trimmed)
-          .maybeSingle();
-        if (error) throw error;
-        setUsernameStatus(data ? 'taken' : 'available');
-      } catch {
-        setUsernameStatus('idle');
-      }
-    }, 500);
-  };
-
-  // ── AUTO-LOGIN POLLING AFTER EMAIL CONFIRMATION ──
-  useEffect(() => {
-    if (!awaitingConfirmation || !emailOrUsername || !password) return;
-    let cancelled = false;
-    let attempts = 0;
-    const maxAttempts = 120; // 10 minutes
-
-    const poll = setInterval(async () => {
-      if (cancelled || attempts >= maxAttempts) { clearInterval(poll); return; }
-      attempts++;
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email: emailOrUsername, password,
-        });
-        if (!error && data?.session) {
-          clearInterval(poll);
-          if (cancelled) return;
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at')
-            .eq('id', data.session.user.id)
-            .single();
-          useAuthStore.setState({
-            user: { ...data.session.user, ...profile, following: [] } as import('@/src/types').User,
-            isAuthenticated: true,
-          });
-          setAwaitingConfirmation(false);
-          router.back();
-        }
-      } catch { /* silently retry */ }
-    }, 5000);
-
-    return () => { cancelled = true; clearInterval(poll); };
-  }, [awaitingConfirmation, emailOrUsername, password]);
-
-  // ── RESEND VERIFICATION EMAIL ──
-  const handleResend = async () => {
-    setResending(true);
-    try {
-      await supabase.auth.resend({ type: 'signup', email: confirmedEmail });
-      reelToast('A new cipher has been wired to your inbox.');
-    } catch {
-      reelToast.error('The telegraph line is disrupted. Try again.');
-    } finally {
-      setResending(false);
-    }
-  };
-
-  const handleSubmit = async () => {
-    if (!emailOrUsername || !password || (!isLogin && !username)) {
-      reelToast('All fields are required for clearance.');
-      return;
-    }
-    // Rate limiting check
-    const now = Date.now();
-    if (isLogin && now < lockoutUntil) {
-      const remaining = Math.ceil((lockoutUntil - now) / 1000);
-      reelToast(`Credentials suspended. Retry in ${remaining}s.`);
-      return;
-    }
-    // Enforce password strength on signup
-    if (!isLogin && !pwStrong) {
-      reelToast('Your cipher does not meet Society encryption standards.');
-      return;
-    }
-    // Username availability guard
-    if (!isLogin && usernameStatus === 'taken') {
-      reelToast('That handle is already claimed by another patron.');
-      return;
-    }
-    if (submitting) return;
-    setSubmitting(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    try {
-      if (isLogin) {
-        await login(emailOrUsername.trim(), password);
-        setLoginAttempts(0);
-        router.back();
-      } else {
-        const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '_');
-        if (formattedUsername.length < 3) {
-          reelToast('Handle must be at least 3 characters.');
-          setSubmitting(false);
-          return;
-        }
-        const result = await signup(emailOrUsername.trim(), password, formattedUsername);
-        if (result.needsConfirmation) {
-          // Show the email confirmation screen with resend button
-          setConfirmedEmail(emailOrUsername.trim());
-          setAwaitingConfirmation(true);
-        } else {
-          router.back();
-        }
-      }
-    } catch (error: unknown) {
-      const rawMsg = error instanceof Error ? error.message : 'Authentication failed.';
-      let msg = rawMsg;
-      if (msg.includes('Database error saving new user')) msg = 'Username is already taken.';
-      if (msg.includes('Invalid login credentials')) {
-        setLoginAttempts(prev => prev + 1);
-        if (loginAttempts + 1 >= MAX_LOGIN_ATTEMPTS) {
-          setLockoutUntil(Date.now() + LOCKOUT_DURATION_MS);
-          setLoginAttempts(0);
-          msg = 'Too many failed attempts. Credentials suspended for 30 seconds.';
-        } else {
-          msg = 'Identity not recognized. Check your credentials.';
-        }
-      }
-      reelToast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleOAuth = async (provider: 'google' | 'apple') => {
-    if (submitting) return;
-    setSubmitting(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      const redirectUri = Linking.createURL('/');
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider,
-        options: {
-          redirectTo: redirectUri,
-          skipBrowserRedirect: true,
-        },
-      });
-      if (error) throw error;
-
-      if (data?.url) {
-        const res = await WebBrowser.openAuthSessionAsync(data.url, redirectUri);
-        if (res.type === 'success') {
-          // Supabase handles the PKCE code exchange via deep link
-        }
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Authentication failed. The booth is dark.';
-      reelToast.error(msg);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!forgotEmail.trim()) {
-      reelToast('Please enter your email to request a credential reset.');
-      return;
-    }
-    setForgotLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail.trim(), {
-        redirectTo: Linking.createURL('auth-callback') + '?type=recovery',
-      });
-      if (error) throw error;
-      setForgotSent(true);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'The telegraph line is down. Try again.';
-      reelToast.error(msg);
-    } finally {
-      setForgotLoading(false);
-    }
-  };
-
-  const toggleMode = () => {
-    setIsLogin(v => !v);
-    setEmailOrUsername('');
-    setPassword('');
-    setUsername('');
-    setUsernameStatus('idle');
-  };
 
   // ── EMAIL CONFIRMATION SCREEN ──
   if (awaitingConfirmation) {
@@ -336,13 +138,15 @@ export default function LoginScreen() {
         confirmedEmail={confirmedEmail}
         resending={resending}
         onResend={handleResend}
-        onClose={() => { setAwaitingConfirmation(false); router.back(); }}
+        onClose={() => { setAwaitingConfirmation(false); router.replace('/(tabs)'); }}
+        resendCooldown={resendCooldown}
       />
     );
   }
 
   return (
     <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
+      <ToastOverlay />
       {/* ── Background & Atmospherics ── */}
       <LinearGradient
         colors={[colors.ink, '#0B0907', colors.soot]}
@@ -353,21 +157,39 @@ export default function LoginScreen() {
       <FilmPerforations side="right" />
 
       {/* ── Pinned Header / Close (0-Overlap) ── */}
-      <View style={s.fixedHeader}>
-        <TouchableOpacity
+      <View style={[s.fixedHeader, { top: insets.top }]}>
+        <PressableScale
           style={s.closeBtn}
-          onPress={() => router.back()}
+          onPress={() => {
+            // If there's a stack to go back to, go back; otherwise go home
+            if (router.canGoBack()) {
+              router.back();
+            } else {
+              // #1 AUDIT FIX: Defer navigation to let auth guard settle,
+              // preventing visible flash on cold-launch deep links
+              requestAnimationFrame(() => {
+                router.replace('/(tabs)');
+              });
+            }
+          }}
           hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+          haptic="light"
         >
-          <Text style={s.closeText}>✕</Text>
-        </TouchableOpacity>
+          <X size={18} color={colors.bone} strokeWidth={2} />
+        </PressableScale>
       </View>
 
-      <KeyboardAvoidingView style={s.keyboardFlex} behavior={Platform.OS === 'ios' ? 'padding' : 'height'} keyboardVerticalOffset={Platform.OS === 'ios' ? insets.bottom + 10 : 0}>
+      {/* IMP #2: Native keyboard handling — no KeyboardAvoidingView jank */}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
         <ScrollView
           contentContainerStyle={s.scroll}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets={true}
         >
           {/* ── Titles ── */}
           <AnimatedView entering={FadeInDown.duration(900).reduceMotion(ReduceMotion.Never)} style={s.header}>
@@ -399,7 +221,8 @@ export default function LoginScreen() {
           </Text>
 
           <Text style={s.loreTransmission}>
-            — “{pickAny()}”
+            {/* eslint-disable-next-line react/no-unescaped-entities */}
+            — "{loreQuote}"
           </Text>
         </AnimatedView>
 
@@ -413,12 +236,16 @@ export default function LoginScreen() {
             <Text style={s.inputLabel}>{isLogin ? 'EMAIL OR USERNAME' : 'EMAIL ADDRESS'}</Text>
             <View style={s.inputWrap}>
               <TextInput
-                style={s.input}
+                style={[s.input, submitting && s.inputDisabled]}
                 placeholder={isLogin ? 'patron@cinema.org' : 'your@email.com'}
                 placeholderTextColor={colors.fog}
                 value={emailOrUsername}
                 onChangeText={setEmailOrUsername}
+                onFocus={onInputFocus}
+                editable={!submitting}
                 autoCapitalize="none"
+                autoCorrect={false}
+                spellCheck={false}
                 keyboardType={isLogin ? 'default' : 'email-address'}
                 selectionColor={colors.sepia}
                 returnKeyType="next"
@@ -427,8 +254,9 @@ export default function LoginScreen() {
                   else if (passwordRef.current) passwordRef.current.focus();
                 }}
                 blurOnSubmit={false}
-                autoCorrect={false}
                 maxLength={254}
+                keyboardAppearance="dark"
+                accessibilityLabel={isLogin ? 'Email or username' : 'Email address'}
               />
             </View>
           </View>
@@ -441,11 +269,13 @@ export default function LoginScreen() {
                 <Text style={s.inputPrefix}>@</Text>
                 <TextInput
                   ref={usernameRef}
-                  style={[s.input, { paddingLeft: 30, paddingRight: usernameStatus !== 'idle' ? 40 : 16 }]}
+                  style={[s.input, { paddingLeft: 30, paddingRight: usernameStatus !== 'idle' ? 40 : 16 }, submitting && s.inputDisabled]}
                   placeholder="your_handle"
                   placeholderTextColor={colors.fog}
                   value={username}
                   onChangeText={(val) => { setUsername(val); checkUsernameAvailability(val); }}
+                  onFocus={onInputFocus}
+                  editable={!submitting}
                   autoCapitalize="none"
                   selectionColor={colors.sepia}
                   returnKeyType="next"
@@ -453,6 +283,8 @@ export default function LoginScreen() {
                   blurOnSubmit={false}
                   autoCorrect={false}
                   maxLength={30}
+                  keyboardAppearance="dark"
+                  accessibilityLabel="Username handle"
                 />
                 {/* Status indicator */}
                 {usernameStatus !== 'idle' && (
@@ -478,25 +310,30 @@ export default function LoginScreen() {
             <View style={s.inputWrap}>
               <TextInput
                 ref={passwordRef}
-                style={[s.input, { paddingRight: 60 }]}
+                style={[s.input, { paddingRight: 60 }, submitting && s.inputDisabled]}
                 placeholder="••••••••"
                 placeholderTextColor={colors.fog}
                 value={password}
                 onChangeText={setPassword}
+                onFocus={onInputFocus}
+                editable={!submitting}
                 secureTextEntry={!showPassword}
                 selectionColor={colors.sepia}
                 returnKeyType="go"
-                onSubmitEditing={handleSubmit}
+                onSubmitEditing={handleLoginSubmit}
                 autoCorrect={false}
                 maxLength={128}
+                keyboardAppearance="dark"
+                accessibilityLabel="Password"
               />
-              <TouchableOpacity
+              <PressableScale
                 style={s.showBtn}
-                onPress={() => setShowPassword(v => !v)}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); setShowPassword(v => !v); }}
                 hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+                pressedScale={0.92}
               >
                 <Text style={s.showText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{showPassword ? 'HIDE' : 'SHOW'}</Text>
-              </TouchableOpacity>
+              </PressableScale>
             </View>
           </View>
 
@@ -505,55 +342,58 @@ export default function LoginScreen() {
 
           {/* Forgot password link (login mode only) */}
           {isLogin && (
-            <TouchableOpacity
+            <PressableScale
               onPress={() => {
                 setForgotEmail(emailOrUsername.includes('@') ? emailOrUsername : '');
                 setForgotSent(false);
                 setForgotModalVisible(true);
               }}
               style={s.forgotBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+              haptic="selection"
             >
               <Text style={s.forgotText}>Forgot your credentials?</Text>
-            </TouchableOpacity>
+            </PressableScale>
           )}
 
           {/* Submit */}
-          <TouchableOpacity
-            style={[s.submitBtn, submitting && s.submitDisabled]}
-            onPress={handleSubmit}
-            disabled={submitting}
-            activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+          <PressableScale
+            style={[s.submitBtn, (submitting || (!isLogin && usernameStatus === 'taken')) && s.submitDisabled]}
+            onPress={handleLoginSubmit}
+            disabled={submitting || (!isLogin && usernameStatus === 'taken')}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            pressedScale={0.97}
           >
             {submitting ? (
               <View style={s.submitLoading}>
-                <ActivityIndicator size="small" color={colors.ink} />
+                <AnimatedSparkles size={16} color={colors.ink} style={spinStyle} />
                 <Text style={s.submitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                   {isLogin ? 'VERIFYING...' : 'PROCESSING APPLICATION...'}
                 </Text>
               </View>
             ) : (
-              <Text style={s.submitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+              <Text style={[s.submitText, !isLogin && usernameStatus === 'taken' && { opacity: 0.5 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                 {isLogin ? '✦  IDENTIFY & ENTER' : '✦  REQUEST ADMISSION'}
               </Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </AnimatedView>
 
         {/* ── Toggle Login/Signup ── */}
         <AnimatedView entering={FadeInUp.duration(600).delay(450).reduceMotion(ReduceMotion.Never)} style={s.toggleWrap}>
-          <TouchableOpacity onPress={toggleMode} activeOpacity={0.6} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+          <PressableScale onPress={toggleMode} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="selection">
             <Text style={s.toggleText}>
               {isLogin ? 'No membership? ' : 'Already admitted? '}
               <Text style={s.toggleHighlight}>
                 {isLogin ? 'Request admission' : 'Identify yourself'}
               </Text>
             </Text>
-          </TouchableOpacity>
+          </PressableScale>
         </AnimatedView>
 
         {/* Footer legal note */}
         <AnimatedView entering={FadeIn.duration(500).delay(700).reduceMotion(ReduceMotion.Never)} style={s.footerNote}>
           <Text style={s.footerText}>
+            {/* eslint-disable-next-line react/no-unescaped-entities */}
             By continuing, you agree to The ReelHouse Society's{'\n'}Terms of Service & Privacy Policy
           </Text>
         </AnimatedView>
@@ -583,9 +423,7 @@ const s = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.ink,
   },
-  keyboardFlex: {
-    flex: 1,
-  },
+
   fixedHeader: {
     position: 'absolute',
     top: 0,
@@ -594,7 +432,7 @@ const s = StyleSheet.create({
     height: 56,
     zIndex: 100,
     flexDirection: 'row',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-start',
     paddingHorizontal: 24,
     paddingTop: 16,
   },
@@ -602,12 +440,6 @@ const s = StyleSheet.create({
     width: 44, height: 44,
     alignItems: 'flex-end',
     justifyContent: 'center',
-  },
-  closeText: {
-    color: colors.fog,
-    fontSize: 20,
-    fontFamily: fonts.ui,
-    opacity: 0.8,
   },
   scroll: {
     flexGrow: 1,
@@ -732,12 +564,35 @@ const s = StyleSheet.create({
     fontFamily: fonts.mono,
     color: colors.parchment,
   },
+  inputDisabled: {
+    opacity: 0.5,
+  },
   fieldHint: {
     fontFamily: fonts.ui,
     fontSize: 9,
     color: colors.sepia,
     letterSpacing: 0.5,
     marginTop: 2,
+  },
+
+  // ── Username Status ──
+  usernameStatusWrap: {
+    position: 'absolute',
+    right: 12,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  usernameAvailable: {
+    fontSize: 16,
+    // #9 AUDIT FIX: Using theme-defined validation color
+    color: colors.validation,
+    fontFamily: fonts.uiBold,
+  },
+  usernameTaken: {
+    fontSize: 16,
+    color: colors.bloodReel,
+    fontFamily: fonts.uiBold,
   },
 
   // ── Password ──
@@ -795,68 +650,6 @@ const s = StyleSheet.create({
     gap: 10,
   },
 
-  // ── Divider ──
-  dividerWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 2,
-  },
-  dividerLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.ash,
-  },
-  dividerText: {
-    fontFamily: fonts.uiMedium,
-    color: colors.fog,
-    fontSize: 9,
-    marginHorizontal: 16,
-    letterSpacing: 2,
-  },
-
-  // ── OAuth ──
-  oauthWrap: {
-    gap: 12,
-  },
-  oauthBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: colors.ash,
-    borderRadius: 3,
-    paddingVertical: 14,
-    gap: 10,
-  },
-  oauthApple: {
-    backgroundColor: colors.parchment,
-    borderColor: colors.parchment,
-  },
-  oauthAppleIcon: {
-    fontSize: 17,
-    color: colors.ink,
-    marginTop: Platform.OS === 'ios' ? -1 : 0,
-  },
-  oauthAppleText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    color: colors.ink,
-    fontWeight: '600',
-  },
-  oauthGoogleIcon: {
-    fontSize: 15,
-    color: colors.parchment,
-    fontFamily: fonts.uiBold,
-  },
-  oauthText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
-    letterSpacing: 1.5,
-    color: colors.bone,
-    fontWeight: '600',
-  },
 
   // ── Toggle ──
   toggleWrap: {

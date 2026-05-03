@@ -1,7 +1,8 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Buster from '@/src/components/Buster';
@@ -20,10 +21,11 @@ interface DNAUser {
     username?: string;
 }
 
-const { width } = Dimensions.get('window');
+
 
 export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }: { logs: DNALog[]; user: DNAUser; onClose: () => void }) {
     const insets = useSafeAreaInsets();
+    const { width: windowWidth } = useWindowDimensions();
     if (!logs || logs.length < 5) return null;
 
     const decades: Record<string, number> = {};
@@ -60,7 +62,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
                 <X size={16} color={colors.parchment} />
             </PressableScale>
 
-            <View style={s.card}>
+            <View style={[s.card, { width: windowWidth * 0.85 }]}>
                 <View style={s.grainOverlay} />
                 
                 <View style={s.header}>
@@ -139,7 +141,6 @@ const s = StyleSheet.create({
     },
     closeBtn: { position: 'absolute', top: 40, right: 20, zIndex: 100006, padding: 10 },
     card: {
-        width: width * 0.85,
         aspectRatio: 9/16,
         backgroundColor: colors.ink,
         borderColor: colors.sepia,

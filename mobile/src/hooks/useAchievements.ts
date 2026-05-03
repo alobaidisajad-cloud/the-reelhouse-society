@@ -4,7 +4,7 @@
  * detects new unlocks, and persists them.
  */
 import { useState, useEffect, useCallback, useRef } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { storage } from '../stores/mmkv-storage'
 import { supabase } from '../lib/supabase'
 import type { FilmLog } from '../types'
 
@@ -22,14 +22,11 @@ export const BADGE_DEFS: Badge[] = [
   { key: 'regular', label: 'THE REGULAR', glyph: '❖', description: 'Log 10 films', check: (l) => l.length >= 10 },
   { key: 'devotee', label: 'THE DEVOTEE', glyph: '◆', description: 'Log 25 films', check: (l) => l.length >= 25 },
   { key: 'oracle', label: 'THE ORACLE', glyph: '◈', description: 'Log 100 films', check: (l) => l.length >= 100 },
-  { key: 'explorer', label: 'THE EXPLORER', glyph: '✧', description: 'Log films in 5+ genres', check: (l) => {
-    const genres = new Set<number>()
-    l.forEach(log => (log.genre_ids || []).forEach((g: number) => genres.add(g)))
-    return genres.size >= 5
-  }},
+  // #3 AUDIT FIX: EXPLORER badge removed — genre_ids not yet stored on FilmLog.
+  // Re-add when TMDB genre enrichment is implemented at log time.
   { key: 'drifter', label: 'THE DRIFTER', glyph: '§', description: 'Watch from 4+ decades', check: (l) => {
     const decades = new Set<number>()
-    l.forEach(log => { const y = log.year || parseInt((log.release_date || '0').slice(0, 4)); if (y) decades.add(Math.floor(y / 10)) })
+    l.forEach(log => { const y = typeof log.year === 'number' ? log.year : parseInt(String(log.year || '0')); if (y) decades.add(Math.floor(y / 10)) })
     return decades.size >= 4
   }},
   { key: 'completionist', label: 'THE COMPLETIONIST', glyph: '⊕', description: 'Rate every logged film', check: (l) => l.length > 0 && l.every(log => log.rating > 0) },
@@ -84,7 +81,7 @@ export function useAchievements(userId: string | undefined, logs: FilmLog[]) {
       // Check locally dismissed badges so we never pop up a toast twice on this device
       let locallyDismissed: string[] = []
       try {
-          const stored = await AsyncStorage.getItem('reelhouse-badges-dismissed')
+          const stored = storage.getString('reelhouse-badges-dismissed')
           if (stored) locallyDismissed = JSON.parse(stored)
       } catch {}
 
@@ -117,11 +114,11 @@ export function useAchievements(userId: string | undefined, logs: FilmLog[]) {
     // Permanently mask this badge on this device so it never pops up again
     ;(async () => {
         try {
-            const raw = await AsyncStorage.getItem('reelhouse-badges-dismissed')
+            const raw = storage.getString('reelhouse-badges-dismissed')
             const dismissed = raw ? JSON.parse(raw) : []
             if (!dismissed.includes(key)) {
                 dismissed.push(key)
-                await AsyncStorage.setItem('reelhouse-badges-dismissed', JSON.stringify(dismissed))
+                storage.set('reelhouse-badges-dismissed', JSON.stringify(dismissed))
             }
         } catch {}
     })()

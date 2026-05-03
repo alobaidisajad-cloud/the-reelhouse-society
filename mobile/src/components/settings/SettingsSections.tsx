@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Switch, Platform } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { View, Text, StyleSheet, TextInput, Switch, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Crown, Lock, Eye, Bell, Shield, LogOut, Trash2, Smartphone, ChevronDown, ChevronUp, Star, Sparkles, User, FileText } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -24,7 +27,7 @@ export const SectionCard = ({ children, danger }: { children: React.ReactNode; d
   </View>
 );
 
-export const SectionHead = ({ icon: Icon, label, danger }: { icon: any; label: string; danger?: boolean }) => (
+export const SectionHead = ({ icon: Icon, label, danger }: { icon: import('lucide-react-native').LucideIcon; label: string; danger?: boolean }) => (
   <View style={st.sectionHeaderWrap}>
     <View style={st.sectionHeaderRow}>
       <Icon size={14} color={danger ? 'rgba(162,36,36,0.7)' : colors.sepia} style={st.sectionHeaderIcon} />
@@ -43,32 +46,34 @@ export const Toggle = ({ active, onToggle }: { active: boolean; onToggle: () => 
 );
 
 export const RadioOption = ({ selected, label, onPress }: { selected: boolean; label: string; onPress: () => void }) => (
-  <TouchableOpacity
+  <PressableScale
     style={[st.radioOption, selected && st.radioOptionActive]}
-    onPress={() => { Haptics.selectionAsync(); onPress(); }}
-    activeOpacity={0.7}
+    onPress={onPress}
     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    haptic="selection"
+    pressedScale={0.96}
   >
     <View style={[st.radioDot, selected && st.radioDotActive]} />
     <Text style={[st.radioLabel, selected && st.radioLabelActive]}>{label}</Text>
-  </TouchableOpacity>
+  </PressableScale>
 );
 
-export const ActionBtn = ({ icon: Icon, label, onPress, danger }: { icon: any; label: string; onPress: () => void; danger?: boolean }) => (
-  <TouchableOpacity
+export const ActionBtn = ({ icon: Icon, label, onPress, danger }: { icon: import('lucide-react-native').LucideIcon; label: string; onPress: () => void; danger?: boolean }) => (
+  <PressableScale
     style={[st.actionBtn, danger && st.actionBtnDanger]}
     onPress={onPress}
-    activeOpacity={0.7}
     hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+    haptic={danger ? 'heavy' : 'light'}
+    pressedScale={0.95}
   >
     <Icon size={12} color={danger ? 'rgba(162,36,36,0.7)' : colors.fog} />
     <Text style={[st.actionBtnText, danger && st.actionBtnTextDanger]}>{label}</Text>
-  </TouchableOpacity>
+  </PressableScale>
 );
 
 // ═══ SECTIONS ═══
 
-export function PatronageSection({ userRole, router }: { userRole: string; router: any }) {
+export function PatronageSection({ userRole, router }: { userRole: string; router: import('expo-router').Router }) {
   return (
     <AnimatedView entering={FadeInDown.duration(500).delay(100)}>
       <SectionCard>
@@ -95,16 +100,17 @@ export function PatronageSection({ userRole, router }: { userRole: string; route
         {(!userRole || userRole === 'cinephile' || userRole === 'free') ? (
           <View>
             <Text style={st.fieldBody}>Unlock The Editorial Desk, The Physical Archive, The Lounge, and more by upgrading your patronage.</Text>
-            <TouchableOpacity style={st.primaryBtn} onPress={() => router.push('/membership')} activeOpacity={0.7}>
+            <PressableScale style={st.primaryBtn} onPress={() => router.push('/membership' as any)} haptic="medium" pressedScale={0.96}>
               <Text style={st.primaryBtnText}>UPGRADE YOUR RANK</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         ) : userRole === 'archivist' ? (
           <View>
+            {/* eslint-disable-next-line react/no-unescaped-entities */}
             <Text style={st.fieldBody}>You're an Archivist. Upgrade to Auteur for radar breakdowns, curatorial poster control, and the gold Dispatch badge.</Text>
-            <TouchableOpacity style={st.primaryBtn} onPress={() => router.push('/membership')} activeOpacity={0.7}>
+            <PressableScale style={st.primaryBtn} onPress={() => router.push('/membership' as any)} haptic="medium" pressedScale={0.96}>
               <Text style={st.primaryBtnText}>UPGRADE TO AUTEUR</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         ) : (
           <Text style={st.fieldBody}>You hold the highest rank in The Society. All features are unlocked.</Text>
@@ -115,7 +121,7 @@ export function PatronageSection({ userRole, router }: { userRole: string; route
   );
 }
 
-export function AccountSection(props: any) {
+export function AccountSection(props: Record<string, any>) {
   const { user, showPasswordChange, setShowPasswordChange, newPassword, setNewPassword, confirmPassword, setConfirmPassword, changingPassword, handlePasswordChange } = props;
   return (
     <AnimatedView entering={FadeInDown.duration(500).delay(150)}>
@@ -129,24 +135,24 @@ export function AccountSection(props: any) {
           <Text style={st.fieldLabel}>EMAIL</Text>
           <View style={st.readonlyField}><Text style={st.readonlyText}>{user.email}</Text></View>
         </View>
-        <TouchableOpacity style={st.actionBtnSpaced} onPress={() => setShowPasswordChange(!showPasswordChange)} activeOpacity={0.7}>
+        <PressableScale style={st.actionBtnSpaced} onPress={() => setShowPasswordChange(!showPasswordChange)} haptic="selection" pressedScale={0.97}>
           <Lock size={12} color={colors.fog} />
           <Text style={st.actionBtnTextFlex}>CHANGE PASSWORD</Text>
           {showPasswordChange ? <ChevronUp size={12} color={colors.fog} /> : <ChevronDown size={12} color={colors.fog} />}
-        </TouchableOpacity>
+        </PressableScale>
         {showPasswordChange && (
           <View style={st.passwordPanel}>
             <View style={st.fieldWrap}>
               <Text style={st.fieldLabel}>NEW PASSWORD</Text>
-              <TextInput style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Min. 8 characters" placeholderTextColor={colors.ash} />
+              <TextInput style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Min. 8 characters" placeholderTextColor={colors.ash} keyboardAppearance="dark" accessibilityLabel="New password" />
             </View>
             <View style={st.fieldWrap}>
               <Text style={st.fieldLabel}>CONFIRM PASSWORD</Text>
-              <TextInput style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Repeat password" placeholderTextColor={colors.ash} />
+              <TextInput style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Repeat password" placeholderTextColor={colors.ash} keyboardAppearance="dark" accessibilityLabel="Confirm password" />
             </View>
-            <TouchableOpacity style={[st.saveFieldBtn, (!newPassword || !confirmPassword) && st.disabledBtn]} onPress={handlePasswordChange} disabled={changingPassword || !newPassword || !confirmPassword} activeOpacity={0.7}>
+            <PressableScale style={[st.saveFieldBtn, (!newPassword || !confirmPassword) && st.disabledBtn]} onPress={handlePasswordChange} disabled={changingPassword || !newPassword || !confirmPassword} haptic="medium" pressedScale={0.96}>
               <Text style={st.saveFieldBtnText}>{changingPassword ? 'UPDATING...' : 'UPDATE PASSWORD'}</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         )}
       </SectionCard>
@@ -154,7 +160,7 @@ export function AccountSection(props: any) {
   );
 }
 
-export function PrivacySection(props: any) {
+export function PrivacySection(props: Record<string, any>) {
   const { socialVisibility, setSocialVisibility, privacyEndorsements, setPrivacyEndorsements, privacyAnnotations, setPrivacyAnnotations } = props;
   return (
     <AnimatedView entering={FadeInDown.duration(500).delay(200)}>
@@ -189,7 +195,7 @@ export function PrivacySection(props: any) {
   );
 }
 
-export function NotificationsSection(props: any) {
+export function NotificationsSection(props: Record<string, any>) {
   const { notifFollows, setNotifFollows, notifEndorsements, setNotifEndorsements, notifComments, setNotifComments, notifSystem, setNotifSystem } = props;
   return (
     <AnimatedView entering={FadeInDown.duration(500).delay(250)}>

@@ -7,8 +7,8 @@
  */
 import React, { useState } from 'react';
 import {
-  View, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
-  Alert, Share, ScrollView,
+  View, Text, StyleSheet,
+  Share,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import {
@@ -23,9 +23,11 @@ import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import { importArchiveZip, ImportProgress, ImportResult } from '@/src/utils/archiveImport';
+import PressableScale from '@/src/components/PressableScale';
+import reelToast from '@/src/utils/reelToast';
 
 export default function DataVault() {
-  const { logs, watchlist, vault, lists } = useFilmStore();
+  const { logs, watchlist, physicalArchive: vault, lists } = useFilmStore();
   const user = useAuthStore(s => s.user);
 
   // ── Import State ──
@@ -72,7 +74,7 @@ export default function DataVault() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : 'An error occurred during import.';
-      Alert.alert('Import Failed', msg);
+      reelToast.error(msg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setImporting(false);
@@ -85,7 +87,7 @@ export default function DataVault() {
   // ══════════════════════════════════════
   const handleExportCSV = async () => {
     if (!logs || logs.length === 0) {
-      Alert.alert('No Data', 'No logs to export yet. Start logging films first.');
+      reelToast.error('No logs to export yet. Start logging films first.');
       return;
     }
 
@@ -95,20 +97,20 @@ export default function DataVault() {
     try {
       const headers = ['Title', 'Year', 'Rating', 'Status', 'Date Watched', 'Review', 'Format'];
       const rows = logs.map((l) => [
-        `"${(l.title ?? l.film_title ?? '').replace(/"/g, '""')}"`,
+        `"${(l.title ?? (l as any).film_title ?? '').replace(/"/g, '""')}"`,
         l.year ?? '',
         l.rating ?? '',
         l.status ?? 'watched',
-        l.watchedDate ?? l.watched_date ?? l.createdAt?.slice(0, 10) ?? '',
+        l.watchedDate ?? (l as any).watched_date ?? l.createdAt?.slice(0, 10) ?? '',
         `"${(l.review ?? '').replace(/"/g, '""').replace(/\n/g, ' ')}"`,
-        l.format ?? 'Digital',
+        l.physicalMedia ?? 'Digital',
       ]);
       const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 
       const username = user?.username ?? 'archive';
       const date = new Date().toISOString().slice(0, 10);
-      const filePath = `${FileSystem.cacheDirectory}reelhouse_${username}_${date}.csv`;
-      await FileSystem.writeAsStringAsync(filePath, csv, { encoding: FileSystem.EncodingType.UTF8 });
+      const filePath = `${(FileSystem as any).cacheDirectory}reelhouse_${username}_${date}.csv`;
+      await FileSystem.writeAsStringAsync(filePath, csv, { encoding: 'utf8' as any });
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
@@ -125,7 +127,7 @@ export default function DataVault() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Export failed';
-      Alert.alert('Export Failed', msg);
+      reelToast.error(msg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setExporting(false);
@@ -148,8 +150,8 @@ export default function DataVault() {
 
       const username = user?.username ?? 'archive';
       const date = new Date().toISOString().slice(0, 10);
-      const filePath = `${FileSystem.cacheDirectory}reelhouse_${username}_${date}.json`;
-      await FileSystem.writeAsStringAsync(filePath, jsonStr, { encoding: FileSystem.EncodingType.UTF8 });
+      const filePath = `${(FileSystem as any).cacheDirectory}reelhouse_${username}_${date}.json`;
+      await FileSystem.writeAsStringAsync(filePath, jsonStr, { encoding: 'utf8' as any });
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
@@ -163,7 +165,7 @@ export default function DataVault() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Export failed';
-      Alert.alert('Export Failed', msg);
+      reelToast.error(msg);
     } finally {
       setExporting(false);
     }
@@ -187,11 +189,11 @@ export default function DataVault() {
 
         {/* ── Upload Zone (idle state) ── */}
         {!importing && !importResult && (
-          <TouchableOpacity style={s.uploadZone} onPress={handlePickFile} activeOpacity={0.7}>
+          <PressableScale style={s.uploadZone} onPress={handlePickFile} haptic="medium" pressedScale={0.98}>
             <Upload size={24} color={colors.sepia} style={{ opacity: 0.7, marginBottom: 10 }} />
             <Text style={s.uploadTitle}>Tap to select your archive ZIP</Text>
             <Text style={s.uploadHint}>or use the file browser</Text>
-          </TouchableOpacity>
+          </PressableScale>
         )}
 
         {/* ── Progress Bar (importing state) ── */}
@@ -203,7 +205,7 @@ export default function DataVault() {
             </View>
             {/* Progress track */}
             <View style={s.progressTrack}>
-              <View style={[s.progressBar, { width: `${progressPct}%` }]} />
+              <View style={[s.progressBar, { width: `${progressPct}%` as import('react-native').DimensionValue }]} />
             </View>
             {importProgress.detail && (
               <Text style={s.progressDetail}>{importProgress.detail}</Text>
@@ -242,21 +244,22 @@ export default function DataVault() {
             )}
 
             {importResult.errors.length > 0 && (
-              <ScrollView style={s.errorScroll} nestedScrollEnabled>
+              <View style={s.errorScroll}>
                 {importResult.errors.map((err, i) => (
                   <Text key={i} style={s.errorLine}>{'\u2022'} {err}</Text>
                 ))}
-              </ScrollView>
+              </View>
             )}
 
-            <TouchableOpacity
+            <PressableScale
               style={s.importAnotherBtn}
               onPress={() => { setImportResult(null); handlePickFile(); }}
-              activeOpacity={0.7}
+              haptic="selection"
+              pressedScale={0.97}
             >
               <Upload size={12} color={colors.fog} />
               <Text style={s.importAnotherText}>IMPORT ANOTHER FILE</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         )}
       </View>
@@ -268,17 +271,17 @@ export default function DataVault() {
 
       <Text style={s.subLabel}>EXPORT YOUR DATA</Text>
 
-      <TouchableOpacity style={s.actionBtn} onPress={handleExportCSV} disabled={exporting} activeOpacity={0.7}>
+      <PressableScale style={s.actionBtn} onPress={handleExportCSV} disabled={exporting} haptic="medium" pressedScale={0.97}>
         <Download size={12} color={colors.fog} />
         <Text style={s.actionBtnText}>{exporting ? 'EXPORTING...' : 'EXPORT DATA (CSV)'}</Text>
-      </TouchableOpacity>
+      </PressableScale>
 
       <View style={s.exportSpacer} />
 
-      <TouchableOpacity style={s.actionBtn} onPress={handleExportJSON} disabled={exporting} activeOpacity={0.7}>
+      <PressableScale style={s.actionBtn} onPress={handleExportJSON} disabled={exporting} haptic="medium" pressedScale={0.97}>
         <Download size={12} color={colors.fog} />
         <Text style={s.actionBtnText}>EXPORT FULL ARCHIVE (JSON)</Text>
-      </TouchableOpacity>
+      </PressableScale>
 
     </Animated.View>
   );
@@ -373,7 +376,7 @@ const s = StyleSheet.create({
   skippedText: {
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog,
   },
-  errorScroll: { maxHeight: 100, marginTop: 8 },
+  errorScroll: { marginTop: 8 },
   errorLine: {
     fontFamily: fonts.body, fontSize: 10, color: 'rgba(162,36,36,0.8)',
     fontStyle: 'italic', marginBottom: 3,

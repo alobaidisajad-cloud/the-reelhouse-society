@@ -80,13 +80,13 @@ export default function AutopsyGauge({ autopsy }: AutopsyGaugeProps) {
                                 colors={[colors.sepia, '#5a430d']}
                                 start={{ x: 0, y: 0 }}
                                 end={{ x: 0, y: 1 }}
-                                style={[s.trackFill, { width: `${(item.value / 10) * 100}%` as any }]}
+                                style={[s.trackFill, { width: `${(item.value / 10) * 100}%` as import('react-native').DimensionValue }]}
                             />
                             {/* Segmented dividers (10 segments) */}
                             {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(seg => (
                                 <View
                                     key={seg}
-                                    style={[s.trackDivider, { left: `${seg * 10}%` as any }]}
+                                    style={[s.trackDivider, { left: `${seg * 10}%` as import('react-native').DimensionValue }]}
                                 />
                             ))}
                         </View>

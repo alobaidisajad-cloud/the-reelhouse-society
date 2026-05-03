@@ -3,6 +3,17 @@
 // ============================================================
 
 // ── Auth ──
+export interface UserPreferences {
+    social_visibility?: string
+    privacy_endorsements?: string
+    privacy_annotations?: string
+    notif_follows?: boolean
+    notif_endorsements?: boolean
+    notif_comments?: boolean
+    notif_system?: boolean
+    [key: string]: unknown
+}
+
 export interface User {
     id: string
     username: string
@@ -23,10 +34,10 @@ export interface User {
     isSocialPrivate?: boolean
     is_social_private?: boolean
     created_at?: string
-    preferences?: Record<string, unknown>
+    preferences?: UserPreferences
     is_banned?: boolean
     ban_reason?: string
-    social_links?: Record<string, string>
+    social_links?: Record<string, string> | {title: string; url: string}[]
 }
 
 // ── Film Log ──
@@ -34,30 +45,33 @@ export interface FilmLog {
     id: string
     filmId: number
     title: string
+    film_title?: string
     poster?: string | null
-    altPoster?: string | null
+    altPoster?: string | null | undefined
     year?: number
     rating: number
-    status: 'watched' | 'rewatched' | 'abandoned'
-    review?: string
-    pullQuote?: string
+    status: 'watched' | 'rewatched' | 'abandoned' | string
+    review?: string | null
+    pullQuote?: string | null
     tags?: string[]
-    director?: string
+    director?: string | null
     directors?: string[]
-    genres?: Array<{ id: number; name: string }> | number[]
-    runtime?: number
+    genres?: { id: number; name: string }[] | number[]
+    runtime?: number | null
     popularity?: number
-    release_date?: string
+    release_date?: string | null
     loggedAt?: string
     created_at?: string
     createdAt?: string
     user_id?: string
     // Half-life tracking
     genre_ids?: number[]
+    format?: string | null
+    watched_date?: string | null
     
     // UI mapping properties
     isSpoiler?: boolean
-    watchedDate?: string
+    watchedDate?: string | null
     watchedWith?: string | null
     privateNotes?: string | null
     abandonedReason?: string | null
@@ -69,12 +83,12 @@ export interface FilmLog {
     videoUrl?: string | null
     // Viewing Chronicle — rewatch history stored in same log
     viewCount?: number
-    viewingHistory?: Array<{
+    viewingHistory?: {
         date?: string
         rating: number
         review?: string
         watchedWith?: string | null
-    }>
+    }[] | null
 }
 
 // ── Watchlist ──
@@ -82,7 +96,7 @@ export interface WatchlistItem {
     id: number
     title: string
     poster_path?: string | null
-    year?: number
+    year?: number | null
 }
 
 // ── Vault ──
@@ -96,15 +110,17 @@ export interface VaultItem {
 
 // ── Physical Archive ──
 export interface PhysicalArchiveItem {
-    id: string
+    id: string | number
     filmId: number
+    film_id?: number
     title: string
     poster_path?: string | null
-    year?: number
+    year?: number | null
     formats: string[]
     notes?: string
     condition?: string
     createdAt?: string
+    created_at?: string
 }
 
 // ── List ──
@@ -113,12 +129,15 @@ export interface FilmList {
     title: string
     name?: string
     description?: string
-    films: Array<{ id: number; title: string; poster_path?: string | null }>
+    films: { id: number; title: string; poster_path?: string | null }[]
     user_id?: string
     created_at?: string
     isPrivate?: boolean
     isRanked?: boolean
 }
+
+/** Alias for FilmList — used by listSlice domain store */
+export type CustomList = FilmList;
 
 // ── Interaction ──
 export interface Interaction {
@@ -146,8 +165,8 @@ export interface TicketStub {
     created_at?: string
 }
 
-// ── Dispatch (Dossier) ──
-export interface Dossier {
+// ── Dispatch (Dossier) — distinct from content.ts Dossier which is the store model ──
+export interface DispatchDossier {
     id: string
     title: string
     content: string
@@ -169,7 +188,7 @@ export interface Programme {
     id: string
     title: string
     description?: string
-    films: Array<{ id: number; title?: string; poster_path?: string | null }>
+    films: { id: number; title?: string; poster_path?: string | null }[]
     date?: string
     user_id?: string
     created_at?: string
@@ -219,7 +238,7 @@ export interface TMDBPerson {
 }
 
 export interface TMDBSearchResult {
-    results: Array<TMDBMovie | TMDBPerson>
+    results: (TMDBMovie | TMDBPerson)[]
     total_pages: number
     total_results: number
     page: number
@@ -266,6 +285,73 @@ export interface UIState {
     handbookOpen: boolean
     handbookSection: string | null
     onboardingOpen: boolean
-    theme: string
 }
 
+// ── Profile Types ──
+export interface ProfileVaultItem {
+    id: string;
+    film_id?: number;
+    filmId: number;
+    title: string;
+    poster_path: string | null;
+    year?: number | null;
+    formats: string[];
+    notes: string;
+    condition: string;
+    created_at?: string;
+    createdAt: string;
+}
+
+export interface FormatCount {
+    id: string;
+    label: string;
+    count: number;
+    color: string;
+}
+
+export interface ProfileLog {
+    id: string;
+    filmId: number;
+    title: string;
+    poster: string | null;
+    year: number | string | null | undefined;
+    rating: number;
+    review?: string | null | undefined;
+    status: string;
+    watchedDate?: string | null | undefined;
+    pullQuote?: string | null | undefined;
+    altPoster?: string | null | undefined;
+    physicalMedia?: string | null | undefined;
+    watchedWith?: string | null | undefined;
+    abandonedReason?: string | null | undefined;
+    createdAt: string;
+}
+
+export interface ProfileWatchlistItem {
+    id: number;
+    title: string;
+    poster_path: string | null;
+    year?: number | null;
+}
+
+export interface ProfileListFilm {
+    id: number;
+    title: string;
+    poster: string | null;
+}
+
+export interface ProfileList {
+    id: string;
+    title: string;
+    description: string;
+    isRanked: boolean;
+    isPrivate: boolean;
+    createdAt: string;
+    films: ProfileListFilm[];
+}
+
+export interface HalfLifeEntry {
+    count: number;
+    trajectory: 'ASCENDING' | 'DECAYING' | 'ETERNAL';
+    delta: number;
+}

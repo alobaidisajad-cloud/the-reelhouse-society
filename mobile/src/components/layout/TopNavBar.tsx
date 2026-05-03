@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback, memo } from 'react';
-import { View, Text, StyleSheet, Pressable, Platform, Dimensions } from 'react-native';
+import { View, StyleSheet, Pressable, Platform } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { Search, Plus, Bell, MessageSquareText } from 'lucide-react-native';
-import Animated, { useAnimatedStyle, withSpring, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, withSpring, useSharedValue, withTiming, withRepeat } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { MasterLogo } from '@/src/components/MasterLogo';
 import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors } from '@/src/theme/theme';
 import { useNotificationStore } from '@/src/stores/social';
 import { LinearGradient } from 'expo-linear-gradient';
 import { onScrollYChange } from '@/src/utils/scrollBridge';
@@ -44,6 +44,8 @@ const NavIconButton = memo(function NavIconButton({
       }}
       onPressOut={() => {
         scale.value = withSpring(1, { damping: 12, stiffness: 200 });
+      }}
+      onPress={() => {
         onPress();
       }}
       style={[styles.iconButton, accent && styles.iconButtonAccent, animatedStyle]}
@@ -54,12 +56,33 @@ const NavIconButton = memo(function NavIconButton({
         color={accent ? colors.sepia : colors.parchment}
         strokeWidth={accent ? 2.5 : 1.8}
       />
-      {badge && (
-        <View style={styles.badgeDot}>
-          <View style={styles.badgeDotInner} />
-        </View>
-      )}
+      {badge && <BreathingEmberBadge />}
     </AnimatedPressable>
+  );
+});
+
+// ── Breathtaking Nitrate Noir Breathing Ember ──
+const BreathingEmberBadge = memo(function BreathingEmberBadge() {
+  const alpha = useSharedValue(0.4);
+
+  useEffect(() => {
+    // Audit Fix #2: Remove infinite loop to allow UI thread idling
+    alpha.value = withRepeat(
+      withTiming(1, { duration: 1800 }),
+      4, // Finite pulse sequence (2 full pulses) instead of -1
+      true
+    );
+  }, [alpha]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: alpha.value,
+    transform: [{ scale: 1 + (alpha.value - 0.4) * 0.15 }],
+  }));
+
+  return (
+    <Animated.View style={[styles.badgeDot, animatedStyle]}>
+      <View style={styles.badgeDotInner} />
+    </Animated.View>
   );
 });
 
@@ -100,6 +123,12 @@ export const TopNavBar = memo(function TopNavBar() {
   const hasLoungeAccess = userRole === 'archivist' || userRole === 'auteur';
   const unreadCount = useNotificationStore((s) => s._unreadCount);
 
+  // ── Zero-Cost Memoized Routing ──
+  const onLogPress = useCallback(() => router.push('/log-modal' as any), [router]);
+  const onLoungePress = useCallback(() => router.push('/lounge' as any), [router]);
+  const onSearchPress = useCallback(() => router.push('/search-modal' as any), [router]);
+  const onNotifPress = useCallback(() => router.push('/notifications-modal' as any), [router]);
+
   return (
     <View style={styles.container}>
       <BlurView
@@ -107,7 +136,8 @@ export const TopNavBar = memo(function TopNavBar() {
         tint="dark"
         style={[
           styles.blur,
-          { paddingTop: Math.max(insets.top, 20), backgroundColor: `rgba(11,10,8,${scrollProgress * 0.7})` },
+          // D5-01 FIX: Android needs higher opacity to compensate for weaker BlurView
+          { paddingTop: Math.max(insets.top, 20), backgroundColor: `rgba(11,10,8,${scrollProgress * (Platform.OS === 'android' ? 0.92 : 0.7)})` },
         ]}
       >
         <View style={styles.navContent}>
@@ -115,13 +145,13 @@ export const TopNavBar = memo(function TopNavBar() {
           <View style={styles.sideCluster}>
             <NavIconButton
               icon={Plus}
-              onPress={() => router.push('/log-modal')}
+              onPress={onLogPress}
               accent
             />
             {hasLoungeAccess && (
               <NavIconButton
                 icon={MessageSquareText}
-                onPress={() => router.push('/lounge')}
+                onPress={onLoungePress}
                 size={19}
               />
             )}
@@ -136,12 +166,12 @@ export const TopNavBar = memo(function TopNavBar() {
           <View style={[styles.sideCluster, styles.rightCluster]}>
             <NavIconButton
               icon={Search}
-              onPress={() => router.push('/search-modal')}
+              onPress={onSearchPress}
               size={19}
             />
             <NavIconButton
               icon={Bell}
-              onPress={() => router.push('/notifications-modal')}
+              onPress={onNotifPress}
               size={19}
               badge={unreadCount > 0}
             />
@@ -228,12 +258,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.bloodReel,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 4,
+    elevation: 3,
   },
   badgeDotInner: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: colors.danger,
+    backgroundColor: colors.bloodReel,
   },
 
   // ── Premium gradient bottom line ──

@@ -6,6 +6,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { Image } from 'expo-image';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -52,10 +53,19 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     }, []);
 
     const spin = useCallback(() => {
-        if (!watchlist || watchlist.length < 2) return;
+        if (!watchlist || watchlist.length === 0) return;
         setPicking(true);
         setResult(null);
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+        // If exactly 1 film, resolve instantly without spin loop
+        if (watchlist.length === 1) {
+            setResult(watchlist[0]);
+            setReason(ORACLE_REASONS[Math.floor(Math.random() * ORACLE_REASONS.length)]);
+            setPicking(false);
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            return;
+        }
 
         const target = watchlist[Math.floor(Math.random() * watchlist.length)];
 
@@ -89,14 +99,14 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
         onClose?.();
         setResult(null);
         if (onSelect) {
-            onSelect(filmId);
+            onSelect(filmId as number);
         } else {
-            router.push(`/film/${filmId}`);
+            router.push(`/film/${filmId}` as never);
         }
     }, [result, onSelect, onClose, router]);
 
-    // Don't render if not visible or not enough films
-    if (!visible || !watchlist || watchlist.length < 2) return null;
+    // Don't render if not visible or empty
+    if (!visible || !watchlist || watchlist.length === 0) return null;
 
     const posterUri = (item: RouletteFilm | null) => {
         const path = item?.poster_path ?? item?.poster;
@@ -113,7 +123,9 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     {/* IDLE — Show prompt */}
                     {!picking && !result && (
                         <Animated.View entering={FadeIn.duration(400)} style={s.centerContent}>
+                            {/* eslint-disable-next-line react/no-unescaped-entities */}
                             <Text style={s.title}>The Oracle's Choice</Text>
+                            {/* eslint-disable-next-line react/no-unescaped-entities */}
                             <Text style={s.subtitle}>Can't decide? Let the Archive choose your next obsession.</Text>
                             <PressableScale style={s.spinBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="medium">
                                 <Text style={s.spinBtnText}>✦ Consult the Oracle</Text>
@@ -144,11 +156,12 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                             <PressableScale onPress={handleSelect} haptic>
                                 {posterUri(result) && (
                                     <View style={s.resultPosterWrap}>
-                                        <Image source={{ uri: posterUri(result)! }} style={s.poster} />
+                                        <Image source={{ uri: posterUri(result)! }} style={s.poster} cachePolicy="memory-disk" />
                                     </View>
                                 )}
                                 <Text style={s.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{result.title ?? result.name}</Text>
                             </PressableScale>
+                            {/* eslint-disable-next-line react/no-unescaped-entities */}
                             <Text style={s.resultReason}>"{reason}"</Text>
                             <PressableScale style={s.rerollBtn} onPress={spin} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic>
                                 <Text style={s.rerollText}>↻ RE-ROLL INCANTATION</Text>
@@ -157,7 +170,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                     )}
 
                     {/* Close button */}
-                    <PressableScale style={s.closeBtn} onPress={() => { Haptics.selectionAsync(); onClose?.(); }} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic>
+                    <PressableScale style={s.closeBtn} onPress={() => { onClose?.(); }} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic>
                         <Text style={s.closeBtnText}>✕</Text>
                     </PressableScale>
                 </Pressable>

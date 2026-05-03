@@ -13,32 +13,39 @@ export interface ToastPayload {
   message: string;
   type: ToastType;
   id: number;
+  action?: {
+    label: string;
+    onPress: () => void;
+  };
 }
 
 let _toastId = 0;
-let _listener: ((payload: ToastPayload) => void) | null = null;
+const _listeners = new Set<(payload: ToastPayload) => void>();
 
-export function setToastListener(fn: ((payload: ToastPayload) => void) | null) {
-  _listener = fn;
+export function setToastListener(fn: (payload: ToastPayload) => void) {
+  _listeners.add(fn);
+  return () => {
+    _listeners.delete(fn);
+  };
 }
 
-function emitToast(message: string, type: ToastType) {
+function emitToast(message: string, type: ToastType, action?: ToastPayload['action']) {
   _toastId++;
   if (type === 'error') {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
   } else {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
-  _listener?.({ message, type, id: _toastId });
+  _listeners.forEach(fn => fn({ message, type, id: _toastId, action }));
 }
 
 // ── Public API ──
 const reelToast = Object.assign(
   (msg: string) => emitToast(msg, 'info'),
   {
-    success: (msg: string) => emitToast(msg, 'success'),
-    error: (msg: string) => emitToast(msg, 'error'),
-    info: (msg: string) => emitToast(msg, 'info'),
+    success: (msg: string, action?: ToastPayload['action']) => emitToast(msg, 'success', action),
+    error: (msg: string, action?: ToastPayload['action']) => emitToast(msg, 'error', action),
+    info: (msg: string, action?: ToastPayload['action']) => emitToast(msg, 'info', action),
   }
 );
 

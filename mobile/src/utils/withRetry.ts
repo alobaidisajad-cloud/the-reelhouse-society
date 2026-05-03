@@ -15,6 +15,8 @@
  *   )
  */
 
+import { addBreadcrumb } from '../lib/sentry';
+
 interface RetryOptions {
     /** Maximum number of retry attempts (default 3) */
     maxRetries?: number
@@ -63,7 +65,9 @@ export async function withRetry<T>(
 
             // Don't retry if this error type shouldn't be retried
             if (!shouldRetry(error)) {
-                throw error
+                // E-02 AUDIT FIX: Log non-retryable rejections for server regression tracking
+                addBreadcrumb(`[withRetry] ${label} non-retryable error — skipping retry`, 'retry');
+                throw error;
             }
 
             // Don't retry if we've exhausted attempts

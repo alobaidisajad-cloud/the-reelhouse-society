@@ -1,27 +1,42 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, TextInput } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { SectionDivider } from '@/src/components/Decorative';
+import PressableScale from '@/src/components/PressableScale';
 import { useLocalSearchParams, router } from 'expo-router';
 import Markdown from 'react-native-markdown-display';
-import * as Haptics from 'expo-haptics';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
+import * as Haptics from 'expo-haptics';
 import { DossierDetail, DossierComment } from '@/src/types';
 
 export default function DossierReaderScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
     const { user } = useAuthStore();
+    const insets = useSafeAreaInsets();
+    
+    const keyboard = useAnimatedKeyboard();
+    const animatedContainerStyle = useAnimatedStyle(() => ({
+        paddingBottom: keyboard.height.value,
+    }));
     
     const [dossier, setDossier] = useState<DossierDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [certified, setCertified] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [certifyCount, setCertifyCount] = useState(0);
     const [comments, setComments] = useState<DossierComment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [posting, setPosting] = useState(false);
+
+    // Callback isolation: stabilize annotation input handler
+    const handleNewCommentChange = useCallback((text: string) => {
+        setNewComment(text);
+    }, []);
 
     useEffect(() => {
         async function fetchDossier() {
@@ -30,7 +45,7 @@ export default function DossierReaderScreen() {
                 // In a real scenario we'd query dispatch_dossiers
                 const { data, error } = await supabase
                     .from('dispatch_dossiers')
-                    .select('id, title, excerpt, full_content, author, author_username, user_id, created_at, views, certify_count')
+                    .select('id, title, excerpt, full_content, author_username, user_id, created_at, views, certify_count')
                     .eq('id', id)
                     .single();
                 
@@ -39,7 +54,7 @@ export default function DossierReaderScreen() {
                 
                 // Track view count (simplified)
                 const { error: rpcError } = await supabase.rpc('increment_dossier_views', { dossier_uuid: id });
-                if (rpcError) console.log(rpcError);
+                if (rpcError && __DEV__) console.warn('[Dossier] View increment RPC failed:', rpcError);
 
                 // Fetch Comments
                 const { data: commData } = await supabase
@@ -61,6 +76,7 @@ export default function DossierReaderScreen() {
                     setCertified(!!cert);
                 }
             } catch (err: unknown) {
+                if (__DEV__) console.warn('[Dossier] Fetch error:', err);
                 reelToast.error('Dossier not found or encrypted.');
                 router.back();
             } finally {
@@ -91,6 +107,7 @@ export default function DossierReaderScreen() {
                 setNewComment('');
             }
         } catch (err: unknown) { 
+            if (__DEV__) console.warn('[Dossier] Post comment error:', err);
             reelToast.error('Failed to annotate.');
         } finally {
             setPosting(false);
@@ -102,7 +119,9 @@ export default function DossierReaderScreen() {
         try {
             await supabase.from('dossier_comments').delete().eq('id', commentId);
             setComments(prev => prev.filter(c => c.id !== commentId));
-        } catch (err: unknown) {}
+        } catch (err: unknown) {
+            if (__DEV__) console.warn('[Dossier] Delete comment error:', err);
+        }
     };
 
     const handleCertify = async () => {
@@ -116,6 +135,7 @@ export default function DossierReaderScreen() {
         try {
             await supabase.rpc('toggle_dossier_certify', { dossier_uuid: id });
         } catch (err: unknown) {
+            if (__DEV__) console.warn('[Dossier] Certify error:', err);
             setCertified(wasCertified);
             setCertifyCount(prev => wasCertified ? prev + 1 : Math.max(0, prev - 1));
             reelToast.error('Certification failed');
@@ -133,15 +153,14 @@ export default function DossierReaderScreen() {
     if (!dossier) return null;
 
     return (
-        <KeyboardAvoidingView 
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
-            style={styles.container}
+        <Animated.View 
+            style={[styles.container, animatedContainerStyle]}
         >
             {/* Header / Nav */}
-            <View style={styles.navBlock}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} hitSlop={{top:10,bottom:10,left:10,right:10}}>
+            <View style={[styles.navBlock, { paddingTop: Math.max(insets.top + 10, 60) }]}>
+                <PressableScale onPress={() => router.back()} style={styles.backBtn} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic="selection" pressedScale={0.92}>
                     <Text style={styles.backIcon}>✕</Text>
-                </TouchableOpacity>
+                </PressableScale>
                 <Text style={styles.navMark}>REELHOUSE DIGITAL DOSSIER</Text>
             </View>
 
@@ -153,7 +172,7 @@ export default function DossierReaderScreen() {
                 <Text style={styles.title}>{dossier.title}</Text>
                 
                 <View style={styles.bylineBlock}>
-                    <Text style={styles.bylineText}>FILED BY <Text style={styles.authorHighlight}>@{dossier.author}</Text></Text>
+                    <Text style={styles.bylineText}>FILED BY <Text style={styles.authorHighlight}>@{dossier.author_username}</Text></Text>
                     {dossier.created_at && (
                         <Text style={styles.dateText}>{new Date(dossier.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</Text>
                     )}
@@ -168,16 +187,17 @@ export default function DossierReaderScreen() {
 
                 {/* Interactions */}
                 <View style={styles.actionBlock}>
-                    <TouchableOpacity 
+                    <PressableScale 
                         style={styles.actionBtn} 
                         onPress={handleCertify}
-                        activeOpacity={0.7}
+                        haptic="light"
+                        pressedScale={0.95}
                     >
                         <Text style={[styles.actionIcon, certified && styles.actionIconActive]}>✦</Text>
                         <Text style={[styles.actionLabel, certified && styles.actionLabelActive]}>
                             {certified ? 'CERTIFIED' : 'CERTIFY'}
                         </Text>
-                    </TouchableOpacity>
+                    </PressableScale>
                 </View>
 
                 <Text style={styles.endMark}>— ✦ —</Text>
@@ -188,16 +208,16 @@ export default function DossierReaderScreen() {
                     
                     {comments.map((c: DossierComment) => (
                         <View key={c.id} style={styles.commentItem}>
-                        <TouchableOpacity onPress={() => router.push(`/user/${c.username}`)} activeOpacity={0.7}>
+                        <PressableScale onPress={() => router.push(`/user/${c.username}`)} haptic="selection" pressedScale={0.98}>
                             <Text style={styles.commUsername}>@{c.username}</Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                         <Text style={styles.commBody}>{c.body}</Text>
                         <View style={styles.commMetaRow}>
                             <Text style={styles.commDate}>{new Date(c.created_at).toLocaleDateString()}</Text>
                             {user?.id === c.user_id && (
-                            <TouchableOpacity onPress={() => handleDeleteComment(c.id)}>
+                            <PressableScale onPress={() => handleDeleteComment(c.id)} haptic="heavy" pressedScale={0.95}>
                                 <Text style={styles.commDelete}>DELETE</Text>
-                            </TouchableOpacity>
+                            </PressableScale>
                             )}
                         </View>
                         </View>
@@ -210,21 +230,24 @@ export default function DossierReaderScreen() {
             </ScrollView>
 
             {/* Input Box */}
-            <View style={styles.inputRow}>
+            <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 12) }]}>
                 <TextInput
                     style={styles.input}
                     placeholder="Add an annotation..."
                     placeholderTextColor={colors.fog}
                     value={newComment}
-                    onChangeText={setNewComment}
+                    onChangeText={handleNewCommentChange}
                     multiline
                     maxLength={500}
+                    keyboardAppearance="dark"
+                    accessibilityLabel="Dossier annotation"
+                    selectionColor={'rgba(218,165,32,0.3)'}
                 />
-                <TouchableOpacity style={styles.postBtn} onPress={handlePostComment} disabled={!newComment.trim() || posting}>
+                <PressableScale style={styles.postBtn} onPress={handlePostComment} disabled={!newComment.trim() || posting} haptic="medium" pressedScale={0.95}>
                     <Text style={[styles.postBtnText, { opacity: newComment.trim() ? 1 : 0.5 }]}>POST</Text>
-                </TouchableOpacity>
+                </PressableScale>
             </View>
-        </KeyboardAvoidingView>
+        </Animated.View>
     );
 }
 
@@ -236,7 +259,6 @@ const styles = StyleSheet.create({
     navBlock: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingTop: 60,
         paddingBottom: 16,
         paddingHorizontal: 20,
         borderBottomWidth: StyleSheet.hairlineWidth,
@@ -353,7 +375,7 @@ const styles = StyleSheet.create({
     inputRow: {
         flexDirection: 'row', alignItems: 'center', padding: 12,
         borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash,
-        backgroundColor: colors.soot, paddingBottom: Platform.OS === 'ios' ? 32 : 12
+        backgroundColor: colors.soot
     },
     input: {
         flex: 1, backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash,

@@ -18,7 +18,7 @@ interface BackdropLog {
 interface BackdropUser {
     role?: string;
     tier?: string;
-    preferences?: { favorites?: Array<{ poster_path?: string | null }>; [key: string]: unknown } | null;
+    preferences?: { favorites?: { poster_path?: string | null }[]; [key: string]: unknown } | null;
 }
 
 export function ProfileBackdrop({ user, logs }: { user: BackdropUser; logs: BackdropLog[] }) {

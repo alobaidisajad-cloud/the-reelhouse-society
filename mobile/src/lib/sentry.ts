@@ -12,6 +12,7 @@
  */
 
 import * as Sentry from '@sentry/react-native';
+import { logger } from '../utils/logger';
 
 // ── Configuration ──
 const SENTRY_DSN = process.env.EXPO_PUBLIC_SENTRY_DSN ?? '';
@@ -23,7 +24,7 @@ const IS_DEV = __DEV__;
  */
 export function initSentry() {
   if (!SENTRY_DSN) {
-    if (IS_DEV) console.log('[Sentry] No DSN configured — skipping initialization');
+    logger.debug('[Sentry] No DSN configured — skipping initialization');
     return;
   }
 

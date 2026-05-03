@@ -1,28 +1,35 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView, Dimensions, Keyboard } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert } from 'react-native';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
 import Markdown from 'react-native-markdown-display';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Haptics from 'expo-haptics';
+import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatchStore } from '@/src/stores/content';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { colors, fonts, spacing } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 
-const { width } = Dimensions.get('window');
 
 export default function ComposeDossierScreen() {
-    const { edit } = useLocalSearchParams<{ edit?: string }>();
+    const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
     const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
     const canWrite = user?.role === 'auteur';
 
-    const [title, setTitle] = useState('');
-    const [content, setContent] = useState('');
+    const keyboard = useAnimatedKeyboard();
+    const animatedContainerStyle = useAnimatedStyle(() => ({
+        paddingBottom: keyboard.height.value,
+    }));
+
+    const [title, setTitle] = useState(initialTitle || '');
+    const [content, setContent] = useState(initialContent || '');
     const [isPublishing, setIsPublishing] = useState(false);
     const [isPreview, setIsPreview] = useState(false);
 
@@ -30,8 +37,10 @@ export default function ComposeDossierScreen() {
 
     useEffect(() => {
         if (!canWrite) {
-            reelToast('Auteur tier required');
-            router.back();
+            reelToast.error('Auteur tier required');
+            InteractionManager.runAfterInteractions(() => {
+                router.back();
+            });
         }
     }, [canWrite]);
 
@@ -54,10 +63,17 @@ export default function ComposeDossierScreen() {
         setIsPublishing(true);
 
         try {
-            const excerpt = content.trim().substring(0, 150) + (content.length > 150 ? '...' : '');
+            // Strip markdown formatting for the clean plaintext excerpt
+            const plainText = content.replace(/[#*_[\]()>-]/g, '').replace(/\n+/g, ' ').trim();
+            const excerpt = plainText.substring(0, 150) + (plainText.length > 150 ? '...' : '');
 
             if (edit) {
-                // Edit functionality reserved for future release
+                await useDispatchStore.getState().updateDossier(edit, {
+                    title: title.trim(),
+                    excerpt,
+                    fullContent: content.trim(),
+                });
+                reelToast.success('Dossier updated');
             } else {
                 await useDispatchStore.getState().addDossier({
                     title: title.trim(),
@@ -67,6 +83,7 @@ export default function ComposeDossierScreen() {
                 reelToast.success('Dossier published');
             }
             router.replace('/(tabs)/dispatch');
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (err) {
             reelToast.error('Transmission failed');
         } finally {
@@ -79,7 +96,16 @@ export default function ComposeDossierScreen() {
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
             
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
-                <PressableScale onPress={() => router.back()} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic>
+                <PressableScale onPress={() => {
+                    if (title.trim() || content.trim()) {
+                        Alert.alert('Discard Draft?', 'Your unsaved dossier will be lost.', [
+                            { text: 'Keep Writing', style: 'cancel' },
+                            { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+                        ]);
+                    } else {
+                        router.back();
+                    }
+                }} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic>
                     <Text style={styles.cancelBtn} numberOfLines={1}>CANCEL</Text>
                 </PressableScale>
                 <Text style={styles.headerTitle} numberOfLines={1}>THE WRITING ROOM</Text>
@@ -108,8 +134,8 @@ export default function ComposeDossierScreen() {
                     )}
                 </ScrollView>
             ) : (
-                <KeyboardAvoidingView style={styles.kavFlex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-                    <ScrollView style={styles.workspace} keyboardShouldPersistTaps="handled">
+                <Animated.View style={[styles.kavFlex, animatedContainerStyle]}>
+                    <ScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
                         <TextInput
                             style={styles.titleInput}
                             placeholder="Headline..."
@@ -119,6 +145,8 @@ export default function ComposeDossierScreen() {
                             maxLength={100}
                             cursorColor={colors.sepia}
                             selectionColor="rgba(139,105,20,0.3)"
+                            keyboardAppearance="dark"
+                            accessibilityLabel="Dossier headline"
                         />
                         <TextInput
                             ref={inputRef}
@@ -131,6 +159,8 @@ export default function ComposeDossierScreen() {
                             textAlignVertical="top"
                             cursorColor={colors.sepia}
                             selectionColor="rgba(139,105,20,0.3)"
+                            keyboardAppearance="dark"
+                            accessibilityLabel="Dossier content body"
                         />
                     </ScrollView>
 
@@ -171,7 +201,7 @@ export default function ComposeDossierScreen() {
                             <Text style={styles.publishBtnText} numberOfLines={1}>{isPublishing ? 'TRANSMITTING' : 'PUBLISH'}</Text>
                         </PressableScale>
                     </BlurView>
-                </KeyboardAvoidingView>
+                </Animated.View>
             )}
         </View>
     );

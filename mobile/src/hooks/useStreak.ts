@@ -17,59 +17,59 @@ export function useStreak(logs: FilmLog[]): StreakResult {
   return useMemo(() => {
     if (logs.length === 0) return { currentStreak: 0, longestStreak: 0, isActive: false, lastLogDate: null }
 
-    // Get unique log dates sorted descending
+    // Get unique log dates
     const dateSet = new Set<string>()
     logs.forEach(log => {
       const d = (log.watchedDate || log.created_at || log.loggedAt || '').slice(0, 10)
       if (d && d.length === 10) dateSet.add(d)
     })
 
-    const dates = Array.from(dateSet).sort().reverse()
-    if (dates.length === 0) return { currentStreak: 0, longestStreak: 0, isActive: false, lastLogDate: null }
+    // #8 AUDIT FIX: Single sort pass — compute both streaks from one ascending array
+    const sorted = Array.from(dateSet).sort()
+    if (sorted.length === 0) return { currentStreak: 0, longestStreak: 0, isActive: false, lastLogDate: null }
 
-    const today = new Date().toISOString().slice(0, 10)
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10)
+    // Use local date string to avoid UTC/timezone confusion
+    const now = new Date()
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+    const yd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1)
+    const yesterday = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, '0')}-${String(yd.getDate()).padStart(2, '0')}`
 
-    // Calculate current streak (must include today or yesterday)
-    let currentStreak = 0
-    const startDate = dates[0]
-    const isActive = startDate === today
-
-    if (startDate === today || startDate === yesterday) {
-      currentStreak = 1
-      for (let i = 1; i < dates.length; i++) {
-        const prev = new Date(dates[i - 1])
-        const curr = new Date(dates[i])
-        const diffDays = Math.round((prev.getTime() - curr.getTime()) / 86400000)
-        if (diffDays === 1) {
-          currentStreak++
-        } else {
-          break
-        }
-      }
+    /** String-safe diff: returns number of days between two YYYY-MM-DD strings */
+    const daysBetween = (a: string, b: string): number => {
+      // Parse as noon local to avoid DST edge cases entirely
+      const da = new Date(a + 'T12:00:00')
+      const db = new Date(b + 'T12:00:00')
+      return Math.round((da.getTime() - db.getTime()) / 86400000)
     }
 
-    // Calculate longest streak
+    // Compute all streak segments in a single forward pass
     let longestStreak = 1
     let streak = 1
-    const sorted = Array.from(dateSet).sort()
+    // Track the end index + length of the streak that reaches the most recent date
+    let tailStreak = 1
     for (let i = 1; i < sorted.length; i++) {
-      const prev = new Date(sorted[i - 1])
-      const curr = new Date(sorted[i])
-      const diff = Math.round((curr.getTime() - prev.getTime()) / 86400000)
+      const diff = daysBetween(sorted[i], sorted[i - 1])
       if (diff === 1) {
         streak++
         longestStreak = Math.max(longestStreak, streak)
       } else {
         streak = 1
       }
+      // If this is the last element, capture the tail streak
+      if (i === sorted.length - 1) tailStreak = streak
     }
+
+    const lastDate = sorted[sorted.length - 1]
+    const isActive = lastDate === today
+
+    // Current streak is the tail streak only if it touches today or yesterday
+    const currentStreak = (lastDate === today || lastDate === yesterday) ? tailStreak : 0
 
     return {
       currentStreak,
       longestStreak: Math.max(longestStreak, currentStreak),
       isActive,
-      lastLogDate: dates[0] || null,
+      lastLogDate: lastDate || null,
     }
   }, [logs])
 }

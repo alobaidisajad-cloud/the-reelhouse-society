@@ -2,11 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { Tv } from 'lucide-react-native';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
-
-/** Warm sepia-toned blurhash */
-const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
 
 interface Provider {
   provider_id: number;
@@ -21,16 +18,13 @@ interface CountryProviders {
   link?: string;
 }
 
-export function WatchProviders({ providers }: { providers: Record<string, CountryProviders> | null }) {
-  const countryData = providers ? (providers['US'] ?? providers[Object.keys(providers)[0]]) : null;
-  const flatrate = countryData?.flatrate ?? [];
-  const rent = countryData?.rent ?? [];
-  const buy = countryData?.buy ?? [];
-  const hasAny = flatrate.length > 0 || rent.length > 0 || buy.length > 0;
-  const link = countryData?.link;
+const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: Provider, providerLink?: string }) {
+  const handlePress = React.useCallback(() => {
+    if (providerLink) Linking.openURL(providerLink);
+  }, [providerLink]);
 
-  const ProviderLogo = ({ p, providerLink }: { p: Provider, providerLink: string }) => (
-    <PressableScale onPress={() => Linking.openURL(providerLink)} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+  return (
+    <PressableScale onPress={handlePress} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
       {p.logo_path ? (
         <Image
           source={{ uri: `https://image.tmdb.org/t/p/original${p.logo_path}` }}
@@ -47,6 +41,19 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
       )}
     </PressableScale>
   );
+});
+
+export const WatchProviders = React.memo(function WatchProviders({ providers }: { providers: Record<string, CountryProviders> | null }) {
+  const countryData = providers ? (providers['US'] ?? providers[Object.keys(providers)[0]]) : null;
+  const flatrate = countryData?.flatrate ?? [];
+  const rent = countryData?.rent ?? [];
+  const buy = countryData?.buy ?? [];
+  const hasAny = flatrate.length > 0 || rent.length > 0 || buy.length > 0;
+  const link = countryData?.link;
+
+  const handleViewAll = React.useCallback(() => {
+    if (link) Linking.openURL(link);
+  }, [link]);
 
   return (
     <View style={s.container}>
@@ -60,6 +67,7 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
       {!hasAny ? (
         <View style={s.emptyState}>
           <Text style={s.emptyDisplay}>Not Currently Streaming</Text>
+          {/* eslint-disable-next-line react/no-unescaped-entities */}
           <Text style={s.emptyBody}>This film isn't available on any streaming platform right now.</Text>
         </View>
       ) : (
@@ -100,7 +108,7 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
           <View style={s.footer}>
             <Text style={s.footerText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>DATA BY JUSTWATCH</Text>
             {link && (
-              <PressableScale onPress={() => Linking.openURL(link)} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+              <PressableScale onPress={handleViewAll} haptic="light" hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
                 <Text style={s.footerLink} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>VIEW ALL OPTIONS →</Text>
               </PressableScale>
             )}
@@ -109,7 +117,7 @@ export function WatchProviders({ providers }: { providers: Record<string, Countr
       )}
     </View>
   );
-}
+});
 
 const s = StyleSheet.create({
   container: {

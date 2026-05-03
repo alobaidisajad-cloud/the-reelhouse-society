@@ -18,7 +18,9 @@
  */
 
 import { QueryClient } from '@tanstack/react-query';
-import { storage } from '../stores/auth';
+// M-06 AUDIT FIX: Import from lightweight mmkv-storage instead of heavyweight auth.ts
+// to avoid circular dependency risk (auth -> queryClient -> auth)
+import { storage } from '../stores/mmkv-storage';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 
 // ── Query Client Configuration ──────────────────────────────
@@ -39,11 +41,22 @@ export const queryClient = new QueryClient({
 // Direct integration with the C++ MMKV instance — no middleware,
 // no AsyncStorage SQLite bridge. ~100x faster than the old approach.
 const CACHE_KEY = 'REELHOUSE_QUERY_CACHE';
+// H-03 AUDIT FIX: Cap persisted cache to prevent cold-start lag for power users
+const MAX_CACHE_AGE_MS = 24 * 60 * 60 * 1000; // 24 hours — stale cache is worse than no cache
+const MAX_CACHE_SIZE_BYTES = 2 * 1024 * 1024;  // 2 MB — prevents JS thread parse stalls
 
 export const mmkvPersister: Persister = {
   persistClient: async (client: PersistedClient) => {
     try {
-      storage.set(CACHE_KEY, JSON.stringify(client));
+      const serialized = JSON.stringify(client);
+      // #3 AUDIT FIX: Use conservative byte estimate (UTF-16 → UTF-8) instead of string.length
+      // string.length counts code units, not bytes — multi-byte chars (emoji, CJK) could double actual size
+      const estimatedBytes = serialized.length * 2;
+      if (estimatedBytes > MAX_CACHE_SIZE_BYTES) {
+        if (__DEV__) console.warn(`[QueryCache] Skipping persist — ${(estimatedBytes / 1024).toFixed(0)} KB exceeds 2 MB limit`);
+        return;
+      }
+      storage.set(CACHE_KEY, serialized);
     } catch {
       // Silently fail — app works without cache, just slower on cold start
     }
@@ -51,7 +64,14 @@ export const mmkvPersister: Persister = {
   restoreClient: async () => {
     try {
       const data = storage.getString(CACHE_KEY);
-      return data ? (JSON.parse(data) as PersistedClient) : undefined;
+      if (!data) return undefined;
+      const parsed = JSON.parse(data) as PersistedClient;
+      // H-03 AUDIT FIX: Discard cache if older than 24 hours
+      if (parsed.timestamp && Date.now() - parsed.timestamp > MAX_CACHE_AGE_MS) {
+        storage.delete(CACHE_KEY);
+        return undefined;
+      }
+      return parsed;
     } catch {
       // Corrupted cache — start fresh
       storage.delete(CACHE_KEY);
@@ -62,3 +82,4 @@ export const mmkvPersister: Persister = {
     storage.delete(CACHE_KEY);
   },
 };
+

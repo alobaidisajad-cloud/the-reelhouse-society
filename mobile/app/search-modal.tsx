@@ -12,10 +12,10 @@
  */
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
-  View, Text, TextInput, StyleSheet, Pressable, Platform,
-  FlatList, KeyboardAvoidingView, ActivityIndicator,
-  ScrollView, TouchableOpacity, Keyboard,
+  View, Text, TextInput, StyleSheet, Platform, ActivityIndicator,
+  ScrollView, Keyboard, InteractionManager,
 } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
@@ -23,21 +23,33 @@ import {
   Search, X, Film, Users, Bookmark, ScrollText, Clapperboard,
   User, ArrowRight, Megaphone, Star,
 } from 'lucide-react-native';
-import Animated, { FadeIn, FadeInDown, FadeOut } from 'react-native-reanimated';
+// M-08 AUDIT FIX: Cleaned unused Reanimated exports
+import Animated, { FadeIn, FadeInDown, useSharedValue, useAnimatedStyle, withTiming, useAnimatedProps, useAnimatedKeyboard } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { colors, fonts, effects } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
+import { ToastOverlay } from '@/src/components/ToastOverlay';
 import { tmdb } from '@/src/lib/tmdb';
 import { supabase } from '@/src/lib/supabase';
 
+// Module-scoped: prevents remount on every render cycle
+const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
+
 interface ProfileRow { id: string; username: string; avatar_url?: string; role?: string }
-interface LogRow { id: string; film_title: string; review?: string; rating?: number; username?: string; role?: string; poster_path?: string; created_at?: string }
-interface ListRow { id: string; title: string; description?: string; is_private?: boolean; created_at?: string }
+interface LogRow { id: string; film_title: string; review?: string; rating?: number; username?: string; role?: string; poster_path?: string; created_at?: string; status?: string; abandoned_reason?: string | null }
+interface ListRow {
+  id: string;
+  title: string;
+  description: string;
+  is_private: boolean;
+  is_ranked: boolean;
+  created_at: string;
+}
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w92';
 
-/** Warm sepia-toned blurhash — used as placeholder while images load */
-const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
+
 
 // ═══════════════════════════════════════════════════════════════
 // TABS
@@ -84,10 +96,93 @@ const TYPE_COLOR: Record<string, { bg: string; border: string }> = {
   list:     { bg: 'rgba(107,26,10,0.08)',    border: 'rgba(107,26,10,0.20)' },
 };
 
+// ═══════════════════════════════════════════════════════════════
+// MEMOIZED ROW COMPONENT
+// ═══════════════════════════════════════════════════════════════
+ 
+const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR; index: number; onPress: (r: SR) => void }) => {
+  const tc = TYPE_COLOR[item.type] || TYPE_COLOR.film;
+  const isPerson = item.type === 'actor' || item.type === 'director' || item.type === 'user';
+  // L-02 AUDIT FIX: Track if this row has already animated to prevent
+  // FlashList recycling from re-triggering the FadeInDown on every scroll
+  const hasAnimated = React.useRef(false);
+  const entering = hasAnimated.current
+    ? undefined
+    : FadeInDown.duration(250).delay(Math.min(index * 25, 150)).withCallback(() => {
+        hasAnimated.current = true;
+      });
+
+  return (
+    <Animated.View entering={entering}>
+      <PressableScale
+        style={st.row}
+        onPress={() => onPress(item)}
+        haptic="light"
+        pressedScale={0.97}
+        accessibilityRole="button"
+        accessibilityLabel={`Go to ${item.title}${item.subtitle ? `, ${item.subtitle}` : ''}`}
+        accessibilityHint="Double tap to view details"
+      >
+        <View style={[st.badge, { backgroundColor: tc.bg, borderColor: tc.border }]}>
+          <Text style={st.badgeGlyph}>{TYPE_GLYPH[item.type]}</Text>
+        </View>
+
+        <View style={[st.rowImg, isPerson && st.rowImgRound]}>
+          {item.image ? (
+            <Image source={{ uri: item.image }} style={st.img} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={150} />
+          ) : (
+            <View style={st.imgEmpty}>
+              {item.type === 'list' ? <Bookmark size={14} color={colors.fog} /> :
+               item.type === 'log' ? <ScrollText size={14} color={colors.fog} /> :
+               item.type === 'user' ? <User size={14} color={colors.fog} /> :
+               <Clapperboard size={14} color={colors.fog} />}
+            </View>
+          )}
+        </View>
+
+        <View style={st.rowText}>
+          <Text style={st.rowTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.title}</Text>
+
+          <View style={st.rowSubRow}>
+            <Text style={st.rowSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.subtitle}</Text>
+            {item.rating ? (
+              <Text style={st.rowRating}>{'◉'.repeat(Math.min(item.rating, 5))}</Text>
+            ) : null}
+            {item.extra && item.type !== 'log' ? (
+              <Text style={st.rowExtra} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
+            ) : null}
+          </View>
+
+          {item.type === 'log' && item.extra ? (
+            <Text style={st.rowExcerpt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
+          ) : null}
+
+          {(item.type === 'user' || item.type === 'log') && item.role && ['auteur', 'archivist'].includes(item.role) ? (
+            <Text style={[
+              st.rolePill,
+              item.role === 'auteur' && { color: '#D4A520', backgroundColor: 'rgba(212,165,32,0.12)' },
+              item.role === 'archivist' && { color: colors.sepia, backgroundColor: 'rgba(139,105,20,0.10)' },
+            ]}>
+              {item.role === 'auteur' ? '★ AUTEUR' : '✦ ARCHIVIST'}
+            </Text>
+          ) : null}
+        </View>
+
+        <ArrowRight size={12} color={colors.ash} style={st.rowArrow} />
+      </PressableScale>
+    </Animated.View>
+  );
+});
+
 export default function SearchModal() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const inputRef = useRef<TextInput>(null);
+
+  const keyboard = useAnimatedKeyboard();
+  const animatedContainerStyle = useAnimatedStyle(() => ({
+    paddingBottom: keyboard.height.value,
+  }));
 
   const [query, setQuery] = useState('');
   const [tab, setTab] = useState<FilterTab>('all');
@@ -102,16 +197,51 @@ export default function SearchModal() {
   const [logs, setLogs] = useState<SR[]>([]);
   const [lists, setLists] = useState<SR[]>([]);
 
-  // Auto-focus
+  const listContentStyle = useMemo(() => ({
+    paddingTop: 4,
+    paddingBottom: Math.max(insets.bottom, 20) + 20
+  }), [insets.bottom]);
+
+  // ── Breathing Ember (Scanning) ──
+  const searchEmberOpacity = useSharedValue(0.5);
   useEffect(() => {
-    const t = setTimeout(() => inputRef.current?.focus(), 100);
-    return () => clearTimeout(t);
+    if (searching) {
+      searchEmberOpacity.value = withTiming(1, { duration: 600 });
+    } else {
+      searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searching]);
+
+  const animatedSearchProps = useAnimatedProps(() => ({
+    color: searching ? colors.bloodReel : colors.sepia,
+  }));
+  const animatedSearchStyle = useAnimatedStyle(() => ({
+    opacity: searchEmberOpacity.value,
+  }));
+
+  const handleQueryChange = useCallback((text: string) => {
+    setQuery(text);
+  }, []);
+
+  // Auto-focus (Physics Sync)
+  useEffect(() => {
+    const interaction = InteractionManager.runAfterInteractions(() => {
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+    });
+    return () => interaction.cancel();
   }, []);
 
   // ═══════════════════════════════════════════════════════════════
   // SEARCH ENGINE — parallel across all sources
+  // Race-condition guard: searchVersion prevents stale responses
+  // from overwriting fresher results during rapid typing.
   // ═══════════════════════════════════════════════════════════════
-  const performSearch = useCallback(async (q: string) => {
+  const searchVersionRef = useRef(0);
+
+  const performSearch = useCallback(async (q: string, version: number) => {
     if (!q.trim()) {
       setFilms([]); setActors([]); setDirectors([]); setUsers([]); setLogs([]); setLists([]);
       setSearched(false);
@@ -132,19 +262,22 @@ export default function SearchModal() {
         .limit(15),
       supabase
         .from('logs')
-        .select('id, film_title, review, rating, username, role, poster_path, created_at')
+        .select('id, film_title, review, rating, username, role, poster_path, status, abandoned_reason, created_at')
         .or(`film_title.ilike.%${safeText}%,review.ilike.%${safeText}%,username.ilike.%${safeText}%`)
         .not('review', 'is', null)
         .order('created_at', { ascending: false })
         .limit(20),
       supabase
         .from('lists')
-        .select('id, title, description, is_private, created_at')
+        .select('id, title, description, is_private, is_ranked, created_at')
         .or(`title.ilike.%${safeText}%,description.ilike.%${safeText}%`)
         .eq('is_private', false)
         .order('created_at', { ascending: false })
         .limit(12),
     ]);
+
+    // Stale guard: if a newer search was initiated, discard these results
+    if (version !== searchVersionRef.current) return;
 
     // ── Parse TMDB ──
     if (tmdbRes.status === 'fulfilled') {
@@ -204,7 +337,9 @@ export default function SearchModal() {
         image: l.poster_path ? `${TMDB_IMG}${l.poster_path}` : null,
         rating: l.rating,
         role: l.role,
-        extra: l.review ? `"${l.review.replace(/<[^>]+>/g, '').trim().slice(0, 80)}…"` : undefined,
+        extra: l.status === 'abandoned' 
+          ? `[ABANDONED${l.abandoned_reason ? ` — ${l.abandoned_reason.toUpperCase()}` : ''}] ${l.review ? l.review.replace(/<[^>]+>/g, '').trim().slice(0, 50) + '…' : ''}`
+          : (l.review ? `"${l.review.replace(/<[^>]+>/g, '').trim().slice(0, 80)}…"` : undefined),
         _nav: `/log/${l.id}`,
       })));
     }
@@ -214,7 +349,9 @@ export default function SearchModal() {
       setLists((listsRes.value.data ?? []).map((p: ListRow) => ({
         id: `list-${p.id}`, type: 'list',
         title: p.title ?? 'Untitled Stack',
-        subtitle: p.description ? p.description.slice(0, 60) : 'PUBLIC STACK',
+        subtitle: p.description 
+            ? (p.is_ranked ? `✦ RANKED · ${p.description.slice(0, 50)}` : p.description.slice(0, 60))
+            : (p.is_ranked ? '✦ RANKED STACK' : 'PUBLIC STACK'),
         image: null,
         _nav: `/stacks/${p.id}`,
       })));
@@ -223,7 +360,7 @@ export default function SearchModal() {
     setSearching(false);
   }, []);
 
-  // Debounce
+  // Debounce — increments search version to invalidate in-flight stale responses
   useEffect(() => {
     if (!query.trim()) {
       setFilms([]); setActors([]); setDirectors([]); setUsers([]); setLogs([]); setLists([]);
@@ -231,8 +368,10 @@ export default function SearchModal() {
       return;
     }
     setSearching(true);
-    const t = setTimeout(() => performSearch(query), 300);
+    const version = ++searchVersionRef.current;
+    const t = setTimeout(() => performSearch(query, version), 500);
     return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   // ═══════════════════════════════════════════════════════════════
@@ -274,96 +413,33 @@ export default function SearchModal() {
   // ═══════════════════════════════════════════════════════════════
   const onPress = useCallback((r: SR) => {
     Haptics.selectionAsync();
-    if (r._nav) router.push(r._nav as `/${string}`);
+    if (r._nav) {
+      router.dismiss();
+      InteractionManager.runAfterInteractions(() => {
+        router.push(r._nav as any);
+      });
+    }
   }, [router]);
-
-  // ═══════════════════════════════════════════════════════════════
-  // RENDER RESULT ROW
-  // ═══════════════════════════════════════════════════════════════
-  const renderRow = useCallback(({ item, index }: { item: SR; index: number }) => {
-    const tc = TYPE_COLOR[item.type] || TYPE_COLOR.film;
-    const isPerson = item.type === 'actor' || item.type === 'director' || item.type === 'user';
-
-    return (
-      <Animated.View entering={FadeInDown.duration(250).delay(Math.min(index * 25, 150))}>
-        <Pressable
-          style={({ pressed }) => [st.row, pressed && st.rowPressed]}
-          onPress={() => onPress(item)}
-        >
-          {/* Type badge */}
-          <View style={[st.badge, { backgroundColor: tc.bg, borderColor: tc.border }]}>
-            <Text style={st.badgeGlyph}>{TYPE_GLYPH[item.type]}</Text>
-          </View>
-
-          {/* Image */}
-          <View style={[st.rowImg, isPerson && st.rowImgRound]}>
-            {item.image ? (
-              <Image source={{ uri: item.image }} style={st.img} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={150} />
-            ) : (
-              <View style={st.imgEmpty}>
-                {item.type === 'list' ? <Bookmark size={14} color={colors.fog} /> :
-                 item.type === 'log' ? <ScrollText size={14} color={colors.fog} /> :
-                 item.type === 'user' ? <User size={14} color={colors.fog} /> :
-                 <Clapperboard size={14} color={colors.fog} />}
-              </View>
-            )}
-          </View>
-
-          {/* Text */}
-          <View style={st.rowText}>
-            <Text style={st.rowTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.title}</Text>
-
-            <View style={st.rowSubRow}>
-              <Text style={st.rowSub} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.subtitle}</Text>
-              {item.rating ? (
-                <Text style={st.rowRating}>{'◉'.repeat(Math.min(item.rating, 5))}</Text>
-              ) : null}
-              {item.extra && item.type !== 'log' ? (
-                <Text style={st.rowExtra} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
-              ) : null}
-            </View>
-
-            {/* Log excerpt */}
-            {item.type === 'log' && item.extra ? (
-              <Text style={st.rowExcerpt} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{item.extra}</Text>
-            ) : null}
-
-            {/* User/log role badge */}
-            {(item.type === 'user' || item.type === 'log') && item.role && ['auteur', 'archivist'].includes(item.role) ? (
-              <Text style={[
-                st.rolePill,
-                item.role === 'auteur' && { color: '#D4A520', backgroundColor: 'rgba(212,165,32,0.12)' },
-                item.role === 'archivist' && { color: colors.sepia, backgroundColor: 'rgba(139,105,20,0.10)' },
-              ]}>
-                {item.role === 'auteur' ? '★ AUTEUR' : '✦ ARCHIVIST'}
-              </Text>
-            ) : null}
-          </View>
-
-          <ArrowRight size={12} color={colors.ash} style={{ marginLeft: 6 }} />
-        </Pressable>
-      </Animated.View>
-    );
-  }, [onPress]);
 
   // ═══════════════════════════════════════════════════════════════
   // JSX
   // ═══════════════════════════════════════════════════════════════
   return (
-    <KeyboardAvoidingView style={st.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <Animated.View style={[st.root, animatedContainerStyle]}>
       <BlurView intensity={Platform.OS === 'ios' ? 55 : 100} tint="dark" style={StyleSheet.absoluteFillObject} />
+      <ToastOverlay />
 
       {/* ── SEARCH BAR ── */}
       <View style={[st.header, { paddingTop: Math.max(insets.top, 20) + 4 }]}>
         <View style={st.inputWrap}>
-          <Search size={15} color={colors.sepia} style={{ marginLeft: 12, marginRight: 8 }} />
+          <AnimatedSearchIcon size={15} animatedProps={animatedSearchProps} style={[animatedSearchStyle, { marginLeft: 12, marginRight: 8 }]} />
           <TextInput
             ref={inputRef}
             style={st.input}
             placeholder="Search the archives..."
             placeholderTextColor={colors.fog}
             value={query}
-            onChangeText={setQuery}
+            onChangeText={handleQueryChange}
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="search"
@@ -374,14 +450,14 @@ export default function SearchModal() {
             onSubmitEditing={() => Keyboard.dismiss()}
           />
           {query.length > 0 && (
-            <Pressable onPress={() => setQuery('')} style={st.clearBtn} hitSlop={{top: 15, right: 15, bottom: 15, left: 15}} accessibilityRole="button" accessibilityLabel="Clear search">
+            <PressableScale onPress={() => setQuery('')} style={st.clearBtn} hitSlop={{top: 15, right: 15, bottom: 15, left: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Clear search">
               <X size={14} color={colors.fog} />
-            </Pressable>
+            </PressableScale>
           )}
         </View>
-        <Pressable onPress={() => router.back()} style={st.cancelWrap} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close search">
+        <PressableScale onPress={() => router.back()} style={st.cancelWrap} hitSlop={12} haptic="light" accessibilityRole="button" accessibilityLabel="Close search">
           <Text style={st.cancelText}>Cancel</Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
       {/* ── FILTER TABS ── */}
@@ -398,12 +474,12 @@ export default function SearchModal() {
               const c = counts[t.key];
               const Icon = t.icon;
               return (
-                <TouchableOpacity
+                <PressableScale
                   key={t.key}
                   style={[st.tabBtn, active && st.tabActive]}
                   onPress={() => { Haptics.selectionAsync(); setTab(t.key); }}
-                  activeOpacity={0.7}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  haptic="selection"
                 >
                   <Icon size={11} color={active ? colors.ink : colors.fog} strokeWidth={active ? 2.5 : 1.5} />
                   <Text style={[st.tabText, active && st.tabTextActive]}>{t.label}</Text>
@@ -414,7 +490,7 @@ export default function SearchModal() {
                       </Text>
                     </View>
                   )}
-                </TouchableOpacity>
+                </PressableScale>
               );
             })}
           </ScrollView>
@@ -429,7 +505,7 @@ export default function SearchModal() {
       )}
 
       {/* ── RESULTS ── */}
-      <View style={{ flex: 1 }}>
+      <View style={st.resultsWrap}>
         {/* Pre-search */}
         {!searched && !searching && (
           <Animated.View entering={FadeIn} style={st.center}>
@@ -459,20 +535,18 @@ export default function SearchModal() {
 
         {/* Results */}
         {filtered.length > 0 && (
-          <FlatList
+          <FlashList
             data={filtered}
             keyExtractor={(r) => r.id}
-            renderItem={renderRow}
-            contentContainerStyle={{ paddingTop: 4, paddingBottom: Math.max(insets.bottom, 20) + 20 }}
+            renderItem={({ item, index }) => <SearchResultRow item={item} index={index} onPress={onPress} />}
+            contentContainerStyle={listContentStyle}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
-            initialNumToRender={12}
-            maxToRenderPerBatch={8}
-            windowSize={5}
+            estimatedItemSize={72}
           />
         )}
       </View>
-    </KeyboardAvoidingView>
+    </Animated.View>
   );
 }
 
@@ -536,7 +610,6 @@ const st = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: 'rgba(139,105,20,0.05)',
   },
-  rowPressed: { backgroundColor: 'rgba(139,105,20,0.04)' },
 
   badge: {
     width: 20, height: 20, borderRadius: 3,
@@ -569,6 +642,8 @@ const st = StyleSheet.create({
     color: colors.fog, paddingHorizontal: 5, paddingVertical: 1.5,
     borderRadius: 2, alignSelf: 'flex-start', overflow: 'hidden', marginTop: 3,
   },
+  rowArrow: { marginLeft: 6 },
+  resultsWrap: { flex: 1 },
 
   // Center states
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
@@ -579,3 +654,6 @@ const st = StyleSheet.create({
     textAlign: 'center', lineHeight: 18, maxWidth: 280,
   },
 });
+
+
+SearchResultRow.displayName = 'SearchResultRow';

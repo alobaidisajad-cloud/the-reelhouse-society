@@ -1,28 +1,31 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { colors, fonts, effects } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 interface Props {
   confirmedEmail: string;
   resending: boolean;
   onResend: () => void;
   onClose: () => void;
+  resendCooldown?: number;
 }
 
-export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, onClose }: Props) {
+export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, onClose, resendCooldown = 0 }: Props) {
   return (
     <View style={s.container}>
       <View style={s.confirmationWrap}>
         <Animated.View entering={FadeIn.duration(600).reduceMotion(ReduceMotion.Never)} style={s.confirmationContent}>
           {/* Close */}
-          <TouchableOpacity
+          <PressableScale
             style={s.closeBtn}
             onPress={onClose}
             hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+            haptic="light"
           >
             <Text style={s.closeText}>✕</Text>
-          </TouchableOpacity>
+          </PressableScale>
 
           {/* Floating mail icon */}
           <View style={s.confirmIconWrap}>
@@ -39,25 +42,29 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
           </View>
           <Text style={s.confirmInstructions}>
             CLICK THE LINK IN YOUR EMAIL TO COMPLETE YOUR ENROLLMENT.{"\n"}
+            {/* eslint-disable-next-line react/no-unescaped-entities */}
             CHECK YOUR SPAM FOLDER IF IT DOESN'T ARRIVE WITHIN 2 MINUTES.
           </Text>
 
           {/* Resend button */}
-          <TouchableOpacity
-            style={[s.confirmResendBtn, resending && s.submitDisabled]}
+          <PressableScale
+            style={[s.confirmResendBtn, (resending || resendCooldown > 0) && s.submitDisabled]}
             onPress={onResend}
-            disabled={resending}
-            activeOpacity={0.7} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            disabled={resending || resendCooldown > 0}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            pressedScale={0.97}
           >
             {resending ? (
               <View style={s.submitLoading}>
                 <ActivityIndicator size="small" color={colors.bone} />
                 <Text style={s.confirmResendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SENDING...</Text>
               </View>
+            ) : resendCooldown > 0 ? (
+              <Text style={s.confirmResendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>RESEND IN {resendCooldown}s</Text>
             ) : (
               <Text style={s.confirmResendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>↻  RESEND LINK</Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
 
           <Text style={s.confirmAutoNote}>
             THIS SCREEN WILL AUTOMATICALLY LOG YOU IN ONCE CONFIRMED.

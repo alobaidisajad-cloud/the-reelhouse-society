@@ -1,14 +1,17 @@
 /**
  * PaywallModal — Membership tier upgrade modal.
  */
-import { View, Text, StyleSheet, TouchableOpacity, Modal } from 'react-native';
+import { View, Text, StyleSheet, Modal, InteractionManager } from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { colors, fonts } from '@/src/theme/theme';
 
+import { useRouter } from 'expo-router';
+import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
+
+// C-05 AUDIT FIX: Pricing now matches the single source of truth in membership.tsx
 const TIERS = [
-    { name: 'ARCHIVIST', price: '$4.99/mo', features: ['Full analytics & insights', 'CSV export', 'Priority support', 'Unlimited lists'] },
-    { name: 'AUTEUR', price: '$9.99/mo', features: ['Everything in Archivist', 'Projector Room', 'Nightly Programmes', 'Profile backdrop', 'Badge of Honor'] },
+    { name: 'ARCHIVIST', price: '$1.99/mo', features: ['The Editorial Desk', 'The Physical Archive', 'The Vault (Private Notes)', 'Exclusive Animated Gold Borders', 'The Lounge (Cinema Chat)'] },
+    { name: 'AUTEUR', price: '$4.99/mo', features: ['Everything in Archivist', 'The Breakdown Engine', 'Publish to The Dispatch', 'Curatorial Control', 'Poster Glow Aesthetics', 'Gold Foil Badge'] },
 ];
 
 interface PaywallModalProps {
@@ -18,13 +21,22 @@ interface PaywallModalProps {
 }
 
 export default function PaywallModal({ visible, onClose, recommendedTier }: PaywallModalProps) {
+    const router = useRouter();
+
+    const handleUpgrade = () => {
+        onClose();
+        // #9 AUDIT FIX: Use InteractionManager instead of arbitrary timeout
+        InteractionManager.runAfterInteractions(() => {
+            router.push('/membership' as any);
+        });
+    };
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay}>
                 <View style={s.card}>
-                    <TouchableOpacity style={s.closeBtn} onPress={onClose} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+                    <PressableScale style={s.closeBtn} onPress={onClose} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" pressedScale={0.96}>
                         <Text style={s.closeBtnText}>✕</Text>
-                    </TouchableOpacity>
+                    </PressableScale>
 
                     <Animated.View entering={FadeIn.duration(400)}>
                         <Text style={s.eyebrow}>THE REELHOUSE SOCIETY</Text>
@@ -34,10 +46,13 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
 
                     {TIERS.map((tier, i) => (
                         <Animated.View key={tier.name} entering={FadeInUp.delay(i * 150).duration(400)}>
-                            <TouchableOpacity
+                            <PressableScale
                                 style={[s.tierCard, recommendedTier === tier.name.toLowerCase() && s.tierRecommended]}
-                                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); }}
-                                activeOpacity={0.7}
+                                onPress={handleUpgrade}
+                                haptic="medium"
+                                pressedScale={0.98}
+                                accessibilityRole="button"
+                                accessibilityLabel={`Subscribe to ${tier.name} for ${tier.price}`}
                             >
                                 {recommendedTier === tier.name.toLowerCase() && (
                                     <Text style={s.recommendedBadge}>RECOMMENDED</Text>
@@ -50,7 +65,7 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
                                 <View style={s.subscribeBtn}>
                                     <Text style={s.subscribeBtnText}>SUBSCRIBE</Text>
                                 </View>
-                            </TouchableOpacity>
+                            </PressableScale>
                         </Animated.View>
                     ))}
                 </View>

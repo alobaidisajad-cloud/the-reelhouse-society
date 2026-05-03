@@ -1,16 +1,22 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { useCallback, useState, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ImageBackground } from 'react-native';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { View, Text, StyleSheet, ImageBackground , DeviceEventEmitter, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, interpolateColor, SharedValue, interpolate, Extrapolation } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Haptics from 'expo-haptics';
-import { DeviceEventEmitter, Dimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/src/lib/supabase';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 import { ActionDeck } from './ActionDeck';
@@ -40,6 +46,7 @@ export interface FeedItem {
   watched_with?: string | null;
   is_autopsied?: boolean;
   autopsy?: Record<string, number>;
+  abandoned_reason?: string | null;
 }
 
 export const ActivityCard = React.memo(function ActivityCard({ item, index, parentScrollY }: { item: FeedItem; index: number; parentScrollY?: SharedValue<number> }) {
@@ -52,11 +59,12 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
   const backdropUri = item.editorial_header ? `${TMDB_IMG_W500}${item.editorial_header}` : item.poster_path ? `${TMDB_IMG_W500}${item.poster_path}` : null;
   
   // ── Store hooks ──
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { hasEndorsed, toggleEndorse, _watchlistIndex, addToWatchlist, removeFromWatchlist } = useFilmStore();
   const { user: currentUser } = useAuthStore();
 
   // ── 3D Gyroscopic Parallax Engine ──
-  const { height: windowHeight } = Dimensions.get('window');
+  const { height: windowHeight } = useWindowDimensions();
   const ITEM_HEIGHT = 450;
   const parallaxStyle = useAnimatedStyle(() => {
     if (!parentScrollY) return {};
@@ -80,65 +88,22 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
   });
 
   // ── Derived state ──
-  const endorsed = hasEndorsed(item.id);
   const timeAgo = getTimeAgo(item.created_at);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const isOwner = currentUser?.username === item.username;
-  const isLoungeEligible = currentUser && ['archivist', 'auteur'].includes(currentUser.role ?? '');
-  const filmSaved = !!_watchlistIndex[item.film_id];
 
-  // ── CERTIFY (Endorse) ──
-  const handleCertify = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    toggleEndorse(item.id);
-  }, [item.id, toggleEndorse]);
+  const handleFilmPress = useCallback(() => {
+    DeviceEventEmitter.emit('reelhouse:projection-mark');
+    router.push(`/film/${item.film_id}` as any);
+  }, [router, item.film_id]);
 
-  // ── CRITIQUE (Navigate to log detail for comments) ──
-  const handleCritique = useCallback(() => {
-    Haptics.selectionAsync();
-    router.push(`/log/${item.id}`);
-  }, [item.id, router]);
+  const handleUserPress = useCallback(() => {
+    router.push(`/user/${item.username}` as any);
+  }, [router, item.username]);
 
-  // ── SAVE / EDIT ──
-  const handleSaveOrEdit = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    if (isOwner) {
-      // Owner can edit their log
-      router.push({
-        pathname: '/log-modal',
-        params: {
-          filmId: String(item.film_id),
-          editLogId: item.id,
-          filmTitle: item.film_title,
-          posterPath: item.poster_path ?? '',
-        },
-      });
-    } else {
-      // Non-owner: toggle watchlist save
-      if (filmSaved) {
-        removeFromWatchlist(item.film_id);
-        reelToast.success('Removed from watchlist');
-      } else {
-        addToWatchlist({
-          id: item.film_id,
-          title: item.film_title,
-          poster_path: item.poster_path,
-          release_date: item.year ? `${item.year}-01-01` : undefined,
-        });
-        reelToast.success('Saved to watchlist ✦');
-      }
-    }
-  }, [isOwner, item, filmSaved, addToWatchlist, removeFromWatchlist, router]);
-
-  // ── LOUNGE (Share to Lounge) ──
-  const handleLounge = useCallback(() => {
-    if (!isLoungeEligible) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-      reelToast.error('Archivist or Auteur tier required to share to The Lounge.');
-      return;
-    }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setShowShareModal(true);
-  }, [isLoungeEligible]);
+  const handleLogPress = useCallback(() => {
+    router.push(`/log/${item.id}` as any);
+  }, [router, item.id]);
 
   return (
     <View style={{ zIndex: index }}>
@@ -161,10 +126,10 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
       {/* ── EDITORIAL HEADER STRIP (Matches Web) ── */}
       {(item.editorial_header || (isPremium && item.poster_path)) && (
         <View style={s.editorialHeaderContainer}>
-          <View style={[s.editorialHeaderImage, { overflow: 'hidden' }]}>
+          <View style={s.editorialHeaderImageWrap}>
             <Image
               source={{ uri: backdropUri as string }} 
-              style={[StyleSheet.absoluteFillObject, s.editorialHeaderImageStyle, !item.editorial_header && { transform: [{ scale: 1.3 }], opacity: 0.35 }]}
+              style={[StyleSheet.absoluteFillObject, s.editorialHeaderImageStyle, !item.editorial_header && s.editorialHeaderImageFallback]}
               blurRadius={!item.editorial_header ? 15 : 0}
               cachePolicy="memory-disk"
               placeholder={{ blurhash: SEPIA_HASH }}
@@ -189,27 +154,31 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
       <View style={s.cardBody}>
         
         {/* LEFT COLUMN: Poster with Physical Embossing */}
-        <PressableScale onPress={() => { DeviceEventEmitter.emit('reelhouse:projection-mark'); router.push(`/film/${item.film_id}`); }} haptic="heavy" style={s.posterWrap}>
+        <PressableScale onPress={handleFilmPress} haptic="heavy" style={s.posterWrap}>
           {posterUri && (isPremium || isAuteur) && (
             <AnimatedExpoImage 
-              source={{ uri: posterUri }} 
-              style={[s.cardPoster, { position: 'absolute', transform: [{ scale: 1.15 }], opacity: 0.6, tintColor: isAuteur ? '#521010' : '#8B6914' }]} 
-              blurRadius={15}
-              cachePolicy="memory-disk"
-              recyclingKey={`blur-${item.film_id}`}
-              placeholder={{ blurhash: SEPIA_HASH }}
-              transition={100}
+              {...{
+                source: { uri: posterUri },
+                style: [s.cardPoster, s.posterPremiumShadow, { tintColor: isAuteur ? '#521010' : '#8B6914' }],
+                blurRadius: 15,
+                cachePolicy: "memory-disk",
+                recyclingKey: `blur-${(item as any).film_id}`,
+                placeholder: { blurhash: SEPIA_HASH },
+                transition: 100
+              } as any}
             />
           )}
           {posterUri && (
             <AnimatedExpoImage 
-              sharedTransitionTag={`poster-${item.film_id}`}
-              source={{ uri: posterUri }} 
-              style={s.cardPoster} 
-              cachePolicy="memory-disk" 
-              recyclingKey={`poster-${item.film_id}`} 
-              placeholder={{ blurhash: SEPIA_HASH }} 
-              transition={100} 
+              {...{
+                sharedTransitionTag: `poster-${(item as any).film_id ?? (item as any).id}`,
+                source: { uri: posterUri },
+                style: s.cardPoster,
+                cachePolicy: "memory-disk",
+                recyclingKey: `poster-${(item as any).film_id}`,
+                placeholder: { blurhash: SEPIA_HASH },
+                transition: 100
+              } as any}
             />
           )}
 
@@ -229,14 +198,14 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
           {/* User Row */}
           <View style={s.inlineUserRow}>
             <View style={s.userRowInner}>
-              <TouchableOpacity onPress={() => { Haptics.selectionAsync(); router.push(`/user/${item.username}`); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
+              <PressableScale onPress={handleUserPress} hitSlop={st.hitSlop} haptic="selection" pressedScale={0.96} style={s.userPressable}>
                 {item.avatar_url ? (
                   <Image source={{ uri: item.avatar_url }} style={s.cardAvatar} cachePolicy="memory-disk" />
                 ) : (
                   <View style={s.cardAvatar}><Text style={s.cardAvatarText}>{item.username.charAt(0).toUpperCase()}</Text></View>
                 )}
                 <Text style={s.cardUsername} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>@{item.username.toUpperCase()}</Text>
-              </TouchableOpacity>
+              </PressableScale>
               {isArchivist && <Text style={s.badgeArchivist} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>✦ ARCHIVIST</Text>}
               {isAuteur && <Text style={s.badgeAuteur} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>★ AUTEUR</Text>}
             </View>
@@ -245,15 +214,24 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
 
           {/* Title + Year */}
           <View style={s.titleRow}>
-            <TouchableOpacity onPress={() => { Haptics.selectionAsync(); router.push(`/film/${item.film_id}`); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} style={{ flexShrink: 1 }}>
+            <PressableScale onPress={handleFilmPress} hitSlop={st.hitSlop} haptic="selection" pressedScale={0.96} style={st.flexShrink}>
               <Text style={s.cardTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.85}>{item.film_title}</Text>
-            </TouchableOpacity>
+            </PressableScale>
             {item.year && <Text style={s.cardYear}>{item.year}</Text>}
           </View>
 
-          {/* Rating */}
-          <TouchableOpacity onPress={() => { Haptics.selectionAsync(); router.push(`/log/${item.id}`); }} activeOpacity={0.8} style={{ flexShrink: 1, width: '100%' }}>
-            {item.rating > 0 && <View style={s.ratingWrap}><ReelRating rating={item.rating} size={15} /></View>}
+          <PressableScale onPress={handleLogPress} haptic="selection" pressedScale={0.98} style={st.logPressable}>
+            {item.status === 'abandoned' ? (
+              <View style={st.abandonedWrap}>
+                <View style={st.abandonedInner}>
+                   <Text style={st.abandonedText}>
+                      ABANDONED{item.abandoned_reason ? ` — ${item.abandoned_reason.toUpperCase()}` : ''}
+                   </Text>
+                </View>
+              </View>
+            ) : item.rating > 0 ? (
+              <View style={s.ratingWrap}><ReelRating rating={item.rating} size={15} /></View>
+            ) : null}
             
             {/* Review / Pull Quote */}
             {item.pull_quote && (
@@ -268,19 +246,19 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
               const cleanReview = item.review.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<[^>]+>/g, '').trim();
               if (!cleanReview) return null;
               return (
-                <Text style={[s.cardReview, item.drop_cap && { lineHeight: undefined }]} numberOfLines={8}>
+                <Text style={[s.cardReview, item.drop_cap && st.dropCapReview]} numberOfLines={8}>
                   {item.drop_cap ? (
                     <Text style={s.dropCapLetter}>{cleanReview.charAt(0)}</Text>
                   ) : null}
-                  <Text style={item.drop_cap ? { lineHeight: 24 } : undefined}>
+                  <Text style={item.drop_cap ? st.dropCapText : undefined}>
                     {item.drop_cap ? cleanReview.slice(1) : cleanReview}
                   </Text>
                 </Text>
               );
             })()}
             {item.review && item.review.replace(/<[^>]+>/g, '').trim().length > 200 && (
-              <View style={{ marginTop: 6 }}>
-                <Text style={{ fontFamily: fonts.body, fontSize: 13, color: colors.sepia, textDecorationLine: 'underline', textDecorationColor: 'rgba(139,105,20,0.3)' }}>Read more</Text>
+              <View style={st.readMoreWrap}>
+                <Text style={st.readMoreText}>Read more</Text>
               </View>
             )}
 
@@ -289,9 +267,9 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
                 ♡ WITH <Text style={s.watchedWithName}>{item.watched_with.toUpperCase()}</Text>
               </Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
 
-          <View style={{ marginTop: 24, width: '100%' }}>
+          <View style={st.actionDeckWrap}>
             <ActionDeck
               itemId={item.id}
               filmId={item.film_id}
@@ -564,7 +542,6 @@ const s = StyleSheet.create({
   cardPoster: {
     width: '100%',
     height: '100%',
-    contentFit: 'cover',
     position: 'absolute',
   },
   posterEdgeHighlight: {
@@ -679,17 +656,6 @@ const s = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
   },
-  dropCapLetter: {
-    fontFamily: fonts.display,
-    fontSize: 48,
-    color: colors.parchment,
-    lineHeight: 48,
-    marginRight: 6,
-    marginTop: 2,
-    textShadowColor: 'rgba(0,0,0,0.9)',
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
   watchedWith: {
     fontFamily: fonts.ui,
     fontSize: 10,
@@ -781,4 +747,38 @@ const s = StyleSheet.create({
   autopsyChevronOpen: { transform: [{ rotate: '180deg' }] },
   autopsyInner: { gap: 20 },
   autopsyBarHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 6 } as const,
+  editorialHeaderImageWrap: {
+    width: '100%',
+    height: '100%',
+    overflow: 'hidden',
+  },
+  editorialHeaderImageFallback: {
+    transform: [{ scale: 1.3 }],
+    opacity: 0.35,
+  },
+  posterPremiumShadow: {
+    position: 'absolute',
+    transform: [{ scale: 1.15 }],
+    opacity: 0.6,
+  },
+  userPressable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+});
+
+const st = StyleSheet.create({
+  hitSlop: { top: 15, bottom: 15, left: 15, right: 15 },
+  flexShrink: { flexShrink: 1 },
+  logPressable: { flexShrink: 1, width: '100%' },
+  abandonedWrap: { marginTop: 8, marginBottom: 4, alignSelf: 'flex-start' },
+  abandonedInner: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(125,31,31,0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(125,31,31,0.3)' },
+  abandonedText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.bloodReel },
+  readMoreWrap: { marginTop: 6 },
+  readMoreText: { fontFamily: fonts.body, fontSize: 13, color: colors.sepia, textDecorationLine: 'underline', textDecorationColor: 'rgba(139,105,20,0.3)' },
+  actionDeckWrap: { marginTop: 24, width: '100%' },
+  dropCapReview: { lineHeight: undefined },
+  dropCapText: { lineHeight: 24 },
 });

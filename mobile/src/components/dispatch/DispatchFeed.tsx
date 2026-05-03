@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet, FlatList, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/src/lib/supabase';
 import { colors, fonts } from '@/src/theme/theme';
@@ -30,13 +31,10 @@ export function DispatchFeed() {
     if (loading) return <ActivityIndicator size="large" color={colors.sepia} />;
 
     return (
-        <FlatList
+        <FlashList
             data={logs}
             keyExtractor={l => l.id.toString()}
-            windowSize={5}
-            maxToRenderPerBatch={8}
-            initialNumToRender={10}
-            removeClippedSubviews={true}
+            estimatedItemSize={100}
             renderItem={({ item }) => {
                 const username = Array.isArray(item.profiles) ? item.profiles[0]?.username : item.profiles?.username;
                 return (

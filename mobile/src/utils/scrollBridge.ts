@@ -3,14 +3,15 @@
  * 
  * Each tab writes its scrollY here on scroll.
  * TopNavBar reads it to interpolate blur/tint.
- * Uses simple callback pattern — zero state, zero re-renders.
+ * #11 AUDIT FIX: Supports multiple listeners via Set to prevent
+ * overwrite during tab transitions.
  */
 let _scrollY = 0;
-let _listener: ((y: number) => void) | null = null;
+const _listeners = new Set<(y: number) => void>();
 
 export function setScrollY(y: number) {
   _scrollY = y;
-  _listener?.(y);
+  _listeners.forEach(fn => fn(y));
 }
 
 export function getScrollY() {
@@ -18,6 +19,6 @@ export function getScrollY() {
 }
 
 export function onScrollYChange(fn: (y: number) => void) {
-  _listener = fn;
-  return () => { _listener = null; };
+  _listeners.add(fn);
+  return () => { _listeners.delete(fn); };
 }

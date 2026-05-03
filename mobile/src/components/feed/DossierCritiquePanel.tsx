@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { ChevronDown, Send } from 'lucide-react-native';
@@ -7,6 +7,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import reelToast from '@/src/utils/reelToast';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 interface DossierComment {
     id: string;
@@ -22,13 +23,20 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
     const [comments, setComments] = useState<DossierComment[]>([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [showAll, setShowAll] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editBody, setEditBody] = useState('');
     const [isUpdating, setIsUpdating] = useState(false);
 
+    // Callback isolation: stabilize critique input handler
+    const handleTextChange = useCallback((t: string) => {
+        setText(t);
+    }, []);
+
     useEffect(() => {
         if (open && comments.length === 0) loadComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [open]);
 
     const loadComments = async () => {
@@ -108,18 +116,18 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
             {loading && <Text style={s.loading}>RETRIEVING CRITIQUES…</Text>}
 
             {comments.length > 3 && !showAll && (
-                <TouchableOpacity onPress={() => setShowAll(true)} style={s.viewAllBtn} activeOpacity={0.6}>
+                <PressableScale onPress={() => router.push(`/user/${comments[0].username}` as any)} style={s.viewAllBtn} haptic="light" pressedScale={0.96}>
                     <ChevronDown size={14} color={colors.fog} />
                     <Text style={s.viewAllText}>VIEW ALL CRITIQUES</Text>
-                </TouchableOpacity>
+                </PressableScale>
             )}
 
             <View style={s.commentsList}>
                 {visibleComments.map(c => (
                     <View key={c.id} style={s.commentItem}>
-                        <TouchableOpacity onPress={() => router.push(`/user/${c.username}`)}>
+                        <PressableScale onPress={() => router.push(`/user/${c.username}`)} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" pressedScale={0.97}>
                             <Text style={s.commentUsername}>@{c.username}</Text>
-                        </TouchableOpacity>
+                        </PressableScale>
 
                         {editingId === c.id ? (
                             <View style={s.editContainer}>
@@ -129,18 +137,23 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                                     onChangeText={setEditBody}
                                     multiline
                                     autoFocus
+                                    keyboardAppearance="dark"
+                                    accessibilityLabel="Edit critique text"
+                                    selectionColor={'rgba(218,165,32,0.3)'}
                                 />
                                 <View style={s.editBtnRow}>
-                                    <TouchableOpacity onPress={() => setEditingId(null)} style={s.cancelBtn}>
+                                    <PressableScale onPress={() => setEditingId(null)} style={s.cancelBtn} haptic="light" pressedScale={0.95}>
                                         <Text style={s.cancelText}>CANCEL</Text>
-                                    </TouchableOpacity>
-                                    <TouchableOpacity 
+                                    </PressableScale>
+                                    <PressableScale 
                                         onPress={() => handleUpdate(c.id)} 
                                         disabled={isUpdating || !editBody.trim()}
                                         style={[s.updateBtn, (isUpdating || !editBody.trim()) && s.updateBtnDisabled]}
+                                        haptic="medium"
+                                        pressedScale={0.95}
                                     >
                                         <Text style={s.updateText}>UPDATE</Text>
-                                    </TouchableOpacity>
+                                    </PressableScale>
                                 </View>
                             </View>
                         ) : (
@@ -148,12 +161,12 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                                 <Text style={s.commentBody}>{c.body}</Text>
                                 {currentUser?.username === c.username && (
                                     <View style={s.userActions}>
-                                        <TouchableOpacity onPress={() => { setEditingId(c.id); setEditBody(c.body); }}>
+                                        <PressableScale onPress={() => { setEditingId(c.id); setEditBody(c.body); }} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" pressedScale={0.95}>
                                             <Text style={s.actionText}>EDIT</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity onPress={() => handleDelete(c.id)}>
+                                        </PressableScale>
+                                        <PressableScale onPress={() => handleDelete(c.id)} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="heavy" pressedScale={0.95}>
                                             <Text style={s.deleteText}>DELETE</Text>
-                                        </TouchableOpacity>
+                                        </PressableScale>
                                     </View>
                                 )}
                             </View>
@@ -167,21 +180,26 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                     <TextInput
                         style={s.input}
                         value={text}
-                        onChangeText={setText}
+                        onChangeText={handleTextChange}
                         placeholder="File a critique on this dossier…"
                         placeholderTextColor={colors.fog}
                         multiline
                         maxLength={1000}
+                        selectionColor={'rgba(218,165,32,0.3)'}
+                        keyboardAppearance="dark"
+                        accessibilityLabel="Write a dossier critique"
                     />
                     <View style={s.submitRow}>
-                        <TouchableOpacity
+                        <PressableScale
                             onPress={handleSubmit}
                             disabled={submitting || !text.trim()}
                             style={[s.submitBtn, (submitting || !text.trim()) && s.submitBtnDisabled]}
+                            haptic="medium"
+                            pressedScale={0.96}
                         >
                             <Text style={s.submitText}>SUBMIT CRITIQUE</Text>
                             <Send size={14} color={colors.sepia} style={s.submitIcon} />
-                        </TouchableOpacity>
+                        </PressableScale>
                     </View>
                 </View>
             ) : (

@@ -1,0 +1,32 @@
+appId: com.reelhouse.app
+---
+# 🏛️ Nitrate Noir: Social Pulse Smoke Test
+# This verifies the 120fps FlashList cover-flow engine doesn't crash on render.
+
+- launchApp:
+    clearState: true
+
+# 1. Login to a test account
+- tapOn: "Email"
+- inputText: "archivist_test@reelhouse.org"
+- tapOn: "Password"
+- inputText: "hunter2"
+- tapOn: "Enter Society"
+
+# 2. Wait for the feed to load
+- extendedWaitUntil:
+    visible: "The Pulse"
+    timeout: 10000
+
+# 3. Assert the GhostEmptyState or the first log is visible
+- assertVisible: ".*(The screening room is dark|LIVE FROM THE FOYER).*" # Fallback regex
+- scrollUntilVisible:
+    element:
+      id: "social_pulse_scroll" # Assuming testID="social_pulse_scroll" is on the FlashList
+    direction: RIGHT
+    timeout: 5000
+
+# 4. Interact with a log
+- tapOn:
+    point: 50%, 50%
+- assertVisible: "OPEN FULL LOG"

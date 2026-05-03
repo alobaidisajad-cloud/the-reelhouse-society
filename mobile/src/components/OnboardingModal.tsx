@@ -3,12 +3,14 @@
  * Introduces ReelHouse Society concepts.
  */
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Dimensions } from 'react-native';
-import Animated, { FadeIn, SlideInRight, SlideOutLeft } from 'react-native-reanimated';
+import { View, Text, StyleSheet, Modal } from 'react-native';
+import Animated, { SlideInRight, SlideOutLeft } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { BlurView } from 'expo-blur';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+
 
 const STEPS = [
     {
@@ -54,8 +56,10 @@ export default function OnboardingModal({ visible, onComplete }: OnboardingModal
     const current = STEPS[step];
 
     return (
-        <Modal visible={visible} transparent animationType="fade">
+        <Modal visible={visible} transparent animationType="none" onRequestClose={onComplete}>
+            {/* #6 AUDIT FIX: Reanimated-driven entry instead of system-default fade */}
             <View style={s.overlay}>
+                <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
                 <View style={s.card}>
                     {/* Progress dots */}
                     <View style={s.dots}>
@@ -64,7 +68,7 @@ export default function OnboardingModal({ visible, onComplete }: OnboardingModal
                         ))}
                     </View>
 
-                    <Animated.View key={step} entering={SlideInRight.duration(300)} style={s.stepContent}>
+                    <Animated.View key={step} entering={SlideInRight.duration(300)} exiting={SlideOutLeft.duration(200)} style={s.stepContent}>
                         <Text style={s.glyph}>{current.glyph}</Text>
                         <Text style={s.title}>{current.title}</Text>
                         <Text style={s.body}>{current.body}</Text>
@@ -72,17 +76,21 @@ export default function OnboardingModal({ visible, onComplete }: OnboardingModal
 
                     <View style={s.footer}>
                         {step > 0 && (
-                            <TouchableOpacity onPress={() => { setStep(step - 1); Haptics.selectionAsync(); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+                            <PressableScale onPress={() => { setStep(step - 1); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.96}>
                                 <Text style={s.backText}>← BACK</Text>
-                            </TouchableOpacity>
+                            </PressableScale>
                         )}
                         <View style={{ flex: 1 }} />
-                        <TouchableOpacity style={s.nextBtn} onPress={handleNext} activeOpacity={0.7}>
+                        <PressableScale style={s.nextBtn} onPress={handleNext} haptic="selection" pressedScale={0.96}>
                             <Text style={s.nextText}>
                                 {step === STEPS.length - 1 ? 'ENTER THE SOCIETY' : 'NEXT →'}
                             </Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                     </View>
+                    {/* M-11 AUDIT FIX: Skip option for returning users */}
+                    <PressableScale onPress={onComplete} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.96}>
+                        <Text style={s.skipText}>SKIP</Text>
+                    </PressableScale>
 
                     <Text style={s.societyTag}>THE REELHOUSE SOCIETY</Text>
                 </View>
@@ -110,4 +118,5 @@ const s = StyleSheet.create({
     nextBtn: { backgroundColor: colors.sepia, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 4 },
     nextText: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 1, color: colors.ink },
     societyTag: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4, color: colors.fog, opacity: 0.3, textAlign: 'center', marginTop: 24 },
+    skipText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog, textAlign: 'center', marginTop: 16, opacity: 0.6 },
 });

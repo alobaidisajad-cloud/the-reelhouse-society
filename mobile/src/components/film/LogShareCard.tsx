@@ -8,18 +8,18 @@
  * Uses react-native-view-shot + expo-sharing for native share sheet.
  */
 import { useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, Share, Alert, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, Share, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
+import reelToast from '@/src/utils/reelToast';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CARD_WIDTH = Math.min(SCREEN_WIDTH - 48, 380);
 
 export interface ShareCardData {
     filmTitle: string;
@@ -32,6 +32,7 @@ export interface ShareCardData {
     review?: string;
     username: string;
     status?: 'watched' | 'rewatched' | 'abandoned';
+    abandonedReason?: string | null;
     role?: string;
     watchedWith?: string;
     pullQuote?: string;
@@ -78,10 +79,13 @@ function CardContent({ data }: { data: ShareCardData }) {
     const rawReview = stripHtml(data.review || '');
     const isLong = rawReview.length > 200;
     const hasReview = rawReview.length > 0;
-    const statusLabel = data.status === 'rewatched' ? 'REWATCHED' : data.status === 'abandoned' ? 'ABANDONED' : 'WATCHED';
+    const statusLabel = data.status === 'rewatched' ? 'REWATCHED' : data.status === 'abandoned' ? `ABANDONED${data.abandonedReason ? ` — ${data.abandonedReason.toUpperCase()}` : ''}` : 'WATCHED';
+
+    const { width } = useWindowDimensions();
+    const cardWidth = Math.min(width - 48, 380);
 
     return (
-        <View style={s.card}>
+        <View style={[s.card, { width: cardWidth }]}>
             {/* Atmospheric blurred poster backdrop */}
             {posterUrl && (
                 <Image
@@ -163,7 +167,7 @@ function CardContent({ data }: { data: ShareCardData }) {
                             <View style={s.cinematicPosterWrap}>
                                 <Image
                                     source={{ uri: posterUrl }}
-                                    style={s.cinematicPoster}
+                                    style={[s.cinematicPoster, { width: cardWidth * 0.55, height: cardWidth * 0.55 * 1.5 }]}
                                     contentFit="cover"
                                 />
                             </View>
@@ -190,7 +194,7 @@ function CardContent({ data }: { data: ShareCardData }) {
 
                         {/* Short review */}
                         {hasReview && (
-                            <Text style={s.cinematicReview}>"{rawReview}"</Text>
+                            <Text style={s.cinematicReview}>&quot;{rawReview}&quot;</Text>
                         )}
                     </View>
                 )}
@@ -206,12 +210,7 @@ function CardContent({ data }: { data: ShareCardData }) {
 }
 
 export default function LogShareCard({ visible, data, onClose }: Props) {
-    // Embedded mode (off-screen capture by parent)
-    if (visible === undefined) {
-        return <CardContent data={data} />;
-    }
-
-    // Modal mode
+    // Modal mode hooks
     const cardRef = useRef<ViewShot>(null);
     const [sharing, setSharing] = useState(false);
 
@@ -221,7 +220,8 @@ export default function LogShareCard({ visible, data, onClose }: Props) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         try {
-            const uri = await cardRef.current.capture();
+            const uri = await (cardRef.current as any)?.capture?.();
+            if (!uri) return;
             const isAvailable = await Sharing.isAvailableAsync();
             if (isAvailable) {
                 await Sharing.shareAsync(uri, {
@@ -236,34 +236,39 @@ export default function LogShareCard({ visible, data, onClose }: Props) {
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : 'Unknown error';
-            if (msg !== 'User did not share') Alert.alert('Share Failed', msg);
+            if (msg !== 'User did not share') reelToast.error(msg);
         } finally {
             setSharing(false);
         }
     }, [data]);
 
+    // Embedded mode (off-screen capture by parent)
+    if (visible === undefined) {
+        return <CardContent data={data} />;
+    }
+
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay}>
                 <Animated.View entering={FadeIn.duration(300)} style={s.modalContent}>
-                    <TouchableOpacity style={s.closeBtn} onPress={onClose} activeOpacity={0.7}>
+                    <PressableScale style={s.closeBtn} onPress={onClose} haptic="light">
                         <Text style={s.closeBtnText}>✕</Text>
-                    </TouchableOpacity>
+                    </PressableScale>
 
                     <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }}>
                         <CardContent data={data} />
                     </ViewShot>
 
-                    <TouchableOpacity
+                    <PressableScale
                         style={s.shareBtn}
                         onPress={handleShare}
                         disabled={sharing}
-                        activeOpacity={0.7}
+                        pressedScale={0.97}
                     >
                         <Text style={s.shareBtnText}>
                             {sharing ? 'PREPARING...' : '✦ SHARE CARD'}
                         </Text>
-                    </TouchableOpacity>
+                    </PressableScale>
                 </Animated.View>
             </View>
         </Modal>
@@ -292,7 +297,7 @@ const s = StyleSheet.create({
 
     // ── Card container ──
     card: {
-        width: CARD_WIDTH, backgroundColor: '#0A0703',
+        backgroundColor: '#0A0703',
         borderRadius: 0, overflow: 'hidden',
         borderWidth: 1, borderColor: 'rgba(139,105,20,0.35)',
     },
@@ -386,7 +391,6 @@ const s = StyleSheet.create({
         shadowOpacity: 0.7, shadowRadius: 30, elevation: 12,
     },
     cinematicPoster: {
-        width: CARD_WIDTH * 0.55, height: CARD_WIDTH * 0.55 * 1.5,
         borderRadius: 4, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
     },
     cinematicTitle: {

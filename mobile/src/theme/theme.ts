@@ -14,8 +14,9 @@ export const colors = {
   danger: '#E74C3C',      // Alert red
   ash: '#2A2118',         // Borders, dividers, subtle backgrounds
   bone: '#C2B492',        // Secondary text (more weathered)
-  fog: '#6B6055',         // Muted text, disabled
+  fog: '#82786B',         // Muted text, disabled (brightened for WCAG contrast)
   silverNitrate: '#D8E0E8', // System/info accent
+  rust: '#8B4513',           // Tarnished copper — dossier accents, warm highlights
 
   // Derived
   transparent: 'transparent',
@@ -23,6 +24,9 @@ export const colors = {
   sepiaSubtle: 'rgba(196, 150, 26, 0.15)',
   sepiaBorder: 'rgba(196, 150, 26, 0.25)',
   bloodFaint: 'rgba(107, 26, 10, 0.3)',
+
+  // ── Semantic ──
+  validation: '#5B8C3E', // Archive-approved green — form validation only
 } as const;
 
 export const fonts = {

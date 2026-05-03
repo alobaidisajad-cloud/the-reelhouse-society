@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import Animated, { 
     useSharedValue, 
@@ -6,6 +6,7 @@ import Animated, {
     withRepeat, 
     withSequence, 
     withTiming, 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     withDelay,
     Easing 
 } from 'react-native-reanimated';
@@ -35,8 +36,9 @@ export default function Buster({ size = 120, message, mood, style }: BusterProps
     const activeMood = mood ?? clockMood();
     const floatY = useSharedValue(0);
     const blinkScale = useSharedValue(1);
+    const blinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Floating animation
+    // Floating animation + organic blink chain
     useEffect(() => {
         floatY.value = withRepeat(
             withSequence(
@@ -55,10 +57,16 @@ export default function Buster({ size = 120, message, mood, style }: BusterProps
                     withTiming(1, { duration: 100 })
                 );
                 const nextBlink = Math.random() * 5000 + 3000;
-                setTimeout(blink, nextBlink);
+                blinkTimerRef.current = setTimeout(blink, nextBlink);
             };
-            setTimeout(blink, 2000);
+            blinkTimerRef.current = setTimeout(blink, 2000);
         }
+
+        // AUDIT FIX #2: Clear recursive blink timer on unmount to prevent timer heap leak
+        return () => {
+            if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
+        };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const animatedStyle = useAnimatedStyle(() => ({

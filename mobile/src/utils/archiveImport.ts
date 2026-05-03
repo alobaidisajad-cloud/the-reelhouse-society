@@ -204,7 +204,7 @@ export async function importArchiveZip(
 
   // ── Step 1: Read file and extract ZIP ──
   onProgress({ phase: 'Extracting archive...', current: 0, total: 1 });
-  const fileBase64 = await FileSystem.readAsStringAsync(fileUri, { encoding: FileSystem.EncodingType.Base64 });
+  const fileBase64 = await FileSystem.readAsStringAsync(fileUri, { encoding: 'base64' as any });
   const zip = await JSZip.loadAsync(fileBase64, { base64: true });
 
   // ── Step 2: Smart CSV reader — handles nested folders ──

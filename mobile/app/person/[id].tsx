@@ -27,20 +27,21 @@
 import { useEffect, useState, useMemo, useCallback, memo } from 'react';
 import {
   View, Text, StyleSheet,
-  Dimensions, RefreshControl,
+  RefreshControl, useWindowDimensions,
 } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import Animated, {
   useSharedValue, useAnimatedStyle,
-  withRepeat, withTiming, Easing,
+  withTiming, Easing,
+  cancelAnimation
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { tmdb, getYear, obscurityScore } from '@/src/lib/tmdb';
 import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts, effects, spacing } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import { SectionDivider, MarqueeLights } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import {
@@ -50,11 +51,10 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 
-const { width: SCREEN_W } = Dimensions.get('window');
+import type { StyleProp, ViewStyle } from 'react-native';
+
 const PORTRAIT_W = 130;
 const POSTER_GRID_GAP = 10;
-const POSTER_COL = 3;
-const POSTER_W = (SCREEN_W - 40 - POSTER_GRID_GAP * (POSTER_COL - 1)) / POSTER_COL;
 const AnimatedView = Animated.createAnimatedComponent(View);
 const PERF_COUNT = 40;
 
@@ -86,23 +86,21 @@ interface PersonCredit {
   job?: string;
 }
 
-import type { StyleProp, ViewStyle } from 'react-native';
-
 // ── Shimmer Pulse ────────────────────────────────────────────
 function ShimmerBlock({ style }: { style: StyleProp<ViewStyle> }) {
   const opacity = useSharedValue(0.3);
   useEffect(() => {
-    opacity.value = withRepeat(
-      withTiming(0.7, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
-      -1, true,
-    );
+    // Round 7: Removed infinite loop to allow UI thread idling
+    opacity.value = withTiming(0.7, { duration: 1800, easing: Easing.inOut(Easing.ease) });
+    return () => cancelAnimation(opacity);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
   return <Animated.View style={[st.shimmer, style, animStyle]} />;
 }
 
 // ── Obscurity Badge ──────────────────────────────────────────
-function ObscurityBadge({ score }: { score: number }) {
+const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: number }) {
   if (score <= 0) return null;
   const label = score > 80 ? 'GHOST REEL' : score > 60 ? 'DEEP CUT' : score > 40 ? 'INDIE' : score > 20 ? 'KNOWN' : 'MAINSTREAM';
   const color = score > 70 ? colors.sepia : score > 40 ? colors.bone : colors.fog;
@@ -112,10 +110,10 @@ function ObscurityBadge({ score }: { score: number }) {
       <Text style={st.obsLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{label}</Text>
     </View>
   );
-}
+});
 
 // ── Film-strip Perforations ──────────────────────────────────
-function FilmStripPerforations() {
+const FilmStripPerforations = memo(function FilmStripPerforations() {
   return (
     <View style={st.perfRow}>
       {Array.from({ length: PERF_COUNT }).map((_, i) => (
@@ -123,28 +121,34 @@ function FilmStripPerforations() {
       ))}
     </View>
   );
-}
+});
 
 // ── Film Poster Card (grid item) ─────────────────────────────
-const FilmPosterCard = memo(function FilmPosterCard({ film, width }: { film: PersonCredit; width: number }) {
+const FilmPosterCard = memo(function FilmPosterCard({ film }: { film: PersonCredit }) {
   const router = useRouter();
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w185') : null;
+
+  const handlePress = useCallback(() => {
+    Haptics.selectionAsync();
+    router.push(`/film/${film.id}` as any);
+  }, [film.id, router]);
+
   return (
     <PressableScale
       style={st.gridCard}
-      onPress={() => { Haptics.selectionAsync(); router.push(`/film/${film.id}`); }}
+      onPress={handlePress}
     >
       {posterUri ? (
         <Image
           source={{ uri: posterUri }}
-          style={[st.gridPoster, { width, height: width * 1.5 }]}
+          style={[st.gridPoster, { width: '100%', aspectRatio: 2 / 3 }]}
           contentFit="cover"
           cachePolicy="memory-disk"
           placeholder={{ blurhash: SEPIA_HASH }}
           transition={50}
         />
       ) : (
-        <View style={[st.gridPoster, st.gridPosterPlaceholder, { width, height: width * 1.5 }]}>
+        <View style={[st.gridPoster, st.gridPosterPlaceholder, { width: '100%', aspectRatio: 2 / 3 }]}>
           <FilmIcon size={16} color={colors.fog} strokeWidth={1} />
         </View>
       )}
@@ -159,10 +163,16 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
   const router = useRouter();
   const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w342') : null;
   const score = obscurityScore(film);
+
+  const handlePress = useCallback(() => {
+    Haptics.selectionAsync();
+    router.push(`/film/${film.id}` as any);
+  }, [film.id, router]);
+
   return (
     <PressableScale
       style={st.defCard}
-      onPress={() => { Haptics.selectionAsync(); router.push(`/film/${film.id}`); }}
+      onPress={handlePress}
     >
       <View style={st.defPosterWrap}>
         {posterUri ? (
@@ -180,7 +190,7 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
           <Text style={st.defTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{film.title}</Text>
           <View style={st.defMetaRow}>
             <Text style={st.defYear}>{getYear(film.release_date) || 'TBA'}</Text>
-            {film.vote_average > 0 && (
+            {film.vote_average !== undefined && film.vote_average > 0 && (
               <View style={st.defRatingRow}>
                 <Star size={7} color={colors.sepia} fill={colors.sepia} />
                 <Text style={st.defRatingText}>{film.vote_average.toFixed(1)}</Text>
@@ -222,9 +232,12 @@ export default function PersonDetailScreen() {
   const { logs } = useFilmStore();
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
+  const { width: windowWidth } = useWindowDimensions();
 
   const personId = Number(id);
   const isArchivist = user && ['archivist', 'auteur'].includes(user.role);
+  
+
 
   const fetchData = useCallback(async () => {
     if (!personId || isNaN(personId)) return;
@@ -233,27 +246,71 @@ export default function PersonDetailScreen() {
         tmdb.person(personId),
         tmdb.personCredits(personId),
       ]);
-      setPerson(personData);
+      setPerson(personData as any);
 
       if (creditData) {
         const seen = new Set<number>();
         const merged: PersonCredit[] = [];
         for (const c of [...(creditData.cast || []), ...(creditData.crew || [])]) {
-          if (!seen.has(c.id)) { seen.add(c.id); merged.push(c); }
+          if (!seen.has(c.id)) { seen.add(c.id); merged.push(c as any); }
         }
         setAllCredits(merged.filter((f) => f.poster_path && (f.vote_count ?? 0) > 5).sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0)));
       }
-    } catch { }
+    } catch (err) { if (__DEV__) console.warn('[Person] fetchData error:', err); }
     finally { setLoading(false); setRefreshing(false); }
   }, [personId]);
 
   useEffect(() => { setLoading(true); fetchData(); }, [fetchData]);
 
+  // ── Stable Handlers ──
+  const handleBack = useCallback(() => {
+    Haptics.selectionAsync();
+    if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(tabs)');
+    }
+  }, [router]);
+
+  const handleRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchData();
+  }, [fetchData]);
+
+  const handleToggleBio = useCallback(() => {
+    Haptics.selectionAsync();
+    setShowFullBio((prev) => !prev);
+  }, []);
+
+  const handleLoungeShare = useCallback(() => {
+    if (!person) return;
+    Haptics.selectionAsync();
+    router.push({
+      pathname: '/(tabs)/lounge',
+      params: {
+        shareFilmId: '',
+        shareFilmTitle: person.name,
+        shareFilmPoster: person.profile_path || '',
+        shareFilmYear: person.known_for_department || '',
+      },
+    });
+  }, [person, router]);
+
+  const renderGridItem = useCallback(({ item, index }: { item: PersonCredit; index: number }) => (
+    <View style={GRID_COL_STYLES[index % 3]}>
+      <FilmPosterCard film={item} />
+    </View>
+  ), []);
+
+  const renderDefiningItem = useCallback(({ item }: { item: PersonCredit }) => (
+    <DefiningCard film={item} />
+  ), []);
+
   // ── Derived data ──
   const definingFilm = useMemo(() => allCredits.find((f) => f.backdrop_path) || null, [allCredits]);
   const heroBackdrop = definingFilm?.backdrop_path ? tmdb.backdrop(definingFilm.backdrop_path) : null;
-  const definingWorks = allCredits.slice(0, 4);
-  const remainingCredits = allCredits.slice(4);
+  const definingWorks = useMemo(() => allCredits.slice(0, 4), [allCredits]);
+  const remainingCredits = useMemo(() => allCredits.slice(4), [allCredits]);
   const totalFilms = allCredits.length;
   const careerSpan = useMemo(() => calcCareerSpan(allCredits), [allCredits]);
 
@@ -270,11 +327,11 @@ export default function PersonDetailScreen() {
   if (loading) return (
     <View style={s.container}>
       <AnimatedView style={[s.floatingBack, { top: Math.max(insets.top + 10, 20), zIndex: 100 }]}>
-        <PressableScale onPress={() => { Haptics.selectionAsync(); router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+        <PressableScale onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>
       </AnimatedView>
-      <View style={s.shimmerBackdrop}>
+      <View style={[s.shimmerBackdrop, { height: windowWidth * 0.55 }]}>
         <ShimmerBlock style={StyleSheet.absoluteFillObject} />
         <LinearGradient colors={['rgba(11,10,8,0.1)', 'rgba(11,10,8,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
       </View>
@@ -299,7 +356,7 @@ export default function PersonDetailScreen() {
       <Text style={s.notFoundBody}>
         This person does not exist in the TMDB archive, or the reel was lost.
       </Text>
-      <PressableScale style={s.backBtnBottom} onPress={() => { Haptics.selectionAsync(); router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+      <PressableScale style={s.backBtnBottom} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
         <View style={s.backBtnRow}>
           <ArrowLeft size={12} color={colors.bone} strokeWidth={1.5} />
           <Text style={s.backBtnBottomText}>GO BACK</Text>
@@ -313,22 +370,22 @@ export default function PersonDetailScreen() {
   return (
     <View style={s.container}>
       {/* ── Floating Back Button ── */}
-      <PressableScale style={[s.floatingBack, { top: Math.max(insets.top + 10, 20) }]} onPress={() => { Haptics.selectionAsync(); router.back(); }} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+      <PressableScale style={[s.floatingBack, { top: Math.max(insets.top + 10, 20) }]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
         <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
       </PressableScale>
 
       <FlashList
         data={remainingCredits}
         numColumns={3}
-        estimatedItemSize={POSTER_W * 1.5 + 40}
+        estimatedItemSize={200}
         contentContainerStyle={s.scrollContent}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); fetchData(); }} tintColor={colors.sepia} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.sepia} />}
         ListHeaderComponent={<>
         {/* ═══════════════════════════════════════════════════════
             CINEMATIC HERO BACKDROP
         ═══════════════════════════════════════════════════════ */}
-        <View style={s.heroWrap}>
+        <View style={[s.heroWrap, { height: windowWidth * 0.6 }]}>
           {heroBackdrop ? (
             <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
           ) : (
@@ -437,18 +494,7 @@ export default function PersonDetailScreen() {
             <AnimatedView>
               <PressableScale
                 style={s.loungeBtn}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  router.push({
-                    pathname: '/(tabs)/lounge',
-                    params: {
-                      shareFilmId: '',
-                      shareFilmTitle: person.name,
-                      shareFilmPoster: person.profile_path || '',
-                      shareFilmYear: person.known_for_department || '',
-                    },
-                  });
-                }}
+                onPress={handleLoungeShare}
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 haptic="light"
               >
@@ -498,7 +544,7 @@ export default function PersonDetailScreen() {
             </View>
             <PressableScale 
               style={s.toggleTicketBtn} 
-              onPress={() => { Haptics.selectionAsync(); setShowFullBio(!showFullBio); }}
+              onPress={handleToggleBio}
               hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
               haptic="light"
             >
@@ -520,11 +566,11 @@ export default function PersonDetailScreen() {
               data={definingWorks}
               keyExtractor={(item) => String(item.id)}
               contentContainerStyle={s.definingList}
-              estimatedItemSize={140}
+              estimatedItemSize={240}
               snapToInterval={152}
               snapToAlignment="start"
               decelerationRate="fast"
-              renderItem={({ item }) => <DefiningCard film={item} />}
+              renderItem={renderDefiningItem}
             />
           </AnimatedView>
         )}
@@ -548,11 +594,7 @@ export default function PersonDetailScreen() {
           </AnimatedView>
         )}
         </>}
-        renderItem={({ item, index }) => (
-          <View style={GRID_COL_STYLES[index % 3]}>
-            <FilmPosterCard film={item} width={POSTER_W} />
-          </View>
-        )}
+        renderItem={renderGridItem}
         keyExtractor={(item) => String(item.id)}
         ListFooterComponent={<>
 
@@ -588,7 +630,7 @@ const s = StyleSheet.create({
   scrollContent: { paddingBottom: 100 },
 
   // ── Shimmer ──
-  shimmerBackdrop: { height: SCREEN_W * 0.55, maxHeight: 280, backgroundColor: 'rgba(8,6,4,0.98)', position: 'relative' },
+  shimmerBackdrop: { maxHeight: 280, backgroundColor: 'rgba(8,6,4,0.98)', position: 'relative' },
   shimmerContent: { alignItems: 'center', marginTop: -70 },
   shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 4, marginBottom: 14 },
   shimmerBadge: { width: 90, height: 14, borderRadius: 2, marginBottom: 10 },
@@ -612,8 +654,8 @@ const s = StyleSheet.create({
   },
 
   // ── Hero Backdrop ──
-  heroWrap: { height: SCREEN_W * 0.6, minHeight: 240, maxHeight: 300, position: 'relative', overflow: 'hidden' },
-  heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' } as import('react-native').ViewStyle,
+  heroWrap: { minHeight: 240, maxHeight: 300, position: 'relative', overflow: 'hidden' },
+  heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
   heroSepia: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.5)' },
   perfBar: { position: 'absolute', bottom: 4, left: 0, right: 0, zIndex: 2 },
 
@@ -784,14 +826,14 @@ const st = StyleSheet.create({
   },
 
   // ── Grid Poster Cards ──
-  gridCard: { width: POSTER_W, marginBottom: 8 },
+  gridCard: { width: '100%', marginBottom: 8 },
   gridPoster: {
     borderRadius: 2, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
   },
   gridPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
   gridTitle: {
     fontFamily: fonts.sub, fontSize: 10, color: colors.bone,
-    marginTop: 5, width: POSTER_W,
+    marginTop: 5, width: '100%',
   },
   gridMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 },
   gridYear: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1 },

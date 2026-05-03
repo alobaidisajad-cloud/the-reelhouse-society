@@ -1,7 +1,10 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import Svg, { Rect, G, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import { Flame } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import PressableScale from '../PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 
 interface CalendarGridLog {
@@ -11,6 +14,7 @@ interface CalendarGridLog {
 
 interface Props {
   logs: CalendarGridLog[];
+  isSelf?: boolean;
 }
 
 const WEEKS = 52;
@@ -20,7 +24,24 @@ const CELL_GAP = 3;
 const SVG_WIDTH = WEEKS * (CELL_SIZE + CELL_GAP);
 const SVG_HEIGHT = DAYS_PER_WEEK * (CELL_SIZE + CELL_GAP);
 
-export default function NitrateCalendarGrid({ logs }: Props) {
+export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
+  const router = useRouter();
+  
+  const flickerAnim = useSharedValue(0.6);
+  useEffect(() => {
+    if (logs.length === 0 && isSelf) {
+      flickerAnim.value = withRepeat(
+        withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+        -1, true
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [logs.length, isSelf]);
+
+  const flickerStyle = useAnimatedStyle(() => ({
+    opacity: flickerAnim.value,
+  }));
+
   // Generate contribution data for the last 52 weeks
   const gridData = useMemo(() => {
     const today = new Date();
@@ -30,7 +51,7 @@ export default function NitrateCalendarGrid({ logs }: Props) {
     const countsMap = new Map<string, number>();
     logs.forEach(log => {
       if (log.watchDate || log.createdAt) {
-        const d = new Date(log.watchDate || log.createdAt);
+        const d = new Date(log.watchDate || log.createdAt || new Date().toISOString());
         const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         countsMap.set(key, (countsMap.get(key) || 0) + 1);
       }
@@ -116,6 +137,15 @@ export default function NitrateCalendarGrid({ logs }: Props) {
           </View>
         </View>
       </ScrollView>
+
+      {logs.length === 0 && isSelf && (
+        <Animated.View style={[s.ctaContainer, flickerStyle]}>
+          <PressableScale style={s.ctaBtn} onPress={() => router.push('/search-modal' as never)} haptic>
+            <Flame size={14} color={colors.flicker} style={{ marginRight: 8 }} />
+            <Text style={s.ctaText}>IGNITE THE TIMELINE</Text>
+          </PressableScale>
+        </Animated.View>
+      )}
     </Animated.View>
   );
 }
@@ -136,4 +166,7 @@ const s = StyleSheet.create({
   legend: { flexDirection: 'row', alignItems: 'center', marginTop: 12, alignSelf: 'flex-end', gap: 4 },
   legendText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginHorizontal: 4 },
   legendBox: { width: 8, height: 8, borderRadius: 1.5 },
+  ctaContainer: { marginTop: 16, alignItems: 'center' },
+  ctaBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(242,232,160,0.05)', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(242,232,160,0.2)' },
+  ctaText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.flicker },
 });

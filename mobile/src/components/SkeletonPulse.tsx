@@ -12,8 +12,9 @@ import Animated, {
   withSequence,
   withTiming,
   Easing,
+  cancelAnimation,
 } from 'react-native-reanimated';
-import { colors } from '@/src/theme/theme';
+
 
 interface SkeletonPulseProps {
   style?: StyleProp<ViewStyle>;
@@ -45,6 +46,8 @@ export default function SkeletonPulse({
       -1,
       false,
     );
+    return () => cancelAnimation(opacity);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -56,7 +59,7 @@ export default function SkeletonPulse({
       style={[
         {
           backgroundColor: color,
-          width: width as any,
+          width: width as import('react-native').DimensionValue,
           height,
           borderRadius,
         },

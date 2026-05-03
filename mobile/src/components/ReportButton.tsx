@@ -2,11 +2,13 @@
  * ReportButton — Content reporting with reason selection.
  */
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, TextInput, Alert } from 'react-native';
+import { View, Text, StyleSheet, Modal, TextInput } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
+import PressableScale from '@/src/components/PressableScale';
+import reelToast from '@/src/utils/reelToast';
 
 const REPORT_REASONS = [
     'Spam or misleading',
@@ -43,12 +45,12 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
                 reason: selectedReason,
                 details: details.trim() || null,
             });
-            Alert.alert('Report Submitted', 'Thank you. The Society moderators will review this.');
+            reelToast.success('Report submitted. The Society moderators will review this.');
             setVisible(false);
             setSelectedReason(''); setDetails('');
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : 'Failed to submit report.';
-            Alert.alert('Error', msg);
+            reelToast.error(msg);
         } finally {
             setSubmitting(false);
         }
@@ -56,29 +58,30 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
 
     return (
         <>
-            <TouchableOpacity onPress={() => setVisible(true)} activeOpacity={0.7} style={s.triggerBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+            <PressableScale onPress={() => setVisible(true)} style={s.triggerBtn} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light">
                 <Text style={s.triggerText}>⚑</Text>
-            </TouchableOpacity>
+            </PressableScale>
 
             <Modal visible={visible} transparent animationType="slide" onRequestClose={() => setVisible(false)}>
                 <View style={s.overlay}>
                     <View style={s.card}>
                         <View style={s.header}>
                             <Text style={s.title}>Report Content</Text>
-                            <TouchableOpacity onPress={() => setVisible(false)} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+                            <PressableScale onPress={() => setVisible(false)} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light">
                                 <Text style={s.closeText}>✕</Text>
-                            </TouchableOpacity>
+                            </PressableScale>
                         </View>
 
                         <Text style={s.label}>SELECT REASON</Text>
                         {REPORT_REASONS.map(reason => (
-                            <TouchableOpacity
+                            <PressableScale
                                 key={reason}
                                 style={[s.reasonBtn, selectedReason === reason && s.reasonActive]}
-                                onPress={() => { setSelectedReason(reason); Haptics.selectionAsync(); }}
+                                onPress={() => { setSelectedReason(reason); }}
+                                haptic="selection"
                             >
                                 <Text style={[s.reasonText, selectedReason === reason && s.reasonTextActive]}>{reason}</Text>
-                            </TouchableOpacity>
+                            </PressableScale>
                         ))}
 
                         <Text style={[s.label, s.labelWithGap]}>ADDITIONAL DETAILS (OPTIONAL)</Text>
@@ -89,15 +92,19 @@ export default function ReportButton({ targetId, targetType, size = 14 }: Report
                             placeholderTextColor={colors.fog}
                             value={details}
                             onChangeText={setDetails}
+                            keyboardAppearance="dark"
+                            accessibilityLabel="Report details"
+                            selectionColor={'rgba(218,165,32,0.3)'}
                         />
 
-                        <TouchableOpacity
+                        <PressableScale
                             style={[s.submitBtn, (!selectedReason || submitting) && s.submitBtnDisabled]}
                             onPress={handleSubmit}
                             disabled={!selectedReason || submitting}
+                            pressedScale={0.97}
                         >
                             <Text style={s.submitText}>{submitting ? 'SUBMITTING...' : 'SUBMIT REPORT'}</Text>
-                        </TouchableOpacity>
+                        </PressableScale>
                     </View>
                 </View>
             </Modal>

@@ -1,11 +1,16 @@
-import React, { useMemo, useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import React, { useMemo, useCallback, useEffect } from 'react';
+import { View, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Bookmark, Search, X, Dice5 } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
-import * as Haptics from 'expo-haptics';
 import PressableScale from '../PressableScale';
 import type { ProfileWatchlistItem } from '../../types';
+import { tmdb } from '../../lib/tmdb';
+
+// Module-scoped: prevents remount on every render cycle
+const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
 interface ProfileWatchlistTabProps {
   watchlist: ProfileWatchlistItem[];
@@ -18,6 +23,8 @@ interface ProfileWatchlistTabProps {
   setRouletteOpen: (val: boolean) => void;
   renderPosterCard: (item: ProfileWatchlistItem, width: number) => React.ReactNode;
   POSTER_COL_3: number;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
 }
 
 type WatchlistRowItem = { type: 'row'; data: ProfileWatchlistItem[]; id: string };
@@ -32,8 +39,46 @@ export default function ProfileWatchlistTab({
   setWatchlistSort,
   setRouletteOpen,
   renderPosterCard,
-  POSTER_COL_3
+  POSTER_COL_3,
+  onLoadMore,
+  isLoadingMore
 }: ProfileWatchlistTabProps) {
+  const router = useRouter();
+
+  const breatheAnim = useSharedValue(0.1);
+  useEffect(() => {
+    breatheAnim.value = withRepeat(
+      withTiming(0.4, { duration: 1800, easing: Easing.inOut(Easing.ease) }),
+      20, true
+    );
+    return () => cancelAnimation(breatheAnim);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const pulseStyle = useAnimatedStyle(() => ({
+    borderColor: `rgba(240,240,240,${0.1 + breatheAnim.value})`,
+  }));
+
+  // Nitrate Noir Breathing Ember Protocol for Search
+  const searchEmberOpacity = useSharedValue(0.5);
+  useEffect(() => {
+      if (watchlistSearch.length > 0) {
+          searchEmberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true);
+      } else {
+          searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
+      }
+      return () => cancelAnimation(searchEmberOpacity);
+  }, [watchlistSearch.length, searchEmberOpacity]);
+
+  const animatedSearchProps = useAnimatedProps(() => ({
+      color: watchlistSearch.length > 0 ? colors.bloodReel : colors.fog,
+  }));
+  const animatedSearchStyle = useAnimatedStyle(() => ({
+      opacity: searchEmberOpacity.value,
+  }));
+
+  const handleSearchChange = useCallback((val: string) => {
+      setWatchlistSearch(val);
+  }, [setWatchlistSearch]);
 
   const flashData = useMemo(() => {
     if (watchlistFiltered.length === 0) return [];
@@ -48,11 +93,25 @@ export default function ProfileWatchlistTab({
     return result;
   }, [watchlistFiltered]);
 
+  // Pre-fetch next-page posters using expo-image for zero-latency scroll
+  useEffect(() => {
+    const urlsToPrefetch = watchlistFiltered
+      .slice(0, 40) // aggressive prefetch of first 40 items
+      .map(item => tmdb.poster(item.poster_path, 'w185'))
+      .filter((url): url is string => !!url);
+    
+    if (urlsToPrefetch.length > 0) {
+      import('expo-image').then(({ Image }) => {
+        Image.prefetch(urlsToPrefetch);
+      });
+    }
+  }, [watchlistFiltered]);
+
   const renderItem = useCallback(({ item }: { item: WatchlistRowItem }) => {
     return (
       <View style={s.grid3}>
         {item.data.map(film => (
-          <View key={film.id || film.filmId} style={{ width: POSTER_COL_3 }}>
+          <View key={film.id || (film as {id?: number, film_id?: number}).film_id} style={{ width: POSTER_COL_3 }}>
             {renderPosterCard(film, POSTER_COL_3)}
           </View>
         ))}
@@ -75,13 +134,17 @@ export default function ProfileWatchlistTab({
         {watchlist.length > 5 && (
           <View style={s.watchlistControlRow}>
             <View style={[s.searchWrap, s.searchWrapFlex]}>
-              <Search size={12} color={colors.fog} strokeWidth={1.5} style={s.searchIconStyle} />
+              <AnimatedSearchIcon size={12} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />
               <TextInput 
                 style={s.searchInput} 
                 value={watchlistSearch} 
-                onChangeText={setWatchlistSearch} 
+                onChangeText={handleSearchChange} 
                 placeholder="Search watchlist..." 
-                placeholderTextColor={colors.fog} 
+                placeholderTextColor={colors.fog}
+                selectionColor={colors.sepia}
+                keyboardAppearance="dark"
+                accessibilityLabel="Filter your watchlist"
+                returnKeyType="search"
               />
               {watchlistSearch.length > 0 && (
                 <PressableScale onPress={() => setWatchlistSearch('')} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
@@ -106,39 +169,56 @@ export default function ProfileWatchlistTab({
         )}
       </>
     );
-  }, [watchlist.length, isSelf, setRouletteOpen, watchlistSearch, setWatchlistSearch, watchlistSort, setWatchlistSort]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchlist.length, isSelf, setRouletteOpen, watchlistSearch, handleSearchChange, watchlistSort, setWatchlistSort, animatedSearchProps, animatedSearchStyle]);
 
   const ListEmptyComponent = useMemo(() => {
     if (watchlist.length > 0 && watchlistFiltered.length > 0) return null;
     
+    if (watchlist.length === 0 && isSelf) {
+      return (
+        <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
+          <Bookmark size={32} color={colors.parchment} strokeWidth={1.5} style={s.emptyLockIcon} />
+          <Text style={s.emptyTitleSelf}>An Empty Queue</Text>
+          <PressableScale style={s.ctaBtnSelf} onPress={() => router.push('/search-modal' as never)} haptic>
+            <Text style={s.ctaBtnTextSelf}>CURATE FUTURE VIEWINGS</Text>
+          </PressableScale>
+        </Animated.View>
+      );
+    }
+
     if (watchlist.length === 0) {
       return (
         <View style={s.emptyState}>
           <Bookmark size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
           <Text style={s.emptyTitle}>The Queue is Empty</Text>
-          <Text style={s.emptyDesc}>{isSelf ? 'No films saved yet.' : "This member hasn't saved any films yet."}</Text>
+          {/* eslint-disable-next-line react/no-unescaped-entities */}
+          <Text style={s.emptyDesc}>This member hasn't saved any films yet.</Text>
         </View>
       );
     }
     
     if (watchlistSearch) {
-      return <Text style={s.searchNoResults}>No films match "{watchlistSearch}"</Text>;
+      return <Text style={s.searchNoResults}>No films match &quot;{watchlistSearch}&quot;</Text>;
     }
     
     return null;
-  }, [watchlist.length, watchlistFiltered.length, isSelf, watchlistSearch]);
+  }, [watchlist.length, watchlistFiltered.length, isSelf, watchlistSearch, pulseStyle, router]);
 
   return (
     <View style={s.container}>
-      <FlashList
+      <FlashList<WatchlistRowItem>
         data={flashData}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: WatchlistRowItem) => item.id}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
-        estimatedItemSize={180}
+        estimatedItemSize={150}
         contentContainerStyle={s.listContent}
         showsVerticalScrollIndicator={false}
+        onEndReached={onLoadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={isLoadingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
       />
     </View>
   );
@@ -148,9 +228,13 @@ const s = StyleSheet.create({
   container: { flex: 1 },
   listContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 2, marginTop: 12 },
-  emptyLockIcon: { marginBottom: 16, opacity: 0.6 },
+  emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(0,0,0,0.95)', borderWidth: 1, borderRadius: 0, marginTop: 12 },
+  emptyLockIcon: { marginBottom: 16, opacity: 0.8 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
+  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: '#FFFFFF', marginBottom: 24, textAlign: 'center', letterSpacing: 1 },
   emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
+  ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)', backgroundColor: 'rgba(255,255,255,0.05)' },
+  ctaBtnTextSelf: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 4, color: '#FFFFFF' },
   ctaBtn: { backgroundColor: 'rgba(8,6,4,0.95)', borderRadius: 2, borderWidth: 1, borderColor: 'rgba(139,105,20,0.4)', paddingVertical: 14, alignItems: 'center', marginBottom: 24 },
   ctaBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   ctaBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },

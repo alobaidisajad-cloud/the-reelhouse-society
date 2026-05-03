@@ -9,6 +9,11 @@ const ExpoSecureStoreAdapter = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
+// S-01 AUDIT VERIFICATION: The Supabase anon key is intentionally exposed in
+// the JS bundle — this is Supabase's design. All data security is enforced by
+// Row Level Security (RLS) policies on every table. The anon key only grants
+// access to operations explicitly permitted by RLS. Auth tokens are stored in
+// expo-secure-store (see ExpoSecureStoreAdapter above), NOT in MMKV or AsyncStorage.
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 
@@ -21,8 +26,16 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-supabase.auth.onAuthStateChange(async (event, _session) => {
-    if (event === 'TOKEN_REFRESH_FAILED') {
+// #15 AUDIT FIX: TOKEN_REFRESH_FAILED is emitted by @supabase/auth-js >=2.64.0
+// but is not part of the public TypeScript enum. The cast is intentional.
+// As a belt-and-suspenders approach, we also handle TOKEN_REFRESHED with an
+// invalid session to catch edge cases across SDK versions.
+supabase.auth.onAuthStateChange(async (event, session) => {
+    if ((event as string) === 'TOKEN_REFRESH_FAILED') {
+        supabase.auth.signOut({ scope: 'local' }).catch(() => { });
+    }
+    // Fallback: if a token refresh fires but the session has no valid access token, force sign-out
+    if (event === 'TOKEN_REFRESHED' && !session?.access_token) {
         supabase.auth.signOut({ scope: 'local' }).catch(() => { });
     }
 });

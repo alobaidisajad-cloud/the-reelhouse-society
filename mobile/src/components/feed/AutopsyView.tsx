@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -20,10 +21,11 @@ export const AutopsyView = React.memo(function AutopsyView({ isAutopsied, autops
 
   return (
     <View style={s.autopsySectionWrap}>
-       <TouchableOpacity 
-          onPress={() => { Haptics.selectionAsync(); setAutopsyOpen(!autopsyOpen); }} 
-          activeOpacity={0.7} 
+       <PressableScale 
+          onPress={() => { setAutopsyOpen(!autopsyOpen); }} 
           style={s.autopsyToggleBtn}
+          haptic="selection"
+          pressedScale={0.97}
         >
           <View style={s.autopsyToggleContent}>
             <AnimatedView style={s.autopsyDot} />
@@ -31,7 +33,7 @@ export const AutopsyView = React.memo(function AutopsyView({ isAutopsied, autops
             <Text style={s.autopsyConfidential}>CONFIDENTIAL</Text>
           </View>
           <Text style={[s.autopsyChevron, autopsyOpen && s.autopsyChevronOpen]}>▼</Text>
-       </TouchableOpacity>
+       </PressableScale>
 
        {autopsyOpen && (
          <AnimatedView entering={FadeInUp.duration(300)} style={s.autopsyCard}>

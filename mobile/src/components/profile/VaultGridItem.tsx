@@ -1,10 +1,11 @@
 import React, { memo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import * as Haptics from 'expo-haptics';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { VaultItem } from '@/src/types';
+import PressableScale from '@/src/components/PressableScale';
 
 interface VaultGridItemProps {
     item: VaultItem;
@@ -14,7 +15,7 @@ interface VaultGridItemProps {
 export const VaultGridItem = memo(function VaultGridItem({ item, onPress }: VaultGridItemProps) {
     const posterUri = item.poster_path ? tmdb.poster(item.poster_path, 'w185') : null;
     return (
-        <TouchableOpacity style={s.container} onPress={() => { Haptics.selectionAsync(); onPress(); }} activeOpacity={0.7}>
+        <PressableScale style={s.container} onPress={onPress} haptic="selection">
             {posterUri ? (
                 <Image source={{ uri: posterUri }} style={s.image} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`vault-${item.id}`} />
             ) : (
@@ -22,7 +23,7 @@ export const VaultGridItem = memo(function VaultGridItem({ item, onPress }: Vaul
                     <Text style={s.placeholderGlyph}>✦</Text>
                 </View>
             )}
-        </TouchableOpacity>
+        </PressableScale>
     );
 });
 

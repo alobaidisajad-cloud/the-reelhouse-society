@@ -1,11 +1,13 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
+import reelToast from '@/src/utils/reelToast';
 
 interface AchievementLog {
     rating: number;
     review?: string;
-    genres?: Array<{ id: number | string }> | number[];
+    genres?: { id: number | string }[] | number[];
     year?: number;
     watchedDate?: string;
     createdAt?: string;
@@ -120,12 +122,14 @@ export function Achievements({ logs }: { logs: AchievementLog[] }) {
 
       <View style={s.grid}>
         {earned.map((badge) => (
-          <View
+          <PressableScale
             key={badge.id}
+            onPress={() => reelToast(`${badge.title}: ${badge.desc}`)}
             style={[
               s.badgeItem,
               badge.unlocked ? s.badgeUnlocked : s.badgeLocked,
             ]}
+            pressedScale={0.93}
           >
             <Text style={[s.badgeGlyph, badge.unlocked ? s.glyphUnlocked : s.glyphLocked]}>
               {badge.glyph}
@@ -133,7 +137,7 @@ export function Achievements({ logs }: { logs: AchievementLog[] }) {
             <Text style={[s.badgeTitle, badge.unlocked ? s.titleUnlocked : s.titleLocked]} numberOfLines={2}>
               {badge.title}
             </Text>
-          </View>
+          </PressableScale>
         ))}
       </View>
     </View>

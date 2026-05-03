@@ -1,11 +1,13 @@
 /**
  * WeeklyChallenge — Weekly film challenge component.
  */
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+ 
+import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 const CHALLENGES = [
     { title: 'THE FIRST TIMER', desc: 'Watch a film from a country you\'ve never explored.', glyph: '🌍' },
@@ -33,13 +35,13 @@ export function WeeklyChallenge() {
             <Text style={s.title}>{challenge.title}</Text>
             <Text style={s.desc}>{challenge.desc}</Text>
 
-            <TouchableOpacity
+            <PressableScale
                 style={s.acceptBtn}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/explore'); }}
-                activeOpacity={0.7}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/darkroom' as any); }}
+                pressedScale={0.95}
             >
                 <Text style={s.acceptText}>ACCEPT CHALLENGE</Text>
-            </TouchableOpacity>
+            </PressableScale>
         </Animated.View>
     );
 }

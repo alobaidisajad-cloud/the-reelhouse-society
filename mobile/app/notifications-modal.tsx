@@ -1,13 +1,15 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Platform } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, StyleSheet, Platform, ActivityIndicator, InteractionManager } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useNotificationStore, AppNotification } from '@/src/stores/social';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import * as Haptics from 'expo-haptics';
-import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
-import { Heart, MessageCircle, UserPlus, Star, Award, Bell } from 'lucide-react-native';
+import Animated, { FadeInUp } from 'react-native-reanimated';
+import { Heart, MessageCircle, UserPlus, Star, Award, Bell, X } from 'lucide-react-native';
 import { EmptyState } from '@/src/components/EmptyStates';
+import PressableScale from '@/src/components/PressableScale';
 
 // Map notification types to icons
 const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
@@ -18,7 +20,7 @@ const TYPE_ICONS: Record<string, { Icon: typeof Heart; color: string }> = {
   default: { Icon: Award, color: colors.fog },
 };
 
-const NotificationItem = React.memo(function NotificationItem({ item, index, onRead, onDismiss }: { item: AppNotification; index: number; onRead: (id: string) => void; onDismiss: (id: string) => void }) {
+const NotificationItem = React.memo(function NotificationItem({ item, index }: { item: AppNotification; index: number }) {
   const isRead = item.read;
   const router = useRouter();
   const typeInfo = TYPE_ICONS[item.type] || TYPE_ICONS.default;
@@ -26,26 +28,30 @@ const NotificationItem = React.memo(function NotificationItem({ item, index, onR
   
   const handlePress = () => {
     if (!isRead) {
-      onRead(item.id);
+      useNotificationStore.getState().markRead(item.id);
     }
-    // Navigate to film or user if available
-    if (item.film_id) router.push(`/film/${item.film_id}`);
-    else if (item.from_username) router.push(`/user/${item.from_username}`);
+    // Navigate to film or user if available (with strict modal teardown)
+    // FIX #6: Use dismissAll to prevent stack corruption when navigating from notifications
+    if (item.film_id) {
+      router.dismissAll();
+      InteractionManager.runAfterInteractions(() => router.push(`/film/${item.film_id}` as any));
+    } else if (item.from_username) {
+      router.dismissAll();
+      InteractionManager.runAfterInteractions(() => router.push(`/user/${item.from_username}` as any));
+    }
   };
 
-  const handlePressIn = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+
 
   const posterUri = item.poster_path ? `https://image.tmdb.org/t/p/w92${item.poster_path}` : null;
 
   return (
-    <Animated.View entering={FadeInUp.duration(300).delay(index * 50)} exiting={FadeOutDown.duration(200)}>
-      <TouchableOpacity 
+    <Animated.View entering={FadeInUp.duration(300).delay(Math.min(index * 50, 400))}>
+      <PressableScale 
         style={[s.itemWrap, !isRead && s.itemUnread]} 
-        onPressIn={handlePressIn}
         onPress={handlePress}
-        activeOpacity={0.85}
+        haptic="light"
+        pressedScale={0.96}
       >
         {/* Action icon */}
         <View style={[s.iconCircle, { borderColor: typeInfo.color }]}>
@@ -57,37 +63,49 @@ const NotificationItem = React.memo(function NotificationItem({ item, index, onR
           <Text style={s.itemMessage} numberOfLines={3} ellipsizeMode="tail">
             <Text style={s.itemUser}>@{item.from_username || 'system'}</Text> {item.message}
           </Text>
-          <Text style={s.itemTime} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{new Date(item.created_at).toLocaleDateString()}</Text>
+          <Text style={s.itemTime} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+            {new Date(item.created_at).toLocaleDateString()} · {new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </Text>
         </View>
 
         {/* Mini poster thumbnail */}
         {posterUri ? (
           <Image source={{ uri: posterUri }} style={s.miniPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={200} />
         ) : item.film_id ? (
-          <View style={[s.miniPoster, { alignItems: 'center', justifyContent: 'center' }]}>
+          <View style={[s.miniPoster, s.miniPosterEmpty]}>
             <Star size={10} color={colors.fog} />
           </View>
         ) : null}
 
-        <TouchableOpacity style={s.dismissBtn} hitSlop={{top: 20, bottom: 20, left: 15, right: 15}} activeOpacity={0.6} onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onDismiss(item.id);
-        }}>
-          <Text style={s.dismissText}>✕</Text>
-        </TouchableOpacity>
-      </TouchableOpacity>
+        <PressableScale style={s.dismissBtn} hitSlop={{top: 20, bottom: 20, left: 15, right: 15}} onPress={() => {
+            useNotificationStore.getState().dismiss(item.id);
+        }} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss notification">
+          <X size={12} color={colors.fog} />
+        </PressableScale>
+      </PressableScale>
     </Animated.View>
   );
 });
 
 export default function NotificationsModal() {
   const router = useRouter();
-  const { notifications, loading, markRead, markAllRead, dismiss } = useNotificationStore();
+  // H-11 AUDIT FIX: loading is now used for the list loading state
+  const { notifications, loading, markAllRead, fetchNotifications } = useNotificationStore();
+  // FIX #4: Single-source derived value instead of double .every() computation
+  const allRead = useNotificationStore(s => s._unreadCount) === 0;
+
+  // C4 FIX: Fetch existing notifications from server on mount
+  React.useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
   const handleMarkAllRead = () => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     markAllRead();
   };
+
+  // FIX #3: Stable renderItem reference to prevent FlashList cell reconciliation
+  const renderNotification = useCallback(({ item, index }: { item: AppNotification; index: number }) => (
+    <NotificationItem item={item} index={index} />
+  ), []);
 
   return (
     <View style={s.container}>
@@ -95,45 +113,47 @@ export default function NotificationsModal() {
       <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
 
       <View style={s.header}>
-        <TouchableOpacity style={s.closeBtn} onPress={() => { Haptics.selectionAsync(); router.back(); }} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+        <PressableScale style={s.closeBtn} onPress={() => { router.back(); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.95}>
           <Text style={s.closeText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>CLOSE</Text>
-        </TouchableOpacity>
+        </PressableScale>
         <Text style={s.title}>Dispatches</Text>
-        <TouchableOpacity 
+        <PressableScale 
            style={s.markReadBtn} 
            onPress={handleMarkAllRead}
-           disabled={notifications.every(n => n.read)}
-           activeOpacity={0.7}
+           disabled={allRead}
            hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}
+           haptic="selection"
+           pressedScale={0.95}
         >
-          <Text style={[s.markReadText, notifications.every(n => n.read) && { opacity: 0.3 }]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>READ ALL</Text>
-        </TouchableOpacity>
+          <Text style={[s.markReadText, allRead && { opacity: 0.3 }]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>READ ALL</Text>
+        </PressableScale>
       </View>
 
-      <FlatList
+      <FlashList
         data={notifications}
+        estimatedItemSize={80}
         keyExtractor={n => n.id}
         contentContainerStyle={s.listContent}
         showsVerticalScrollIndicator={false}
-        windowSize={7}
-        maxToRenderPerBatch={15}
-        initialNumToRender={12}
         removeClippedSubviews={true}
-        ListEmptyComponent={
-          <EmptyState
-            icon={<Bell size={28} color={colors.sepia} strokeWidth={1} />}
-            title="No New Transmissions"
-            subtitle="Your frequency is silent."
-          />
+        ListHeaderComponent={
+          loading ? (
+            <View style={s.loadingWrap}>
+              <ActivityIndicator size="small" color={colors.sepia} />
+              <Text style={s.loadingText}>TUNING FREQUENCY…</Text>
+            </View>
+          ) : null
         }
-        renderItem={({ item, index }) => (
-          <NotificationItem 
-            item={item}
-            index={index}
-            onRead={(id) => markRead(id)} 
-            onDismiss={(id) => dismiss(id)} 
-          />
-        )}
+        ListEmptyComponent={
+          loading ? null : (
+            <EmptyState
+              icon={<Bell size={28} color={colors.sepia} strokeWidth={1} />}
+              title="No New Transmissions"
+              subtitle="Your frequency is silent."
+            />
+          )
+        }
+        renderItem={renderNotification}
       />
     </View>
   );
@@ -145,7 +165,7 @@ const s = StyleSheet.create({
   dragHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.2)' },
   header: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingTop: Platform.OS === 'ios' ? 16 : 24, paddingBottom: 16,
+    paddingHorizontal: 16, paddingTop: 16, paddingBottom: 16,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
   },
   closeBtn: { width: 80 },
@@ -178,12 +198,13 @@ const s = StyleSheet.create({
     width: 24, height: 36, borderRadius: 2,
     backgroundColor: colors.soot,
   },
+  miniPosterEmpty: {
+    alignItems: 'center', justifyContent: 'center'
+  },
   
   dismissBtn: { padding: 8 },
-  dismissText: { fontSize: 12, color: colors.fog },
 
-  emptyState: { alignItems: 'center', marginTop: 100 },
-  emptyIcon: { fontSize: 40, marginBottom: 12 },
-  emptyTitle: { fontFamily: fonts.sub, fontSize: 16, color: colors.bone, marginBottom: 4 },
-  emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic' }
+  loadingWrap: { alignItems: 'center', paddingVertical: 20, gap: 8 },
+  loadingText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog },
+
 });

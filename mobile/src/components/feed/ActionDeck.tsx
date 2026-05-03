@@ -9,6 +9,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
 
 interface ActionDeckProps {
   itemId: string;
@@ -40,18 +41,32 @@ export const ActionDeck = React.memo(function ActionDeck({
   const isOwner = currentUser?.username === ownerUsername;
   const isLoungeEligible = currentUser && ['archivist', 'auteur'].includes(currentUser.role ?? '');
 
+  const heartScale = useSharedValue(1);
+  const bookmarkScale = useSharedValue(1);
+
+  const animatedHeartStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: heartScale.value }]
+  }));
+  const animatedBookmarkStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: bookmarkScale.value }]
+  }));
+
   const handleCertify = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     toggleEndorse(itemId);
-  }, [itemId, toggleEndorse]);
+    heartScale.value = withSequence(
+      withSpring(1.5, { damping: 12, stiffness: 400 }),
+      withSpring(1, { damping: 14, stiffness: 300 })
+    );
+  }, [itemId, toggleEndorse, heartScale]);
 
   const handleCritique = useCallback(() => {
     Haptics.selectionAsync();
-    router.push(`/log/${itemId}`);
+    router.push(`/log/${itemId}` as any);
   }, [itemId, router]);
 
   const handleSaveOrEdit = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (isOwner) {
       router.push({
         pathname: '/log-modal',
@@ -59,9 +74,10 @@ export const ActionDeck = React.memo(function ActionDeck({
           filmId: String(filmId),
           editLogId: itemId,
           filmTitle: filmTitle,
-          posterPath: posterPath ?? '',
+          filmPoster: posterPath ?? '',
+          filmYear: year ? String(year) : '',
         },
-      });
+      } as any);
     } else {
       if (filmSaved) {
         removeFromWatchlist(filmId);
@@ -75,8 +91,12 @@ export const ActionDeck = React.memo(function ActionDeck({
         });
         reelToast.success('Saved to watchlist ✦');
       }
+      bookmarkScale.value = withSequence(
+        withSpring(1.4, { damping: 12, stiffness: 400 }),
+        withSpring(1, { damping: 14, stiffness: 300 })
+      );
     }
-  }, [isOwner, filmSaved, addToWatchlist, removeFromWatchlist, router, filmId, itemId, filmTitle, posterPath, year]);
+  }, [isOwner, filmSaved, addToWatchlist, removeFromWatchlist, router, filmId, itemId, filmTitle, posterPath, year, bookmarkScale]);
 
   const handleLounge = useCallback(() => {
     if (!isLoungeEligible) {
@@ -91,8 +111,10 @@ export const ActionDeck = React.memo(function ActionDeck({
   return (
     <>
       <View style={s.actionDeck}>
-        <PressableScale style={s.actionBtn} onPress={handleCertify} haptic="medium">
-          <Heart size={16} strokeWidth={2} color={endorsed ? colors.sepia : colors.fog} fill={endorsed ? colors.sepia : 'transparent'} />
+        <PressableScale style={s.actionBtn} onPress={handleCertify} haptic="medium" pressedScale={0.92}>
+          <Animated.View style={animatedHeartStyle}>
+            <Heart size={16} strokeWidth={2} color={endorsed ? colors.bloodReel : colors.fog} fill={endorsed ? colors.bloodReel : 'transparent'} />
+          </Animated.View>
           <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]}>{endorsed ? 'CERTIFIED' : 'CERT'}</Text>
         </PressableScale>
 
@@ -101,12 +123,14 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Text style={s.actionLabel}>CRITIQUE</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleSaveOrEdit} haptic="medium">
-          {isOwner ? (
-            <Edit3 size={16} strokeWidth={2} color={colors.fog} />
-          ) : (
-            <Bookmark size={16} strokeWidth={2} color={filmSaved ? colors.sepia : colors.fog} fill={filmSaved ? colors.sepia : 'transparent'} />
-          )}
+        <PressableScale style={s.actionBtn} onPress={handleSaveOrEdit} haptic="medium" pressedScale={0.92}>
+          <Animated.View style={animatedBookmarkStyle}>
+            {isOwner ? (
+              <Edit3 size={16} strokeWidth={2} color={colors.fog} />
+            ) : (
+              <Bookmark size={16} strokeWidth={2} color={filmSaved ? colors.bloodReel : colors.fog} fill={filmSaved ? colors.bloodReel : 'transparent'} />
+            )}
+          </Animated.View>
           <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelCertified]}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
         </PressableScale>
 
@@ -155,7 +179,7 @@ const s = StyleSheet.create({
     color: colors.fog,
   },
   actionLabelCertified: {
-    color: colors.sepia,
+    color: colors.bloodReel,
   },
   actionIconLocked: {
     opacity: 0.3,

@@ -71,7 +71,7 @@ export function useBatchReactions(logIds: string[]) {
     }, [])
 
     useEffect(() => {
-        const key = logIds.sort().join(',')
+        const key = [...logIds].sort().join(',')
         if (key === prevIdsRef.current || logIds.length === 0) return
         prevIdsRef.current = key
         fetchAll(logIds)

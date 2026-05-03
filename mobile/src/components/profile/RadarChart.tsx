@@ -1,7 +1,8 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { View, Text, StyleSheet } from 'react-native';
 import { colors, fonts } from '@/src/theme/theme';
 
-export function RadarChart({ autopsy, size = 120 }: { autopsy: any; size?: number }) {
+export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, number> | null; size?: number }) {
     if (!autopsy) return null;
     return (
         <View style={{ width: size, height: size, backgroundColor: colors.ash, borderRadius: size/2, alignItems: 'center', justifyContent: 'center' }}>

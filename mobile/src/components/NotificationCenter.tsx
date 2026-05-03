@@ -2,13 +2,17 @@
  * NotificationCenter — Full notification panel with grouped notifications.
  */
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
+import PressableScale from '@/src/components/PressableScale';
+import { EmptyState } from '@/src/components/EmptyStates';
 
 // ── Pure utility functions (module-level = zero GC pressure) ──
 function getIcon(type: string): string {
@@ -35,7 +39,12 @@ interface Notification {
     id: string;
     type: string;
     message: string;
-    metadata?: Record<string, unknown> | null;
+    metadata?: {
+        film_id?: number | string;
+        user_id?: string;
+        username?: string;
+        [key: string]: unknown;
+    } | null;
     created_at: string;
     read: boolean;
 }
@@ -69,21 +78,27 @@ export default function NotificationCenter() {
 
     const markAllRead = async () => {
         if (!user) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     };
 
     const handlePress = (n: Notification) => {
         Haptics.selectionAsync();
-        // Mark as read
+        // #7 AUDIT FIX: Await mark-as-read and rollback on failure
         if (!n.read) {
-            supabase.from('notifications').update({ read: true }).eq('id', n.id);
+            // Optimistic update
             setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
+            supabase.from('notifications').update({ read: true }).eq('id', n.id)
+                .then(({ error }) => {
+                    if (error) {
+                        // Rollback on failure
+                        setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: false } : x));
+                    }
+                });
         }
         // Navigate based on type
-        if (n.metadata?.film_id) router.push(`/film/${n.metadata.film_id}`);
-        else if (n.metadata?.user_id) router.push(`/user/${n.metadata.username ?? n.metadata.user_id}`);
+        if (n.metadata?.film_id) router.push(`/film/${n.metadata.film_id}` as any);
+        else if (n.metadata?.user_id) router.push(`/user/${n.metadata.username ?? n.metadata.user_id}` as any);
     };
 
 
@@ -95,25 +110,21 @@ export default function NotificationCenter() {
             <View style={s.header}>
                 <Text style={s.title}>Notifications</Text>
                 {unreadCount > 0 && (
-                    <TouchableOpacity onPress={markAllRead} activeOpacity={0.7}>
+                    <PressableScale onPress={markAllRead} haptic="light">
                         <Text style={s.markAllText}>MARK ALL READ ({unreadCount})</Text>
-                    </TouchableOpacity>
+                    </PressableScale>
                 )}
             </View>
 
-            <FlatList
+            <FlashList
                 data={notifications}
                 keyExtractor={item => item.id}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}
-                windowSize={5}
-                maxToRenderPerBatch={10}
-                initialNumToRender={15}
-                removeClippedSubviews={true}
+                estimatedItemSize={72}
                 renderItem={({ item }) => (
-                    <TouchableOpacity
+                    <PressableScale
                         style={[s.notifRow, !item.read && s.notifUnread]}
                         onPress={() => handlePress(item)}
-                        activeOpacity={0.7}
                     >
                         <View style={[s.iconCircle, !item.read && s.iconCircleUnread]}>
                             <Text style={s.icon}>{getIcon(item.type)}</Text>
@@ -123,15 +134,18 @@ export default function NotificationCenter() {
                             <Text style={s.notifTime}>{timeAgo(item.created_at)}</Text>
                         </View>
                         {!item.read && <View style={s.unreadDot} />}
-                    </TouchableOpacity>
+                    </PressableScale>
                 )}
                 ListEmptyComponent={
                     !loading ? (
-                        <View style={s.emptyWrap}>
-                            <Text style={s.emptyGlyph}>◎</Text>
-                            <Text style={s.emptyText}>No notifications yet</Text>
-                            <Text style={s.emptySubtext}>Activity from the Society will appear here.</Text>
-                        </View>
+                        // #14 AUDIT FIX: Use branded EmptyState with Buster for visual consistency
+                        <EmptyState
+                            useBuster
+                            busterMood="neutral"
+                            title="The Lobby Is Quiet"
+                            subtitle="Activity from the Society will appear here."
+                            compact
+                        />
                     ) : null
                 }
             />
@@ -153,8 +167,4 @@ const s = StyleSheet.create({
     notifMessage: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 18 },
     notifTime: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, marginTop: 2 },
     unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.sepia },
-    emptyWrap: { padding: 48, alignItems: 'center' },
-    emptyGlyph: { fontSize: 40, color: colors.sepia, opacity: 0.3, marginBottom: 12 },
-    emptyText: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 4 },
-    emptySubtext: { fontFamily: fonts.body, fontSize: 13, color: colors.fog },
 });

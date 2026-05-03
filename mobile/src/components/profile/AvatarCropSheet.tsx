@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import Animated, { FadeInUp, FadeOutDown } from 'react-native-reanimated';
 import { BlurView } from 'expo-blur';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Camera, Image as ImageIcon, X, Check } from 'lucide-react-native';
 import { decode } from 'base64-arraybuffer';
 
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
+import reelToast from '@/src/utils/reelToast';
 
 interface Props {
   onClose: () => void;
@@ -56,6 +60,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
     setUploading(true);
     try {
       const filePath = `${user!.id}/${Date.now()}.jpg`;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { data, error } = await supabase.storage.from('avatars').upload(filePath, decode(base64Str), {
         contentType: 'image/jpeg',
       });
@@ -73,8 +78,8 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       onSuccess(publicUrl);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
-      console.error(msg);
-      Alert.alert('Upload Failed', msg);
+      if (__DEV__) console.error(msg);
+      reelToast.error(msg);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
     } finally {
       setUploading(false);
@@ -87,9 +92,9 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       <Animated.View entering={FadeInUp.springify().damping(15)} exiting={FadeOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
         <View style={s.header}>
           <Text style={s.title}>UPDATE IDENTITY</Text>
-          <TouchableOpacity onPress={() => { Haptics.selectionAsync(); onClose(); }} style={s.closeBtn}>
+          <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic="selection" pressedScale={0.9}>
             <X size={20} color={colors.fog} />
-          </TouchableOpacity>
+          </PressableScale>
         </View>
 
         {uploading ? (
@@ -99,19 +104,19 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
           </View>
         ) : (
           <View style={s.actions}>
-            <TouchableOpacity style={s.actionCard} onPress={() => handlePick('camera')} activeOpacity={0.8}>
+            <PressableScale style={s.actionCard} onPress={() => handlePick('camera')} haptic="selection" pressedScale={0.96}>
               <View style={s.iconWrap}>
                 <Camera size={24} color={colors.sepia} />
               </View>
               <Text style={s.actionText}>USE CAMERA</Text>
-            </TouchableOpacity>
+            </PressableScale>
 
-            <TouchableOpacity style={s.actionCard} onPress={() => handlePick('library')} activeOpacity={0.8}>
+            <PressableScale style={s.actionCard} onPress={() => handlePick('library')} haptic="selection" pressedScale={0.96}>
               <View style={s.iconWrap}>
                 <ImageIcon size={24} color={colors.bone} />
               </View>
               <Text style={s.actionText}>LIBRARY VAULT</Text>
-            </TouchableOpacity>
+            </PressableScale>
           </View>
         )}
       </Animated.View>

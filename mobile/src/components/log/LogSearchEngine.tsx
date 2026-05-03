@@ -1,10 +1,15 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, FlatList, TouchableOpacity } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, Easing } from 'react-native-reanimated';
+import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { Search, Sparkles, Star } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
+
+// Module-scoped: prevents remount on every render cycle
+const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 
 export interface LogSearchResult {
     id: number;
@@ -20,6 +25,22 @@ interface Props {
     onSelectFilm: (film: LogSearchResult) => void;
 }
 
+ 
+const LogSearchResultRow = React.memo(({ r, onSelectFilm }: { r: LogSearchResult, onSelectFilm: (film: LogSearchResult) => void }) => {
+    return (
+        <PressableScale style={st.resultRow} onPress={() => onSelectFilm(r)} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.96}>
+            {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} contentFit="cover" cachePolicy="memory-disk" />}
+            <View style={st.resultFlex}>
+                <Text style={st.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{r.title || r.name}</Text>
+                <View style={st.resultMetaRow}>
+                    <Text style={st.resultMeta}>{r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)}</Text>
+                    <Star size={8} color={colors.sepia} fill={colors.sepia} />
+                </View>
+            </View>
+        </PressableScale>
+    );
+});
+
 export default function LogSearchEngine({ onSelectFilm }: Props) {
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<LogSearchResult[]>([]);
@@ -28,27 +49,53 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
     const [searchContext, setSearchContext] = useState('');
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Nitrate Noir Breathing Ember Protocol
+    const emberOpacity = useSharedValue(0.5);
+    useEffect(() => {
+        if (searching) {
+            emberOpacity.value = withRepeat(withTiming(1, { duration: 600 }), -1, true);
+        } else {
+            emberOpacity.value = withTiming(0.5, { duration: 300 });
+        }
+        return () => cancelAnimation(emberOpacity);
+    }, [searching, emberOpacity]);
+
+    const animatedIconProps = useAnimatedProps(() => ({
+        color: searching ? colors.bloodReel : colors.fog,
+    }));
+    const animatedIconStyle = useAnimatedStyle(() => ({
+        opacity: emberOpacity.value,
+    }));
+
     const handleSearch = useCallback((q: string) => {
         setQuery(q);
         if (!q.trim()) { setResults([]); setSearching(false); return; }
         setSearching(true);
         if (searchTimeout.current) clearTimeout(searchTimeout.current);
         searchTimeout.current = setTimeout(async () => {
+            // Stale guard: if query changed during async, bail
             try {
                 const res = await tmdb.search(q, 1);
-                const filtered = (res.results || []).filter((r: any) => r.media_type !== 'person').slice(0, 8);
+                const filtered = (res.results || []).filter((r: Record<string, any>) => r.media_type !== 'person').slice(0, 8);
                 setResults(filtered);
                 setSearchType(res.searchType || 'exact');
                 setSearchContext(res.matchedContext || '');
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             } catch (err: unknown) { setResults([]); }
             finally { setSearching(false); }
         }, 400);
     }, []);
 
+    useEffect(() => {
+        return () => {
+            if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        };
+    }, []);
+
     return (
         <Animated.View entering={FadeIn.duration(400).easing(Easing.out(Easing.cubic))} style={st.searchStep}>
             <View style={st.searchWrap}>
-                <Search size={16} color={colors.fog} style={st.searchIcon} />
+                <AnimatedSearchIcon size={16} animatedProps={animatedIconProps} style={[st.searchIcon, animatedIconStyle]} />
                 <TextInput
                     style={st.searchInput}
                     placeholder="Search for a film..."
@@ -64,6 +111,8 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                     autoCorrect={false}
                     spellCheck={false}
                     autoCapitalize="words"
+                    keyboardAppearance="dark"
+                    accessibilityLabel="Search for a film to log"
                 />
             </View>
             {searching && (
@@ -81,26 +130,18 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                     <Text style={[st.searchBadge, st.searchBadgeFlicker]}>FUZZY RESCUE: {searchContext.toUpperCase()}</Text>
                 </View>
             )}
-            <FlatList
+            <FlashList
                 data={results}
                 keyExtractor={r => String(r.id)}
                 style={st.searchResults}
                 contentContainerStyle={st.searchResultsContent}
-                renderItem={({ item: r }) => (
-                    <TouchableOpacity style={st.resultRow} onPress={() => onSelectFilm(r)} activeOpacity={0.7} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
-                        {r.poster_path && <Image source={{ uri: tmdb.poster(r.poster_path, 'w92') }} style={st.resultPoster} contentFit="cover" cachePolicy="memory-disk" />}
-                        <View style={st.resultFlex}>
-                            <Text style={st.resultTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>{r.title || r.name}</Text>
-                            <View style={st.resultMetaRow}>
-                                <Text style={st.resultMeta}>{r.release_date?.slice(0, 4)} · {r.vote_average?.toFixed(1)}</Text>
-                                <Star size={8} color={colors.sepia} fill={colors.sepia} />
-                            </View>
-                        </View>
-                    </TouchableOpacity>
-                )}
+                estimatedItemSize={74}
+                renderItem={({ item: r }) => <LogSearchResultRow r={r} onSelectFilm={onSelectFilm} />}
+                keyboardShouldPersistTaps="handled"
             />
             {!searching && query.length > 0 && results.length === 0 && (
                 <View style={st.noResultsWrap}>
+                    {/* eslint-disable-next-line react/no-unescaped-entities */}
                     <Text style={st.noResultsText}>No films found for "{query}"</Text>
                 </View>
             )}
@@ -130,3 +171,6 @@ const st = StyleSheet.create({
     noResultsWrap: { alignItems: 'center', paddingVertical: 40 },
     noResultsText: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog },
 });
+
+
+LogSearchResultRow.displayName = 'LogSearchResultRow';

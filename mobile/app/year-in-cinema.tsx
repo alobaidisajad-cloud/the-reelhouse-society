@@ -1,26 +1,39 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity, Platform } from 'react-native';
-import Animated, { FadeInDown, FadeIn, Layout } from 'react-native-reanimated';
+import { useMemo, useState, useCallback } from 'react';
+import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
+import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { X, ChevronRight, Play } from 'lucide-react-native';
+import { X, Film } from 'lucide-react-native';
+import * as Haptics from 'expo-haptics';
 
 import { useFilmStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import { ReelRating } from '@/src/components/Decorative';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const { width, height } = Dimensions.get('window');
-const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
+// ── Static slide definitions (module-scope to avoid re-creation on every render) ──
+const SLIDES = [
+  { type: 'intro' },
+  { type: 'total' },
+  { type: 'directors' },
+  { type: 'top' },
+  { type: 'outro' },
+];
+
+
 
 export default function YearInCinemaScreen() {
   const router = useRouter();
-  const { logs } = useFilmStore();
+  const logs = useFilmStore(s => s.logs);
   const { user } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { width, height } = useWindowDimensions();
 
   const stats = useMemo(() => {
     const currentYear = new Date().getFullYear();
@@ -46,43 +59,20 @@ export default function YearInCinemaScreen() {
     return { year: currentYear, total, avgRating, topDirectors, topFilms };
   }, [logs]);
 
-  const slides = [
-    { type: 'intro' },
-    { type: 'total' },
-    { type: 'directors' },
-    { type: 'top' },
-    { type: 'outro' },
-  ];
 
-  const handleNext = () => {
-    if (currentIndex < slides.length - 1) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      // Let flatlist snap
-    } else {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      router.back();
-    }
-  };
 
-  const renderSlide = ({ item, index }: { item: { type: string }; index: number }) => {
+  // FIX #1: Stable renderItem reference — prevents stale currentIndex closure in FlashList recycled cells
+  const renderSlide = useCallback(({ item, index }: { item: { type: string }; index: number }) => {
     const isActive = currentIndex === index;
 
     return (
-      <View style={[s.slide, { width, height }]}>
+      <View style={[s.slide, { width, height: height - insets.top - insets.bottom }]}>
         <LinearGradient 
           colors={['#1a1510', colors.ink, '#0A0703']} 
           locations={[0, 0.5, 1]}
           style={StyleSheet.absoluteFillObject} 
         />
         <View style={s.grainOverlay} />
-
-        <TouchableOpacity 
-          style={StyleSheet.absoluteFillObject} 
-          activeOpacity={1} 
-          onPress={() => {
-            // Invisible touch areas for left/right tap if wanted
-          }} 
-        />
 
         <View style={s.slideContent}>
           {isActive && item.type === 'intro' && (
@@ -102,7 +92,7 @@ export default function YearInCinemaScreen() {
           )}
 
           {isActive && item.type === 'directors' && (
-            <Animated.View entering={FadeInDown.duration(800).springify()} style={s.contentBox}>
+            <Animated.View entering={FadeInDown.duration(800).springify()} style={[s.contentBox, { paddingTop: Math.max(insets.top + 20, 60) }]}>
               <Text style={s.title}>The Auteurs</Text>
               <Text style={s.sub}>Your most explored directors of the year.</Text>
               <View style={s.rankingWrap}>
@@ -118,7 +108,7 @@ export default function YearInCinemaScreen() {
           )}
 
           {isActive && item.type === 'top' && (
-            <Animated.View entering={FadeInDown.duration(800).springify()} style={s.contentBox}>
+            <Animated.View entering={FadeInDown.duration(800).springify()} style={[s.contentBox, { paddingTop: Math.max(insets.top + 20, 60) }]}>
               <Text style={s.title}>Highest Rated</Text>
               <Text style={s.sub}>The masterworks you certified perfectly.</Text>
               <View style={s.topFilmsWrap}>
@@ -126,9 +116,14 @@ export default function YearInCinemaScreen() {
                 {stats.topFilms.map((f, i) => (
                   <Animated.View key={f.id} entering={FadeInDown.delay(i * 200)} style={s.topFilmCard}>
                     {f.poster ? (
-                      <Image source={{ uri: tmdb.poster(f.poster, 'w342') }} style={s.topPoster} />
+                      <Image source={{ uri: tmdb.poster(f.poster, 'w342') }} style={s.topPoster} cachePolicy="memory-disk" />
                     ) : (
-                      <View style={[s.topPoster, { backgroundColor: colors.ash }]} />
+                      <LinearGradient 
+                        colors={['rgba(196,150,26,0.06)', 'rgba(11,10,8,0.95)']} 
+                        style={[s.topPoster, { justifyContent: 'center', alignItems: 'center' }]}
+                      >
+                        <Film size={20} color={colors.sepia} opacity={0.3} />
+                      </LinearGradient>
                     )}
                     <View style={s.topFilmInfo}>
                       <Text style={s.topFilmTitle} numberOfLines={2}>{f.title}</Text>
@@ -153,35 +148,30 @@ export default function YearInCinemaScreen() {
 
         {isActive && (
           <Animated.View entering={FadeIn} style={s.bottomRow}>
-             <TouchableOpacity style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.back(); }}>
+             <PressableScale style={s.navBtn} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} onPress={() => { router.back(); }} haptic="light" accessibilityRole="button" accessibilityLabel="Exit Year in Cinema">
                 <Text style={s.navText}>EXIT</Text>
-             </TouchableOpacity>
+             </PressableScale>
              <View style={s.paginator}>
-               {slides.map((_, i) => (
+               {SLIDES.map((_, i) => (
                  <View key={i} style={[s.pageDot, i === currentIndex && s.pageDotActive]} />
                ))}
              </View>
-             {currentIndex === slides.length - 1 ? (
-               <View style={{ width: 40 }} />
-             ) : (
-               <View style={{ width: 40 }} />
-             )}
+             {/* FIX #5: Removed dead ternary — both branches were identical */}
+             <View style={{ width: 40 }} />
           </Animated.View>
         )}
       </View>
     );
-  };
+  }, [currentIndex, width, height, insets, stats, user]);
 
   return (
     <View style={s.container}>
-      <FlatList
-        data={slides}
+      <FlashList
+        data={SLIDES}
         keyExtractor={(_, i) => `slide-${i}`}
         horizontal
         pagingEnabled
-        initialNumToRender={1}
-        windowSize={3}
-        maxToRenderPerBatch={1}
+        estimatedItemSize={width}
         showsHorizontalScrollIndicator={false}
         bounces={false}
         onMomentumScrollEnd={(e) => {
@@ -193,21 +183,21 @@ export default function YearInCinemaScreen() {
         }}
         renderItem={renderSlide}
       />
-      <TouchableOpacity style={s.globalCloseBtn} onPress={() => router.back()} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}>
+      <PressableScale style={[s.globalCloseBtn, { top: insets.top + 10 }]} onPress={() => router.back()} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" accessibilityRole="button" accessibilityLabel="Close Year in Cinema">
         <X size={24} color={colors.bone} />
-      </TouchableOpacity>
+      </PressableScale>
     </View>
   );
 }
 
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
-  globalCloseBtn: { position: 'absolute', top: Platform.OS === 'ios' ? 50 : 20, right: 20, zIndex: 100, padding: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
+  globalCloseBtn: { position: 'absolute', right: 20, zIndex: 100, padding: 8, backgroundColor: 'rgba(0,0,0,0.5)', borderRadius: 20 },
   slide: { flex: 1 },
   grainOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(139,105,20,0.03)' },
   slideContent: { flex: 1, padding: 30, justifyContent: 'center' },
   centerBox: { alignItems: 'center' },
-  contentBox: { alignItems: 'flex-start', paddingTop: 60 },
+  contentBox: { alignItems: 'flex-start' },
   
   eyebrow: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 6, color: colors.sepia, marginBottom: 12 },
   hugeYear: { fontFamily: fonts.display, fontSize: 80, color: colors.parchment, lineHeight: 90, marginBottom: 16, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 10 },

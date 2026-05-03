@@ -1,9 +1,10 @@
-import { View, Text, StyleSheet, Share, Alert } from 'react-native';
+import { View, Text, StyleSheet, Share } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '../PressableScale';
+import reelToast from '@/src/utils/reelToast';
 
 interface CinephileStats {
     count: number;
@@ -61,7 +62,7 @@ export function ProjectorRoom({ stats, user }: { stats?: CinephileStats; user?: 
             });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : 'Unknown error';
-            Alert.alert('Export Failed', msg);
+            reelToast.error(msg);
         }
     };
 

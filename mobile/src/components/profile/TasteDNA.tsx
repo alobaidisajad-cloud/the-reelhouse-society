@@ -2,17 +2,29 @@
  * TasteDNA — Visual taste fingerprint display.
  * Shows genre preferences as a DNA-style bar visualization.
  */
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, { FadeIn, FadeInRight } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInRight, runOnJS } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import * as Sharing from 'expo-sharing';
+import { Share2 } from 'lucide-react-native';
+import ViewShot from 'react-native-view-shot';
 import { colors, fonts } from '@/src/theme/theme';
+import { tmdb } from '@/src/lib/tmdb';
+import { GLOBAL_TMDB_CACHE } from './CinematicInsights';
+import { FilmSchema } from '@/src/lib/schemas';
+import { TasteDNAExportCanvas } from './TasteDNAExportCanvas';
+import PressableScale from '../PressableScale';
 
 interface TasteDNALog {
+    filmId?: number;
+    film_id?: number;
     genre_ids?: number[];
 }
 
 interface TasteDNAProps {
     logs: TasteDNALog[];
+    username?: string;
 }
 
 const GENRE_MAP: Record<number, string> = {
@@ -23,45 +35,141 @@ const GENRE_MAP: Record<number, string> = {
     53: 'Thriller', 10752: 'War', 37: 'Western',
 };
 
-export const TasteDNA = memo(function TasteDNA({ logs }: TasteDNAProps) {
-    if (logs.length < 5) return null;
+export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps) {
+    const [computedGenres, setComputedGenres] = useState<[string, number][]>([]);
+    const [isSharing, setIsSharing] = useState(false);
+    const viewShotRef = React.useRef<ViewShot>(null);
 
-    // Compute genre distribution from logs
-    const genreCounts = new Map<string, number>();
-    for (const log of logs) {
-        if (log.genre_ids) {
-            for (const gid of log.genre_ids) {
-                const name = GENRE_MAP[gid];
-                if (name) genreCounts.set(name, (genreCounts.get(name) ?? 0) + 1);
-            }
+    const filmIds = useMemo(() => {
+        const ids = new Set<number>();
+        for (const log of logs) {
+            const fid = log.filmId ?? log.film_id;
+            if (fid) ids.add(Number(fid));
         }
-    }
+        return Array.from(ids);
+    }, [logs]);
 
-    const sorted = Array.from(genreCounts.entries())
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 6);
+    useEffect(() => {
+        if (filmIds.length < 5) {
+            setComputedGenres([]);
+            return;
+        }
 
-    if (sorted.length === 0) return null;
+        let cancelled = false;
 
-    const maxCount = sorted[0][1];
+        (async () => {
+            const idsToFetch = filmIds.slice(0, 60);
+            const BATCH_SIZE = 4;
+            const BATCH_DELAY = 400;
+
+            const idsToNetworkFetch: number[] = [];
+            for (const id of idsToFetch) {
+                if (!GLOBAL_TMDB_CACHE.has(id)) {
+                    idsToNetworkFetch.push(id);
+                }
+            }
+
+            for (let i = 0; i < idsToNetworkFetch.length; i += BATCH_SIZE) {
+                if (cancelled) return;
+                const batch = idsToNetworkFetch.slice(i, i + BATCH_SIZE);
+                const results = await Promise.allSettled(
+                    batch.map(id => tmdb.detail(id))
+                );
+
+                for (let j = 0; j < results.length; j++) {
+                    const result = results[j];
+                    if (result.status === 'fulfilled' && result.value) {
+                        const parsed = FilmSchema.safeParse(result.value);
+                        if (parsed.success) {
+                            GLOBAL_TMDB_CACHE.set(batch[j], parsed.data as any); // using as any since map expects TMDBMovie, but FilmSchema is parsed safely. 
+                        } else {
+                            // Fallback to TMDBMovie casting if strictly needed, but parsed data guarantees shape
+                            GLOBAL_TMDB_CACHE.set(batch[j], result.value as any);
+                        }
+                    }
+                }
+                if (i + BATCH_SIZE < idsToNetworkFetch.length) {
+                    await new Promise(r => setTimeout(r, BATCH_DELAY));
+                }
+            }
+
+            if (cancelled) return;
+
+            const genreCounts = new Map<string, number>();
+            for (const id of idsToFetch) {
+                const movie = GLOBAL_TMDB_CACHE.get(id);
+                if (!movie) continue;
+                if (movie.genres) {
+                    for (const g of movie.genres) {
+                        genreCounts.set(g.name, (genreCounts.get(g.name) ?? 0) + 1);
+                    }
+                } else if (movie.genre_ids) {
+                    for (const gid of movie.genre_ids) {
+                        const name = GENRE_MAP[gid];
+                        if (name) genreCounts.set(name, (genreCounts.get(name) ?? 0) + 1);
+                    }
+                }
+            }
+
+            const sorted = Array.from(genreCounts.entries())
+                .sort(([, a], [, b]) => b - a)
+                .slice(0, 6);
+
+            setComputedGenres(sorted);
+        })();
+
+        return () => { cancelled = true; };
+    }, [filmIds]);
+
+    if (computedGenres.length === 0) return null;
+
+    const maxCount = computedGenres[0][1];
 
     // Generate "DNA" color from genre position
     const dnaColors = ['#8B6914', '#A67B17', '#C4921E', '#D4A825', '#E0BC3A', '#F0D050'];
 
+    const handleShare = async () => {
+        if (isSharing || !viewShotRef.current) return;
+        try {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            setIsSharing(true);
+            const uri = await viewShotRef.current.capture?.();
+            if (uri) {
+                await Sharing.shareAsync(uri, { dialogTitle: 'Share your Taste DNA' });
+            }
+        } catch (e) {
+            if (__DEV__) console.error('Failed to export TasteDNA', e);
+        } finally {
+            setIsSharing(false);
+        }
+    };
+
     return (
         <Animated.View entering={FadeIn.duration(500)} style={s.container}>
-            <Text style={s.title}>TASTE DNA</Text>
-            <Text style={s.subtitle}>Your cinematic fingerprint</Text>
+            <View style={s.headerRow}>
+                <View>
+                    <Text style={s.title}>TASTE DNA</Text>
+                    <Text style={s.subtitle}>Your cinematic fingerprint</Text>
+                </View>
+                <PressableScale onPress={handleShare} style={s.shareBtn} haptic>
+                    <Share2 size={16} color={isSharing ? colors.sepia : colors.fog} />
+                </PressableScale>
+            </View>
 
             <View style={s.dnaStrip}>
-                {sorted.map(([genre, count], i) => {
-                    const pct = Math.round((count / logs.length) * 100);
+                {computedGenres.map(([genre, count], i) => {
+                    const pct = Math.round((count / Math.max(logs.length, 1)) * 100);
                     const barWidth = `${(count / maxCount) * 100}%`;
+                    const anim = FadeInRight.delay(i * 60).duration(300).withCallback((finished) => {
+                        if (finished) {
+                            runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+                        }
+                    });
                     return (
-                        <Animated.View key={genre} entering={FadeInRight.delay(i * 60).duration(300)} style={s.row}>
+                        <Animated.View key={genre} entering={anim} style={s.row}>
                             <Text style={s.genreLabel} numberOfLines={1} adjustsFontSizeToFit>{genre.toUpperCase()}</Text>
                             <View style={s.barTrack}>
-                                <View style={[s.barFill, { width: `${(count / maxCount) * 100}%`, backgroundColor: dnaColors[i] ?? colors.sepia }]} />
+                                <View style={[s.barFill, { width: barWidth as import('react-native').DimensionValue, backgroundColor: dnaColors[i] ?? colors.sepia }]} />
                             </View>
                             <Text style={s.pctLabel}>{pct}%</Text>
                         </Animated.View>
@@ -74,6 +182,9 @@ export const TasteDNA = memo(function TasteDNA({ logs }: TasteDNAProps) {
                     <View key={i} style={[s.helixDot, { opacity: 0.1 + (i % 3) * 0.15, left: `${(i / 12) * 100}%` }]} />
                 ))}
             </View>
+
+            {/* Offscreen High-Fidelity Canvas for Lumière Export */}
+            <TasteDNAExportCanvas ref={viewShotRef} genres={computedGenres} username={username} />
         </Animated.View>
     );
 });
@@ -84,6 +195,8 @@ const s = StyleSheet.create({
         borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 4,
         position: 'relative', overflow: 'hidden',
     },
+    headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+    shareBtn: { padding: 4, opacity: 0.8 },
     title: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 4 },
     subtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic', marginBottom: 16 },
     dnaStrip: { gap: 10 },

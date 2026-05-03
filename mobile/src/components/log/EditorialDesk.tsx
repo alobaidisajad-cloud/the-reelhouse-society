@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as Haptics from 'expo-haptics';
 import { Sparkles, Check } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
+import PressableScale from '@/src/components/PressableScale';
 
 interface Props {
     dropCap: boolean;
@@ -13,7 +16,7 @@ interface Props {
     setPullQuote: (v: string) => void;
     editorialHeader: string | null;
     setEditorialHeader: (v: string | null) => void;
-    availableBackdrops: Array<{ file_path: string }>;
+    availableBackdrops: { file_path: string }[];
 }
 
 export default function EditorialDesk({
@@ -26,29 +29,31 @@ export default function EditorialDesk({
             
             <View style={st.editRow}>
                 <Text style={st.editLabel}>STYLIZED DROP CAP</Text>
-                <TouchableOpacity style={st.spoilerRow} onPress={() => { Haptics.selectionAsync(); setDropCap(!dropCap); }} activeOpacity={0.7} hitSlop={{top: 15, left: 15, bottom: 15, right: 15}}>
+                <PressableScale style={st.spoilerRow} onPress={() => { setDropCap(!dropCap); }} hitSlop={{top: 15, left: 15, bottom: 15, right: 15}} haptic="selection" pressedScale={0.96}>
                     <View style={[st.cbox, dropCap && st.cboxSepia]}>{dropCap && <Check size={10} color={colors.ink} />}</View>
                     <Text style={st.editToggleText}>ENABLE</Text>
-                </TouchableOpacity>
+                </PressableScale>
             </View>
             
             <View>
                 <Text style={st.editLabel}>PULL QUOTE</Text>
-                <TextInput style={st.pullQuoteInput} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={120} multiline={true} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} />
+                <TextInput style={st.pullQuoteInput} placeholder="Highlight a memorable line..." placeholderTextColor={colors.fog} value={pullQuote} onChangeText={setPullQuote} maxLength={120} multiline={true} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Pull quote" />
             </View>
             
             <View>
                 <Text style={st.editLabel}>ARTICLE HEADER (STILL)</Text>
                 {availableBackdrops.length > 0 ? (
-                    <FlatList horizontal data={[{ file_path: '__none__' }, ...availableBackdrops]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGap}
+                    <FlashList horizontal data={[{ file_path: '__none__' }, ...availableBackdrops]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGap}
+                        estimatedItemSize={88}
+                        ListFooterComponent={<View style={{ width: 16 }} />}
                         renderItem={({ item: p }) => p.file_path === '__none__' ? (
-                            <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} activeOpacity={0.7}>
+                            <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96}>
                                 <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
-                            </TouchableOpacity>
+                            </PressableScale>
                         ) : (
-                            <TouchableOpacity onPress={() => { Haptics.selectionAsync(); setEditorialHeader(p.file_path); }} activeOpacity={0.7}>
+                            <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96}>
                                 <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
-                            </TouchableOpacity>
+                            </PressableScale>
                         )}
                     />
                 ) : <Text style={st.noData}>No stills found.</Text>}
