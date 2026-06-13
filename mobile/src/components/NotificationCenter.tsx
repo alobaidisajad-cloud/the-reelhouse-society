@@ -53,20 +53,45 @@ export default function NotificationCenter() {
     const router = useRouter();
     const { user } = useAuthStore();
     const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [followRequests, setFollowRequests] = useState<any[]>([]);
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(true);
 
     const fetchNotifications = useCallback(async () => {
         if (!user) return;
-        const { data } = await supabase
+        
+        const fetchNotifs = supabase
             .from('notifications')
             .select('id, type, message, metadata, created_at, read')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(50);
-        setNotifications(data ?? []);
+            
+        const fetchRequests = supabase
+            .from('interactions')
+            .select('id, user_id, created_at, profiles!interactions_user_id_fkey(username, avatar_url)')
+            .eq('target_user_id', user.id)
+            .eq('type', 'follow_request')
+            .order('created_at', { ascending: false });
+
+        const [notifsRes, reqsRes] = await Promise.all([fetchNotifs, fetchRequests]);
+        
+        // Filter out follow_request from standard list because we render them separately above
+        const standardNotifs = (notifsRes.data ?? []).filter((n: any) => n.type !== 'follow_request');
+        setNotifications(standardNotifs);
+        setFollowRequests(reqsRes.data ?? []);
         setLoading(false);
     }, [user]);
+
+    const handleAcceptRequest = async (requesterId: string) => {
+        await supabase.rpc('accept_follow_request', { requester_id: requesterId });
+        setFollowRequests(prev => prev.filter(r => r.user_id !== requesterId));
+    };
+
+    const handleDeclineRequest = async (requesterId: string) => {
+        await supabase.rpc('decline_follow_request', { requester_id: requesterId });
+        setFollowRequests(prev => prev.filter(r => r.user_id !== requesterId));
+    };
 
     useEffect(() => { fetchNotifications(); }, [fetchNotifications]);
 
@@ -82,7 +107,7 @@ export default function NotificationCenter() {
         setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     };
 
-    const handlePress = (n: Notification) => {
+    const handlePress = useCallback((n: Notification) => {
         Haptics.selectionAsync();
         // #7 AUDIT FIX: Await mark-as-read and rollback on failure
         if (!n.read) {
@@ -97,13 +122,64 @@ export default function NotificationCenter() {
                 });
         }
         // Navigate based on type
-        if (n.metadata?.film_id) router.push(`/film/${n.metadata.film_id}` as any);
-        else if (n.metadata?.user_id) router.push(`/user/${n.metadata.username ?? n.metadata.user_id}` as any);
-    };
+        if (n.metadata?.film_id) (router.push as any)(`/film/${n.metadata.film_id}` as any);
+        else if (n.metadata?.user_id) (router.push as any)(`/user/${n.metadata.username ?? n.metadata.user_id}` as any);
+    }, [router]);
 
 
+
+    const renderItem = useCallback(({ item }: { item: Notification }) => (
+        <PressableScale
+            style={[s.notifRow, !item.read && s.notifUnread]}
+            onPress={() => handlePress(item)}
+        >
+            <View style={[s.iconCircle, !item.read && s.iconCircleUnread]}>
+                <Text style={s.icon}>{getIcon(item.type)}</Text>
+            </View>
+            <View style={s.notifContent}>
+                <Text style={s.notifMessage} numberOfLines={2}>{item.message}</Text>
+                <Text style={s.notifTime}>{timeAgo(item.created_at)}</Text>
+            </View>
+            {!item.read && <View style={s.unreadDot} />}
+        </PressableScale>
+    ), [handlePress]);
 
     const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
+
+    const ListHeader = useCallback(() => {
+        if (followRequests.length === 0) return null;
+        return (
+            <View style={s.requestsContainer}>
+                <Text style={s.requestsHeader}>FOLLOW REQUESTS</Text>
+                {followRequests.map(req => {
+                    const username = req.profiles?.username || 'Unknown';
+                    return (
+                        <View key={req.id} style={s.requestCard}>
+                            <View style={s.requestRow}>
+                                <View style={s.iconCircleUnread}>
+                                    <Text style={s.icon}>◎</Text>
+                                </View>
+                                <View style={s.notifContent}>
+                                    <Text style={s.notifMessage}>
+                                        <Text style={s.username} onPress={() => (router.push as any)(`/user/${username}` as any)}>@{username}</Text> requested to follow you.
+                                    </Text>
+                                    <Text style={s.notifTime}>{timeAgo(req.created_at)}</Text>
+                                </View>
+                            </View>
+                            <View style={s.requestActions}>
+                                <PressableScale onPress={() => handleAcceptRequest(req.user_id)} style={s.btnAccept}>
+                                    <Text style={s.btnAcceptText}>ACCEPT</Text>
+                                </PressableScale>
+                                <PressableScale onPress={() => handleDeclineRequest(req.user_id)} style={s.btnDecline}>
+                                    <Text style={s.btnDeclineText}>DECLINE</Text>
+                                </PressableScale>
+                            </View>
+                        </View>
+                    );
+                })}
+            </View>
+        );
+    }, [followRequests, router]);
 
     return (
         <View style={s.container}>
@@ -121,21 +197,8 @@ export default function NotificationCenter() {
                 keyExtractor={item => item.id}
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}
                 estimatedItemSize={72}
-                renderItem={({ item }) => (
-                    <PressableScale
-                        style={[s.notifRow, !item.read && s.notifUnread]}
-                        onPress={() => handlePress(item)}
-                    >
-                        <View style={[s.iconCircle, !item.read && s.iconCircleUnread]}>
-                            <Text style={s.icon}>{getIcon(item.type)}</Text>
-                        </View>
-                        <View style={s.notifContent}>
-                            <Text style={s.notifMessage} numberOfLines={2}>{item.message}</Text>
-                            <Text style={s.notifTime}>{timeAgo(item.created_at)}</Text>
-                        </View>
-                        {!item.read && <View style={s.unreadDot} />}
-                    </PressableScale>
-                )}
+                renderItem={renderItem}
+                ListHeaderComponent={ListHeader}
                 ListEmptyComponent={
                     !loading ? (
                         // #14 AUDIT FIX: Use branded EmptyState with Buster for visual consistency
@@ -167,4 +230,16 @@ const s = StyleSheet.create({
     notifMessage: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 18 },
     notifTime: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, marginTop: 2 },
     unreadDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.sepia },
+    
+    // Follow Requests
+    requestsContainer: { paddingBottom: 8 },
+    requestsHeader: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.sepia, paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
+    requestCard: { backgroundColor: 'rgba(139,105,20,0.06)', borderLeftWidth: 2, borderLeftColor: colors.sepia, marginHorizontal: 16, marginBottom: 8, borderRadius: 4, paddingVertical: 12 },
+    requestRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 12 },
+    username: { color: colors.flicker, fontFamily: fonts.body, fontWeight: 'bold' },
+    requestActions: { flexDirection: 'row', gap: 8, marginTop: 12, paddingLeft: 60, paddingRight: 12 },
+    btnAccept: { backgroundColor: colors.sepia, paddingVertical: 6, paddingHorizontal: 16, borderRadius: 2 },
+    btnAcceptText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.ink },
+    btnDecline: { borderWidth: 1, borderColor: 'rgba(139,105,20,0.4)', paddingVertical: 6, paddingHorizontal: 16, borderRadius: 2 },
+    btnDeclineText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.sepia },
 });

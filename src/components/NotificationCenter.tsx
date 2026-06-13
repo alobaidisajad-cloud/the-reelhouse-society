@@ -24,6 +24,7 @@ interface Notification {
 
 export default function NotificationCenter({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [notifications, setNotifications] = useState<Notification[]>([])
+  const [followRequests, setFollowRequests] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const { user } = useAuthStore()
   const navigate = useNavigate()
@@ -32,26 +33,49 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
   useEffect(() => {
     if (!open || !user?.id || !isSupabaseConfigured) return
     setLoading(true)
-    supabase
+
+    const fetchNotifs = supabase
       .from('notifications')
       .select('*')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(50)
-      .then(({ data }) => {
-        const formatted = (data || []).map((n: any) => ({
-          id: n.id,
-          type: n.type || 'system',
-          from: n.from_username || '',
-          message: n.message || '',
-          read: n.read || false,
-          created_at: n.created_at,
-          target_url: n.target_url,
-        }))
-        setNotifications(formatted)
-        setLoading(false)
-      })
+
+    const fetchRequests = supabase
+      .from('interactions')
+      .select('id, user_id, created_at, profiles!interactions_user_id_fkey(username, avatar_url)')
+      .eq('target_user_id', user.id)
+      .eq('type', 'follow_request')
+      .order('created_at', { ascending: false })
+
+    Promise.all([fetchNotifs, fetchRequests]).then(([notifsRes, reqsRes]) => {
+      const data = notifsRes.data || []
+      const formatted = data
+        .filter((n: any) => n.type !== 'follow_request')
+        .map((n: any) => ({
+        id: n.id,
+        type: n.type || 'system',
+        from: n.from_username || '',
+        message: n.message || '',
+        read: n.read || false,
+        created_at: n.created_at,
+        target_url: n.target_url,
+      }))
+      setNotifications(formatted)
+      setFollowRequests(reqsRes.data || [])
+      setLoading(false)
+    })
   }, [open, user?.id])
+
+  const handleAcceptRequest = async (requesterId: string) => {
+    await supabase.rpc('accept_follow_request', { requester_id: requesterId })
+    setFollowRequests(prev => prev.filter(r => r.user_id !== requesterId))
+  }
+
+  const handleDeclineRequest = async (requesterId: string) => {
+    await supabase.rpc('decline_follow_request', { requester_id: requesterId })
+    setFollowRequests(prev => prev.filter(r => r.user_id !== requesterId))
+  }
 
   const markAllRead = async () => {
     if (!user?.id || !isSupabaseConfigured) return
@@ -182,11 +206,71 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
                 }}>
                   RECEIVING TRANSMISSIONS…
                 </div>
-              ) : notifications.length === 0 ? (
-                <EmptyNotifications />
               ) : (
-                Object.entries(grouped).map(([day, items]) => (
-                  <div key={day}>
+                <>
+                  {/* Follow Requests Section */}
+                  {followRequests.length > 0 && (
+                    <div style={{ marginBottom: '1rem' }}>
+                      <div style={{
+                        fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em',
+                        color: 'var(--sepia)', padding: '0.75rem 0.5rem 0.25rem', borderBottom: '1px solid rgba(139,105,20,0.2)', marginBottom: '0.5rem'
+                      }}>
+                        FOLLOW REQUESTS
+                      </div>
+                      {followRequests.map(req => {
+                        const username = req.profiles?.username || 'Unknown'
+                        return (
+                          <div
+                            key={req.id}
+                            style={{
+                              display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem',
+                              borderRadius: '2px', background: 'rgba(139,105,20,0.08)',
+                              borderLeft: '2px solid var(--sepia)',
+                              marginBottom: '0.5rem'
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <div style={{ fontSize: '1rem', color: 'var(--sepia)', lineHeight: 1 }}>◆</div>
+                              <div style={{ flex: 1 }}>
+                                <div style={{
+                                  fontFamily: 'var(--font-body)', fontSize: '0.8rem',
+                                  color: 'var(--parchment)', lineHeight: 1.4,
+                                }}>
+                                  <strong 
+                                    style={{ color: 'var(--flicker)', cursor: 'pointer' }}
+                                    onClick={() => { navigate(`/user/${username}`); onClose(); }}
+                                  >@{username}</strong> requested to follow you.
+                                </div>
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem', paddingLeft: '1.75rem' }}>
+                              <button
+                                onClick={() => handleAcceptRequest(req.user_id)}
+                                className="btn btn-primary"
+                                style={{ padding: '0.3rem 0.8rem', fontSize: '0.55rem', letterSpacing: '0.15em' }}
+                              >
+                                ACCEPT
+                              </button>
+                              <button
+                                onClick={() => handleDeclineRequest(req.user_id)}
+                                className="btn btn-ghost"
+                                style={{ padding: '0.3rem 0.8rem', fontSize: '0.55rem', letterSpacing: '0.15em', border: '1px solid rgba(139,105,20,0.2)' }}
+                              >
+                                DECLINE
+                              </button>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {/* Regular Notifications */}
+                  {notifications.length === 0 && followRequests.length === 0 ? (
+                    <EmptyNotifications />
+                  ) : notifications.length > 0 && (
+                    Object.entries(grouped).map(([day, items]) => (
+                      <div key={day}>
                     <div style={{
                       fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em',
                       color: 'var(--ash)', padding: '0.75rem 0.5rem 0.25rem',
@@ -232,7 +316,9 @@ export default function NotificationCenter({ open, onClose }: { open: boolean; o
                   </div>
                 ))
               )}
-            </div>
+            </>
+            )}
+          </div>
           </motion.div>
         </>
       )}
