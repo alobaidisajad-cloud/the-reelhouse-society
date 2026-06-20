@@ -31,6 +31,7 @@ yarn-error.*
 *.pem
 
 # local env files
+.env
 .env*.local
 
 # typescript
@@ -41,3 +42,20 @@ app-example
 # generated native folders
 /ios
 /android
+
+# Debug / audit artifacts
+search_results*.json
+search_results*.txt
+eslint-results.json
+eslint_report.json
+eslint_detailed.txt
+context_search.txt
+scratch_*.json
+search_refs.txt
+search_files.txt
+
+# Local scratch / WIP scripts and dumps (never shipped)
+scratch/
+
+# Generated documentation
+docs/
