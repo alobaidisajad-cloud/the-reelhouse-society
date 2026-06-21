@@ -49,9 +49,9 @@ async function screenshotCard(el: HTMLDivElement): Promise<Blob> {
 // render target's 380×676 canvas (the preview renders the same px values at
 // a smaller scale, which is fine since only the hidden target is exported).
 function CornerTicks() {
-    const SEPIA = 'rgba(196,150,26,0.55)'
-    const TICK = 16
-    const INSET = 10
+    const SEPIA = 'rgba(196,150,26,0.5)'
+    const TICK = 12
+    const INSET = 15
     const RIGHT = 380 - INSET
     const BOTTOM = 676 - INSET
     const corners = [
@@ -75,84 +75,78 @@ function CornerTicks() {
 // Shared card content — renders inside both the visible preview and the hidden render target
 // Layout: Poster zone (flex 1.3) + Dossier Data Panel (flex 1) — "The Nitrate Dossier"
 function CardContent({ film, log, posterDataUrl, username }: { film: Record<string, any>; log: Record<string, any>; posterDataUrl: string | null; username?: string | null }) {
-    const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
-    // Graceful review truncation — cut on a word boundary with an ellipsis, never mid-word.
     const MAX_REVIEW = 350
     const rawReview = String(log.review || 'Classified Analysis').trim()
     const cut = rawReview.lastIndexOf(' ', MAX_REVIEW)
     const reviewText = rawReview.length > MAX_REVIEW
         ? rawReview.slice(0, cut > 40 ? cut : MAX_REVIEW).trimEnd() + '…'
         : rawReview
-    const isAbandoned = log.status === 'abandoned'
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-            {/* ── Poster Zone ── */}
-            <div style={{ flex: 1.3, position: 'relative', overflow: 'hidden' }}>
-                {posterDataUrl && (
-                    <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${posterDataUrl})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.15) brightness(0.7) contrast(1.05)' }} />
-                )}
-                {!posterDataUrl && (
-                    <div style={{ position: 'absolute', inset: 0, background: 'var(--soot)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(196,150,26,0.3)', borderTopColor: '#C4961A', animation: 'spin 0.8s linear infinite' }} />
-                    </div>
-                )}
-                {/* Short elegant fade into panel */}
-                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: 'linear-gradient(to bottom, transparent, var(--soot))' }} />
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', padding: 15, boxSizing: 'border-box' }}>
+            {/* Inset frame + corner ticks */}
+            <div style={{ position: 'absolute', inset: 15, border: '1px solid rgba(196,150,26,0.25)', pointerEvents: 'none', zIndex: 2 }} />
+            <CornerTicks />
+
+            {/* 1. Top HUD */}
+            <div style={{ textAlign: 'center', marginTop: 4, zIndex: 3 }}>
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.25em', color: 'var(--sepia)', opacity: 0.8 }}>
+                    ● ARCHIVE DOSSIER ●
+                </span>
             </div>
 
-            {/* ── Dossier Data Panel ── */}
-            <div style={{ flex: 1, background: 'var(--soot)', padding: '0.75rem 1.25rem 2rem', display: 'flex', flexDirection: 'column' }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>
-                    CLASSIFIED DOSSIER
+            <div style={{ flex: 0.8 }} />
+
+            {/* 2. The Art (Poster) */}
+            <div style={{ display: 'flex', justifyContent: 'center', zIndex: 3 }}>
+                <div style={{ width: 230, height: 345, background: 'var(--soot)', position: 'relative', border: '1px solid rgba(196,150,26,0.15)', boxShadow: '0 6px 16px rgba(0,0,0,0.7)' }}>
+                    {posterDataUrl ? (
+                        <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} crossOrigin="anonymous" />
+                    ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)' }}>∅</span>
+                        </div>
+                    )}
                 </div>
-                <div style={{ height: 1, background: 'linear-gradient(to right, var(--sepia), rgba(184,137,26,0.1))', marginBottom: '0.5rem' }} />
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.2rem, 5.5vw, 1.65rem)', color: 'var(--parchment)', lineHeight: 1.15, margin: '0 0 0.15rem 0', textShadow: '0 0 10px rgba(196,150,26,0.4)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+            </div>
+
+            <div style={{ flex: 1 }} />
+
+            {/* 3. The Placard */}
+            <div style={{ padding: '0 1.2rem', textAlign: 'center', zIndex: 3 }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.4rem', lineHeight: 1.15, color: 'var(--parchment)', margin: '0 0 0.3rem 0', textShadow: '0 0 10px rgba(196,150,26,0.4)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {film.title}
                 </h2>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--flicker)', marginBottom: '0.6rem', opacity: 0.85 }}>
-                    {film.release_date?.slice(0, 4)}{director && <> · DIR. {director.name?.toUpperCase()}</>}
+                
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--flicker)', opacity: 0.85, marginBottom: '0.7rem' }}>
+                    {film.release_date?.slice(0, 4)}
                 </div>
-                {(log.rating ?? 0) > 0 && (
-                    <div style={{ marginBottom: '0.6rem' }}>
-                        <ReelRating value={log.rating} size="lg" />
+                
+                {(log?.rating ?? 0) > 0 && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.7rem' }}>
+                        <ReelRating value={log.rating} size="md" />
                     </div>
                 )}
-                {isAbandoned && (
-                    <div style={{ display: 'inline-block', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.12em', color: 'var(--parchment)', background: 'rgba(184,137,26,0.08)', border: '1px solid rgba(196,150,26,0.4)', borderRadius: 2, padding: '0.15rem 0.4rem', marginBottom: '0.4rem', alignSelf: 'flex-start' }}>
-                        ✕ ABANDONED{log.abandonedReason ? ` — ${String(log.abandonedReason).toUpperCase()}` : ''}
-                    </div>
-                )}
-                <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: 'clamp(0.55rem, 2vw, 0.68rem)', color: 'var(--bone)', lineHeight: 1.6, margin: 0, display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden', opacity: 0.92 }}>
+
+                <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: '0.65rem', lineHeight: 1.5, color: 'var(--bone)', margin: 0, opacity: 0.95, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     "{reviewText}"
                 </p>
+
                 {username && (
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginTop: '0.4rem', opacity: 0.95 }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginTop: '0.5rem', opacity: 0.9 }}>
                         — @{username.toUpperCase()}
                     </div>
                 )}
             </div>
 
-            {/* ── Top HUD ── */}
-            <div style={{ position: 'absolute', top: '0.8rem', left: '1rem', display: 'flex', alignItems: 'center', gap: '0.3rem', zIndex: 3 }}>
-                <img src="/reelhouse-logo-transparent.png" alt="" style={{ height: 10, width: 'auto', opacity: 0.7 }} />
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.3rem', letterSpacing: '0.15em', color: 'rgba(196,150,26,0.5)' }}>
+            <div style={{ flex: 1 }} />
+
+            {/* 4. Footer Lockup */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', marginBottom: '0.1rem', zIndex: 3 }}>
+                <img src="/reelhouse-logo-transparent.png" alt="" style={{ height: 12, width: 'auto', opacity: 0.8 }} />
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.18em', color: 'rgba(196,150,26,0.5)' }}>
                     THE REELHOUSE SOCIETY
                 </span>
-            </div>
-
-            {/* Inset frame + corner ticks */}
-            <div style={{ position: 'absolute', inset: 10, border: '1px solid rgba(196,150,26,0.25)', pointerEvents: 'none', zIndex: 2 }} />
-            <CornerTicks />
-
-            {/* Footer brand lockup */}
-            <div style={{ position: 'absolute', bottom: '0.4rem', left: 0, right: 0, zIndex: 2 }}>
-                <div style={{ width: 90, height: 1, margin: '0 auto 0.35rem', background: 'linear-gradient(to right, transparent, rgba(196,150,26,0.5), transparent)' }} />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
-                    <img src="/reelhouse-logo-transparent.png" alt="" style={{ height: 12, width: 'auto', opacity: 0.85 }} />
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.18em', color: 'rgba(196,150,26,0.55)' }}>
-                        THE REELHOUSE SOCIETY
-                    </span>
-                </div>
             </div>
         </div>
     )
@@ -229,22 +223,22 @@ export default function DossierExportModal({
                     onClick={onClose}
                 >
                     {/* ─── HIDDEN render target (full 9:16, off-screen) — this is what gets screenshotted ─── */}
-                    <div
-                        ref={renderRef}
-                        aria-hidden="true"
-                        style={{
-                            position: 'fixed',
-                            top: 0, left: '-9999px',      // completely off-screen
-                            width: RENDER_W, height: RENDER_H,
-                            background: 'var(--soot)',
-                            overflow: 'hidden',
-                            borderRadius: 4,
-                            display: 'flex', flexDirection: 'column',
-                            pointerEvents: 'none', zIndex: -1,
-                        }}
-                    >
-                        <CardContent film={film} log={log} posterDataUrl={posterDataUrl} username={username} />
-                    </div>
+                        <div
+                            ref={renderRef}
+                            aria-hidden="true"
+                            style={{
+                                position: 'fixed',
+                                top: 0, left: '-9999px',      // completely off-screen
+                                width: RENDER_W, height: RENDER_H,
+                                background: 'var(--ink)',
+                                overflow: 'hidden',
+                                borderRadius: 4,
+                                display: 'flex', flexDirection: 'column',
+                                pointerEvents: 'none', zIndex: -1,
+                            }}
+                        >
+                            <CardContent film={film} log={log} posterDataUrl={posterDataUrl} username={username} />
+                        </div>
 
                     {/* Close */}
                     <button onClick={onClose} style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer', zIndex: 10, padding: '0.5rem' }}>
@@ -252,7 +246,7 @@ export default function DossierExportModal({
                     </button>
 
                     <div style={{ position: 'absolute', top: '3.5vh', textAlign: 'center', zIndex: 10 }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.22rem', color: 'var(--blood-reel)', marginBottom: '0.3rem' }}>● CLASSIFIED DOSSIER</div>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.22rem', color: 'var(--sepia)', marginBottom: '0.3rem', opacity: 0.8 }}>● ARCHIVE DOSSIER ●</div>
                         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--fog)' }}>
                             {ready ? 'Ready to save or share' : 'Developing…'}
                         </div>
@@ -265,7 +259,7 @@ export default function DossierExportModal({
                             width: '100%', maxWidth: 300,
                             aspectRatio: '9/16',
                             maxHeight: '68vh',
-                            background: 'var(--soot)',
+                            background: 'var(--ink)',
                             position: 'relative', overflow: 'hidden',
                             border: '1px solid rgba(196,150,26,0.3)',
                             boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 50px rgba(196,150,26,0.12)',
