@@ -1,9 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Download, Share2 } from 'lucide-react'
-import { tmdb } from '../../lib/tmdb'
+import html2canvas from 'html2canvas'
+import { tmdb } from '../../tmdb'
 import { Portal, ReelRating } from '../UI'
-import * as htmlToImage from 'html-to-image'
 
 interface ShareCardData {
     filmTitle: string
@@ -33,7 +33,7 @@ function truncateReview(text: string, maxLength = 350) {
     const raw = cleanReviewText(text)
     if (raw.length <= maxLength) return raw
     const cut = raw.lastIndexOf(' ', maxLength)
-    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '…'
+    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + 'ï¿½'
 }
 
 // Fixed dimensions
@@ -42,7 +42,7 @@ const RENDER_H = Math.round(RENDER_W * 16 / 9)
 
 const getProxiedImageUrl = (path: string | null) => {
     if (!path) return null
-    return `https://images.weserv.nl/?url=${encodeURIComponent(tmdb.poster(path, 'w500'))}&output=webp`
+    return `https://images.weserv.nl/?url=&output=webp`
 }
 
 function CornerTicks() {
@@ -91,7 +91,7 @@ function CardContent({ data, posterDataUrl }: { data: ShareCardData, posterDataU
                     {posterDataUrl ? (
                         <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
                     ) : (
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)' }}>Ø</div>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)' }}>ï¿½</div>
                     )}
                 </div>
             </div>
@@ -113,7 +113,7 @@ function CardContent({ data, posterDataUrl }: { data: ShareCardData, posterDataU
 
                 {data.rating > 0 && (
                     <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.8rem' }}>
-                        <ReelRating rating={data.rating} size={14} />
+                        <ReelRating value={data.rating} size="sm" />
                     </div>
                 )}
 
@@ -130,7 +130,7 @@ function CardContent({ data, posterDataUrl }: { data: ShareCardData, posterDataU
                         fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.12rem',
                         color: 'var(--sepia)', marginTop: '0.6rem', opacity: 0.9
                     }}>
-                        — @{data.username.toUpperCase()}
+                        ï¿½ @{data.username.toUpperCase()}
                     </div>
                 )}
             </div>
@@ -156,9 +156,8 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
 
     const screenshotCard = async (element: HTMLElement) => {
         try {
-            const dataUrl = await htmlToImage.toPng(element, { quality: 1.0, pixelRatio: 3 })
-            const response = await fetch(dataUrl)
-            return await response.blob()
+            const canvas = await html2canvas(element, { scale: 3, useCORS: true, backgroundColor: '#040302' })
+            return await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/png'))
         } catch (err) {
             console.error('Screenshot failed:', err)
             return null
@@ -200,7 +199,7 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
             const file = new File([blob], filename, { type: 'image/png' })
             const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
             if ((shareMode || isMobile) && navigator.canShare?.({ files: [file] })) {
-                await navigator.share({ files: [file], title: `${data.filmTitle} — ReelHouse Dossier` })
+                await navigator.share({ files: [file], title: `${data.filmTitle} ï¿½ ReelHouse Dossier` })
             } else {
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
@@ -238,7 +237,7 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                     <div style={{ position: 'absolute', top: '3.5vh', textAlign: 'center', zIndex: 10 }}>
                         <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.22rem', color: 'var(--sepia)', marginBottom: '0.3rem', opacity: 0.8 }}>? ARCHIVE DOSSIER ?</div>
                         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--fog)' }}>
-                            {ready ? 'Ready to save or share' : 'Developing…'}
+                            {ready ? 'Ready to save or share' : 'Developingï¿½'}
                         </div>
                     </div>
 
@@ -266,10 +265,10 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                             }}
                         >
                             <Download size={14} />
-                            {saving ? 'SAVING…' : !ready
+                            {saving ? 'SAVINGï¿½' : !ready
                                 ? <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                     <span style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid rgba(14,11,8,0.4)', borderTopColor: '#0E0B08', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-                                    DEVELOPING…
+                                    DEVELOPINGï¿½
                                   </span>
                                 : 'SAVE TO PHOTOS'}
                         </button>
