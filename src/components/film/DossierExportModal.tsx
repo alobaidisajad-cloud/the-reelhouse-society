@@ -45,6 +45,33 @@ async function screenshotCard(el: HTMLDivElement): Promise<Blob> {
     )
 }
 
+// Decorative corner brackets marking the inset frame — fixed to the hidden
+// render target's 380×676 canvas (the preview renders the same px values at
+// a smaller scale, which is fine since only the hidden target is exported).
+function CornerTicks() {
+    const SEPIA = 'rgba(196,150,26,0.55)'
+    const TICK = 16
+    const INSET = 10
+    const RIGHT = 380 - INSET
+    const BOTTOM = 676 - INSET
+    const corners = [
+        { top: INSET, left: INSET },
+        { top: INSET, left: RIGHT - TICK },
+        { top: BOTTOM - TICK, left: INSET },
+        { top: BOTTOM - TICK, left: RIGHT - TICK },
+    ]
+    return (
+        <>
+            {corners.map((pos, i) => (
+                <div key={i} style={{ position: 'absolute', top: pos.top, left: pos.left, width: TICK, height: TICK }}>
+                    <div style={{ position: 'absolute', top: 0, left: i % 2 === 0 ? 0 : 'auto', right: i % 2 === 1 ? 0 : 'auto', width: TICK, height: 1.5, background: SEPIA }} />
+                    <div style={{ position: 'absolute', left: i % 2 === 0 ? 0 : 'auto', right: i % 2 === 1 ? 0 : 'auto', top: i < 2 ? 0 : 'auto', bottom: i >= 2 ? 0 : 'auto', width: 1.5, height: TICK, background: SEPIA }} />
+                </div>
+            ))}
+        </>
+    )
+}
+
 // Shared card content — renders inside both the visible preview and the hidden render target
 function CardContent({ film, log, posterDataUrl, username }: { film: Record<string, any>; log: Record<string, any>; posterDataUrl: string | null; username?: string | null }) {
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
@@ -55,11 +82,12 @@ function CardContent({ film, log, posterDataUrl, username }: { film: Record<stri
     const reviewText = rawReview.length > MAX_REVIEW
         ? rawReview.slice(0, cut > 40 ? cut : MAX_REVIEW).trimEnd() + '…'
         : rawReview
+    const isAbandoned = log.status === 'abandoned'
     return (
         <>
-            {/* Poster */}
+            {/* Poster — lighter base filter since the gradients below now carry the darkening */}
             {posterDataUrl && (
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${posterDataUrl})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.32) brightness(0.52) contrast(1.12)' }} />
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${posterDataUrl})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.28) brightness(0.66) contrast(1.1)' }} />
             )}
             {!posterDataUrl && (
                 <div style={{ position: 'absolute', inset: 0, background: '#0F0D0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -67,17 +95,26 @@ function CardContent({ film, log, posterDataUrl, username }: { film: Record<stri
                 </div>
             )}
 
-            {/* Gradient overlays */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(8,6,4,0.55) 0%, rgba(8,6,4,0) 30%)' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,6,4,1) 40%, rgba(8,6,4,0.85) 62%, rgba(8,6,4,0) 84%)' }} />
+            {/* Edge feather — the poster fades into the card's own background on three sides
+                instead of sitting as a hard rectangle */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, var(--soot) 0%, transparent 12%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to left, var(--soot) 0%, transparent 12%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, var(--soot) 0%, transparent 14%)' }} />
+
+            {/* Bottom vignette — gradual 5-stop fade so text legibility never depends on the poster */}
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--soot) 0%, rgba(14,13,10,0.85) 35%, rgba(14,13,10,0.45) 55%, rgba(14,13,10,0.12) 75%, transparent 100%)' }} />
+
+            {/* Inset frame + corner ticks — the "mounted print" border */}
+            <div style={{ position: 'absolute', inset: 10, border: '1px solid rgba(196,150,26,0.25)', pointerEvents: 'none' }} />
+            <CornerTicks />
 
             {/* Content */}
             <div style={{ position: 'absolute', bottom: '1.5rem', left: '1.25rem', right: '1.25rem', zIndex: 2 }}>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>
-                    REELHOUSE · DECLASSIFIED
+                    CLASSIFIED DOSSIER
                 </div>
                 <div style={{ height: 1, background: 'linear-gradient(to right, var(--sepia), rgba(196,150,26,0.15))', marginBottom: '0.6rem' }} />
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.4rem, 6.5vw, 2.1rem)', color: 'var(--parchment)', lineHeight: 1.05, margin: '0 0 0.35rem 0', textShadow: '0 2px 12px rgba(0,0,0,0.9)' }}>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.4rem, 6.5vw, 2.1rem)', color: 'var(--parchment)', lineHeight: 1.05, margin: '0 0 0.35rem 0', textShadow: '0 2px 12px rgba(0,0,0,0.9)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {film.title}
                 </h2>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--flicker)', marginBottom: '0.8rem', opacity: 0.85 }}>
@@ -86,6 +123,11 @@ function CardContent({ film, log, posterDataUrl, username }: { film: Record<stri
                 {(log.rating ?? 0) > 0 && (
                     <div style={{ marginBottom: '0.8rem' }}>
                         <ReelRating value={log.rating} size="lg" />
+                    </div>
+                )}
+                {isAbandoned && (
+                    <div style={{ display: 'inline-block', fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15em', color: 'var(--parchment)', background: 'rgba(196,150,26,0.08)', border: '1px solid rgba(196,150,26,0.4)', borderRadius: 2, padding: '0.2rem 0.5rem', marginBottom: '0.6rem' }}>
+                        ✕ ABANDONED{log.abandonedReason ? ` — ${String(log.abandonedReason).toUpperCase()}` : ''}
                     </div>
                 )}
                 <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: 'clamp(0.6rem, 2.4vw, 0.78rem)', color: 'var(--bone)', lineHeight: 1.65, margin: 0, display: '-webkit-box', WebkitLineClamp: 7, WebkitBoxOrient: 'vertical', overflow: 'hidden', opacity: 0.92 }}>
@@ -98,8 +140,15 @@ function CardContent({ film, log, posterDataUrl, username }: { film: Record<stri
                 )}
             </div>
 
-            <div style={{ position: 'absolute', bottom: '0.35rem', left: 0, right: 0, textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.2em', color: 'rgba(196,150,26,0.55)' }}>
-                THE REELHOUSE SOCIETY
+            {/* Footer brand lockup — same seal + wordmark used in the navbar and footer */}
+            <div style={{ position: 'absolute', bottom: '0.4rem', left: 0, right: 0, zIndex: 2 }}>
+                <div style={{ width: 110, height: 1, margin: '0 auto 0.4rem', background: 'linear-gradient(to right, transparent, var(--sepia), transparent)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
+                    <img src="/reelhouse-logo-transparent.png" alt="" style={{ height: 14, width: 'auto', opacity: 0.85 }} />
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.2em', color: 'rgba(196,150,26,0.55)' }}>
+                        THE REELHOUSE SOCIETY
+                    </span>
+                </div>
             </div>
         </>
     )

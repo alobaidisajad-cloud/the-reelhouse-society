@@ -185,6 +185,7 @@ export default function FilmDetailScreen() {
           onClose={handleCloseShare}
           film={data.detail as any}
           log={existingLog as any}
+          username={user?.username}
         />
       )}
       {activeTrailerKey && (

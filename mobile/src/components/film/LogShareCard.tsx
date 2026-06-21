@@ -8,7 +8,7 @@
  * Uses react-native-view-shot + expo-sharing for native share sheet.
  */
 import { useRef, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, Modal, Share, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, Modal, Share } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import ViewShot from 'react-native-view-shot';
@@ -21,6 +21,7 @@ import { tmdb } from '@/src/lib/tmdb';
 import reelToast from '@/src/utils/reelToast';
 import { extractDropCap } from '@/src/utils/text';
 import { ReelRating } from '@/src/components/Decorative';
+import { DossierBorder, DossierFooter, DOSSIER_CARD_WIDTH } from './DossierFrame';
 
 
 export interface ShareCardData {
@@ -77,11 +78,11 @@ function CardContent({ data }: { data: ShareCardData }) {
     const hasReview = rawReview.length > 0;
     const statusLabel = data.status === 'rewatched' ? 'REWATCHED' : data.status === 'abandoned' ? `ABANDONED${data.abandonedReason ? ` — ${data.abandonedReason.toUpperCase()}` : ''}` : 'WATCHED';
 
-    const { width } = useWindowDimensions();
-    const cardWidth = Math.min(width - 48, 380);
+    const cardWidth = DOSSIER_CARD_WIDTH;
+    const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
 
     return (
-        <View style={[s.card, { width: cardWidth }]}>
+        <View style={[s.card, { width: cardWidth }]} onLayout={e => setMeasuredHeight(e.nativeEvent.layout.height)}>
             {/* Atmospheric blurred poster backdrop */}
             {posterUrl && (
                 <Image
@@ -195,12 +196,10 @@ function CardContent({ data }: { data: ShareCardData }) {
                     </View>
                 )}
 
-                {/* ── BOTTOM: Watermark ── */}
-                <View style={s.bottomRow}>
-                    <Text style={s.brandLarge}>REELHOUSE</Text>
-                    <Text style={s.brandSub}>THE SOCIETY</Text>
-                </View>
             </View>
+
+            {measuredHeight != null && <DossierBorder width={cardWidth} height={measuredHeight} />}
+            <DossierFooter />
         </View>
     );
 }
@@ -317,6 +316,7 @@ const s = StyleSheet.create({
     cardInner: {
         position: 'relative', zIndex: 2,
         padding: 24,
+        paddingBottom: 48, // reserves clearance for the absolutely-positioned DossierFooter below
     },
 
     // ── Top row ──
@@ -418,18 +418,4 @@ const s = StyleSheet.create({
         paddingHorizontal: 8, opacity: 0.85,
     },
 
-    // ── Bottom row ──
-    bottomRow: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        marginTop: 20, paddingTop: 10,
-        borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.12)',
-    },
-    brandLarge: {
-        fontFamily: fonts.display, fontSize: 16, color: colors.sepia, opacity: 0.8,
-        letterSpacing: 1,
-    },
-    brandSub: {
-        fontFamily: fonts.ui, fontSize: 6, letterSpacing: 3,
-        color: colors.fog, opacity: 0.5,
-    },
 });
