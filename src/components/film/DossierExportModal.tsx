@@ -46,245 +46,82 @@ function CardContent({ film, log, posterDataUrl, blurDataUrl, username }: { film
     return (
         <div style={{
             position: 'relative', width: '360px', height: '640px',
-            display: 'flex', flexDirection: 'column',
-            fontFamily: 'var(--font-body)', color: 'var(--parchment)',
-            overflow: 'hidden', background: '#040302'
+            backgroundColor: 'var(--ink)', overflow: 'hidden',
+            fontFamily: 'var(--font-body)', color: 'var(--parchment)'
         }}>
-            {/* Ambient Blur Layer */}
+            {/* Poster top half full bleed */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '360px', height: '360px', zIndex: 1, backgroundColor: 'var(--soot)' }}>
+                {posterDataUrl ? (
+                    <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
+                ) : null}
+            </div>
+
+            {/* Abyss Fade Mask */}
             <div style={{
-                position: 'absolute', inset: 0,
-                backgroundImage: blurDataUrl ? `url(${blurDataUrl})` : 'none',
-                background: blurDataUrl ? undefined : 'radial-gradient(circle at center, rgba(196, 150, 26, 0.12) 0%, rgba(4, 3, 2, 0) 70%)',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                transform: 'scale(1.15)',
-                opacity: blurDataUrl ? 0.45 : 1,
-                zIndex: 0
+                position: 'absolute', top: '120px', left: 0, width: '360px', height: '240px', zIndex: 2,
+                background: 'linear-gradient(to bottom, rgba(11, 10, 8, 0), rgba(11, 10, 8, 1))'
             }} />
 
-            {/* Vignette Overlay */}
-            <div style={{
-                position: 'absolute', inset: 0,
-                background: 'radial-gradient(circle at center, rgba(4,3,2,0.1) 0%, rgba(4,3,2,0.85) 90%)',
-                zIndex: 1
-            }} />
-
-            {/* Obsidian Glass Slab - Height: 560px */}
-            <div style={{
-                margin: '40px 24px',
-                width: '312px',
-                height: '560px',
-                background: '#090705',
-                border: '1px solid rgba(196, 150, 26, 0.3)',
-                borderRadius: '8px',
-                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), 0 0 40px rgba(196,150,26,0.08)',
-                display: 'flex',
-                flexDirection: 'column',
-                overflow: 'hidden',
-                position: 'relative',
-                zIndex: 2,
-                boxSizing: 'border-box',
-                paddingTop: '15px',
-                paddingBottom: '15px'
-            }}>
-                {/* Header (25px) */}
-                <div style={{ 
-                    height: '25px', 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center', 
-                    borderBottom: '1px solid rgba(196,150,26,0.15)', 
-                    background: 'rgba(0,0,0,0.1)',
-                    boxSizing: 'border-box'
+            {/* Typography Container */}
+            <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }}>
+                {/* Film Title */}
+                <div style={{
+                    position: 'absolute', top: '270px', left: '20px', width: '320px',
+                    textAlign: 'center', fontFamily: 'var(--font-display)', color: 'var(--flicker)',
+                    fontSize: '28px', lineHeight: '32px',
+                    textShadow: '0 4px 12px rgba(0,0,0,0.8)',
+                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
                 }}>
-                    <span style={{ 
-                        fontFamily: 'var(--font-ui)', 
-                        fontSize: '0.45rem', 
-                        letterSpacing: '0.25rem', 
-                        color: '#D4AF37', // Solid Gold
-                        textShadow: '0px 1px 2px rgba(0,0,0,0.8)',
-                        opacity: 0.9 
-                    }}>
-                        ● DECLASSIFIED DOSSIER ●
-                    </span>
+                    {film.title}
                 </div>
 
-                {/* Spacer (15px) */}
-                <div style={{ height: '15px' }} />
+                {/* Metadata */}
+                <div style={{
+                    position: 'absolute', top: '335px', left: '20px', width: '320px',
+                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
+                }}>
+                    {yearDisplay ? <span style={{ fontFamily: 'var(--font-ui)', color: 'var(--sepia)', fontSize: '11px', letterSpacing: '1.5px', fontWeight: 600 }}>{yearDisplay}</span> : null}
+                    {yearDisplay ? <span style={{ fontFamily: 'var(--font-ui)', color: 'var(--sepia)', fontSize: '11px', opacity: 0.5 }}>•</span> : null}
+                    {log.rating > 0 ? <ReelRating value={log.rating} size="sm" /> : null}
+                </div>
 
-                {/* Poster Container (225px) */}
-                <div style={{ height: '225px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box' }}>
-                    <div style={{
-                        width: '150px',
-                        height: '225px',
-                        background: 'var(--soot)',
-                        boxShadow: '0 12px 24px rgba(0,0,0,0.85)',
-                        borderRadius: '4px',
-                        overflow: 'hidden',
-                        border: '1px solid rgba(212,175,55,0.4)' // Gold Matting
-                    }}>
-                        {posterDataUrl ? (
-                            <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
-                        ) : (
-                            <div style={{
-                                width: '100%',
-                                height: '100%',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                background: 'linear-gradient(135deg, #1A1510 0%, #0A0806 100%)', // Leather Bound fallback
-                                padding: '16px',
-                                boxSizing: 'border-box',
-                                textAlign: 'center',
-                                position: 'relative'
-                            }}>
-                                <div style={{
-                                    position: 'absolute',
-                                    inset: '6px',
-                                    border: '1px solid rgba(212, 175, 55, 0.15)',
-                                    pointerEvents: 'none'
-                                }} />
-                                <div style={{
-                                    fontFamily: 'var(--font-ui)',
-                                    fontSize: '0.6rem',
-                                    color: '#D4AF37',
-                                    opacity: 0.8,
-                                    marginBottom: '12px',
-                                    fontWeight: 300,
-                                    letterSpacing: '0.1em',
-                                    textShadow: '0px 1px 2px rgba(0,0,0,0.8)'
-                                }}>
-                                    RH
-                                </div>
-                                <div style={{
-                                    fontFamily: 'var(--font-display)',
-                                    fontSize: '0.75rem',
-                                    lineHeight: 1.2,
-                                    color: 'var(--parchment)',
-                                    opacity: 0.9,
-                                    marginBottom: '6px',
-                                    textTransform: 'uppercase',
-                                    display: '-webkit-box',
-                                    WebkitLineClamp: 3,
-                                    WebkitBoxOrient: 'vertical',
-                                    overflow: 'hidden'
-                                }}>
-                                    {film.title}
-                                </div>
-                                <div style={{
-                                    fontFamily: 'var(--font-ui)',
-                                    fontSize: '0.45rem',
-                                    letterSpacing: '0.1em',
-                                    color: 'var(--fog)',
-                                    textTransform: 'uppercase'
-                                }}>
-                                    {yearDisplay}
-                                </div>
+                {/* Review Text */}
+                <div style={{
+                    position: 'absolute', top: '380px', left: '24px', width: '312px', height: '170px',
+                    overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center'
+                }}>
+                    {reviewText ? (
+                        <div style={{
+                            fontFamily: '"Courier Prime", Courier, monospace', fontSize: '13px', lineHeight: '20px',
+                            color: 'var(--bone)', textAlign: 'center', fontStyle: 'italic'
+                        }}>
+                            "{reviewText}"
+                        </div>
+                    ) : (
+                        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                            <div style={{ fontFamily: '"Courier Prime", Courier, monospace', fontSize: '12px', color: 'rgba(200, 185, 154, 0.4)', letterSpacing: '1px' }}>
+                                LOGGED // {log.status?.toUpperCase() || 'WATCHED'}
                             </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* Spacer (15px) */}
-                <div style={{ height: '15px' }} />
-
-                {/* Film & Review Metadata (65px) */}
-                <div style={{ height: '65px', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', boxSizing: 'border-box' }}>
-                    <h1 style={{
-                        fontFamily: 'var(--font-display)', 
-                        fontSize: (film.title?.length || 0) > 40 ? '0.8rem' : '1.15rem',
-                        lineHeight: 1.15, 
-                        color: 'var(--parchment)', 
-                        margin: '0 0 0.25rem 0',
-                        textShadow: '0 2px 8px rgba(0,0,0,0.8)',
-                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                    }}>
-                        {film.title}
-                    </h1>
-
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: '#D4AF37', textShadow: '0px 1px 2px rgba(0,0,0,0.8)', marginBottom: '0.35rem', opacity: 0.85 }}>
-                        {yearDisplay}
-                    </div>
-
-                    {log.rating > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'center' }}>
-                            <ReelRating value={log.rating} size="sm" />
                         </div>
                     )}
-                </div>
-
-                {/* Spacer (15px) */}
-                <div style={{ height: '15px' }} />
-
-                {/* Review Box (140px) */}
-                <div style={{ padding: '0 20px', display: 'flex', justifyContent: 'center', boxSizing: 'border-box' }}>
-                    <div style={{
-                        fontFamily: 'Courier, monospace', fontSize: '0.7rem', color: 'var(--bone)',
-                        lineHeight: 1.5, opacity: 0.95,
-                        padding: '8px 12px',
-                        background: 'rgba(0,0,0,0.4)',
-                        borderRadius: '4px',
-                        borderLeft: '2px solid #D4AF37',
-                        width: '100%',
-                        height: '140px', // Strict locked height
-                        position: 'relative',
-                        overflow: 'hidden',
-                        textAlign: 'left',
-                        boxSizing: 'border-box'
-                    }}>
-                        {reviewText ? (
-                            <>
-                                <span style={{ 
-                                    float: 'left', 
-                                    fontSize: '2.2rem', 
-                                    lineHeight: '2.0rem', 
-                                    paddingRight: '6px',
-                                    paddingTop: '4px',
-                                    color: '#D4AF37',
-                                    fontFamily: 'var(--font-display)',
-                                    textShadow: '0px 1px 4px rgba(0,0,0,0.8)'
-                                }}>
-                                    {reviewText.charAt(0)}
-                                </span>
-                                {reviewText.slice(1)}
-                            </>
-                        ) : (
-                            <span style={{ opacity: 0.5 }}>Classified Analysis</span>
-                        )}
-                        {/* Soot-Gradient Fade Mask (45px) */}
+                    
+                    {/* Fade to black at bottom of review */}
+                    {reviewText ? (
                         <div style={{
-                            position: 'absolute',
-                            bottom: 0, left: 0, right: 0,
-                            height: '45px',
-                            background: 'linear-gradient(to bottom, transparent, #090705)'
+                            position: 'absolute', bottom: 0, left: 0, right: 0, height: '40px',
+                            background: 'linear-gradient(to bottom, rgba(11, 10, 8, 0), rgba(11, 10, 8, 1))'
                         }} />
-                    </div>
+                    ) : null}
                 </div>
 
-                {/* Spacer (15px) */}
-                <div style={{ height: '15px' }} />
-
-                {/* Footer (15px) */}
-                <div style={{ 
-                    height: '15px', 
-                    padding: '0 16px', 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    boxSizing: 'border-box'
+                {/* Footer */}
+                <div style={{
+                    position: 'absolute', top: '580px', left: '24px', width: '312px',
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    paddingTop: '16px', borderTop: '1px solid rgba(196, 150, 26, 0.2)'
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <img src="/reelhouse-logo-transparent.png" alt="" style={{ width: 14, height: 14, opacity: 0.7 }} />
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15rem', color: '#D4AF37', textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
-                            REELHOUSE
-                        </span>
-                    </div>
-                    {username && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.1rem', color: 'var(--flicker)', opacity: 0.7 }}>
-                            @{username.toUpperCase()}
-                        </span>
-                    )}
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--sepia)', letterSpacing: '1px', opacity: 0.8 }}>REELHOUSE</span>
+                    {username && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--parchment)', letterSpacing: '1px', opacity: 0.8 }}>@{username}</span>}
                 </div>
             </div>
         </div>
