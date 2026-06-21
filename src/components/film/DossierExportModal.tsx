@@ -4,6 +4,7 @@ import { Download, Share2, X } from 'lucide-react'
 import html2canvas from 'html2canvas'
 import { tmdb } from '../../tmdb'
 import { ReelRating, Portal } from '../UI'
+import { useAuthStore } from '../../store'
 
 async function fetchPosterDataUrl(posterPath: string): Promise<string> {
     const originalUrl = tmdb.poster(posterPath, 'original')
@@ -45,13 +46,20 @@ async function screenshotCard(el: HTMLDivElement): Promise<Blob> {
 }
 
 // Shared card content — renders inside both the visible preview and the hidden render target
-function CardContent({ film, log, posterDataUrl }: { film: Record<string, any>; log: Record<string, any>; posterDataUrl: string | null }) {
+function CardContent({ film, log, posterDataUrl, username }: { film: Record<string, any>; log: Record<string, any>; posterDataUrl: string | null; username?: string | null }) {
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
+    // Graceful review truncation — cut on a word boundary with an ellipsis, never mid-word.
+    const MAX_REVIEW = 300
+    const rawReview = String(log.review || 'Classified Analysis').trim()
+    const cut = rawReview.lastIndexOf(' ', MAX_REVIEW)
+    const reviewText = rawReview.length > MAX_REVIEW
+        ? rawReview.slice(0, cut > 40 ? cut : MAX_REVIEW).trimEnd() + '…'
+        : rawReview
     return (
         <>
             {/* Poster */}
             {posterDataUrl && (
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${posterDataUrl})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.35) brightness(0.38) contrast(1.18)' }} />
+                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${posterDataUrl})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.32) brightness(0.52) contrast(1.12)' }} />
             )}
             {!posterDataUrl && (
                 <div style={{ position: 'absolute', inset: 0, background: '#0F0D0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -61,7 +69,7 @@ function CardContent({ film, log, posterDataUrl }: { film: Record<string, any>; 
 
             {/* Gradient overlays */}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(8,6,4,0.55) 0%, rgba(8,6,4,0) 30%)' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,6,4,1) 30%, rgba(8,6,4,0.7) 55%, rgba(8,6,4,0) 75%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(8,6,4,1) 40%, rgba(8,6,4,0.85) 62%, rgba(8,6,4,0) 84%)' }} />
 
             {/* Content */}
             <div style={{ position: 'absolute', bottom: '1.5rem', left: '1.25rem', right: '1.25rem', zIndex: 2 }}>
@@ -80,12 +88,17 @@ function CardContent({ film, log, posterDataUrl }: { film: Record<string, any>; 
                         <ReelRating value={log.rating} size="lg" />
                     </div>
                 )}
-                <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: 'clamp(0.6rem, 2.4vw, 0.78rem)', color: 'var(--bone)', lineHeight: 1.65, margin: 0, display: '-webkit-box', WebkitLineClamp: 6, WebkitBoxOrient: 'vertical', overflow: 'hidden', opacity: 0.9 }}>
-                    "{log.review || 'Classified Analysis'}"
+                <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: 'clamp(0.6rem, 2.4vw, 0.78rem)', color: 'var(--bone)', lineHeight: 1.65, margin: 0, display: '-webkit-box', WebkitLineClamp: 7, WebkitBoxOrient: 'vertical', overflow: 'hidden', opacity: 0.92 }}>
+                    "{reviewText}"
                 </p>
+                {username && (
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.55rem', opacity: 0.95 }}>
+                        — @{username.toUpperCase()}
+                    </div>
+                )}
             </div>
 
-            <div style={{ position: 'absolute', bottom: '0.35rem', left: 0, right: 0, textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.18em', color: 'rgba(196,150,26,0.3)' }}>
+            <div style={{ position: 'absolute', bottom: '0.35rem', left: 0, right: 0, textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.2em', color: 'rgba(196,150,26,0.55)' }}>
                 THE REELHOUSE SOCIETY
             </div>
         </>
@@ -107,6 +120,7 @@ export default function DossierExportModal({
     const [posterDataUrl, setPosterDataUrl] = useState<string | null>(null)
     const [ready, setReady] = useState(false)
     const [saving, setSaving] = useState(false)
+    const username = useAuthStore(s => s.user?.username)
 
     const preGenerate = useCallback(async () => {
         try {
@@ -176,7 +190,7 @@ export default function DossierExportModal({
                             pointerEvents: 'none', zIndex: -1,
                         }}
                     >
-                        <CardContent film={film} log={log} posterDataUrl={posterDataUrl} />
+                        <CardContent film={film} log={log} posterDataUrl={posterDataUrl} username={username} />
                     </div>
 
                     {/* Close */}
@@ -206,7 +220,7 @@ export default function DossierExportModal({
                             display: 'flex', flexDirection: 'column',
                         }}
                     >
-                        <CardContent film={film} log={log} posterDataUrl={posterDataUrl} />
+                        <CardContent film={film} log={log} posterDataUrl={posterDataUrl} username={username} />
                     </div>
 
                     {/* Actions */}

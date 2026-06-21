@@ -20,6 +20,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import reelToast from '@/src/utils/reelToast';
 import { extractDropCap } from '@/src/utils/text';
+import { ReelRating } from '@/src/components/Decorative';
 
 
 export interface ShareCardData {
@@ -46,27 +47,8 @@ interface Props {
     onClose?: () => void;
 }
 
-function ReelRating({ rating, size = 18 }: { rating: number; size?: number }) {
-    return (
-        <View style={rs.container}>
-            {[1, 2, 3, 4, 5].map(i => {
-                const filled = i <= Math.floor(rating);
-                const half = !filled && i === Math.ceil(rating) && rating % 1 >= 0.5;
-                return (
-                    <Text key={i} style={[rs.reel, { fontSize: size }, filled ? rs.reelFilled : half ? rs.reelHalf : rs.reelEmpty]}>◉</Text>
-                );
-            })}
-        </View>
-    );
-}
-
-const rs = StyleSheet.create({
-    container: { flexDirection: 'row', gap: 3, alignItems: 'center' },
-    reel: { fontSize: 18 },
-    reelFilled: { color: colors.sepia },
-    reelHalf: { color: 'rgba(139,105,20,0.5)' },
-    reelEmpty: { color: 'rgba(255,255,255,0.08)' },
-});
+// ReelRating now uses the shared gold film-reel graphics from Decorative
+// (imported above) so the log card matches the film card and the web export.
 
 const ENTITIES: Record<string, string> = {
   '&quot;': '"',
