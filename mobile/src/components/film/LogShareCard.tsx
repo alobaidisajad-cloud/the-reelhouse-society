@@ -68,7 +68,7 @@ function CardContent({ data }: { data: ShareCardData }) {
                 />
             ) : (
                 <LinearGradient
-                    colors={['rgba(196, 150, 26, 0.08)', 'rgba(4, 3, 2, 0)']}
+                    colors={['rgba(196, 150, 26, 0.12)', 'rgba(4, 3, 2, 0)']}
                     start={{ x: 0.5, y: 0.5 }}
                     end={{ x: 0.5, y: 1.0 }}
                     style={s.blurBackground}
@@ -78,60 +78,71 @@ function CardContent({ data }: { data: ShareCardData }) {
             {/* Vignette Overlay */}
             <View style={s.vignette} />
 
-            {/* Obsidian Slab */}
-            <View style={s.obsidianSlab}>
-                {/* Header */}
-                <View style={s.slabHeader}>
-                    <Text style={s.slabHeaderText}>● ARCHIVE DOSSIER ●</Text>
+            {/* Obsidian Glass Slab - Height: 560, Width: 312 */}
+            <View style={{
+                position: 'absolute',
+                top: 40,
+                left: 24,
+                width: 312,
+                height: 560,
+                backgroundColor: '#090705',
+                borderWidth: 1,
+                borderColor: 'rgba(196, 150, 26, 0.3)',
+                borderRadius: 8,
+                overflow: 'hidden',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 25 },
+                shadowOpacity: 0.8,
+                shadowRadius: 50,
+                elevation: 10,
+            }}>
+                {/* Header (Y: 15, H: 25) */}
+                <View style={{
+                    position: 'absolute', top: 15, left: 0, width: 312, height: 25,
+                    justifyContent: 'center', alignItems: 'center',
+                    borderBottomWidth: 1, borderBottomColor: 'rgba(196,150,26,0.15)',
+                    backgroundColor: 'rgba(0,0,0,0.1)'
+                }}>
+                    <Text style={{
+                        fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4,
+                        color: '#D4AF37', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2,
+                        opacity: 0.9
+                    }}>
+                        ● DECLASSIFIED DOSSIER ●
+                    </Text>
                 </View>
 
-                {/* Poster Area */}
-                <View style={s.slabPosterArea}>
-                    <View style={s.slabPosterWrapper}>
+                {/* Poster Container (Y: 55, H: 225) */}
+                <View style={{ position: 'absolute', top: 55, left: 0, width: 312, height: 225, justifyContent: 'center', alignItems: 'center' }}>
+                    <View style={{
+                        width: 150, height: 225,
+                        backgroundColor: colors.soot,
+                        borderRadius: 4,
+                        overflow: 'hidden',
+                        borderWidth: 1, borderColor: 'rgba(212,175,55,0.4)',
+                        shadowColor: '#000', shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.85, shadowRadius: 24, elevation: 8
+                    }}>
                         {posterUrl ? (
                             <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
                         ) : (
                             <LinearGradient
-                                colors={['#15120e', '#090706']}
-                                style={[StyleSheet.absoluteFillObject, { padding: 12, alignItems: 'center', justifyContent: 'center' }]}
+                                colors={['#1A1510', '#0A0806']}
+                                style={[StyleSheet.absoluteFillObject, { padding: 16, alignItems: 'center', justifyContent: 'center' }]}
                             >
                                 <View style={{
-                                    position: 'absolute',
-                                    top: 6, bottom: 6, left: 6, right: 6,
-                                    borderWidth: 1,
-                                    borderColor: 'rgba(196, 150, 26, 0.08)'
+                                    position: 'absolute', top: 6, bottom: 6, left: 6, right: 6,
+                                    borderWidth: 1, borderColor: 'rgba(212, 175, 55, 0.15)'
                                 }} />
                                 <Text style={{
-                                    fontFamily: fonts.ui,
-                                    fontSize: 10,
-                                    color: colors.sepia,
-                                    opacity: 0.6,
-                                    marginBottom: 8,
-                                    letterSpacing: 1.5,
-                                    textAlign: 'center'
-                                }}>
-                                    RH
-                                </Text>
+                                    fontFamily: fonts.ui, fontSize: 10, color: '#D4AF37', opacity: 0.8,
+                                    marginBottom: 12, letterSpacing: 1.5, textAlign: 'center',
+                                    textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2
+                                }}>RH</Text>
                                 <Text style={{
-                                    fontFamily: fonts.display,
-                                    fontSize: 9,
-                                    lineHeight: 12,
-                                    color: colors.parchment,
-                                    opacity: 0.85,
-                                    marginBottom: 4,
-                                    textTransform: 'uppercase',
-                                    textAlign: 'center'
-                                }} numberOfLines={3}>
-                                    {data.filmTitle}
-                                </Text>
-                                <Text style={{
-                                    fontFamily: fonts.ui,
-                                    fontSize: 6,
-                                    letterSpacing: 1,
-                                    color: colors.fog,
-                                    textTransform: 'uppercase',
-                                    textAlign: 'center'
-                                }}>
+                                    fontFamily: fonts.display, fontSize: 12, lineHeight: 14, color: colors.parchment,
+                                    opacity: 0.9, marginBottom: 6, textTransform: 'uppercase', textAlign: 'center'
+                                }} numberOfLines={3}>{data.filmTitle}</Text>
+                                <Text style={{ fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog, textTransform: 'uppercase', textAlign: 'center' }}>
                                     {yearDisplay}
                                 </Text>
                             </LinearGradient>
@@ -139,32 +150,76 @@ function CardContent({ data }: { data: ShareCardData }) {
                     </View>
                 </View>
 
-                {/* Film & Review Metadata */}
-                <View style={s.slabInfoArea}>
-                    <Text style={s.slabFilmTitle} numberOfLines={2} adjustsFontSizeToFit>{data.filmTitle}</Text>
-                    <Text style={s.slabFilmMeta}>{yearDisplay}</Text>
-                    
+                {/* Film & Review Metadata (Y: 295, H: 65) */}
+                <View style={{ position: 'absolute', top: 295, left: 20, width: 272, height: 65, alignItems: 'center' }}>
+                    <Text style={{
+                        fontFamily: fonts.display, fontSize: (data.filmTitle?.length || 0) > 40 ? 14 : 20, lineHeight: 22,
+                        color: colors.parchment, textAlign: 'center', marginBottom: 4,
+                        textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 8
+                    }} numberOfLines={2}>
+                        {data.filmTitle}
+                    </Text>
+
+                    <Text style={{
+                        fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5,
+                        color: '#D4AF37', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2,
+                        opacity: 0.85, marginBottom: 6
+                    }}>
+                        {yearDisplay}
+                    </Text>
+
                     {data.rating > 0 && (
-                        <View style={s.slabRatingWrap}>
+                        <View style={{ alignItems: 'center' }}>
                             <ReelRating rating={data.rating} size={13} />
                         </View>
                     )}
-
-                    <View style={s.slabReviewBox}>
-                        <Text style={s.slabReviewText} numberOfLines={3}>
-                            "{reviewText || 'Classified Analysis'}"
-                        </Text>
-                    </View>
                 </View>
 
-                {/* Footer */}
-                <View style={s.slabFooter}>
-                    <View style={s.slabFooterLeft}>
-                        <Image source={require('@/assets/images/reelhouse-logo-transparent.png')} style={s.slabFooterLogo} />
-                        <Text style={s.slabFooterText}>REELHOUSE</Text>
+                {/* Review Box (Y: 375, H: 140) */}
+                <View style={{
+                    position: 'absolute', top: 375, left: 20, width: 272, height: 140,
+                    backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 4, borderLeftWidth: 2, borderLeftColor: '#D4AF37',
+                    paddingHorizontal: 12, paddingTop: 8, overflow: 'hidden'
+                }}>
+                    {reviewText ? (
+                        <Text style={{ fontFamily: 'Courier', fontSize: 11, color: colors.bone, lineHeight: 16, opacity: 0.95 }}>
+                            <Text style={{ fontFamily: fonts.display, fontSize: 16, color: '#D4AF37' }}>
+                                {reviewText.charAt(0)}
+                            </Text>
+                            {reviewText.slice(1)}
+                        </Text>
+                    ) : (
+                        <Text style={{ fontFamily: 'Courier', fontSize: 11, color: colors.bone, lineHeight: 16, opacity: 0.5 }}>
+                            Classified Analysis
+                        </Text>
+                    )}
+                    
+                    {/* Fade Mask (H: 45) */}
+                    <LinearGradient
+                        colors={['transparent', '#090705']}
+                        style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 45 }}
+                        pointerEvents="none"
+                    />
+                </View>
+
+                {/* Footer (Y: 530, H: 15) */}
+                <View style={{
+                    position: 'absolute', top: 530, left: 16, width: 280, height: 15,
+                    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'
+                }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                        <Image source={require('@/assets/images/reelhouse-logo-transparent.png')} style={{ width: 14, height: 14, opacity: 0.7 }} />
+                        <Text style={{
+                            fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5,
+                            color: '#D4AF37', textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2
+                        }}>
+                            REELHOUSE
+                        </Text>
                     </View>
                     {data.username && (
-                        <Text style={s.slabFooterUsername}>@{data.username.toUpperCase()}</Text>
+                        <Text style={{ fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.flicker, opacity: 0.7 }}>
+                            @{data.username.toUpperCase()}
+                        </Text>
                     )}
                 </View>
             </View>

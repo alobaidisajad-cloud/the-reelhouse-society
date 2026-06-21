@@ -34,11 +34,9 @@ function truncateReview(text: string, maxLength = 350) {
     if (raw.length <= maxLength) return raw
     const cut = raw.lastIndexOf(' ', maxLength)
     return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '…'
-}
-
-// Fixed dimensions
-const RENDER_W = 380
-const RENDER_H = Math.round(RENDER_W * 16 / 9)
+}// Fixed dimensions for flawless pixel-parity
+const RENDER_W = 360
+const RENDER_H = 640
 
 const getProxiedImageUrl = (path: string | null) => {
     if (!path) return null
@@ -60,7 +58,7 @@ function CardContent({ data, posterDataUrl, blurDataUrl }: { data: ShareCardData
 
     return (
         <div style={{
-            position: 'relative', width: '100%', height: '100%',
+            position: 'relative', width: '360px', height: '640px',
             display: 'flex', flexDirection: 'column',
             fontFamily: 'var(--font-body)', color: 'var(--parchment)',
             overflow: 'hidden', background: '#040302'
@@ -84,10 +82,11 @@ function CardContent({ data, posterDataUrl, blurDataUrl }: { data: ShareCardData
                 zIndex: 1
             }} />
 
-            {/* Obsidian Slab */}
+            {/* Obsidian Glass Slab - Height: 560px */}
             <div style={{
-                margin: '45px 24px 25px 24px',
-                flex: 1,
+                margin: '40px 24px',
+                width: '312px',
+                height: '560px',
                 background: '#090705',
                 border: '1px solid rgba(196, 150, 26, 0.3)',
                 borderRadius: '8px',
@@ -96,25 +95,46 @@ function CardContent({ data, posterDataUrl, blurDataUrl }: { data: ShareCardData
                 flexDirection: 'column',
                 overflow: 'hidden',
                 position: 'relative',
-                zIndex: 2
+                zIndex: 2,
+                boxSizing: 'border-box',
+                paddingTop: '15px',
+                paddingBottom: '15px'
             }}>
-                {/* Header */}
-                <div style={{ padding: '12px 0 6px 0', textAlign: 'center', borderBottom: '1px solid rgba(196,150,26,0.15)', background: 'rgba(0,0,0,0.1)' }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.25rem', color: 'var(--sepia)', opacity: 0.9 }}>
-                        ● ARCHIVE DOSSIER ●
+                {/* Header (25px) */}
+                <div style={{ 
+                    height: '25px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    borderBottom: '1px solid rgba(196,150,26,0.15)', 
+                    background: 'rgba(0,0,0,0.1)',
+                    boxSizing: 'border-box'
+                }}>
+                    <span style={{ 
+                        fontFamily: 'var(--font-ui)', 
+                        fontSize: '0.45rem', 
+                        letterSpacing: '0.25rem', 
+                        color: '#D4AF37', // Solid Gold
+                        textShadow: '0px 1px 2px rgba(0,0,0,0.8)',
+                        opacity: 0.9 
+                    }}>
+                        ● DECLASSIFIED DOSSIER ●
                     </span>
                 </div>
 
-                {/* Poster Container */}
-                <div style={{ padding: '16px 16px 12px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: 0 }}>
+                {/* Spacer (15px) */}
+                <div style={{ height: '15px' }} />
+
+                {/* Poster Container (225px) */}
+                <div style={{ height: '225px', display: 'flex', justifyContent: 'center', alignItems: 'center', boxSizing: 'border-box' }}>
                     <div style={{
-                        height: '100%',
-                        aspectRatio: '2/3',
+                        width: '150px',
+                        height: '225px',
                         background: 'var(--soot)',
-                        boxShadow: '0 12px 24px rgba(0,0,0,0.65)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.85)',
                         borderRadius: '4px',
                         overflow: 'hidden',
-                        border: '1px solid rgba(255,255,255,0.06)'
+                        border: '1px solid rgba(212,175,55,0.4)' // Gold Matting
                     }}>
                         {posterDataUrl ? (
                             <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
@@ -126,27 +146,27 @@ function CardContent({ data, posterDataUrl, blurDataUrl }: { data: ShareCardData
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: 'linear-gradient(135deg, #15120e 0%, #090706 100%)',
+                                background: 'linear-gradient(135deg, #1A1510 0%, #0A0806 100%)', // Leather Bound fallback
                                 padding: '16px',
-                                border: '1px solid rgba(196, 150, 26, 0.15)',
                                 boxSizing: 'border-box',
                                 textAlign: 'center',
                                 position: 'relative'
                             }}>
                                 <div style={{
                                     position: 'absolute',
-                                    inset: '8px',
-                                    border: '1px solid rgba(196, 150, 26, 0.08)',
+                                    inset: '6px',
+                                    border: '1px solid rgba(212, 175, 55, 0.15)',
                                     pointerEvents: 'none'
                                 }} />
                                 <div style={{
                                     fontFamily: 'var(--font-ui)',
                                     fontSize: '0.6rem',
-                                    color: 'var(--sepia)',
-                                    opacity: 0.6,
+                                    color: '#D4AF37',
+                                    opacity: 0.8,
                                     marginBottom: '12px',
                                     fontWeight: 300,
-                                    letterSpacing: '0.1em'
+                                    letterSpacing: '0.1em',
+                                    textShadow: '0px 1px 2px rgba(0,0,0,0.8)'
                                 }}>
                                     RH
                                 </div>
@@ -155,7 +175,7 @@ function CardContent({ data, posterDataUrl, blurDataUrl }: { data: ShareCardData
                                     fontSize: '0.75rem',
                                     lineHeight: 1.2,
                                     color: 'var(--parchment)',
-                                    opacity: 0.85,
+                                    opacity: 0.9,
                                     marginBottom: '6px',
                                     textTransform: 'uppercase',
                                     display: '-webkit-box',
@@ -165,67 +185,107 @@ function CardContent({ data, posterDataUrl, blurDataUrl }: { data: ShareCardData
                                 }}>
                                     {data.filmTitle}
                                 </div>
-                                <div style={{
-                                    fontFamily: 'var(--font-ui)',
-                                    fontSize: '0.45rem',
-                                    letterSpacing: '0.1em',
-                                    color: 'var(--fog)',
-                                    textTransform: 'uppercase'
-                                }}>
-                                    {yearDisplay}
-                                </div>
                             </div>
                         )}
                     </div>
                 </div>
 
-                {/* Film & Review Metadata */}
-                <div style={{ padding: '0 20px 16px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                {/* Spacer (15px) */}
+                <div style={{ height: '15px' }} />
+
+                {/* Film & Review Metadata (65px) */}
+                <div style={{ height: '65px', padding: '0 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', boxSizing: 'border-box' }}>
                     <h1 style={{
-                        fontFamily: 'var(--font-display)', fontSize: '1.25rem',
-                        lineHeight: 1.15, color: 'var(--parchment)', margin: '0 0 0.25rem 0',
-                        textShadow: '0 2px 8px rgba(0,0,0,0.6)'
+                        fontFamily: 'var(--font-display)', 
+                        fontSize: data.filmTitle.length > 40 ? '0.8rem' : '1.15rem',
+                        lineHeight: 1.15, 
+                        color: 'var(--parchment)', 
+                        margin: '0 0 0.25rem 0',
+                        textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
                     }}>
                         {data.filmTitle}
                     </h1>
 
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem', opacity: 0.85 }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: '#D4AF37', textShadow: '0px 1px 2px rgba(0,0,0,0.8)', marginBottom: '0.35rem', opacity: 0.85 }}>
                         {yearDisplay}
                     </div>
 
                     {data.rating > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
                             <ReelRating value={data.rating} size="sm" />
                         </div>
                     )}
+                </div>
 
+                {/* Spacer (15px) */}
+                <div style={{ height: '15px' }} />
+
+                {/* Review Box (140px) */}
+                <div style={{ padding: '0 20px', display: 'flex', justifyContent: 'center', boxSizing: 'border-box' }}>
                     <div style={{
-                        fontFamily: 'var(--font-body-italic)', fontSize: '0.7rem', color: 'var(--bone)',
+                        fontFamily: 'Courier, monospace', fontSize: '0.7rem', color: 'var(--bone)',
                         lineHeight: 1.5, opacity: 0.95,
                         padding: '8px 12px',
-                        background: 'rgba(0,0,0,0.3)',
+                        background: 'rgba(0,0,0,0.4)',
                         borderRadius: '4px',
-                        borderLeft: '2px solid var(--sepia)',
+                        borderLeft: '2px solid #D4AF37',
                         width: '100%',
-                        maxHeight: '96px',
+                        height: '140px', // Strict locked height
+                        position: 'relative',
                         overflow: 'hidden',
-                        display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
-                        textAlign: 'left'
+                        textAlign: 'left',
+                        boxSizing: 'border-box'
                     }}>
-                        "{reviewText || 'Classified Analysis'}"
+                        {reviewText ? (
+                            <>
+                                <span style={{ 
+                                    float: 'left', 
+                                    fontSize: '2.2rem', 
+                                    lineHeight: '2.0rem', 
+                                    paddingRight: '6px',
+                                    paddingTop: '4px',
+                                    color: '#D4AF37',
+                                    fontFamily: 'var(--font-display)',
+                                    textShadow: '0px 1px 4px rgba(0,0,0,0.8)'
+                                }}>
+                                    {reviewText.charAt(0)}
+                                </span>
+                                {reviewText.slice(1)}
+                            </>
+                        ) : (
+                            <span style={{ opacity: 0.5 }}>Classified Analysis</span>
+                        )}
+                        {/* Soot-Gradient Fade Mask (45px) */}
+                        <div style={{
+                            position: 'absolute',
+                            bottom: 0, left: 0, right: 0,
+                            height: '45px',
+                            background: 'linear-gradient(to bottom, transparent, #090705)'
+                        }} />
                     </div>
                 </div>
 
-                {/* Footer */}
-                <div style={{ padding: '8px 16px', borderTop: '1px solid rgba(196,150,26,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                {/* Spacer (15px) */}
+                <div style={{ height: '15px' }} />
+
+                {/* Footer (15px) */}
+                <div style={{ 
+                    height: '15px', 
+                    padding: '0 16px', 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center', 
+                    boxSizing: 'border-box'
+                }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <img src="/reelhouse-logo-transparent.png" alt="" style={{ width: 14, height: 14, opacity: 0.7 }} />
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15rem', color: 'var(--sepia)' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15rem', color: '#D4AF37', textShadow: '0px 1px 2px rgba(0,0,0,0.8)' }}>
                             REELHOUSE
                         </span>
                     </div>
                     {data.username && (
-                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.1rem', color: 'var(--flicker)' }}>
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.1rem', color: 'var(--flicker)', opacity: 0.7 }}>
                             @{data.username.toUpperCase()}
                         </span>
                     )}
@@ -260,66 +320,32 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
             if (!sharpUrl) { setReady(true); return }
 
             // Fetch sharp poster
-            let sharpDataUrl = ''
-            try {
-                const imgRes = await fetch(sharpUrl)
-                if (!imgRes.ok) throw new Error('Proxy offline')
-                const imgBlob = await imgRes.blob()
-                sharpDataUrl = await new Promise<string>((res, rej) => {
-                    const reader = new FileReader()
-                    reader.onloadend = () => res(reader.result as string)
-                    reader.onerror = rej
-                    reader.readAsDataURL(imgBlob)
-                })
-            } catch {
-                const directUrl = tmdb.poster(data.posterPath, 'w500')
-                if (directUrl) {
-                    try {
-                        const imgRes = await fetch(directUrl)
-                        const imgBlob = await imgRes.blob()
-                        sharpDataUrl = await new Promise<string>((res, rej) => {
-                            const reader = new FileReader()
-                            reader.onloadend = () => res(reader.result as string)
-                            reader.onerror = rej
-                            reader.readAsDataURL(imgBlob)
-                        })
-                    } catch (e) {
-                        console.error('Direct sharp poster fetch failed', e)
-                    }
-                }
-            }
-            if (sharpDataUrl) setPosterDataUrl(sharpDataUrl)
+            const imgRes = await fetch(sharpUrl)
+            const imgBlob = await imgRes.blob()
+            const sharpDataUrl = await new Promise<string>((res, rej) => {
+                const reader = new FileReader()
+                reader.onloadend = () => res(reader.result as string)
+                reader.onerror = rej
+                reader.readAsDataURL(imgBlob)
+            })
+            setPosterDataUrl(sharpDataUrl)
 
             // Fetch blurred background
-            let blurDataUrlVal = ''
             if (blurredUrl) {
                 try {
                     const blurRes = await fetch(blurredUrl)
-                    if (!blurRes.ok) throw new Error('Proxy offline')
                     const blurBlob = await blurRes.blob()
-                    blurDataUrlVal = await new Promise<string>((res, rej) => {
+                    const blurDataUrlVal = await new Promise<string>((res, rej) => {
                         const reader = new FileReader()
                         reader.onloadend = () => res(reader.result as string)
                         reader.onerror = rej
                         reader.readAsDataURL(blurBlob)
                     })
-                } catch {
-                    const directUrl = tmdb.poster(data.posterPath, 'w92')
-                    if (directUrl) {
-                        try {
-                            const blurRes = await fetch(directUrl)
-                            const blurBlob = await blurRes.blob()
-                            blurDataUrlVal = await new Promise<string>((res, rej) => {
-                                const reader = new FileReader()
-                                reader.onloadend = () => res(reader.result as string)
-                                reader.onerror = rej
-                                reader.readAsDataURL(blurBlob)
-                            })
-                        } catch {}
-                    }
+                    setBlurDataUrl(blurDataUrlVal)
+                } catch (e) {
+                    console.error('Blurred background load failed', e)
                 }
             }
-            if (blurDataUrlVal) setBlurDataUrl(blurDataUrlVal)
 
             await new Promise(r => setTimeout(r, 180))
             if (!renderRef.current) return
