@@ -25,6 +25,8 @@ module.exports = defineConfig([
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
       'react/display-name': 'off',
+      // fast-check's documented usage is `import fc from 'fast-check'; fc.assert(...)`.
+      'import/no-named-as-default-member': 'off',
     },
   },
 ]);
