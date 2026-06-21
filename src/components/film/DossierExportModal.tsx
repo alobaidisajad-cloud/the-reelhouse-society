@@ -6,7 +6,7 @@ import { tmdb } from '../../tmdb'
 import { ReelRating, Portal } from '../UI'
 
 async function fetchPosterDataUrl(posterPath: string): Promise<string> {
-    const originalUrl = tmdb.poster(posterPath, 'w780')
+    const originalUrl = tmdb.poster(posterPath, 'original')
     if (!originalUrl) throw new Error('No poster URL')
     const proxyUrl = `/api/proxy-image?url=${encodeURIComponent(originalUrl)}`
     const res = await fetch(proxyUrl)
@@ -21,6 +21,11 @@ async function fetchPosterDataUrl(posterPath: string): Promise<string> {
 }
 
 async function screenshotCard(el: HTMLDivElement): Promise<Blob> {
+    // Ensure custom fonts are fully loaded before capture — otherwise html2canvas
+    // renders a fallback system font into the exported image.
+    if (typeof document !== 'undefined' && document.fonts?.ready) {
+        try { await document.fonts.ready } catch { /* fonts API unavailable — proceed */ }
+    }
     const canvas = await html2canvas(el, {
         useCORS: false,
         allowTaint: false,
@@ -103,8 +108,6 @@ export default function DossierExportModal({
     const [ready, setReady] = useState(false)
     const [saving, setSaving] = useState(false)
 
-    if (!log) return null
-
     const preGenerate = useCallback(async () => {
         try {
             const dataUrl = await fetchPosterDataUrl(film.poster_path)
@@ -145,6 +148,10 @@ export default function DossierExportModal({
     // Fixed render dimensions (380px wide, full 9:16)
     const RENDER_W = 380
     const RENDER_H = Math.round(RENDER_W * 16 / 9) // 676px
+
+    // Guard placed AFTER all hooks (Rules of Hooks) — moving it above the
+    // useCallback/useEffect above caused a conditional-hook crash when `log` changed.
+    if (!log) return null
 
     return (
         <Portal>

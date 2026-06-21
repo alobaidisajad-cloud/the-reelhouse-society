@@ -99,7 +99,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
               <View style={StyleSheet.absoluteFill}>
                 {film.backdrop_path ? (
                   <Image 
-                    source={{ uri: tmdb.backdrop(film.backdrop_path, 'w780') }} 
+                    source={{ uri: tmdb.backdrop(film.backdrop_path, 'w1280') }}
                     style={s.backdropImg} 
                     blurRadius={10} 
                     onLoad={() => setBackdropLoaded(true)}
@@ -118,7 +118,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
               <View style={s.filmInfoRow}>
                 {posterToUse ? (
                   <Image 
-                    source={{ uri: tmdb.poster(posterToUse, 'w185') }} 
+                    source={{ uri: tmdb.poster(posterToUse, 'w342') }}
                     style={s.cardPoster} 
                     contentFit="cover" 
                     cachePolicy="memory-disk" 

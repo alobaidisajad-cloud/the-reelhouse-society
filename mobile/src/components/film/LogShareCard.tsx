@@ -87,7 +87,7 @@ function cleanReviewText(text: string): string {
 
 /** The inner card content — shared between embedded and modal modes */
 function CardContent({ data }: { data: ShareCardData }) {
-    const posterUrl = data.posterUri ?? (data.posterPath ? tmdb.poster(data.posterPath, 'w500') : null);
+    const posterUrl = data.posterUri ?? (data.posterPath ? tmdb.poster(data.posterPath, 'w780') : null);
     const yearDisplay = data.filmYear ?? data.year ?? '';
     const rawReview = cleanReviewText(data.review || '');
     const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(rawReview);
