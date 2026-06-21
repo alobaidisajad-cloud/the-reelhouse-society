@@ -21,9 +21,8 @@ function truncateReview(text: string, maxLength = 350) {
     return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '…'
 }
 
-// Fixed dimensions for flawless pixel-parity
-const RENDER_W = 360
-const RENDER_H = 640
+const RENDER_W = 380
+const RENDER_H = Math.round(RENDER_W * 16 / 9)
 
 const getProxiedImageUrl = (path: string | null) => {
     if (!path) return null
@@ -45,83 +44,175 @@ function CardContent({ film, log, posterDataUrl, blurDataUrl, username }: { film
 
     return (
         <div style={{
-            position: 'relative', width: '360px', height: '640px',
-            backgroundColor: 'var(--ink)', overflow: 'hidden',
-            fontFamily: 'var(--font-body)', color: 'var(--parchment)'
+            position: 'relative', width: '100%', height: '100%',
+            display: 'flex', flexDirection: 'column',
+            fontFamily: 'var(--font-body)', color: 'var(--parchment)',
+            overflow: 'hidden', background: '#040302'
         }}>
-            {/* Poster top half full bleed */}
-            <div style={{ position: 'absolute', top: 0, left: 0, width: '360px', height: '360px', zIndex: 1, backgroundColor: 'var(--soot)' }}>
-                {posterDataUrl ? (
-                    <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
-                ) : null}
-            </div>
-
-            {/* Abyss Fade Mask */}
+            {/* Ambient Blur Layer */}
             <div style={{
-                position: 'absolute', top: '120px', left: 0, width: '360px', height: '240px', zIndex: 2,
-                background: 'linear-gradient(to bottom, rgba(11, 10, 8, 0), rgba(11, 10, 8, 1))'
+                position: 'absolute', inset: 0,
+                backgroundImage: blurDataUrl ? `url(${blurDataUrl})` : 'none',
+                background: blurDataUrl ? undefined : 'radial-gradient(circle at center, rgba(196, 150, 26, 0.12) 0%, rgba(4, 3, 2, 0) 70%)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                transform: 'scale(1.15)',
+                opacity: blurDataUrl ? 0.45 : 1,
+                zIndex: 0
             }} />
 
-            {/* Typography Container */}
-            <div style={{ position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none' }}>
-                {/* Film Title */}
-                <div style={{
-                    position: 'absolute', top: '270px', left: '20px', width: '320px',
-                    textAlign: 'center', fontFamily: 'var(--font-display)', color: 'var(--flicker)',
-                    fontSize: '28px', lineHeight: '32px',
-                    textShadow: '0 4px 12px rgba(0,0,0,0.8)',
-                    display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                }}>
-                    {film.title}
+            {/* Vignette Overlay */}
+            <div style={{
+                position: 'absolute', inset: 0,
+                background: 'radial-gradient(circle at center, rgba(4,3,2,0.1) 0%, rgba(4,3,2,0.85) 90%)',
+                zIndex: 1
+            }} />
+
+            {/* Obsidian Slab */}
+            <div style={{
+                margin: '45px 24px 25px 24px',
+                flex: 1,
+                background: '#090705',
+                border: '1px solid rgba(196, 150, 26, 0.3)',
+                borderRadius: '8px',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), 0 0 40px rgba(196,150,26,0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                position: 'relative',
+                zIndex: 2
+            }}>
+                {/* Header */}
+                <div style={{ padding: '12px 0 6px 0', textAlign: 'center', borderBottom: '1px solid rgba(196,150,26,0.15)', background: 'rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.25rem', color: 'var(--sepia)', opacity: 0.9 }}>
+                        ● ARCHIVE DOSSIER ●
+                    </span>
                 </div>
 
-                {/* Metadata */}
-                <div style={{
-                    position: 'absolute', top: '335px', left: '20px', width: '320px',
-                    display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px'
-                }}>
-                    {yearDisplay ? <span style={{ fontFamily: 'var(--font-ui)', color: 'var(--sepia)', fontSize: '11px', letterSpacing: '1.5px', fontWeight: 600 }}>{yearDisplay}</span> : null}
-                    {yearDisplay ? <span style={{ fontFamily: 'var(--font-ui)', color: 'var(--sepia)', fontSize: '11px', opacity: 0.5 }}>•</span> : null}
-                    {log.rating > 0 ? <ReelRating value={log.rating} size="sm" /> : null}
-                </div>
-
-                {/* Review Text */}
-                <div style={{
-                    position: 'absolute', top: '380px', left: '24px', width: '312px', height: '170px',
-                    overflow: 'hidden', display: 'flex', flexDirection: 'column', alignItems: 'center'
-                }}>
-                    {reviewText ? (
-                        <div style={{
-                            fontFamily: '"Courier Prime", Courier, monospace', fontSize: '13px', lineHeight: '20px',
-                            color: 'var(--bone)', textAlign: 'center', fontStyle: 'italic'
-                        }}>
-                            "{reviewText}"
-                        </div>
-                    ) : (
-                        <div style={{ flex: 1, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                            <div style={{ fontFamily: '"Courier Prime", Courier, monospace', fontSize: '12px', color: 'rgba(200, 185, 154, 0.4)', letterSpacing: '1px' }}>
-                                LOGGED // {log.status?.toUpperCase() || 'WATCHED'}
+                {/* Poster Container */}
+                <div style={{ padding: '16px 16px 12px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: 0 }}>
+                    <div style={{
+                        height: '100%',
+                        aspectRatio: '2/3',
+                        background: 'var(--soot)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.65)',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255,255,255,0.06)'
+                    }}>
+                        {posterDataUrl ? (
+                            <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
+                        ) : (
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #15120e 0%, #090706 100%)',
+                                padding: '16px',
+                                border: '1px solid rgba(196, 150, 26, 0.15)',
+                                boxSizing: 'border-box',
+                                textAlign: 'center',
+                                position: 'relative'
+                            }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: '8px',
+                                    border: '1px solid rgba(196, 150, 26, 0.08)',
+                                    pointerEvents: 'none'
+                                }} />
+                                <div style={{
+                                    fontFamily: 'var(--font-ui)',
+                                    fontSize: '0.6rem',
+                                    color: 'var(--sepia)',
+                                    opacity: 0.6,
+                                    marginBottom: '12px',
+                                    fontWeight: 300,
+                                    letterSpacing: '0.1em'
+                                }}>
+                                    RH
+                                </div>
+                                <div style={{
+                                    fontFamily: 'var(--font-display)',
+                                    fontSize: '0.75rem',
+                                    lineHeight: 1.2,
+                                    color: 'var(--parchment)',
+                                    opacity: 0.85,
+                                    marginBottom: '6px',
+                                    textTransform: 'uppercase',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 3,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                }}>
+                                    {film.title}
+                                </div>
+                                <div style={{
+                                    fontFamily: 'var(--font-ui)',
+                                    fontSize: '0.45rem',
+                                    letterSpacing: '0.1em',
+                                    color: 'var(--fog)',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {yearDisplay}
+                                </div>
                             </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Film & Review Metadata */}
+                <div style={{ padding: '0 20px 16px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{
+                        fontFamily: 'var(--font-display)', fontSize: '1.25rem',
+                        lineHeight: 1.15, color: 'var(--parchment)', margin: '0 0 0.25rem 0',
+                        textShadow: '0 2px 8px rgba(0,0,0,0.6)'
+                    }}>
+                        {film.title}
+                    </h1>
+
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem', opacity: 0.85 }}>
+                        {yearDisplay}
+                    </div>
+
+                    {log.rating > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                            <ReelRating value={log.rating} size="sm" />
                         </div>
                     )}
-                    
-                    {/* Fade to black at bottom of review */}
-                    {reviewText ? (
-                        <div style={{
-                            position: 'absolute', bottom: 0, left: 0, right: 0, height: '40px',
-                            background: 'linear-gradient(to bottom, rgba(11, 10, 8, 0), rgba(11, 10, 8, 1))'
-                        }} />
-                    ) : null}
+
+                    <div style={{
+                        fontFamily: 'var(--font-body-italic)', fontSize: '0.7rem', color: 'var(--bone)',
+                        lineHeight: 1.5, opacity: 0.95,
+                        padding: '8px 12px',
+                        background: 'rgba(0,0,0,0.3)',
+                        borderRadius: '4px',
+                        borderLeft: '2px solid var(--sepia)',
+                        width: '100%',
+                        maxHeight: '96px',
+                        overflow: 'hidden',
+                        display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
+                        textAlign: 'left'
+                    }}>
+                        "{reviewText || 'Classified Analysis'}"
+                    </div>
                 </div>
 
                 {/* Footer */}
-                <div style={{
-                    position: 'absolute', top: '580px', left: '24px', width: '312px',
-                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    paddingTop: '16px', borderTop: '1px solid rgba(196, 150, 26, 0.2)'
-                }}>
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--sepia)', letterSpacing: '1px', opacity: 0.8 }}>REELHOUSE</span>
-                    {username && <span style={{ fontFamily: 'var(--font-ui)', fontSize: '10px', color: 'var(--parchment)', letterSpacing: '1px', opacity: 0.8 }}>@{username}</span>}
+                <div style={{ padding: '8px 16px', borderTop: '1px solid rgba(196,150,26,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <img src="/reelhouse-logo-transparent.png" alt="" style={{ width: 14, height: 14, opacity: 0.7 }} />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15rem', color: 'var(--sepia)' }}>
+                            REELHOUSE
+                        </span>
+                    </div>
+                    {username && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.1rem', color: 'var(--flicker)' }}>
+                            @{username.toUpperCase()}
+                        </span>
+                    )}
                 </div>
             </div>
         </div>

@@ -136,7 +136,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       pull_quote: existingLog.pullQuote ?? null,
       drop_cap: existingLog.dropCap ?? false,
     };
-  }, [existingLog, currentUsername, user, user?.id]);
+  }, [existingLog, currentUsername, user]);
 
   if (loading && validFilmId) {
     return (

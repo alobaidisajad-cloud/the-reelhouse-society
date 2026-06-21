@@ -1,7 +1,6 @@
 import React, { useCallback, useRef, useState } from 'react';
  
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
-import { FlashList } from '@shopify/flash-list';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -487,7 +486,7 @@ export default function StackDetailScreen() {
         },
       ]
     );
-  }, [id, deleteList, router]);
+  }, [id, deleteList, router, queryClient]);
 
   const handlePressFilm = useCallback((filmId: number) => {
     Haptics.selectionAsync();

@@ -7,7 +7,6 @@ import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useAuthStore } from '@/src/stores/auth';
 import { useLogStore } from '@/src/stores/films';
 import { colors, fonts } from '@/src/theme/theme';
-import { FlashList } from '@shopify/flash-list';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';

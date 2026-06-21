@@ -80,7 +80,7 @@ export const ActionDeck = React.memo(function ActionDeck({
       withSpring(1.5, { damping: 12, stiffness: 400 }),
       withSpring(1, { damping: 14, stiffness: 300 })
     );
-  }, [itemId, toggleEndorse, heartScale]);
+  }, [itemId, toggleEndorse, heartScale, router.push]);
 
   const handleCritique = useCallback(() => {
     if (!useAuthStore.getState().user) {
@@ -140,7 +140,7 @@ export const ActionDeck = React.memo(function ActionDeck({
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setShowShareModal(true);
-  }, [isLoungeEligible]);
+  }, [isLoungeEligible, router.push]);
 
   return (
     <>

@@ -1,7 +1,6 @@
-import React, { useRef, useState, memo, useEffect, useCallback } from 'react';
+import React, { useRef, useState, memo, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Share, Pressable } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
@@ -54,84 +53,118 @@ function CardContent({ film, log, username }: { film: ShareFilm; log?: ShareLog 
   const yearDisplay = film.release_date?.slice(0, 4) || '';
 
   return (
-        <View style={{
-            position: 'relative', width: 360, height: 640,
-            backgroundColor: colors.ink, overflow: 'hidden'
-        }}>
-            {/* Poster top half full bleed */}
-            <View style={{ position: 'absolute', top: 0, left: 0, width: 360, height: 360, zIndex: 1, backgroundColor: colors.soot }}>
-                {posterUrl ? (
-                    <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
-                ) : null}
-            </View>
+    <View style={s.cardContainer}>
+      {/* Ambient Blur Layer */}
+      {posterUrl ? (
+        <Image
+          source={{ uri: posterUrl }}
+          style={s.blurBackground}
+          contentFit="cover"
+          blurRadius={40}
+        />
+      ) : (
+        <LinearGradient
+          colors={['rgba(196, 150, 26, 0.08)', 'rgba(4, 3, 2, 0)']}
+          start={{ x: 0.5, y: 0.5 }}
+          end={{ x: 0.5, y: 1.0 }}
+          style={s.blurBackground}
+        />
+      )}
 
-            {/* Abyss Fade Mask */}
-            <LinearGradient
-                colors={['rgba(11, 10, 8, 0)', 'rgba(11, 10, 8, 1)']}
-                style={{ position: 'absolute', top: 120, left: 0, width: 360, height: 240, zIndex: 2 }}
-            />
+      {/* Vignette Overlay */}
+      <View style={s.vignette} />
 
-            {/* Typography Container */}
-            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 5 }}>
-                {/* Film Title */}
-                <Text style={{
-                    position: 'absolute', top: 270, left: 20, width: 320,
-                    textAlign: 'center', fontFamily: fonts.display, color: colors.flicker,
-                    fontSize: 28, lineHeight: 32, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 12
-                }} numberOfLines={2}>
-                    {film.title}
-                </Text>
-
-                {/* Metadata */}
-                <View style={{
-                    position: 'absolute', top: 335, left: 20, width: 320,
-                    flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8
-                }}>
-                    {yearDisplay ? <Text style={{ fontFamily: fonts.ui, color: colors.sepia, fontSize: 11, letterSpacing: 1.5, fontWeight: '600' }}>{yearDisplay}</Text> : null}
-                    {yearDisplay ? <Text style={{ fontFamily: fonts.ui, color: colors.sepia, fontSize: 11, opacity: 0.5 }}>•</Text> : null}
-                    {log && log.rating > 0 ? <ReelRating rating={log.rating} size={11} /> : null}
-                </View>
-
-                {/* Review Text */}
-                <View style={{
-                    position: 'absolute', top: 380, left: 24, width: 312, height: 170,
-                    overflow: 'hidden', alignItems: 'center'
-                }}>
-                    {reviewText ? (
-                        <Text style={{
-                            fontFamily: 'Courier', fontSize: 13, lineHeight: 20,
-                            color: colors.bone, textAlign: 'center', fontStyle: 'italic'
-                        }}>
-                            "{reviewText}"
-                        </Text>
-                    ) : (
-                        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                            <Text style={{ fontFamily: 'Courier', fontSize: 12, color: 'rgba(200, 185, 154, 0.4)', letterSpacing: 1 }}>
-                                LOGGED // {log?.status?.toUpperCase() || 'WATCHED'}
-                            </Text>
-                        </View>
-                    )}
-                    
-                    {/* Fade to black at bottom of review */}
-                    {reviewText ? (
-                        <LinearGradient
-                            colors={['rgba(11, 10, 8, 0)', 'rgba(11, 10, 8, 1)']}
-                            style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40 }}
-                        />
-                    ) : null}
-                </View>
-
-                {/* Footer */}
-                <View style={{
-                    position: 'absolute', top: 580, left: 24, width: 312,
-                    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                    paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(196, 150, 26, 0.2)'
-                }}>
-                    <Text style={{ fontFamily: fonts.ui, fontSize: 10, color: colors.sepia, letterSpacing: 1, opacity: 0.8 }}>REELHOUSE</Text>
-                    {username && <Text style={{ fontFamily: fonts.ui, fontSize: 10, color: colors.parchment, letterSpacing: 1, opacity: 0.8 }}>@{username}</Text>}
-                </View>
-            </View>
+      {/* Obsidian Slab */}
+      <View style={s.obsidianSlab}>
+        {/* Header */}
+        <View style={s.slabHeader}>
+          <Text style={s.slabHeaderText}>● ARCHIVE DOSSIER ●</Text>
         </View>
+
+        {/* Poster Area */}
+        <View style={s.slabPosterArea}>
+          <View style={s.slabPosterWrapper}>
+            {posterUrl ? (
+              <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+            ) : (
+              <LinearGradient
+                colors={['#15120e', '#090706']}
+                style={[StyleSheet.absoluteFillObject, { padding: 12, alignItems: 'center', justifyContent: 'center' }]}
+              >
+                <View style={{
+                  position: 'absolute',
+                  top: 6, bottom: 6, left: 6, right: 6,
+                  borderWidth: 1,
+                  borderColor: 'rgba(196, 150, 26, 0.08)'
+                }} />
+                <Text style={{
+                  fontFamily: fonts.ui,
+                  fontSize: 10,
+                  color: colors.sepia,
+                  opacity: 0.6,
+                  marginBottom: 8,
+                  letterSpacing: 1.5,
+                  textAlign: 'center'
+                }}>
+                  RH
+                </Text>
+                <Text style={{
+                  fontFamily: fonts.display,
+                  fontSize: 9,
+                  lineHeight: 12,
+                  color: colors.parchment,
+                  opacity: 0.85,
+                  marginBottom: 4,
+                  textTransform: 'uppercase',
+                  textAlign: 'center'
+                }} numberOfLines={3}>
+                  {film.title}
+                </Text>
+                <Text style={{
+                  fontFamily: fonts.ui,
+                  fontSize: 6,
+                  letterSpacing: 1,
+                  color: colors.fog,
+                  textTransform: 'uppercase',
+                  textAlign: 'center'
+                }}>
+                  {yearDisplay}
+                </Text>
+              </LinearGradient>
+            )}
+          </View>
+        </View>
+
+        {/* Film & Review Metadata */}
+        <View style={s.slabInfoArea}>
+          <Text style={s.slabFilmTitle} numberOfLines={2} adjustsFontSizeToFit>{film.title}</Text>
+          <Text style={s.slabFilmMeta}>{yearDisplay}</Text>
+          
+          {log && log.rating > 0 && (
+            <View style={s.slabRatingWrap}>
+              <ReelRating rating={log.rating} size={13} />
+            </View>
+          )}
+
+          <View style={s.slabReviewBox}>
+            <Text style={s.slabReviewText} numberOfLines={3}>
+              &quot;{reviewText || 'Classified Analysis'}&quot;
+            </Text>
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={s.slabFooter}>
+          <View style={s.slabFooterLeft}>
+            <Image source={require('@/assets/images/reelhouse-logo-transparent.png')} style={s.slabFooterLogo} />
+            <Text style={s.slabFooterText}>REELHOUSE</Text>
+          </View>
+          {username && (
+            <Text style={s.slabFooterUsername}>@{username.toUpperCase()}</Text>
+          )}
+        </View>
+      </View>
+    </View>
   );
 }
 

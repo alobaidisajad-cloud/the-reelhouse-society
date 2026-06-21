@@ -12,7 +12,7 @@ import Animated, {
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
 import { useAuthStore } from '@/src/stores/auth';
@@ -54,7 +54,6 @@ export default function LobbyScreen() {
   const fetchNotifications = useNotificationStore(s => s.fetchNotifications);
   const router = useRouter();
 
-  const queryClient = useQueryClient();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -165,7 +164,7 @@ export default function LobbyScreen() {
     } finally {
       setRefreshing(false);
     }
-  }, [queryClient, isAuthenticated, fetchLogs]);
+  }, [isAuthenticated, fetchLogs]);
 
   const heroFilm = trending[0] ?? null;
 

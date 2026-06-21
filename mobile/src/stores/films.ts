@@ -64,7 +64,7 @@ const useFilmStoreBase = create<FilmState>()(
                     }
 
                     try {
-                        // eslint-disable-next-line @typescript-eslint/no-require-imports
+                         
                         const { ImagePrefetcher } = require('../utils/imagePrefetcher');
                         if (state.watchlist && state.watchlist.length > 0) {
                             ImagePrefetcher.preloadFilmBatch(state.watchlist.slice(0, 10));
@@ -74,11 +74,11 @@ const useFilmStoreBase = create<FilmState>()(
                         }
                     } catch { /* prefetch is best-effort */ }
                     try {
-                        // eslint-disable-next-line @typescript-eslint/no-require-imports
+                         
                         const { tmdb } = require('../lib/tmdb');
                         tmdb.trending('week').then((res: any) => {
                             try {
-                                // eslint-disable-next-line @typescript-eslint/no-require-imports
+                                 
                                 const { ImagePrefetcher } = require('../utils/imagePrefetcher');
                                 ImagePrefetcher.preloadFilmBatch((res?.results ?? []).slice(0, 15));
                             } catch { /* prefetch is best-effort */ }
