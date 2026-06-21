@@ -1,28 +1,15 @@
-/**
- * LogShareCard — Premium adaptive share card for film logs.
- * 
- * Two distinct layouts:
- *   1. CINEMATIC — Short/no review: Large poster, centered title, big rating.
- *   2. EDITORIAL — Long review: Side-by-side poster+title, full review text in magazine column style.
- * 
- * Uses react-native-view-shot + expo-sharing for native share sheet.
- */
 import { useRef, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Modal, Share } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import reelToast from '@/src/utils/reelToast';
-import { extractDropCap } from '@/src/utils/text';
 import { ReelRating } from '@/src/components/Decorative';
-import { DossierBorder, DossierFooter, DOSSIER_CARD_WIDTH } from './DossierFrame';
-
 
 export interface ShareCardData {
     filmTitle: string;
@@ -48,173 +35,119 @@ interface Props {
     onClose?: () => void;
 }
 
-// ReelRating now uses the shared gold film-reel graphics from Decorative
-// (imported above) so the log card matches the film card and the web export.
+const DOSSIER_CARD_WIDTH = 360;
+const DOSSIER_CARD_HEIGHT = 640;
+
+function CornerTicks() {
+    const TICK = 12;
+    const INSET = 14;
+    const RIGHT = DOSSIER_CARD_WIDTH - INSET;
+    const BOTTOM = DOSSIER_CARD_HEIGHT - INSET;
+    
+    return (
+        <>
+            <View style={[s.tickH, { top: 0, left: 0 }]} />
+            <View style={[s.tickV, { top: 0, left: 0 }]} />
+            
+            <View style={[s.tickH, { top: 0, right: 0 }]} />
+            <View style={[s.tickV, { top: 0, right: 0 }]} />
+            
+            <View style={[s.tickH, { bottom: 0, left: 0 }]} />
+            <View style={[s.tickV, { bottom: 0, left: 0 }]} />
+            
+            <View style={[s.tickH, { bottom: 0, right: 0 }]} />
+            <View style={[s.tickV, { bottom: 0, right: 0 }]} />
+        </>
+    );
+}
 
 const ENTITIES: Record<string, string> = {
-  '&quot;': '"',
-  '&apos;': "'",
-  '&#39;': "'",
-  '&amp;': '&',
-  '&lt;': '<',
-  '&gt;': '>',
-  '&nbsp;': ' '
+  '&quot;': '"', '&apos;': "'", '&#39;': "'", '&amp;': '&', '&lt;': '<', '&gt;': '>', '&nbsp;': ' '
 };
 
-/** Parses review text to preserve paragraphs and decode entities */
 function cleanReviewText(text: string): string {
     if (!text) return '';
     let parsed = text.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<(?:\/?(?:p|div|br|b|i|strong|em|span|a|ul|li))[^>]*>/gi, '').trim();
     return parsed.replace(/&[a-z0-9#]+;/gi, (m) => ENTITIES[m] || m);
 }
 
-/** The inner card content — shared between embedded and modal modes */
+function truncateReview(text: string, maxLength = 350) {
+    const raw = cleanReviewText(text);
+    if (raw.length <= maxLength) return raw;
+    const cut = raw.lastIndexOf(' ', maxLength);
+    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '�';
+}
+
 function CardContent({ data }: { data: ShareCardData }) {
     const posterUrl = data.posterUri ?? (data.posterPath ? tmdb.poster(data.posterPath, 'w780') : null);
+    const reviewText = data.review ? truncateReview(data.review) : null;
     const yearDisplay = data.filmYear ?? data.year ?? '';
-    const rawReview = cleanReviewText(data.review || '');
-    const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(rawReview);
-    const isLong = rawReview.length > 200;
-    const hasReview = rawReview.length > 0;
-    const statusLabel = data.status === 'rewatched' ? 'REWATCHED' : data.status === 'abandoned' ? `ABANDONED${data.abandonedReason ? ` — ${data.abandonedReason.toUpperCase()}` : ''}` : 'WATCHED';
-
-    const cardWidth = DOSSIER_CARD_WIDTH;
-    const [measuredHeight, setMeasuredHeight] = useState<number | null>(null);
 
     return (
-        <View style={[s.card, { width: cardWidth }]} onLayout={e => setMeasuredHeight(e.nativeEvent.layout.height)}>
-            {/* Atmospheric blurred poster backdrop */}
-            {posterUrl && (
-                <Image
-                    source={{ uri: posterUrl }}
-                    style={s.backdropBlur}
-                    blurRadius={40}
-                    contentFit="cover"
-                />
-            )}
-            {/* Dark gradient overlay */}
-            <LinearGradient
-                colors={['rgba(10,7,3,0.6)', 'rgba(10,7,3,0.85)', 'rgba(10,7,3,0.95)']}
-                style={StyleSheet.absoluteFillObject}
-            />
-            {/* Film grain texture */}
-            <View style={s.grainOverlay} />
+        <View style={s.cardContainer}>
+            <View style={s.insetBorder} pointerEvents="none">
+                <CornerTicks />
+            </View>
 
-            <View style={s.cardInner}>
-                {/* ── TOP: Username + Branding ── */}
-                <View style={s.topRow}>
-                    <View style={s.userChip}>
-                        <View style={s.userDot} />
-                        <Text style={s.username}>@{data.username}</Text>
-                    </View>
-                    <Text style={s.brandSmall}>REELHOUSE</Text>
+            <View style={s.topHud}>
+                <Text style={s.topHudText}>? ARCHIVE DOSSIER ?</Text>
+            </View>
+
+            <View style={s.spacerLg} />
+
+            <View style={s.posterWrapper}>
+                <View style={s.posterArt}>
+                    {posterUrl ? (
+                        <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+                    ) : (
+                        <View style={[StyleSheet.absoluteFillObject, s.posterPlaceholder]}>
+                            <Text style={s.placeholderGlyph}>�</Text>
+                        </View>
+                    )}
                 </View>
+            </View>
 
-                {isLong ? (
-                    /* ══════════════════════════════════
-                       EDITORIAL LAYOUT — Long reviews
-                    ══════════════════════════════════ */
-                    <View>
-                        {/* Compact film header */}
-                        <View style={s.editorialHeader}>
-                            {posterUrl && (
-                                <Image
-                                    source={{ uri: posterUrl }}
-                                    style={s.editorialPoster}
-                                    contentFit="cover"
-                                />
-                            )}
-                            <View style={s.editorialMeta}>
-                                <View style={s.statusChip}>
-                                    <Text style={s.statusText}>{statusLabel}</Text>
-                                </View>
-                                <Text style={s.editorialTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{data.filmTitle}</Text>
-                                {yearDisplay ? <Text style={s.editorialYear}>{yearDisplay}</Text> : null}
-                                <ReelRating rating={data.rating} size={14} />
-                            </View>
-                        </View>
+            <View style={s.spacerMd} />
 
-                        {/* Pull quote */}
-                        {data.pullQuote && (
-                            <View style={s.pullQuoteWrap}>
-                                <View style={s.pullQuoteLine} />
-                                <Text style={s.pullQuoteText}>« {data.pullQuote} »</Text>
-                            </View>
-                        )}
+            <View style={s.placard}>
+                <Text style={s.filmTitle} numberOfLines={2} adjustsFontSizeToFit>{data.filmTitle}</Text>
+                
+                <Text style={s.filmMeta}>
+                    {yearDisplay}
+                </Text>
 
-                        {/* Full review — no truncation */}
-                        <Text style={s.editorialReview}>
-                            {data.dropCap ? (
-                                <>
-                                    <Text style={s.dropCapLetter}>{dropCapFirst}</Text>
-                                    <Text>{dropCapRest}</Text>
-                                </>
-                            ) : (
-                                rawReview
-                            )}
-                        </Text>
-                    </View>
-                ) : (
-                    /* ══════════════════════════════════
-                       CINEMATIC LAYOUT — Short reviews
-                    ══════════════════════════════════ */
-                    <View style={s.cinematicBody}>
-                        {/* Large centered poster */}
-                        {posterUrl && (
-                            <View style={s.cinematicPosterWrap}>
-                                <Image
-                                    source={{ uri: posterUrl }}
-                                    style={[s.cinematicPoster, { width: cardWidth * 0.55, height: cardWidth * 0.55 * 1.5 }]}
-                                    contentFit="cover"
-                                />
-                            </View>
-                        )}
-
-                        {/* Status badge */}
-                        <View style={s.statusChipCenter}>
-                            <Text style={s.statusText}>{statusLabel}</Text>
-                        </View>
-
-                        {/* Title */}
-                        <Text style={s.cinematicTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{data.filmTitle}</Text>
-                        {yearDisplay ? <Text style={s.cinematicYear}>{yearDisplay}</Text> : null}
-
-                        {/* Rating */}
-                        <View style={s.cinematicRating}>
-                            <ReelRating rating={data.rating} size={20} />
-                        </View>
-
-                        {/* Watched with */}
-                        {data.watchedWith && (
-                            <Text style={s.watchedWith}>♡ W/ {data.watchedWith.toUpperCase()}</Text>
-                        )}
-
-                        {/* Short review */}
-                        {hasReview && (
-                            <Text style={s.cinematicReview}>“{rawReview}”</Text>
-                        )}
+                {data.rating > 0 && (
+                    <View style={s.ratingWrap}>
+                        <ReelRating rating={data.rating} size={14} />
                     </View>
                 )}
 
+                <Text style={s.reviewText} numberOfLines={4}>
+                    "{reviewText || 'Classified Analysis'}"
+                </Text>
+
+                {data.username && (
+                    <Text style={s.attribution}>� @{data.username.toUpperCase()}</Text>
+                )}
             </View>
 
-            {measuredHeight != null && <DossierBorder width={cardWidth} height={measuredHeight} />}
-            <DossierFooter />
+            <View style={s.spacerMd} />
+
+            <View style={s.footerLockup}>
+                <Image source={require('@/assets/images/reelhouse-logo-transparent.png')} style={s.footerLogo} />
+                <Text style={s.footerText}>THE REELHOUSE SOCIETY</Text>
+            </View>
         </View>
     );
 }
 
 export default function LogShareCard({ visible, data, onClose }: Props) {
-    // Fast path for embedded mode — zero hooks, zero allocations.
-    // When rendered inside the hidden share container on the log detail page,
-    // visible is undefined and we only need the static card content.
     if (visible === undefined) {
         return <CardContent data={data} />;
     }
     return <LogShareCardModal visible={visible} data={data} onClose={onClose} />;
 }
 
-/** Full modal mode — hooks only execute when the share modal is presented */
 function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data: ShareCardData; onClose?: () => void }) {
     const cardRef = useRef<ViewShot>(null);
     const [sharing, setSharing] = useState(false);
@@ -231,14 +164,13 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
             if (isAvailable) {
                 await Sharing.shareAsync(uri, {
                     mimeType: 'image/png',
-                    dialogTitle: `${data.filmTitle} — ReelHouse Log`,
+                    dialogTitle: `${data.filmTitle} � ReelHouse Log`,
                 });
             } else {
                 const yearText = (data.filmYear || data.year) ? ` (${data.filmYear || data.year})` : '';
-                const ratingText = data.rating > 0 ? ` — ${data.rating}/5 reels` : '';
-                
+                const ratingText = data.rating > 0 ? ` � ${data.rating}/5 reels` : '';
                 await Share.share({
-                    message: `${data.filmTitle}${yearText}${ratingText}\n\n${cleanReviewText(data.review || '')}\n\n— via The ReelHouse Society`.trim(),
+                    message: `${data.filmTitle}${yearText}${ratingText}\n\n${cleanReviewText(data.review || '')}\n\n� via The ReelHouse Society`.trim(),
                 });
             }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -247,29 +179,30 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
             if (msg !== 'User did not share') reelToast.error(msg);
         } finally {
             setSharing(false);
+            onClose?.();
         }
-    }, [data]);
+    }, [data, onClose]);
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
             <View style={s.overlay}>
                 <Animated.View entering={FadeIn.duration(300)} style={s.modalContent}>
-                    <PressableScale style={s.closeBtn} onPress={onClose} haptic="light">
-                        <Text style={s.closeBtnText}>✕</Text>
-                    </PressableScale>
+                    <View style={s.header}>
+                        <Text style={s.title}>GENERATE CLASSIFIED DOSSIER</Text>
+                        <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}>
+                            <Text style={s.closeText}>?</Text>
+                        </PressableScale>
+                    </View>
 
-                    <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }}>
-                        <CardContent data={data} />
-                    </ViewShot>
+                    <View style={s.cardWrapper}>
+                        <ViewShot ref={cardRef} options={{ format: 'png', quality: 1 }} style={s.cardContainer}>
+                            <CardContent data={data} />
+                        </ViewShot>
+                    </View>
 
-                    <PressableScale
-                        style={s.shareBtn}
-                        onPress={handleShare}
-                        disabled={sharing}
-                        pressedScale={0.97}
-                    >
-                        <Text style={s.shareBtnText}>
-                            {sharing ? 'PREPARING...' : '✦ SHARE CARD'}
+                    <PressableScale style={s.shareButton} onPress={handleShare} disabled={sharing} pressedScale={0.97}>
+                        <Text style={s.shareButtonText}>
+                            {sharing ? 'DEVELOPING...' : 'SAVE TO PHOTOS'}
                         </Text>
                     </PressableScale>
                 </Animated.View>
@@ -279,143 +212,84 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
 }
 
 const s = StyleSheet.create({
-    // ── Modal chrome ──
     overlay: {
-        flex: 1, backgroundColor: 'rgba(5,3,1,0.97)',
-        justifyContent: 'center', alignItems: 'center', padding: 24,
+        flex: 1, backgroundColor: 'rgba(4,3,2,0.97)',
+        justifyContent: 'center', padding: 24,
     },
-    modalContent: { width: '100%', maxWidth: 400, alignItems: 'center' },
-    closeBtn: {
-        position: 'absolute', top: -44, right: 0, zIndex: 10,
-        width: 36, height: 36, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 18,
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+    modalContent: {
+        width: '100%', maxWidth: 400, alignSelf: 'center',
     },
-    closeBtnText: { fontSize: 16, color: colors.fog },
-    shareBtn: {
+    header: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        marginBottom: 24, paddingHorizontal: 4,
+    },
+    title: {
+        fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2.5,
+        color: colors.sepia, opacity: 0.9,
+    },
+    closeText: {
+        fontFamily: fonts.ui, fontSize: 20, color: colors.fog,
+        lineHeight: 24,
+    },
+    cardWrapper: {
+        alignItems: 'center', marginBottom: 24,
+    },
+    cardContainer: {
+        width: DOSSIER_CARD_WIDTH, height: DOSSIER_CARD_HEIGHT,
+        backgroundColor: colors.ink, borderRadius: 4,
+        overflow: 'hidden', flexDirection: 'column', padding: 14,
+    },
+    insetBorder: {
+        ...StyleSheet.absoluteFillObject,
+        margin: 14, borderWidth: 1, borderColor: colors.sepiaBorder,
+    },
+    tickH: { position: 'absolute', width: 12, height: 1.5, backgroundColor: colors.sepia },
+    tickV: { position: 'absolute', width: 1.5, height: 12, backgroundColor: colors.sepia },
+    topHud: { alignItems: 'center', marginTop: 4 },
+    topHudText: {
+        fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3,
+        color: colors.sepia, opacity: 0.8,
+    },
+    spacerLg: { flex: 0.8 },
+    spacerMd: { flex: 1 },
+    posterWrapper: { alignItems: 'center', width: '100%' },
+    posterArt: {
+        width: 220, height: 330, backgroundColor: colors.soot,
+        ...effects.shadowPrimary, borderWidth: 1, borderColor: 'rgba(196,150,26,0.15)',
+    },
+    posterPlaceholder: { justifyContent: 'center', alignItems: 'center' },
+    placeholderGlyph: { fontFamily: fonts.ui, fontSize: 24, color: colors.fog },
+    placard: { alignItems: 'center', paddingHorizontal: 16 },
+    filmTitle: {
+        fontFamily: fonts.display, fontSize: 24, lineHeight: 28,
+        color: colors.parchment, textAlign: 'center', marginBottom: 6,
+        ...effects.textGlowSepia,
+    },
+    filmMeta: {
+        fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2,
+        color: colors.flicker, opacity: 0.85, marginBottom: 12,
+    },
+    ratingWrap: { marginBottom: 12 },
+    reviewText: {
+        fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone,
+        lineHeight: 18, textAlign: 'center', opacity: 0.95,
+    },
+    attribution: {
+        fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5,
+        color: colors.sepia, marginTop: 8, opacity: 0.9,
+    },
+    footerLockup: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 2,
+    },
+    footerLogo: { width: 12, height: 12, opacity: 0.8 },
+    footerText: {
+        fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepiaBorderStrong,
+    },
+    shareButton: {
         backgroundColor: colors.sepia, paddingVertical: 14,
-        paddingHorizontal: 48, borderRadius: 4, marginTop: 20,
+        borderRadius: 4, alignItems: 'center',
     },
-    shareBtnText: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 2, color: colors.ink },
-
-    // ── Card container ──
-    card: {
-        backgroundColor: '#0A0703',
-        borderRadius: 0, overflow: 'hidden',
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.35)',
+    shareButtonText: {
+        fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 2, color: colors.ink,
     },
-    backdropBlur: {
-        ...StyleSheet.absoluteFillObject,
-        opacity: 0.5,
-    },
-    grainOverlay: {
-        ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.03)',
-        zIndex: 1,
-    },
-    cardInner: {
-        position: 'relative', zIndex: 2,
-        padding: 24,
-        paddingBottom: 48, // reserves clearance for the absolutely-positioned DossierFooter below
-    },
-
-    // ── Top row ──
-    topRow: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 20, paddingBottom: 10,
-        borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.12)',
-    },
-    userChip: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    userDot: {
-        width: 20, height: 20, borderRadius: 10,
-        backgroundColor: 'rgba(139,105,20,0.15)',
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
-    },
-    username: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.parchment },
-    brandSmall: { fontFamily: fonts.ui, fontSize: 6, letterSpacing: 3.5, color: colors.sepia, opacity: 0.6 },
-
-    // ── Status chip ──
-    statusChip: {
-        alignSelf: 'flex-start',
-        backgroundColor: colors.sepia, paddingHorizontal: 8, paddingVertical: 3,
-        borderRadius: 2, marginBottom: 8,
-    },
-    statusChipCenter: {
-        alignSelf: 'center',
-        backgroundColor: colors.sepia, paddingHorizontal: 10, paddingVertical: 3,
-        borderRadius: 2, marginBottom: 10,
-    },
-    statusText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.ink },
-
-    // ══════════════════════════════════
-    // EDITORIAL layout styles
-    // ══════════════════════════════════
-    editorialHeader: {
-        flexDirection: 'row', gap: 14, marginBottom: 16, alignItems: 'flex-start',
-    },
-    editorialPoster: {
-        width: 72, height: 108, borderRadius: 3, flexShrink: 0,
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
-    },
-    editorialMeta: { flex: 1, paddingTop: 2 },
-    editorialTitle: {
-        fontFamily: fonts.display, fontSize: 20, color: colors.parchment,
-        lineHeight: 24, marginBottom: 4,
-    },
-    editorialYear: {
-        fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2,
-        color: colors.fog, marginBottom: 8,
-    },
-    pullQuoteWrap: {
-        paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: colors.sepia,
-        backgroundColor: 'rgba(139,105,20,0.05)', paddingVertical: 10,
-        paddingHorizontal: 12, marginBottom: 14,
-    },
-    pullQuoteLine: {},
-    pullQuoteText: {
-        fontFamily: fonts.display, fontStyle: 'italic', fontSize: 14,
-        color: colors.sepia, lineHeight: 20,
-    },
-    editorialReview: {
-        fontFamily: fonts.body, fontSize: 12, color: colors.bone,
-        lineHeight: 21, opacity: 0.9,
-    },
-    dropCapLetter: {
-        fontFamily: fonts.display, fontSize: 32, color: colors.sepia,
-        lineHeight: 28,
-    },
-
-    // ══════════════════════════════════
-    // CINEMATIC layout styles
-    // ══════════════════════════════════
-    cinematicBody: { alignItems: 'center' },
-    cinematicPosterWrap: {
-        marginBottom: 20,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 20 },
-        shadowOpacity: 0.7, shadowRadius: 30, elevation: 12,
-    },
-    cinematicPoster: {
-        borderRadius: 4, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
-    },
-    cinematicTitle: {
-        fontFamily: fonts.display, fontSize: 26, color: colors.parchment,
-        textAlign: 'center', lineHeight: 30, marginBottom: 4,
-        textShadowColor: 'rgba(0,0,0,0.6)', textShadowOffset: { width: 0, height: 3 },
-        textShadowRadius: 10,
-    },
-    cinematicYear: {
-        fontFamily: fonts.ui, fontSize: 11, letterSpacing: 3,
-        color: colors.fog, marginBottom: 10,
-    },
-    cinematicRating: { marginBottom: 12 },
-    watchedWith: {
-        fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5,
-        color: colors.fog, marginBottom: 10,
-    },
-    cinematicReview: {
-        fontFamily: fonts.body, fontSize: 13, color: colors.bone,
-        fontStyle: 'italic', lineHeight: 20, textAlign: 'center',
-        paddingHorizontal: 8, opacity: 0.85,
-    },
-
 });
