@@ -162,7 +162,7 @@ export const tmdb = {
                         `/search/multi?query=${encodeURIComponent(fb.text)}&page=1&include_adult=false`,
                         { results: [], total_pages: 0, total_results: 0, page: 1 }
                     )
-                    if (fData?.results?.length > 0) {
+                    if (fData?.results?.length) {
                         const bestItem = fData.results.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0]
                         return { data: fData, fallback: fb, bestItem }
                     }
@@ -175,8 +175,8 @@ export const tmdb = {
 
             for (const res of fallbackResults) {
                 if (res && res.bestItem) {
-                    if (res.bestItem.popularity > highestPopularity) {
-                        highestPopularity = res.bestItem.popularity
+                    if ((res.bestItem.popularity ?? 0) > highestPopularity) {
+                        highestPopularity = res.bestItem.popularity ?? 0
                         winner = res
                     }
                 }
@@ -215,7 +215,7 @@ export const tmdb = {
                         `/search/keyword?query=${encodeURIComponent(word)}`,
                         { results: [], total_pages: 0, total_results: 0, page: 1 }
                     )
-                    if (kwData?.results?.length > 0) {
+                    if (kwData?.results?.length) {
                         keywordIds.push(kwData.results[0].id)
                     }
                 } catch { }
@@ -226,7 +226,7 @@ export const tmdb = {
                     `/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1`,
                     { results: [], total_pages: 0, total_results: 0, page: 1 }
                 )
-                if (discoverData?.results?.length > 0) {
+                if (discoverData?.results?.length) {
                     discoverData.searchType = 'semantic'
                     discoverData.matchedContext = words.join(', ')
                     return discoverData

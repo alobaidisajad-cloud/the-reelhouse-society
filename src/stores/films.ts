@@ -88,7 +88,7 @@ export interface FilmState {
     addLog: (log: Partial<FilmLog>) => Promise<void>
     markAsWatched: (film: TMDBFilmInput, status?: 'watched' | 'rewatched' | 'abandoned') => Promise<void>
     unmarkWatched: (filmId: number) => Promise<void>
-    getCinephileStats: () => { count: number, level: string, color: string, progress: number }
+    getCinephileStats: (overrideCount?: number) => { count: number, level: string, color: string, progress: number }
     updateLog: (id: string, updates: Partial<FilmLog>) => Promise<void>
     removeLog: (id: string) => Promise<void>
     addToWatchlist: (film: TMDBFilmInput) => Promise<void>
@@ -376,7 +376,7 @@ export const useFilmStore = create<FilmState>()(
                     if (data.length < PAGE_SIZE) break
                     page++
                 }
-                const newWatchlist = allItems.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || null }))
+                const newWatchlist = allItems.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path || null, year: w.year || undefined }))
                 const idx: Record<number, true> = {}
                 newWatchlist.forEach(w => { idx[w.id] = true })
                 set({ watchlist: newWatchlist, _watchlistIndex: idx })
@@ -467,8 +467,8 @@ export const useFilmStore = create<FilmState>()(
                     set({
                         stubs: data.map((t) => ({
                             id: t.id || '',
-                            filmTitle: t.showtimes?.film_title || 'Unknown Film',
-                            date: t.showtimes?.date || '',
+                            filmTitle: (t.showtimes as any)?.film_title || 'Unknown Film',
+                            date: (t.showtimes as any)?.date || '',
                             seat: t.seat || '—',
                             ticketType: t.ticket_type || 'Standard',
                             amount: t.amount || 0,

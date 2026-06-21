@@ -63,7 +63,7 @@ export const initAuthSync = () => {
                 const { data: profile } = await supabase
                     .from('profiles').select(PROFILE_COLUMNS).eq('id', session.user.id).single()
                 useAuthStore.setState({
-                    user: { ...session.user, ...profile },
+                    user: { ...session.user, ...profile } as any,
                     isAuthenticated: true,
                 })
                 hydrateAllStores()
@@ -80,7 +80,7 @@ export const initAuthSync = () => {
             const { data: profile } = await supabase
                 .from('profiles').select(PROFILE_COLUMNS).eq('id', session.user.id).single()
             useAuthStore.setState({
-                user: { ...session.user, ...profile },
+                user: { ...session.user, ...profile } as any,
                 isAuthenticated: true,
             })
             hydrateAllStores()

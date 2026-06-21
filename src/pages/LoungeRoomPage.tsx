@@ -45,7 +45,7 @@ function shouldShowAuthor(messages: LoungeMessage[], index: number): boolean {
 
 // ── Shared Content Card ──
 const SharedCard = memo(function SharedCard({ msg }: { msg: LoungeMessage }) {
-    const meta = msg.metadata
+    const meta = msg.metadata as any
     if (!meta?.title) return null
 
     const link = msg.type === 'film_share' ? `/film/${meta.filmId}`

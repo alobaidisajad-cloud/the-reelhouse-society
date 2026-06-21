@@ -43,7 +43,7 @@ interface ProfileContentProps {
     fetchLogs: (loadMore?: boolean) => void;
     fetchLists: (loadMore?: boolean) => void;
     setArchiveSieve: (sieve: string) => void;
-    setArchiveVisibleCount: (cb: (c: number) => number) => void;
+    setArchiveVisibleCount: (updater: number | ((prev: number) => number)) => void;
     setShowDNA: (show: boolean) => void;
 }
 

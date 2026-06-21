@@ -88,7 +88,7 @@ export default function UserProfilePage() {
 
     const profileUser = isOwnProfile ? currentUser : fetchedProfile
 
-    const isFollowing = currentUser?.following?.includes(profileUser?.username)
+    const isFollowing = !!currentUser?.following?.includes(profileUser?.username)
     const isRequested = currentUser?.requested?.includes(profileUser?.username)
     const isPrivacyBlocked = !isOwnProfile && fetchedProfile?.isSocialPrivate && !isFollowing
 
@@ -167,6 +167,7 @@ export default function UserProfilePage() {
                 privacyAnnotations: (fetchedProfile as any)?.privacyAnnotations || 'everyone',
             }))
         },
+        initialPageParam: 0,
         getNextPageParam: (lastPage, allPages) => lastPage.length === 50 ? allPages.length : undefined,
         enabled: !!targetUserId,
         staleTime: 1000 * 60 * 5,

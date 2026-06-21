@@ -382,7 +382,7 @@ export default function FocusView({
             </div>
 
             {/* Dossier Hidden HTML Canvas */}
-            <DossierExportHTML ref={dossierRef} log={log} />
+            <DossierExportHTML ref={dossierRef} log={log} isExporting={isExporting} />
         </div>
     )
 }

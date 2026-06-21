@@ -84,7 +84,7 @@ export const useNotificationStore = create<NotificationState>()(
             version: 3,
             storage: idbStorage,
             // v3: migrated from localStorage to idb-keyval for architectural consistency
-            migrate: () => ({ notifications: [], deletedIds: [] }),
+            migrate: () => ({ notifications: [], deletedIds: [] } as any),
         }
     )
 )

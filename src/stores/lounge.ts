@@ -394,7 +394,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 schema: 'public',
                 table: 'lounge_messages',
                 filter: `lounge_id=eq.${loungeId}`,
-            }, (payload: { old: { id: string } }) => {
+            }, (payload: any) => {
                 set(s => ({
                     messages: s.messages.filter(m => m.id !== payload.old.id)
                 }))
@@ -693,7 +693,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .order('joined_at', { ascending: true })
 
         if (!data) return []
-        return data.map((m: { user_id: string; joined_at: string; profiles?: { username: string; avatar_url: string | null } }) => ({
+        return data.map((m: any) => ({
             user_id: m.user_id,
             username: m.profiles?.username || 'Unknown',
             avatar_url: m.profiles?.avatar_url || null,

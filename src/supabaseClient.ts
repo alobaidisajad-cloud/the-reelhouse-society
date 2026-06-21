@@ -32,7 +32,7 @@ if (!isSupabaseConfigured) {
 // We catch it here and clear the dead session from localStorage gracefully.
 if (isSupabaseConfigured) {
     supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
-        if (event === 'TOKEN_REFRESH_FAILED') {
+        if ((event as string) === 'TOKEN_REFRESH_FAILED') {
             // Sign out locally only (no server round-trip needed)
             supabase.auth.signOut({ scope: 'local' }).catch(() => { })
             // Belt-and-suspenders: clear any leftover sb-* auth tokens

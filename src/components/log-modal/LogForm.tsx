@@ -189,10 +189,10 @@ export default function LogForm({ film }: { film: any }) {
         setSubmitting(true)
         try {
             if (logModalEditLogId) {
-                await updateLog({ id: logModalEditLogId, updates: logData })
+                await updateLog({ id: logModalEditLogId, updates: logData as any })
                 reelToast.success('Log updated flawlessly.')
             } else {
-                await addLog(logData)
+                await addLog(logData as any)
                 localStorage.removeItem(`reelhouse_draft_${film.id}`)
                 reelToast.success('Film logged to your archive.')
             }
