@@ -77,7 +77,6 @@ export default function FeedPage() {
     // ── Feed Tab State ──
     type FeedTab = 'for-you' | 'following'
     const [feedTab, setFeedTab] = useState<FeedTab>('for-you')
-    const navigate = useNavigate()
 
     // ── Feed Data ──
     const [showLegend, setShowLegend] = useState(false)

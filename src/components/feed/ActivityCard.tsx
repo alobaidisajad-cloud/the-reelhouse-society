@@ -12,7 +12,7 @@ import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { useViewport } from '../../hooks/useViewport'
 import reelToast from '../../utils/reelToast'
 import { throttleAction } from '../../errorLogger'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../supabaseClient'
 import FocusView from './FocusView'
 import FeedView from './FeedView'
 

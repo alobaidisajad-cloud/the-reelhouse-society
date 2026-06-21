@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuthStore, useUIStore } from '../store'
 import Buster from '../components/Buster'
 import { tmdb } from '../tmdb'

@@ -109,6 +109,7 @@ export default function SettingsPage() {
     useEffect(() => {
         if (!user) return
         try {
+            const p = (user.preferences || {}) as any
             setPrivacyEndorsements(p.privacy_endorsements || 'everyone')
             setPrivacyAnnotations(p.privacy_annotations || 'everyone')
             setNotifFollows(p.notif_follows !== undefined ? !!p.notif_follows : true)

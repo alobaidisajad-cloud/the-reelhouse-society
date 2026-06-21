@@ -314,8 +314,7 @@ export const useAuthStore = create<AuthState>()(
                     ])
                     if (followErr && !followErr.message?.includes('duplicate')) throw followErr
                         
-                        // DB trigger handles notification generation
-                    }
+                    // DB trigger handles notification generation
                 } catch {
                     // Rollback
                     if (isPrivate) {

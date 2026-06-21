@@ -235,9 +235,9 @@ export default function UserProfilePage() {
 
     const loadMoreRef = useRef(null)
     const [viewLog, setViewLog] = useState<any>(null)
+    const [shareLog, setShareLog] = useState<any>(null)
 
     // Pull pagination tools from store
-    const logsHasMore = useFilmStore(state => state.logsHasMore)
     const fetchLogs = useFilmStore(state => state.fetchLogs)
     const listsHasMore = useFilmStore(state => state.listsHasMore)
     const fetchLists = useFilmStore(state => state.fetchLists)
