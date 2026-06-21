@@ -251,32 +251,70 @@ export function ShareCardOverlay({ log, user, onClose }: ShareCardOverlayProps) 
             if (!sharpUrl) { setReady(true); return }
 
             // Fetch sharp poster
-            const imgRes = await fetch(sharpUrl)
-            const imgBlob = await imgRes.blob()
-            const sharpDataUrl = await new Promise<string>((res, rej) => {
-                const reader = new FileReader()
-                reader.onloadend = () => res(reader.result as string)
-                reader.onerror = rej
-                reader.readAsDataURL(imgBlob)
-            })
-            setPosterDataUrl(sharpDataUrl)
+            let sharpDataUrl = ''
+            try {
+                const imgRes = await fetch(sharpUrl)
+                if (!imgRes.ok) throw new Error('Proxy offline')
+                const imgBlob = await imgRes.blob()
+                sharpDataUrl = await new Promise<string>((res, rej) => {
+                    const reader = new FileReader()
+                    reader.onloadend = () => res(reader.result as string)
+                    reader.onerror = rej
+                    reader.readAsDataURL(imgBlob)
+                })
+            } catch {
+                if (posterPath) {
+                    const directUrl = tmdb.poster(posterPath, 'w500')
+                    if (directUrl) {
+                        try {
+                            const imgRes = await fetch(directUrl)
+                            const imgBlob = await imgRes.blob()
+                            sharpDataUrl = await new Promise<string>((res, rej) => {
+                                const reader = new FileReader()
+                                reader.onloadend = () => res(reader.result as string)
+                                reader.onerror = rej
+                                reader.readAsDataURL(imgBlob)
+                            })
+                        } catch (e) {
+                            console.error('Direct sharp poster fetch failed', e)
+                        }
+                    }
+                }
+            }
+            if (sharpDataUrl) setPosterDataUrl(sharpDataUrl)
 
             // Fetch blurred background
+            let blurDataUrlVal = ''
             if (blurredUrl) {
                 try {
                     const blurRes = await fetch(blurredUrl)
+                    if (!blurRes.ok) throw new Error('Proxy offline')
                     const blurBlob = await blurRes.blob()
-                    const blurDataUrlVal = await new Promise<string>((res, rej) => {
+                    blurDataUrlVal = await new Promise<string>((res, rej) => {
                         const reader = new FileReader()
                         reader.onloadend = () => res(reader.result as string)
                         reader.onerror = rej
                         reader.readAsDataURL(blurBlob)
                     })
-                    setBlurDataUrl(blurDataUrlVal)
-                } catch (e) {
-                    console.error('Blurred background load failed', e)
+                } catch {
+                    if (posterPath) {
+                        const directUrl = tmdb.poster(posterPath, 'w92')
+                        if (directUrl) {
+                            try {
+                                const blurRes = await fetch(directUrl)
+                                const blurBlob = await blurRes.blob()
+                                blurDataUrlVal = await new Promise<string>((res, rej) => {
+                                    const reader = new FileReader()
+                                    reader.onloadend = () => res(reader.result as string)
+                                    reader.onerror = rej
+                                    reader.readAsDataURL(blurBlob)
+                                })
+                            } catch {}
+                        }
+                    }
                 }
             }
+            if (blurDataUrlVal) setBlurDataUrl(blurDataUrlVal)
 
             await new Promise(r => setTimeout(r, 180))
             if (!renderRef.current) return
