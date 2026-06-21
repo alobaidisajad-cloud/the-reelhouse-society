@@ -14,6 +14,24 @@ interface TMDBFilmInput {
     release_date?: string;
 }
 
+/**
+ * Aggregate accessor used by consumers that destructure the individual mutation
+ * hooks (LogForm, FilmHero, DiscoverPage). Returns the hook functions; callers
+ * invoke them at the top level of their component (function declarations above
+ * are hoisted, so order here is irrelevant).
+ */
+export function useFilmMutations() {
+    return {
+        useAddToWatchlist,
+        useAddLog,
+        useUpdateLog,
+        useRemoveLog,
+        useRemoveFromWatchlist,
+        useMarkAsWatched,
+        useUnmarkWatched,
+    };
+}
+
 export function useAddToWatchlist() {
     return useMutation({
         networkMode: 'offlineFirst',
@@ -230,6 +248,7 @@ export function useAddLog() {
 }
 
 export function useUpdateLog() {
+    const queryClient = useQueryClient();
     return useMutation({
         networkMode: 'offlineFirst',
         mutationFn: async ({ id, updates }: { id: string; updates: Partial<FilmLog> }) => {
@@ -325,6 +344,7 @@ export function useRemoveLog() {
 }
 
 export function useRemoveFromWatchlist() {
+    const queryClient = useQueryClient();
     return useMutation({
         networkMode: 'offlineFirst',
         mutationFn: async (filmId: number) => {
