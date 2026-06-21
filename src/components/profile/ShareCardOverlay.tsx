@@ -34,14 +34,14 @@ const getProxiedImageUrl = (path: string | null) => {
     if (!path) return null
     const posterUrl = tmdb.poster(path, 'w500')
     if (!posterUrl) return null
-    return `https://images.weserv.nl/?url=${encodeURIComponent(posterUrl)}&output=webp`
+    return `/api/proxy-image?url=${encodeURIComponent(posterUrl)}`
 }
 
 const getBlurredProxiedImageUrl = (path: string | null) => {
     if (!path) return null
     const posterUrl = tmdb.poster(path, 'w92')
     if (!posterUrl) return null
-    return `https://images.weserv.nl/?url=${encodeURIComponent(posterUrl)}&w=80&blur=8&output=webp`
+    return `/api/proxy-image?url=${encodeURIComponent(posterUrl)}`
 }
 
 function CardContent({ log, user, posterDataUrl, blurDataUrl }: { log: any, user: any, posterDataUrl: string | null, blurDataUrl: string | null }) {
@@ -56,17 +56,16 @@ function CardContent({ log, user, posterDataUrl, blurDataUrl }: { log: any, user
             overflow: 'hidden', background: '#040302'
         }}>
             {/* Ambient Blur Layer */}
-            {blurDataUrl && (
-                <div style={{
-                    position: 'absolute', inset: 0,
-                    backgroundImage: `url(${blurDataUrl})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    transform: 'scale(1.15)',
-                    opacity: 0.45,
-                    zIndex: 0
-                }} />
-            )}
+            <div style={{
+                position: 'absolute', inset: 0,
+                backgroundImage: blurDataUrl ? `url(${blurDataUrl})` : 'none',
+                background: blurDataUrl ? undefined : 'radial-gradient(circle at center, rgba(196, 150, 26, 0.12) 0%, rgba(4, 3, 2, 0) 70%)',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                transform: 'scale(1.15)',
+                opacity: blurDataUrl ? 0.45 : 1,
+                zIndex: 0
+            }} />
 
             {/* Vignette Overlay */}
             <div style={{
@@ -110,7 +109,62 @@ function CardContent({ log, user, posterDataUrl, blurDataUrl }: { log: any, user
                         {posterDataUrl ? (
                             <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
                         ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)' }}>∅</div>
+                            <div style={{
+                                width: '100%',
+                                height: '100%',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                background: 'linear-gradient(135deg, #15120e 0%, #090706 100%)',
+                                padding: '16px',
+                                border: '1px solid rgba(196, 150, 26, 0.15)',
+                                boxSizing: 'border-box',
+                                textAlign: 'center',
+                                position: 'relative'
+                            }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    inset: '8px',
+                                    border: '1px solid rgba(196, 150, 26, 0.08)',
+                                    pointerEvents: 'none'
+                                }} />
+                                <div style={{
+                                    fontFamily: 'var(--font-ui)',
+                                    fontSize: '0.6rem',
+                                    color: 'var(--sepia)',
+                                    opacity: 0.6,
+                                    marginBottom: '12px',
+                                    fontWeight: 300,
+                                    letterSpacing: '0.1em'
+                                }}>
+                                    RH
+                                </div>
+                                <div style={{
+                                    fontFamily: 'var(--font-display)',
+                                    fontSize: '0.75rem',
+                                    lineHeight: 1.2,
+                                    color: 'var(--parchment)',
+                                    opacity: 0.85,
+                                    marginBottom: '6px',
+                                    textTransform: 'uppercase',
+                                    display: '-webkit-box',
+                                    WebkitLineClamp: 3,
+                                    WebkitBoxOrient: 'vertical',
+                                    overflow: 'hidden'
+                                }}>
+                                    {log.title}
+                                </div>
+                                <div style={{
+                                    fontFamily: 'var(--font-ui)',
+                                    fontSize: '0.45rem',
+                                    letterSpacing: '0.1em',
+                                    color: 'var(--fog)',
+                                    textTransform: 'uppercase'
+                                }}>
+                                    {yearDisplay}
+                                </div>
+                            </div>
                         )}
                     </div>
                 </div>
@@ -154,8 +208,8 @@ function CardContent({ log, user, posterDataUrl, blurDataUrl }: { log: any, user
 
                 {/* Footer */}
                 <div style={{ padding: '8px 16px', borderTop: '1px solid rgba(196,150,26,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <img src="/assets/images/reelhouse-logo-transparent.png" alt="" style={{ width: 10, height: 10, opacity: 0.7 }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <img src="/reelhouse-logo-transparent.png" alt="" style={{ width: 14, height: 14, opacity: 0.7 }} />
                         <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15rem', color: 'var(--sepia)' }}>
                             REELHOUSE
                         </span>

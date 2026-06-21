@@ -2,6 +2,7 @@ import { useRef, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Modal, Share } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import * as Haptics from 'expo-haptics';
@@ -58,12 +59,19 @@ function CardContent({ data }: { data: ShareCardData }) {
     return (
         <View style={s.cardContainer}>
             {/* Ambient Blur Layer */}
-            {posterUrl && (
+            {posterUrl ? (
                 <Image
                     source={{ uri: posterUrl }}
                     style={s.blurBackground}
                     contentFit="cover"
                     blurRadius={40}
+                />
+            ) : (
+                <LinearGradient
+                    colors={['rgba(196, 150, 26, 0.08)', 'rgba(4, 3, 2, 0)']}
+                    start={{ x: 0.5, y: 0.5 }}
+                    end={{ x: 0.5, y: 1.0 }}
+                    style={s.blurBackground}
                 />
             )}
 
@@ -83,9 +91,50 @@ function CardContent({ data }: { data: ShareCardData }) {
                         {posterUrl ? (
                             <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
                         ) : (
-                            <View style={[StyleSheet.absoluteFillObject, s.posterPlaceholder]}>
-                                <Text style={s.placeholderGlyph}>∅</Text>
-                            </View>
+                            <LinearGradient
+                                colors={['#15120e', '#090706']}
+                                style={[StyleSheet.absoluteFillObject, { padding: 12, alignItems: 'center', justifyContent: 'center' }]}
+                            >
+                                <View style={{
+                                    position: 'absolute',
+                                    top: 6, bottom: 6, left: 6, right: 6,
+                                    borderWidth: 1,
+                                    borderColor: 'rgba(196, 150, 26, 0.08)'
+                                }} />
+                                <Text style={{
+                                    fontFamily: fonts.ui,
+                                    fontSize: 10,
+                                    color: colors.sepia,
+                                    opacity: 0.6,
+                                    marginBottom: 8,
+                                    letterSpacing: 1.5,
+                                    textAlign: 'center'
+                                }}>
+                                    RH
+                                </Text>
+                                <Text style={{
+                                    fontFamily: fonts.display,
+                                    fontSize: 9,
+                                    lineHeight: 12,
+                                    color: colors.parchment,
+                                    opacity: 0.85,
+                                    marginBottom: 4,
+                                    textTransform: 'uppercase',
+                                    textAlign: 'center'
+                                }} numberOfLines={3}>
+                                    {data.filmTitle}
+                                </Text>
+                                <Text style={{
+                                    fontFamily: fonts.ui,
+                                    fontSize: 6,
+                                    letterSpacing: 1,
+                                    color: colors.fog,
+                                    textTransform: 'uppercase',
+                                    textAlign: 'center'
+                                }}>
+                                    {yearDisplay}
+                                </Text>
+                            </LinearGradient>
                         )}
                     </View>
                 </View>
@@ -319,7 +368,7 @@ const s = StyleSheet.create({
         alignItems: 'center',
         gap: 4,
     },
-    slabFooterLogo: { width: 10, height: 10, opacity: 0.7 },
+    slabFooterLogo: { width: 14, height: 14, opacity: 0.7 },
     slabFooterText: {
         fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.sepia,
     },
