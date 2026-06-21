@@ -73,10 +73,11 @@ function CornerTicks() {
 }
 
 // Shared card content — renders inside both the visible preview and the hidden render target
+// Layout: Poster zone (flex 1.3) + Dossier Data Panel (flex 1) — "The Nitrate Dossier"
 function CardContent({ film, log, posterDataUrl, username }: { film: Record<string, any>; log: Record<string, any>; posterDataUrl: string | null; username?: string | null }) {
     const director = film.credits?.crew?.find((c: any) => c.job === 'Director')
     // Graceful review truncation — cut on a word boundary with an ellipsis, never mid-word.
-    const MAX_REVIEW = 300
+    const MAX_REVIEW = 350
     const rawReview = String(log.review || 'Classified Analysis').trim()
     const cut = rawReview.lastIndexOf(' ', MAX_REVIEW)
     const reviewText = rawReview.length > MAX_REVIEW
@@ -84,73 +85,76 @@ function CardContent({ film, log, posterDataUrl, username }: { film: Record<stri
         : rawReview
     const isAbandoned = log.status === 'abandoned'
     return (
-        <>
-            {/* Poster — lighter base filter since the gradients below now carry the darkening */}
-            {posterDataUrl && (
-                <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${posterDataUrl})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.28) brightness(0.66) contrast(1.1)' }} />
-            )}
-            {!posterDataUrl && (
-                <div style={{ position: 'absolute', inset: 0, background: '#0F0D0A', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(196,150,26,0.3)', borderTopColor: '#C4961A', animation: 'spin 0.8s linear infinite' }} />
-                </div>
-            )}
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+            {/* ── Poster Zone ── */}
+            <div style={{ flex: 1.3, position: 'relative', overflow: 'hidden' }}>
+                {posterDataUrl && (
+                    <div style={{ position: 'absolute', inset: 0, backgroundImage: `url(${posterDataUrl})`, backgroundSize: 'cover', backgroundPosition: 'center top', filter: 'sepia(0.15) brightness(0.7) contrast(1.05)' }} />
+                )}
+                {!posterDataUrl && (
+                    <div style={{ position: 'absolute', inset: 0, background: 'var(--soot)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: 28, height: 28, borderRadius: '50%', border: '2px solid rgba(196,150,26,0.3)', borderTopColor: '#C4961A', animation: 'spin 0.8s linear infinite' }} />
+                    </div>
+                )}
+                {/* Short elegant fade into panel */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, background: 'linear-gradient(to bottom, transparent, var(--soot))' }} />
+            </div>
 
-            {/* Edge feather — the poster fades into the card's own background on three sides
-                instead of sitting as a hard rectangle */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, var(--soot) 0%, transparent 12%)' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to left, var(--soot) 0%, transparent 12%)' }} />
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, var(--soot) 0%, transparent 14%)' }} />
-
-            {/* Bottom vignette — gradual 5-stop fade so text legibility never depends on the poster */}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, var(--soot) 0%, rgba(14,13,10,0.85) 35%, rgba(14,13,10,0.45) 55%, rgba(14,13,10,0.12) 75%, transparent 100%)' }} />
-
-            {/* Inset frame + corner ticks — the "mounted print" border */}
-            <div style={{ position: 'absolute', inset: 10, border: '1px solid rgba(196,150,26,0.25)', pointerEvents: 'none' }} />
-            <CornerTicks />
-
-            {/* Content */}
-            <div style={{ position: 'absolute', bottom: '1.5rem', left: '1.25rem', right: '1.25rem', zIndex: 2 }}>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.35rem' }}>
+            {/* ── Dossier Data Panel ── */}
+            <div style={{ flex: 1, background: 'var(--soot)', padding: '0.75rem 1.25rem 2rem', display: 'flex', flexDirection: 'column' }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.2em', color: 'var(--sepia)', marginBottom: '0.3rem' }}>
                     CLASSIFIED DOSSIER
                 </div>
-                <div style={{ height: 1, background: 'linear-gradient(to right, var(--sepia), rgba(196,150,26,0.15))', marginBottom: '0.6rem' }} />
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.4rem, 6.5vw, 2.1rem)', color: 'var(--parchment)', lineHeight: 1.05, margin: '0 0 0.35rem 0', textShadow: '0 2px 12px rgba(0,0,0,0.9)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                <div style={{ height: 1, background: 'linear-gradient(to right, var(--sepia), rgba(184,137,26,0.1))', marginBottom: '0.5rem' }} />
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(1.2rem, 5.5vw, 1.65rem)', color: 'var(--parchment)', lineHeight: 1.15, margin: '0 0 0.15rem 0', textShadow: '0 0 10px rgba(196,150,26,0.4)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
                     {film.title}
                 </h2>
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--flicker)', marginBottom: '0.8rem', opacity: 0.85 }}>
+                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.15em', color: 'var(--flicker)', marginBottom: '0.6rem', opacity: 0.85 }}>
                     {film.release_date?.slice(0, 4)}{director && <> · DIR. {director.name?.toUpperCase()}</>}
                 </div>
                 {(log.rating ?? 0) > 0 && (
-                    <div style={{ marginBottom: '0.8rem' }}>
+                    <div style={{ marginBottom: '0.6rem' }}>
                         <ReelRating value={log.rating} size="lg" />
                     </div>
                 )}
                 {isAbandoned && (
-                    <div style={{ display: 'inline-block', fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15em', color: 'var(--parchment)', background: 'rgba(196,150,26,0.08)', border: '1px solid rgba(196,150,26,0.4)', borderRadius: 2, padding: '0.2rem 0.5rem', marginBottom: '0.6rem' }}>
+                    <div style={{ display: 'inline-block', fontFamily: 'var(--font-ui)', fontSize: '0.35rem', letterSpacing: '0.12em', color: 'var(--parchment)', background: 'rgba(184,137,26,0.08)', border: '1px solid rgba(196,150,26,0.4)', borderRadius: 2, padding: '0.15rem 0.4rem', marginBottom: '0.4rem', alignSelf: 'flex-start' }}>
                         ✕ ABANDONED{log.abandonedReason ? ` — ${String(log.abandonedReason).toUpperCase()}` : ''}
                     </div>
                 )}
-                <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: 'clamp(0.6rem, 2.4vw, 0.78rem)', color: 'var(--bone)', lineHeight: 1.65, margin: 0, display: '-webkit-box', WebkitLineClamp: 7, WebkitBoxOrient: 'vertical', overflow: 'hidden', opacity: 0.92 }}>
+                <p style={{ fontFamily: 'var(--font-body)', fontStyle: 'italic', fontSize: 'clamp(0.55rem, 2vw, 0.68rem)', color: 'var(--bone)', lineHeight: 1.6, margin: 0, display: '-webkit-box', WebkitLineClamp: 5, WebkitBoxOrient: 'vertical', overflow: 'hidden', opacity: 0.92 }}>
                     "{reviewText}"
                 </p>
                 {username && (
-                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginTop: '0.55rem', opacity: 0.95 }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.12em', color: 'var(--sepia)', marginTop: '0.4rem', opacity: 0.95 }}>
                         — @{username.toUpperCase()}
                     </div>
                 )}
             </div>
 
-            {/* Footer brand lockup — same seal + wordmark used in the navbar and footer */}
+            {/* ── Top HUD ── */}
+            <div style={{ position: 'absolute', top: '0.8rem', left: '1rem', display: 'flex', alignItems: 'center', gap: '0.3rem', zIndex: 3 }}>
+                <img src="/reelhouse-logo-transparent.png" alt="" style={{ height: 10, width: 'auto', opacity: 0.7 }} />
+                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.3rem', letterSpacing: '0.15em', color: 'rgba(196,150,26,0.5)' }}>
+                    THE REELHOUSE SOCIETY
+                </span>
+            </div>
+
+            {/* Inset frame + corner ticks */}
+            <div style={{ position: 'absolute', inset: 10, border: '1px solid rgba(196,150,26,0.25)', pointerEvents: 'none', zIndex: 2 }} />
+            <CornerTicks />
+
+            {/* Footer brand lockup */}
             <div style={{ position: 'absolute', bottom: '0.4rem', left: 0, right: 0, zIndex: 2 }}>
-                <div style={{ width: 110, height: 1, margin: '0 auto 0.4rem', background: 'linear-gradient(to right, transparent, var(--sepia), transparent)' }} />
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.35rem' }}>
-                    <img src="/reelhouse-logo-transparent.png" alt="" style={{ height: 14, width: 'auto', opacity: 0.85 }} />
-                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.4rem', letterSpacing: '0.2em', color: 'rgba(196,150,26,0.55)' }}>
+                <div style={{ width: 90, height: 1, margin: '0 auto 0.35rem', background: 'linear-gradient(to right, transparent, rgba(196,150,26,0.5), transparent)' }} />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem' }}>
+                    <img src="/reelhouse-logo-transparent.png" alt="" style={{ height: 12, width: 'auto', opacity: 0.85 }} />
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.18em', color: 'rgba(196,150,26,0.55)' }}>
                         THE REELHOUSE SOCIETY
                     </span>
                 </div>
             </div>
-        </>
+        </div>
     )
 }
 

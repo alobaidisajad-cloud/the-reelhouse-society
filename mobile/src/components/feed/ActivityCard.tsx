@@ -137,7 +137,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
     if (!parentScrollY) return {};
     
     // Access value to force Reanimated babel plugin to track reactivity
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     const _scroll = parentScrollY.value;
     
     const measurement = measure(animatedRef);

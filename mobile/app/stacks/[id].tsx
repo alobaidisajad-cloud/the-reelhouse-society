@@ -35,7 +35,6 @@ const isNetworkError = (e: unknown): boolean => {
     return msg.includes('fetch') || msg.includes('network') || msg.includes('offline');
 };
 
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList);
 const AnimatedBlurView = Animated.createAnimatedComponent(BlurView);
 
 
@@ -480,7 +479,7 @@ export default function StackDetailScreen() {
               queryClient.invalidateQueries({ queryKey: ['stacks'] });
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
               router.back();
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+             
             } catch (err: unknown) {
               reelToast.error('The collection resists destruction.');
             }

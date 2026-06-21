@@ -8,6 +8,19 @@ module.exports = defineConfig([
     ignores: ['**/dist/**', '**/supabase/functions/**', '*.config.js'],
   },
   {
+    files: ['**/*.{ts,tsx}'],
+    rules: {
+      // Match Expo's defaults (unused args allowed) but also don't flag
+      // intentionally-unused caught errors or _-prefixed placeholders.
+      '@typescript-eslint/no-unused-vars': ['warn', {
+        args: 'none',
+        caughtErrors: 'none',
+        ignoreRestSiblings: true,
+        varsIgnorePattern: '^_',
+      }],
+    },
+  },
+  {
     files: ['scripts/**/*.js', 'test-utils/**/*.js'],
     languageOptions: {
       globals: {
@@ -17,6 +30,16 @@ module.exports = defineConfig([
         module: 'readonly',
       },
     },
+  },
+  {
+    // Domain store slices use lazy require() to break circular dependencies.
+    files: ['src/stores/**/*.ts'],
+    rules: { '@typescript-eslint/no-require-imports': 'off' },
+  },
+  {
+    // moderation.ts intentionally pairs `export const X` with `export type X`.
+    files: ['src/types/moderation.ts'],
+    rules: { '@typescript-eslint/no-redeclare': 'off' },
   },
   {
     // Test files and the Jest setup use inline mock components that don't need

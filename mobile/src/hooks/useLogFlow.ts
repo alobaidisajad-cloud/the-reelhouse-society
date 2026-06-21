@@ -154,7 +154,7 @@ export function useLogFlow() {
         setAbandonedReason(log.abandonedReason ?? '');
         if (log.autopsy) {
             try { setAutopsy(typeof log.autopsy === 'string' ? JSON.parse(log.autopsy) : log.autopsy); }
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+             
             catch (err: unknown) { setAutopsy({ ...AUTOPSY_INIT }); }
         }
         setAltPoster(log.altPoster ?? null);
@@ -271,7 +271,7 @@ export function useLogFlow() {
             InteractionManager.runAfterInteractions(() => {
                 router.back();
             });
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         } catch (err: unknown) { reelToast.error('The record could not be sealed. Try again.'); }
         setSubmitting(false);
     };

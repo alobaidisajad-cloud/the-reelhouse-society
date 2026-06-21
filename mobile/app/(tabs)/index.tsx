@@ -1,13 +1,13 @@
 import { useEffect, useCallback, useState } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, RefreshControl, useWindowDimensions
+  View, Text, StyleSheet, RefreshControl, useWindowDimensions
 } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   FadeInDown, FadeIn,
   useSharedValue, useAnimatedStyle, withTiming, withRepeat, withSequence,
   Easing, interpolate, Extrapolation, useAnimatedScrollHandler,
-  useAnimatedReaction, runOnJS, cancelAnimation
+  cancelAnimation
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,7 +26,6 @@ import PressableScale from '@/src/components/PressableScale';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { FilmGrain, Vignette } from '@/src/components/CinematicOverlays';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 
 // Extracted Architectural Components

@@ -1,6 +1,6 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import React, { RefObject } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { Heart, MessageSquare, Edit3, MessageCircle, ChevronDown } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';

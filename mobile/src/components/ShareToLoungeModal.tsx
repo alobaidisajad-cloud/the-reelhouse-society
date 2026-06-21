@@ -27,7 +27,7 @@ interface ShareToLoungeProps {
     listTopPosters?: string[];
 }
 
-interface LoungeMemberRow {
+interface _LoungeMemberRow {
     lounge_id: string;
     lounges: LoungeRoom | null;
 }

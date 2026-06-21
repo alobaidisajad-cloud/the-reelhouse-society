@@ -37,7 +37,6 @@ describe('ActionDeck logic', () => {
   });
 
   it('lounge eligibility requires archivist+ tier', () => {
-    const tiers = ['cinephile', 'archivist', 'auteur'];
     const isEligible = (role: string) => role === 'archivist' || role === 'auteur';
 
     expect(isEligible('cinephile')).toBe(false);

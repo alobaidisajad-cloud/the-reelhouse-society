@@ -205,7 +205,7 @@ export default function ListModal() {
                     .filter((r: SearchResult) => !films.some(f => f.id === r.id))
                     .slice(0, 6) as SearchResult[];
                 if (isMounted.current) setResults(filtered);
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+             
             } catch (err: unknown) { if (active && isMounted.current) setResults([]); }
             finally { if (active && isMounted.current) setSearching(false); }
         }, 400);

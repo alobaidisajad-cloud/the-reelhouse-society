@@ -3,7 +3,6 @@ import {
   View, Text, ScrollView, TextInput,
   RefreshControl, ActivityIndicator, AppState,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
 import Animated, {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   FadeInDown, FadeIn, FadeInUp,
@@ -15,7 +14,7 @@ import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
 import { isArchivistPlusTier } from '@/src/utils/tier';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 // Import deleted since it's replaced by CinematicFlashList below

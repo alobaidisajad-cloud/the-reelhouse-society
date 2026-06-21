@@ -222,7 +222,7 @@ describe('TribunalScreen Integration', () => {
     });
 
     it('renders report cards with correct content', async () => {
-      const { getByText, getAllByText } = renderTribunal();
+      const { getByText } = renderTribunal();
 
       await waitFor(() => {
         expect(getByText('Hate speech in film review')).toBeTruthy();

@@ -84,7 +84,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                 setResults(filtered);
                 setSearchType(res.searchType || 'exact');
                 setSearchContext(res.matchedContext || '');
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+             
             } catch (err: unknown) { if (gen === searchGenRef.current && isMounted.current) setResults([]); }
             finally { if (gen === searchGenRef.current && isMounted.current) setSearching(false); }
         }, 400);

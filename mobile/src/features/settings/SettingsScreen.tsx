@@ -61,7 +61,7 @@ export function SettingsScreen() {
   const [otpModalVisible, setOtpModalVisible] = useState(false);
   const [otpAction, setOtpAction] = useState<'signOut' | 'deleteAccount' | 'toggleBiometric' | null>(null);
   const [otpCode, setOtpCode] = useState('');
-  const [otpSending, setOtpSending] = useState(false);
+  const [_otpSending, setOtpSending] = useState(false);
   const [otpVerifying, setOtpVerifying] = useState(false);
   const nextBiometricStateRef = useRef<boolean>(false);
   const pendingSaveDataRef = useRef<SettingsFormData | null>(null);

@@ -22,7 +22,7 @@ const { addToCleanupQueue } = require(
 
 // Synchronous render implementation
 function renderSync(element, options = {}) {
-  const { wrapper: Wrapper, ...rest } = options || {};
+  const { wrapper: Wrapper } = options || {};
 
   const rendererOptions = {
     textComponentTypes: ['Text', 'TextInput'],

@@ -186,7 +186,7 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
         const data = await res.json();
         if (!path.includes('/search/')) cacheSet(path, data);
         return data as T;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       } catch (e: unknown) {
         if (attempt < 2) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
       }

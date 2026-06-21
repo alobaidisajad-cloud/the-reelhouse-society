@@ -178,7 +178,7 @@ export default function SocialModal() {
                     setLounges(parsed);
                 }
             }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         } catch (err) {
             reelToast.error('The telegraph to the archive is disrupted.');
         } finally {

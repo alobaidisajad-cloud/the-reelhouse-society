@@ -17,7 +17,6 @@ import {
 // ── Track execution order ───────────────────────────────────────────────────
 
 const executionLog: string[] = [];
-let mockIdCounter = 0;
 
 // ── Mock InteractionService (used by endorse_log) ───────────────────────────
 

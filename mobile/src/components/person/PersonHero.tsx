@@ -2,20 +2,20 @@
  * PersonHero — Cinematic backdrop, film-strip perforations, portrait dossier,
  * career stats strip, share-to-lounge CTA, and auteur hunt progress bar.
  */
-import { memo, useCallback } from 'react';
+import { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import {
-  Film as FilmIcon, Star, MessageCircle,
+  Film as FilmIcon, MessageCircle,
   MapPin, Calendar, Skull, Clock,
 } from 'lucide-react-native';
 import { s } from '@/app/person/personStyles';
 import { FilmStripPerforations } from '@/src/components/person/PersonFilmography';
 
-import type { DimensionValue, ViewStyle } from 'react-native';
+import type { DimensionValue } from 'react-native';
 
 // ── Interfaces ──────────────────────────────────────────────
 interface PersonDetail {
@@ -70,7 +70,7 @@ export function formatDossierDate(dateStr: string | null): string {
     const d = new Date(isoString);
     if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString('en-US', { timeZone: 'UTC', month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase();
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   } catch (e) {
     return dateStr;
   }

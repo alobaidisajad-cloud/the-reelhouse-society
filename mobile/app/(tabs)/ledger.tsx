@@ -19,7 +19,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 const AnimatedView = Animated.createAnimatedComponent(View);
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
 
 type TabName = 'logs' | 'watchlist' | 'vault' | 'lists';
 

@@ -8,7 +8,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View, Text, StyleSheet,
-  Share,
 } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import {
@@ -28,10 +27,10 @@ import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 
 export default function DataVault() {
-  const logs = useFilmStore(s => s.logs);
-  const watchlist = useWatchlistStore(s => s.watchlist);
-  const vault = useArchiveStore(s => s.physicalArchive);
-  const lists = useListStore(s => s.lists);
+  const _logs = useFilmStore(s => s.logs);
+  const _watchlist = useWatchlistStore(s => s.watchlist);
+  const _vault = useArchiveStore(s => s.physicalArchive);
+  const _lists = useListStore(s => s.lists);
   const user = useAuthStore(s => s.user);
 
   // ── Import State ──

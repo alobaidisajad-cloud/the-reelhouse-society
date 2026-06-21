@@ -30,7 +30,7 @@ jest.mock('../logger', () => ({
 
 // ── Test Schema ──
 const TestSchema = z.object({ id: z.string(), name: z.string() });
-type TestItem = z.infer<typeof TestSchema>;
+type _TestItem = z.infer<typeof TestSchema>;
 
 describe('validateWithTelemetry', () => {
   beforeEach(() => {

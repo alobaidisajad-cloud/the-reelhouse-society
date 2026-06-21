@@ -68,7 +68,7 @@ jest.mock('expo-haptics', () => ({
 // ── Arbitraries ──────────────────────────────────────────────────────────────
 
 /** A content item with a user_id field. */
-interface TestItem {
+interface _TestItem {
   id: string;
   user_id: string;
   content: string;

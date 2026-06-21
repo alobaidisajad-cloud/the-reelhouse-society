@@ -78,7 +78,7 @@ jest.mock('../resetAllStores', () => ({
 // ── Arbitraries ──────────────────────────────────────────────────────────────
 
 const contentTypeArb = fc.constantFrom(...ReportableContentType.options);
-const reasonArb = fc.constantFrom(...ReportReason.options);
+const _reasonArb = fc.constantFrom(...ReportReason.options);
 const reasonNonOtherArb = fc.constantFrom(
   ...ReportReason.options.filter((r) => r !== 'other'),
 );

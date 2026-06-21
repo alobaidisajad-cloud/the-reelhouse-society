@@ -41,7 +41,7 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
             } else {
                 setError('Authentication Failed');
             }
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         } catch (e) {
             onUnlocked();
             setLocked(false);

@@ -89,7 +89,7 @@ export default function ComposeDossierScreen() {
                 reelToast.success('Dossier published');
             }
             router.replace('/(tabs)/dispatch');
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+         
         } catch (err) {
             reelToast.error('Transmission failed');
         } finally {

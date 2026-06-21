@@ -81,7 +81,6 @@ import { useBlockStore } from '@/src/stores/blockStore';
  
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
-const AnimatedScrollView = AnimatedRN.createAnimatedComponent(ScrollView);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';

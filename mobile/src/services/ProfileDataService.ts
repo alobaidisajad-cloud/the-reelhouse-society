@@ -291,7 +291,7 @@ export const ProfileDataService = {
             query = query.or(`watched_date.lt."${safeDate}",and(watched_date.eq."${safeDate}",id.lt.${safeId}),watched_date.is.null`);
           }
         }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+       
       } catch (e) {
         // Fallback or ignore invalid cursor
       }

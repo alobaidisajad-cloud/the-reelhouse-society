@@ -82,7 +82,7 @@ export default function OracleScreen() {
         oracleEmberOpacity.value = withTiming(0.5, { duration: 300 });
         TactileEngine.success();
       }, 500); // Brief dramatic pause — entrance animations handle the rest
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     } catch (e) {
       setLoading(false);
       oracleEmberOpacity.value = withTiming(0.5, { duration: 300 });

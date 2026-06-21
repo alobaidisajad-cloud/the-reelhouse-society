@@ -1,10 +1,9 @@
  
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
-import { Sparkles, Film as FilmIcon, Star, Archive, X } from 'lucide-react-native';
+import { Film as FilmIcon, Star, Archive, X } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
-import { tmdb } from '@/src/lib/tmdb';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { s } from '@/app/log/logDetailStyles';
