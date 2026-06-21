@@ -33,7 +33,7 @@ function truncateReview(text: string, maxLength = 350) {
     const raw = cleanReviewText(text)
     if (raw.length <= maxLength) return raw
     const cut = raw.lastIndexOf(' ', maxLength)
-    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '�'
+    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '…'
 }
 
 // Fixed dimensions
@@ -42,25 +42,19 @@ const RENDER_H = Math.round(RENDER_W * 16 / 9)
 
 const getProxiedImageUrl = (path: string | null) => {
     if (!path) return null
-    return `https://images.weserv.nl/?url=&output=webp`
+    const posterUrl = tmdb.poster(path, 'w500')
+    if (!posterUrl) return null
+    return `https://images.weserv.nl/?url=${encodeURIComponent(posterUrl)}&output=webp`
 }
 
-function CornerTicks() {
-    return (
-        <div style={{ position: 'absolute', inset: '14px', border: '1px solid var(--sepia-border)', pointerEvents: 'none' }}>
-            <div style={{ position: 'absolute', top: 0, left: 0, width: 12, height: 1.5, background: 'var(--sepia)' }} />
-            <div style={{ position: 'absolute', top: 0, left: 0, width: 1.5, height: 12, background: 'var(--sepia)' }} />
-            <div style={{ position: 'absolute', top: 0, right: 0, width: 12, height: 1.5, background: 'var(--sepia)' }} />
-            <div style={{ position: 'absolute', top: 0, right: 0, width: 1.5, height: 12, background: 'var(--sepia)' }} />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, width: 12, height: 1.5, background: 'var(--sepia)' }} />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, width: 1.5, height: 12, background: 'var(--sepia)' }} />
-            <div style={{ position: 'absolute', bottom: 0, right: 0, width: 12, height: 1.5, background: 'var(--sepia)' }} />
-            <div style={{ position: 'absolute', bottom: 0, right: 0, width: 1.5, height: 12, background: 'var(--sepia)' }} />
-        </div>
-    )
+const getBlurredProxiedImageUrl = (path: string | null) => {
+    if (!path) return null
+    const posterUrl = tmdb.poster(path, 'w92')
+    if (!posterUrl) return null
+    return `https://images.weserv.nl/?url=${encodeURIComponent(posterUrl)}&w=80&blur=8&output=webp`
 }
 
-function CardContent({ data, posterDataUrl }: { data: ShareCardData, posterDataUrl: string | null }) {
+function CardContent({ data, posterDataUrl, blurDataUrl }: { data: ShareCardData, posterDataUrl: string | null, blurDataUrl: string | null }) {
     const reviewText = data.review ? truncateReview(data.review) : null
     const yearDisplay = data.filmYear ?? data.year ?? ''
 
@@ -69,79 +63,119 @@ function CardContent({ data, posterDataUrl }: { data: ShareCardData, posterDataU
             position: 'relative', width: '100%', height: '100%',
             display: 'flex', flexDirection: 'column',
             fontFamily: 'var(--font-body)', color: 'var(--parchment)',
-            padding: 14, overflow: 'hidden'
+            overflow: 'hidden', background: '#040302'
         }}>
-            <CornerTicks />
-            <div style={{ textAlign: 'center', marginTop: 4 }}>
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.22rem', color: 'var(--sepia)', opacity: 0.8 }}>
-                    ? ARCHIVE DOSSIER ?
-                </span>
-            </div>
-
-            <div style={{ flex: 0.8 }} />
-
-            <div style={{ width: '100%', display: 'flex', justifyContent: 'center' }}>
+            {/* Ambient Blur Layer */}
+            {blurDataUrl && (
                 <div style={{
-                    width: 220, height: 330, background: 'var(--soot)',
-                    border: '1px solid rgba(196,150,26,0.15)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    overflow: 'hidden',
-                    boxShadow: '0 20px 40px rgba(0,0,0,0.8), 0 0 40px rgba(196,150,26,0.1)'
-                }}>
-                    {posterDataUrl ? (
-                        <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
-                    ) : (
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)' }}>�</div>
+                    position: 'absolute', inset: 0,
+                    backgroundImage: `url(${blurDataUrl})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    transform: 'scale(1.15)',
+                    opacity: 0.45,
+                    zIndex: 0
+                }} />
+            )}
+
+            {/* Vignette Overlay */}
+            <div style={{
+                position: 'absolute', inset: 0,
+                background: 'radial-gradient(circle at center, rgba(4,3,2,0.1) 0%, rgba(4,3,2,0.85) 90%)',
+                zIndex: 1
+            }} />
+
+            {/* Obsidian Slab */}
+            <div style={{
+                margin: '45px 24px 25px 24px',
+                flex: 1,
+                background: '#090705',
+                border: '1px solid rgba(196, 150, 26, 0.3)',
+                borderRadius: '8px',
+                boxShadow: '0 25px 50px -12px rgba(0,0,0,0.8), 0 0 40px rgba(196,150,26,0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                position: 'relative',
+                zIndex: 2
+            }}>
+                {/* Header */}
+                <div style={{ padding: '12px 0 6px 0', textAlign: 'center', borderBottom: '1px solid rgba(196,150,26,0.15)', background: 'rgba(0,0,0,0.1)' }}>
+                    <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.25rem', color: 'var(--sepia)', opacity: 0.9 }}>
+                        ● ARCHIVE DOSSIER ●
+                    </span>
+                </div>
+
+                {/* Poster Container */}
+                <div style={{ padding: '16px 16px 12px 16px', display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: 0 }}>
+                    <div style={{
+                        height: '100%',
+                        aspectRatio: '2/3',
+                        background: 'var(--soot)',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.65)',
+                        borderRadius: '4px',
+                        overflow: 'hidden',
+                        border: '1px solid rgba(255,255,255,0.06)'
+                    }}>
+                        {posterDataUrl ? (
+                            <img src={posterDataUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} alt="Poster" crossOrigin="anonymous" />
+                        ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'var(--font-ui)', fontSize: '1.5rem', color: 'var(--fog)' }}>∅</div>
+                        )}
+                    </div>
+                </div>
+
+                {/* Film & Review Metadata */}
+                <div style={{ padding: '0 20px 16px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                    <h1 style={{
+                        fontFamily: 'var(--font-display)', fontSize: '1.25rem',
+                        lineHeight: 1.15, color: 'var(--parchment)', margin: '0 0 0.25rem 0',
+                        textShadow: '0 2px 8px rgba(0,0,0,0.6)'
+                    }}>
+                        {data.filmTitle}
+                    </h1>
+
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.15em', color: 'var(--sepia)', marginBottom: '0.5rem', opacity: 0.85 }}>
+                        {yearDisplay}
+                    </div>
+
+                    {data.rating > 0 && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.75rem' }}>
+                            <ReelRating value={data.rating} size="sm" />
+                        </div>
+                    )}
+
+                    <div style={{
+                        fontFamily: 'var(--font-body-italic)', fontSize: '0.7rem', color: 'var(--bone)',
+                        lineHeight: 1.5, opacity: 0.95,
+                        padding: '8px 12px',
+                        background: 'rgba(0,0,0,0.3)',
+                        borderRadius: '4px',
+                        borderLeft: '2px solid var(--sepia)',
+                        width: '100%',
+                        maxHeight: '96px',
+                        overflow: 'hidden',
+                        display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical',
+                        textAlign: 'left'
+                    }}>
+                        "{reviewText || 'Classified Analysis'}"
+                    </div>
+                </div>
+
+                {/* Footer */}
+                <div style={{ padding: '8px 16px', borderTop: '1px solid rgba(196,150,26,0.15)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <img src="/assets/images/reelhouse-logo-transparent.png" alt="" style={{ width: 10, height: 10, opacity: 0.7 }} />
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.15rem', color: 'var(--sepia)' }}>
+                            REELHOUSE
+                        </span>
+                    </div>
+                    {data.username && (
+                        <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.38rem', letterSpacing: '0.1rem', color: 'var(--flicker)' }}>
+                            @{data.username.toUpperCase()}
+                        </span>
                     )}
                 </div>
-            </div>
-
-            <div style={{ flex: 1 }} />
-
-            <div style={{ textAlign: 'center', padding: '0 1rem' }}>
-                <h1 style={{
-                    fontFamily: 'var(--font-display)', fontSize: '1.4rem',
-                    lineHeight: 1.1, color: 'var(--parchment)', margin: '0 0 0.3rem 0',
-                    textShadow: '0 0 12px rgba(196,150,26,0.15)'
-                }}>
-                    {data.filmTitle}
-                </h1>
-
-                <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.15em', color: 'var(--flicker)', opacity: 0.85, marginBottom: '0.6rem' }}>
-                    {yearDisplay}
-                </div>
-
-                {data.rating > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '0.8rem' }}>
-                        <ReelRating value={data.rating} size="sm" />
-                    </div>
-                )}
-
-                <div style={{
-                    fontFamily: 'var(--font-body-italic)', fontSize: '0.72rem', color: 'var(--bone)',
-                    lineHeight: 1.5, opacity: 0.95,
-                    display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden'
-                }}>
-                    "{reviewText || 'Classified Analysis'}"
-                </div>
-
-                {data.username && (
-                    <div style={{
-                        fontFamily: 'var(--font-ui)', fontSize: '0.45rem', letterSpacing: '0.12rem',
-                        color: 'var(--sepia)', marginTop: '0.6rem', opacity: 0.9
-                    }}>
-                        � @{data.username.toUpperCase()}
-                    </div>
-                )}
-            </div>
-
-            <div style={{ flex: 1 }} />
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.3rem', marginBottom: 2 }}>
-                <img src="/assets/images/reelhouse-logo-transparent.png" alt="" style={{ width: 12, height: 12, opacity: 0.8 }} />
-                <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.42rem', letterSpacing: '0.22rem', color: 'var(--sepia-border-strong)' }}>
-                    THE REELHOUSE SOCIETY
-                </span>
             </div>
         </div>
     )
@@ -151,6 +185,7 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
     const renderRef = useRef<HTMLDivElement>(null)
     const [saving, setSaving] = useState(false)
     const [posterDataUrl, setPosterDataUrl] = useState<string | null>(null)
+    const [blurDataUrl, setBlurDataUrl] = useState<string | null>(null)
     const [ready, setReady] = useState(false)
     const cachedBlob = useRef<Blob | null>(null)
 
@@ -166,17 +201,38 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
 
     const preGenerate = useCallback(async () => {
         try {
-            const proxiedUrl = getProxiedImageUrl(data.posterPath)
-            if (!proxiedUrl) { setReady(true); return }
-            const imgRes = await fetch(proxiedUrl)
+            const sharpUrl = getProxiedImageUrl(data.posterPath)
+            const blurredUrl = getBlurredProxiedImageUrl(data.posterPath)
+            if (!sharpUrl) { setReady(true); return }
+
+            // Fetch sharp poster
+            const imgRes = await fetch(sharpUrl)
             const imgBlob = await imgRes.blob()
-            const dataUrl = await new Promise<string>((res, rej) => {
+            const sharpDataUrl = await new Promise<string>((res, rej) => {
                 const reader = new FileReader()
                 reader.onloadend = () => res(reader.result as string)
                 reader.onerror = rej
                 reader.readAsDataURL(imgBlob)
             })
-            setPosterDataUrl(dataUrl)
+            setPosterDataUrl(sharpDataUrl)
+
+            // Fetch blurred background
+            if (blurredUrl) {
+                try {
+                    const blurRes = await fetch(blurredUrl)
+                    const blurBlob = await blurRes.blob()
+                    const blurDataUrlVal = await new Promise<string>((res, rej) => {
+                        const reader = new FileReader()
+                        reader.onloadend = () => res(reader.result as string)
+                        reader.onerror = rej
+                        reader.readAsDataURL(blurBlob)
+                    })
+                    setBlurDataUrl(blurDataUrlVal)
+                } catch (e) {
+                    console.error('Blurred background load failed', e)
+                }
+            }
+
             await new Promise(r => setTimeout(r, 180))
             if (!renderRef.current) return
             cachedBlob.current = await screenshotCard(renderRef.current)
@@ -199,7 +255,7 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
             const file = new File([blob], filename, { type: 'image/png' })
             const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
             if ((shareMode || isMobile) && navigator.canShare?.({ files: [file] })) {
-                await navigator.share({ files: [file], title: `${data.filmTitle} � ReelHouse Dossier` })
+                await navigator.share({ files: [file], title: `${data.filmTitle} • ReelHouse Dossier` })
             } else {
                 const url = URL.createObjectURL(blob)
                 const a = document.createElement('a')
@@ -222,12 +278,12 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                         aria-hidden="true"
                         style={{
                             position: 'fixed', top: 0, left: '-9999px',
-                            width: RENDER_W, height: RENDER_H, background: 'var(--ink)',
+                            width: RENDER_W, height: RENDER_H, background: '#040302',
                             overflow: 'hidden', borderRadius: 4, display: 'flex', flexDirection: 'column',
                             pointerEvents: 'none', zIndex: -1,
                         }}
                     >
-                        <CardContent data={data} posterDataUrl={posterDataUrl} />
+                        <CardContent data={data} posterDataUrl={posterDataUrl} blurDataUrl={blurDataUrl} />
                     </div>
 
                     <button onClick={onClose} style={{ position: 'absolute', top: '1.25rem', right: '1.25rem', background: 'none', border: 'none', color: 'var(--fog)', cursor: 'pointer', zIndex: 10, padding: '0.5rem' }}>
@@ -235,9 +291,9 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                     </button>
 
                     <div style={{ position: 'absolute', top: '3.5vh', textAlign: 'center', zIndex: 10 }}>
-                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.22rem', color: 'var(--sepia)', marginBottom: '0.3rem', opacity: 0.8 }}>? ARCHIVE DOSSIER ?</div>
+                        <div style={{ fontFamily: 'var(--font-ui)', fontSize: '0.55rem', letterSpacing: '0.22rem', color: 'var(--sepia)', marginBottom: '0.3rem', opacity: 0.8 }}>● ARCHIVE DOSSIER ●</div>
                         <div style={{ fontFamily: 'var(--font-body)', fontSize: '0.72rem', color: 'var(--fog)' }}>
-                            {ready ? 'Ready to save or share' : 'Developing�'}
+                            {ready ? 'Ready to save or share' : 'Developing…'}
                         </div>
                     </div>
 
@@ -245,13 +301,13 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                         onClick={e => e.stopPropagation()}
                         style={{
                             width: '100%', maxWidth: 300, aspectRatio: '9/16', maxHeight: '68vh',
-                            background: 'var(--ink)', position: 'relative', overflow: 'hidden',
+                            background: '#040302', position: 'relative', overflow: 'hidden',
                             border: '1px solid rgba(196,150,26,0.3)',
                             boxShadow: '0 20px 60px rgba(0,0,0,0.9), 0 0 50px rgba(196,150,26,0.12)',
                             borderRadius: 4, display: 'flex', flexDirection: 'column',
                         }}
                     >
-                        <CardContent data={data} posterDataUrl={posterDataUrl} />
+                        <CardContent data={data} posterDataUrl={posterDataUrl} blurDataUrl={blurDataUrl} />
                     </div>
 
                     <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 300, display: 'flex', gap: '0.6rem', marginTop: '1.1rem', paddingBottom: 'calc(1.5rem + env(safe-area-inset-bottom))' }}>
@@ -265,10 +321,10 @@ export default function ShareCardModal({ data, onClose }: ShareCardModalProps) {
                             }}
                         >
                             <Download size={14} />
-                            {saving ? 'SAVING�' : !ready
+                            {saving ? 'SAVING…' : !ready
                                 ? <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                                     <span style={{ width: 10, height: 10, borderRadius: '50%', border: '1.5px solid rgba(14,11,8,0.4)', borderTopColor: '#0E0B08', animation: 'spin 0.8s linear infinite', display: 'inline-block' }} />
-                                    DEVELOPING�
+                                    DEVELOPING…
                                   </span>
                                 : 'SAVE TO PHOTOS'}
                         </button>

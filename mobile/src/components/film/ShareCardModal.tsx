@@ -1,15 +1,15 @@
-import React, { useRef, useState, memo, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, Pressable, Image as RNImage } from 'react-native';
+import React, { useRef, useState, memo, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Modal, Share, Pressable } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
+import * as Haptics from 'expo-haptics';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 
-// Exported dimensions so we don't break existing imports
 export const DOSSIER_CARD_WIDTH = 360;
 export const DOSSIER_CARD_HEIGHT = 640;
 
@@ -46,26 +46,79 @@ const truncateReview = (text: string, max = 350): string => {
   return raw.slice(0, cut > 40 ? cut : max).trimEnd() + '…';
 };
 
-const CornerTicks = () => {
-  const TICK = 12;
-  const THICK = 1.5;
-  const corners = [
-    { top: 0, left: 0, vTop: true, hLeft: true },
-    { top: 0, right: 0, vTop: true, hLeft: false },
-    { bottom: 0, left: 0, vTop: false, hLeft: true },
-    { bottom: 0, right: 0, vTop: false, hLeft: false },
-  ];
+function CardContent({ film, log, username }: { film: ShareFilm; log?: ShareLog | null; username?: string | null }) {
+  const posterToUse = log?.altPoster || film.poster_path;
+  const posterUrl = posterToUse ? tmdb.poster(posterToUse, 'w500') : null;
+  const reviewText = log?.review ? truncateReview(log.review) : null;
+  const yearDisplay = film.release_date?.slice(0, 4) || '';
+
   return (
-    <>
-      {corners.map((p, i) => (
-        <View key={i} style={{ position: 'absolute', top: p.top, bottom: p.bottom, left: p.left, right: p.right, width: TICK, height: TICK }}>
-          <View style={{ position: 'absolute', top: p.vTop ? 0 : undefined, bottom: p.vTop ? undefined : 0, left: p.hLeft ? 0 : undefined, right: p.hLeft ? undefined : 0, width: TICK, height: THICK, backgroundColor: colors.sepiaBorderStrong }} />
-          <View style={{ position: 'absolute', top: p.vTop ? 0 : undefined, bottom: p.vTop ? undefined : 0, left: p.hLeft ? 0 : undefined, right: p.hLeft ? undefined : 0, width: THICK, height: TICK, backgroundColor: colors.sepiaBorderStrong }} />
+    <View style={s.cardContainer}>
+      {/* Ambient Blur Layer */}
+      {posterUrl && (
+        <Image
+          source={{ uri: posterUrl }}
+          style={s.blurBackground}
+          contentFit="cover"
+          blurRadius={40}
+        />
+      )}
+
+      {/* Vignette Overlay */}
+      <View style={s.vignette} />
+
+      {/* Obsidian Slab */}
+      <View style={s.obsidianSlab}>
+        {/* Header */}
+        <View style={s.slabHeader}>
+          <Text style={s.slabHeaderText}>● ARCHIVE DOSSIER ●</Text>
         </View>
-      ))}
-    </>
+
+        {/* Poster Area */}
+        <View style={s.slabPosterArea}>
+          <View style={s.slabPosterWrapper}>
+            {posterUrl ? (
+              <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+            ) : (
+              <View style={[StyleSheet.absoluteFillObject, s.posterPlaceholder]}>
+                <Text style={s.placeholderGlyph}>∅</Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        {/* Film & Review Metadata */}
+        <View style={s.slabInfoArea}>
+          <Text style={s.slabFilmTitle} numberOfLines={2} adjustsFontSizeToFit>{film.title}</Text>
+          <Text style={s.slabFilmMeta}>{yearDisplay}</Text>
+          
+          {log && log.rating > 0 && (
+            <View style={s.slabRatingWrap}>
+              <ReelRating rating={log.rating} size={13} />
+            </View>
+          )}
+
+          <View style={s.slabReviewBox}>
+            <Text style={s.slabReviewText} numberOfLines={3}>
+              "{reviewText || 'Classified Analysis'}"
+            </Text>
+          </View>
+        </View>
+
+        {/* Footer */}
+        <View style={s.slabFooter}>
+          <View style={s.slabFooterLeft}>
+            <Image source={require('@/assets/images/reelhouse-logo-transparent.png')} style={s.slabFooterLogo} />
+            <Text style={s.slabFooterText}>REELHOUSE</Text>
+          </View>
+          {username && (
+            <Text style={s.slabFooterUsername}>@{username.toUpperCase()}</Text>
+          )}
+        </View>
+      </View>
+    </View>
   );
-};
+}
 
 export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, film, log, username }: ShareCardModalProps) {
   const viewShotRef = useRef<ViewShot>(null);
@@ -90,14 +143,24 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
   const handleShare = async () => {
     if (!viewShotRef.current?.capture || !film) return;
     setSharing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
     try {
       const uri = await viewShotRef.current.capture();
-      const deepLink = `https://reelhouse.app/film/${film.id}`;
-
-      await Sharing.shareAsync(uri, {
-        mimeType: 'image/png',
-        dialogTitle: `Share Cinematic Dossier - ${deepLink}`,
-      });
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(uri, {
+          mimeType: 'image/png',
+          dialogTitle: `${film.title} • ReelHouse Dossier`,
+        });
+      } else {
+        const deepLink = `https://reelhouse.app/film/${film.id}`;
+        const ratingText = log && log.rating > 0 ? ` • ${log.rating}/5 reels` : '';
+        await Share.share({
+          message: `${film.title}${ratingText}\n\n"${truncateReview(log?.review || '')}"\n\n• view on ReelHouse: ${deepLink}`.trim(),
+        });
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } catch (err: unknown) {
       if (__DEV__) console.warn('[ShareCard] Share failed:', err);
     } finally {
@@ -108,9 +171,8 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
 
   if (!film) return null;
 
-  const posterToUse = log?.altPoster || film.poster_path;
-  const posterUrl = posterToUse ? tmdb.poster(posterToUse, 'original') : null;
-  const reviewText = log?.review ? truncateReview(log.review) : null;
+  const isPosterReady = !film.poster_path || posterLoaded || posterError;
+  const canShare = !sharing && (forceReady || isPosterReady);
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -127,88 +189,20 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
 
           <View style={s.cardWrapper}>
             <ViewShot ref={viewShotRef} options={{ format: 'png', quality: 1 }} style={s.cardContainer}>
-              
-              {/* Inset Border with Ticks */}
-              <View style={s.insetBorder} pointerEvents="none">
-                <CornerTicks />
-              </View>
-
-              {/* 1. Top HUD */}
-              <View style={s.topHud}>
-                <Text style={s.topHudText}>● ARCHIVE DOSSIER ●</Text>
-              </View>
-
-              <View style={s.spacerLg} />
-
-              {/* 2. The Art (Poster) */}
-              <View style={s.posterWrapper}>
-                <View style={s.posterArt}>
-                  {posterUrl ? (
-                    <Image
-                      source={{ uri: posterUrl }}
-                      style={StyleSheet.absoluteFillObject}
-                      contentFit="cover"
-                      onLoad={() => setPosterLoaded(true)}
-                      onError={() => setPosterError(true)}
-                    />
-                  ) : (
-                    <View style={[StyleSheet.absoluteFillObject, s.posterPlaceholder]}>
-                      <Text style={s.placeholderGlyph}>∅</Text>
-                    </View>
-                  )}
-                </View>
-              </View>
-
-              <View style={s.spacerMd} />
-
-              {/* 3. The Placard (Typography) */}
-              <View style={s.placard}>
-                <Text style={s.filmTitle} numberOfLines={2} adjustsFontSizeToFit>{film.title}</Text>
-                
-                <Text style={s.filmMeta}>
-                  {film.release_date?.slice(0, 4)}
-                </Text>
-
-                {log && log.rating > 0 && (
-                  <View style={s.ratingWrap}>
-                    <ReelRating rating={log.rating} size={14} />
-                  </View>
-                )}
-
-                <Text style={s.reviewText} numberOfLines={4}>
-                  "{reviewText || 'Classified Analysis'}"
-                </Text>
-
-                {username && <Text style={s.attribution}>— @{username.toUpperCase()}</Text>}
-              </View>
-
-              <View style={s.spacerMd} />
-
-              {/* 4. Footer Lockup */}
-              <View style={s.footerLockup}>
-                <RNImage source={require('../../../assets/images/reelhouse-logo.png')} style={s.footerLogo} resizeMode="contain" />
-                <Text style={s.footerText}>THE REELHOUSE SOCIETY</Text>
-              </View>
-
+              <CardContent film={film} log={log} username={username} />
             </ViewShot>
           </View>
 
-          {(() => {
-            const isPosterReady = !posterUrl || posterLoaded || posterError;
-            const canShare = !sharing && (forceReady || isPosterReady);
-            return (
-              <PressableScale style={s.shareButton} onPress={handleShare} disabled={!canShare} haptic="medium" pressedScale={0.98}>
-                <Text style={s.shareButtonText}>
-                  {sharing ? 'TRANSMITTING...' : (!canShare ? 'DEVELOPING...' : 'SHARE TO SOCIALS')}
-                </Text>
-              </PressableScale>
-            );
-          })()}
+          <PressableScale style={s.shareButton} onPress={handleShare} disabled={!canShare} haptic="medium" pressedScale={0.98}>
+            <Text style={s.shareButtonText}>
+              {sharing ? 'TRANSMITTING...' : (!canShare ? 'DEVELOPING...' : 'SHARE TO SOCIALS')}
+            </Text>
+          </PressableScale>
         </View>
       </View>
     </Modal>
   );
-})
+});
 
 const s = StyleSheet.create({
   overlay: {
@@ -243,143 +237,130 @@ const s = StyleSheet.create({
   },
   closeText: {
     fontFamily: fonts.ui,
-    fontSize: 14,
+    fontSize: 18,
     color: colors.fog,
   },
   cardWrapper: {
     alignItems: 'center',
     marginBottom: 24,
   },
-  
-  /* ── Exhibition Print Layout ── */
   cardContainer: {
     width: DOSSIER_CARD_WIDTH,
     height: DOSSIER_CARD_HEIGHT,
-    backgroundColor: colors.ink, // Pure Nitrate background
-    borderRadius: 4,
+    backgroundColor: '#040302',
     overflow: 'hidden',
     flexDirection: 'column',
-    padding: 14, // Margin for the inner frame
   },
-  insetBorder: {
+  blurBackground: {
     ...StyleSheet.absoluteFillObject,
-    margin: 14,
+    opacity: 0.45,
+    transform: [{ scale: 1.15 }],
+  },
+  vignette: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(4,3,2,0.4)',
+  },
+  obsidianSlab: {
+    marginHorizontal: 24,
+    marginVertical: 45,
+    flex: 1,
+    backgroundColor: '#090705',
     borderWidth: 1,
-    borderColor: colors.sepiaBorder,
+    borderColor: 'rgba(196, 150, 26, 0.3)',
+    borderRadius: 8,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.8,
+    shadowRadius: 30,
+    elevation: 10,
   },
-  
-  // HUD
-  topHud: {
+  slabHeader: {
+    paddingVertical: 12,
     alignItems: 'center',
-    marginTop: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(196, 150, 26, 0.15)',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
-  topHudText: {
-    fontFamily: fonts.ui,
-    fontSize: 8,
-    letterSpacing: 3,
-    color: colors.sepia,
-    opacity: 0.8,
+  slabHeaderText: {
+    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3,
+    color: colors.sepia, opacity: 0.9,
   },
-
-  spacerLg: { flex: 0.8 },
-  spacerMd: { flex: 1 },
-
-  // Art
-  posterWrapper: {
+  slabPosterArea: {
+    flex: 1,
+    padding: 16,
+    paddingBottom: 12,
     alignItems: 'center',
-    width: '100%',
-  },
-  posterArt: {
-    width: 220,
-    height: 330, // Perfect 2:3 aspect ratio
-    backgroundColor: colors.soot,
-    ...effects.shadowPrimary, // Lift the poster off the page
-    borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.15)',
-  },
-  posterPlaceholder: {
     justifyContent: 'center',
-    alignItems: 'center',
+    minHeight: 0,
   },
-  placeholderGlyph: {
-    fontFamily: fonts.ui,
-    fontSize: 24,
-    color: colors.fog,
+  slabPosterWrapper: {
+    height: '100%',
+    aspectRatio: 2/3,
+    backgroundColor: colors.soot,
+    ...effects.shadowPrimary,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 4,
+    overflow: 'hidden',
   },
-
-  // Placard
-  placard: {
+  posterPlaceholder: { justifyContent: 'center', alignItems: 'center' },
+  placeholderGlyph: { fontFamily: fonts.ui, fontSize: 24, color: colors.fog },
+  slabInfoArea: {
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+  },
+  slabFilmTitle: {
+    fontFamily: fonts.display, fontSize: 20, lineHeight: 24,
+    color: colors.parchment, textAlign: 'center', marginBottom: 4,
+  },
+  slabFilmMeta: {
+    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2,
+    color: colors.sepia, opacity: 0.85, marginBottom: 8,
+  },
+  slabRatingWrap: { marginBottom: 8 },
+  slabReviewBox: {
+    width: '100%',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 4,
+    borderLeftWidth: 2,
+    borderLeftColor: colors.sepia,
+  },
+  slabReviewText: {
+    fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.bone,
+    lineHeight: 16, textAlign: 'left', opacity: 0.95,
+  },
+  slabFooter: {
+    paddingVertical: 8,
     paddingHorizontal: 16,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(196, 150, 26, 0.15)',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
   },
-  filmTitle: {
-    fontFamily: fonts.display,
-    fontSize: 24,
-    lineHeight: 28,
-    color: colors.parchment,
-    textAlign: 'center',
-    marginBottom: 6,
-    ...effects.textGlowSepia,
-  },
-  filmMeta: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
-    letterSpacing: 2,
-    color: colors.flicker,
-    opacity: 0.85,
-    marginBottom: 12,
-  },
-  ratingWrap: {
-    marginBottom: 12,
-  },
-  reviewText: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 12,
-    color: colors.bone,
-    lineHeight: 18,
-    textAlign: 'center',
-    opacity: 0.95,
-  },
-  attribution: {
-    fontFamily: fonts.ui,
-    fontSize: 8,
-    letterSpacing: 1.5,
-    color: colors.sepia,
-    marginTop: 8,
-    opacity: 0.9,
-  },
-
-  // Footer Lockup
-  footerLockup: {
+  slabFooterLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginBottom: 2,
+    gap: 4,
   },
-  footerLogo: {
-    width: 12,
-    height: 12,
-    opacity: 0.8,
+  slabFooterLogo: { width: 10, height: 10, opacity: 0.7 },
+  slabFooterText: {
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.sepia,
   },
-  footerText: {
-    fontFamily: fonts.ui,
-    fontSize: 7,
-    letterSpacing: 3,
-    color: colors.sepiaBorderStrong,
+  slabFooterUsername: {
+    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.flicker,
   },
-
-  /* ── Actions ── */
   shareButton: {
-    backgroundColor: colors.sepia,
-    paddingVertical: 14,
-    borderRadius: 4,
-    alignItems: 'center',
+    backgroundColor: colors.sepia, paddingVertical: 14,
+    borderRadius: 4, alignItems: 'center',
   },
   shareButtonText: {
-    fontFamily: fonts.uiBold,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: colors.ink,
+    fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.ink,
   },
 });

@@ -38,104 +38,86 @@ interface Props {
 const DOSSIER_CARD_WIDTH = 360;
 const DOSSIER_CARD_HEIGHT = 640;
 
-function CornerTicks() {
-    const TICK = 12;
-    const INSET = 14;
-    const RIGHT = DOSSIER_CARD_WIDTH - INSET;
-    const BOTTOM = DOSSIER_CARD_HEIGHT - INSET;
-    
-    return (
-        <>
-            <View style={[s.tickH, { top: 0, left: 0 }]} />
-            <View style={[s.tickV, { top: 0, left: 0 }]} />
-            
-            <View style={[s.tickH, { top: 0, right: 0 }]} />
-            <View style={[s.tickV, { top: 0, right: 0 }]} />
-            
-            <View style={[s.tickH, { bottom: 0, left: 0 }]} />
-            <View style={[s.tickV, { bottom: 0, left: 0 }]} />
-            
-            <View style={[s.tickH, { bottom: 0, right: 0 }]} />
-            <View style={[s.tickV, { bottom: 0, right: 0 }]} />
-        </>
-    );
-}
-
-const ENTITIES: Record<string, string> = {
-  '&quot;': '"', '&apos;': "'", '&#39;': "'", '&amp;': '&', '&lt;': '<', '&gt;': '>', '&nbsp;': ' '
-};
-
 function cleanReviewText(text: string): string {
     if (!text) return '';
-    let parsed = text.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<(?:\/?(?:p|div|br|b|i|strong|em|span|a|ul|li))[^>]*>/gi, '').trim();
-    return parsed.replace(/&[a-z0-9#]+;/gi, (m) => ENTITIES[m] || m);
+    return text.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<(?:\/?(?:p|div|br|b|i|strong|em|span|a|ul|li))[^>]*>/gi, '').trim();
 }
 
 function truncateReview(text: string, maxLength = 350) {
     const raw = cleanReviewText(text);
     if (raw.length <= maxLength) return raw;
     const cut = raw.lastIndexOf(' ', maxLength);
-    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + 'Ö';
+    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '‚Ä¶';
 }
 
 function CardContent({ data }: { data: ShareCardData }) {
-    const posterUrl = data.posterUri ?? (data.posterPath ? tmdb.poster(data.posterPath, 'w780') : null);
+    const posterUrl = data.posterPath ? tmdb.poster(data.posterPath, 'w500') : (data.posterUri || null);
     const reviewText = data.review ? truncateReview(data.review) : null;
-    const yearDisplay = data.filmYear ?? data.year ?? '';
+    const yearDisplay = data.filmYear || data.year || '';
 
     return (
         <View style={s.cardContainer}>
-            <View style={s.insetBorder} pointerEvents="none">
-                <CornerTicks />
-            </View>
+            {/* Ambient Blur Layer */}
+            {posterUrl && (
+                <Image
+                    source={{ uri: posterUrl }}
+                    style={s.blurBackground}
+                    contentFit="cover"
+                    blurRadius={40}
+                />
+            )}
 
-            <View style={s.topHud}>
-                <Text style={s.topHudText}>? ARCHIVE DOSSIER ?</Text>
-            </View>
+            {/* Vignette Overlay */}
+            <View style={s.vignette} />
 
-            <View style={s.spacerLg} />
+            {/* Obsidian Slab */}
+            <View style={s.obsidianSlab}>
+                {/* Header */}
+                <View style={s.slabHeader}>
+                    <Text style={s.slabHeaderText}>‚óè ARCHIVE DOSSIER ‚óè</Text>
+                </View>
 
-            <View style={s.posterWrapper}>
-                <View style={s.posterArt}>
-                    {posterUrl ? (
-                        <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
-                    ) : (
-                        <View style={[StyleSheet.absoluteFillObject, s.posterPlaceholder]}>
-                            <Text style={s.placeholderGlyph}>ÿ</Text>
+                {/* Poster Area */}
+                <View style={s.slabPosterArea}>
+                    <View style={s.slabPosterWrapper}>
+                        {posterUrl ? (
+                            <Image source={{ uri: posterUrl }} style={StyleSheet.absoluteFillObject} contentFit="cover" />
+                        ) : (
+                            <View style={[StyleSheet.absoluteFillObject, s.posterPlaceholder]}>
+                                <Text style={s.placeholderGlyph}>‚àÖ</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
+
+                {/* Film & Review Metadata */}
+                <View style={s.slabInfoArea}>
+                    <Text style={s.slabFilmTitle} numberOfLines={2} adjustsFontSizeToFit>{data.filmTitle}</Text>
+                    <Text style={s.slabFilmMeta}>{yearDisplay}</Text>
+                    
+                    {data.rating > 0 && (
+                        <View style={s.slabRatingWrap}>
+                            <ReelRating rating={data.rating} size={13} />
                         </View>
                     )}
-                </View>
-            </View>
 
-            <View style={s.spacerMd} />
-
-            <View style={s.placard}>
-                <Text style={s.filmTitle} numberOfLines={2} adjustsFontSizeToFit>{data.filmTitle}</Text>
-                
-                <Text style={s.filmMeta}>
-                    {yearDisplay}
-                </Text>
-
-                {data.rating > 0 && (
-                    <View style={s.ratingWrap}>
-                        <ReelRating rating={data.rating} size={14} />
+                    <View style={s.slabReviewBox}>
+                        <Text style={s.slabReviewText} numberOfLines={3}>
+                            "{reviewText || 'Classified Analysis'}"
+                        </Text>
                     </View>
-                )}
+                </View>
 
-                <Text style={s.reviewText} numberOfLines={4}>
-                    "{reviewText || 'Classified Analysis'}"
-                </Text>
-
-                {data.username && (
-                    <Text style={s.attribution}>ó @{data.username.toUpperCase()}</Text>
-                )}
-            </View>
-
-            <View style={s.spacerMd} />
-
-            <View style={s.footerLockup}>
-                <Image source={require('@/assets/images/reelhouse-logo-transparent.png')} style={s.footerLogo} />
-                <Text style={s.footerText}>THE REELHOUSE SOCIETY</Text>
+                {/* Footer */}
+                <View style={s.slabFooter}>
+                    <View style={s.slabFooterLeft}>
+                        <Image source={require('@/assets/images/reelhouse-logo-transparent.png')} style={s.slabFooterLogo} />
+                        <Text style={s.slabFooterText}>REELHOUSE</Text>
+                    </View>
+                    {data.username && (
+                        <Text style={s.slabFooterUsername}>@{data.username.toUpperCase()}</Text>
+                    )}
+                </View>
             </View>
         </View>
     );
@@ -164,13 +146,13 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
             if (isAvailable) {
                 await Sharing.shareAsync(uri, {
                     mimeType: 'image/png',
-                    dialogTitle: `${data.filmTitle} ó ReelHouse Log`,
+                    dialogTitle: `${data.filmTitle} ‚Ä¢ ReelHouse Log`,
                 });
             } else {
                 const yearText = (data.filmYear || data.year) ? ` (${data.filmYear || data.year})` : '';
-                const ratingText = data.rating > 0 ? ` ó ${data.rating}/5 reels` : '';
+                const ratingText = data.rating > 0 ? ` ‚Ä¢ ${data.rating}/5 reels` : '';
                 await Share.share({
-                    message: `${data.filmTitle}${yearText}${ratingText}\n\n${cleanReviewText(data.review || '')}\n\nó via The ReelHouse Society`.trim(),
+                    message: `${data.filmTitle}${yearText}${ratingText}\n\n${cleanReviewText(data.review || '')}\n\n‚Ä¢ via The ReelHouse Society`.trim(),
                 });
             }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -190,7 +172,7 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
                     <View style={s.header}>
                         <Text style={s.title}>GENERATE CLASSIFIED DOSSIER</Text>
                         <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="light" pressedScale={0.96}>
-                            <Text style={s.closeText}>?</Text>
+                            <Text style={s.closeText}>‚úï</Text>
                         </PressableScale>
                     </View>
 
@@ -228,7 +210,7 @@ const s = StyleSheet.create({
         color: colors.sepia, opacity: 0.9,
     },
     closeText: {
-        fontFamily: fonts.ui, fontSize: 20, color: colors.fog,
+        fontFamily: fonts.ui, fontSize: 18, color: colors.fog,
         lineHeight: 24,
     },
     cardWrapper: {
@@ -236,54 +218,113 @@ const s = StyleSheet.create({
     },
     cardContainer: {
         width: DOSSIER_CARD_WIDTH, height: DOSSIER_CARD_HEIGHT,
-        backgroundColor: colors.ink, borderRadius: 4,
-        overflow: 'hidden', flexDirection: 'column', padding: 14,
+        backgroundColor: '#040302',
+        overflow: 'hidden', flexDirection: 'column',
     },
-    insetBorder: {
+    blurBackground: {
         ...StyleSheet.absoluteFillObject,
-        margin: 14, borderWidth: 1, borderColor: colors.sepiaBorder,
+        opacity: 0.45,
+        transform: [{ scale: 1.15 }],
     },
-    tickH: { position: 'absolute', width: 12, height: 1.5, backgroundColor: colors.sepia },
-    tickV: { position: 'absolute', width: 1.5, height: 12, backgroundColor: colors.sepia },
-    topHud: { alignItems: 'center', marginTop: 4 },
-    topHudText: {
+    vignette: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(4,3,2,0.4)',
+    },
+    obsidianSlab: {
+        marginHorizontal: 24,
+        marginVertical: 45,
+        flex: 1,
+        backgroundColor: '#090705',
+        borderWidth: 1,
+        borderColor: 'rgba(196, 150, 26, 0.3)',
+        borderRadius: 8,
+        overflow: 'hidden',
+        position: 'relative',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 20 },
+        shadowOpacity: 0.8,
+        shadowRadius: 30,
+        elevation: 10,
+    },
+    slabHeader: {
+        paddingVertical: 12,
+        alignItems: 'center',
+        borderBottomWidth: 1,
+        borderBottomColor: 'rgba(196, 150, 26, 0.15)',
+        backgroundColor: 'rgba(0, 0, 0, 0.1)',
+    },
+    slabHeaderText: {
         fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3,
-        color: colors.sepia, opacity: 0.8,
+        color: colors.sepia, opacity: 0.9,
     },
-    spacerLg: { flex: 0.8 },
-    spacerMd: { flex: 1 },
-    posterWrapper: { alignItems: 'center', width: '100%' },
-    posterArt: {
-        width: 220, height: 330, backgroundColor: colors.soot,
-        ...effects.shadowPrimary, borderWidth: 1, borderColor: 'rgba(196,150,26,0.15)',
+    slabPosterArea: {
+        flex: 1,
+        padding: 16,
+        paddingBottom: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: 0,
+    },
+    slabPosterWrapper: {
+        height: '100%',
+        aspectRatio: 2/3,
+        backgroundColor: colors.soot,
+        ...effects.shadowPrimary,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.06)',
+        borderRadius: 4,
+        overflow: 'hidden',
     },
     posterPlaceholder: { justifyContent: 'center', alignItems: 'center' },
     placeholderGlyph: { fontFamily: fonts.ui, fontSize: 24, color: colors.fog },
-    placard: { alignItems: 'center', paddingHorizontal: 16 },
-    filmTitle: {
-        fontFamily: fonts.display, fontSize: 24, lineHeight: 28,
-        color: colors.parchment, textAlign: 'center', marginBottom: 6,
-        ...effects.textGlowSepia,
+    slabInfoArea: {
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingBottom: 16,
     },
-    filmMeta: {
-        fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2,
-        color: colors.flicker, opacity: 0.85, marginBottom: 12,
+    slabFilmTitle: {
+        fontFamily: fonts.display, fontSize: 20, lineHeight: 24,
+        color: colors.parchment, textAlign: 'center', marginBottom: 4,
     },
-    ratingWrap: { marginBottom: 12 },
-    reviewText: {
-        fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone,
-        lineHeight: 18, textAlign: 'center', opacity: 0.95,
+    slabFilmMeta: {
+        fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2,
+        color: colors.sepia, opacity: 0.85, marginBottom: 8,
     },
-    attribution: {
-        fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5,
-        color: colors.sepia, marginTop: 8, opacity: 0.9,
+    slabRatingWrap: { marginBottom: 8 },
+    slabReviewBox: {
+        width: '100%',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        borderRadius: 4,
+        borderLeftWidth: 2,
+        borderLeftColor: colors.sepia,
     },
-    footerLockup: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 2,
+    slabReviewText: {
+        fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.bone,
+        lineHeight: 16, textAlign: 'left', opacity: 0.95,
     },
-    footerLogo: { width: 12, height: 12, opacity: 0.8 },
-    footerText: {
-        fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.sepiaBorderStrong,
+    slabFooter: {
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(196, 150, 26, 0.15)',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.2)',
+    },
+    slabFooterLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 4,
+    },
+    slabFooterLogo: { width: 10, height: 10, opacity: 0.7 },
+    slabFooterText: {
+        fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.sepia,
+    },
+    slabFooterUsername: {
+        fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.flicker,
     },
     shareButton: {
         backgroundColor: colors.sepia, paddingVertical: 14,
