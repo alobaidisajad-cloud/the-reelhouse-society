@@ -96,11 +96,15 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
             setIsMuted(true)
             reelToast.success('Reported. This user has been muted from your feed.')
             if (log.user_id || log.userId) {
-                await supabase.from('user_reports').insert({
-                    reported_id: log.user_id || log.userId,
-                    log_id: log.id,
-                    reason: 'Inappropriate content via Web'
-                }).catch(() => {}) // Fire and forget
+                // Fire and forget — the Supabase query builder is a thenable without a
+                // .catch() method, so swallow failures with try/catch instead.
+                try {
+                    await supabase.from('user_reports').insert({
+                        reported_id: log.user_id || log.userId,
+                        log_id: log.id,
+                        reason: 'Inappropriate content via Web'
+                    })
+                } catch { /* non-critical */ }
             }
         }
     }

@@ -312,7 +312,7 @@ export const useFilmStore = create<FilmState>()(
                 const page = loadMore ? state.logsPage : 0
 
                 const { data, error } = await supabase
-                    .from('logs').select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, private_notes, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at').eq('user_id', user.id)
+                    .from('logs').select('id, user_id, film_id, film_title, poster_path, year, rating, review, status, watched_date, is_spoiler, watched_with, private_notes, abandoned_reason, physical_media, is_autopsied, autopsy, alt_poster, editorial_header, drop_cap, pull_quote, video_url, format, created_at, view_count, viewing_history').eq('user_id', user.id)
                     .order('watched_date', { ascending: false })
                     .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1)
                 
