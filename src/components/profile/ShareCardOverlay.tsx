@@ -244,6 +244,7 @@ export function ShareCardOverlay({ log, user, onClose }: ShareCardOverlayProps) 
     }
 
     const preGenerate = useCallback(async () => {
+        if (!log) return
         try {
             const posterPath = log.poster || log.film?.poster_path
             const sharpUrl = getProxiedImageUrl(posterPath)
