@@ -4,7 +4,7 @@
 import { FlashList } from '@shopify/flash-list';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import PressableScale from '@/src/components/PressableScale';
 import { useAuthStore } from '@/src/stores/auth';
 import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';

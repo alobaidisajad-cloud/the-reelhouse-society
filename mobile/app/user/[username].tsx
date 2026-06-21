@@ -1,4 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useCallback, useEffect, useState } from 'react';
@@ -11,14 +11,14 @@ import {
     useWindowDimensions
 } from 'react-native';
 import AnimatedRN, { Easing, FadeIn, cancelAnimation, useAnimatedReaction, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { useFilmStore } from '@/src/stores/films';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import type { ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '@/src/types';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { CinematicInsights } from '@/src/components/profile/CinematicInsights';
 import { ProgrammesSection } from '@/src/components/profile/ProgrammesSection';
@@ -26,9 +26,9 @@ import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
 // CinematicMap is missing from workspace, commenting out to avoid compilation errors
 // import { CinematicMap } from '@/src/components/profile/CinematicMap';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { useProfileController } from '@/src/hooks/useProfileController';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { Achievements } from '@/src/components/profile/Achievements';
 import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
 import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
@@ -44,16 +44,16 @@ import { TasteMatch } from '@/src/components/profile/TasteMatch';
 import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
 import { useProfileComputed } from './profileComputed';
 import { s } from './profileStyles';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import PressableScale from '@/src/components/PressableScale';
 import ProfileListsTab from '@/src/components/profile/ProfileListsTab';
 import ProfilePhysicalTab from '@/src/components/profile/ProfilePhysicalTab';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
 import {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     Archive,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     ArrowLeft,
     CalendarDays,
     ChevronLeft,
@@ -78,7 +78,7 @@ import ReportSheet from '@/src/components/moderation/ReportSheet';
 import { GoldDivider, SectionLabel, StatCard } from '@/src/components/profile/ProfileHelpers';
 import { ProfilePosterCard } from '@/src/components/profile/ProfilePosterCard';
 import { useBlockStore } from '@/src/stores/blockStore';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
 const AnimatedScrollView = AnimatedRN.createAnimatedComponent(ScrollView);

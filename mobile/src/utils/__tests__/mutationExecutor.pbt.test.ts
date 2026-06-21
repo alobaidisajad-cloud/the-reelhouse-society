@@ -11,6 +11,8 @@
 
 import * as fc from 'fast-check';
 
+import { applyIdMapToPayload } from '../mutationExecutor';
+
 // Mock dependencies that mutationExecutor.ts imports at module level
 jest.mock('../../lib/supabase', () => ({
   supabase: {
@@ -32,8 +34,6 @@ jest.mock('../logger', () => ({
 jest.mock('../../stores/auth', () => ({
   useAuthStore: { getState: () => ({ user: null }) },
 }));
-
-import { applyIdMapToPayload } from '../mutationExecutor';
 
 describe('applyIdMapToPayload — Property-Based Tests', () => {
   const REMAPPABLE_KEYS = [

@@ -80,7 +80,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         // Merge pending creates/deletes/updates so the user sees consistent state.
         // NOTE: Dynamic require avoids Jest module mock resolution issues in test env.
         const { getOfflineQueue } = require('../../utils/offlineQueue');
-        const queue: Array<{ type: string; payload: Record<string, any>; timestamp: number }> = getOfflineQueue();
+        const queue: { type: string; payload: Record<string, any>; timestamp: number }[] = getOfflineQueue();
         const pendingDeletes = new Set(
             queue.filter((q: { type: string; payload: Record<string, any> }) => q.type === 'delete_list').map((q: { payload: Record<string, any> }) => q.payload.list_id as string)
         );

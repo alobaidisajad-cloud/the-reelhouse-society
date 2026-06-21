@@ -70,7 +70,7 @@ export default function DispatchScreen() {
       isScrolling.value = false;
     }
   });
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   
   const user = useAuthStore(s => s.user);
   const dossiers = useDispatchStore(s => s.dossiers);
   const loading = useDispatchStore(s => s.loading);

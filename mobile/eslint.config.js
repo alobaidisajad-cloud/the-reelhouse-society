@@ -8,7 +8,7 @@ module.exports = defineConfig([
     ignores: ['**/dist/**', '**/supabase/functions/**', '*.config.js'],
   },
   {
-    files: ['scripts/**/*.js'],
+    files: ['scripts/**/*.js', 'test-utils/**/*.js'],
     languageOptions: {
       globals: {
         __dirname: 'readonly',
@@ -19,9 +19,12 @@ module.exports = defineConfig([
     },
   },
   {
-    files: ['**/__tests__/**'],
+    // Test files and the Jest setup use inline mock components that don't need
+    // display names, and CommonJS-style requires.
+    files: ['**/__tests__/**', 'jest.setup.ts'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
+      'react/display-name': 'off',
     },
   },
 ]);

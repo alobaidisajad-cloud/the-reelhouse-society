@@ -7,6 +7,11 @@
 
 // ── Mock declarations (hoisted above jest.mock) ──────────────────────────────
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import TribunalScreen from '../tribunal';
+
 const mockResolveReportV2 = jest.fn().mockResolvedValue(undefined);
 const mockBulkDismiss = jest.fn().mockResolvedValue(undefined);
 const mockGetPriorityQueue = jest.fn().mockResolvedValue([]);
@@ -89,11 +94,6 @@ jest.mock('lucide-react-native', () => {
     X: icon('X'),
   };
 });
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, waitFor } from '@testing-library/react-native';
-import { Alert } from 'react-native';
-import TribunalScreen from '../tribunal';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

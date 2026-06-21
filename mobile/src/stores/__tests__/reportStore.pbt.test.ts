@@ -10,6 +10,12 @@
 import * as fc from 'fast-check';
 import { ReportableContentType, ReportPayloadSchema, ReportReason } from '../../types/moderation';
 
+// ── Import after mocks ───────────────────────────────────────────────────────
+
+import { supabase } from '../../lib/supabase';
+import { enqueueMutation } from '../../utils/offlineQueue';
+import { useReportStore } from '../reportStore';
+
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 jest.mock('../../lib/supabase', () => ({
@@ -68,12 +74,6 @@ jest.mock('../../lib/sentry', () => ({
 jest.mock('../resetAllStores', () => ({
   registerStoreReset: jest.fn(),
 }));
-
-// ── Import after mocks ───────────────────────────────────────────────────────
-
-import { supabase } from '../../lib/supabase';
-import { enqueueMutation } from '../../utils/offlineQueue';
-import { useReportStore } from '../reportStore';
 
 // ── Arbitraries ──────────────────────────────────────────────────────────────
 

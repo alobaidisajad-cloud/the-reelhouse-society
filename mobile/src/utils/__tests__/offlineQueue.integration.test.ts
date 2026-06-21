@@ -13,6 +13,9 @@
 
 // ── Module Mocks (must be before imports) ──────────────────────
 
+import type { QueuedMutation } from '../offlineQueue';
+import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../offlineQueue';
+
 const mockStorage = new Map<string, string>();
 jest.mock('../../stores/mmkv-storage', () => ({
   storage: {
@@ -77,9 +80,6 @@ jest.mock('../reelToast', () => {
 jest.mock('../logger', () => ({
   logger: { debug: jest.fn(), warn: jest.fn(), error: jest.fn(), info: jest.fn() },
 }));
-
-import type { QueuedMutation } from '../offlineQueue';
-import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../offlineQueue';
 
 // ── Test Helpers ───────────────────────────────────────────────
 

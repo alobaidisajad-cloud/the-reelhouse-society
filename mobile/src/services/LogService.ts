@@ -7,7 +7,7 @@ import { resolveTier } from '@/src/utils/tier';
 import { validateWithTelemetry } from '@/src/utils/validateWithTelemetry';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { z } from 'zod';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { getOfflineQueue } from '@/src/utils/offlineQueue';
 
 const LogCommentPayloadSchema = z.object({

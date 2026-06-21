@@ -9,6 +9,10 @@
 
 import * as fc from 'fast-check';
 
+// ── Import after mocks ───────────────────────────────────────────────────────
+
+import { filterContentByBlocks } from '../filterContentByBlocks';
+
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 // We need to mock blockStore before importing filterContentByBlocks
@@ -60,10 +64,6 @@ jest.mock('expo-haptics', () => ({
   notificationAsync: jest.fn(),
   NotificationFeedbackType: { Success: 'success', Warning: 'warning' },
 }));
-
-// ── Import after mocks ───────────────────────────────────────────────────────
-
-import { filterContentByBlocks } from '../filterContentByBlocks';
 
 // ── Arbitraries ──────────────────────────────────────────────────────────────
 

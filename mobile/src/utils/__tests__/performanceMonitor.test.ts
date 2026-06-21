@@ -50,13 +50,13 @@ describe('performanceMonitor', () => {
     jest.mock('../../lib/sentry', () => ({
       captureWarning: (...args: any[]) => mockCaptureWarning(...args),
     }));
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const SentryMod = require('@sentry/react-native');
     SentryMod.startSpan = jest.fn((options: any, fn: any) => fn());
     SentryMod.setMeasurement = jest.fn();
     SentryMod.addBreadcrumb = jest.fn();
 
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+     
     const { performanceMonitor } = require('../performanceMonitor');
     return { performanceMonitor, SentryMod };
   }

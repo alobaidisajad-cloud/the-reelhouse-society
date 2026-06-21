@@ -13,6 +13,8 @@
 import { Text } from 'react-native';
 import TestRenderer, { act } from 'react-test-renderer';
 
+import ErrorBoundary from '@/src/components/ErrorBoundary';
+
 // ── Mock dependencies BEFORE importing ErrorBoundary ─────────────────────────
 
 jest.mock('@/src/lib/sentry', () => ({
@@ -39,8 +41,6 @@ jest.mock('@/src/components/PressableScale', () => {
     }),
   };
 });
-
-import ErrorBoundary from '@/src/components/ErrorBoundary';
 
 // Suppress React error boundary console.error noise
 const originalConsoleError = console.error;

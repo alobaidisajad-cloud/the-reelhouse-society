@@ -143,7 +143,7 @@ jest.mock('@/src/stores/auth', () => ({
 
 // ── Access mock internals ───────────────────────────────────────────────────
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
+ 
 const supabaseMock = require('@/src/lib/supabase') as {
   __getExecutionLog: () => string[];
   __resetExecutionLog: () => void;

@@ -9,6 +9,8 @@
 
 import { z } from 'zod';
 
+import { reportValidationTelemetry, validateWithTelemetry } from '../validateWithTelemetry';
+
 // ── Mock captureWarning from sentry lib ──
 const mockCaptureWarning = jest.fn();
 jest.mock('../../lib/sentry', () => ({
@@ -25,8 +27,6 @@ jest.mock('../logger', () => ({
     error: jest.fn(),
   },
 }));
-
-import { reportValidationTelemetry, validateWithTelemetry } from '../validateWithTelemetry';
 
 // ── Test Schema ──
 const TestSchema = z.object({ id: z.string(), name: z.string() });

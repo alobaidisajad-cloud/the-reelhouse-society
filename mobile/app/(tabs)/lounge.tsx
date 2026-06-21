@@ -31,10 +31,10 @@ import { EmptyMyLounges } from '@/src/components/lounge/EmptyMyLounges';
 
 // ── Styles ──
 import { s } from './loungeStyles';
+import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
-import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 
 
 

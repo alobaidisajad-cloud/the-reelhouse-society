@@ -13,6 +13,11 @@
  */
 
 // Reanimated mock with complete Easing (overrides global jest.setup)
+import { render } from '@testing-library/react-native';
+
+import { REPORT_REASON_LABELS, ReportReason } from '@/src/types/moderation';
+import ReportSheet from '../ReportSheet';
+
 jest.mock('react-native-reanimated', () => {
   const React = require('react');
   const { View, Text, ScrollView } = require('react-native');
@@ -73,8 +78,6 @@ jest.mock('react-native-reanimated', () => {
     useReducedMotion: () => false,
   };
 });
-
-import { render } from '@testing-library/react-native';
 
 // Mock gesture handler (native module)
 jest.mock('react-native-gesture-handler', () => {
@@ -138,9 +141,6 @@ jest.mock('@/src/stores/reportStore', () => ({
 jest.mock('@/src/stores/settings', () => ({
   useSettingsStore: { getState: () => ({ tactileAudioEnabled: true }) },
 }));
-
-import { REPORT_REASON_LABELS, ReportReason } from '@/src/types/moderation';
-import ReportSheet from '../ReportSheet';
 
 const defaultProps = {
   visible: true,
