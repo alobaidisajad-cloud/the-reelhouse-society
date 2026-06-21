@@ -299,4 +299,49 @@ describe('mutationExecutor', () => {
             expect(fromCalls).not.toContain('profiles');
         });
     });
+
+    // ── Idempotency: at-least-once delivery for log inserts ──
+    // A 504 / dropped connection after the server already committed gets re-queued
+    // with the SAME client-generated id. On flush the insert collides (23505); the
+    // merge must treat a same-id conflict as a no-op (not a phantom rewatch), while a
+    // genuinely concurrent log (different id) still merges as a rewatch.
+
+    describe('add_log idempotency on same-id duplicate', () => {
+        it('treats a same-id 23505 conflict as a no-op (no phantom rewatch)', async () => {
+            mockChain.maybeSingle
+                // insertLog: insert(...).select('id').maybeSingle() → duplicate
+                .mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } })
+                // handleDuplicateLogMerge: select('*')...maybeSingle() → the already-committed row, SAME id
+                .mockResolvedValueOnce({ data: { id: 'log-ABC', user_id: 'u1', film_id: 42, view_count: 1, viewing_history: [] }, error: null });
+
+            const result = await executeMutation(
+                makeQueuedMutation('add_log', { id: 'log-ABC', user_id: 'u1', film_id: 42, rating: 5 }),
+                {},
+            );
+
+            // No-op: the row is NOT re-written, so view_count is never incremented.
+            expect(mockChain.update).not.toHaveBeenCalled();
+            expect(result).toEqual({});
+        });
+
+        it('still merges a genuinely concurrent log (different id) as a rewatch', async () => {
+            mockChain.maybeSingle
+                .mockResolvedValueOnce({ data: null, error: { code: '23505', message: 'duplicate key value violates unique constraint' } })
+                // Existing row was created on another device — DIFFERENT id
+                .mockResolvedValueOnce({ data: { id: 'log-OLD', user_id: 'u1', film_id: 42, view_count: 1, viewing_history: [] }, error: null });
+
+            const result = await executeMutation(
+                makeQueuedMutation('add_log', { id: 'log-NEW', user_id: 'u1', film_id: 42, rating: 5 }),
+                {},
+            );
+
+            // Rewatch merge: row is updated with an archived history entry + bumped count.
+            expect(mockChain.update).toHaveBeenCalledTimes(1);
+            const updatePayload = (mockChain.update as jest.Mock).mock.calls[0][0];
+            expect(updatePayload.view_count).toBe(2);
+            expect(Array.isArray(updatePayload.viewing_history)).toBe(true);
+            expect(updatePayload.viewing_history).toHaveLength(1);
+            expect(result).toEqual({});
+        });
+    });
 });

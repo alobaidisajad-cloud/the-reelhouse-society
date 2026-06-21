@@ -43,6 +43,19 @@ const handleDuplicateLogMerge = async (error: any, dbPayload: any, _fakeId?: str
         const existing = await supabase.from('logs').select('*').eq('user_id', dbPayload.user_id).eq('film_id', dbPayload.film_id).maybeSingle();
         if (existing.data) {
             const existingData = existing.data;
+
+            // Idempotency guard for at-least-once delivery.
+            // If the conflicting row shares this mutation's client-generated id, the
+            // original insert already committed and only its response was lost (e.g. a
+            // 504 / dropped connection misread as a network failure, then re-queued with
+            // the SAME id). This is the exact same operation — treat it as a no-op rather
+            // than archiving the row into its own viewing_history and inflating view_count
+            // (a phantom rewatch). A genuinely concurrent log has a DIFFERENT id and still
+            // falls through to the rewatch merge below.
+            if (existingData.id === dbPayload.id) {
+                return _fakeId ? { newId: existingData.id, fakeId: _fakeId as string } : {};
+            }
+
             const oldHistory = Array.isArray(existingData.viewing_history) ? existingData.viewing_history : [];
             const archivedEntry = {
                 date: existingData.watched_date ?? existingData.created_at ?? new Date().toISOString(),

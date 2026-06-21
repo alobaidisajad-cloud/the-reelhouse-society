@@ -1,9 +1,27 @@
+// HTML entity-encode every dynamic value before interpolation.
+// Covers attribute and text contexts (escapes & < > " ').
+function escapeHtml(value) {
+    return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 export default async function handler(req, res) {
-    const { type, id } = req.query;
-    
+    // ── Strict input validation ──
+    // `type` and `id` are client-controlled and get reflected into the HTML
+    // response served from the app origin. Allowlist them so nothing
+    // unexpected is ever reflected: `type` must be a known route, `id` must be
+    // a positive integer (TMDB ids are always numeric). Anything else degrades
+    // to the safe generic card instead of echoing raw input.
+    const type = (req.query.type === 'film' || req.query.type === 'person') ? req.query.type : null;
+    const id = /^\d+$/.test(String(req.query.id ?? '')) ? String(req.query.id) : null;
+
     // Automatically pick up Vercel environment variables injected during the build
     const token = process.env.VITE_TMDB_READ_URL; // Using Bearer if present
-    const apiKey = process.env.VITE_TMDB_API_KEY; 
+    const apiKey = process.env.VITE_TMDB_API_KEY;
 
     const options = {
         method: 'GET',
@@ -12,29 +30,30 @@ export default async function handler(req, res) {
             ...(token ? { Authorization: `Bearer ${token}` } : {})
         }
     };
-    
+
     let title = 'ReelHouse';
     let description = 'Discover, log, and review your cinematic life.';
     let imageUrl = 'https://thereelhouse.io/icon-512.png'; // High-res fallback logo
-    let url = `https://thereelhouse.io/${type}/${id}`;
+    // url is built ONLY from validated values — never from raw query input.
+    let url = (type && id) ? `https://thereelhouse.io/${type}/${id}` : 'https://thereelhouse.io';
     let isFound = false;
 
-    // TMDB Interceptor
+    // TMDB Interceptor — only runs for validated type+id
     try {
         if (type === 'film' && id) {
-            const endpoint = apiKey 
+            const endpoint = apiKey
                 ? `https://api.themoviedb.org/3/movie/${id}?api_key=${apiKey}&language=en-US`
                 : `https://api.themoviedb.org/3/movie/${id}?language=en-US`;
-                
+
             const tmdbRes = await fetch(endpoint, options);
             const data = await tmdbRes.json();
-            
+
             if (data.title) {
                 isFound = true;
                 const year = data.release_date ? data.release_date.split('-')[0] : '';
                 title = `${data.title} ${year ? `(${year})` : ''} — ReelHouse`;
                 description = data.overview || description;
-                
+
                 // Prioritize the gorgeous 16:9 Backdrop for Twitter/Discord cards
                 if (data.backdrop_path) {
                     imageUrl = `https://image.tmdb.org/t/p/w1280${data.backdrop_path}`;
@@ -42,15 +61,15 @@ export default async function handler(req, res) {
                     imageUrl = `https://image.tmdb.org/t/p/w780${data.poster_path}`;
                 }
             }
-        } 
+        }
         else if (type === 'person' && id) {
-            const endpoint = apiKey 
+            const endpoint = apiKey
                 ? `https://api.themoviedb.org/3/person/${id}?api_key=${apiKey}&language=en-US`
                 : `https://api.themoviedb.org/3/person/${id}?language=en-US`;
 
             const tmdbRes = await fetch(endpoint, options);
             const data = await tmdbRes.json();
-            
+
             if (data.name) {
                 isFound = true;
                 title = `${data.name} on ReelHouse`;
@@ -68,40 +87,49 @@ export default async function handler(req, res) {
         title = 'ReelHouse | The Cinema Society';
     }
 
+    // ── Escape EVERY dynamic value at the sink ──
+    // Both client-derived (url) and third-party (TMDB title/overview/name/bio,
+    // which is community-editable) content is entity-encoded. There is no
+    // unescaped interpolation path below.
+    const safeTitle = escapeHtml(title);
+    const safeDescription = escapeHtml(description);
+    const safeImageUrl = escapeHtml(imageUrl);
+    const safeUrl = escapeHtml(url);
+
     // Generate raw HTML with injected OG meta tags
     const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${title}</title>
-    <meta name="description" content="${description.replace(/"/g, '&quot;')}">
-    
+    <title>${safeTitle}</title>
+    <meta name="description" content="${safeDescription}">
+
     <!-- Open Graph / Facebook / iMessage -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="${url}">
-    <meta property="og:title" content="${title.replace(/"/g, '&quot;')}">
-    <meta property="og:description" content="${description.replace(/"/g, '&quot;')}">
-    <meta property="og:image" content="${imageUrl}">
+    <meta property="og:url" content="${safeUrl}">
+    <meta property="og:title" content="${safeTitle}">
+    <meta property="og:description" content="${safeDescription}">
+    <meta property="og:image" content="${safeImageUrl}">
 
     <!-- Twitter / Discord / Slack -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="${url}">
-    <meta property="twitter:title" content="${title.replace(/"/g, '&quot;')}">
-    <meta property="twitter:description" content="${description.replace(/"/g, '&quot;')}">
-    <meta property="twitter:image" content="${imageUrl}">
+    <meta property="twitter:url" content="${safeUrl}">
+    <meta property="twitter:title" content="${safeTitle}">
+    <meta property="twitter:description" content="${safeDescription}">
+    <meta property="twitter:image" content="${safeImageUrl}">
 </head>
 <body>
-    <h1>${title}</h1>
-    <p>${description}</p>
-    <img src="${imageUrl}" alt="Preview" />
+    <h1>${safeTitle}</h1>
+    <p>${safeDescription}</p>
+    <img src="${safeImageUrl}" alt="Preview" />
 </body>
 </html>`;
 
     // Emit Header Directives
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     // Cache the dynamic HTML at the Vercel CDN Edge for 7 DAYS to protect against viral social scrapers/DDoS
-    res.setHeader('Cache-Control', 'public, s-maxage=604800, stale-while-revalidate=86400'); 
-    
+    res.setHeader('Cache-Control', 'public, s-maxage=604800, stale-while-revalidate=86400');
+
     res.status(200).send(html);
 }
