@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, memo } from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import Animated, { 
     useSharedValue, 
@@ -6,8 +6,6 @@ import Animated, {
     withRepeat, 
     withSequence, 
     withTiming, 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    withDelay,
     Easing 
 } from 'react-native-reanimated';
 import Svg, { Path, Ellipse, Circle, Rect, G } from 'react-native-svg';
@@ -32,13 +30,18 @@ function clockMood(): BusterMood {
     return 'thinking';                                   // Late night: contemplating cinema
 }
 
-export default function Buster({ size = 120, message, mood, style }: BusterProps) {
+const busterColors = {
+    body: '#E8DFC8',
+    eyes: '#0A0703',
+    mouth: '#0A0703',
+    tear: '#8B6914',
+};
+
+export default memo(function Buster({ size = 120, message, mood, style }: BusterProps) {
     const activeMood = mood ?? clockMood();
     const floatY = useSharedValue(0);
-    const blinkScale = useSharedValue(1);
-    const blinkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Floating animation + organic blink chain
+    // Floating animation
     useEffect(() => {
         floatY.value = withRepeat(
             withSequence(
@@ -48,24 +51,6 @@ export default function Buster({ size = 120, message, mood, style }: BusterProps
             -1, // Loop forever
             true
         );
-
-        // Blinking logic — organic interval (skip for sleeping)
-        if (activeMood !== 'sleeping') {
-            const blink = () => {
-                blinkScale.value = withSequence(
-                    withTiming(0.1, { duration: 100 }),
-                    withTiming(1, { duration: 100 })
-                );
-                const nextBlink = Math.random() * 5000 + 3000;
-                blinkTimerRef.current = setTimeout(blink, nextBlink);
-            };
-            blinkTimerRef.current = setTimeout(blink, 2000);
-        }
-
-        // AUDIT FIX #2: Clear recursive blink timer on unmount to prevent timer heap leak
-        return () => {
-            if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
-        };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -73,12 +58,6 @@ export default function Buster({ size = 120, message, mood, style }: BusterProps
         transform: [{ translateY: floatY.value }],
     }));
 
-    const busterColors = {
-        body: '#E8DFC8',
-        eyes: '#0A0703',
-        mouth: '#0A0703',
-        tear: '#8B6914',
-    };
 
     const renderMoodFace = () => {
         switch (activeMood) {
@@ -212,7 +191,7 @@ export default function Buster({ size = 120, message, mood, style }: BusterProps
             )}
         </View>
     );
-}
+});
 
 const s = StyleSheet.create({
     container: { alignItems: 'center', justifyContent: 'center' },

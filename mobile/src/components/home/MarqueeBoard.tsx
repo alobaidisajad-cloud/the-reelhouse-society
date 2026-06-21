@@ -7,7 +7,7 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
   useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, withDelay,
-  Easing, interpolate, Extrapolation, cancelAnimation
+  Easing, interpolate, Extrapolation, cancelAnimation, useAnimatedReaction, runOnJS, useReducedMotion
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
@@ -25,8 +25,13 @@ const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 // ── MARQUEE BULB ──
 const MarqueeBulb = memo(function MarqueeBulb({ index }: { index: number }) {
   const glow = useSharedValue(0.6);
+  const reducedMotion = useReducedMotion();
   
   useEffect(() => {
+    if (reducedMotion) {
+      glow.value = 1;
+      return;
+    }
     const duration = 2500 + ((index * 750) % 2000); 
     const minGlow = 0.5 + ((index * 0.1) % 0.3);
     
@@ -68,8 +73,13 @@ export const MarqueeBulbRow = memo(function MarqueeBulbRow({ count = 12 }: { cou
 // ── TUNGSTEN IGNITION (Loading State) ──
 const TungstenIgnition = memo(function TungstenIgnition() {
   const flicker = useSharedValue(0.1);
+  const reducedMotion = useReducedMotion();
   
   useEffect(() => {
+    if (reducedMotion) {
+      flicker.value = 0.8;
+      return;
+    }
     flicker.value = withRepeat(
       withSequence(
         withTiming(0.8, { duration: 50, easing: Easing.linear }),
@@ -84,15 +94,14 @@ const TungstenIgnition = memo(function TungstenIgnition() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  useEffect(() => {
-     const interval = setInterval(() => {
-         if (flicker.value > 0.5) {
-             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-         }
-     }, 400); 
-     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useAnimatedReaction(
+    () => flicker.value > 0.5,
+    (isHigh, wasHigh) => {
+      if (isHigh && !wasHigh) {
+        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+      }
+    }
+  );
 
   const animStyle = useAnimatedStyle(() => ({ opacity: flicker.value }));
 
@@ -110,9 +119,14 @@ const TungstenIgnition = memo(function TungstenIgnition() {
 export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFilm | null }) {
   const router = useRouter();
   const [localCount, setLocalCount] = useState(0);
+  const reducedMotion = useReducedMotion();
 
   const kenBurns = useSharedValue(1);
   useEffect(() => {
+    if (reducedMotion) {
+      kenBurns.value = 1;
+      return;
+    }
     if (film) {
       kenBurns.value = withRepeat(
          withSequence(
@@ -157,7 +171,7 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
   return (
     <PressableScale
       style={s.marqueeShell}
-      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push(`/film/${film.id}` as any); }}
+      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); (router.push as any)(`/film/${film.id}` as any); }}
     >
       <MarqueeBulbRow count={8} />
 

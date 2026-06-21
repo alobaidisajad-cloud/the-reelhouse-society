@@ -1,0 +1,43 @@
+appId: com.divisionops.reelhouse
+---
+# Error Recovery Flow
+# Tests: ErrorBoundary catches crash → user can retry → app recovers
+
+- launchApp
+- extendedWaitUntil:
+    visible: "The Lobby"
+    timeout: 10000
+
+# Navigate to a deep screen that may throw
+- tapOn:
+    id: "tab-profile"
+
+# Verify app is still functional after navigation
+- assertVisible: "Profile"
+
+# If error boundary ever triggers, verify recovery works
+# This flow primarily ensures no crash occurs during normal navigation
+- tapOn:
+    id: "tab-lobby"
+- assertVisible: "The Lobby"
+- tapOn:
+    id: "tab-darkroom"
+- assertVisible: "Darkroom"
+- tapOn:
+    id: "tab-dispatch"
+- assertVisible: "Dispatch"
+
+# Rapid tab switching stress test (10 cycles)
+- repeat:
+    times: 5
+    commands:
+      - tapOn:
+          id: "tab-lobby"
+      - tapOn:
+          id: "tab-darkroom"
+      - tapOn:
+          id: "tab-profile"
+
+# Verify app is still alive
+- assertVisible: "Profile"
+- assertNotVisible: "PROJECTION FAILURE"

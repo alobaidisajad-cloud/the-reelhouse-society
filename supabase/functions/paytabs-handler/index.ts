@@ -150,7 +150,10 @@ serve(async (req) => {
                     const tier = parts[2]
                     const newRole = tier === 'founding' ? 'auteur' : (amount >= 4.99 ? 'auteur' : 'archivist')
                     
-                    const { error } = await supabaseAdmin.from('profiles').update({ role: newRole }).eq('id', userId)
+                    const updatePayload: Record<string, unknown> = { role: newRole }
+                    if (tier === 'founding') updatePayload.is_founding = true
+
+                    const { error } = await supabaseAdmin.from('profiles').update(updatePayload).eq('id', userId)
                     if (error) console.error('Error auto-upgrading user role:', error)
                     else console.log(`✅ IPN Success: User ${userId} upgraded to ${newRole}`)
                 }

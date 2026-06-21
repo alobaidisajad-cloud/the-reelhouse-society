@@ -26,7 +26,7 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
       withSequence(
         withTiming(-0.1, { duration: 12000, easing: Easing.inOut(Easing.sin) }),
         withTiming(0.1, { duration: 12000, easing: Easing.inOut(Easing.sin) })
-      ), 20, true
+      ), -1, true
     );
     flicker.value = withRepeat(
       withSequence(
@@ -35,7 +35,7 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
         withTiming(0.95, { duration: 250 }),
         withTiming(0.7, { duration: 50 }),
         withTiming(0.9, { duration: 1200 }),
-      ), 20, false
+      ), -1, false
     );
     return () => { cancelAnimation(beamSwing); cancelAnimation(flicker); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -43,10 +43,8 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
 
   const style = useAnimatedStyle(() => {
     // Mathematical GPU Culling: Disable beam layer opacity entirely when scrolled far down
-    if (scrollY.value > 600) return { opacity: 0 };
-    
     return {
-      opacity: flicker.value * Math.max(0, 1 - (scrollY.value / 600)),
+      opacity: scrollY.value > 600 ? 0 : flicker.value * Math.min(1, Math.max(0, 1 - (scrollY.value / 600))),
       transform: [
         { perspective: 400 },
         { rotateX: '55deg' },
@@ -75,7 +73,7 @@ export const FilterChip = memo(function FilterChip({ label, active, onPress }: {
   const pulse = useSharedValue(0);
   useEffect(() => {
     if (active) {
-      pulse.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }), 20, true);
+      pulse.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }), -1, true);
     } else {
       pulse.value = 0;
     }
@@ -116,9 +114,10 @@ const PRESET_GRADIENTS: readonly [string, string, ...string[]][] = [
 
 export const StackCard = memo(function StackCard({ stack, onPress }: { stack: StackData; onPress: () => void }) {
   const posters = (stack.films ?? []).filter((f: StackFilm) => f.poster_path).slice(0, 3);
-  const refCode = stack.id ? `REF: ${stack.id.slice(0, 4).toUpperCase()}` : 'REF: 0000';
+  const stackIdStr = stack.id ? String(stack.id) : '';
+  const refCode = stackIdStr ? `REF: ${stackIdStr.slice(0, 4).toUpperCase()}` : 'REF: 0000';
   
-  const hash = stack.id ? stack.id.charCodeAt(0) : 0;
+  const hash = stackIdStr ? stackIdStr.charCodeAt(0) : 0;
   const gradientColors = PRESET_GRADIENTS[Math.abs(hash) % PRESET_GRADIENTS.length];
 
   return (
@@ -163,7 +162,9 @@ export const StackCard = memo(function StackCard({ stack, onPress }: { stack: St
 
       <View style={st.stackCardContent}>
         <View style={st.stackCardMetaRow}>
-          <Text style={st.stackCardBadgeText}>{stack.count ?? 0} FILMS</Text>
+          <Text style={st.stackCardBadgeText}>
+            {(stack.count ?? 0)} {(stack.count ?? 0) === 1 ? 'FILM' : 'FILMS'}
+          </Text>
           {stack.isRanked && (
             <Text style={[st.stackCertifyText, { color: colors.sepia }]}>✦ RANKED</Text>
           )}
@@ -193,7 +194,7 @@ export const BrassSheen = memo(() => {
     useEffect(() => {
        sheen.value = withRepeat(
          withTiming(2, { duration: 4000, easing: Easing.inOut(Easing.quad) }),
-         30, false
+         -1, false
        );
        return () => cancelAnimation(sheen);
     // eslint-disable-next-line react-hooks/exhaustive-deps

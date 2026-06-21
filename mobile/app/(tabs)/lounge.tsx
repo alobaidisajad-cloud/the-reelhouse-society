@@ -1,458 +1,42 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
-  View, Text, StyleSheet, ScrollView, TextInput,
-  Modal, Platform, Switch, Keyboard,
+  View, Text, ScrollView, TextInput,
   RefreshControl, ActivityIndicator, AppState,
 } from 'react-native';
-import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
-import { useRouter } from 'expo-router';
 import Animated, {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  FadeInDown, FadeIn, FadeInUp, SlideInDown, SlideOutDown,
-  useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing, cancelAnimation, useAnimatedProps, SharedValue, runOnJS, useAnimatedKeyboard
+  FadeInDown, FadeIn, FadeInUp,
+  useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing, cancelAnimation, useAnimatedProps, useAnimatedScrollHandler,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { BlurView } from 'expo-blur';
-import { LinearGradient } from 'expo-linear-gradient';
-import Svg, { Path, Rect, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import * as Haptics from 'expo-haptics';
-import {
-  Search, Plus, Lock, Users, Globe, X, MessageCircle,
-  Sparkles, ChevronRight, Film as FilmIcon, Eye,
-} from 'lucide-react-native';
+import { Search, Plus, Globe, X, Eye } from 'lucide-react-native';
+import { useFocusEffect } from 'expo-router';
+import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
 import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
-import { tmdb } from '@/src/lib/tmdb';
+import { isArchivistPlusTier } from '@/src/utils/tier';
+import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
+// Import deleted since it's replaced by CinematicFlashList below
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+// ── Extracted components ──
+import { PulseContext } from '@/src/components/lounge/PulseContext';
+import { LoungeGate } from '@/src/components/lounge/LoungeGate';
+import { CreateLoungeSheet } from '@/src/components/lounge/CreateLoungeSheet';
+import { JoinedLoungeCard } from '@/src/components/lounge/JoinedLoungeCard';
+import { PublicLoungeCard } from '@/src/components/lounge/PublicLoungeCard';
+import { EmptyMyLounges } from '@/src/components/lounge/EmptyMyLounges';
+
+// ── Styles ──
+import { s } from './loungeStyles';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
+import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 
 
-
-// F-09 FIX: Shared pulse animation context — single driver for all cards
-const PulseContext = React.createContext<{ pulse: SharedValue<number>, isScrolling: SharedValue<boolean> } | null>(null);
-function usePulse() {
-  return React.useContext(PulseContext);
-}
-
-
-
-// ════════════════════════════════════════════════════════════
-// ORNAMENTAL DIVIDER — Cinematic rules with center motif
-// ════════════════════════════════════════════════════════════
-function OrnamentalRule() {
-  return (
-    <View style={s.ornRule}>
-      <Svg width="100%" height="12" viewBox="0 0 300 12" preserveAspectRatio="none">
-        <Defs>
-          <SvgLinearGradient id="g-lounge" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0" stopColor={colors.sepia} stopOpacity="0" />
-            <Stop offset="0.3" stopColor={colors.sepia} stopOpacity="0.4" />
-            <Stop offset="0.5" stopColor={colors.sepia} stopOpacity="0.8" />
-            <Stop offset="0.7" stopColor={colors.sepia} stopOpacity="0.4" />
-            <Stop offset="1" stopColor={colors.sepia} stopOpacity="0" />
-          </SvgLinearGradient>
-        </Defs>
-        <Rect x="0" y="5.5" width="300" height="0.5" fill="url(#g-lounge)" />
-        <Path d="M150 0 L156 6 L150 12 L144 6 Z" fill={colors.sepia} opacity="0.8" />
-        <Path d="M135 4 L139 6 L135 8 L131 6 Z" fill={colors.sepia} opacity="0.4" />
-        <Path d="M165 4 L169 6 L165 8 L161 6 Z" fill={colors.sepia} opacity="0.4" />
-      </Svg>
-    </View>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
-// BREATHING GLOW — Subtle ambient pulse on the header crest
-// ════════════════════════════════════════════════════════════
-function CrestGlow() {
-  const glow = useSharedValue(0.1);
-
-  useEffect(() => {
-    // Round 6: Removed infinite loop to allow UI thread idling
-    glow.value = withTiming(0.9, { duration: 1500, easing: Easing.inOut(Easing.ease) });
-    return () => cancelAnimation(glow);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const glowStyle = useAnimatedStyle(() => ({
-    opacity: glow.value,
-  }));
-
-  return (
-    <Animated.View style={[s.crestGlow, glowStyle]}>
-      <View style={s.crestGlowInner} />
-    </Animated.View>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
-// LOUNGE GATE — Members-only velvet rope
-// ════════════════════════════════════════════════════════════
-function LoungeGate() {
-  const router = useRouter();
-  return (
-    <FrozenTab>
-    <View style={s.gateContainer}>
-      <Animated.View entering={FadeInDown.duration(900).delay(200)} style={s.gateCard}>
-        {/* Crest */}
-        <View style={s.gateCrestWrap}>
-          <CrestGlow />
-          <View style={s.gateCrest}>
-            <Eye size={28} color={colors.sepia} strokeWidth={1} />
-          </View>
-        </View>
-
-        <Text style={s.gateTitle} accessibilityRole="header">The Lounge</Text>
-        <Text style={s.gateEst}>EST. 1924</Text>
-        <OrnamentalRule />
-
-        <Text style={[s.gateSub, { fontFamily: fonts.mono, letterSpacing: 4 }]}>[ CLEARANCE REQUIRED ]</Text>
-
-        <Text style={s.gateDesc}>
-          Beyond this door lies The Lounge — intimate cinema
-          salons where the devoted gather to discuss, debate,
-          and discover. Private screening rooms. Whispered
-          critiques. {"\n\n"}A place where cinema lives between the frames,
-          and every conversation is a love letter to the art.
-        </Text>
-
-        <PressableScale
-          style={s.gateCta}
-          onPress={() => router.push('/membership' as any)}
-          haptic="medium"
-          accessibilityRole="button" accessibilityLabel="Become an Archivist to access The Lounge"
-        >
-          <Sparkles size={11} color={colors.ink} strokeWidth={2} />
-          <Text style={s.gateCtaText} numberOfLines={1}>BECOME AN ARCHIVIST</Text>
-        </PressableScale>
-
-        <Text style={s.gateFootnote}>
-          PRIVATE SCREENING ROOMS / PUBLIC SALONS / CINEMA DISCOURSE
-        </Text>
-      </Animated.View>
-    </View>
-    </FrozenTab>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
-// CREATE LOUNGE SHEET
-// ════════════════════════════════════════════════════════════
-function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onClose: () => void }) {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [creating, setCreating] = useState(false);
-  const createLounge = useLoungeStore(s => s.createLounge);
-
-  const handleCreate = async () => {
-    if (!name.trim()) return;
-    setCreating(true);
-    const id = await createLounge(name.trim(), description.trim(), isPrivate);
-    setCreating(false);
-    if (id) {
-      setName('');
-      setDescription('');
-      setIsPrivate(false);
-      onClose();
-      router.push(`/lounge/${id}` as any);
-    }
-  };
-
-  const translateY = useSharedValue(0);
-
-  const keyboard = useAnimatedKeyboard();
-  const animatedContainerStyle = useAnimatedStyle(() => ({
-    paddingBottom: keyboard.height.value,
-  }));
-
-  // Reset translateY when opened
-  useEffect(() => {
-    if (visible) translateY.value = 0;
-  }, [visible, translateY]);
-
-  const pan = Gesture.Pan()
-    .onChange((e) => {
-      if (e.translationY > 0) translateY.value = e.translationY;
-    })
-    .onEnd((e) => {
-      if (e.translationY > 100 || e.velocityY > 500) {
-        runOnJS(onClose)();
-      } else {
-        translateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
-      }
-    });
-
-  if (!visible) return null;
-
-  return (
-    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-      <Animated.View style={[s.sheetKeyboard, animatedContainerStyle]}>
-        <BlurView intensity={90} tint="dark" style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(5,3,1,0.6)' }]}>
-          <PressableScale style={s.sheetBackdrop} onPress={() => { Keyboard.dismiss(); onClose(); }} />
-        </BlurView>
-
-        <GestureDetector gesture={pan}>
-          <Animated.View 
-            entering={SlideInDown.duration(350).easing(Easing.out(Easing.cubic))} 
-            exiting={SlideOutDown.duration(250)} 
-            style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 24), transform: [{ translateY }] }]}
-          >
-          <View style={s.sheetHandle} />
-
-          <View style={s.sheetHeaderWrap}>
-            <Text style={s.sheetEyebrow}>[ SUBMIT DESK LEDGER ]</Text>
-            <Text style={s.sheetTitle}>Establish Parameter</Text>
-          </View>
-
-          <View style={s.field}>
-            <Text style={s.fieldLabel}>LOUNGE NAME</Text>
-            <TextInput
-              style={s.fieldInput}
-              placeholder="e.g., The Noir Corner..."
-              placeholderTextColor={colors.fog}
-              value={name}
-              onChangeText={setName}
-              maxLength={60}
-              selectionColor={colors.sepia}
-              keyboardAppearance="dark"
-              accessibilityLabel="Salon name"
-            />
-            <Text style={s.fieldCharCount}>{name.length}/60</Text>
-          </View>
-
-          <View style={s.field}>
-            <Text style={s.fieldLabel}>DESCRIPTION</Text>
-            <TextInput
-              style={[s.fieldInput, s.fieldTextarea]}
-              placeholder="What kind of cinema lovers belong here?"
-              placeholderTextColor={colors.fog}
-              value={description}
-              onChangeText={setDescription}
-              maxLength={300}
-              multiline
-              selectionColor={colors.sepia}
-              keyboardAppearance="dark"
-              accessibilityLabel="Salon description"
-            />
-            <Text style={s.fieldCharCount}>{description.length}/300</Text>
-          </View>
-
-          <View style={s.toggleRow}>
-            <View style={s.toggleInfo}>
-              <View style={s.toggleLabelRow}>
-                {isPrivate
-                  ? <Lock size={12} color={colors.sepia} strokeWidth={1.5} />
-                  : <Globe size={12} color={colors.fog} strokeWidth={1.5} />
-                }
-                <Text style={s.toggleLabel}>
-                  {isPrivate ? 'PRIVATE SCREENING ROOM' : 'PUBLIC SALON'}
-                </Text>
-              </View>
-              <Text style={s.toggleDesc}>
-                {isPrivate ? 'Invite-only via code' : 'Anyone with Archivist+ can join'}
-              </Text>
-            </View>
-            <Switch
-              value={isPrivate}
-              onValueChange={(val) => { Haptics.selectionAsync(); setIsPrivate(val); }}
-              trackColor={{ false: colors.ash, true: colors.sepia }}
-              thumbColor={colors.parchment}
-              ios_backgroundColor={colors.ash}
-            />
-          </View>
-
-          <View style={s.sheetActions}>
-            <PressableScale style={s.sheetBtnGhost} onPress={onClose} disabled={creating} haptic="selection">
-              <Text style={s.sheetBtnGhostText} numberOfLines={1}>[ ABORT ]</Text>
-            </PressableScale>
-            <PressableScale
-              style={[s.sheetBtnPrimary, (!name.trim() || creating) && s.sheetBtnDisabled]}
-              onPress={handleCreate}
-              disabled={!name.trim() || creating}
-              haptic="medium"
-            >
-              {creating
-                ? <ActivityIndicator size="small" color={colors.ink} />
-                : <Text style={s.sheetBtnPrimaryText} numberOfLines={1}>[ INITIATE ]</Text>
-              }
-            </PressableScale>
-          </View>
-          </Animated.View>
-        </GestureDetector>
-      </Animated.View>
-    </Modal>
-  );
-}
-
-// ════════════════════════════════════════════════════════════
-// JOINED LOUNGE CARD — Premium horizontal poster card
-// ════════════════════════════════════════════════════════════
-const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; index: number }) => {
-  const router = useRouter();
-  const ctx = usePulse();
-
-  const pulseStyle = useAnimatedStyle(() => ({ 
-    opacity: ctx?.isScrolling.value ? 1 : (ctx?.pulse.value ?? 0.7) 
-  }));
-
-  const coverUrl = lounge.cover_image
-    ? tmdb.backdrop(lounge.cover_image, 'w500')
-    : null;
-  const hasUnread = Boolean(lounge.unread_count && lounge.unread_count > 0);
-
-  return (
-    <View>
-      <PressableScale
-        style={s.joinedCard}
-        onPress={() => router.push(`/lounge/${lounge.id}` as any)}
-        haptic="light"
-        accessibilityRole="button"
-        accessibilityLabel={`Enter screening room ${lounge.name}`}
-      >
-        {/* Cover or atmospheric placeholder */}
-        <View style={s.joinedImgWrap}>
-          {coverUrl ? (
-            <Image source={{ uri: coverUrl }} style={s.joinedImg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
-          ) : (
-            <LinearGradient
-              colors={['rgba(196,150,26,0.06)', 'rgba(11,10,8,0.95)']}
-              style={s.joinedImgPlaceholder}
-            >
-              <FilmIcon size={22} color={colors.sepia} strokeWidth={1} />
-            </LinearGradient>
-          )}
-
-          {/* Cinematic gradient overlay */}
-          <LinearGradient
-            colors={['transparent', 'rgba(11,10,8,0.85)']}
-            style={s.joinedGradient}
-          />
-
-          {/* Unread pulse */}
-          {hasUnread && <Animated.View style={[s.unreadDot, pulseStyle]} />}
-
-          {/* Embedded name overlay */}
-          <View style={s.joinedNameOverlay}>
-            <Text style={s.joinedNameText} numberOfLines={2}>{lounge.name}</Text>
-            <View style={s.joinedMetaRow}>
-              <Users size={10} color={colors.fog} strokeWidth={1.5} />
-              <Text style={s.joinedMetaText} numberOfLines={1}>
-                {lounge.member_count || 0}
-              </Text>
-              {lounge.is_private && (
-                <>
-                  <View style={s.joinedMetaLine} />
-                  <Lock size={10} color={colors.sepia} strokeWidth={1.5} />
-                </>
-              )}
-            </View>
-          </View>
-        </View>
-      </PressableScale>
-    </View>
-  );
-});
-JoinedLoungeCard.displayName = 'JoinedLoungeCard';
-
-// ════════════════════════════════════════════════════════════
-// PUBLIC LOUNGE CARD — Cinematic list entry
-// ════════════════════════════════════════════════════════════
-const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeRoom; index: number }) => {
-  const router = useRouter();
-  const ctx = usePulse();
-
-  const pulseStyle = useAnimatedStyle(() => ({ 
-    opacity: ctx?.isScrolling.value ? 1 : (ctx?.pulse.value ?? 0.7) 
-  }));
-
-  const coverUrl = lounge.cover_image
-    ? tmdb.backdrop(lounge.cover_image, 'w500')
-    : null;
-
-  return (
-    <View>
-      <PressableScale
-        style={s.publicCard}
-        onPress={() => router.push(`/lounge/${lounge.id}` as any)}
-        haptic="light"
-        accessibilityRole="button"
-        accessibilityLabel={`Enter salon ${lounge.name}${lounge.is_private ? ', approval required' : ''}`}
-      >
-        <View style={s.publicAccentBar} />
-        
-        {coverUrl && (
-          <View style={s.publicImgTop}>
-            <Image source={{ uri: coverUrl }} style={s.publicImgContent} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
-            <LinearGradient
-              colors={['transparent', 'rgba(255,255,255,0.015)']}
-              style={StyleSheet.absoluteFillObject}
-            />
-          </View>
-        )}
-
-        <View style={s.publicBody}>
-          <Text style={s.publicName} numberOfLines={2}>{lounge.name}</Text>
-          {lounge.is_private && (
-            <View style={s.publicPrivateBadge}>
-              <Lock size={10} color={colors.sepia} strokeWidth={1.5} />
-              <Text style={s.publicPrivateText}>APPROVAL REQUIRED</Text>
-            </View>
-          )}
-          <Text style={s.publicDesc} numberOfLines={3}>
-            {lounge.description || 'A cinematic gathering place.'}
-          </Text>
-          
-          <View style={s.publicFooter}>
-            <View style={s.publicMetaRow}>
-              <Users size={12} color={colors.fog} strokeWidth={1.5} />
-              <Text style={s.publicMetaText} numberOfLines={1}>{lounge.member_count || 0} SEATS TAKEN</Text>
-            </View>
-            <View style={s.publicEnterTag}>
-              {!lounge.is_private && <Animated.View style={[s.liveIndicator, pulseStyle]} />}
-              <Text style={[s.publicEnterText, { flexShrink: 1 }]} numberOfLines={1}>
-                {lounge.is_private ? '[ REQUEST INTELLIGENCE ]' : '[ GRANT ACCESS ]'}
-              </Text>
-              {lounge.is_private 
-                ? <Lock size={12} color={colors.sepia} strokeWidth={2} />
-                : <ChevronRight size={12} color={colors.sepia} strokeWidth={2} />
-              }
-            </View>
-          </View>
-        </View>
-      </PressableScale>
-    </View>
-  );
-});
-PublicLoungeCard.displayName = 'PublicLoungeCard';
-
-// ════════════════════════════════════════════════════════════
-// EMPTY STATE — "The Velvet Seats Await"
-// ════════════════════════════════════════════════════════════
-function EmptyMyLounges() {
-  return (
-    <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.emptyHero}>
-      <View style={s.emptyCrestWrap}>
-        <MessageCircle size={32} color={colors.sepia} strokeWidth={1} />
-      </View>
-      <Text style={s.emptyTitle}>The Velvet Seats Await</Text>
-      <OrnamentalRule />
-      <Text style={s.emptyDesc}>
-        Every great filmmaker started with a conversation.{'\n'}
-        Open your own screening room or take a seat{'\n'}
-        in a public salon below.
-      </Text>
-    </Animated.View>
-  );
-}
 
 // ════════════════════════════════════════════════════════════
 // MAIN LOUNGE SCREEN
@@ -469,7 +53,7 @@ export default function LoungeScreen() {
   const [joining, setJoining] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const isArchivist = user?.role === 'archivist' || user?.role === 'auteur';
+  const isArchivist = isArchivistPlusTier(user);
   const isPollingRef = useRef(false);
 
   // Nitrate Noir Search Activity State
@@ -494,7 +78,7 @@ export default function LoungeScreen() {
     setSearchQuery(text);
   }, []);
 
-  // F-08 FIX: AppState-aware polling — pauses when app is backgrounded
+  // AppState-aware polling — pauses when app is backgrounded
   useEffect(() => {
     if (!isAuthenticated || !isArchivist) return;
     fetchLounges();
@@ -525,7 +109,7 @@ export default function LoungeScreen() {
     };
   }, [isAuthenticated, isArchivist, fetchLounges]);
 
-  // S3-05 FIX: fetchLounges is a stable zustand selector — safe to include in deps
+  // fetchLounges is a stable zustand selector — safe to include in deps
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchLounges();
@@ -553,12 +137,43 @@ export default function LoungeScreen() {
     };
   }, [lounges, searchQuery]);
 
-  // F-09 FIX: Single shared pulse animation for all cards
+  // Single shared pulse animation for all cards
   const sharedPulse = useSharedValue(0.4);
   const isScrolling = useSharedValue(false);
 
+  const scrollY = useSharedValue(0);
+  const scrollHeight = useSharedValue(0);
+  const viewHeight = useSharedValue(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      globalScrollY.value = withTiming(scrollY.value, { duration: 250 });
+    }, [scrollY])
+  );
+
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+      globalScrollY.value = event.contentOffset.y;
+      scrollHeight.value = event.contentSize.height;
+      viewHeight.value = event.layoutMeasurement.height;
+    },
+    onBeginDrag: () => {
+      isScrolling.value = true;
+    },
+    onEndDrag: (event) => {
+      isScrolling.value = false;
+    },
+    onMomentumBegin: () => {
+      isScrolling.value = true;
+    },
+    onMomentumEnd: () => {
+      isScrolling.value = false;
+    }
+  });
+
   useEffect(() => {
-    // P2-04 AUDIT FIX: Capped to 30 iterations (~42s) to prevent permanent UI-thread timer
+    // Capped to 30 iterations (~42s) to prevent permanent UI-thread timer
     sharedPulse.value = withRepeat(
       withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
       30,
@@ -568,7 +183,7 @@ export default function LoungeScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // F-05 FIX: Memoized renderItem for FlashList
+  // Memoized renderItem for FlashList
   const renderPublicCard = useCallback(({ item, index: i }: { item: LoungeRoom; index: number }) => (
     <PublicLoungeCard lounge={item} index={i} />
   ), []);
@@ -660,17 +275,17 @@ export default function LoungeScreen() {
       </Animated.View>
 
       {/* ── Body ── */}
-      <FlashList
+      <CinematicFlashList
         data={browsableLounges}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         estimatedItemSize={220}
-        renderItem={renderPublicCard}
-        showsVerticalScrollIndicator={false}
+        renderItem={renderPublicCard as any}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={s.scrollContent}
-        onScrollBeginDrag={() => { isScrolling.value = true; }}
-        onMomentumScrollEnd={() => { isScrolling.value = false; }}
+        scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
+        onScroll={onScroll}
+        bottomInset={insets.bottom + 49}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />
         }
@@ -703,7 +318,7 @@ export default function LoungeScreen() {
                 </ScrollView>
               </View>
             ) : (
-              !loading && !searchQuery && <EmptyMyLounges />
+              !loading && !searchQuery && <EmptyMyLounges onEstablishPress={() => setShowCreate(true)} />
             )}
 
             {/* Public Salons Header */}
@@ -728,716 +343,8 @@ export default function LoungeScreen() {
 
       {/* ── Create Sheet ── */}
       <CreateLoungeSheet visible={showCreate} onClose={() => setShowCreate(false)} />
-    </View>
-    </PulseContext.Provider>
+      </View>
+      </PulseContext.Provider>
     </FrozenTab>
   );
 }
-
-// ════════════════════════════════════════════════════════════
-// STYLES — Nitrate Noir Lounge Edition
-// ════════════════════════════════════════════════════════════
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.ink },
-
-  // ── Ornamental ──
-  ornRule: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    marginVertical: 14,
-  },
-  ornLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.sepia,
-    opacity: 0.3,
-  },
-
-  // ── Crest ──
-  crestGlow: {
-    position: 'absolute',
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: 'rgba(196,150,26,0.08)',
-  },
-  crestGlowInner: {
-    flex: 1,
-    borderRadius: 50,
-    backgroundColor: 'rgba(196,150,26,0.04)',
-  },
-
-  // ── Gate ──
-  gateContainer: {
-    flex: 1,
-    backgroundColor: colors.ink,
-    justifyContent: 'center',
-    paddingHorizontal: 36,
-  },
-  gateCard: {
-    alignItems: 'center',
-  },
-  gateCrestWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 28,
-  },
-  gateCrest: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(196,150,26,0.03)',
-  },
-  gateTitle: {
-    fontFamily: fonts.display,
-    fontSize: 24,
-    color: colors.parchment,
-    marginBottom: 6,
-  },
-  gateEst: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 8,
-    letterSpacing: 6,
-    color: colors.sepia,
-    marginBottom: 4,
-    opacity: 0.7,
-  },
-  gateSub: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 8, // to 8
-    letterSpacing: 3,
-    color: colors.sepia,
-    marginBottom: 20,
-  },
-  gateDesc: {
-    fontFamily: fonts.body,
-    fontSize: 11,
-    color: colors.bone,
-    lineHeight: 18,
-    textAlign: 'center',
-    marginBottom: 32,
-    opacity: 0.8,
-  },
-  gateCta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: colors.sepia,
-    paddingVertical: 15,
-    paddingHorizontal: 36,
-    borderRadius: 2,
-    marginBottom: 28,
-  },
-  gateCtaText: {
-    fontFamily: fonts.uiBold,
-    fontSize: 9,
-    letterSpacing: 2.5,
-    color: colors.ink,
-  },
-  gateFootnote: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 7,
-    letterSpacing: 3,
-    color: colors.fog,
-    opacity: 0.4,
-    textAlign: 'center',
-  },
-
-  // ── Header ──
-  header: {
-    paddingHorizontal: 20,
-    paddingBottom: 18,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.ash,
-    alignItems: 'center',
-  },
-  headerCrestRow: {
-    marginBottom: 10,
-  },
-  headerCrest: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(196,150,26,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(196,150,26,0.03)',
-  },
-  headerTitle: {
-    fontFamily: fonts.display,
-    fontSize: 24,
-    color: colors.parchment,
-    textAlign: 'center',
-    lineHeight: 28,
-  },
-  headerEst: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 7,
-    letterSpacing: 6,
-    color: colors.sepia,
-    opacity: 0.6,
-    marginTop: 2,
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  headerSubtitle: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 10,
-    color: colors.bone,
-    opacity: 0.6,
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  headerOrnRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 16,
-    alignSelf: 'stretch',
-  },
-  headerOrnLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.ash,
-  },
-  headerExclusive: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 7,
-    letterSpacing: 4,
-    color: colors.sepia,
-    opacity: 0.6,
-  },
-
-  // ── Search ──
-  searchWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    backgroundColor: 'rgba(5,4,3,0.95)',
-    borderRadius: 2,
-    paddingHorizontal: 14,
-    height: 46,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(139,105,20,0.3)',
-    gap: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 10,
-    color: colors.parchment,
-    letterSpacing: 2,
-  },
-
-  // ── Actions ──
-  actionsRow: {
-    flexDirection: 'row',
-    marginTop: 12,
-    gap: 8,
-    alignSelf: 'stretch',
-  },
-  btnPrimary: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 7,
-    backgroundColor: colors.sepia,
-    borderRadius: 2,
-    borderWidth: 1,
-    borderColor: colors.sepia,
-    height: 46,
-    ...effects.shadowSurface,
-  },
-  btnPrimaryText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 10,
-    letterSpacing: 2.5,
-    color: colors.ink,
-  },
-  inviteWrap: {
-    flexDirection: 'row',
-    flex: 1,
-    gap: 6,
-  },
-  inviteInput: {
-    flex: 1,
-    backgroundColor: 'rgba(5,4,3,0.95)',
-    borderRadius: 2,
-    height: 46,
-    paddingHorizontal: 12,
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 10,
-    color: colors.parchment,
-    textAlign: 'center',
-    letterSpacing: 6,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(139,105,20,0.3)',
-  },
-  btnJoin: {
-    backgroundColor: colors.ash,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 2,
-    height: 46,
-    ...effects.shadowSurface,
-  },
-  btnJoinDisabled: { opacity: 0.35 },
-  btnJoinText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 10,
-    letterSpacing: 2.5,
-    color: colors.parchment,
-  },
-
-  // ── Scroll ──
-  scrollView: { flex: 1 },
-  scrollContent: {
-    paddingTop: 28,
-    paddingBottom: 120,
-  },
-
-  // ── Loading ──
-  loadingWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 60,
-    gap: 14,
-  },
-  loadingText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 8,
-    letterSpacing: 4,
-    color: colors.fog,
-  },
-
-  // ── Sections ──
-  section: {
-    marginBottom: 36,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 6,
-  },
-  sectionTitleLine: {
-    flex: 1,
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.ash,
-  },
-  sectionLabel: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 7,
-    letterSpacing: 3,
-    color: colors.fog,
-  },
-  sectionSubtext: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 9,
-    color: colors.fog,
-    opacity: 0.5,
-    paddingHorizontal: 20,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-
-  // ── Joined Cards ──
-  joinedStrip: {
-    gap: 16,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 24,
-  },
-  joinedCard: {
-    width: '42%',
-    borderRadius: 2,
-    overflow: 'hidden',
-    backgroundColor: colors.soot,
-    borderWidth: 1.5,
-    borderColor: 'rgba(139,105,20,0.3)',
-    ...effects.shadowSurface,
-    elevation: 8,
-  },
-  joinedImgWrap: {
-    width: '42%',
-    aspectRatio: 1 / 1.35,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  joinedImg: {
-    width: '100%',
-    height: '100%',
-  },
-  joinedImgPlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  joinedGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '75%',
-  },
-  unreadDot: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.bloodReel,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    zIndex: 10,
-  },
-  joinedNameOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 12,
-    paddingBottom: 14,
-    paddingTop: 4,
-  },
-  liveIndicator: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.bloodReel,
-    marginRight: 6,
-  },
-  joinedNameText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    letterSpacing: 1,
-    fontSize: 14,
-    color: colors.parchment,
-    marginBottom: 8,
-    lineHeight: 18,
-  },
-  joinedMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  joinedMetaText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 9,
-    letterSpacing: 2,
-    color: colors.fog,
-  },
-  joinedMetaLine: {
-    height: 10,
-    width: 1.5,
-    backgroundColor: colors.ash,
-  },
-
-  // ── Public Cards ──
-  publicList: {
-    paddingHorizontal: 20,
-    gap: 24,
-  },
-  publicCard: {
-    padding: 24, paddingLeft: 28,
-    backgroundColor: 'rgba(12,9,7,0.85)',
-    borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)', borderStyle: 'dashed',
-    borderRadius: 4, position: 'relative',
-    overflow: 'hidden',
-    ...effects.shadowSurface,
-  },
-  publicAccentBar: {
-    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4,
-    backgroundColor: colors.sepia, zIndex: 2,
-  },
-  publicImgTop: {
-    width: '100%',
-    height: 120,
-    marginBottom: 20,
-    borderRadius: 2,
-    overflow: 'hidden',
-    borderColor: 'rgba(139,105,20,0.2)',
-    borderWidth: 1.5,
-  },
-  publicImgContent: { width: '100%', height: '100%' },
-  publicBody: { flex: 1 },
-  publicName: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    color: colors.parchment,
-    marginBottom: 10,
-    lineHeight: 26,
-  },
-  publicDesc: {
-    fontFamily: fonts.mono,
-    fontSize: 11,
-    color: colors.bone,
-    lineHeight: 20,
-    marginBottom: 24,
-    opacity: 0.8,
-  },
-  publicPrivateBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginBottom: 16,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: 'rgba(196,150,26,0.04)',
-    borderRadius: 2,
-    alignSelf: 'flex-start',
-    borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.3)',
-    borderStyle: 'dashed',
-  },
-  publicPrivateText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 8,
-    letterSpacing: 2.5,
-    color: colors.sepia,
-  },
-  publicFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(139,105,20,0.15)',
-    paddingTop: 16,
-    marginTop: 8,
-  },
-  publicMetaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  publicMetaText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 9,
-    letterSpacing: 2.5,
-    color: colors.fog,
-  },
-  publicEnterTag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  publicEnterText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 9,
-    letterSpacing: 2.5,
-    color: colors.sepia,
-  },
-
-  // ── Empty States ──
-  emptyHero: {
-    alignItems: 'center',
-    paddingHorizontal: 44,
-    paddingVertical: 52,
-    marginBottom: 8,
-  },
-  emptyCrestWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(196,150,26,0.2)',
-    backgroundColor: 'rgba(196,150,26,0.03)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 18,
-  },
-  emptyTitle: {
-    fontFamily: fonts.display,
-    fontSize: 15,
-    color: colors.parchment,
-    textAlign: 'center',
-  },
-  emptyDesc: {
-    fontFamily: fonts.body,
-    fontSize: 10,
-    color: colors.fog,
-    lineHeight: 16,
-    textAlign: 'center',
-    opacity: 0.7,
-  },
-  emptyPublic: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 44,
-    paddingHorizontal: 24,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
-    borderRadius: 4,
-    gap: 8,
-  },
-  emptyPublicText: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 10,
-    color: colors.fog,
-  },
-  emptyPublicHint: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
-    color: colors.fog,
-    opacity: 0.5,
-    letterSpacing: 1,
-  },
-
-  // ── Create Sheet ──
-  sheetKeyboard: { flex: 1 },
-  sheetBackdrop: { flex: 1 },
-  sheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(7,5,4,0.98)',
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
-    padding: 24,
-    borderWidth: 1.5,
-    borderBottomWidth: 0,
-    borderColor: 'rgba(139,105,20,0.3)',
-    ...effects.shadowSurface,
-    elevation: 20,
-  },
-  sheetHandle: {
-    width: 48,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(139,105,20,0.2)',
-    alignSelf: 'center',
-    marginBottom: 24,
-  },
-  sheetHeaderWrap: { marginBottom: 28 },
-  sheetEyebrow: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 8,
-    letterSpacing: 4,
-    color: colors.fog,
-    marginBottom: 8,
-  },
-  sheetTitle: {
-    fontFamily: fonts.display,
-    fontSize: 24,
-    color: colors.parchment,
-    letterSpacing: 1,
-  },
-  field: { marginBottom: 22 },
-  fieldLabel: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 9,
-    letterSpacing: 3,
-    color: colors.sepia,
-    marginBottom: 8,
-  },
-  fieldInput: {
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(139,105,20,0.3)',
-    backgroundColor: 'rgba(255,255,255,0.02)',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 14,
-    color: colors.parchment,
-    borderRadius: 2,
-  },
-  fieldTextarea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  fieldCharCount: {
-    fontFamily: fonts.ui,
-    fontSize: 8,
-    color: colors.fog,
-    opacity: 0.3,
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  toggleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 28,
-  },
-  toggleInfo: { flex: 1, marginRight: 16 },
-  toggleLabelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
-  },
-  toggleLabel: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
-    letterSpacing: 1,
-    color: colors.parchment,
-  },
-  toggleDesc: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 11,
-    color: colors.fog,
-  },
-  sheetActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  sheetBtnGhost: {
-    flex: 1,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 2,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(139,105,20,0.3)',
-  },
-  sheetBtnGhostText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 10,
-    letterSpacing: 3,
-    color: colors.parchment,
-  },
-  sheetBtnPrimary: {
-    flex: 1,
-    height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderRadius: 2,
-    backgroundColor: colors.sepia,
-    ...effects.shadowSurface,
-  },
-  sheetBtnPrimaryText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 10,
-    letterSpacing: 3,
-    color: colors.ink,
-  },
-  sheetBtnDisabled: { opacity: 0.35 },
-});

@@ -1,14 +1,18 @@
-import { create } from 'zustand';
-import { supabase } from '../lib/supabase';
-import { User } from '../types';
-import { Platform } from 'react-native';
 import * as Linking from 'expo-linking';
-import { storage } from './mmkv-storage';
-import { logoutRevenueCat } from '../lib/revenueCat';
-import { setSentryUser } from '../lib/sentry';
-import { queryClient } from '../lib/queryClient';
+import { Platform } from 'react-native';
+import { create } from 'zustand';
 import { removePushToken } from '../lib/pushNotifications';
+import { queryClient } from '../lib/queryClient';
+import { logoutRevenueCat } from '../lib/revenueCat';
+import { captureError, setSentryUser } from '../lib/sentry';
+import { supabase } from '../lib/supabase';
+import { PROFILE_SELECT_COLUMNS, ProfileService } from '../services/ProfileWriteService';
+import { User } from '../types';
+import { logger } from '../utils/logger';
 import reelToast from '../utils/reelToast';
+import { isRetryable, withRetry } from '../utils/withRetry';
+import { hydrateFollowing } from './domain/socialSlice';
+import { storage } from './mmkv-storage';
 export { storage };
 
 export interface AuthState {
@@ -19,23 +23,17 @@ export interface AuthState {
   signup: (email: string, password: string, username: string, persona?: string) => Promise<{ needsConfirmation: boolean }>;
   logout: () => Promise<void>;
   updateUser: (updates: Partial<User>) => Promise<void>;
+  setLocalTierHint: (updates: { tier?: string; is_founding?: boolean }) => void;
   setPreference: (key: string, value: unknown) => Promise<void>;
   getPreference: (key: string, fallback?: unknown) => unknown;
   restoreSession: () => Promise<void>;
-  followUser: (targetUsername: string) => Promise<void>;
-  unfollowUser: (targetUsername: string) => Promise<void>;
 }
 
-interface DBProfileUpdate {
-  bio?: string;
-  username?: string;
-  avatar_url?: string;
-  display_name?: string;
-  is_social_private?: boolean;
-}
+
 
 // ── Action throttle: prevents spam-clicking social buttons ──
 const _actionThrottles = new Map<string, number>();
+const _prefTimers = new Map<string, ReturnType<typeof setTimeout>>();
 const _THROTTLE_MAX = 200;
 const _THROTTLE_TTL = 30000;
 function pruneThrottles() {
@@ -44,31 +42,11 @@ function pruneThrottles() {
   for (const [key, ts] of _actionThrottles) {
     if (now - ts > _THROTTLE_TTL) _actionThrottles.delete(key);
   }
-  // Batch-prune oldest 50 entries if still over limit (matches interactionSlice L-09 fix)
+  // Batch-prune the oldest 50 entries if still over the limit.
   if (_actionThrottles.size >= _THROTTLE_MAX) {
     const keys = [..._actionThrottles.keys()].slice(0, 50);
     keys.forEach(k => _actionThrottles.delete(k));
   }
-}
-
-// ── Username → ID cache (with 10min TTL to prevent stale mappings) ──
-const _usernameIdCache = new Map<string, { id: string; ts: number }>();
-const _USERNAME_CACHE_TTL = 10 * 60 * 1000;
-async function resolveUsernameToId(username: string): Promise<string | null> {
-  const cached = _usernameIdCache.get(username);
-  if (cached && Date.now() - cached.ts < _USERNAME_CACHE_TTL) return cached.id;
-  if (cached) _usernameIdCache.delete(username);  // Expired — remove stale entry
-  const { data } = await supabase.from('profiles').select('id').eq('username', username).single();
-  if (data?.id) {
-    // Batch-prune oldest 20 entries if cache is full (L-13 fix)
-    if (_usernameIdCache.size >= 200) {
-      const keys = [..._usernameIdCache.keys()].slice(0, 20);
-      keys.forEach(k => _usernameIdCache.delete(k));
-    }
-    _usernameIdCache.set(username, { id: data.id, ts: Date.now() });
-    return data.id;
-  }
-  return null;
 }
 
 export const useAuthStore = create<AuthState>()((set, get) => ({
@@ -78,7 +56,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
   restoreSession: async () => {
     try {
-      // ── IRON VAULT CACHE: Instant RAM memory restoration before network ping ──
+      // Restore the locally cached user first for instant startup, before the network session check.
       let cachedFollowing: string[] = [];
       const lastUserId = storage.getString('last_user_id');
       if (lastUserId) {
@@ -94,11 +72,42 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
+        // Dirty-prefs reconciliation: push local prefs to server if not yet synced
+        const isDirtyPrefs = storage.getString(`dirty_prefs_${session.user.id}`) === 'true';
+        if (isDirtyPrefs) {
+          const cachedData = storage.getString(`ironvault_user_cache_${session.user.id}`);
+          if (cachedData) {
+            try {
+              const cached = JSON.parse(cachedData);
+              if (cached.preferences) {
+                await supabase.from('profiles').update({ preferences: cached.preferences }).eq('id', session.user.id);
+                storage.delete(`dirty_prefs_${session.user.id}`);
+              }
+            } catch {
+              // Push failed — local prefs will be preserved below
+            }
+          }
+        }
+
         const { data: profile } = await supabase
-          .from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', session.user.id).single();
+          .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', session.user.id).single();
         if (profile) {
           // CRITICAL: Preserve the cached following list — don't overwrite with []
-          const completeUser = { ...session.user, ...profile, following: cachedFollowing } as unknown as User;
+          const stillDirty = storage.getString(`dirty_prefs_${session.user.id}`) === 'true';
+          let finalPrefs = profile.preferences;
+          if (stillDirty) {
+            const cd = storage.getString(`ironvault_user_cache_${session.user.id}`);
+            if (cd) { try { finalPrefs = JSON.parse(cd).preferences ?? finalPrefs; } catch {} }
+          }
+          // Merge any profile fields (bio, display_name, persona, avatar_url, ...) that updateUser()
+          // has optimistically written but not yet confirmed server-side — otherwise a concurrent
+          // restoreSession (e.g. post-purchase polling) would silently revert the in-flight edit.
+          let pendingProfileEdits: Partial<User> = {};
+          const dirtyProfile = storage.getString(`dirty_profile_${session.user.id}`);
+          if (dirtyProfile) {
+            try { pendingProfileEdits = JSON.parse(dirtyProfile); } catch {}
+          }
+          const completeUser = { ...session.user, ...profile, ...pendingProfileEdits, preferences: finalPrefs, following: cachedFollowing } as unknown as User;
           storage.set('last_user_id', session.user.id);
           storage.set(`ironvault_user_cache_${session.user.id}`, JSON.stringify(completeUser));
           set({ user: completeUser, isAuthenticated: true, loading: false });
@@ -133,12 +142,20 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     storage.set(`ironvault_user_cache_${data.user.id}`, JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true });
 
-    // Enrich with profile in background
-    Promise.resolve(supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user.id).single())
-      .then((res) => {
-        if (res.data) {
+    // Enrich with the full profile in the background. Transient failures are retried;
+    // if enrichment ultimately fails, the user operates with an incomplete profile for the session.
+    withRetry(
+      async () => {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', data.user.id).single();
+        if (profileError) throw profileError;
+        return profileData;
+      },
+      { maxRetries: 2, baseDelay: 1500, label: 'login_enrich', shouldRetry: isRetryable }
+    ).then((profileData) => {
+        if (profileData) {
            set((s) => {
-             const updatedUser = s.user ? { ...s.user, ...res.data } : null;
+             const updatedUser = s.user ? { ...s.user, ...profileData } : null;
              if (updatedUser) {
                storage.set('last_user_id', updatedUser.id);
                storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
@@ -146,7 +163,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
              return { user: updatedUser };
            });
         }
-      }).catch(() => {});
+      }).catch((err) => {
+        logger.warn('[auth.login] Profile enrichment failed after retries:', err);
+        captureError(err instanceof Error ? err : new Error(String(err)), { context: 'login_enrichment', userId: data.user.id });
+      });
 
     hydrateFollowing();
   },
@@ -166,7 +186,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (data?.session) {
       // Email confirmation disabled — immediate login
       await supabase.from('profiles').update({ username, persona }).eq('id', data.user!.id);
-      const { data: profile } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user!.id).single();
+      const { data: profile } = await supabase.from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', data.user!.id).single();
       const completeUser = { ...data.user, ...profile, following: [] } as User;
       storage.set('last_user_id', data.user!.id);
       storage.set(`ironvault_user_cache_${data.user!.id}`, JSON.stringify(completeUser));
@@ -184,8 +204,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     // 0.5. Clean up Realtime WebSocket immediately to stop background heartbeat
     try {
-      const { useNotificationStore } = await import('./social');
-      useNotificationStore.getState()._realtimeCleanup?.();
+      const { teardownNotificationRealtime } = await import('./notificationStore');
+      teardownNotificationRealtime();
     } catch { cleanupErrors.push('realtime'); }
 
     // 1. Sign out from Supabase
@@ -194,8 +214,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     // 2. Clear zustand auth state
     set({ user: null, isAuthenticated: false });
 
-    // 3. Nuclear cleanup — Clear ALL dependent stores to prevent cross-user data leakage
-    //    F-10 FIX: Uses centralized resetAllStores() — each store self-registers its handler
+    // 3. Clear all dependent stores to prevent cross-user data leakage.
+    //    Uses the centralized resetAllStores(); each store self-registers its reset handler.
     try {
       const { resetAllStores } = await import('./resetAllStores');
       await resetAllStores();
@@ -235,7 +255,8 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
 
     // 9. Clear module-level caches
     _actionThrottles.clear();
-    _usernameIdCache.clear();
+    _prefTimers.forEach(t => clearTimeout(t));
+    _prefTimers.clear();
 
     // 10. Report partial cleanup failures
     if (cleanupErrors.length > 0 && __DEV__) {
@@ -269,19 +290,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       return { user: updatedUser };
     });
 
-    const dbUpdates: DBProfileUpdate = {};
-    if (updates.bio !== undefined) dbUpdates.bio = updates.bio;
-    if (updates.username !== undefined) dbUpdates.username = updates.username;
-    if (updates.avatar_url !== undefined) dbUpdates.avatar_url = updates.avatar_url;
-    if (updates.display_name !== undefined) dbUpdates.display_name = updates.display_name;
-    if (updates.isSocialPrivate !== undefined) dbUpdates.is_social_private = updates.isSocialPrivate;
-    if (Object.keys(dbUpdates).length > 0) {
+    if (Object.keys(safeUpdates).length > 0) {
+      // Mirrors the dirty_prefs_ pattern below: marks these fields as locally-ahead-of-server
+      // so a concurrent restoreSession() (e.g. the post-purchase polling loop in
+      // useEntitlement.ts) merges them instead of overwriting with the stale fetched profile.
+      storage.set(`dirty_profile_${user.id}`, JSON.stringify(safeUpdates));
       try {
-        const { error } = await supabase.from('profiles').update(dbUpdates).eq('id', user.id);
-        if (error) throw error;
+        await ProfileService.updateProfile(user.id, safeUpdates as Partial<User>);
+        storage.delete(`dirty_profile_${user.id}`);
       } catch (e: unknown) {
         // Rollback optimistic update
         if (__DEV__) console.warn('[updateUser] DB sync failed, rolling back:', e);
+        storage.delete(`dirty_profile_${user.id}`);
         set({ user: prevUser });
         storage.set(`ironvault_user_cache_${prevUser.id}`, JSON.stringify(prevUser));
         reelToast.error('Profile update failed \u2014 changes reverted.');
@@ -289,180 +309,64 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     }
   },
 
+  // Local-only tier/is_founding update for the post-purchase optimistic UI.
+  // `tier` and `is_founding` are server-derived (set by the RevenueCat
+  // webhook, not the client) and aren't in ProfileService's update
+  // whitelist, so routing this through updateUser()/ProfileService would
+  // silently no-op the DB write while still paying for the network round
+  // trip. The canonical value is reconciled by the polling loop in
+  // useEntitlement.purchase()/membership.tsx, which calls restoreSession()
+  // once the webhook lands.
+  setLocalTierHint: (updates) => {
+    set((state) => {
+      if (!state.user) return state;
+      const updatedUser = { ...state.user, ...updates };
+      storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+      return { user: updatedUser };
+    });
+  },
+
   setPreference: async (key, value) => {
     const user = get().user;
     if (!user) return;
-    // D5-02 FIX: Capture previous value for clean rollback
+    // Capture the previous value so a failed sync can roll back cleanly.
     const prevValue = user.preferences?.[key];
     const prefs = { ...(user.preferences ?? {}), [key]: value };
+    
+    // 1. Optimistic update (Memory)
     set((state) => ({ user: state.user ? { ...state.user, preferences: prefs } : null }));
+    
+    // 2. Optimistic update (Cache) - guarantees state persists even if app closes during debounce
+    storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
+    storage.set(`dirty_prefs_${user.id}`, 'true');
 
-    const throttleKey = `pref:${user.id}`;
-    const lastCall = _actionThrottles.get(throttleKey) ?? 0;
-    if (Date.now() - lastCall < 1500) return;
-    pruneThrottles();
-    _actionThrottles.set(throttleKey, Date.now());
-
-    try {
-      await supabase.from('profiles').update({ preferences: prefs }).eq('id', user.id);
-      // D1-02 FIX: Persist to per-user cache key (was legacy 'ironvault_user_cache')
-      storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify({ ...get().user, preferences: prefs }));
-    } catch {
-      // M-16: DB write failed — rollback local state to prevent cache/server divergence
-      // D5-02 FIX: Restore captured previous value instead of setting undefined
-      const prevPrefs = { ...(get().user?.preferences ?? {}), [key]: prevValue };
-      set((state) => ({ user: state.user ? { ...state.user, preferences: prevPrefs } : null }));
-      storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
-      if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back locally');
+    const timerKey = `pref:${user.id}`;
+    if (_prefTimers.has(timerKey)) {
+      clearTimeout(_prefTimers.get(timerKey)!);
     }
+
+    // 3. Debounced network sync - batches rapid changes and guarantees trailing edge execution
+    _prefTimers.set(timerKey, setTimeout(async () => {
+      _prefTimers.delete(timerKey);
+      try {
+        const currentPrefs = get().user?.preferences;
+        if (!currentPrefs) return;
+        await supabase.from('profiles').update({ preferences: currentPrefs }).eq('id', user.id);
+        storage.delete(`dirty_prefs_${user.id}`);
+      } catch {
+        // DB write failed — roll back local state to prevent cache/server divergence.
+        const rollbackPrefs = { ...(get().user?.preferences ?? {}), [key]: prevValue };
+        set((state) => ({ user: state.user ? { ...state.user, preferences: rollbackPrefs } : null }));
+        storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify(get().user));
+        if (__DEV__) console.warn('[setPreference] DB sync failed, rolled back locally');
+      }
+    }, 1000));
   },
 
   getPreference: (key, fallback = null) => {
     const user = get().user;
     return user?.preferences?.[key] ?? fallback;
   },
-
-  followUser: async (targetUsername) => {
-    const state = get();
-    const following = state.user?.following ?? [];
-    if (following.includes(targetUsername)) return;
-
-    const throttleKey = `follow:${targetUsername}`;
-    const lastCall = _actionThrottles.get(throttleKey) ?? 0;
-    if (Date.now() - lastCall < 2000) return;
-    pruneThrottles();
-    _actionThrottles.set(throttleKey, Date.now());
-
-    const userId = state.user?.id;
-    if (!userId) {
-      if (__DEV__) console.warn('[followUser] No userId — user not authenticated');
-      return;
-    }
-
-    // Optimistic update + persist to cache immediately
-    const newFollowing = [...(state.user?.following ?? []), targetUsername];
-    set((s) => ({ user: s.user ? { ...s.user, following: newFollowing } : null }));
-    _persistFollowingToCache(newFollowing, state.user!);
-
-    try {
-      const targetId = await resolveUsernameToId(targetUsername);
-      if (!targetId) throw new Error(`User "${targetUsername}" not found in profiles table`);
-
-      // CHECK if follow already exists in DB before inserting
-      const { data: existing } = await supabase
-        .from('interactions')
-        .select('id')
-        .eq('user_id', userId)
-        .eq('target_user_id', targetId)
-        .eq('type', 'follow')
-        .maybeSingle();
-
-      if (existing) {
-        // Follow already exists in DB — just keep the optimistic update, no insert needed
-        if (__DEV__) console.warn(`[followUser] Already following @${targetUsername} in DB, syncing state`);
-        return;
-      }
-
-      const { error } = await supabase.from('interactions').insert([{
-        user_id: userId, target_user_id: targetId, type: 'follow',
-      }]);
-      if (error && !error.message?.includes('duplicate')) throw error;
-      // Success — DB trigger handles notification generation
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (__DEV__) console.warn(`[followUser] FAILED for @${targetUsername}: ${msg}`);
-      // Rollback optimistic update + cache
-      const rolledBack = (get().user?.following ?? []).filter(u => u !== targetUsername);
-      set((s) => ({ user: s.user ? { ...s.user, following: rolledBack } : null }));
-      _persistFollowingToCache(rolledBack, get().user!);
-      reelToast.error(`Could not follow @${targetUsername}. Please try again.`);
-    }
-  },
-
-  unfollowUser: async (targetUsername) => {
-    const throttleKey = `unfollow:${targetUsername}`;
-    const lastCall = _actionThrottles.get(throttleKey) ?? 0;
-    if (Date.now() - lastCall < 2000) return;
-    pruneThrottles();
-    _actionThrottles.set(throttleKey, Date.now());
-
-    const prevFollowing = get().user?.following ?? [];
-    const userId = get().user?.id;
-    if (!userId) {
-      if (__DEV__) console.warn('[unfollowUser] No userId — user not authenticated');
-      return;
-    }
-
-    // Optimistic update + persist to cache immediately
-    const newFollowing = prevFollowing.filter(u => u !== targetUsername);
-    set((s) => ({ user: s.user ? { ...s.user, following: newFollowing } : null }));
-    _persistFollowingToCache(newFollowing, get().user!);
-
-    try {
-      const targetId = await resolveUsernameToId(targetUsername);
-      if (targetId) {
-        const { error } = await supabase.from('interactions').delete()
-          .eq('user_id', userId).eq('target_user_id', targetId).eq('type', 'follow');
-        if (error) throw error;
-      } else {
-        if (__DEV__) console.warn(`[unfollowUser] Could not resolve ID for @${targetUsername}`);
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (__DEV__) console.warn(`[unfollowUser] FAILED for @${targetUsername}: ${msg}`);
-      // Rollback
-      set((s) => ({ user: s.user ? { ...s.user, following: prevFollowing } : null }));
-      _persistFollowingToCache(prevFollowing, get().user!);
-      reelToast.error(`Could not unfollow @${targetUsername}. Please try again.`);
-    }
-  },
 }));
 
-// ── Persist following array to ironvault cache (fire-and-forget) ──
-function _persistFollowingToCache(following: string[], user: User) {
-  try {
-    const cached = { ...user, following };
-    // D1-01 FIX: Write to per-user cache key (was legacy 'ironvault_user_cache')
-    storage.set(`ironvault_user_cache_${user.id}`, JSON.stringify(cached));
-  } catch { /* non-critical */ }
-}
 
-// ── Hydrate following list from interactions table ──
-export async function hydrateFollowing() {
-  const userId = useAuthStore.getState().user?.id;
-  if (!userId) {
-    if (__DEV__) console.warn('[hydrateFollowing] No userId — skipping');
-    return;
-  }
-  try {
-    const { data: followRows, error: followErr } = await supabase
-      .from('interactions').select('target_user_id')
-      .eq('user_id', userId).eq('type', 'follow').limit(5000);
-    if (followErr) {
-      if (__DEV__) console.warn('[hydrateFollowing] Query error:', followErr.message);
-      return;
-    }
-    if (!followRows || followRows.length === 0) {
-      useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: [] } : null }));
-      // Persist empty following to cache to prevent phantom follows on cold-start
-      const currentUser = useAuthStore.getState().user;
-      if (currentUser) _persistFollowingToCache([], currentUser);
-      return;
-    }
-    const targetIds = followRows.map(r => r.target_user_id);
-    const { data: profiles, error: profileErr } = await supabase
-      .from('profiles').select('username').in('id', targetIds).limit(5000);
-    if (profileErr) {
-      if (__DEV__) console.warn('[hydrateFollowing] Profile resolve error:', profileErr.message);
-      return;
-    }
-    const usernames = (profiles ?? []).map(p => p.username).filter(Boolean);
-    useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: usernames } : null }));
-    // Persist to cache so next session loads instantly
-    const currentUser = useAuthStore.getState().user;
-    if (currentUser) _persistFollowingToCache(usernames, currentUser);
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    if (__DEV__) console.warn('[hydrateFollowing] Unexpected error:', msg);
-  }
-}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1080">
+<title>Slide 0 - Tiers Cover</title>
+<link href="https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime&family=Bungee+Shade&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root { --ink: #0B0A08; --parchment: #EDE5D8; --sepia: #C4961A; --bone: #C8B99A; --fog: #6B6055; --blood-reel: #6B1A0A; }
+  body { width: 1080px; height: 1080px; background: var(--ink); overflow: hidden; font-family: 'Courier Prime', monospace; }
+  .canvas { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(155deg, #1a150e 0%, #0B0A08 35%, #12100b 60%, #0B0A08 100%); }
+  .grain { position: absolute; inset: 0; z-index: 2; pointer-events: none; opacity: 0.05; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); background-repeat: repeat; background-size: 156px 156px; }
+  .vignette { position: absolute; inset: 0; z-index: 3; pointer-events: none; background: radial-gradient(ellipse 85% 80% at center, transparent 35%, rgba(0,0,0,0.35) 65%, rgba(0,0,0,0.8) 100%); }
+  .scanlines { position: absolute; inset: 0; z-index: 4; pointer-events: none; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px); }
+  .aged-border { position: absolute; inset: 24px; z-index: 5; border: 1px solid rgba(200, 185, 154, 0.12); pointer-events: none; }
+  .aged-border::before { content: ''; position: absolute; inset: 8px; border: 1px solid rgba(200, 185, 154, 0.06); }
+  .corner { position: absolute; width: 35px; height: 35px; z-index: 6; pointer-events: none; opacity: 0.35; }
+  .corner.tl { top: 20px; left: 20px; border-top: 2px solid var(--sepia); border-left: 2px solid var(--sepia); }
+  .corner.tr { top: 20px; right: 20px; border-top: 2px solid var(--sepia); border-right: 2px solid var(--sepia); }
+  .corner.bl { bottom: 20px; left: 20px; border-bottom: 2px solid var(--sepia); border-left: 2px solid var(--sepia); }
+  .corner.br { bottom: 20px; right: 20px; border-bottom: 2px solid var(--sepia); border-right: 2px solid var(--sepia); }
+  .content { position: relative; z-index: 10; text-align: center; display: flex; flex-direction: column; align-items: center; }
+  
+  .logo { width: 160px; filter: drop-shadow(0 0 20px rgba(196, 150, 26, 0.4)) sepia(0.8); margin-bottom: 40px; }
+  .header-badge { font-family: 'Special Elite', cursive; font-size: 16px; letter-spacing: 0.3em; color: var(--ink); background: var(--sepia); padding: 6px 20px; font-weight: bold; margin-bottom: 30px; box-shadow: 2px 2px 0px var(--bone); }
+  .title { font-family: 'Bungee Shade', cursive; font-size: 90px; color: var(--parchment); text-shadow: 4px 4px 0px var(--blood-reel); margin-bottom: 20px; }
+  .subtitle { font-family: 'Rye', serif; font-size: 36px; color: var(--sepia); }
+  .swipe { position: absolute; bottom: 80px; font-family: 'Courier Prime', monospace; color: var(--fog); font-size: 18px; letter-spacing: 0.2em; z-index: 10; }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="grain"></div><div class="vignette"></div><div class="scanlines"></div><div class="aged-border"></div>
+  <div class="corner tl"></div><div class="corner tr"></div><div class="corner bl"></div><div class="corner br"></div>
+  <div class="content">
+    <div class="header-badge">CLASSIFICATION SYSTEM</div>
+    <img class="logo" src="../reelhouse-logo-transparent.png" alt="ReelHouse">
+    <h1 class="title">CHOOSE YOUR<br>OBSESSION</h1>
+    <div class="subtitle">(Or let Buster choose for you)</div>
+  </div>
+  <div class="swipe">SWIPE TO VIEW TIERS ➞</div>
+</div>
+</body>
+</html>

@@ -4,6 +4,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors } from '@/src/theme/theme';
+import { isAuteurPlusTier } from '@/src/utils/tier';
 
 /**
  * ProfileBackdrop — Auteur-only full-bleed poster backdrop.
@@ -16,16 +17,19 @@ interface BackdropLog {
 }
 
 interface BackdropUser {
-    role?: string;
-    tier?: string;
+    role?: string | null;
+    tier?: string | null;
+    is_founding?: boolean | null;
     preferences?: { favorites?: { poster_path?: string | null }[]; [key: string]: unknown } | null;
 }
 
 export function ProfileBackdrop({ user, logs }: { user: BackdropUser; logs: BackdropLog[] }) {
-    const isAuteur = user?.role === 'auteur' || user?.tier === 'auteur';
-    if (!isAuteur) return null;
+    const isAuteurPlus = isAuteurPlusTier(user);
+    if (!isAuteurPlus) return null;
 
-    const favorites = (user?.preferences?.favorites ?? []).filter((f: { poster_path?: string | null }) => f && f.poster_path);
+    const rawFavorites = user?.preferences?.favorites;
+    const safeFavorites = Array.isArray(rawFavorites) ? rawFavorites : [];
+    const favorites = safeFavorites.filter((f: { poster_path?: string | null }) => f && f.poster_path);
     const posterSrc = favorites.length > 0
         ? `https://image.tmdb.org/t/p/w780${favorites[0].poster_path}`
         : logs?.filter((l: BackdropLog) => l.poster).slice(0, 1).map((l: BackdropLog) => tmdb.poster(l.poster ?? '', 'w342'))[0];

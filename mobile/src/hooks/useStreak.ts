@@ -4,7 +4,7 @@
  * Updates Supabase profiles on each log.
  */
 import { useMemo } from 'react'
-import type { FilmLog } from '../types'
+import type { DomainLog } from '../types'
 
 interface StreakResult {
   currentStreak: number
@@ -13,18 +13,18 @@ interface StreakResult {
   lastLogDate: string | null
 }
 
-export function useStreak(logs: FilmLog[]): StreakResult {
+export function useStreak(logs: DomainLog[]): StreakResult {
   return useMemo(() => {
     if (logs.length === 0) return { currentStreak: 0, longestStreak: 0, isActive: false, lastLogDate: null }
 
     // Get unique log dates
     const dateSet = new Set<string>()
     logs.forEach(log => {
-      const d = (log.watchedDate || log.created_at || log.loggedAt || '').slice(0, 10)
+      const d = (log.watchedDate || log.createdAt || log.createdAt || '').slice(0, 10)
       if (d && d.length === 10) dateSet.add(d)
     })
 
-    // #8 AUDIT FIX: Single sort pass — compute both streaks from one ascending array
+    // Single sort pass — compute both streaks from one ascending array
     const sorted = Array.from(dateSet).sort()
     if (sorted.length === 0) return { currentStreak: 0, longestStreak: 0, isActive: false, lastLogDate: null }
 

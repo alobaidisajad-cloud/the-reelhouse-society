@@ -10,7 +10,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '../utils/TactileEngine';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -26,9 +26,9 @@ interface PressableScaleProps {
   haptic?: boolean | 'light' | 'medium' | 'heavy' | 'selection';
   disabled?: boolean;
   hitSlop?: null | number | { top?: number; bottom?: number; left?: number; right?: number };
-  /** M-04 AUDIT FIX: Delay before onLongPress fires (default 600ms per HIG) */
+  /** Delay before onLongPress fires (default 600ms per HIG) */
   delayLongPress?: number;
-  /** M-06 AUDIT FIX: Debounce interaction to prevent double-push route flooding */
+  /** Debounce interaction to prevent double-push route flooding */
   debounceMs?: number;
   /** VoiceOver / TalkBack role */
   accessibilityRole?: AccessibilityRole;
@@ -86,7 +86,7 @@ function PressableScale({
       accessibilityHint={accessibilityHint}
       accessibilityState={accessibilityState ?? (disabled ? { disabled: true } : undefined)}
       onPressIn={() => {
-        // U-01 AUDIT FIX: Scale animation + haptics ALWAYS fire on finger-down,
+        // Scale animation + haptics ALWAYS fire on finger-down,
         // even during debounce cooldown. This prevents "dead button" perception
         // where the button appears completely unresponsive. Only the onPress
         // callback is debounced (see onPress handler below).
@@ -95,10 +95,10 @@ function PressableScale({
         scale.value = withSpring(pressedScale, { damping: 18, stiffness: 400, mass: 0.6 });
         
         // Haptics triggered on finger-down (mechanical click emulation)
-        if (haptic === 'selection') Haptics.selectionAsync();
-        else if (haptic === true || haptic === 'light') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        else if (haptic === 'medium') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        else if (haptic === 'heavy') Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        if (haptic === 'selection') TactileEngine.selection();
+        else if (haptic === true || haptic === 'light') TactileEngine.navigate();
+        else if (haptic === 'medium') TactileEngine.mutate();
+        else if (haptic === 'heavy') TactileEngine.destroy();
         
         onPressIn?.();
       }}
@@ -114,12 +114,12 @@ function PressableScale({
         }
         onPress?.();
       }}
-      onLongPress={() => {
+      onLongPress={onLongPress ? () => {
         if (haptic && haptic !== 'selection') {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+          TactileEngine.destroy();
         }
-        onLongPress?.();
-      }}
+        onLongPress();
+      } : undefined}
       style={[style, animatedStyle]}
     >
       {children}

@@ -2,8 +2,10 @@ import { useCallback, memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useRouter } from 'expo-router';
 import { tmdb } from '@/src/lib/tmdb';
+import { nav } from '@/src/utils/typedRouter';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
@@ -14,16 +16,21 @@ interface CastMember {
     profile_path?: string | null;
 }
 
-const keyExtractor = (item: CastMember) => item.id.toString();
+const keyExtractor = (item: CastMember, index: number) => `${item.id}-${index}`;
 
 const CastCard = memo(function CastCard({ item }: { item: CastMember }) {
-    const router = useRouter();
+    const handlePress = useCallback(() => {
+        if (item.id) {
+            nav.push(`/person/${item.id}`);
+        }
+    }, [item.id]);
 
     const photoUri = item.profile_path ? tmdb.profile(item.profile_path) : null;
     return (
         <PressableScale
             style={s.castCard}
-            onPress={() => router.push(`/person/${item.id}` as any)}
+            onPress={handlePress}
+            haptic="selection"
         >
             <View style={s.castPhotoWrap}>
                 {photoUri ? (
@@ -46,6 +53,8 @@ const CastCard = memo(function CastCard({ item }: { item: CastMember }) {
     );
 });
 
+const CarouselSeparator = () => <View style={{ width: 16 }} />;
+
 export const CastCarousel = memo(function CastCarousel({ cast }: { cast: CastMember[] }) {
     const renderItem = useCallback(({ item }: { item: CastMember }) => {
         return <CastCard item={item} />;
@@ -61,7 +70,8 @@ export const CastCarousel = memo(function CastCarousel({ cast }: { cast: CastMem
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={s.listContent}
                 keyExtractor={keyExtractor}
-                estimatedItemSize={100}
+                estimatedItemSize={116}
+                ItemSeparatorComponent={CarouselSeparator}
                 renderItem={renderItem}
             />
         </View>
@@ -69,7 +79,7 @@ export const CastCarousel = memo(function CastCarousel({ cast }: { cast: CastMem
 })
 
 const s = StyleSheet.create({
-    listContent: { paddingHorizontal: 16, gap: 16 },
+    listContent: { paddingHorizontal: 16 },
     castCard: { width: 100 },
     castPhotoWrap: { width: 100, height: 150, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', marginBottom: 8 },
     castPhoto: { width: '100%', height: '100%' },

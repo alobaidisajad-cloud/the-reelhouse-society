@@ -83,7 +83,7 @@ const SharedCard = memo(function SharedCard({ msg }: { msg: LoungeMessage }) {
 // ── Single Message ──
 const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onDelete, onReply, isTouch }: {
     msg: LoungeMessage; isSelf: boolean; showAuthor: boolean;
-    onDelete?: () => void; onReply?: () => void; isTouch: boolean
+    onDelete?: (id: string) => void; onReply?: (msg: LoungeMessage) => void; isTouch: boolean
 }) {
     const [actionSheet, setActionSheet] = useState(false)
     const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -142,13 +142,13 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
 
                         <div className="lounge-msg-actions">
                             {onReply && (
-                                <button className="lounge-msg-reply" onClick={(e) => { e.stopPropagation(); onReply() }} title="Reply">
+                                <button className="lounge-msg-reply" onClick={(e) => { e.stopPropagation(); onReply(msg) }} title="Reply">
                                     <Reply size={12} />
                                 </button>
                             )}
 
                             {isSelf && onDelete && (
-                                <button className="lounge-msg-delete" onClick={(e) => { e.stopPropagation(); onDelete() }} title="Delete message">
+                                <button className="lounge-msg-delete" onClick={(e) => { e.stopPropagation(); onDelete(msg.id) }} title="Delete message">
                                     <Trash2 size={12} />
                                 </button>
                             )}
@@ -164,7 +164,7 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
                     <div className="lounge-action-sheet">
                         <div className="lounge-action-sheet-handle" />
                         {onReply && (
-                            <button className="lounge-action-sheet-item" onClick={() => { setActionSheet(false); onReply() }}>
+                            <button className="lounge-action-sheet-item" onClick={() => { setActionSheet(false); onReply(msg) }}>
                                 <Reply size={16} /> REPLY
                             </button>
                         )}
@@ -172,7 +172,7 @@ const MessageBubble = memo(function MessageBubble({ msg, isSelf, showAuthor, onD
                             <Copy size={16} /> COPY TEXT
                         </button>
                         {isSelf && onDelete && (
-                            <button className="lounge-action-sheet-item lounge-action-sheet-item--danger" onClick={() => { setActionSheet(false); onDelete() }}>
+                            <button className="lounge-action-sheet-item lounge-action-sheet-item--danger" onClick={() => { setActionSheet(false); onDelete(msg.id) }}>
                                 <Trash2 size={16} /> DELETE FOR EVERYONE
                             </button>
                         )}
@@ -360,6 +360,23 @@ function LoungeSettingsPanel({ lounge, onClose, isCreator }: { lounge: any; onCl
                             <LogOut size={12} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
                             STEP OUT OF LOUNGE
                         </button>
+                        {isCreator && (
+                            <button 
+                                className="lounge-settings-danger-btn" 
+                                style={{ marginTop: '1rem', color: 'var(--blood)', borderColor: 'var(--blood)' }}
+                                onClick={async () => {
+                                    if (!confirm('INCINERATE LOUNGE?\n\nThis will permanently delete the lounge and all its history. This action cannot be undone.')) return
+                                    const store = useLoungeStore.getState()
+                                    // Make sure deleteLounge is accessible. Since it's in the store we can call it.
+                                    await store.deleteLounge(lounge.id)
+                                    reelToast.success('Lounge incinerated.')
+                                    navigate('/lounge')
+                                }}
+                            >
+                                <Trash2 size={12} style={{ verticalAlign: 'middle', marginRight: '0.4rem' }} />
+                                INCINERATE LOUNGE
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -483,10 +500,14 @@ export default function LoungeRoomPage() {
         }
     }
 
-    const handleReply = (msg: LoungeMessage) => {
+    const handleReply = useCallback((msg: LoungeMessage) => {
         setReplyTo(msg)
         inputRef.current?.focus()
-    }
+    }, [])
+
+    const handleDelete = useCallback((id: string) => {
+        deleteMessage(id)
+    }, [deleteMessage])
 
     const isCreator = activeLounge?.creator_id === user?.id
 
@@ -576,8 +597,8 @@ export default function LoungeRoomPage() {
                                 msg={msg}
                                 isSelf={msg.user_id === user?.id}
                                 showAuthor={shouldShowAuthor(messages, i)}
-                                onDelete={msg.user_id === user?.id ? () => deleteMessage(msg.id) : undefined}
-                                onReply={() => handleReply(msg)}
+                                onDelete={msg.user_id === user?.id ? handleDelete : undefined}
+                                onReply={handleReply}
                                 isTouch={isTouch}
                             />
                         </div>

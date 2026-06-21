@@ -1,0 +1,52 @@
+name: Maestro E2E Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'mobile/**'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Install Maestro CLI
+        run: curl -Ls "https://get.maestro.mobile.dev" | bash
+        
+      - name: Add Maestro to path
+        run: echo "${HOME}/.maestro/bin" >> $GITHUB_PATH
+
+      # NOTE: For an actual CI run on Ubuntu, we usually need an Android emulator or we can use Maestro Cloud.
+      # To run Maestro locally in CI we need hardware acceleration and emulator setup,
+      # which is typically done via reactivecircus/android-emulator-runner
+      - name: Run Maestro Tests on Android Emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 31
+          target: default
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            npm run android &
+            # Wait for Metro bundler to start and app to build/install
+            sleep 60
+            maestro test .maestro/

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, useWindowDimensions } from 'react-native';
 import { Canvas, Rect, FractalNoise, ColorMatrix } from '@shopify/react-native-skia';
 
 interface FilmGrainProps {
@@ -8,6 +8,7 @@ interface FilmGrainProps {
 }
 
 export default function FilmGrain({ intensity = 0.15, pointerEvents = 'none' }: FilmGrainProps) {
+  const { width, height } = useWindowDimensions();
   // We use a high frequency to simulate fine 35mm grain.
   // The ColorMatrix is used to push the fractal noise into absolute black & white
   // and reduce its alpha so it acts as a subtle overlay rather than blinding white noise.
@@ -22,7 +23,7 @@ export default function FilmGrain({ intensity = 0.15, pointerEvents = 'none' }: 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents={pointerEvents}>
       <Canvas style={StyleSheet.absoluteFill}>
-        <Rect x={0} y={0} width={4000} height={4000}>
+        <Rect x={0} y={0} width={width} height={height}>
           <ColorMatrix matrix={matrix}>
             <FractalNoise freqX={0.8} freqY={0.8} octaves={2} />
           </ColorMatrix>

@@ -2,39 +2,75 @@
  * THE DISPATCH — "The Gazette of 1924"
  * A journal of cinema — for those who see in the dark.
  */
-import { useEffect, useCallback, useState, useRef, useMemo } from 'react';
-import { View, Text, RefreshControl, ActivityIndicator, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
-import { Pen, Radio, Sparkles, FileText } from 'lucide-react-native';
+import { globalScrollY } from '@/src/lib/scrollBridge';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown, useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
 
-import { useAuthStore } from '@/src/stores/auth';
-import { useDispatchStore, Dossier } from '@/src/stores/content';
-import { tmdb } from '@/src/lib/tmdb';
-import { colors } from '@/src/theme/theme';
-import reelToast from '@/src/utils/reelToast';
+import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { FileText, Pen, Radio, Sparkles } from 'lucide-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import Buster from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
+import { tmdb } from '@/src/lib/tmdb';
+import { getNews } from '@/src/services/NewsService';
+import { useAuthStore } from '@/src/stores/auth';
+import { Dossier, useDispatchStore } from '@/src/stores/content';
+import { colors } from '@/src/theme/theme';
+import reelToast from '@/src/utils/reelToast';
+import { isAuteurPlusTier } from '@/src/utils/tier';
+// Import deleted since it's replaced by CinematicFlashList above
 
 // Decomposed components
-import { DispatchFilm, WireStory } from '@/src/components/dispatch/types';
-import { volumeNumber } from '@/src/components/dispatch/utils';
-import { st } from '@/src/components/dispatch/styles';
-import { OrnamentalDivider, SectionHeader } from '@/src/components/dispatch/DispatchShared';
-import { NightlyTransmission } from '@/src/components/dispatch/NightlyTransmission';
+import { ArticleReaderModal } from '@/src/components/dispatch/ArticleReaderModal';
 import { DailyFrame } from '@/src/components/dispatch/DailyFrame';
 import { DossierCard, WireItem } from '@/src/components/dispatch/DispatchCards';
-import { ArticleReaderModal } from '@/src/components/dispatch/ArticleReaderModal';
+import { OrnamentalDivider, SectionHeader } from '@/src/components/dispatch/DispatchShared';
+import { NightlyTransmission } from '@/src/components/dispatch/NightlyTransmission';
+import { st } from '@/src/components/dispatch/styles';
+import { DispatchFilm, WireStory } from '@/src/components/dispatch/types';
+import { volumeNumber } from '@/src/components/dispatch/utils';
 
 export default function DispatchScreen() {
   const insets = useSafeAreaInsets();
+
+  const scrollY = useSharedValue(0);
+  const scrollHeight = useSharedValue(0);
+  const viewHeight = useSharedValue(0);
+  const isScrolling = useSharedValue(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      globalScrollY.value = withTiming(scrollY.value, { duration: 250 });
+    }, [scrollY])
+  );
+
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+      globalScrollY.value = event.contentOffset.y;
+      scrollHeight.value = event.contentSize.height;
+      viewHeight.value = event.layoutMeasurement.height;
+    },
+    onBeginDrag: () => {
+      isScrolling.value = true;
+    },
+    onEndDrag: (event) => {
+      isScrolling.value = false;
+    },
+    onMomentumBegin: () => {
+      isScrolling.value = true;
+    },
+    onMomentumEnd: () => {
+      isScrolling.value = false;
+    }
+  });
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
   const dossiers = useDispatchStore(s => s.dossiers);
   const loading = useDispatchStore(s => s.loading);
@@ -44,7 +80,7 @@ export default function DispatchScreen() {
   const NAV_HEIGHT = 44 + 12;
   const topPad = insets.top + NAV_HEIGHT + 8;
 
-  const canWrite = user?.role === 'auteur';
+  const canWrite = isAuteurPlusTier(user);
 
   const [trending, setTrending] = useState<DispatchFilm[]>([]);
   const [news, setNews] = useState<WireStory[]>([]);
@@ -60,31 +96,55 @@ export default function DispatchScreen() {
     setSelectedArticle(null);
   }, []);
 
+  const isMounted = useRef(true);
+  useEffect(() => {
+    isMounted.current = true;
+    return () => { isMounted.current = false; };
+  }, []);
+
   const isFirstNewsRef = useRef(true);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [trendRes] = await Promise.all([
-        tmdb.trending('week'),
-        fetchDossiers(),
-      ]);
-      setTrending((trendRes?.results ?? []).slice(0, 12));
-    } catch {
-      reelToast.error('The nightly transmission could not be decoded.');
-    }
-
-    // News — SWR pattern: only show loading skeleton on first load
+  const loadData = useCallback(async (isUserAction = false) => {
+    // 1. News — Concurrent SWR pattern
     if (isFirstNewsRef.current) setNewsLoading(true);
-    try {
-      const items = await tmdb.getNews();
-      setNews((items ?? []).map((item: any) => ({ ...item, id: item.id ?? item.link ?? Math.random().toString(), link: item.link ?? '' })).slice(0, 8));
-    } catch {
-      if (isFirstNewsRef.current) reelToast.error('The wire signals were disrupted.');
-    }
-    if (isFirstNewsRef.current) {
-      setNewsLoading(false);
-      isFirstNewsRef.current = false;
-    }
+    const newsPromise = getNews()
+      .then((items: any) => {
+        if (!isMounted.current) return;
+        setNews((items ?? []).map((item: any, index: number) => ({ ...item, id: item.id ?? item.link ?? `wire-fallback-${index}`, link: item.link ?? '' })).slice(0, 8));
+      })
+      .catch(() => {
+        if ((isFirstNewsRef.current || isUserAction) && isMounted.current) {
+          reelToast.error('The wire signals were disrupted.');
+        }
+      })
+      .finally(() => {
+        if (isFirstNewsRef.current && isMounted.current) {
+          setNewsLoading(false);
+          isFirstNewsRef.current = false;
+        }
+      });
+
+    // 2. Trending — Concurrent decoupled pipeline
+    const trendPromise = tmdb.trending('week')
+      .then((trendRes) => {
+        if (isMounted.current) {
+          setTrending((trendRes?.results ?? []).slice(0, 12));
+        }
+      })
+      .catch(() => {
+        // Fallback silently if trending fails
+      });
+
+    // 3. Dossiers — Concurrent decoupled pipeline
+    const dossierPromise = fetchDossiers()
+      .catch(() => {
+        if ((isFirstNewsRef.current || isUserAction) && isMounted.current) {
+          reelToast.error('The nightly transmission could not be decoded.');
+        }
+      });
+
+    // Barrier: await all decoupled pipelines concurrently
+    await Promise.all([trendPromise, dossierPromise, newsPromise]);
   }, [fetchDossiers]);
 
   useEffect(() => {
@@ -95,7 +155,7 @@ export default function DispatchScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await loadData();
+    await loadData(true);
     setRefreshing(false);
   }, [loadData]);
 
@@ -103,12 +163,137 @@ export default function DispatchScreen() {
     month: 'long', day: '2-digit', year: 'numeric',
   }).toUpperCase();
 
-  // S3-01 AUDIT FIX: Stable renderItem reference — prevents FlashList cell re-creation on parent re-renders
+  // Stable renderItem reference — prevents FlashList cell re-creation on parent re-renders
   const renderDossierItem = useCallback(({ item, index }: { item: Dossier; index: number }) => (
     <View style={st.documentItem}>
       <DossierCard dossier={item} index={index} onPress={handleArticlePress} />
     </View>
   ), [handleArticlePress]);
+
+  const listHeader = useMemo(() => (
+    <View style={st.documentHeader}>
+      {/* ── MASTHEAD ── */}
+      <Animated.View entering={FadeIn.duration(800)} style={st.masthead}>
+        <View style={st.mastheadPublisherRow}>
+          <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
+          <Text style={st.mastheadPublisher}>THE REELHOUSE SOCIETY</Text>
+          <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
+        </View>
+
+        {/* Double rule top */}
+        <View style={st.mastheadRuleTop} />
+
+        <Text style={st.mastheadTitle} accessibilityRole="header" numberOfLines={2}>THE{'\n'}DISPATCH</Text>
+
+        {/* Double rule bottom */}
+        <View style={st.mastheadRuleBottom} />
+
+        {/* Meta line: VOL · EST · DATE */}
+        <View style={st.mastheadMetaRow}>
+          <Text style={st.mastheadMetaText} numberOfLines={1}>VOL. {volumeNumber()}</Text>
+          <View style={st.pulseDot} />
+          <Text style={st.mastheadMetaText} numberOfLines={1}>EST. 1924</Text>
+          <View style={st.pulseDot} />
+          <Text style={st.mastheadMetaText} numberOfLines={1}>{todayStr}</Text>
+        </View>
+
+        <Text style={st.mastheadSubtitle}>
+          A journal of cinema — for those who see in the dark.
+        </Text>
+      </Animated.View>
+
+      <OrnamentalDivider />
+
+      {/* ── NIGHTLY TRANSMISSION ── */}
+      <Animated.View entering={FadeInDown.duration(600).delay(200)}>
+        <NightlyTransmission films={trending} />
+      </Animated.View>
+
+      <OrnamentalDivider />
+
+      {/* ── DAILY FRAME ── */}
+      <Animated.View entering={FadeInDown.duration(600).delay(300)}>
+        <DailyFrame films={trending} />
+      </Animated.View>
+
+      <OrnamentalDivider />
+
+      {/* ── THE GLOBAL WIRE ── */}
+      <Animated.View entering={FadeInDown.duration(600).delay(400)}>
+        <SectionHeader
+          title="The Global Wire"
+          sub="Decoded signals from the worldwide cinema industry."
+        />
+
+        {newsLoading ? (
+          <Text style={st.wireLoader}>Decrypting incoming signals...</Text>
+        ) : news.length > 0 ? (
+          <View style={st.wireList}>
+            {news[0] && (
+              <WireItem
+                item={news[0]}
+                isLead
+                onPress={handleArticlePress}
+              />
+            )}
+            {news.slice(1).map((item) => (
+              <WireItem
+                key={item.id}
+                item={item}
+                onPress={handleArticlePress}
+              />
+            ))}
+          </View>
+        ) : null}
+
+        {!newsLoading && news.length === 0 && (
+          <View style={st.emptyState}>
+            <Radio size={28} color={colors.sepia} strokeWidth={1} />
+            <Text style={st.emptyTitle}>The wire is silent tonight.</Text>
+            <Text style={st.emptySub}>No decoded signals from the worldwide cinema industry.</Text>
+          </View>
+        )}
+      </Animated.View>
+
+      <OrnamentalDivider />
+
+      {/* ── AUTEUR DOSSIERS ── */}
+      <Animated.View entering={FadeInDown.duration(600).delay(500)}>
+        <SectionHeader
+          title="Auteur Dossiers"
+          sub="Original cinematic essays filed by our premium members."
+        />
+
+        {canWrite && (
+          <View style={st.writerBarWrap}>
+            <PressableScale
+              style={st.writerBarBtn}
+              onPress={() => (router.push as any)('/dispatch/compose' as any)}
+              haptic
+            >
+              <View style={st.writerBarBtnInner}>
+                <Pen size={10} color={colors.parchment} strokeWidth={1.5} />
+                <Text style={st.writerBarBtnText} numberOfLines={1}>FILE NEW DOSSIER</Text>
+              </View>
+            </PressableScale>
+          </View>
+        )}
+
+        {loading && dossiers.length === 0 && (
+          /* Skeleton shimmer */
+          <View style={st.skeletonGroup}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <View key={i} style={st.skeleton}>
+                <View style={[st.shimmer, st.shimmerSm]} />
+                <View style={[st.shimmer, st.shimmerLg]} />
+                <View style={[st.shimmer, st.shimmerMd]} />
+              </View>
+            ))}
+          </View>
+        )}
+      </Animated.View>
+    </View>
+  ), [trending, news, newsLoading, handleArticlePress, canWrite, router, loading, dossiers.length, todayStr]);
 
   return (
     <FrozenTab>
@@ -125,12 +310,15 @@ export default function DispatchScreen() {
         style={st.ambientGlow}
       />
 
-      <FlashList
+      <CinematicFlashList
         data={dossiers}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         estimatedItemSize={200}
         contentContainerStyle={[st.scrollContent, { paddingTop: topPad }]}
-        showsVerticalScrollIndicator={false}
+        scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
+        onScroll={onScroll}
+        topInset={topPad}
+        bottomInset={insets.bottom + 49}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -141,78 +329,8 @@ export default function DispatchScreen() {
         }
         onEndReached={() => useDispatchStore.getState().loadMoreDossiers()}
         onEndReachedThreshold={0.5}
-        ListHeaderComponent={
-          <View style={st.documentHeader}>
-            {/* ── MASTHEAD ── */}
-            <Animated.View entering={FadeIn.duration(800)} style={st.masthead}>
-              <View style={st.mastheadPublisherRow}>
-                <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
-                <Text style={st.mastheadPublisher}>THE REELHOUSE SOCIETY</Text>
-                <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
-              </View>
-
-              {/* Double rule top */}
-              <View style={st.mastheadRuleTop} />
-
-              <Text style={st.mastheadTitle} accessibilityRole="header" numberOfLines={2}>THE{'\n'}DISPATCH</Text>
-
-              {/* Double rule bottom */}
-              <View style={st.mastheadRuleBottom} />
-
-              {/* Meta line: VOL · EST · DATE */}
-              <View style={st.mastheadMetaRow}>
-                <Text style={st.mastheadMetaText} numberOfLines={1}>VOL. {volumeNumber()}</Text>
-                <View style={st.pulseDot} />
-                <Text style={st.mastheadMetaText} numberOfLines={1}>EST. 1924</Text>
-                <View style={st.pulseDot} />
-                <Text style={st.mastheadMetaText} numberOfLines={1}>{todayStr}</Text>
-              </View>
-
-              <Text style={st.mastheadSubtitle}>
-                A journal of cinema — for those who see in the dark.
-              </Text>
-            </Animated.View>
-
-            <OrnamentalDivider />
-
-            {/* ── AUTEUR DOSSIERS ── */}
-            <Animated.View entering={FadeInDown.duration(600).delay(300)}>
-              <SectionHeader
-                title="Auteur Dossiers"
-                sub="Original cinematic essays filed by our premium members."
-              />
-
-              {canWrite && (
-                <View style={st.writerBarWrap}>
-                  <PressableScale
-                    style={st.writerBarBtn}
-                    onPress={() => router.push('/dispatch/compose' as any)}
-                    haptic
-                  >
-                    <View style={st.writerBarBtnInner}>
-                      <Pen size={10} color={colors.parchment} strokeWidth={1.5} />
-                      <Text style={st.writerBarBtnText} numberOfLines={1}>FILE NEW DOSSIER</Text>
-                    </View>
-                  </PressableScale>
-                </View>
-              )}
-
-              {loading && dossiers.length === 0 && (
-                /* Skeleton shimmer */
-                <View style={st.skeletonGroup}>
-                  {Array.from({ length: 3 }).map((_, i) => (
-                    <View key={i} style={st.skeleton}>
-                      <View style={[st.shimmer, st.shimmerSm]} />
-                      <View style={[st.shimmer, st.shimmerLg]} />
-                      <View style={[st.shimmer, st.shimmerMd]} />
-                    </View>
-                  ))}
-                </View>
-              )}
-            </Animated.View>
-          </View>
-        }
-        renderItem={renderDossierItem}
+        ListHeaderComponent={listHeader}
+        renderItem={renderDossierItem as any}
         ListEmptyComponent={
           !loading ? (
             <View style={st.emptyState}>
@@ -234,59 +352,8 @@ export default function DispatchScreen() {
 
             <OrnamentalDivider />
 
-            {/* ── NIGHTLY TRANSMISSION ── */}
-            <Animated.View entering={FadeInDown.duration(600).delay(400)}>
-              <NightlyTransmission films={trending} />
-            </Animated.View>
-
-            <OrnamentalDivider />
-
-            {/* ── DAILY FRAME ── */}
-            <Animated.View entering={FadeInDown.duration(600).delay(500)}>
-              <DailyFrame films={trending} />
-            </Animated.View>
-
-            <OrnamentalDivider />
-
-            {/* ── THE GLOBAL WIRE ── */}
-            <Animated.View entering={FadeInDown.duration(600).delay(600)}>
-              <SectionHeader
-                title="The Global Wire"
-                sub="Decoded signals from the worldwide cinema industry."
-              />
-
-              {newsLoading ? (
-                <Text style={st.wireLoader}>Decrypting incoming signals...</Text>
-              ) : (
-                <View style={st.wireList}>
-                  {news[0] && (
-                    <WireItem
-                      item={news[0]}
-                      isLead
-                      onPress={handleArticlePress}
-                    />
-                  )}
-                  {news.slice(1).map((item) => (
-                    <WireItem
-                      key={item.id}
-                      item={item}
-                      onPress={handleArticlePress}
-                    />
-                  ))}
-                </View>
-              )}
-
-              {!newsLoading && news.length === 0 && (
-                <View style={st.emptyState}>
-                  <Radio size={28} color={colors.sepia} strokeWidth={1} />
-                  <Text style={st.emptyTitle}>The wire is silent tonight.</Text>
-                  <Text style={st.emptySub}>No decoded signals from the worldwide cinema industry.</Text>
-                </View>
-              )}
-            </Animated.View>
-
             {/* ── BUSTER'S EDITOR NOTE ── */}
-            <Animated.View entering={FadeInDown.duration(600).delay(700)} style={st.busterNote}>
+            <Animated.View entering={FadeInDown.duration(600).delay(400)} style={st.busterNote}>
               <View style={st.busterRuleTop} />
               <View style={st.busterContent}>
                 <View style={st.busterAvatar}>
@@ -312,7 +379,6 @@ export default function DispatchScreen() {
           </View>
         }
       />
-
 
       {/* ── ARTICLE READER MODAL ── */}
       <ArticleReaderModal

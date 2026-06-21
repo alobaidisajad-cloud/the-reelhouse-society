@@ -1,10 +1,10 @@
 import { StateCreator } from 'zustand';
 import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../auth';
-import { FilmState } from '../films';
-import reelToast from '../../utils/reelToast';
+import { PhysicalArchiveItem, TicketStub } from '../../types';
 import { enqueueMutation } from '../../utils/offlineQueue';
-import { TicketStub, PhysicalArchiveItem } from '../../types';
+import reelToast from '../../utils/reelToast';
+import { isArchivistPlusTier } from '../../utils/tier';
+import { useAuthStore } from '../auth';
 
 import { isNetworkError } from '../../utils/networkError';
 
@@ -12,6 +12,8 @@ export interface ArchiveSlice {
     physicalArchive: PhysicalArchiveItem[];
     archiveHasMore: boolean;
     archivePage: number;
+    _fetchingArchive: boolean;
+    _archiveCursor: string | null;
     stubs: TicketStub[];
 
     fetchPhysicalArchive: (userId?: string, loadMore?: boolean) => Promise<PhysicalArchiveItem[]>;
@@ -23,54 +25,80 @@ export interface ArchiveSlice {
     saveStub: (stub: Partial<TicketStub> & { showtimeId?: string, slotId?: string }) => Promise<string | null>;
 }
 
-export const createArchiveSlice: StateCreator<FilmState, [], [], ArchiveSlice> = (set, get) => ({
+export const createArchiveSlice: StateCreator<ArchiveSlice, [], [], ArchiveSlice> = (set, get) => ({
     physicalArchive: [],
     archiveHasMore: true,
     archivePage: 0,
+    _fetchingArchive: false,
+    _archiveCursor: null,
     stubs: [],
 
     fetchPhysicalArchive: async (userId?: string, loadMore = false) => {
         const uid = userId ?? useAuthStore.getState().user?.id;
-        if (!uid) return [];
+        const user = useAuthStore.getState().user;
+        if (!uid || !isArchivistPlusTier(user)) return [];
         const state = get();
         if (loadMore && !state.archiveHasMore) return state.physicalArchive;
+        if (state._fetchingArchive) return state.physicalArchive;
 
-        const PAGE_SIZE = 50;
-        const page = loadMore ? state.archivePage : 0;
+        set({ _fetchingArchive: true });
+        try {
+            const PAGE_SIZE = 50;
 
-        const { data, error } = await supabase
-            .from('physical_archive').select('id, user_id, film_id, film_title, poster_path, year, formats, notes, condition, created_at').eq('user_id', uid)
-            .order('created_at', { ascending: false })
-            .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-        if (!error && data) {
-            const items = data.map((item) => ({
-                id: item.id,
-                filmId: item.film_id,
-                title: item.film_title,
-                poster_path: item.poster_path ?? null,
-                year: item.year ?? null,
-                formats: item.formats ?? [],
-                notes: item.notes ?? '',
-                condition: item.condition ?? 'good',
-                createdAt: item.created_at,
-            }));
-            const hasMore = data.length === PAGE_SIZE;
+            let query = supabase
+                .from('physical_archive').select('id, user_id, film_id, film_title, poster_path, year, formats, notes, condition, created_at').eq('user_id', uid)
+                .order('created_at', { ascending: false })
+                .order('id', { ascending: false })
+                .limit(PAGE_SIZE);
 
-            if (!userId || userId === useAuthStore.getState().user?.id) {
-                set((prev) => ({ 
-                    physicalArchive: loadMore ? [...prev.physicalArchive, ...items] : items,
-                    archiveHasMore: hasMore,
-                    archivePage: page + 1
-                }));
+            // Cursor-based keyset pagination
+            const cursor = loadMore ? state._archiveCursor : null;
+            if (cursor) {
+                const [cursorDate, cursorId] = cursor.split('|');
+                if (cursorDate && cursorId) {
+                    query = query.or(`created_at.lt.${cursorDate},and(created_at.eq.${cursorDate},id.lt.${cursorId})`);
+                }
             }
-            return items;
+
+            const { data, error } = await query;
+            if (!error && data) {
+                const items = data.map((item) => ({
+                    id: item.id,
+                    filmId: item.film_id,
+                    title: item.film_title,
+                    poster: item.poster_path ?? null,
+                    poster_path: item.poster_path ?? null,
+                    year: item.year ?? null,
+                    formats: item.formats ?? [],
+                    notes: item.notes ?? '',
+                    condition: item.condition ?? 'good',
+                    createdAt: item.created_at,
+                }));
+                const hasMore = data.length === PAGE_SIZE;
+
+                // Compute next cursor from last row
+                const lastRow = data.length > 0 ? data[data.length - 1] : null;
+                const nextCursor = hasMore && lastRow ? `${lastRow.created_at}|${lastRow.id}` : null;
+
+                if (!userId || userId === useAuthStore.getState().user?.id) {
+                    set((prev) => ({ 
+                        physicalArchive: loadMore ? [...prev.physicalArchive, ...items] : items,
+                        archiveHasMore: hasMore,
+                        archivePage: (loadMore ? prev.archivePage : 0) + 1,
+                        _archiveCursor: nextCursor,
+                    }));
+                }
+                return items;
+            }
+            return get().physicalArchive;
+        } finally {
+            set({ _fetchingArchive: false });
         }
-        return get().physicalArchive;
     },
 
     addToPhysicalArchive: async (film, formats, notes = '', condition = 'good') => {
         const user = useAuthStore.getState().user;
-        if (!user) return;
+        if (!user || !isArchivistPlusTier(user)) return;
 
         const existingItem = get().physicalArchive.find(item => item.filmId === film.id);
         const newFormats = existingItem ? Array.from(new Set([...existingItem.formats, ...formats])) : formats;
@@ -79,6 +107,7 @@ export const createArchiveSlice: StateCreator<FilmState, [], [], ArchiveSlice> =
             id: String(existingItem ? existingItem.id : `-${Date.now()}`),
             filmId: film.id,
             title: film.title ?? film.name ?? 'Unknown',
+            poster: film.poster_path ?? film.poster ?? null,
             poster_path: film.poster_path ?? film.poster ?? null,
             year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
             formats: newFormats,
@@ -116,7 +145,7 @@ export const createArchiveSlice: StateCreator<FilmState, [], [], ArchiveSlice> =
          
         } catch (e: unknown) {
             if (isNetworkError(e)) {
-                // C-03 AUDIT FIX: Queue for offline sync
+                // Queue for offline sync
                 enqueueMutation({ type: 'add_archive', payload: {
                     user_id: user.id, film_id: film.id,
                     film_title: film.title ?? film.name ?? 'Unknown',
@@ -139,12 +168,12 @@ export const createArchiveSlice: StateCreator<FilmState, [], [], ArchiveSlice> =
 
     removeFromPhysicalArchive: async (filmId) => {
         const user = useAuthStore.getState().user;
-        if (!user) return;
+        if (!user || !isArchivistPlusTier(user)) return;
 
         const itemToRemove = get().physicalArchive.find((item) => item.filmId === filmId);
         if (!itemToRemove) return;
 
-        // Use unique record id for surgical optimistic removal (not filmId which could match multiple)
+        // Use unique record id for optimistic removal (not filmId which could match multiple)
         const removeId = itemToRemove.id;
         set((state) => ({
             physicalArchive: state.physicalArchive.filter((item) => item.id !== removeId)
@@ -156,7 +185,7 @@ export const createArchiveSlice: StateCreator<FilmState, [], [], ArchiveSlice> =
          
         } catch (e: unknown) {
             if (isNetworkError(e)) {
-                // C-03 AUDIT FIX: Queue for offline sync
+                // Queue for offline sync
                 enqueueMutation({ type: 'remove_archive', payload: { user_id: user.id, film_id: filmId } });
                 reelToast('Removed offline. Will sync when connected.');
                 return;
@@ -170,7 +199,7 @@ export const createArchiveSlice: StateCreator<FilmState, [], [], ArchiveSlice> =
 
     updatePhysicalArchiveItem: async (filmId: number, updates: Partial<PhysicalArchiveItem>) => {
         const user = useAuthStore.getState().user;
-        if (!user) return;
+        if (!user || !isArchivistPlusTier(user)) return;
         
         const prevItem = get().physicalArchive.find(a => a.filmId === filmId);
         
@@ -186,7 +215,7 @@ export const createArchiveSlice: StateCreator<FilmState, [], [], ArchiveSlice> =
          
         } catch (e: unknown) {
             if (isNetworkError(e)) {
-                // C-03 AUDIT FIX: Queue for offline sync
+                // Queue for offline sync
                 const dbUpdates: Record<string, any> = {};
                 if (updates.formats) dbUpdates.formats = updates.formats;
                 if (updates.notes !== undefined) dbUpdates.notes = updates.notes;

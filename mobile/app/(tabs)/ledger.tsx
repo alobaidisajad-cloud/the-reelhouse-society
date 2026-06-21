@@ -1,23 +1,25 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, RefreshControl } from 'react-native';
-import { Lock, Sparkles } from 'lucide-react-native';
-import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { useAuthStore } from '@/src/stores/auth';
-import { useFilmStore } from '@/src/stores/films';
-import { useRouter } from 'expo-router';
-import { colors, fonts } from '@/src/theme/theme';
-import { SectionDivider, ReelRating } from '@/src/components/Decorative';
-import { EmptyLedger, EmptyWatchlist, EmptyVault, EmptyLists } from '@/src/components/EmptyStates';
+import { ReelRating, SectionDivider } from '@/src/components/Decorative';
+import { EmptyLedger, EmptyLists, EmptyVault, EmptyWatchlist } from '@/src/components/EmptyStates';
 import PressableScale from '@/src/components/PressableScale';
+import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-import { setScrollY } from '@/src/utils/scrollBridge';
+import { globalScrollY } from '@/src/lib/scrollBridge';
+import { useAuthStore } from '@/src/stores/auth';
+import { useLogStore } from '@/src/stores/films';
+import { colors, fonts } from '@/src/theme/theme';
+import { FlashList } from '@shopify/flash-list';
+import * as Haptics from 'expo-haptics';
+import { Image } from 'expo-image';
+import { useFocusEffect, useRouter } from 'expo-router';
+import { Lock, Sparkles } from 'lucide-react-native';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeInDown, FadeInUp, runOnJS, useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const TMDB_IMG = 'https://image.tmdb.org/t/p/w185';
 const AnimatedView = Animated.createAnimatedComponent(View);
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
 
 type TabName = 'logs' | 'watchlist' | 'vault' | 'lists';
 
@@ -25,7 +27,7 @@ const LedgerLogCard = React.memo(({ item, index, router }: { item: Record<string
   const posterUri = item.poster ? `${TMDB_IMG}${item.poster}` : null;
   return (
     <AnimatedView entering={FadeInUp.duration(350).delay(Math.min(index * 40, 300))}>
-      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/log/${item.id}` as any); }}>
+      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)(`/log/${item.id}` as any); }}>
         <View style={s.logRow}>
           {posterUri ? <Image source={{ uri: posterUri }} style={s.logPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`log-${item.id}`} /> : <View style={[s.logPoster, s.noPoster]} />}
           <View style={s.logInfo}>
@@ -45,7 +47,7 @@ const LedgerWatchlistCard = React.memo(({ item, index, router }: { item: Record<
   const posterUri = item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null;
   return (
     <AnimatedView entering={FadeInUp.duration(300).delay(Math.min(index * 30, 250))} style={s.gridItem}>
-      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/film/${item.id}` as any); }}>
+      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)(`/film/${item.id}` as any); }}>
         {posterUri ? <Image source={{ uri: posterUri }} style={s.gridPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`wl-${item.id}`} /> : <View style={[s.gridPoster, s.noPoster]}><Text style={s.noPosterText}>?</Text></View>}
         <Text style={s.gridTitle} numberOfLines={1}>{item.title}</Text>
       </PressableScale>
@@ -58,7 +60,7 @@ const LedgerVaultCard = React.memo(({ item, index, router }: { item: Record<stri
   const posterUri = item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null;
   return (
     <AnimatedView entering={FadeInUp.duration(300).delay(Math.min(index * 30, 250))} style={s.gridItem}>
-      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/film/${item.id}` as any); }}>
+      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)(`/film/${item.id}` as any); }}>
         {posterUri ? <Image source={{ uri: posterUri }} style={s.gridPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`vault-${item.id}`} /> : <View style={[s.gridPoster, s.noPoster]}><Text style={s.noPosterText}>?</Text></View>}
         <Text style={s.gridTitle} numberOfLines={1}>{item.title}</Text>
         <Text style={s.gridFormat}>{item.format}</Text>
@@ -71,7 +73,7 @@ LedgerVaultCard.displayName = 'LedgerVaultCard';
 const LedgerListCard = React.memo(({ item, index, router }: { item: Record<string, any>, index: number, router: import('expo-router').Router }) => {
   return (
     <AnimatedView entering={FadeInUp.duration(350).delay(Math.min(index * 50, 300))}>
-      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push(`/stacks/${item.id}` as any); }}>
+      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)(`/stacks/${item.id}` as any); }}>
         <View style={s.listCard}>
           <Text style={s.listTitle}>{item.title}</Text>
           <Text style={s.listMeta}>{item.films?.length ?? 0} films{item.description ? ` · ${item.description}` : ''}</Text>
@@ -93,18 +95,93 @@ LedgerListCard.displayName = 'LedgerListCard';
 export default function StacksScreen() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { isAuthenticated, user } = useAuthStore();
-  const { logs, watchlist, physicalArchive, lists, fetchLogs, fetchWatchlist, fetchPhysicalArchive, fetchLists } = useFilmStore();
+  const { logs, watchlist, physicalArchive, lists, fetchLogs, fetchWatchlist, fetchPhysicalArchive, fetchLists } = useLogStore();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabName>('logs');
+  const [refreshing, setRefreshing] = useState(false);
   const scrollOffsets = useRef<Record<TabName, number>>({ logs: 0, watchlist: 0, vault: 0, lists: 0 });
   const insets = useSafeAreaInsets();
 
-  const handleScroll = useCallback((e: any) => {
-    scrollOffsets.current[activeTab] = e.nativeEvent.contentOffset.y;
-  }, [activeTab]);
+  const setScrollOffset = useCallback((tab: TabName, val: number) => {
+    scrollOffsets.current[tab] = val;
+  }, []);
 
-  // Reset scroll bridge so NavBar returns to transparent on this tab
-  useEffect(() => { setScrollY(0); }, []);
+  // Scroll tracking (isolated per tab)
+  const logsScrollY = useSharedValue(0);
+  const logsScrollHeight = useSharedValue(0);
+  const logsViewHeight = useSharedValue(0);
+  const logsIsScrolling = useSharedValue(false);
+  const onScrollLogs = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      logsScrollY.value = e.contentOffset.y;
+      logsScrollHeight.value = e.contentSize.height;
+      logsViewHeight.value = e.layoutMeasurement.height;
+      if (activeTab === 'logs') globalScrollY.value = e.contentOffset.y;
+    },
+    onBeginDrag: () => { logsIsScrolling.value = true; },
+    onEndDrag: (e) => { logsIsScrolling.value = false; runOnJS(setScrollOffset)('logs', e.contentOffset.y); },
+    onMomentumBegin: () => { logsIsScrolling.value = true; },
+    onMomentumEnd: (e) => { logsIsScrolling.value = false; runOnJS(setScrollOffset)('logs', e.contentOffset.y); }
+  });
+
+  const watchlistScrollY = useSharedValue(0);
+  const watchlistScrollHeight = useSharedValue(0);
+  const watchlistViewHeight = useSharedValue(0);
+  const watchlistIsScrolling = useSharedValue(false);
+  const onScrollWatchlist = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      watchlistScrollY.value = e.contentOffset.y;
+      watchlistScrollHeight.value = e.contentSize.height;
+      watchlistViewHeight.value = e.layoutMeasurement.height;
+      if (activeTab === 'watchlist') globalScrollY.value = e.contentOffset.y;
+    },
+    onBeginDrag: () => { watchlistIsScrolling.value = true; },
+    onEndDrag: (e) => { watchlistIsScrolling.value = false; runOnJS(setScrollOffset)('watchlist', e.contentOffset.y); },
+    onMomentumBegin: () => { watchlistIsScrolling.value = true; },
+    onMomentumEnd: (e) => { watchlistIsScrolling.value = false; runOnJS(setScrollOffset)('watchlist', e.contentOffset.y); }
+  });
+
+  const vaultScrollY = useSharedValue(0);
+  const vaultScrollHeight = useSharedValue(0);
+  const vaultViewHeight = useSharedValue(0);
+  const vaultIsScrolling = useSharedValue(false);
+  const onScrollVault = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      vaultScrollY.value = e.contentOffset.y;
+      vaultScrollHeight.value = e.contentSize.height;
+      vaultViewHeight.value = e.layoutMeasurement.height;
+      if (activeTab === 'vault') globalScrollY.value = e.contentOffset.y;
+    },
+    onBeginDrag: () => { vaultIsScrolling.value = true; },
+    onEndDrag: (e) => { vaultIsScrolling.value = false; runOnJS(setScrollOffset)('vault', e.contentOffset.y); },
+    onMomentumBegin: () => { vaultIsScrolling.value = true; },
+    onMomentumEnd: (e) => { vaultIsScrolling.value = false; runOnJS(setScrollOffset)('vault', e.contentOffset.y); }
+  });
+
+  const listsScrollY = useSharedValue(0);
+  const listsScrollHeight = useSharedValue(0);
+  const listsViewHeight = useSharedValue(0);
+  const listsIsScrolling = useSharedValue(false);
+  const onScrollLists = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      listsScrollY.value = e.contentOffset.y;
+      listsScrollHeight.value = e.contentSize.height;
+      listsViewHeight.value = e.layoutMeasurement.height;
+      if (activeTab === 'lists') globalScrollY.value = e.contentOffset.y;
+    },
+    onBeginDrag: () => { listsIsScrolling.value = true; },
+    onEndDrag: (e) => { listsIsScrolling.value = false; runOnJS(setScrollOffset)('lists', e.contentOffset.y); },
+    onMomentumBegin: () => { listsIsScrolling.value = true; },
+    onMomentumEnd: (e) => { listsIsScrolling.value = false; runOnJS(setScrollOffset)('lists', e.contentOffset.y); }
+  });
+
+  useEffect(() => { globalScrollY.value = 0; }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      globalScrollY.value = withTiming(scrollOffsets.current[activeTab] || 0, { duration: 250 });
+    }, [activeTab])
+  );
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -113,12 +190,16 @@ export default function StacksScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAuthenticated]);
 
-  const onRefresh = useCallback(() => { fetchLogs(); fetchWatchlist(); fetchPhysicalArchive(); fetchLists(); }, [fetchLogs, fetchWatchlist, fetchPhysicalArchive, fetchLists]);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([fetchLogs(), fetchWatchlist(), fetchPhysicalArchive(), fetchLists()]);
+    setRefreshing(false);
+  }, [fetchLogs, fetchWatchlist, fetchPhysicalArchive, fetchLists]);
 
-  // F-04 FIX: Memoize the shared refresh control to prevent re-creation
+  // Memoize the shared refresh control to prevent re-creation
   const sharedRefreshControl = useMemo(() => (
-    <RefreshControl refreshing={false} onRefresh={onRefresh} tintColor={colors.sepia} />
-  ), [onRefresh]);
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />
+  ), [refreshing, onRefresh]);
 
   const renderLogItem = useCallback(({ item, index }: { item: Record<string, any>, index: number }) => (
     <LedgerLogCard item={item} index={index} router={router} />
@@ -143,7 +224,7 @@ export default function StacksScreen() {
         <View style={s.center}>
           <Lock size={40} color={colors.ash} strokeWidth={1.2} />
           <Text style={s.lockedText}>Sign in to access your Stacks</Text>
-          <PressableScale style={s.ctaBtn} onPress={() => router.push('/login' as any)} pressedScale={0.97}>
+          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/login' as any)} pressedScale={0.97}>
             <View style={s.ctaBtnContent}>
               <Sparkles size={12} color={colors.ink} strokeWidth={2} />
               <Text style={s.ctaText}>ENTER THE HOUSE</Text>
@@ -191,68 +272,84 @@ export default function StacksScreen() {
        * the scrollOffsets ref and initialScrollOffset prop on remount.
        */}
       <View style={s.tabPaneActive}>
-        {activeTab === 'logs' && (
-          <FlashList
+        <View style={[StyleSheet.absoluteFill, { opacity: activeTab === 'logs' ? 1 : 0, zIndex: activeTab === 'logs' ? 1 : 0 }]} pointerEvents={activeTab === 'logs' ? 'auto' : 'none'}>
+          <CinematicFlashList
             data={logs}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: any) => item.id}
             contentContainerStyle={s.listContent}
-            showsVerticalScrollIndicator={false}
             estimatedItemSize={83}
             refreshControl={sharedRefreshControl}
             renderItem={renderLogItem}
             ListEmptyComponent={<EmptyLedger />}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            contentOffset={{ y: scrollOffsets.current['logs'], x: 0 }}
+            scrollMetrics={{
+              scrollY: logsScrollY,
+              scrollHeight: logsScrollHeight,
+              viewHeight: logsViewHeight,
+              isScrolling: logsIsScrolling
+            }}
+            onScroll={onScrollLogs}
+            bottomInset={insets.bottom + 49}
           />
-        )}
-        {activeTab === 'watchlist' && (
-          <FlashList
+        </View>
+        <View style={[StyleSheet.absoluteFill, { opacity: activeTab === 'watchlist' ? 1 : 0, zIndex: activeTab === 'watchlist' ? 1 : 0 }]} pointerEvents={activeTab === 'watchlist' ? 'auto' : 'none'}>
+          <CinematicFlashList
             data={watchlist}
-            keyExtractor={(item) => String(item.id)}
+            keyExtractor={(item: any) => String(item.id)}
             numColumns={3}
             contentContainerStyle={s.gridContent}
-            showsVerticalScrollIndicator={false}
             estimatedItemSize={180}
             refreshControl={sharedRefreshControl}
             renderItem={renderWatchlistItem}
             ListEmptyComponent={<EmptyWatchlist />}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            contentOffset={{ y: scrollOffsets.current['watchlist'], x: 0 }}
+            scrollMetrics={{
+              scrollY: watchlistScrollY,
+              scrollHeight: watchlistScrollHeight,
+              viewHeight: watchlistViewHeight,
+              isScrolling: watchlistIsScrolling
+            }}
+            onScroll={onScrollWatchlist}
+            bottomInset={insets.bottom + 49}
           />
-        )}
-        {activeTab === 'vault' && (
-          <FlashList
+        </View>
+        <View style={[StyleSheet.absoluteFill, { opacity: activeTab === 'vault' ? 1 : 0, zIndex: activeTab === 'vault' ? 1 : 0 }]} pointerEvents={activeTab === 'vault' ? 'auto' : 'none'}>
+          <CinematicFlashList
             data={physicalArchive}
-            keyExtractor={(item) => String(item.id)}
+            keyExtractor={(item: any) => String(item.id)}
             numColumns={3}
             contentContainerStyle={s.gridContent}
-            showsVerticalScrollIndicator={false}
             estimatedItemSize={180}
             refreshControl={sharedRefreshControl}
             renderItem={renderVaultItem}
             ListEmptyComponent={<EmptyVault />}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            contentOffset={{ y: scrollOffsets.current['vault'], x: 0 }}
+            scrollMetrics={{
+              scrollY: vaultScrollY,
+              scrollHeight: vaultScrollHeight,
+              viewHeight: vaultViewHeight,
+              isScrolling: vaultIsScrolling
+            }}
+            onScroll={onScrollVault}
+            bottomInset={insets.bottom + 49}
           />
-        )}
-        {activeTab === 'lists' && (
-          <FlashList
+        </View>
+        <View style={[StyleSheet.absoluteFill, { opacity: activeTab === 'lists' ? 1 : 0, zIndex: activeTab === 'lists' ? 1 : 0 }]} pointerEvents={activeTab === 'lists' ? 'auto' : 'none'}>
+          <CinematicFlashList
             data={lists}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item: any) => item.id}
             contentContainerStyle={s.listContent}
-            showsVerticalScrollIndicator={false}
             estimatedItemSize={120}
             refreshControl={sharedRefreshControl}
             renderItem={renderListItem}
             ListEmptyComponent={<EmptyLists />}
-            onScroll={handleScroll}
-            scrollEventThrottle={16}
-            contentOffset={{ y: scrollOffsets.current['lists'], x: 0 }}
+            scrollMetrics={{
+              scrollY: listsScrollY,
+              scrollHeight: listsScrollHeight,
+              viewHeight: listsViewHeight,
+              isScrolling: listsIsScrolling
+            }}
+            onScroll={onScrollLists}
+            bottomInset={insets.bottom + 49}
           />
-        )}
+        </View>
       </View>
     </View>
     </FrozenTab>
@@ -311,7 +408,7 @@ const s = StyleSheet.create({
   listPosters: { flexDirection: 'row', marginTop: 4 },
   listPosterThumb: { width: 40, height: 60, borderRadius: 2, marginRight: 6, backgroundColor: colors.ash },
 
-  // F-04 FIX: Persistent tab panes — stay mounted to preserve scroll state
+  // Persistent tab panes — stay mounted to preserve scroll state
   tabPaneActive: { flex: 1 },
 
   // Locked

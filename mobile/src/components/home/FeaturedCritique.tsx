@@ -1,68 +1,47 @@
 /**
  * FeaturedCritique — The lead story/featured log section on the Lobby.
  */
-import { memo, useEffect, useState } from 'react';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { memo, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   Easing, interpolate, cancelAnimation
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { supabase } from '@/src/lib/supabase';
 import type { FeaturedLog, PulseActivity } from './types';
 import { timeAgo } from './types';
-import { PulseCardItem } from './SocialPulse';
-
-// ── SHIMMER RULE ──
- 
-const ShimmerRule = memo(() => {
-    const shimmer = useSharedValue(-1);
-    useEffect(() => {
-       shimmer.value = withRepeat(
-         withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-         -1, false
-       );
-       return () => cancelAnimation(shimmer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    const shimmerStyle = useAnimatedStyle(() => ({
-       transform: [{ translateX: interpolate(shimmer.value, [-1, 1], [-100, 300]) }]
-    }));
-    return (
-       <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1.5, backgroundColor: 'rgba(139,105,20,0.1)', overflow: 'hidden' }}>
-          <Animated.View style={[{ width: 60, height: '100%' }, shimmerStyle]}>
-             <LinearGradient colors={['transparent', 'rgba(218,165,32,0.8)', 'transparent']} start={{x:0,y:0}} end={{x:1,y:0}} style={StyleSheet.absoluteFillObject} />
-          </Animated.View>
-       </View>
-    );
-});
+import { PulseCardItem } from './PulseCardItem';
+import { ShimmerRule } from './VelvetRopeCTA';
 
 // ── FEATURED CRITIQUE ──
 function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
   const router = useRouter();
-  const [featured, setFeatured] = useState<FeaturedLog | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-    (async () => {
-      try {
-        const { data: featuredLog } = await supabase
+  const { data: featured } = useQuery({
+    queryKey: ['featuredCritique', refreshTrigger],
+    queryFn: async () => {
+        const { data: featuredLog, error } = await supabase
           .rpc('get_featured_critique')
           .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, created_at, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
           .single();
 
-        if (featuredLog && isMounted) setFeatured(featuredLog as FeaturedLog);
-      } catch (e: unknown) {
-        if (__DEV__) console.error('[FeaturedCritique] Sync error:', e);
-      }
-    })();
-    return () => { isMounted = false; };
-  }, [refreshTrigger]);
+        if (error) {
+          if (__DEV__) console.error('[FeaturedCritique] Sync error:', error);
+          return null;
+        }
+        return featuredLog as FeaturedLog;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
   if (!featured) return null;
 
@@ -71,6 +50,7 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
 
   const pulseItem: PulseActivity = {
       id: featured.id,
+      user_id: featured.user_id,
       user: username,
       userRole: role,
       film: { id: featured.film_id, title: featured.film_title, poster_path: featured.poster_path },
@@ -103,7 +83,7 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
          <PulseCardItem act={pulseItem} isFeatured={true} />
       </View>
 
-      <PressableScale style={s.critiqueSubmitBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); router.push('/log-modal' as any); }}>
+      <PressableScale style={s.critiqueSubmitBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); (router.push as any)('/log-modal' as any); }}>
         <Text style={s.critiqueSubmitText}>✦ FILE A DISPATCH ✦</Text>
         <ShimmerRule />
       </PressableScale>
@@ -128,6 +108,4 @@ const s = StyleSheet.create({
   },
   critiqueSubmitText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 3, color: colors.sepia },
 });
-
-
-ShimmerRule.displayName = 'ShimmerRule';
+

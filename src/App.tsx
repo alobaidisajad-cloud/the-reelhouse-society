@@ -9,6 +9,7 @@ import Preloader from './components/Preloader'
 import FilmStripLoader from './components/FilmStripLoader'
 import CustomCursor from './components/CustomCursor'
 import { useFilmStore, useUIStore, useAuthStore, initRealtime, initAuthSync } from './store'
+import { useFeatureFlagStore } from './stores/featureFlags'
 import InstallPrompt from './components/InstallPrompt'
 import QualityOfLife from './components/QualityOfLife'
 import ErrorBoundary from './components/ErrorBoundary'
@@ -19,6 +20,7 @@ import ShortcutsHelp from './components/ShortcutsHelp'
 import { useAnalytics } from './hooks/useAnalytics'
 import { useAchievements } from './hooks/useAchievements'
 import AchievementToast from './components/AchievementToast'
+import posthog from 'posthog-js'
 
 // ── Heavy Global Modals (Lazy Loaded) ──
 // BootcampModal retired — onboarding content lives in the Handbook now
@@ -151,6 +153,13 @@ export default function App() {
   // ── Analytics — auto page views + manual tracking ──
   const { trackEvent } = useAnalytics()
 
+  // ── PostHog SPA Pageview — manual capture since auto-capture is disabled ──
+  useEffect(() => {
+    if (import.meta.env.VITE_POSTHOG_KEY) {
+      posthog.capture('$pageview', { $current_url: window.location.origin + location.pathname })
+    }
+  }, [location.pathname])
+
   // ── Persistent Achievements — detect new badge unlocks ──
   const { newBadges, dismissNewBadge } = useAchievements(user?.id, logs)
 
@@ -197,10 +206,11 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Elite Backend: Initialize Live global data stream + error logging
+  // Elite Backend: Initialize Live global data stream + error logging + feature flags
   useEffect(() => {
     initAuthSync()
     initRealtime()
+    useFeatureFlagStore.getState().loadFlags()
     // Log unhandled errors to Supabase for production monitoring
     import('./errorLogger').then(m => m.initGlobalErrorLogging())
   }, [])
@@ -265,45 +275,47 @@ export default function App() {
           {newBadges.length > 0 && <AchievementToast badge={newBadges[0]} onDismiss={() => dismissNewBadge(newBadges[0].key)} />}
 
           <main id="main-content" tabIndex={-1}>
-          <AnimatePresence mode="wait" initial={false}>
-            <Routes location={location} key={location.pathname}>
-              <Route path="/" element={<ErrorBoundary key="home"><PageWrapper><HomePage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/film/:id" element={<ErrorBoundary key="film"><PageWrapper><FilmDetailPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/log/:logId" element={<ErrorBoundary key="log"><PageWrapper><LogDetailPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/user/:username/:tab?" element={<ErrorBoundary key="profile"><PageWrapper><UserProfilePage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/discover" element={<ErrorBoundary key="discover"><PageWrapper><DiscoverPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/feed" element={<ErrorBoundary key="feed"><PageWrapper><FeedPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/lists" element={<ErrorBoundary key="lists"><PageWrapper><ListsPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/stacks" element={<ErrorBoundary key="stacks"><PageWrapper><ListsPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/lists/:id" element={<ErrorBoundary key="list-detail"><PageWrapper><ListDetailPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/stacks/:id" element={<ErrorBoundary key="stack-detail"><PageWrapper><ListDetailPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/lounge" element={<ErrorBoundary key="lounge"><PageWrapper><LoungePage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/lounge/:loungeId" element={<ErrorBoundary key="lounge-room"><PageWrapper><LoungeRoomPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/person/:id" element={<ErrorBoundary key="person"><PageWrapper><PersonPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/dispatch" element={<ErrorBoundary key="dispatch"><PageWrapper><DispatchPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/dispatch/compose" element={<ErrorBoundary key="compose"><PageWrapper><ComposeDossierPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/patronage" element={<ErrorBoundary key="patronage"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/society" element={<ErrorBoundary key="society"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/auth/callback" element={<ErrorBoundary key="auth"><AuthCallbackPage /></ErrorBoundary>} />
-              <Route path="/auth/reset-password" element={<ErrorBoundary key="reset-pw"><PageWrapper><ResetPasswordPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/join" element={<ErrorBoundary key="join"><PageWrapper><AuthPage mode="join" /></PageWrapper></ErrorBoundary>} />
-              <Route path="/login" element={<ErrorBoundary key="login"><PageWrapper><AuthPage mode="login" /></PageWrapper></ErrorBoundary>} />
-              <Route path="/verify" element={<ErrorBoundary key="verify"><PageWrapper><AuthPage mode="verify" /></PageWrapper></ErrorBoundary>} />
-              <Route path="/forgot-password" element={<ErrorBoundary key="forgot-password"><PageWrapper><AuthPage mode="forgot-password" /></PageWrapper></ErrorBoundary>} />
-              <Route path="/darkroom" element={<Navigate to="/discover" replace />} />
-              <Route path="/membership" element={<Navigate to="/patronage" replace />} />
-              <Route path="/year-in-cinema" element={<ErrorBoundary key="yic"><PageWrapper><YearInCinemaPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/settings" element={<ErrorBoundary key="settings"><PageWrapper><SettingsPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/admin" element={<ErrorBoundary key="admin"><PageWrapper><DebugPanel /></PageWrapper></ErrorBoundary>} />
+            <Suspense fallback={<PageFallback />}>
+              <AnimatePresence mode="wait" initial={false}>
+                <Routes location={location} key={location.pathname}>
+                  <Route path="/" element={<ErrorBoundary key="home"><PageWrapper><HomePage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/film/:id" element={<ErrorBoundary key="film"><PageWrapper><FilmDetailPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/log/:logId" element={<ErrorBoundary key="log"><PageWrapper><LogDetailPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/user/:username/:tab?" element={<ErrorBoundary key="profile"><PageWrapper><UserProfilePage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/discover" element={<ErrorBoundary key="discover"><PageWrapper><DiscoverPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/feed" element={<ErrorBoundary key="feed"><PageWrapper><FeedPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/lists" element={<ErrorBoundary key="lists"><PageWrapper><ListsPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/stacks" element={<ErrorBoundary key="stacks"><PageWrapper><ListsPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/lists/:id" element={<ErrorBoundary key="list-detail"><PageWrapper><ListDetailPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/stacks/:id" element={<ErrorBoundary key="stack-detail"><PageWrapper><ListDetailPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/lounge" element={<ErrorBoundary key="lounge"><PageWrapper><LoungePage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/lounge/:loungeId" element={<ErrorBoundary key="lounge-room"><PageWrapper><LoungeRoomPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/person/:id" element={<ErrorBoundary key="person"><PageWrapper><PersonPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/dispatch" element={<ErrorBoundary key="dispatch"><PageWrapper><DispatchPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/dispatch/compose" element={<ErrorBoundary key="compose"><PageWrapper><ComposeDossierPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/patronage" element={<ErrorBoundary key="patronage"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/society" element={<ErrorBoundary key="society"><PageWrapper><MembershipPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/auth/callback" element={<ErrorBoundary key="auth"><AuthCallbackPage /></ErrorBoundary>} />
+                  <Route path="/auth/reset-password" element={<ErrorBoundary key="reset-pw"><PageWrapper><ResetPasswordPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/join" element={<ErrorBoundary key="join"><PageWrapper><AuthPage mode="join" /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/login" element={<ErrorBoundary key="login"><PageWrapper><AuthPage mode="login" /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/verify" element={<ErrorBoundary key="verify"><PageWrapper><AuthPage mode="verify" /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/forgot-password" element={<ErrorBoundary key="forgot-password"><PageWrapper><AuthPage mode="forgot-password" /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/darkroom" element={<Navigate to="/discover" replace />} />
+                  <Route path="/membership" element={<Navigate to="/patronage" replace />} />
+                  <Route path="/year-in-cinema" element={<ErrorBoundary key="yic"><PageWrapper><YearInCinemaPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/settings" element={<ErrorBoundary key="settings"><PageWrapper><SettingsPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/admin" element={<ErrorBoundary key="admin"><PageWrapper><DebugPanel /></PageWrapper></ErrorBoundary>} />
 
-              <Route path="/tribunal" element={<ErrorBoundary key="tribunal"><PageWrapper><TribunalPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/privacy" element={<ErrorBoundary key="privacy"><PageWrapper><PrivacyPolicyPage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/terms" element={<ErrorBoundary key="terms"><PageWrapper><TermsOfServicePage /></PageWrapper></ErrorBoundary>} />
-              <Route path="/edit-profile" element={<ErrorBoundary key="edit-profile"><PageWrapper><EditProfilePage /></PageWrapper></ErrorBoundary>} />
-              <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/tribunal" element={<ErrorBoundary key="tribunal"><PageWrapper><TribunalPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/privacy" element={<ErrorBoundary key="privacy"><PageWrapper><PrivacyPolicyPage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/terms" element={<ErrorBoundary key="terms"><PageWrapper><TermsOfServicePage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="/edit-profile" element={<ErrorBoundary key="edit-profile"><PageWrapper><EditProfilePage /></PageWrapper></ErrorBoundary>} />
+                  <Route path="*" element={<ErrorBoundary key="404"><PageWrapper><NotFoundPage /></PageWrapper></ErrorBoundary>} />
 
-            </Routes>
-          </AnimatePresence>
+                </Routes>
+              </AnimatePresence>
+            </Suspense>
           </main>
         </ErrorBoundary>
       </Suspense>

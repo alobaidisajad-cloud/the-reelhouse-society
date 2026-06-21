@@ -1,0 +1,106 @@
+## T4-4: Maestro E2E Test Flows for ReelHouse Society
+## ────────────────────────────────────────────────────
+## Profile screen critical path — verifies the entire
+## profile loading, navigation, and interaction flow.
+##
+## Run: maestro test maestro/flows/profile.yaml
+## ────────────────────────────────────────────────────
+
+appId: com.reelhouse.mobile
+name: Profile Screen - Critical Path
+
+---
+
+# ── Step 1: Launch and navigate to profile ──
+- launchApp
+
+- waitForAnimationToEnd
+
+# Tap the profile tab (bottom nav)
+- tapOn:
+    id: "tab-profile"
+    retryTapIfNoChange: true
+
+- waitForAnimationToEnd
+
+# ── Step 2: Verify profile header loads ──
+- assertVisible:
+    id: "profile-display-name"
+    
+- assertVisible:
+    id: "profile-avatar"
+
+- assertVisible:
+    id: "profile-stats-grid"
+
+# ── Step 3: Verify collection cards render ──
+- assertVisible:
+    text: "Archive"
+
+- assertVisible:
+    text: "The Ledger"
+
+- assertVisible:
+    text: "Watchlist"
+
+- assertVisible:
+    text: "Stacks"
+
+# ── Step 4: Navigate to Archive tab ──
+- tapOn:
+    text: "Archive"
+    retryTapIfNoChange: true
+
+- waitForAnimationToEnd
+
+# Verify archive content loads
+- assertVisible:
+    id: "tab-header-title"
+
+# ── Step 5: Go back to profile ──  
+- tapOn:
+    id: "back-button"
+
+- waitForAnimationToEnd
+
+# ── Step 6: Navigate to Watchlist tab ──
+- tapOn:
+    text: "Watchlist"
+    retryTapIfNoChange: true
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "tab-header-title"
+
+# ── Step 7: Go back and check Stacks ──
+- tapOn:
+    id: "back-button"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    text: "Stacks"
+    retryTapIfNoChange: true
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "tab-header-title"
+
+# ── Step 8: Navigate to Analytics (Projector) ──
+- tapOn:
+    id: "back-button"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    text: "Analytics"
+    retryTapIfNoChange: true
+
+- waitForAnimationToEnd
+
+# Analytics should show projector room content
+- assertVisible:
+    id: "projector-room"
+    optional: true

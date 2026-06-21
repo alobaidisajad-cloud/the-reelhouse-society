@@ -103,9 +103,9 @@ export const useDispatchStore = create<DispatchState>((set) => ({
         const user = useAuthStore.getState().user
         if (!user) throw new Error("Must be logged in")
         const dbUpdates: Record<string, any> = {}
-        if (updates.title) dbUpdates.title = updates.title
-        if (updates.excerpt) dbUpdates.excerpt = updates.excerpt
-        if (updates.fullContent) dbUpdates.full_content = updates.fullContent
+        if (updates.title !== undefined) dbUpdates.title = updates.title
+        if (updates.excerpt !== undefined) dbUpdates.excerpt = updates.excerpt
+        if (updates.fullContent !== undefined) dbUpdates.full_content = updates.fullContent
 
         const { error } = await supabase
             .from('dispatch_dossiers')
@@ -198,7 +198,9 @@ export const useProgrammeStore = create<ProgrammeState>((set) => ({
     },
 
     removeProgramme: async (id) => {
-        const { error } = await supabase.from('programmes').delete().eq('id', id)
+        const user = useAuthStore.getState().user
+        if (!user) throw new Error("Must be logged in to remove a programme")
+        const { error } = await supabase.from('programmes').delete().eq('id', id).eq('user_id', user.id)
         if (error) throw error
         set((state) => ({ programmes: state.programmes.filter((p) => p.id !== id) }))
     },

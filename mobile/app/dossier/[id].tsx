@@ -1,18 +1,33 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, TextInput } from 'react-native';
 import { SectionDivider } from '@/src/components/Decorative';
+import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
+import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
+import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
-import { useLocalSearchParams, router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { MoreHorizontal } from 'lucide-react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
+import { useBlockStore } from '@/src/stores/blockStore';
+import { useDispatchStore } from '@/src/stores/content';
 import { colors, fonts } from '@/src/theme/theme';
+import { DossierComment, DossierDetail } from '@/src/types';
+import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
+import TactileEngine from '@/src/utils/TactileEngine';
+import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
-import { DossierDetail, DossierComment } from '@/src/types';
+import { z } from 'zod';
+
+// In-flight guard (not a timestamp throttle): blocks re-tapping certify on the same
+// dossier until the prior RPC has actually resolved, so a fast second tap can't read
+// optimistic state that the first call hasn't confirmed yet.
+const _certifyPending = new Set<string>();
 
 export default function DossierReaderScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -21,17 +36,23 @@ export default function DossierReaderScreen() {
     
     const keyboard = useAnimatedKeyboard();
     const animatedContainerStyle = useAnimatedStyle(() => ({
-        paddingBottom: keyboard.height.value,
+        paddingBottom: Math.max(keyboard.height.value, insets.bottom),
     }));
     
     const [dossier, setDossier] = useState<DossierDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [certified, setCertified] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [certifyCount, setCertifyCount] = useState(0);
     const [comments, setComments] = useState<DossierComment[]>([]);
     const [newComment, setNewComment] = useState('');
     const [posting, setPosting] = useState(false);
+    const [actionSheetVisible, setActionSheetVisible] = useState(false);
+    const [reportSheetVisible, setReportSheetVisible] = useState(false);
+    const [commentActionSheetVisible, setCommentActionSheetVisible] = useState(false);
+    const [commentReportSheetVisible, setCommentReportSheetVisible] = useState(false);
+    const [selectedComment, setSelectedComment] = useState<DossierComment | null>(null);
+
+    const blockUser = useBlockStore((state) => state.blockUser);
+    const muteUser = useBlockStore((state) => state.muteUser);
 
     // Callback isolation: stabilize annotation input handler
     const handleNewCommentChange = useCallback((text: string) => {
@@ -42,6 +63,11 @@ export default function DossierReaderScreen() {
         async function fetchDossier() {
             setLoading(true);
             try {
+                const localDossier = useDispatchStore.getState().dossiers.find(d => d.id === id);
+                if (localDossier) {
+                    setDossier(localDossier as DossierDetail);
+                }
+
                 // In a real scenario we'd query dispatch_dossiers
                 const { data, error } = await supabase
                     .from('dispatch_dossiers')
@@ -49,12 +75,35 @@ export default function DossierReaderScreen() {
                     .eq('id', id)
                     .single();
                 
-                if (error) throw error;
+                if (error) {
+                    if (localDossier) {
+                        const errLower = (error.message || '').toLowerCase();
+                        if (error.code === 'PGRST116' || errLower.includes('fetch') || errLower.includes('network')) {
+                            setLoading(false);
+                            return; // Keep local dossier and exit gracefully
+                        }
+                    }
+                    throw error;
+                }
+                
                 setDossier(data);
                 
-                // Track view count (simplified)
-                const { error: rpcError } = await supabase.rpc('increment_dossier_views', { dossier_uuid: id });
-                if (rpcError && __DEV__) console.warn('[Dossier] View increment RPC failed:', rpcError);
+                // Track view count cleanly (deduplicated per session)
+                if (useDispatchStore.getState().markDossierViewed(id)) {
+                    useDispatchStore.getState().syncDossierStats(id, 1, 0);
+                    supabase.rpc('increment_dossier_views', { dossier_uuid: id }).then(({ error: rpcError }) => {
+                        if (rpcError) {
+                            const errStr = (rpcError.message || '').toLowerCase();
+                            if (errStr.includes('fetch') || errStr.includes('network') || errStr.includes('timeout')) {
+                                enqueueMutation({ type: 'increment_dossier_views', payload: { dossier_uuid: id } });
+                                flushOfflineQueue();
+                            } else {
+                                useDispatchStore.getState().syncDossierStats(id, -1, 0);
+                                useDispatchStore.getState().unmarkDossierViewed(id);
+                            }
+                        }
+                    });
+                }
 
                 // Fetch Comments
                 const { data: commData } = await supabase
@@ -63,7 +112,23 @@ export default function DossierReaderScreen() {
                     .eq('dossier_id', id)
                     .order('created_at', { ascending: true });
                 
-                setComments(commData || []);
+                // Offline Queue Stitching
+                const queue = getOfflineQueue();
+                const pendingAdds = queue.filter(q => q.type === 'add_dossier_comment' && q.payload.dossier_id === id);
+                
+                let finalComments = commData || [];
+                for (const pa of pendingAdds) {
+                    const p = pa.payload;
+                    finalComments.push({
+                        id: `offline-${Date.now()}-${Math.random()}`,
+                        user_id: p.user_id,
+                        username: p.username || 'anonymous',
+                        body: p.body,
+                        created_at: new Date().toISOString()
+                    } as unknown as DossierComment);
+                }
+                
+                setComments(finalComments);
                 
                 // Check if certified
                 if (user) {
@@ -89,56 +154,135 @@ export default function DossierReaderScreen() {
     }, [id, user]);
 
     const handlePostComment = async () => {
-        if (!user) return router.push('/login');
+        if (!user) return (router.push as any)('/login');
         if (!newComment.trim() || posting || id.startsWith('seed')) return;
 
+        // Pre-flight Zod validation
+        if (!z.string().uuid().safeParse(id).success) {
+            reelToast.error('Invalid dossier record.');
+            return;
+        }
+
         setPosting(true);
+        const tempId = Crypto.randomUUID();
+        const tempComment = {
+            id: tempId,
+            dossier_id: id,
+            user_id: user.id,
+            username: user.username,
+            body: newComment.trim(),
+            created_at: new Date().toISOString()
+        } as unknown as DossierComment;
+
+        // Optimistic UI update
+        setComments(prev => [...prev, tempComment]);
+        setNewComment('');
+
         try {
             const { data, error } = await supabase.from('dossier_comments').insert({
                 dossier_id: id,
                 user_id: user.id,
                 username: user.username,
-                body: newComment.trim(),
+                body: tempComment.body,
             }).select().single();
 
-            if (!error && data) {
+            if (error) throw error;
+            if (data) {
                 Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                setComments(prev => [...prev, data]);
-                setNewComment('');
+                setComments(prev => prev.map(c => c.id === tempId ? data : c));
             }
-        } catch (err: unknown) { 
-            if (__DEV__) console.warn('[Dossier] Post comment error:', err);
-            reelToast.error('Failed to annotate.');
+        } catch (err: any) { 
+            const errStr = (err.message || '').toLowerCase();
+            if (errStr.includes('fetch') || errStr.includes('network') || errStr.includes('timeout')) {
+                enqueueMutation({
+                    type: 'add_dossier_comment',
+                    payload: {
+                        _tempId: tempId,
+                        dossier_id: id,
+                        user_id: user.id,
+                        username: user.username,
+                        body: tempComment.body,
+                    }
+                });
+                flushOfflineQueue();
+                reelToast.success('Annotation queued for offline transmission.');
+            } else {
+                setComments(prev => prev.filter(c => c.id !== tempId));
+                if (__DEV__) console.warn('[Dossier] Post comment error:', err);
+                reelToast.error('Failed to annotate.');
+            }
         } finally {
             setPosting(false);
         }
     };
 
     const handleDeleteComment = async (commentId: string) => {
+        if (!user) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        
+        const removed = comments.find(c => c.id === commentId);
+        setComments(prev => prev.filter(c => c.id !== commentId));
+        
         try {
-            await supabase.from('dossier_comments').delete().eq('id', commentId);
-            setComments(prev => prev.filter(c => c.id !== commentId));
-        } catch (err: unknown) {
-            if (__DEV__) console.warn('[Dossier] Delete comment error:', err);
+            const { error } = await supabase.from('dossier_comments').delete()
+                .eq('id', commentId)
+                .eq('user_id', user.id);
+            if (error) throw error;
+        } catch (err: any) {
+            const errStr = (err.message || '').toLowerCase();
+            if (errStr.includes('fetch') || errStr.includes('network') || errStr.includes('timeout')) {
+                enqueueMutation({
+                    type: 'delete_dossier_comment',
+                    payload: { comment_id: commentId, user_id: user.id }
+                });
+                flushOfflineQueue();
+                reelToast.success('Deletion queued offline.');
+            } else {
+                if (removed) setComments(prev => [...prev, removed].sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+                if (__DEV__) console.warn('[Dossier] Delete comment error:', err);
+                reelToast.error('Failed to delete annotation.');
+            }
         }
     };
 
     const handleCertify = async () => {
         if (!user || id.startsWith('seed')) return;
+
+        // Pre-flight Zod validation
+        if (!z.string().uuid().safeParse(id).success) {
+            return;
+        }
+
+        if (_certifyPending.has(id)) return;
+        _certifyPending.add(id);
+
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        
+
         const wasCertified = certified;
+        const certifyDelta = wasCertified ? -1 : 1;
         setCertified(!wasCertified);
-        setCertifyCount(prev => wasCertified ? Math.max(0, prev - 1) : prev + 1);
-        
+        useDispatchStore.getState().syncDossierStats(id, 0, certifyDelta, !wasCertified);
+
         try {
-            await supabase.rpc('toggle_dossier_certify', { dossier_uuid: id });
-        } catch (err: unknown) {
-            if (__DEV__) console.warn('[Dossier] Certify error:', err);
-            setCertified(wasCertified);
-            setCertifyCount(prev => wasCertified ? prev + 1 : Math.max(0, prev - 1));
-            reelToast.error('Certification failed');
+            const { error } = await supabase.rpc('toggle_dossier_certify', { dossier_uuid: id });
+            if (error) throw error;
+        } catch (err: any) {
+            const errStr = (err.message || '').toLowerCase();
+            if (errStr.includes('fetch') || errStr.includes('network') || errStr.includes('timeout')) {
+                enqueueMutation({
+                    type: 'toggle_dossier_certify',
+                    payload: { dossier_uuid: id, desired_state: !wasCertified }
+                });
+                flushOfflineQueue();
+                reelToast.success('Certification queued offline.');
+            } else {
+                if (__DEV__) console.warn('[Dossier] Certify error:', err);
+                setCertified(wasCertified);
+                useDispatchStore.getState().syncDossierStats(id, 0, -certifyDelta, wasCertified);
+                reelToast.error('Certification failed');
+            }
+        } finally {
+            _certifyPending.delete(id);
         }
     };
 
@@ -162,12 +306,23 @@ export default function DossierReaderScreen() {
                     <Text style={styles.backIcon}>✕</Text>
                 </PressableScale>
                 <Text style={styles.navMark}>REELHOUSE DIGITAL DOSSIER</Text>
+                {user?.id !== dossier?.user_id && (
+                    <PressableScale
+                        style={styles.moreBtn}
+                        onPress={() => setActionSheetVisible(true)}
+                        hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                        haptic="selection"
+                        pressedScale={0.92}
+                        accessibilityLabel="More options for this dispatch"
+                    >
+                        <MoreHorizontal size={16} color={colors.fog} strokeWidth={1.5} />
+                    </PressableScale>
+                )}
             </View>
 
-            <ScrollView 
+            <CinematicScrollView 
                 style={styles.paper} 
                 contentContainerStyle={styles.paperContent}
-                showsVerticalScrollIndicator={false}
             >
                 <Text style={styles.title}>{dossier.title}</Text>
                 
@@ -207,8 +362,22 @@ export default function DossierReaderScreen() {
                     <SectionDivider label={`ANNOTATIONS (${comments.length})`} />
                     
                     {comments.map((c: DossierComment) => (
-                        <View key={c.id} style={styles.commentItem}>
-                        <PressableScale onPress={() => router.push(`/user/${c.username}`)} haptic="selection" pressedScale={0.98}>
+                        <PressableScale
+                          key={c.id}
+                          onLongPress={() => {
+                            if (c.user_id !== user?.id) {
+                              TactileEngine.destroy();
+                              setSelectedComment(c);
+                              setCommentActionSheetVisible(true);
+                            }
+                          }}
+                          delayLongPress={400}
+                          pressedScale={0.98}
+                          accessibilityLabel={`Comment by ${c.username}`}
+                          accessibilityHint={c.user_id !== user?.id ? "Long press to report or block" : undefined}
+                        >
+                        <View style={styles.commentItem}>
+                        <PressableScale onPress={() => (router.push as any)(`/user/${c.username}`)} haptic="selection" pressedScale={0.98}>
                             <Text style={styles.commUsername}>@{c.username}</Text>
                         </PressableScale>
                         <Text style={styles.commBody}>{c.body}</Text>
@@ -221,16 +390,17 @@ export default function DossierReaderScreen() {
                             )}
                         </View>
                         </View>
+                        </PressableScale>
                     ))}
 
                     {comments.length === 0 && (
                         <Text style={styles.emptyComments}>No critiques yet on this dossier.</Text>
                     )}
                 </View>
-            </ScrollView>
+            </CinematicScrollView>
 
             {/* Input Box */}
-            <View style={[styles.inputRow, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+            <View style={[styles.inputRow, { paddingBottom: 12 }]}>
                 <TextInput
                     style={styles.input}
                     placeholder="Add an annotation..."
@@ -247,6 +417,80 @@ export default function DossierReaderScreen() {
                     <Text style={[styles.postBtnText, { opacity: newComment.trim() ? 1 : 0.5 }]}>POST</Text>
                 </PressableScale>
             </View>
+
+            {/* Content Action Sheet (Report/Block/Mute) */}
+            <ContentActionSheet
+                visible={actionSheetVisible}
+                targetUserId={dossier.user_id ?? ''}
+                targetUsername={dossier.author_username || 'unknown'}
+                contentType="dossier"
+                contentId={dossier.id}
+                onClose={() => setActionSheetVisible(false)}
+                onReport={() => {
+                    setActionSheetVisible(false);
+                    setReportSheetVisible(true);
+                }}
+                onBlock={() => {
+                    if (dossier.user_id) blockUser(dossier.user_id);
+                    setActionSheetVisible(false);
+                }}
+                onMute={() => {
+                    if (dossier.user_id) muteUser(dossier.user_id);
+                    setActionSheetVisible(false);
+                }}
+            />
+
+            {/* Report Sheet */}
+            <ReportSheet
+                visible={reportSheetVisible}
+                contentType="dossier"
+                contentId={dossier.id}
+                targetUserId={dossier.user_id ?? ''}
+                targetUsername={dossier.author_username || 'unknown'}
+                onDismiss={() => setReportSheetVisible(false)}
+            />
+
+            {/* Comment Moderation: Action Sheet & Report Sheet */}
+            {selectedComment && (
+              <>
+                <ContentActionSheet
+                  visible={commentActionSheetVisible}
+                  contentType="dossier_comment"
+                  contentId={selectedComment.id}
+                  targetUserId={selectedComment.user_id}
+                  targetUsername={selectedComment.username}
+                  hideMute
+                  onClose={() => {
+                    setCommentActionSheetVisible(false);
+                    setSelectedComment(null);
+                  }}
+                  onReport={() => {
+                    setCommentActionSheetVisible(false);
+                    setCommentReportSheetVisible(true);
+                  }}
+                  onBlock={() => {
+                    blockUser(selectedComment.user_id);
+                    setCommentActionSheetVisible(false);
+                    setSelectedComment(null);
+                  }}
+                  onMute={() => {
+                    setCommentActionSheetVisible(false);
+                    setSelectedComment(null);
+                  }}
+                />
+                <ReportSheet
+                  visible={commentReportSheetVisible}
+                  contentType="dossier_comment"
+                  contentId={selectedComment.id}
+                  targetUserId={selectedComment.user_id}
+                  targetUsername={selectedComment.username}
+                  onDismiss={() => {
+                    setCommentReportSheetVisible(false);
+                    setSelectedComment(null);
+                  }}
+                />
+              </>
+            )}
         </Animated.View>
     );
 }
@@ -281,6 +525,14 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: 'center',
         paddingRight: 32, // Offset back button to center exactly
+    },
+    moreBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 8,
+        marginLeft: 8,
     },
     paper: {
         flex: 1,
@@ -394,6 +646,13 @@ const markdownStyles = {
         color: colors.bone,
         lineHeight: 26,
     },
+    heading1: {
+        fontFamily: fonts.sub,
+        fontSize: 32,
+        color: colors.parchment,
+        marginTop: 24,
+        marginBottom: 12,
+    },
     heading2: {
         fontFamily: fonts.sub,
         fontSize: 24,
@@ -407,6 +666,27 @@ const markdownStyles = {
         color: colors.parchment,
         marginTop: 24,
         marginBottom: 12,
+    },
+    heading4: {
+        fontFamily: fonts.sub,
+        fontSize: 16,
+        color: colors.parchment,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    heading5: {
+        fontFamily: fonts.sub,
+        fontSize: 14,
+        color: colors.parchment,
+        marginTop: 16,
+        marginBottom: 8,
+    },
+    heading6: {
+        fontFamily: fonts.sub,
+        fontSize: 12,
+        color: colors.parchment,
+        marginTop: 16,
+        marginBottom: 8,
     },
     blockquote: {
         backgroundColor: 'rgba(139,105,20,0.05)',
@@ -428,5 +708,36 @@ const markdownStyles = {
         height: 1,
         marginVertical: 32,
         opacity: 0.2,
+    },
+    link: {
+        color: colors.sepia,
+        textDecorationLine: 'underline' as const,
+    },
+    code_inline: {
+        fontFamily: fonts.ui,
+        backgroundColor: colors.sepiaSubtle,
+        color: colors.parchmentBright,
+        paddingHorizontal: 4,
+        borderRadius: 4,
+    },
+    code_block: {
+        fontFamily: fonts.ui,
+        backgroundColor: colors.ink,
+        color: colors.parchment,
+        padding: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.sepiaBorder,
+        marginVertical: 16,
+    },
+    fence: {
+        fontFamily: fonts.ui,
+        backgroundColor: colors.ink,
+        color: colors.parchment,
+        padding: 16,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: colors.sepiaBorder,
+        marginVertical: 16,
     },
 };

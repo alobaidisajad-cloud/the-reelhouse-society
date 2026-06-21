@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -97,6 +97,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
   const reduceMotion = useReducedMotion();
   const throttleDevice = useDeviceThrottling();
 
+  const hapticT1 = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hapticT2 = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const { width } = useWindowDimensions();
 
   useEffect(() => {
@@ -107,8 +110,8 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
       storage.set('reelhouse_has_launched', true);
       // Bass-rumble haptic pattern: Heavy → Medium → Light
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), D1);
-      setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), D1 + D2);
+      hapticT1.current = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), D1);
+      hapticT2.current = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), D1 + D2);
     }
 
     const FAST_PATH = !isFirstLaunch || reduceMotion || throttleDevice;
@@ -169,7 +172,11 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
           runOnJS(onComplete)();
         }
       }));
-    return () => { cancelAnimation(breathe); cancelAnimation(flicker); };
+    return () => { 
+      cancelAnimation(breathe); cancelAnimation(flicker); 
+      if (hapticT1.current) clearTimeout(hapticT1.current);
+      if (hapticT2.current) clearTimeout(hapticT2.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

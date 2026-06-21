@@ -1,417 +1,302 @@
-import { useEffect, useCallback, useState, useMemo, useRef } from 'react';
+import { useEffect, useCallback, useState, useMemo, useRef, memo } from 'react';
 import {
-  View, Text, StyleSheet, RefreshControl,
-  TextInput
+  View, Text, StyleSheet,
+  TextInput, Keyboard
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+
 import { Image } from 'expo-image';
 import Animated, {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing
+  FadeInDown, useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, withTiming, useDerivedValue, Easing
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { storage } from '@/src/stores/mmkv-storage';
+import { useScrollToTop } from '@react-navigation/native';
 
 import { useAuthStore } from '@/src/stores/auth';
-import { supabase } from '@/src/lib/supabase';
-import { tmdb } from '@/src/lib/tmdb';
+import { resolveTier } from '@/src/utils/tier';
+import { useSocialStore } from '@/src/stores/followStore';
 import { colors, fonts, effects } from '@/src/theme/theme';
-import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
+
 import { SectionDivider } from '@/src/components/Decorative';
 import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import PressableScale from '@/src/components/PressableScale';
 import Buster from '@/src/components/Buster';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 
-import { setScrollY } from '@/src/utils/scrollBridge';
+import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
+import { globalScrollY } from '@/src/lib/scrollBridge';
 
 // Extracted Modules
 import { 
-  RawFeedRow, StackFilm, StackData, ListRow, ListItemRow, EndorseRow, ReelSection, FeedFilter 
+  ReelSection, FeedFilter 
 } from '@/src/components/reels/types';
 import { SharedReelHeader } from '@/src/components/reels/ReelsHeader';
 import { 
-  ProjectorBeam, TungstenSpooling, FilterChip, StackCard, BrassSheen 
+  ProjectorBeam, TungstenSpooling, FilterChip, BrassSheen 
 } from '@/src/components/reels/ReelsCards';
+import { useCommunityFeed, useFollowingFeed, useStacksFeed } from '@/src/hooks/useFeeds';
+import { ReelsFeedList } from '@/src/components/reels/ReelsFeedList';
+import { ReelsStackList } from '@/src/components/reels/ReelsStackList';
 
-// M-04 AUDIT FIX: Removed LayoutAnimation — conflicts with Reanimated layout transitions.
+// Removed LayoutAnimation — conflicts with Reanimated layout transitions.
 // Reanimated's entering/exiting animations handle all transitions in this screen.
+
+const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: string; onChangeText: (text: string) => void; onClear: () => void }) => {
+  const [localText, setLocalText] = useState(value);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastEmittedValue = useRef(value);
+
+  useEffect(() => {
+    if (value !== lastEmittedValue.current) {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      setLocalText(value);
+      lastEmittedValue.current = value;
+    }
+  }, [value]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
+
+  const handleChange = useCallback((t: string) => {
+    setLocalText(t);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      lastEmittedValue.current = t;
+      onChangeText(t);
+    }, 400);
+  }, [onChangeText]);
+
+  const handleClear = useCallback(() => {
+    setLocalText('');
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    onClear();
+  }, [onClear]);
+
+  return (
+    <>
+      <TextInput
+        style={st.searchInput}
+        placeholder="SEARCH ARCHIVES..."
+        placeholderTextColor={colors.fog}
+        value={localText}
+        onChangeText={handleChange}
+        returnKeyType="search"
+        onSubmitEditing={() => Keyboard.dismiss()}
+        selectionColor={colors.sepia}
+        keyboardAppearance="dark"
+        accessibilityLabel="Search curated stacks"
+        onFocus={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+      />
+      {localText.length > 0 && (
+        <PressableScale onPress={handleClear} style={st.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
+          <Text style={st.searchClearText}>✕</Text>
+        </PressableScale>
+      )}
+    </>
+  );
+});
+AutonomousSearchBar.displayName = 'AutonomousSearchBar';
+
 
 export default function ReelScreen() {
   const insets = useSafeAreaInsets();
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
   const user = useAuthStore(s => s.user);
+  const resolvedRole = resolveTier(user);
   const router = useRouter();
 
   const NAV_HEIGHT = 44 + 12;
   const topPad = insets.top + NAV_HEIGHT + 8;
 
-  useEffect(() => { setScrollY(0); }, []);
-
-  const isMountedRef = useRef(true);
-  useEffect(() => {
-    return () => { isMountedRef.current = false; };
-  }, []);
+  useEffect(() => { globalScrollY.value = 0; }, []);
 
   const overallLogsScrollY = useSharedValue(0);
-  const logsScrollY = useRef(0);
-  const stacksScrollY = useRef(0);
-  const lastHapticRef = useRef(0);
+  const stacksScrollY = useSharedValue(0);
+  const activeTabSV = useSharedValue<ReelSection>('logs');
+
+  const activeScrollY = useDerivedValue(() => {
+    return activeTabSV.value === 'logs' ? overallLogsScrollY.value : stacksScrollY.value;
+  });
+
+  useFocusEffect(
+    useCallback(() => {
+      globalScrollY.value = withTiming(activeScrollY.value, { duration: 250 });
+    }, [activeScrollY])
+  );
+
+  const logsOpacityStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(activeTabSV.value === 'logs' ? 1 : 0, { duration: 300, easing: Easing.out(Easing.quad) }),
+      zIndex: activeTabSV.value === 'logs' ? 10 : 1,
+    };
+  });
+
+  const stacksOpacityStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(activeTabSV.value === 'stacks' ? 1 : 0, { duration: 300, easing: Easing.out(Easing.quad) }),
+      zIndex: activeTabSV.value === 'stacks' ? 10 : 1,
+    };
+  });
+
   const logsFlatListRef = useRef<any>(null);
   const stacksFlatListRef = useRef<any>(null);
   
   const [section, setSection] = useState<ReelSection>('logs');
+
+  const activeSectionRef = useRef(section);
+  activeSectionRef.current = section;
+
+  const proxyScrollRef = useRef({
+    scrollToOffset: (options: any) => {
+      if (activeSectionRef.current === 'logs') {
+        logsFlatListRef.current?.scrollToOffset(options);
+      } else {
+        stacksFlatListRef.current?.scrollToOffset(options);
+      }
+    }
+  });
+  useScrollToTop(proxyScrollRef);
+
   const [feedFilter, setFeedFilter] = useState<FeedFilter>('all');
   const [stackFilter, setStackFilter] = useState<FeedFilter>('all');
   const [stackSearch, setStackSearch] = useState('');
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
 
-  const [communityFeed, setCommunityFeed] = useState<FeedItem[]>([]);
-  const [followingFeed, setFollowingFeed] = useState<FeedItem[]>([]);
-  const [feedLoading, setFeedLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { data: communityData, isLoading: communityLoading, refetch: refetchCommunity, isRefetching: isCommunityRefetching, fetchNextPage: fetchNextCommunity, hasNextPage: hasNextCommunity, isFetchingNextPage: isFetchingNextCommunity } = useCommunityFeed();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { data: followingData, isLoading: followingLoading, refetch: refetchFollowing, isRefetching: isFollowingRefetching, fetchNextPage: fetchNextFollowing, hasNextPage: hasNextFollowing, isFetchingNextPage: isFetchingNextFollowing } = useFollowingFeed();
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { data: stacksData, isLoading: stacksLoading, refetch: refetchStacks, isRefetching: isStacksRefetching, fetchNextPage: fetchNextStacks, hasNextPage: hasNextStacks, isFetchingNextPage: isFetchingNextStacks } = useStacksFeed(stackFilter, stackSearch);
 
-  const [allStacks, setAllStacks] = useState<StackData[]>([]);
-  const [stacksLoading, setStacksLoading] = useState(false);
-  const stacksFirstLoadRef = useRef(true);
-  const communityFirstLoadRef = useRef(true);
+  const followingCount = useSocialStore((s) => s.following.length);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (section === 'logs' && logsFlatListRef.current && logsScrollY.current > 0) {
-        logsFlatListRef.current.scrollToOffset({ offset: logsScrollY.current, animated: false });
-      } else if (section === 'stacks' && stacksFlatListRef.current && stacksScrollY.current > 0) {
-        stacksFlatListRef.current.scrollToOffset({ offset: stacksScrollY.current, animated: false });
-      }
-    }, [section])
-  );
-
-  const handleScroll = useCallback((e: { nativeEvent: { contentOffset: { y: number }; velocity?: { y?: number } } }, isLogs: boolean) => {
-    const y = e.nativeEvent.contentOffset.y;
-    overallLogsScrollY.value = y;
-    setScrollY(y);
-    if (isLogs) logsScrollY.current = y;
-    else stacksScrollY.current = y;
-    
-    // M-03 AUDIT FIX: Throttle scroll haptics to 150ms minimum to prevent battery drain
-    const velocity = Math.abs(e.nativeEvent.velocity?.y ?? 0);
-    if (velocity > 1.2) {
-      const now = Date.now();
-      if (now - lastHapticRef.current > 150) {
-        lastHapticRef.current = now;
-        Haptics.selectionAsync();
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const handleStackSearchChange = useCallback((text: string) => {
-    setStackSearch(text);
-  }, []);
-
-  const stackSearchEmber = useSharedValue(0.5);
-  useEffect(() => {
-    if (stacksLoading || stackSearch.length > 0) {
-      stackSearchEmber.value = withTiming(1, { duration: 600 });
-    } else {
-      stackSearchEmber.value = withTiming(0.5, { duration: 300 });
-    }
-  }, [stacksLoading, stackSearch.length, stackSearchEmber]);
-
-  const stackSearchIconStyle = useAnimatedStyle(() => ({
-    opacity: stackSearchEmber.value,
-    color: (stacksLoading || stackSearch.length > 0) ? colors.bloodReel : colors.sepia,
-  }));
-
-  const fetchFeed = useCallback(async (mode: FeedFilter) => {
-    try {
-      if (mode === 'following' && user?.following && user.following.length > 0) {
-        const { data: rpcData, error: rpcError } = await supabase.rpc('get_following_feed', {
-          p_usernames: user.following,
-          p_limit: 40,
-          p_offset: 0,
-        });
-
-        if (!rpcError && rpcData) {
-          return (rpcData as unknown as RawFeedRow[]).map((d) => ({
-            id: String(d.id),
-            username: d.username ?? 'unknown',
-            avatar_url: d.avatar_url ?? undefined,
-            film_title: d.film_title ?? 'Unknown Film',
-            film_id: d.film_id ?? 0,
-            poster_path: d.poster_path ?? null,
-            rating: d.rating ?? 0,
-            review: d.review ?? null,
-            drop_cap: d.drop_cap,
-            status: d.status ?? 'watched',
-            created_at: d.created_at ?? new Date().toISOString(),
-            year: d.year ?? undefined,
-            editorial_header: d.editorial_header ?? null,
-            pull_quote: d.pull_quote ?? null,
-            role: d.role,
-            is_autopsied: d.is_autopsied,
-            autopsy: typeof d.autopsy === 'object' && d.autopsy !== null ? d.autopsy as Record<string, number> : undefined,
-          }));
-        }
-
-        const { data: profiles } = await supabase.from('profiles').select('id').in('username', user.following).limit(500);
-        if (!profiles || profiles.length === 0) return [];
-        const { data } = await supabase.from('logs')
-          .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, profiles!logs_user_id_fkey(username, avatar_url, role)')
-          .not('review', 'is', null).neq('review', '')
-          .in('user_id', profiles.map(p => p.id))
-          .order('created_at', { ascending: false }).limit(40);
-        if (!data) return [];
-        return (data as unknown as RawFeedRow[]).map((d) => {
-          const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
-          return {
-            id: String(d.id),
-            username: profile?.username ?? 'unknown',
-            avatar_url: profile?.avatar_url ?? undefined,
-            film_title: d.film_title ?? 'Unknown Film',
-            film_id: d.film_id ?? 0,
-            poster_path: d.poster_path ?? null,
-            rating: d.rating ?? 0,
-            review: d.review ?? null,
-            drop_cap: d.drop_cap,
-            status: d.status ?? 'watched',
-            abandoned_reason: d.abandoned_reason ?? null,
-            created_at: d.created_at ?? new Date().toISOString(),
-            year: d.year ?? undefined,
-            editorial_header: d.editorial_header ?? null,
-            pull_quote: d.pull_quote ?? null,
-            watched_with: d.watched_with ?? null,
-            role: profile?.role ?? 'cinephile',
-            is_autopsied: d.is_autopsied,
-            autopsy: typeof d.autopsy === 'object' && d.autopsy !== null ? d.autopsy as Record<string, number> : undefined,
-          } satisfies FeedItem;
-        });
-      }
-
-      const { data } = await supabase.from('logs')
-        .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, profiles!logs_user_id_fkey(username, avatar_url, role)')
-        .not('review', 'is', null).neq('review', '')
-        .order('created_at', { ascending: false }).limit(40);
-      if (!data) return [];
-
-      return (data as unknown as RawFeedRow[]).map((d) => {
-        const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
-        return {
-          id: String(d.id),
-          username: profile?.username ?? 'unknown',
-          avatar_url: profile?.avatar_url ?? undefined,
-          film_title: d.film_title ?? 'Unknown Film', 
-          film_id: d.film_id ?? 0, 
-          poster_path: d.poster_path ?? null,
-          rating: d.rating ?? 0, 
-          review: d.review ?? null, 
-          drop_cap: d.drop_cap,
-          status: d.status ?? 'watched', 
-          abandoned_reason: d.abandoned_reason ?? null, 
-          created_at: d.created_at ?? new Date().toISOString(), 
-          year: d.year ?? undefined,
-          editorial_header: d.editorial_header ?? null, 
-          pull_quote: d.pull_quote ?? null,
-          watched_with: d.watched_with ?? null,
-          role: profile?.role ?? 'cinephile',
-          is_autopsied: d.is_autopsied, 
-          autopsy: typeof d.autopsy === 'object' && d.autopsy !== null ? d.autopsy as Record<string, number> : undefined,
-        } satisfies FeedItem;
-      });
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err: unknown) { return []; }
-  }, [user?.following]);
-
-  const fetchStacks = useCallback(async () => {
-    const isFirstLoad = stacksFirstLoadRef.current;
-    if (isFirstLoad && isMountedRef.current) setStacksLoading(true);
-    try {
-      const { data: lists } = await supabase
-        .from('lists')
-        .select('id, title, description, created_at, user_id, is_private, is_ranked, profiles!lists_user_id_fkey(username)')
-        .eq('is_private', false)
-        .order('created_at', { ascending: false })
-        .limit(60);
-
-      if (!lists || lists.length === 0) { 
-        if (isMountedRef.current) { setAllStacks([]); setStacksLoading(false); }
-        return; 
-      }
-
-      const listIds = lists.map((l: ListRow & { profiles?: { username?: string } | { username?: string }[] }) => l.id);
-
-      const [itemsResp, endorseResp] = await Promise.all([
-        listIds.length > 0 ? supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).order('position', { ascending: true }).order('created_at', { ascending: true }) : Promise.resolve({ data: [] }),
-        listIds.length > 0 ? supabase.from('interactions').select('target_list_id').in('target_list_id', listIds).eq('type', 'endorse_list') : Promise.resolve({ data: [] }),
-      ]);
-
-      const itemsMap: Record<string, ListItemRow[]> = {};
-      if (itemsResp.data) {
-        (itemsResp.data as ListItemRow[]).forEach((item) => {
-          if (!itemsMap[item.list_id]) itemsMap[item.list_id] = [];
-          itemsMap[item.list_id].push(item);
-        });
-      }
-
-      const endorseMap: Record<string, number> = {};
-      if (endorseResp.data) {
-        (endorseResp.data as EndorseRow[]).forEach((e) => {
-          endorseMap[e.target_list_id] = (endorseMap[e.target_list_id] ?? 0) + 1;
-        });
-      }
-
-      if (isMountedRef.current) {
-        setAllStacks(lists.map((l: ListRow & { profiles?: { username?: string } | { username?: string }[] }) => {
-          const curator = Array.isArray(l.profiles) ? l.profiles[0]?.username : l.profiles?.username;
-          return {
-            id: l.id,
-            title: l.title,
-            description: l.description ?? '',
-            curator: curator ?? 'society',
-            curatorId: l.user_id,
-            createdAt: l.created_at,
-            films: (itemsMap[l.id] ?? []).map((item: ListItemRow) => ({
-              id: item.film_id, title: item.film_title, poster_path: item.poster_path ?? null,
-            })),
-            count: (itemsMap[l.id] ?? []).length,
-            certifyCount: endorseMap[l.id] ?? 0,
-            isRanked: l.is_ranked ?? false,
-          };
-        }));
-      }
-    } catch { /* ignore */ }
-    if (isFirstLoad && isMountedRef.current) {
-      setStacksLoading(false);
-      stacksFirstLoadRef.current = false;
-    }
-  }, []);
-
-  const loadCommunityAndStacks = useCallback(async () => {
-    const isFirstLoad = communityFirstLoadRef.current;
-    if (isFirstLoad) {
-      const cached = storage.getString('nitrate_memory_feed');
-      if (cached) {
-        try {
-          setCommunityFeed(JSON.parse(cached));
-        } catch (err: unknown) {
-          if (__DEV__) console.warn('[Reels] Cache parsing failed, obliterating corrupted key.', err);
-          storage.delete('nitrate_memory_feed');
-          setFeedLoading(true);
-        }
-      } else {
-        setFeedLoading(true);
-      }
-    }
-    const community = await fetchFeed('all');
-
-    if (community.length > 0) {
-      try { storage.set('nitrate_memory_feed', JSON.stringify(community.slice(0, 15))); } catch {}
-    }
-
-    if (isMountedRef.current) {
-      setCommunityFeed(community as FeedItem[]);
-      if (isFirstLoad) {
-        setFeedLoading(false);
-        communityFirstLoadRef.current = false;
-      }
-    }
-    fetchStacks();
-  }, [fetchFeed, fetchStacks]);
-
-  const followingUsernames = user?.following;
-  const followingCount = followingUsernames?.length ?? 0;
-
-  const loadFollowingFeed = useCallback(async () => {
-    if (!isAuthenticated || followingCount === 0) {
-      if (isMountedRef.current) setFollowingFeed([]);
-      return;
-    }
-    const following = await fetchFeed('following');
-    if (isMountedRef.current) setFollowingFeed(following as FeedItem[]);
-  }, [fetchFeed, isAuthenticated, followingCount]);
-
-  useEffect(() => {
-    if (isAuthenticated) loadCommunityAndStacks();
-  }, [isAuthenticated, loadCommunityAndStacks]);
-
-  useEffect(() => {
-    if (isAuthenticated && followingCount > 0) loadFollowingFeed();
-  }, [isAuthenticated, followingCount, loadFollowingFeed]);
-
-  useFocusEffect(
-    useCallback(() => {
-      if (isAuthenticated && followingCount > 0) loadFollowingFeed();
-    }, [isAuthenticated, followingCount, loadFollowingFeed])
-  );
-
-  const loadAll = useCallback(async () => {
-    await Promise.all([loadCommunityAndStacks(), loadFollowingFeed()]);
-  }, [loadCommunityAndStacks, loadFollowingFeed]);
+  const communityFeed = useMemo(() => communityData?.pages.flat() || [], [communityData]);
+  const followingFeed = useMemo(() => followingData?.pages.flat() || [], [followingData]);
+  const filteredStacks = useMemo(() => {
+    if (stackFilter === 'following' && followingCount === 0) return [];
+    return stacksData?.pages.flat() || [];
+  }, [stacksData, stackFilter, followingCount]);
 
   const onRefresh = useCallback(async () => {
-    setRefreshing(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    await loadAll();
-    setRefreshing(false);
-  }, [loadAll]);
-
-  const activeFeed = useMemo(() => feedFilter === 'following' ? followingFeed : communityFeed, [feedFilter, followingFeed, communityFeed]);
+    setIsManualRefreshing(true);
+    const isFollowingAnyone = useSocialStore.getState().following.length > 0;
+    
+    try {
+      if (section === 'logs') {
+        if (feedFilter === 'following') {
+          if (isAuthenticated && isFollowingAnyone) {
+            await refetchFollowing();
+          }
+        } else {
+          await refetchCommunity();
+        }
+      } else {
+        await refetchStacks();
+      }
+    } finally {
+      setIsManualRefreshing(false);
+    }
+  }, [section, feedFilter, refetchCommunity, refetchFollowing, refetchStacks, isAuthenticated]);
+  const activeFeed = useMemo(() => 
+    feedFilter === 'following' ? (followingCount > 0 ? followingFeed : []) : communityFeed, 
+  [feedFilter, followingFeed, communityFeed, followingCount]);
   const logCount = activeFeed.length;
+  const feedLoading = feedFilter === 'following' ? followingLoading : communityLoading;
 
-  const filteredStacks = useMemo(() => {
-    let result = [...allStacks];
-    if (stackFilter === 'following' && user?.following && user.following.length > 0) {
-      result = result.filter((s: StackData) => user.following!.includes(s.curator));
+  const onLoadMoreLogs = useCallback(() => {
+    if (feedFilter === 'following' && hasNextFollowing) {
+      fetchNextFollowing();
+    } else if (feedFilter === 'all' && hasNextCommunity) {
+      fetchNextCommunity();
     }
-    if (stackSearch.trim()) {
-      const q = stackSearch.toLowerCase().trim();
-      result = result.filter((s: StackData) =>
-        s.title.toLowerCase().includes(q) ||
-        (s.description && s.description.toLowerCase().includes(q)) ||
-        s.curator.toLowerCase().includes(q) ||
-        (s.films ?? []).some((f: StackFilm) => f.title && f.title.toLowerCase().includes(q))
-      );
+  }, [feedFilter, hasNextFollowing, fetchNextFollowing, hasNextCommunity, fetchNextCommunity]);
+
+  const onLoadMoreStacks = useCallback(() => {
+    if (hasNextStacks) {
+      fetchNextStacks();
     }
-    return result;
-  }, [allStacks, stackFilter, stackSearch, user?.following]);
+  }, [hasNextStacks, fetchNextStacks]);
 
   const switchSection = useCallback((s: ReelSection) => {
     if (s === section) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    activeTabSV.value = s;
     setSection(s);
-  }, [section]);
+    
+    // Instantly sync the global scroll variables to prevent nav bar glitching
+    if (s === 'logs') {
+      globalScrollY.value = overallLogsScrollY.value;
+
+    } else {
+      globalScrollY.value = stacksScrollY.value;
+
+    }
+  }, [section, activeTabSV, overallLogsScrollY, stacksScrollY]);
 
   const switchFeedFilter = useCallback((f: FeedFilter) => {
     if (f === feedFilter) return;
     Haptics.selectionAsync();
+    
+    // Synchronously kill momentum before batching state updates
+    logsFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    overallLogsScrollY.value = 0;
+    globalScrollY.value = 0;
+
     setFeedFilter(f);
-  }, [feedFilter]);
+  }, [feedFilter, overallLogsScrollY]);
 
   const switchStackFilter = useCallback((f: FeedFilter) => {
     if (f === stackFilter) return;
     Haptics.selectionAsync();
+    
+    // Synchronously kill momentum before batching state updates
+    stacksFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    stacksScrollY.value = 0;
+    globalScrollY.value = 0;
+
     setStackFilter(f);
-  }, [stackFilter]);
+  }, [stackFilter, stacksScrollY]);
 
 
 
-  const renderLogItem = useCallback(({ item, index }: { item: FeedItem; index: number }) => (
-    <ActivityCard item={item} index={index} parentScrollY={overallLogsScrollY} />
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), []);
+  const handleStackSearchChange = useCallback((text: string) => {
+    stacksFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    stacksScrollY.value = 0;
+    globalScrollY.value = 0;
+
+    setStackSearch(text);
+  }, [stacksScrollY]);
+
+  const handleClearSearch = useCallback(() => {
+    stacksFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+    stacksScrollY.value = 0;
+    globalScrollY.value = 0;
+
+    setStackSearch('');
+  }, [stacksScrollY]);
+
+
+
+
 
   const logsHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} logCount={logCount} userRole={user?.role} onTabSwitch={switchSection} />
+      <SharedReelHeader section={section} logCount={logCount} userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.filterRow}>
         <FilterChip label="MAIN REEL" active={feedFilter === 'all'} onPress={() => switchFeedFilter('all')} />
         <FilterChip label="FOLLOWING" active={feedFilter === 'following'} onPress={() => switchFeedFilter('following')} />
       </View>
       <SectionDivider label="LOGS" />
     </>
-  ), [section, feedFilter, logCount, user?.role, switchSection, switchFeedFilter]);
+  ), [section, feedFilter, logCount, resolvedRole, switchSection, switchFeedFilter]);
 
   const logsEmpty = useMemo(() => {
     if (feedLoading) return <TungstenSpooling />;
@@ -427,40 +312,28 @@ export default function ReelScreen() {
             : 'Be the first to log a film and leave your mark.'}
         </Text>
         {feedFilter === 'following' ? (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setFeedFilter('all'); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); switchFeedFilter('all'); }}>
             <Text style={st.emptyBtnText}>GLOBAL REEL</Text>
           </PressableScale>
         ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/log-modal' as any); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); (router.push as any)('/log-modal' as any); }}>
             <Text style={st.emptyBtnText}>LOG A FILM</Text>
           </PressableScale>
         )}
       </Animated.View>
     );
-  }, [feedLoading, feedFilter, router]);
+  }, [feedLoading, feedFilter, router, switchFeedFilter]);
 
   const stackHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} logCount={logCount} userRole={user?.role} onTabSwitch={switchSection} />
+      <SharedReelHeader section={section} logCount={logCount} userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.searchWrap}>
-        <Animated.Text style={[st.searchIcon, stackSearchIconStyle]}>✦</Animated.Text>
-        <TextInput
-          style={st.searchInput}
-          placeholder="SEARCH ARCHIVES..."
-          placeholderTextColor={colors.fog}
-          value={stackSearch}
-          onChangeText={handleStackSearchChange}
-          returnKeyType="search"
-          selectionColor={colors.sepia}
-          keyboardAppearance="dark"
-          accessibilityLabel="Search curated stacks"
-          onFocus={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+        <Animated.Text style={st.searchIcon}>✦</Animated.Text>
+        <AutonomousSearchBar 
+          value={stackSearch} 
+          onChangeText={handleStackSearchChange} 
+          onClear={handleClearSearch} 
         />
-        {stackSearch.length > 0 && (
-          <PressableScale onPress={() => handleStackSearchChange('')} style={st.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
-            <Text style={st.searchClearText}>✕</Text>
-          </PressableScale>
-        )}
       </View>
       <View style={st.filterRow}>
         <FilterChip label="ALL STACKS" active={stackFilter === 'all'} onPress={() => switchStackFilter('all')} />
@@ -471,7 +344,7 @@ export default function ReelScreen() {
       <SectionDivider label="CURATED STACKS" />
       <PressableScale
         style={st.createStackBtn}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); router.push('/list-modal' as any); }}
+        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); (router.push as any)('/list-modal' as any); }}
       >
         <BrassSheen />
         <LinearGradient
@@ -482,8 +355,12 @@ export default function ReelScreen() {
         <Text style={st.createStackText}>✦ CURATE A COLLECTION</Text>
       </PressableScale>
     </>
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  ), [section, logCount, user?.role, stackSearch, stackFilter, filteredStacks.length, switchSection, switchStackFilter, router]);
+   
+  ), [section, logCount, resolvedRole, stackSearch, stackFilter, filteredStacks.length, switchSection, switchStackFilter, router, handleStackSearchChange, handleClearSearch]);
+
+  const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
+  const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading]);
+
 
   const stackEmpty = useMemo(() => {
     if (stacksLoading) return <TungstenSpooling />;
@@ -502,45 +379,23 @@ export default function ReelScreen() {
             : 'Create a collection to immortalize your cinematic taste.'}
         </Text>
         {stackSearch ? (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setStackSearch(''); setStackFilter('all'); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); handleClearSearch(); }}>
             <Text style={st.emptyBtnText}>CLEAR FILTERS</Text>
           </PressableScale>
         ) : stackFilter === 'following' ? (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); setStackFilter('all'); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); switchStackFilter('all'); }}>
             <Text style={st.emptyBtnText}>GLOBAL STACKS</Text>
           </PressableScale>
         ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); router.push('/list-modal' as any); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); (router.push as any)('/list-modal' as any); }}>
             <Text style={st.emptyBtnText}>CREATE COLLECTION</Text>
           </PressableScale>
         )}
       </Animated.View>
     );
-  }, [stacksLoading, stackSearch, stackFilter, router]);
+  }, [stacksLoading, stackSearch, stackFilter, router, handleClearSearch, switchStackFilter]);
 
-  const renderStackItem = useCallback(({ item }: { item: StackData }) => (
-    <View style={st.stackGridCell}>
-      <StackCard
-        stack={item}
-        onPress={() => { Haptics.selectionAsync(); router.push(`/stacks/${item.id}` as any); }}
-      />
-    </View>
-  ), [router]);
 
-  const viewabilityConfig = useRef({
-    minimumViewTime: 800,
-    itemVisiblePercentThreshold: 80,
-  }).current;
-
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: import('react-native').ViewToken[] }) => {
-    // S3-03 FIX: Fire-and-forget prefetch — errors are intentionally swallowed
-    viewableItems.forEach((vi) => {
-      const item = vi.item as Partial<FeedItem>;
-      if (item && item.film_id) {
-        tmdb.detail(item.film_id).catch(() => {});
-      }
-    });
-  }).current;
 
   if (!isAuthenticated) {
     return (
@@ -550,7 +405,7 @@ export default function ReelScreen() {
         <Image source={require('../../assets/images/reelhouse-logo.png')} style={st.gateLogo} contentFit="contain" />
         <Text style={st.gateTitle}>Admit One Required</Text>
         <Text style={st.gateSub}>Join the Society to access The Reel.</Text>
-        <PressableScale style={st.gateCta} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); router.push('/login' as any); }}>
+        <PressableScale style={st.gateCta} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); (router.push as any)('/login' as any); }}>
           <BrassSheen />
           <Text style={st.gateCtaText}>REQUEST MEMBERSHIP</Text>
         </PressableScale>
@@ -560,84 +415,58 @@ export default function ReelScreen() {
   }
 
   return (
-    <FrozenTab>
-    <View style={st.container}>
+    <SectionErrorBoundary section="The Reel">
+      <FrozenTab>
+      <View style={st.container}>
       <LinearGradient
         colors={[colors.ink, 'rgba(10,5,3,1)', colors.soot]}
         locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFillObject}
       />
-      <ProjectorBeam scrollY={overallLogsScrollY} />
+      <ProjectorBeam scrollY={activeScrollY} />
 
-      {section === 'logs' ? (
-        <FlashList
-          ref={logsFlatListRef}
-          key="logs-feed"
-          data={activeFeed}
-          keyExtractor={(item) => item.id}
-          estimatedItemSize={280}
-          renderItem={renderLogItem}
-          contentContainerStyle={{ ...st.listContent, paddingTop: topPad }}
-          showsVerticalScrollIndicator={false}
+      <Animated.View pointerEvents={section === 'logs' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, logsOpacityStyle]}>
+        <ReelsFeedList
+          feed={activeFeed}
+          refreshing={isManualRefreshing}
+          onRefresh={onRefresh}
+          topPad={topPad}
+          bottomInset={insets.bottom + 49}
+          overallLogsScrollY={overallLogsScrollY}
+          activeTabSV={activeTabSV}
           ListHeaderComponent={logsHeader}
           ListEmptyComponent={logsEmpty}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="transparent"
-              colors={['transparent']}
-              progressBackgroundColor="transparent"
-              progressViewOffset={topPad}
-            />
-          }
-          onScroll={(e) => handleScroll(e, true)}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          decelerationRate="fast"
-          overScrollMode="never"
-          bounces={true}
-          scrollEventThrottle={32}
-          drawDistance={250}
-          viewabilityConfig={viewabilityConfig}
-          onViewableItemsChanged={onViewableItemsChanged}
+          contentContainerStyle={{ ...st.listContent, paddingTop: topPad }}
+          listRef={logsFlatListRef}
+          onEndReached={onLoadMoreLogs}
+          isFetchingNextPage={feedFilter === 'following' ? isFetchingNextFollowing : isFetchingNextCommunity}
+          extraData={logsExtraData}
         />
-      ) : (
-        <FlashList
-          ref={stacksFlatListRef}
-          key="stacks-grid"
-          data={filteredStacks}
-          keyExtractor={(item) => item.id}
-          estimatedItemSize={180}
-          numColumns={2}
-          renderItem={renderStackItem}
-          contentContainerStyle={{ ...st.listContent, paddingTop: topPad, paddingBottom: 100, paddingHorizontal: 10 }}
-          showsVerticalScrollIndicator={false}
+      </Animated.View>
+
+      <Animated.View pointerEvents={section === 'stacks' ? 'auto' : 'none'} style={[StyleSheet.absoluteFill, stacksOpacityStyle]}>
+        <ReelsStackList
+          stacks={filteredStacks}
+          refreshing={isManualRefreshing}
+          onRefresh={onRefresh}
+          topPad={topPad}
+          bottomInset={insets.bottom + 49}
+          stacksScrollY={stacksScrollY}
+          activeTabSV={activeTabSV}
           ListHeaderComponent={stackHeader}
           ListEmptyComponent={stackEmpty}
-          onScroll={(e) => handleScroll(e, false)}
-          keyboardShouldPersistTaps="handled"
-          keyboardDismissMode="on-drag"
-          decelerationRate="fast"
-          overScrollMode="never"
-          scrollEventThrottle={32}
-          drawDistance={250}
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="transparent"
-              colors={['transparent']}
-              progressBackgroundColor="transparent"
-              progressViewOffset={topPad}
-            />
-          }
+          contentContainerStyle={{ ...st.listContent, paddingTop: topPad, paddingBottom: 100, paddingHorizontal: 10 }}
+          listRef={stacksFlatListRef}
+          onEndReached={onLoadMoreStacks}
+          isFetchingNextPage={isFetchingNextStacks}
+          extraData={stacksExtraData}
         />
-      )}
+      </Animated.View>
 
       <QuickActionsFAB />
     </View>
     </FrozenTab>
+    </SectionErrorBoundary>
   );
 }
 
@@ -677,7 +506,6 @@ const st = StyleSheet.create({
   },
   createStackText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 4, color: colors.parchment, opacity: 0.9 },
 
-  stackGridCell: { flex: 1, paddingHorizontal: 6 },
 
   emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment, opacity: 0.8, textAlign: 'center', marginBottom: 8 },

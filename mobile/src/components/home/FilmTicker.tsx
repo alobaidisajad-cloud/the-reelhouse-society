@@ -1,6 +1,6 @@
 /**
  * FilmTicker — Scrolling film title ticker at the top of the Lobby.
- * Infinitely loops a duplicate strip for seamless wrapping.
+ * Infinitely loops a duplicate strip for continuous wrapping.
  */
 import { memo, useEffect, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';

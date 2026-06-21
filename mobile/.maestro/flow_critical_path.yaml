@@ -1,0 +1,38 @@
+appId: com.divisionops.reelhouse
+---
+- launchApp
+- assertVisible: "THE REELHOUSE SOCIETY"
+- tapOn: "✦ SEEK ADMISSION ✦"
+- assertVisible: "LOGIN"
+
+# Mock login flow
+- tapOn: "Email"
+- inputText: "test_critic@reelhouse.app"
+- tapOn: "Password"
+- inputText: "hunter2"
+- tapOn: "SIGN IN"
+
+# Wait for lobby and atmospheric loading
+- extendedWaitUntil:
+    visible: "The Lobby"
+    timeout: 10000
+
+# Open Search and find a film
+- tapOn:
+    id: "tab-search"
+- tapOn: "Search films, directors, lists..."
+- inputText: "Godfather"
+- assertVisible: "The Godfather"
+- tapOn: "The Godfather"
+
+# Log the film
+- tapOn: "LOG FILM"
+- assertVisible: "Log Film"
+- tapOn:
+    id: "rating-star-5"
+- tapOn: "Review (Optional)..."
+- inputText: "Absolute masterpiece. Essential viewing for the society."
+- tapOn: "SAVE LOG"
+
+# Verify Success
+- assertVisible: "Archive updated"

@@ -1,5 +1,6 @@
 import { QueryClient } from '@tanstack/react-query'
 import reelToast from './utils/reelToast'
+import { friendlyError } from './utils/errorHandling'
 
 export const queryClient = new QueryClient({
   defaultOptions: {
@@ -10,8 +11,8 @@ export const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
     },
     mutations: {
-      onError: () => {
-        reelToast.error('Something went wrong — please try again.')
+      onError: (error) => {
+        reelToast.error(friendlyError(error))
       },
     },
   },

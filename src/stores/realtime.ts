@@ -8,19 +8,30 @@ import { useProgrammeStore } from './content'
 // These are module-level side effects, not stores.
 // Both guard against being called without Supabase configured.
 
+// ── Profile columns — explicit list to avoid select('*') schema leaks ──
+const PROFILE_COLUMNS = 'id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, social_links, created_at'
+
+// ── Hydration mutex — prevents concurrent hydration during HMR/re-mounts ──
+let _hydrating = false
+
 // ── Extracted hydration helper — eliminates code duplication ──
 async function hydrateAllStores() {
-    return Promise.all([
-        useFilmStore.getState().fetchLogs(),
-        useFilmStore.getState().fetchWatchlist(),
-        useFilmStore.getState().fetchVault(),
-        useFilmStore.getState().fetchLists(),
-        useFilmStore.getState().fetchStubs(),
-        useFilmStore.getState().fetchEndorsements(),
-        useFilmStore.getState().fetchPhysicalArchive(),
-        useProgrammeStore.getState().fetchProgrammes(),
-        hydrateFollowing(),
-    ]).catch(() => { /* background hydration failure is non-critical */ })
+    if (_hydrating) return // Prevent concurrent hydration
+    _hydrating = true
+    try {
+        await Promise.all([
+            useFilmStore.getState().fetchLogs(),
+            useFilmStore.getState().fetchWatchlist(),
+            useFilmStore.getState().fetchVault(),
+            useFilmStore.getState().fetchLists(),
+            useFilmStore.getState().fetchStubs(),
+            useFilmStore.getState().fetchEndorsements(),
+            useFilmStore.getState().fetchPhysicalArchive(),
+            useProgrammeStore.getState().fetchProgrammes(),
+            hydrateFollowing(),
+        ])
+    } catch { /* background hydration failure is non-critical */ }
+    finally { _hydrating = false }
 }
 
 let _authSub: any = null
@@ -50,7 +61,7 @@ export const initAuthSync = () => {
         if (event === 'INITIAL_SESSION') {
             if (session) {
                 const { data: profile } = await supabase
-                    .from('profiles').select('*').eq('id', session.user.id).single()
+                    .from('profiles').select(PROFILE_COLUMNS).eq('id', session.user.id).single()
                 useAuthStore.setState({
                     user: { ...session.user, ...profile },
                     isAuthenticated: true,
@@ -67,7 +78,7 @@ export const initAuthSync = () => {
             if (currentUser && currentUser.id === session.user.id) return
 
             const { data: profile } = await supabase
-                .from('profiles').select('*').eq('id', session.user.id).single()
+                .from('profiles').select(PROFILE_COLUMNS).eq('id', session.user.id).single()
             useAuthStore.setState({
                 user: { ...session.user, ...profile },
                 isAuthenticated: true,
@@ -84,21 +95,23 @@ export const initAuthSync = () => {
 }
 
 
-let _realtimeConnecting = false
+/**
+ * initRealtime — INTENTIONAL NOOP
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Previously managed global WebSocket subscriptions for feed and notifications.
+ * Both were disabled for the following production-validated reasons:
+ *
+ * 1. Live global feed sync: At 10M scale, global WebSocket invalidations
+ *    generate infrastructure-killing DDoS. Feed sync is now localized to
+ *    pull-to-refresh and tab-focus mechanics.
+ *
+ * 2. Notification realtime: Now exclusively managed by NotificationBell's
+ *    singleton channel to prevent duplicate subscription bugs.
+ *
+ * This function is called from App.tsx and retained as a stable API surface
+ * for future re-enablement of realtime features.
+ */
 export const initRealtime = () => {
-    if (!isSupabaseConfigured) return
-    // Semaphore: prevent concurrent initRealtime calls during rapid auth events
-    if (_realtimeConnecting) return
-    _realtimeConnecting = true
-
-    try {
-        // 1. Live global feed sync has been intentionally disabled for scalability
-        // At 10M scale, global WebSocket invalidations generate an infrastructure-killing DDoS.
-        // Feed synchronization is now strictly isolated to localized pull-to-refresh and tab-focus mechanics.
-
-        // 2. Notification realtime is now exclusively managed by NotificationBell's singleton channel.
-        // This prevents duplicate subscriptions that were causing notifications to appear 2-3x.
-    } finally {
-        _realtimeConnecting = false
-    }
+    // noop — see JSDoc above for rationale
 }
+

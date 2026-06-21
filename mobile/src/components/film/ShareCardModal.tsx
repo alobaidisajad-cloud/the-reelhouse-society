@@ -1,4 +1,4 @@
-import React, { useRef, useState, memo } from 'react';
+import React, { useRef, useState, memo, useEffect } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, useWindowDimensions } from 'react-native';
 import { Image } from 'expo-image';
 import ViewShot from 'react-native-view-shot';
@@ -38,7 +38,23 @@ interface ShareCardModalProps {
 export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, film, log }: ShareCardModalProps) {
   const viewShotRef = useRef<ViewShot>(null);
   const [sharing, setSharing] = useState(false);
+  const [posterLoaded, setPosterLoaded] = useState(false);
+  const [posterError, setPosterError] = useState(false);
+  const [backdropLoaded, setBackdropLoaded] = useState(false);
+  const [backdropError, setBackdropError] = useState(false);
+  const [forceReady, setForceReady] = useState(false);
   const { width: windowWidth } = useWindowDimensions();
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
+    if (visible) {
+      setForceReady(false);
+      timer = setTimeout(() => setForceReady(true), 2000);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [visible]);
 
   const handleShare = async () => {
     if (!viewShotRef.current?.capture || !film) return;
@@ -60,6 +76,8 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
   };
 
   if (!film) return null;
+  
+  const posterToUse = log?.altPoster || film.poster_path;
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -79,23 +97,34 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
             <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }} style={[s.cardContainer, { width: windowWidth - 72 }]}>
               {/* Backing gradient for the cinematic look */}
               <View style={StyleSheet.absoluteFill}>
-                <Image 
-                  source={{ uri: tmdb.backdrop(film.backdrop_path, 'w780') }} 
-                  style={s.backdropImg} 
-                  blurRadius={10} 
-                />
+                {film.backdrop_path ? (
+                  <Image 
+                    source={{ uri: tmdb.backdrop(film.backdrop_path, 'w780') }} 
+                    style={s.backdropImg} 
+                    blurRadius={10} 
+                    onLoad={() => setBackdropLoaded(true)}
+                    onError={() => setBackdropError(true)}
+                  />
+                ) : null}
               </View>
               
               <View style={s.cardHeader}>
                 <Text style={s.logoText}>REELHOUSE SOCIETY</Text>
                 {log?.watchedDate && (
-                  <Text style={s.dateText}>{new Date(log.watchedDate).toLocaleDateString()}</Text>
+                  <Text style={s.dateText}>{new Date(log.watchedDate).toLocaleDateString('en-US', { timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</Text>
                 )}
               </View>
 
               <View style={s.filmInfoRow}>
-                {film.poster_path ? (
-                  <Image source={{ uri: tmdb.poster(log?.altPoster ?? film.poster_path, 'w185') }} style={s.cardPoster} contentFit="cover" cachePolicy="memory-disk" />
+                {posterToUse ? (
+                  <Image 
+                    source={{ uri: tmdb.poster(posterToUse, 'w185') }} 
+                    style={s.cardPoster} 
+                    contentFit="cover" 
+                    cachePolicy="memory-disk" 
+                    onLoad={() => setPosterLoaded(true)}
+                    onError={() => setPosterError(true)}
+                  />
                 ) : (
                   <View style={[s.cardPoster, s.cardPosterPlaceholder]}>
                     <Text style={s.placeholderGlyph}>∅</Text>
@@ -121,8 +150,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
 
               {log?.review ? (
                 <View style={s.reviewContainer}>
-                  {/* eslint-disable-next-line react/no-unescaped-entities */}
-                  <Text style={s.reviewText} numberOfLines={5}>"{log.review}"</Text>
+                  <Text style={s.reviewText} numberOfLines={5}>“{log.review}”</Text>
                 </View>
               ) : (
                 <View style={s.synopsisContainer}>
@@ -139,11 +167,18 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
             </ViewShot>
           </View>
 
-          <PressableScale style={s.shareButton} onPress={handleShare} disabled={sharing} haptic="medium" pressedScale={0.98}>
-            <Text style={s.shareButtonText}>
-              {sharing ? 'TRANSMITTING...' : 'SHARE TO SOCIALS'}
-            </Text>
-          </PressableScale>
+          {(() => {
+            const isPosterReady = !posterToUse || posterLoaded || posterError;
+            const isBackdropReady = !film.backdrop_path || backdropLoaded || backdropError;
+            const canShare = (!sharing) && (forceReady || (isPosterReady && isBackdropReady));
+            return (
+              <PressableScale style={s.shareButton} onPress={handleShare} disabled={!canShare} haptic="medium" pressedScale={0.98}>
+                <Text style={s.shareButtonText}>
+                  {sharing ? 'TRANSMITTING...' : (!canShare ? 'ARCHIVING...' : 'SHARE TO SOCIALS')}
+                </Text>
+              </PressableScale>
+            );
+          })()}
         </View>
       </View>
     </Modal>

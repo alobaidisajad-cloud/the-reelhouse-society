@@ -1,7 +1,5 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { colors } from '../theme/theme';
 import SkiaFilmGrain from './FilmGrain';
 
 
@@ -27,15 +25,6 @@ export function Vignette() {
 }
 
 const styles = StyleSheet.create({
-  grain: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 900,
-    opacity: 0.025,
-    backgroundColor: 'transparent',
-    // Simulated grain via a very dense border pattern
-    borderWidth: 0.5,
-    borderColor: 'rgba(255,255,255,0.03)',
-  },
   vignette: {
     ...StyleSheet.absoluteFillObject,
     zIndex: 899,

@@ -10,6 +10,8 @@ import { RadarChart } from '@/src/components/profile/RadarChart';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '../PressableScale';
 
+import type { ProfileAnalyticsPayload } from './NoirPassport';
+
 interface DNALog {
     year?: number | string;
     rating: number;
@@ -21,40 +23,71 @@ interface DNAUser {
     username?: string;
 }
 
-
-
-export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }: { logs: DNALog[]; user: DNAUser; onClose: () => void }) {
+export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics, onClose }: { logs: DNALog[]; user: DNAUser; analytics?: ProfileAnalyticsPayload | null; onClose: () => void }) {
     const insets = useSafeAreaInsets();
     const { width: windowWidth } = useWindowDimensions();
-    if (!logs || logs.length < 5) return null;
+    
+    // Always calculate total count from either analytics or logs
+    const totalCount = analytics?.stamps?.total_logs ?? logs?.length ?? 0;
+    if (totalCount < 5) return null;
 
-    const decades: Record<string, number> = {};
-    logs.forEach((log) => {
-        const year = parseInt(String(log.year ?? '2000'));
-        const decade = `${Math.floor(year / 10) * 10}s`;
-        decades[decade] = (decades[decade] ?? 0) + 1;
-    });
-    const topDecades = Object.entries(decades).sort((a, b) => b[1] - a[1]).slice(0, 3);
-    const rated = logs.filter((l) => l.rating > 0);
-    const avgRating = rated.length ? (rated.reduce((s, l) => s + l.rating, 0) / rated.length).toFixed(1) : '—';
-    const obscurityScore = Math.round(40 + (5 - parseFloat(avgRating === '—' ? '3' : avgRating)) * 12 + Math.min(logs.length, 30));
+    let topDecades: [string, number][] = [];
+    let avgRatingStr = '—';
+    let avgRatingNum = 0;
+    let avgAutopsy: { story: number; cinematography: number; sound: number } | null = null;
+
+    if (analytics?.dna) {
+        // Phase 3: Server-side pre-computed
+        const d = analytics.dna;
+        avgRatingNum = d.avg_rating ?? 0;
+        avgRatingStr = d.avg_rating ? Number(d.avg_rating).toFixed(1) : '—';
+        if (d.top_decades && Array.isArray(d.top_decades)) {
+            topDecades = d.top_decades.map((td: Record<string, number>) => {
+                const entries = Object.entries(td);
+                return entries.length > 0 ? entries[0] : null;
+            }).filter(Boolean) as [string, number][];
+        }
+        if (analytics.autopsy_math?.avg_story !== undefined) {
+            avgAutopsy = {
+                story: Math.round(analytics.autopsy_math.avg_story || 0),
+                cinematography: Math.round(analytics.autopsy_math.avg_cinematography || 0),
+                sound: Math.round(analytics.autopsy_math.avg_sound || 0),
+            };
+        }
+    } else {
+        // Fallback: Client-side O(N) computation
+        const decades: Record<string, number> = {};
+        logs.forEach((log) => {
+            if (!log.year) return;
+            const year = parseInt(String(log.year), 10);
+            if (isNaN(year)) return;
+            const decade = `${Math.floor(year / 10) * 10}s`;
+            decades[decade] = (decades[decade] ?? 0) + 1;
+        });
+        topDecades = Object.entries(decades).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        
+        const rated = logs.filter((l) => l.rating > 0);
+        avgRatingNum = rated.length ? rated.reduce((s, l) => s + l.rating, 0) / rated.length : 0;
+        avgRatingStr = rated.length ? avgRatingNum.toFixed(1) : '—';
+        
+        const autopsies = logs.filter((l) => l.isAutopsied && l.autopsy).map((l) => l.autopsy!);
+        if (autopsies.length > 0) {
+            avgAutopsy = {
+                story: Math.round(autopsies.reduce((s, a) => s + (a.story ?? a.screenplay ?? a.script ?? 0), 0) / autopsies.length),
+                cinematography: Math.round(autopsies.reduce((s, a) => s + (a.cinematography ?? a.visuals ?? a.acting ?? 0), 0) / autopsies.length),
+                sound: Math.round(autopsies.reduce((s, a) => s + (a.sound ?? a.score ?? a.editing ?? 0), 0) / autopsies.length),
+            };
+        }
+    }
+
+    const obscurityScore = Math.round(40 + (5 - (avgRatingNum || 3)) * 12 + Math.min(totalCount, 30));
 
     const archetypes = [
         { min: 0, label: 'Initiate' }, { min: 5, label: 'Devotee' }, { min: 15, label: 'Archivist' },
         { min: 30, label: 'Cinephile' }, { min: 60, label: 'Obsessive' }, { min: 100, label: 'The Oracle' },
     ];
-    const archetype = archetypes.filter(a => logs.length >= a.min).pop()?.label ?? 'Initiate';
-    const tones = parseFloat(avgRating) >= 4 ? 'Romanticism' : parseFloat(avgRating) >= 3 ? 'Realism' : parseFloat(avgRating) >= 2 ? 'Dark Romanticism' : 'Nihilism';
-
-    const autopsies = logs.filter((l) => l.isAutopsied && l.autopsy).map((l) => l.autopsy!);
-    let avgAutopsy: { story: number; cinematography: number; sound: number } | null = null;
-    if (autopsies.length > 0) {
-        avgAutopsy = {
-            story: Math.round(autopsies.reduce((s, a) => s + (a.story ?? a.screenplay ?? a.script ?? 0), 0) / autopsies.length),
-            cinematography: Math.round(autopsies.reduce((s, a) => s + (a.cinematography ?? a.visuals ?? a.acting ?? 0), 0) / autopsies.length),
-            sound: Math.round(autopsies.reduce((s, a) => s + (a.sound ?? a.score ?? a.editing ?? 0), 0) / autopsies.length),
-        };
-    }
+    const archetype = archetypes.filter(a => totalCount >= a.min).pop()?.label ?? 'Initiate';
+    const tones = avgRatingNum >= 4 ? 'Romanticism' : avgRatingNum >= 3 ? 'Realism' : avgRatingNum >= 2 ? 'Dark Romanticism' : 'Nihilism';
 
     return (
         <Animated.View entering={FadeInDown} exiting={FadeOut} style={s.overlay}>
@@ -93,11 +126,11 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
 
                 <View style={s.statsGrid}>
                     <View style={s.statBox}>
-                        <Text style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{logs.length}</Text>
+                        <Text style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{totalCount}</Text>
                         <Text style={s.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>FILMS</Text>
                     </View>
                     <View style={s.statBox}>
-                        <Text style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{avgRating}</Text>
+                        <Text style={s.statVal} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{avgRatingStr}</Text>
                         <Text style={s.statLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>AVG RATING</Text>
                     </View>
                 </View>
@@ -105,15 +138,22 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
                 <View style={s.decadesWrap}>
                     <Text style={s.sectionEyebrow}>DOMINANT ERAS</Text>
                     <View style={s.decadesRow}>
-                        {topDecades.map(([decade, count]) => {
-                            const pct = Math.round((count / logs.length) * 100);
-                            return (
-                                <View key={decade} style={s.decadeBox}>
-                                    <Text style={s.decadeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{decade}</Text>
-                                    <Text style={s.decadePct} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{pct}%</Text>
-                                </View>
-                            );
-                        })}
+                        {topDecades.length > 0 ? (
+                            topDecades.map(([decade, count]) => {
+                                const pct = Math.round((count / Math.max(totalCount, 1)) * 100);
+                                return (
+                                    <View key={decade} style={s.decadeBox}>
+                                        <Text style={s.decadeLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{decade}</Text>
+                                        <Text style={s.decadePct} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{pct}%</Text>
+                                    </View>
+                                );
+                            })
+                        ) : (
+                            <View style={[s.decadeBox, { opacity: 0.5 }]}>
+                                <Text style={s.decadeLabel}>UNKNOWN</Text>
+                                <Text style={s.decadePct}>—</Text>
+                            </View>
+                        )}
                     </View>
                 </View>
 
@@ -124,7 +164,7 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, onClose }
 
                 <View style={s.footer}>
                     <Text style={s.logo}>REELHOUSE</Text>
-                    <Text style={s.footerSub}>CASE №{String(logs.length).padStart(4, '0')}</Text>
+                    <Text style={s.footerSub}>CASE №{String(totalCount).padStart(4, '0')}</Text>
                 </View>
             </View>
         </Animated.View>

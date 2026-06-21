@@ -161,7 +161,7 @@ export async function setupNotificationResponseHandler(
 
   const subscription = Notifications.addNotificationResponseReceivedListener(
     (response: any) => {
-      // #5 AUDIT FIX: Guard against malformed push payloads
+      // Guard against malformed push payloads
       const data = response?.notification?.request?.content?.data;
       if (data) onNotificationTapped(data);
     }

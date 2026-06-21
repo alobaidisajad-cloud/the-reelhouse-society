@@ -65,7 +65,7 @@ export async function withRetry<T>(
 
             // Don't retry if this error type shouldn't be retried
             if (!shouldRetry(error)) {
-                // E-02 AUDIT FIX: Log non-retryable rejections for server regression tracking
+                // Log non-retryable rejections for server regression tracking
                 addBreadcrumb(`[withRetry] ${label} non-retryable error — skipping retry`, 'retry');
                 throw error;
             }

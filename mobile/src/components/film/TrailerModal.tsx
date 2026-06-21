@@ -1,19 +1,49 @@
-import React, { memo } from 'react';
-import { View, Text, StyleSheet, Modal, ActivityIndicator } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WebView } from 'react-native-webview';
+import PressableScale from '@/src/components/PressableScale';
+import { colors, fonts } from '@/src/theme/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 import { X } from 'lucide-react-native';
-import { colors, fonts } from '@/src/theme/theme';
-import PressableScale from '@/src/components/PressableScale';
+import React, { memo, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { WebView } from 'react-native-webview';
 
 export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClose }: { visible: boolean; videoId: string; onClose: () => void }) {
     const insets = useSafeAreaInsets();
-    if (!visible || !videoId) return null;
+    const [shouldRender, setShouldRender] = useState(visible);
+    const webviewRef = useRef<WebView>(null);
+
+    useEffect(() => {
+        const wv = webviewRef.current;
+        let timer: ReturnType<typeof setTimeout>;
+        
+        if (visible) {
+            setShouldRender(true);
+        } else {
+            wv?.injectJavaScript(`
+                var v = document.querySelectorAll('video');
+                for(var i=0; i<v.length; i++) { v[i].pause(); }
+                window.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                true;
+            `);
+            timer = setTimeout(() => setShouldRender(false), 300);
+        }
+
+        return () => {
+            if (timer) clearTimeout(timer);
+            wv?.injectJavaScript(`
+                var v = document.querySelectorAll('video');
+                for(var i=0; i<v.length; i++) { v[i].pause(); }
+                window.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                true;
+            `);
+        };
+    }, [visible]);
+
+    if (!shouldRender || !videoId) return null;
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={s.overlay}>
+            <View style={s.overlay} accessibilityViewIsModal={true}>
                 {/* Close button — matches web: "X CLOSE" text button above video */}
                 <PressableScale style={[s.closeBtn, { top: Math.max(insets.top + 10, 50) }]} onPress={onClose} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.96}>
                     <X size={12} color={colors.parchment} />
@@ -28,10 +58,18 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
                         />
                     </View>
                     <WebView
-                        source={{ uri: `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&controls=0&showinfo=0&fs=0&playsinline=1&iv_load_policy=3` }}
+                        ref={webviewRef}
+                        source={{ uri: `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&controls=1&showinfo=0&fs=1&playsinline=1&iv_load_policy=3&enablejsapi=1` }}
                         style={s.webview}
+                        originWhitelist={['https://*']}
+                        onShouldStartLoadWithRequest={(request) => {
+                            // Security: Only allow YouTube embed and Google OAuth domains
+                            return request.url.startsWith('https://www.youtube.com/') ||
+                                   request.url.startsWith('https://www.google.com/');
+                        }}
                         allowsInlineMediaPlayback
                         mediaPlaybackRequiresUserAction={false}
+                        allowsBackForwardNavigationGestures={false}
                         bounces={false}
                         scrollEnabled={false}
                         startInLoadingState

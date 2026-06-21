@@ -1,10 +1,11 @@
-import { memo, useEffect } from 'react';
+import { memo, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Radio, Star } from 'lucide-react-native';
+import { storage } from '@/src/stores/mmkv-storage';
 
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -17,8 +18,29 @@ const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
 export const NightlyTransmission = memo(function NightlyTransmission({ films }: { films: DispatchFilm[] }) {
   const router = useRouter();
   const day = daysSinceEpoch();
-  const film = films.length > 0 ? films[day % films.length] : null;
   const txNum = transmissionNum();
+
+  const film = useMemo(() => {
+    const validFilms = films.filter(f => f.backdrop_path);
+    if (validFilms.length === 0) return null;
+    
+    const lockKey = `nightly_tx_${day}`;
+    const lockedId = storage.getNumber(lockKey);
+    if (lockedId) {
+      const f = validFilms.find(f => f.id === lockedId);
+      if (f) return f;
+    }
+    return validFilms[day % validFilms.length];
+  }, [films, day]);
+
+  useEffect(() => {
+    if (film) {
+      const lockKey = `nightly_tx_${day}`;
+      if (storage.getNumber(lockKey) !== film.id) {
+        storage.set(lockKey, film.id);
+      }
+    }
+  }, [film, day]);
 
   const scale = useSharedValue(1);
   const blink = useSharedValue(0.2);
@@ -54,7 +76,7 @@ export const NightlyTransmission = memo(function NightlyTransmission({ films }: 
   return (
     <PressableScale
       style={st.transmissionWrap}
-      onPress={() => router.push(`/film/${film.id}` as any)}
+      onPress={() => (router.push as any)(`/film/${film.id}` as any)}
       pressedScale={0.97}
       haptic="medium"
       accessibilityRole="button"

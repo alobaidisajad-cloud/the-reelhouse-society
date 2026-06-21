@@ -112,7 +112,7 @@ export const st = StyleSheet.create({
   // ── Dossier Card ──
   dossierCard: {
     padding: 20, paddingLeft: 24,
-    backgroundColor: 'rgba(8,6,4,0.98)',
+    backgroundColor: 'transparent',
     borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.2)', borderStyle: 'dashed',
     borderRadius: 4, position: 'relative',
     ...effects.shadowSurface,
@@ -364,6 +364,13 @@ export const markdownStyles = {
     fontWeight: '500' as const,
     marginBottom: 24,
   },
+  heading1: {
+    fontFamily: fonts.sub,
+    fontSize: 32,
+    color: colors.parchment,
+    marginTop: 24,
+    marginBottom: 12,
+  },
   heading2: {
     fontFamily: fonts.sub,
     fontSize: 24,
@@ -377,6 +384,27 @@ export const markdownStyles = {
     color: colors.parchment,
     marginTop: 20,
     marginBottom: 10,
+  },
+  heading4: {
+    fontFamily: fonts.sub,
+    fontSize: 16,
+    color: colors.parchment,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  heading5: {
+    fontFamily: fonts.sub,
+    fontSize: 14,
+    color: colors.parchment,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  heading6: {
+    fontFamily: fonts.sub,
+    fontSize: 12,
+    color: colors.parchment,
+    marginTop: 16,
+    marginBottom: 8,
   },
   blockquote: {
     backgroundColor: 'rgba(139,105,20,0.05)',
@@ -403,5 +431,32 @@ export const markdownStyles = {
   link: {
     color: colors.sepia,
     textDecorationLine: 'underline' as const,
+  },
+  code_inline: {
+    fontFamily: fonts.ui,
+    backgroundColor: colors.sepiaSubtle,
+    color: colors.parchmentBright,
+    paddingHorizontal: 4,
+    borderRadius: 4,
+  },
+  code_block: {
+    fontFamily: fonts.ui,
+    backgroundColor: colors.ink,
+    color: colors.parchment,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.sepiaBorder,
+    marginVertical: 16,
+  },
+  fence: {
+    fontFamily: fonts.ui,
+    backgroundColor: colors.ink,
+    color: colors.parchment,
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.sepiaBorder,
+    marginVertical: 16,
   },
 };

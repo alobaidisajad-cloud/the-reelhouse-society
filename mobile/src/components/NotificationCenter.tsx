@@ -13,6 +13,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import PressableScale from '@/src/components/PressableScale';
 import { EmptyState } from '@/src/components/EmptyStates';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ── Pure utility functions (module-level = zero GC pressure) ──
 function getIcon(type: string): string {
@@ -51,6 +52,7 @@ interface Notification {
 
 export default function NotificationCenter() {
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const { user } = useAuthStore();
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [followRequests, setFollowRequests] = useState<any[]>([]);
@@ -109,7 +111,7 @@ export default function NotificationCenter() {
 
     const handlePress = useCallback((n: Notification) => {
         Haptics.selectionAsync();
-        // #7 AUDIT FIX: Await mark-as-read and rollback on failure
+        // Await mark-as-read and rollback on failure
         if (!n.read) {
             // Optimistic update
             setNotifications(prev => prev.map(x => x.id === n.id ? { ...x, read: true } : x));
@@ -146,7 +148,7 @@ export default function NotificationCenter() {
 
     const unreadCount = useMemo(() => notifications.filter(n => !n.read).length, [notifications]);
 
-    const ListHeader = useCallback(() => {
+    const listHeaderElement = useMemo(() => {
         if (followRequests.length === 0) return null;
         return (
             <View style={s.requestsContainer}>
@@ -198,10 +200,12 @@ export default function NotificationCenter() {
                 refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}
                 estimatedItemSize={72}
                 renderItem={renderItem}
-                ListHeaderComponent={ListHeader}
+                ListHeaderComponent={listHeaderElement}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: Math.max(insets.bottom, 40) }}
                 ListEmptyComponent={
                     !loading ? (
-                        // #14 AUDIT FIX: Use branded EmptyState with Buster for visual consistency
+                        // Use branded EmptyState with Buster for visual consistency
                         <EmptyState
                             useBuster
                             busterMood="neutral"

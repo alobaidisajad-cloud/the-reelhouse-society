@@ -1,10 +1,11 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { View, ScrollView, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { PenTool, Film as FilmIcon, Search, X, TrendingUp, TrendingDown, Minus } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { colors, fonts } from '../../theme/theme';
+import { tmdb } from '../../lib/tmdb';
 import PressableScale from '../PressableScale';
 import { ReelRating } from '../Decorative';
 import type { ProfileLog, HalfLifeEntry } from '../../types';
@@ -26,6 +27,9 @@ interface ProfileLedgerTabProps {
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   isSelf?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  bottomInset?: number;
 }
 
 type LedgerItem = 
@@ -45,7 +49,10 @@ export default function ProfileLedgerTab({
   POSTER_COL_4,
   onLoadMore,
   isLoadingMore,
-  isSelf
+  isSelf,
+  refreshing = false,
+  onRefresh,
+  bottomInset
 }: ProfileLedgerTabProps) {
   const router = useRouter();
 
@@ -74,16 +81,25 @@ export default function ProfileLedgerTab({
       return () => cancelAnimation(searchEmberOpacity);
   }, [ledgerSearch.length, searchEmberOpacity]);
 
+  // Reanimated props must map from useSharedValue to prevent UI thread sync failures
   const animatedSearchProps = useAnimatedProps(() => ({
-      color: ledgerSearch.length > 0 ? colors.bloodReel : colors.fog,
+      color: searchEmberOpacity.value > 0.5 ? colors.bloodReel : colors.fog,
   }));
   const animatedSearchStyle = useAnimatedStyle(() => ({
       opacity: searchEmberOpacity.value,
   }));
 
+  // Debounce JS thread string search to prevent ANR freezes on 1000+ log profiles
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localSearch, setLocalSearch] = useState(ledgerSearch);
+
   const handleSearchChange = useCallback((val: string) => {
-      setLedgerSearch(val);
-  }, [setLedgerSearch]); // setLedgerSearch comes from props, not a stable setter
+      setLocalSearch(val);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = setTimeout(() => {
+          setLedgerSearch(val);
+      }, 300);
+  }, [setLedgerSearch]);
 
   // Flatten month groupings into a predictable FlashList array
   const flashData = useMemo(() => {
@@ -109,8 +125,11 @@ export default function ProfileLedgerTab({
   // Pre-fetch next-page posters using expo-image for zero-latency scroll
   useEffect(() => {
     const urlsToPrefetch = ledgerFiltered
-      .slice(0, 40) // aggressive prefetch of first 40 items
-      .map(item => item.poster || item.altPoster) // ProfileLog uses poster / altPoster, which are TMDB urls mapped previously
+      .slice(0, 40)
+      .map(item => {
+        const path = item.poster || item.altPoster;
+        return path ? tmdb.poster(path, 'w185') : null;
+      })
       .filter((url): url is string => !!url);
     
     if (urlsToPrefetch.length > 0) {
@@ -158,7 +177,7 @@ export default function ProfileLedgerTab({
           <AnimatedSearchIcon size={12} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />
           <TextInput 
             style={s.searchInput} 
-            value={ledgerSearch} 
+            value={localSearch} 
             onChangeText={handleSearchChange} 
             placeholder="Search your ledger..." 
             placeholderTextColor={colors.fog}
@@ -167,8 +186,8 @@ export default function ProfileLedgerTab({
             accessibilityLabel="Filter your film log"
             returnKeyType="search"
           />
-          {ledgerSearch.length > 0 && (
-            <PressableScale onPress={() => setLedgerSearch('')} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
+          {localSearch.length > 0 && (
+            <PressableScale onPress={() => { setLocalSearch(''); setLedgerSearch(''); }} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
               <X size={14} color={colors.fog} strokeWidth={1.5} />
             </PressableScale>
           )}
@@ -203,7 +222,7 @@ export default function ProfileLedgerTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <PenTool size={32} color="#C4921E" strokeWidth={1} style={s.emptyLockIcon} />
           <Text style={s.emptyTitleSelf}>A Blank Ledger</Text>
-          <PressableScale style={s.ctaBtn} onPress={() => router.push('/search-modal' as never)} haptic>
+          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
             <Text style={s.ctaBtnText}>DRAFT A CRITIQUE</Text>
           </PressableScale>
         </Animated.View>
@@ -222,18 +241,21 @@ export default function ProfileLedgerTab({
 
   return (
     <View style={s.container}>
-      <FlashList<LedgerItem>
+      <CinematicFlashList
         data={flashData}
+        getItemType={(item) => item.type}
         renderItem={renderItem}
         keyExtractor={(item: LedgerItem) => item.type === 'header' ? `header-${item.title}` : `row-${(item as any).id}`}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         estimatedItemSize={250}
         contentContainerStyle={s.listContent}
-        showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={isLoadingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
+        bottomInset={bottomInset}
       />
     </View>
   );

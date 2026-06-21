@@ -11,8 +11,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.reelhouse.society",
+      "buildNumber": "14",
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "The ReelHouse requires access to your archives to set your Society portrait."
+        "NSPhotoLibraryUsageDescription": "The ReelHouse requires access to your archives to set your Society portrait.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -59,7 +61,7 @@
     ],
     "experiments": {
       "typedRoutes": true,
-      "reactCompiler": false
+      "reactCompiler": true
     },
     "extra": {
       "router": {},
@@ -67,6 +69,6 @@
         "projectId": "9527b5a1-c663-4262-883c-7b85e6aa748d"
       }
     },
-    "owner": "thereehouse.society"
+    "owner": "thereelhouse.society"
   }
 }

@@ -1,0 +1,35 @@
+appId: com.divisionops.reelhouse
+---
+# Offline Resilience Flow
+# Tests: offline queue → sync on reconnect
+
+- launchApp
+- extendedWaitUntil:
+    visible: "The Lobby"
+    timeout: 10000
+
+# Navigate to a film (from cache)
+- tapOn:
+    id: "tab-darkroom"
+- assertVisible: "Darkroom"
+
+# Simulate going offline (toggle airplane mode)
+- toggleAirplaneMode
+
+# Verify offline banner appears
+- extendedWaitUntil:
+    visible: "OFFLINE"
+    timeout: 5000
+
+# Try to interact while offline — action should be queued
+- tapOn:
+    id: "tab-lobby"
+- assertVisible: "The Lobby"
+
+# Re-enable connectivity
+- toggleAirplaneMode
+
+# Wait for sync notification
+- extendedWaitUntil:
+    visible: "Archive updated"
+    timeout: 15000

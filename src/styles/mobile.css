@@ -86,15 +86,35 @@
   }
 }
 
-/* ── Touch interaction improvements ── */
+/* ── Touch interaction improvements — Cross-platform (iOS + Android) ── */
 @media (hover: none) {
   .card-film-overlay {
     opacity: 1 !important;
     background: linear-gradient(to top, rgba(10, 7, 3, 0.95) 0%, rgba(10, 7, 3, 0.4) 45%, transparent 100%) !important;
   }
 
-  .nav-icon-btn, .btn, .tag, .nav-link { min-height: 44px; }
+  /* Touch targets: 48px minimum (Material Design standard, covers both iOS 44px and Android 48px) */
+  .nav-icon-btn, .btn, .tag, .nav-link { min-height: 48px; min-width: 48px; }
   .nav-logo-buster { display: none; }
+
+  /* ANDROID FIX: Kill the blue/grey tap highlight rectangle on all interactive elements */
+  a, button, input, select, textarea, [role="button"], [tabindex] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* ANDROID FIX: Explicitly declare vertical scrolling is allowed on the page body.
+     On iOS Safari this is implicit, but Android Chrome needs it when overscroll-behavior
+     and overflow-x:clip are set on html/body. */
+  body {
+    touch-action: pan-y;
+  }
+
+  /* ANDROID FIX: Force GPU compositing for fixed-position overlays to prevent
+     rendering flicker on Android Chrome's compositor during scroll */
+  body::before, body::after {
+    will-change: transform;
+    transform: translateZ(0);
+  }
 }
 
 /* ── Motion handling fully offloaded to GPU ── */
@@ -150,11 +170,14 @@
     padding-right: max(1rem, env(safe-area-inset-right)) !important; 
   }
 
-  /* Prevent ANY horizontal page scrolling */
-  html, body { overflow-x: hidden !important; }
+  /* Prevent ANY horizontal page scrolling
+     ANDROID FIX: Use 'clip' instead of 'hidden' — hidden creates a BFC that
+     traps vertical scrolling on Android Chrome/Samsung Internet. 'clip' does
+     the same visual clipping without creating a new scroll container. */
+  html, body { overflow-x: clip !important; }
   .layout-sidebar, .layout-sidebar.reversed,
   .teletype-container {
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     max-width: 100vw !important;
     box-sizing: border-box !important;
   }
@@ -516,8 +539,10 @@
   .filter-tabs::-webkit-scrollbar { display: none; }
   section[style*="textAlign: 'center'"] { padding: 2rem 1rem !important; }
 
-  /* === GLOBAL OVERFLOW SAFETY NET === */
-  * { max-width: 100vw; box-sizing: border-box; }
+  /* === GLOBAL OVERFLOW SAFETY NET ===
+     ANDROID FIX: Removed 'max-width: 100vw' — on Android this constrains the
+     document body and breaks scroll chain resolution. box-sizing alone is sufficient. */
+  * { box-sizing: border-box; }
   img, video, iframe { max-width: 100% !important; height: auto; }
 }
 

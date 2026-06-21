@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { storage } from '../stores/mmkv-storage'
 import { supabase } from '../lib/supabase'
-import type { FilmLog } from '../types'
+import type { DomainLog } from '../types'
 
 // Badge definitions — must match Achievements.tsx glyphs
 export interface Badge {
@@ -14,7 +14,7 @@ export interface Badge {
   label: string
   glyph: string
   description: string
-  check: (logs: FilmLog[]) => boolean
+  check: (logs: DomainLog[]) => boolean
 }
 
 export const BADGE_DEFS: Badge[] = [
@@ -22,7 +22,7 @@ export const BADGE_DEFS: Badge[] = [
   { key: 'regular', label: 'THE REGULAR', glyph: '❖', description: 'Log 10 films', check: (l) => l.length >= 10 },
   { key: 'devotee', label: 'THE DEVOTEE', glyph: '◆', description: 'Log 25 films', check: (l) => l.length >= 25 },
   { key: 'oracle', label: 'THE ORACLE', glyph: '◈', description: 'Log 100 films', check: (l) => l.length >= 100 },
-  // #3 AUDIT FIX: EXPLORER badge removed — genre_ids not yet stored on FilmLog.
+  // EXPLORER badge removed - genre_ids not yet stored on DomainLog.
   // Re-add when TMDB genre enrichment is implemented at log time.
   { key: 'drifter', label: 'THE DRIFTER', glyph: '§', description: 'Watch from 4+ decades', check: (l) => {
     const decades = new Set<number>()
@@ -31,18 +31,18 @@ export const BADGE_DEFS: Badge[] = [
   }},
   { key: 'completionist', label: 'THE COMPLETIONIST', glyph: '⊕', description: 'Rate every logged film', check: (l) => l.length > 0 && l.every(log => log.rating > 0) },
   { key: 'nocturne', label: 'THE NOCTURNE', glyph: '⊗', description: 'Log 5 films after midnight', check: (l) => {
-    const nightLogs = l.filter(log => { const h = new Date(log.created_at || log.loggedAt || '').getHours(); return h >= 0 && h < 5 })
+    const nightLogs = l.filter(log => { const h = new Date(log.createdAt || '').getHours(); return h >= 0 && h < 5 })
     return nightLogs.length >= 5
   }},
   { key: 'marathon', label: 'THE MARATHON', glyph: '⟐', description: 'Log 3+ films in one day', check: (l) => {
     const byDay = new Map<string, number>()
-    l.forEach(log => { const d = (log.watchedDate || log.created_at || '').slice(0, 10); if (d) byDay.set(d, (byDay.get(d) || 0) + 1) })
+    l.forEach(log => { const d = (log.watchedDate || log.createdAt || '').slice(0, 10); if (d) byDay.set(d, (byDay.get(d) || 0) + 1) })
     return Array.from(byDay.values()).some(c => c >= 3)
   }},
   { key: 'critic', label: 'THE CRITIC', glyph: '⊛', description: 'Write 10+ reviews', check: (l) => l.filter(log => log.review && log.review.length > 20).length >= 10 },
 ]
 
-export function useAchievements(userId: string | undefined, logs: FilmLog[]) {
+export function useAchievements(userId: string | undefined, logs: DomainLog[]) {
   const [storedBadges, setStoredBadges] = useState<string[]>([])
   const [newBadges, setNewBadges] = useState<Badge[]>([])
   const [loaded, setLoaded] = useState(false)
@@ -92,12 +92,13 @@ export function useAchievements(userId: string | undefined, logs: FilmLog[]) {
       const hasUnsavedEarned = earned.some(k => !storedBadgesRef.current.includes(k))
 
       if (hasUnsavedEarned) {
-        storedBadgesRef.current = earned
-        setStoredBadges(earned)
+        const merged = Array.from(new Set([...storedBadgesRef.current, ...earned]))
+        storedBadgesRef.current = merged
+        setStoredBadges(merged)
 
         // Persist to Supabase
         if (userId) {
-          supabase.from('profiles').update({ badges: earned }).eq('id', userId).then(() => {})
+          supabase.from('profiles').update({ badges: merged }).eq('id', userId).then(() => {})
         }
       }
 

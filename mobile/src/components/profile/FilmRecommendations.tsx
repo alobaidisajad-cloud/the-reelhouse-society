@@ -2,7 +2,7 @@
  * FilmRecommendations — "Films you might like" panel.
  * Uses TMDB similar movies endpoint.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
@@ -69,6 +69,17 @@ export function FilmRecommendations({ logs }: FilmRecommendationsProps) {
         return () => { cancelled = true; };
     }, [logs]);
 
+    const renderItem = useCallback(({ item }: { item: { id: number; title: string; poster_path?: string | null } }) => (
+        <PressableScale
+            onPress={() => { (router.push as any)(`/film/${item.id}` as never); }}
+            style={s.filmCard}
+            haptic
+        >
+            <Image source={{ uri: `https://image.tmdb.org/t/p/w185${item.poster_path}` }} style={s.poster} contentFit="cover" cachePolicy="memory-disk" />
+            <Text style={s.filmTitle} numberOfLines={2}>{item.title}</Text>
+        </PressableScale>
+    ), [router]);
+
     if (logs.length < 3 || recs.length === 0) return null;
 
     return (
@@ -82,16 +93,7 @@ export function FilmRecommendations({ logs }: FilmRecommendationsProps) {
                 contentContainerStyle={s.listContent}
                 estimatedItemSize={110}
                 ListFooterComponent={<View style={{ width: 16 }} />}
-                renderItem={({ item }) => (
-                    <PressableScale
-                        onPress={() => { router.push(`/film/${item.id}` as never); }}
-                        style={s.filmCard}
-                        haptic
-                    >
-                        <Image source={{ uri: `https://image.tmdb.org/t/p/w185${item.poster_path}` }} style={s.poster} contentFit="cover" cachePolicy="memory-disk" />
-                        <Text style={s.filmTitle} numberOfLines={2}>{item.title}</Text>
-                    </PressableScale>
-                )}
+                renderItem={renderItem}
             />
         </Animated.View>
     );

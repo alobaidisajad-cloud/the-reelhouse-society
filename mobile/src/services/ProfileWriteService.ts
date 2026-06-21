@@ -99,14 +99,14 @@ export const ProfileService = {
   },
 
   async uploadAvatar(userId: string, base64Str: string): Promise<string> {
-    // SEC-01 AUDIT FIX: Guard against oversized payloads before decode().
+    // Guard against oversized payloads before decode().
     // 10MB raw ≈ 13.3MB base64. Prevents JS thread OOM on malicious input.
     const MAX_AVATAR_BASE64_LENGTH = 13_300_000;
     if (base64Str.length > MAX_AVATAR_BASE64_LENGTH) {
       throw new Error('Avatar image exceeds the 10MB size limit.');
     }
 
-    // Elite Fix: Cryptographic-level magic byte sniffing prevents file corruption
+    // Detect image type from magic bytes to set the correct content type
     const pureBase64 = base64Str.replace(/^data:image\/\w+;base64,/, '');
     let mimeType = 'image/jpeg';
     let ext = 'jpg';
@@ -140,7 +140,7 @@ export const ProfileService = {
   },
 
   /**
-   * Elite Garbage Collection: Asynchronously purges old avatars ONLY after DB commits.
+   * Asynchronously purges old avatars only after the DB write commits.
    * Includes Chronological Race Protection to prevent destroying concurrent uploads.
    */
   async purgeLegacyAvatars(userId: string, currentAvatarUrl: string | null): Promise<void> {
@@ -168,7 +168,7 @@ export const ProfileService = {
     const pathsToDelete = files
       .filter(f => {
         if (currentFileName && f.name === currentFileName) return false;
-        // Elite Race Condition Protection: Never delete a file newer than our target file.
+        // Never delete a file newer than the target file, to protect concurrent uploads.
         // This guarantees concurrent rapid uploads won't destroy each other's files.
         if (targetFileDate && f.created_at) {
           const fDate = new Date(f.created_at);
@@ -184,7 +184,7 @@ export const ProfileService = {
   },
 
   /**
-   * P1-3 FIX: Cursor-based keyset pagination replaces hardcoded .limit(100).
+   * Cursor-based keyset pagination replaces hardcoded .limit(100).
    * Returns { profiles, hasMore } so the UI can show a "Load More" indicator
    * instead of silently truncating the list.
    */
@@ -264,7 +264,7 @@ export const ProfileService = {
 
     if (error) throw error;
 
-    // T1-3 FIX: Re-sort profiles to match the original interaction query order.
+    // Re-sort profiles to match the original interaction query order.
     // .in('id', ids) returns arbitrary PK order, losing the created_at DESC
     // chronological ordering from the interaction query above.
     const idOrder = new Map(ids.map((id, i) => [id, i]));

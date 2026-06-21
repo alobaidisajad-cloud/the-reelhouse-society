@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Text, Pressable, StyleSheet, ActivityIndicator, Modal, TextInput, Platform } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
@@ -18,7 +18,7 @@ interface Props {
 export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgotLoading, onClose, onEmailChange, onSubmit, onBackToSignIn }: Props) {
   const keyboard = useAnimatedKeyboard();
   const animatedOverlayStyle = useAnimatedStyle(() => ({
-    paddingBottom: keyboard.height.value + 24,
+    paddingBottom: Platform.OS === 'ios' ? keyboard.height.value + 24 : 24,
   }));
 
   return (
@@ -99,6 +99,8 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                   maxLength={254}
                   keyboardAppearance="dark"
                   accessibilityLabel="Recovery email address"
+                  textContentType="emailAddress"
+                  autoComplete="email"
                 />
               </View>
               <PressableScale

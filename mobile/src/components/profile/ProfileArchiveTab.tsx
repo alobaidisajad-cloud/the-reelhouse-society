@@ -1,6 +1,6 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react';
 import { View, ScrollView, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Film as FilmIcon } from 'lucide-react-native';
 import { colors, fonts } from '../../theme/theme';
 import PressableScale from '../PressableScale';
@@ -20,6 +20,9 @@ interface ProfileArchiveTabProps {
   POSTER_COL_4: number;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  bottomInset?: number;
 }
 
 type ArchiveItem = 
@@ -36,7 +39,10 @@ export default function ProfileArchiveTab({
   groupByMonth,
   POSTER_COL_4,
   onLoadMore,
-  isLoadingMore
+  isLoadingMore,
+  refreshing = false,
+  onRefresh,
+  bottomInset
 }: ProfileArchiveTabProps) {
   const router = useRouter();
   const [archiveReady, setArchiveReady] = useState(!isSelf);
@@ -52,7 +58,11 @@ export default function ProfileArchiveTab({
   }, []);
   const pulseStyle = useAnimatedStyle(() => ({
     borderColor: `rgba(139,105,20,${breatheAnim.value})`,
-    boxShadow: `0 0 20px rgba(139,105,20,${breatheAnim.value * 0.5})`
+    shadowColor: '#8b6914',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: breatheAnim.value * 0.5,
+    shadowRadius: 20,
+    elevation: breatheAnim.value * 10
   }));
 
   const handleUnlocked = useCallback(() => {
@@ -122,7 +132,7 @@ export default function ProfileArchiveTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <FilmIcon size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
           <Text style={s.emptyTitleSelf}>The Archive Awaits</Text>
-          <PressableScale style={s.ctaBtn} onPress={() => router.push('/search-modal' as never)} haptic>
+          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
             <Text style={s.ctaBtnText}>RECORD A SCREENING</Text>
           </PressableScale>
         </Animated.View>
@@ -145,17 +155,21 @@ export default function ProfileArchiveTab({
   return (
     <View style={s.container}>
       {isSelf && !archiveReady && <VaultLock onUnlocked={handleUnlocked} />}
-      <FlashList
+      <CinematicFlashList
+        estimatedItemSize={200}
         data={flashData}
+        getItemType={(item: ArchiveItem) => item.type}
         renderItem={renderItem}
-        keyExtractor={(item) => item.type === 'header' ? `header-${item.title}` : `row-${item.id}`}
+        keyExtractor={(item: ArchiveItem) => item.type === 'header' ? `header-${item.title}` : `row-${item.id}`}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         contentContainerStyle={s.listContent}
-        showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={isLoadingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
+        bottomInset={bottomInset}
       />
     </View>
   );

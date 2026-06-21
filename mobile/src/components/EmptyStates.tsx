@@ -33,7 +33,7 @@ function BreathingIcon({ children }: { children: React.ReactNode }) {
     const scale = useSharedValue(0.95);
 
     useEffect(() => {
-        // ADV-01 FIX: Finite repeats (6 iterations ≈ 24s) to allow UI thread idling
+        // Finite repeats (6 iterations ≈ 24s) to allow UI thread idling
         opacity.value = withRepeat(
             withSequence(
                 withTiming(0.7, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
@@ -85,7 +85,7 @@ export function EmptyState({ icon, glyph = '◈', title, subtitle, compact, bust
 // ── Pre-built variants with Buster + lore poetry ──
 
 export function EmptyLedger() {
-    // #12 AUDIT FIX: No useMemo — fresh random lore on each visit
+    // No useMemo — fresh random lore on each visit
     const lore = pickRandom([
         'The ledger is empty. Buster is staring at you. He\'s not angry. He\'s disappointed.',
         'Every great archivist begins with a single entry.',

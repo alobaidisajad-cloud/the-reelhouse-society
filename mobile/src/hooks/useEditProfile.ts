@@ -1,0 +1,251 @@
+import { useState, useEffect, useMemo } from 'react';
+import { Alert } from 'react-native';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useAuthStore } from '@/src/stores/auth';
+import { ProfileService } from '@/src/services/ProfileWriteService';
+import { useRouter } from 'expo-router';
+import { validateUsername } from '@/src/utils/validateUsername';
+import { queryClient } from '@/src/lib/queryClient';
+import { useLoungeStore } from '@/src/stores/lounge';
+
+// Zod schema for the form
+const editProfileSchema = z.object({
+  username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores'),
+  displayName: z.string().max(50).optional().default(''),
+  bio: z.string().max(160, 'Bio cannot exceed 160 characters').optional().default(''),
+  links: z.array(z.object({ title: z.string(), url: z.string() })).default([]),
+});
+
+type ProfileFormData = z.infer<typeof editProfileSchema>;
+
+// Parse both legacy Record structures and modern Array structures
+// to guarantee 0% data loss when editing profiles.
+const parseLinks = (raw: any): { title: string; url: string }[] => {
+  if (!raw) return [];
+  if (Array.isArray(raw)) {
+    return raw.map(l => ({ title: l.title || '', url: l.url || '' }));
+  }
+  if (typeof raw === 'object') {
+    return Object.entries(raw).map(([k, v]) => ({
+      title: k.charAt(0).toUpperCase() + k.slice(1),
+      url: v as string
+    }));
+  }
+  return [];
+};
+
+export function useEditProfile() {
+  const { user, updateUser } = useAuthStore();
+  const router = useRouter();
+
+  const form = useForm<ProfileFormData>({
+    resolver: zodResolver(editProfileSchema) as any,
+    defaultValues: {
+      username: user?.username || '',
+      displayName: user?.display_name || '',
+      bio: user?.bio || '',
+      links: parseLinks(user?.social_links),
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control: form.control,
+    name: 'links',
+  });
+
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatar_url || null);
+  const [avatarBase64, setAvatarBase64] = useState<string | null>(null);
+  const [showCropModal, setShowCropModal] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState<string | Error | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        username: user.username || '',
+        displayName: user.display_name || '',
+        bio: user.bio || '',
+        links: parseLinks(user.social_links),
+      });
+      setAvatarPreview(user.avatar_url || null);
+    }
+  }, [user, form]);
+
+  const { isDirty: isFormDirty } = form.formState;
+
+  const isDirty = useMemo(() => {
+    const hasNewAvatar = !!avatarBase64 || (avatarPreview === null && user?.avatar_url != null);
+    return isFormDirty || hasNewAvatar;
+  }, [isFormDirty, avatarBase64, avatarPreview, user?.avatar_url]);
+
+  const handleSave = form.handleSubmit(async (data: any) => {
+    if (!user) return;
+    setSubmitError(null);
+    setSaving(true);
+    
+    try {
+      const validation = validateUsername(data.username);
+      if (!validation.valid) {
+        form.setError('username', { type: 'manual', message: validation.error || 'Invalid username' });
+        setSaving(false);
+        return;
+      }
+      
+      const sanitizedUsername = validation.sanitized;
+      
+      if (sanitizedUsername !== user.username) {
+        const isAvailable = await ProfileService.checkUsernameAvailable(sanitizedUsername);
+        if (!isAvailable) {
+          form.setError('username', { type: 'manual', message: 'This username is already taken.' });
+          setSaving(false);
+          return;
+        }
+      }
+
+      // Map form fields to DB fields, handling the display_name mapping bug
+      let finalAvatarUrl: string | null | undefined = undefined;
+      if (avatarBase64) {
+        finalAvatarUrl = await ProfileService.uploadAvatar(user.id, avatarBase64);
+      } else if (avatarPreview === null && user.avatar_url != null) {
+        finalAvatarUrl = null;
+      }
+
+      const updates: any = {
+        username: sanitizedUsername,
+        display_name: data.displayName,
+        bio: data.bio,
+        social_links: data.links.filter((l: any) => l.title.trim() && l.url.trim()).map((l: any) => ({ title: l.title.trim(), url: l.url.trim() })),
+      };
+      
+      if (finalAvatarUrl !== undefined) {
+        updates.avatar_url = finalAvatarUrl;
+      }
+
+      await ProfileService.updateProfile(user.id, updates);
+
+      // Optimistically propagate the new avatar instantly across all feeds and lounge messages
+      if (finalAvatarUrl !== undefined) {
+        try {
+          // 1. Sync Lounge store
+          useLoungeStore.getState().syncGlobalAvatar(user.id, finalAvatarUrl);
+
+          // 2. Sync React Query Feeds
+          queryClient.getQueriesData({ queryKey: ['feed'] }).forEach(([queryKey, data]: any) => {
+            if (data?.pages) {
+              const newPages = data.pages.map((page: any) => {
+                if (Array.isArray(page)) {
+                  return page.map((item: any) => 
+                    item.username === sanitizedUsername 
+                      ? { ...item, avatar_url: finalAvatarUrl }
+                      : item
+                  );
+                }
+                return page;
+              });
+              queryClient.setQueryData(queryKey, { ...data, pages: newPages });
+            }
+          });
+
+          // 3. Sync Lounge Members Query
+          queryClient.getQueriesData({ queryKey: ['lounge_members'] }).forEach(([queryKey, data]: any) => {
+            if (Array.isArray(data)) {
+              const newMembers = data.map((member: any) => {
+                if (member.user_id === user.id) {
+                  return {
+                    ...member,
+                    profiles: Array.isArray(member.profiles) 
+                      ? [{ ...member.profiles[0], avatar_url: finalAvatarUrl }]
+                      : { ...member.profiles, avatar_url: finalAvatarUrl }
+                  };
+                }
+                return member;
+              });
+              queryClient.setQueryData(queryKey, newMembers);
+            }
+          });
+
+          // 4. Sync Featured Critique Query
+          queryClient.getQueriesData({ queryKey: ['featuredCritique'] }).forEach(([queryKey, data]: any) => {
+            if (data && data.user_id === user.id) {
+              const newData = {
+                ...data,
+                profiles: Array.isArray(data.profiles)
+                  ? [{ ...data.profiles[0], avatar_url: finalAvatarUrl }]
+                  : { ...data.profiles, avatar_url: finalAvatarUrl }
+              };
+              queryClient.setQueryData(queryKey, newData);
+            }
+          });
+
+          // 5. Hard flush caches where manual iteration is impractical
+          queryClient.removeQueries({ queryKey: ['universalSearch'] });
+          queryClient.removeQueries({ queryKey: ['user', user.id] });
+          
+        } catch (syncErr) {
+          if (__DEV__) console.warn('[useEditProfile] Avatar sync failed non-fatally:', syncErr);
+        }
+      }
+
+      // Fire-and-forget: asynchronous garbage collection
+      if (finalAvatarUrl !== undefined) {
+        ProfileService.purgeLegacyAvatars(user.id, finalAvatarUrl).catch(err => {
+          console.error('Non-blocking legacy avatar purge failed:', err);
+        });
+      }
+      
+      // Update local auth store
+      updateUser({ 
+        ...user, 
+        ...updates,
+        display_name: updates.display_name ?? user.display_name 
+      } as any);
+      router.back();
+    } catch (err: unknown) {
+      console.error('Failed to update profile:', err);
+      setSubmitError(err instanceof Error ? err : new Error('Failed to update profile. Please try again.'));
+    } finally {
+      setSaving(false);
+    }
+  });
+
+  const handleBack = () => {
+    if (isDirty) {
+      Alert.alert(
+        'Discard Changes?',
+        'You have unsaved changes. Are you sure you want to discard them?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Discard', style: 'destructive', onPress: () => router.back() }
+        ]
+      );
+    } else {
+      router.back();
+    }
+  };
+
+  return {
+    user,
+    form,
+    errors: form.formState.errors,
+    avatarPreview,
+    setAvatarPreview,
+    avatarBase64,
+    setAvatarBase64,
+    showCropModal,
+    setShowCropModal,
+    handleRemoveAvatar: () => {
+      setAvatarPreview(null);
+      setAvatarBase64(null);
+    },
+    fields,
+    handleAddLink: () => append({ title: '', url: '' }),
+    handleRemoveLink: (index: number) => remove(index),
+    saving,
+    submitError,
+    handleSave,
+    handleBack,
+    isDirty,
+  };
+}

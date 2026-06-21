@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { View, ScrollView, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
-import { FlashList } from '@shopify/flash-list';
+import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Disc, Film as FilmIcon } from 'lucide-react-native';
 import { colors, fonts , SEPIA_HASH } from '../../theme/theme';
 import { tmdb } from '../../lib/tmdb';
@@ -22,6 +22,9 @@ interface ProfilePhysicalTabProps {
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
   hasMore?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  bottomInset?: number;
 }
 
 type VaultListItem = 
@@ -31,14 +34,15 @@ type VaultListItem =
 const POSTER_COL_4 = 4;
 
  
-const PhysicalVaultCard = React.memo(({ vaultItem, router }: { vaultItem: ProfileVaultItem, router: import('expo-router').Router }) => {
+const PhysicalVaultCard = React.memo(({ vaultItem }: { vaultItem: ProfileVaultItem }) => {
+  const router = useRouter();
   const posterUri = tmdb.poster(vaultItem.poster_path, 'w185');
   const fmt = (vaultItem.formats || [])[0];
   const FC: Record<string, string> = { '4k': '#a855f7', bluray: '#3b82f6', dvd: '#f59e0b', vhs: '#ef4444', laserdisc: '#10b981', steelbook: '#6366f1', criterion: colors.sepia };
   const FL: Record<string, string> = { '4k': '4K', bluray: 'BD', dvd: 'DVD', vhs: 'VHS', laserdisc: 'LD', steelbook: 'SB', criterion: 'CC' };
   
   const onPress = useCallback(() => {
-    if (vaultItem.film_id) router.push(`/film/${vaultItem.film_id}` as never);
+    if (vaultItem.film_id) (router.push as any)(`/film/${vaultItem.film_id}` as never);
   }, [vaultItem.film_id, router]);
 
   return (
@@ -81,7 +85,10 @@ export default React.memo(function ProfilePhysicalTab({
   groupByMonth,
   onLoadMore,
   isLoadingMore,
-  hasMore
+  hasMore,
+  refreshing = false,
+  onRefresh,
+  bottomInset
 }: ProfilePhysicalTabProps) {
   const router = useRouter();
 
@@ -142,11 +149,11 @@ export default React.memo(function ProfilePhysicalTab({
     return (
       <View style={s.grid4}>
         {item.items.map((vaultItem: ProfileVaultItem) => (
-          <PhysicalVaultCard key={vaultItem.id} vaultItem={vaultItem} router={router} />
+          <PhysicalVaultCard key={vaultItem.id} vaultItem={vaultItem} />
         ))}
       </View>
     );
-  }, [router]);
+  }, []);
 
   const ListHeaderComponent = useMemo(() => {
     if (physicalFormatCounts.length === 0) return null;
@@ -188,7 +195,7 @@ export default React.memo(function ProfilePhysicalTab({
           <View style={s.vaultPattern} />
           <Disc size={36} color={colors.parchment} strokeWidth={1.5} style={s.emptyLockIcon} />
           <Text style={s.emptyTitleSelf}>The Vault is Sealed</Text>
-          <PressableScale style={s.ctaBtnSelf} onPress={() => router.push('/search-modal' as never)} haptic>
+          <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
             <Text style={s.ctaBtnTextSelf}>CATALOGUE MEDIA</Text>
           </PressableScale>
         </Animated.View>
@@ -219,20 +226,22 @@ export default React.memo(function ProfilePhysicalTab({
 
   return (
     <View style={s.container}>
-      <FlashList
+      <CinematicFlashList
         data={flashData}
         renderItem={renderItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item: any) => item.id}
         ListHeaderComponent={ListHeaderComponent}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         /* Mixed header/row items: weighted average */
         estimatedItemSize={100}
-        getItemType={(item) => item.type}
+        getItemType={(item: any) => item.type}
         contentContainerStyle={s.listContent}
-        showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
+        bottomInset={bottomInset}
       />
     </View>
   );

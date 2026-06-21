@@ -190,7 +190,7 @@ export const FeedService = {
     const limit = 40;
     const { cursorDate, cursorId } = parseCursor(pageParam);
 
-    // ── Strategy 1: Try the flawless new _auth_cursor RPC ──
+    // ── Strategy 1: Server-side cursor RPC ──
     try {
       const rpcResult = await supabase.rpc('get_following_feed_auth_cursor', {
         p_limit: limit,
@@ -221,7 +221,7 @@ export const FeedService = {
     // ── Strategy 2: Direct query fallback (Safely bounded to prevent 414 URI crashes) ──
     // 150 UUIDs = ~5.5KB URI, well under the 8KB hard limit of standard load balancers.
     const safeFollowing = fallbackFollowing ? fallbackFollowing.slice(0, 150) : [];
-    // TRIBUNAL FIX: Log when truncation occurs for production observability
+    // Log when truncation occurs for production observability
     if (fallbackFollowing && fallbackFollowing.length > 150) {
       logger.warn(`[FeedService.getFollowingFeed] Truncated following list: ${fallbackFollowing.length} → 150 (direct query fallback). Deploy get_following_feed_auth_cursor RPC to resolve.`);
     }
@@ -283,7 +283,7 @@ export const FeedService = {
     const limit = 60;
     const { cursorDate, cursorId } = parseCursor(pageParam);
 
-    // ── Strategy 1: Try the flawless new _auth_cursor RPC ──
+    // ── Strategy 1: Server-side cursor RPC ──
     try {
       const rpcResult = await supabase.rpc('get_filtered_stacks_auth_cursor', {
         p_search: search.trim().toLowerCase(),
@@ -343,7 +343,7 @@ export const FeedService = {
     }
 
     if (filter === 'following' && fallbackFollowing && fallbackFollowing.length > 0) {
-      const safeFollowing = fallbackFollowing.slice(0, 150); // AUDIT FIX: Maximize payload, prevent 8KB URI crash
+      const safeFollowing = fallbackFollowing.slice(0, 150); // Maximize payload, prevent 8KB URI crash
       // Get user IDs for followed usernames
       const { data: followedProfiles } = await supabase
         .from('profiles')

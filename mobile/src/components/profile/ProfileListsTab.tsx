@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { Image } from 'expo-image';
-import { FlashList } from '@shopify/flash-list';
+import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { LayoutList, Lock, ListOrdered } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
@@ -17,9 +17,10 @@ interface ProfileListsTabProps {
   isLoadingMore?: boolean;
   hasMore?: boolean;
   isSelf?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  bottomInset?: number;
 }
-
-type ListRowItem = { type: 'row'; data: ProfileList[]; id: string };
 
  
 const ProfileListCard = React.memo(({ list, router }: { list: ProfileList, router: import('expo-router').Router }) => {
@@ -31,7 +32,7 @@ const ProfileListCard = React.memo(({ list, router }: { list: ProfileList, route
   return (
     <PressableScale 
       style={s.stackCard} 
-      onPress={() => router.push({ pathname: '/list-modal', params: { listId: list.id } } as never)}
+      onPress={() => (router.push as any)(`/stacks/${list.id}` as any)}
       haptic
     >
       <View style={s.stackPosterWrap}>
@@ -75,7 +76,7 @@ const ProfileListCard = React.memo(({ list, router }: { list: ProfileList, route
   );
 });
 
-export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadingMore, hasMore, isSelf }: ProfileListsTabProps) {
+export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadingMore, hasMore, isSelf, refreshing = false, onRefresh, bottomInset }: ProfileListsTabProps) {
   const router = useRouter();
 
   const breatheAnim = useSharedValue(0.1);
@@ -92,26 +93,9 @@ export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadin
     shadowOpacity: breatheAnim.value,
   }));
 
-  const flashData = useMemo(() => {
-    if (lists.length === 0) return [];
-    const result: ListRowItem[] = [];
-    for (let i = 0; i < lists.length; i += 2) {
-      result.push({
-        type: 'row',
-        data: lists.slice(i, i + 2),
-        id: `list-row-${i}`
-      });
-    }
-    return result;
-  }, [lists]);
-
-  const renderItem = useCallback(({ item }: { item: ListRowItem }) => {
+  const renderItem = useCallback(({ item }: { item: ProfileList }) => {
     return (
-      <View style={s.stacksGridRow}>
-        {item.data.map((list) => (
-          <ProfileListCard key={list.id} list={list} router={router} />
-        ))}
-      </View>
+      <ProfileListCard list={item} router={router} />
     );
   }, [router]);
 
@@ -126,7 +110,7 @@ export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadin
           <View style={s.dossierFront}>
             <LayoutList size={32} color={colors.parchment} strokeWidth={1.5} style={s.emptyLockIcon} />
             <Text style={s.emptyTitleSelf}>Uncharted Stacks</Text>
-            <PressableScale style={s.ctaBtnSelf} onPress={() => router.push('/list-modal' as never)} haptic>
+            <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/list-modal' as never)} haptic>
               <Text style={s.ctaBtnTextSelf}>COMPILE A DOSSIER</Text>
             </PressableScale>
           </View>
@@ -158,17 +142,20 @@ export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadin
 
   return (
     <View style={s.container}>
-      <FlashList<ListRowItem>
-        data={flashData}
+      <CinematicFlashList
+        data={lists}
         renderItem={renderItem}
-        keyExtractor={(item: ListRowItem) => item.id}
+        keyExtractor={(item: ProfileList) => item.id}
+        numColumns={2}
         ListEmptyComponent={ListEmptyComponent}
         ListFooterComponent={ListFooterComponent}
         estimatedItemSize={200}
         contentContainerStyle={s.listContent}
-        showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
+        bottomInset={bottomInset}
       />
     </View>
   );
@@ -176,7 +163,7 @@ export default React.memo(function ProfileListsTab({ lists, onLoadMore, isLoadin
 
 const s = StyleSheet.create({
   container: { flex: 1 },
-  listContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 },
+  listContent: { paddingHorizontal: 8, paddingTop: 16, paddingBottom: 100 },
   emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', backgroundColor: 'rgba(8,6,4,0.98)' },
   emptyStateSelf: { marginTop: 24, position: 'relative', width: '100%', shadowColor: 'rgba(0,0,0,0.8)', shadowOffset: { width: 0, height: 10 }, shadowRadius: 20 },
   dossierStackBg1: { position: 'absolute', top: -12, left: 12, right: 12, height: '100%', backgroundColor: 'rgba(15,12,8,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)', borderRadius: 4 },
@@ -188,8 +175,7 @@ const s = StyleSheet.create({
   emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, fontStyle: 'italic', textAlign: 'center', lineHeight: 16 },
   ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', backgroundColor: 'rgba(255,255,255,0.05)', borderRadius: 2 },
   ctaBtnTextSelf: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 4, color: colors.parchment },
-  stacksGridRow: { flexDirection: 'row', gap: 16, marginBottom: 16 },
-  stackCard: { flex: 1, maxWidth: '48%' },
+  stackCard: { flex: 1, marginHorizontal: 8, marginBottom: 16 },
   stackPosterWrap: { width: '100%', aspectRatio: 3 / 2, borderRadius: 6, overflow: 'hidden', backgroundColor: 'rgba(18,14,9,0.5)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', position: 'relative' },
   stackPosterPanel: { position: 'absolute', top: 0, bottom: 0, height: '100%' },
   stackEmptyBg: { flex: 1, backgroundColor: 'rgba(18,14,9,0.7)' },

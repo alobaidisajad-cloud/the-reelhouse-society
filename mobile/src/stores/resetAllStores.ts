@@ -1,5 +1,5 @@
 /**
- * resetAllStores.ts — Centralized Store Cleanup (F-10 Fix)
+ * resetAllStores.ts — Centralized Store Cleanup
  * ────────────────────────────────────────────────────────
  * Replaces fragile lazy-require() pattern in auth.ts logout.
  * Each store registers its own cleanup handler here, inverting

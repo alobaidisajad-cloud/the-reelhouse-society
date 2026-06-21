@@ -1,0 +1,25 @@
+# D-08: ReelHouse Maestro E2E Test Suite — Lounge Chat
+# Tests the lounge (chat room) flow.
+# Requires: Maestro CLI (https://maestro.mobile.dev)
+# Run: maestro test .maestro/
+
+appId: com.reelhouse.mobile
+---
+# Navigate to Lounges tab
+- tapOn: "Lounges"
+- waitForAnimationToEnd
+
+# Should show lounge list or create button
+- assertVisible:
+    text: "Create Lounge"
+    optional: true
+
+# Test creating a lounge
+- tapOn: "Create Lounge"
+- waitForAnimationToEnd
+- inputText: "Test Lounge"
+- tapOn: "Create"
+- waitForAnimationToEnd
+
+# Should show the new lounge
+- assertVisible: "Test Lounge"

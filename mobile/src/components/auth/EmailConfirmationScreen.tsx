@@ -10,9 +10,11 @@ interface Props {
   onResend: () => void;
   onClose: () => void;
   resendCooldown?: number;
+  onManualConfirm: () => void;
+  submitting?: boolean;
 }
 
-export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, onClose, resendCooldown = 0 }: Props) {
+export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, onClose, resendCooldown = 0, onManualConfirm, submitting = false }: Props) {
   return (
     <View style={s.container}>
       <View style={s.confirmationWrap}>
@@ -46,11 +48,29 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
             CHECK YOUR SPAM FOLDER IF IT DOESN'T ARRIVE WITHIN 2 MINUTES.
           </Text>
 
+          {/* Manual Confirm Button */}
+          <PressableScale
+            style={[s.manualConfirmBtn, submitting && s.submitDisabled]}
+            onPress={onManualConfirm}
+            disabled={submitting}
+            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+            pressedScale={0.97}
+          >
+            {submitting ? (
+              <View style={s.submitLoading}>
+                <ActivityIndicator size="small" color={colors.ink} />
+                <Text style={s.manualConfirmText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>VERIFYING...</Text>
+              </View>
+            ) : (
+              <Text style={s.manualConfirmText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>I&apos;VE VERIFIED MY EMAIL</Text>
+            )}
+          </PressableScale>
+
           {/* Resend button */}
           <PressableScale
-            style={[s.confirmResendBtn, (resending || resendCooldown > 0) && s.submitDisabled]}
+            style={[s.confirmResendBtn, (resending || resendCooldown > 0 || submitting) && s.submitDisabled]}
             onPress={onResend}
-            disabled={resending || resendCooldown > 0}
+            disabled={resending || resendCooldown > 0 || submitting}
             hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
             pressedScale={0.97}
           >
@@ -65,10 +85,6 @@ export function EmailConfirmationScreen({ confirmedEmail, resending, onResend, o
               <Text style={s.confirmResendText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>↻  RESEND LINK</Text>
             )}
           </PressableScale>
-
-          <Text style={s.confirmAutoNote}>
-            THIS SCREEN WILL AUTOMATICALLY LOG YOU IN ONCE CONFIRMED.
-          </Text>
         </Animated.View>
       </View>
     </View>
@@ -133,6 +149,20 @@ const s = StyleSheet.create({
     color: colors.fog, textAlign: 'center', lineHeight: 16,
     marginBottom: 24,
   },
+  manualConfirmBtn: {
+    backgroundColor: colors.sepia,
+    borderRadius: 3,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    marginBottom: 16,
+    alignSelf: 'stretch',
+    ...effects.glowSepia,
+  },
+  manualConfirmText: {
+    fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2,
+    color: colors.ink, fontWeight: '700',
+  },
   confirmResendBtn: {
     borderWidth: 1, borderColor: colors.ash, borderRadius: 2,
     paddingVertical: 10, paddingHorizontal: 20,
@@ -141,10 +171,6 @@ const s = StyleSheet.create({
   },
   confirmResendText: {
     fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.bone,
-  },
-  confirmAutoNote: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1,
-    color: colors.fog, textAlign: 'center', opacity: 0.6,
   },
   submitDisabled: {
     opacity: 0.5,

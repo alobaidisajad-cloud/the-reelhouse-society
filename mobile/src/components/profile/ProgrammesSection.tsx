@@ -17,6 +17,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
+import { isArchivistPlusTier } from '@/src/utils/tier';
 
 interface ProgrammeFilm {
     id?: number;
@@ -36,7 +37,9 @@ interface Programme {
 
 interface ProgrammeUser {
     id?: string;
-    role?: string;
+    role?: string | null;
+    tier?: string | null;
+    is_founding?: boolean | null;
     preferences?: any;
 }
 
@@ -86,7 +89,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
         setSearchText(text);
     }, [setSearchText]);
 
-    const isAuteur = (logs?.length ?? 0) >= 20 || user?.role === 'auteur' || user?.role === 'archivist';
+    const isAuteur = (logs?.length ?? 0) >= 20 || isArchivistPlusTier(user);
 
     const filteredFilms = useMemo(() => {
         if (!searchText.trim()) return safeFilms.slice(0, 20);

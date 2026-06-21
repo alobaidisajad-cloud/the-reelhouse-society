@@ -1,0 +1,17 @@
+# Boot Verification Flow
+# ─────────────────────────────────────────────────────────────
+# Verifies that the app completes its full boot sequence by asserting
+# the lobby/feed screen becomes visible. If AppBootstrapper or any
+# critical subsystem fails to initialize, this test will timeout.
+appId: com.divisionops.reelhouse
+---
+- launchApp
+
+# Wait for the app to complete boot and show the lobby
+- extendedWaitUntil:
+    visible: "The Lobby"
+    timeout: 15000
+
+# Verify tab bar is rendered (proves navigation tree mounted correctly)
+- assertVisible:
+    id: "tab-search"

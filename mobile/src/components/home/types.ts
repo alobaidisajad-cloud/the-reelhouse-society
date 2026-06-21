@@ -59,6 +59,7 @@ export interface PulseActivity {
 export function timeAgo(dateStr: string | null): string {
   if (!dateStr) return '';
   const diff = Date.now() - new Date(dateStr).getTime();
+  if (isNaN(diff)) return '';
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'MOMENTS AGO';
   if (mins < 60) return mins === 1 ? '1 MIN. AGO' : `${mins} MIN. AGO`;

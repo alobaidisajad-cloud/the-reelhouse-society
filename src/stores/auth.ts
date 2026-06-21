@@ -28,6 +28,9 @@ async function resolveUsernameToId(username: string): Promise<string | null> {
 // ── Action throttle: prevents spam-clicking social buttons ──
 const _actionThrottles = new Map<string, number>()
 const _THROTTLE_MAX = 200
+
+// ── Signup throttle: prevents bot registration spam (5s per email) ──
+const _signupThrottle = new Map<string, number>()
 const _THROTTLE_TTL = 30_000 // 30s — entries older than this are stale
 function pruneThrottles() {
     if (_actionThrottles.size < _THROTTLE_MAX) return
@@ -62,23 +65,36 @@ export async function hydrateFollowing() {
         // Get all follow interactions by this user
         const { data: followRows } = await supabase
             .from('interactions')
-            .select('target_user_id')
+            .select('target_user_id, type')
             .eq('user_id', userId)
-            .eq('type', 'follow')
+            .in('type', ['follow', 'follow_request'])
             .limit(5000)
         if (!followRows || followRows.length === 0) {
-            useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: [] } : null }))
+            useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: [], requested: [] } : null }))
             return
         }
         // Resolve target IDs to usernames
         const targetIds = followRows.map(r => r.target_user_id)
         const { data: profiles } = await supabase
             .from('profiles')
-            .select('username')
+            .select('id, username')
             .in('id', targetIds)
             .limit(5000)
-        const usernames = (profiles || []).map(p => p.username).filter(Boolean)
-        useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following: usernames } : null }))
+            
+        const following: string[] = []
+        const requested: string[] = []
+        if (profiles) {
+            const profileMap = new Map(profiles.map(p => [p.id, p.username]))
+            followRows.forEach(row => {
+                const username = profileMap.get(row.target_user_id)
+                if (username) {
+                    if (row.type === 'follow_request') requested.push(username)
+                    else following.push(username)
+                }
+            })
+        }
+        
+        useAuthStore.setState(s => ({ user: s.user ? { ...s.user, following, requested } : null }))
     } catch (e: unknown) {
         const err = e instanceof Error ? e : new Error(String(e))
         logError({ type: 'store', message: `Failed to hydrate following list: ${err.message}`, stack: err.stack, component: 'auth.hydrateFollowing' })
@@ -112,7 +128,7 @@ export const useAuthStore = create<AuthState>()(
                 if (error) throw error
 
                 // Set authenticated IMMEDIATELY with minimal auth data so the UI responds instantly
-                set({ user: { ...data.user, following: [] } as unknown as User, isAuthenticated: true })
+                set({ user: { ...data.user, following: [], requested: [] } as unknown as User, isAuthenticated: true })
 
                 // Fetch full profile in the background — UI is already updated
                 Promise.resolve(supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user.id).single())
@@ -127,6 +143,17 @@ export const useAuthStore = create<AuthState>()(
             },
 
             signup: async (email, password, username, role = 'cinephile', persona = '') => {
+                // Client-side throttle — prevent bot spam (5s cooldown per email)
+                const throttleKey = `signup:${email}`
+                const now = Date.now()
+                const lastAttempt = _signupThrottle.get(throttleKey) || 0
+                if (now - lastAttempt < 5000) {
+                    throw new Error('Please wait a moment before trying again.')
+                }
+                _signupThrottle.set(throttleKey, now)
+                // Cap throttle map to prevent memory leak
+                if (_signupThrottle.size > 50) _signupThrottle.clear()
+
                 const redirectTo = `${window.location.origin}/auth/callback`
                 const { data, error } = await supabase.auth.signUp({
                     email, password,
@@ -152,7 +179,7 @@ export const useAuthStore = create<AuthState>()(
                         persona: persona || 'The Cinephile',
                     }).eq('id', data.user!.id)
                     const { data: profile } = await supabase.from('profiles').select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at').eq('id', data.user!.id).single()
-                    set({ user: { ...data.user, ...profile, following: [] } as User, isAuthenticated: true })
+                    set({ user: { ...data.user, ...profile, following: [], requested: [] } as User, isAuthenticated: true })
                     hydrateUserData()
                 }
                 // Return data — SignupModal checks data.session to decide
@@ -244,7 +271,8 @@ export const useAuthStore = create<AuthState>()(
             followUser: async (targetUsername) => {
                 const state = get()
                 const following = state.user?.following || []
-                if (following.includes(targetUsername)) return
+                const requested = state.user?.requested || []
+                if (following.includes(targetUsername) || requested.includes(targetUsername)) return
 
                 // ── Throttle: prevent spam-clicking (2s cooldown) ──
                 const throttleKey = `follow:${targetUsername}`
@@ -256,30 +284,45 @@ export const useAuthStore = create<AuthState>()(
                 const fromUsername = state.user?.username || 'someone'
                 const userId = state.user?.id
 
+                // We need to resolve ID and privacy setting BEFORE optimistic update
+                if (!userId) return
+                
+                // Keep the target username in a loading state array if needed, but since we await DB
+                // we'll fetch ID and is_social_private
+                const { data: profile } = await supabase.from('profiles').select('id, is_social_private').eq('username', targetUsername).single()
+                if (!profile) {
+                    reelToast.error('User not found.')
+                    return
+                }
+                const targetId = profile.id
+                const isPrivate = Boolean(profile.is_social_private)
+                const interactionType = isPrivate ? 'follow_request' : 'follow'
+
                 // Optimistic update — UI responds instantly
-                set((s) => ({
-                    user: s.user ? { ...s.user, following: [...(s.user.following || []), targetUsername] } : null,
-                }))
+                if (isPrivate) {
+                    set((s) => ({ user: s.user ? { ...s.user, requested: [...(s.user.requested || []), targetUsername] } : null }))
+                } else {
+                    set((s) => ({ user: s.user ? { ...s.user, following: [...(s.user.following || []), targetUsername] } : null }))
+                }
 
                 // Background sync — rollback on failure
                 try {
-                    if (userId) {
-                        const targetId = await resolveUsernameToId(targetUsername)
-                        if (!targetId) throw new Error('User not found')
-                        const [{ error: followErr }] = await Promise.all([
-                            supabase.from('interactions').insert([{
-                                user_id: userId, target_user_id: targetId, type: 'follow'
-                            }])
-                        ])
-                        if (followErr && !followErr.message?.includes('duplicate')) throw followErr
+                    const [{ error: followErr }] = await Promise.all([
+                        supabase.from('interactions').insert([{
+                            user_id: userId, target_user_id: targetId, type: interactionType
+                        }])
+                    ])
+                    if (followErr && !followErr.message?.includes('duplicate')) throw followErr
                         
                         // DB trigger handles notification generation
                     }
                 } catch {
                     // Rollback
-                    set((s) => ({
-                        user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null,
-                    }))
+                    if (isPrivate) {
+                        set((s) => ({ user: s.user ? { ...s.user, requested: (s.user.requested || []).filter(u => u !== targetUsername) } : null }))
+                    } else {
+                        set((s) => ({ user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null }))
+                    }
                     reelToast.error('Follow failed — please try again.')
                 }
             },
@@ -293,11 +336,16 @@ export const useAuthStore = create<AuthState>()(
                 _actionThrottles.set(throttleKey, Date.now())
 
                 const prevFollowing = get().user?.following || []
+                const prevRequested = get().user?.requested || []
                 const userId = get().user?.id
 
                 // Optimistic update
                 set((s) => ({
-                    user: s.user ? { ...s.user, following: (s.user.following || []).filter(u => u !== targetUsername) } : null,
+                    user: s.user ? { 
+                        ...s.user, 
+                        following: (s.user.following || []).filter(u => u !== targetUsername),
+                        requested: (s.user.requested || []).filter(u => u !== targetUsername)
+                    } : null,
                 }))
 
                 // Background sync — rollback on failure
@@ -308,14 +356,14 @@ export const useAuthStore = create<AuthState>()(
                             const { error } = await supabase.from('interactions').delete()
                                 .eq('user_id', userId)
                                 .eq('target_user_id', targetId)
-                                .eq('type', 'follow')
+                                .in('type', ['follow', 'follow_request'])
                             if (error) throw error
                         }
                     }
                 } catch {
                     // Rollback
                     set((s) => ({
-                        user: s.user ? { ...s.user, following: prevFollowing } : null,
+                        user: s.user ? { ...s.user, following: prevFollowing, requested: prevRequested } : null,
                     }))
                     reelToast.error('Unfollow failed — please try again.')
                 }
@@ -347,6 +395,7 @@ export const useAuthStore = create<AuthState>()(
                     is_social_private: state.user.is_social_private,
                     created_at: state.user.created_at,
                     following: state.user.following,
+                    requested: state.user.requested,
                     preferences: state.user.preferences || {},
                 } : null,
                 isAuthenticated: state.isAuthenticated,

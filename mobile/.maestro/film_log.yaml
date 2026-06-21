@@ -1,0 +1,32 @@
+# D-08: ReelHouse Maestro E2E Test Suite — Film Log
+# Tests logging a film (the core user action).
+# Requires: Maestro CLI (https://maestro.mobile.dev)
+# Run: maestro test .maestro/
+
+appId: com.reelhouse.mobile
+---
+# Navigate to Darkroom
+- tapOn: "The Darkroom"
+- waitForAnimationToEnd
+
+# Search for a film
+- tapOn:
+    id: "search-films-input"
+    optional: true
+- inputText: "The Matrix"
+- waitForAnimationToEnd
+
+# Select The Matrix from suggestions
+- tapOn:
+    text: "The Matrix"
+    index: 0
+- waitForAnimationToEnd
+
+# Tap the log button on film detail
+- tapOn:
+    text: "Log Film"
+    optional: true
+- waitForAnimationToEnd
+
+# Should show log form
+- assertVisible: "Rating"

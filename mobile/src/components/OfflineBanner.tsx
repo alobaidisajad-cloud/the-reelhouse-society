@@ -1,16 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Text, StyleSheet } from 'react-native';
 import NetInfo, { useNetInfo } from '@react-native-community/netinfo';
+import React, { useEffect, useRef, useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
+import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts } from '../theme/theme';
-import Animated, { FadeInUp, FadeOutUp } from 'react-native-reanimated';
 import PressableScale from './PressableScale';
 
 export default function OfflineBanner() {
     const netInfo = useNetInfo();
     const insets = useSafeAreaInsets();
     const [checking, setChecking] = useState(false);
-    // #13 AUDIT FIX: Track elapsed offline time
+    // Track elapsed offline time
     const offlineSince = useRef<number | null>(null);
     const [elapsed, setElapsed] = useState('');
 
@@ -44,7 +44,7 @@ export default function OfflineBanner() {
             style={[styles.container, { bottom: Math.max(insets.bottom, 20) + 82 }]}
             pointerEvents="box-none"
         >
-            <PressableScale onPress={handleRetry} pressedScale={0.96}>
+            <PressableScale onPress={handleRetry} pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Retry connection">
                 <Text style={styles.text}>
                     {checking ? 'CHECKING CONNECTION…' : `OPERATING IN ISOLATION${elapsed}`}
                 </Text>

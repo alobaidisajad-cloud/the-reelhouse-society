@@ -19,6 +19,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import reelToast from '@/src/utils/reelToast';
+import { extractDropCap } from '@/src/utils/text';
 
 
 export interface ShareCardData {
@@ -67,16 +68,29 @@ const rs = StyleSheet.create({
     reelEmpty: { color: 'rgba(255,255,255,0.08)' },
 });
 
-/** Strips HTML tags from review text */
-function stripHtml(text: string): string {
-    return (text || '').replace(/<[^>]+>/g, '').trim();
+const ENTITIES: Record<string, string> = {
+  '&quot;': '"',
+  '&apos;': "'",
+  '&#39;': "'",
+  '&amp;': '&',
+  '&lt;': '<',
+  '&gt;': '>',
+  '&nbsp;': ' '
+};
+
+/** Parses review text to preserve paragraphs and decode entities */
+function cleanReviewText(text: string): string {
+    if (!text) return '';
+    let parsed = text.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<(?:\/?(?:p|div|br|b|i|strong|em|span|a|ul|li))[^>]*>/gi, '').trim();
+    return parsed.replace(/&[a-z0-9#]+;/gi, (m) => ENTITIES[m] || m);
 }
 
 /** The inner card content — shared between embedded and modal modes */
 function CardContent({ data }: { data: ShareCardData }) {
     const posterUrl = data.posterUri ?? (data.posterPath ? tmdb.poster(data.posterPath, 'w500') : null);
     const yearDisplay = data.filmYear ?? data.year ?? '';
-    const rawReview = stripHtml(data.review || '');
+    const rawReview = cleanReviewText(data.review || '');
+    const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(rawReview);
     const isLong = rawReview.length > 200;
     const hasReview = rawReview.length > 0;
     const statusLabel = data.status === 'rewatched' ? 'REWATCHED' : data.status === 'abandoned' ? `ABANDONED${data.abandonedReason ? ` — ${data.abandonedReason.toUpperCase()}` : ''}` : 'WATCHED';
@@ -149,8 +163,8 @@ function CardContent({ data }: { data: ShareCardData }) {
                         <Text style={s.editorialReview}>
                             {data.dropCap ? (
                                 <>
-                                    <Text style={s.dropCapLetter}>{rawReview.charAt(0)}</Text>
-                                    <Text>{rawReview.slice(1)}</Text>
+                                    <Text style={s.dropCapLetter}>{dropCapFirst}</Text>
+                                    <Text>{dropCapRest}</Text>
                                 </>
                             ) : (
                                 rawReview
@@ -194,7 +208,7 @@ function CardContent({ data }: { data: ShareCardData }) {
 
                         {/* Short review */}
                         {hasReview && (
-                            <Text style={s.cinematicReview}>&quot;{rawReview}&quot;</Text>
+                            <Text style={s.cinematicReview}>“{rawReview}”</Text>
                         )}
                     </View>
                 )}
@@ -210,7 +224,17 @@ function CardContent({ data }: { data: ShareCardData }) {
 }
 
 export default function LogShareCard({ visible, data, onClose }: Props) {
-    // Modal mode hooks
+    // Fast path for embedded mode — zero hooks, zero allocations.
+    // When rendered inside the hidden share container on the log detail page,
+    // visible is undefined and we only need the static card content.
+    if (visible === undefined) {
+        return <CardContent data={data} />;
+    }
+    return <LogShareCardModal visible={visible} data={data} onClose={onClose} />;
+}
+
+/** Full modal mode — hooks only execute when the share modal is presented */
+function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data: ShareCardData; onClose?: () => void }) {
     const cardRef = useRef<ViewShot>(null);
     const [sharing, setSharing] = useState(false);
 
@@ -220,7 +244,7 @@ export default function LogShareCard({ visible, data, onClose }: Props) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
         try {
-            const uri = await (cardRef.current as any)?.capture?.();
+            const uri = await cardRef.current?.capture?.();
             if (!uri) return;
             const isAvailable = await Sharing.isAvailableAsync();
             if (isAvailable) {
@@ -229,8 +253,11 @@ export default function LogShareCard({ visible, data, onClose }: Props) {
                     dialogTitle: `${data.filmTitle} — ReelHouse Log`,
                 });
             } else {
+                const yearText = (data.filmYear || data.year) ? ` (${data.filmYear || data.year})` : '';
+                const ratingText = data.rating > 0 ? ` — ${data.rating}/5 reels` : '';
+                
                 await Share.share({
-                    message: `${data.filmTitle} (${data.filmYear || data.year || ''}) — ${data.rating}/5 reels\n\n${data.review || ''}\n\n— via The ReelHouse Society`,
+                    message: `${data.filmTitle}${yearText}${ratingText}\n\n${cleanReviewText(data.review || '')}\n\n— via The ReelHouse Society`.trim(),
                 });
             }
             Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -241,11 +268,6 @@ export default function LogShareCard({ visible, data, onClose }: Props) {
             setSharing(false);
         }
     }, [data]);
-
-    // Embedded mode (off-screen capture by parent)
-    if (visible === undefined) {
-        return <CardContent data={data} />;
-    }
 
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>

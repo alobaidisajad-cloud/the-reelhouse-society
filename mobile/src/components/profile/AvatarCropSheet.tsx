@@ -9,8 +9,10 @@ import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Camera, Image as ImageIcon, X, Check } from 'lucide-react-native';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { decode } from 'base64-arraybuffer';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
@@ -59,23 +61,8 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   const uploadAvatar = async (base64Str: string) => {
     setUploading(true);
     try {
-      const filePath = `${user!.id}/${Date.now()}.jpg`;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { data, error } = await supabase.storage.from('avatars').upload(filePath, decode(base64Str), {
-        contentType: 'image/jpeg',
-      });
-
-      if (error) throw error;
-
-      const { data: publicUrlData } = supabase.storage.from('avatars').getPublicUrl(filePath);
-      const publicUrl = publicUrlData.publicUrl;
-
-      // Update profile
-      const { error: profileError } = await supabase.from('profiles').update({ avatar_url: publicUrl }).eq('id', user!.id);
-      if (profileError) throw profileError;
-
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onSuccess(publicUrl);
+      onSuccess(base64Str);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       if (__DEV__) console.error(msg);

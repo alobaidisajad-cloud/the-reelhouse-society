@@ -11,7 +11,7 @@ import { Share2 } from 'lucide-react-native';
 import ViewShot from 'react-native-view-shot';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
-import { GLOBAL_TMDB_CACHE } from './CinematicInsights';
+import { GLOBAL_TMDB_CACHE, INFLIGHT_TMDB_REQUESTS } from './CinematicInsights';
 import { FilmSchema } from '@/src/lib/schemas';
 import { TasteDNAExportCanvas } from './TasteDNAExportCanvas';
 import PressableScale from '../PressableScale';
@@ -37,6 +37,7 @@ const GENRE_MAP: Record<number, string> = {
 
 export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps) {
     const [computedGenres, setComputedGenres] = useState<[string, number][]>([]);
+    const [totalResolvedFilms, setTotalResolvedFilms] = useState(0);
     const [isSharing, setIsSharing] = useState(false);
     const viewShotRef = React.useRef<ViewShot>(null);
 
@@ -73,7 +74,16 @@ export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps
                 if (cancelled) return;
                 const batch = idsToNetworkFetch.slice(i, i + BATCH_SIZE);
                 const results = await Promise.allSettled(
-                    batch.map(id => tmdb.detail(id))
+                    batch.map(id => {
+                        if (INFLIGHT_TMDB_REQUESTS.has(id)) {
+                            return INFLIGHT_TMDB_REQUESTS.get(id)!;
+                        }
+                        const promise = tmdb.detail(id).finally(() => {
+                            INFLIGHT_TMDB_REQUESTS.delete(id);
+                        });
+                        INFLIGHT_TMDB_REQUESTS.set(id, promise);
+                        return promise;
+                    })
                 );
 
                 for (let j = 0; j < results.length; j++) {
@@ -83,8 +93,7 @@ export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps
                         if (parsed.success) {
                             GLOBAL_TMDB_CACHE.set(batch[j], parsed.data as any); // using as any since map expects TMDBMovie, but FilmSchema is parsed safely. 
                         } else {
-                            // Fallback to TMDBMovie casting if strictly needed, but parsed data guarantees shape
-                            GLOBAL_TMDB_CACHE.set(batch[j], result.value as any);
+                            console.warn(`[TasteDNA] Malformed TMDB payload for ID ${batch[j]}`);
                         }
                     }
                 }
@@ -96,19 +105,25 @@ export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps
             if (cancelled) return;
 
             const genreCounts = new Map<string, number>();
+            let resolvedCount = 0;
             for (const id of idsToFetch) {
                 const movie = GLOBAL_TMDB_CACHE.get(id);
                 if (!movie) continue;
-                if (movie.genres) {
+                
+                let hasGenre = false;
+                if (movie.genres && movie.genres.length > 0) {
+                    hasGenre = true;
                     for (const g of movie.genres) {
                         genreCounts.set(g.name, (genreCounts.get(g.name) ?? 0) + 1);
                     }
-                } else if (movie.genre_ids) {
+                } else if (movie.genre_ids && movie.genre_ids.length > 0) {
+                    hasGenre = true;
                     for (const gid of movie.genre_ids) {
                         const name = GENRE_MAP[gid];
                         if (name) genreCounts.set(name, (genreCounts.get(name) ?? 0) + 1);
                     }
                 }
+                if (hasGenre) resolvedCount++;
             }
 
             const sorted = Array.from(genreCounts.entries())
@@ -116,6 +131,7 @@ export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps
                 .slice(0, 6);
 
             setComputedGenres(sorted);
+            setTotalResolvedFilms(resolvedCount);
         })();
 
         return () => { cancelled = true; };
@@ -158,7 +174,7 @@ export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps
 
             <View style={s.dnaStrip}>
                 {computedGenres.map(([genre, count], i) => {
-                    const pct = Math.round((count / Math.max(logs.length, 1)) * 100);
+                    const pct = Math.round((count / Math.max(totalResolvedFilms, 1)) * 100);
                     const barWidth = `${(count / maxCount) * 100}%`;
                     const anim = FadeInRight.delay(i * 60).duration(300).withCallback((finished) => {
                         if (finished) {

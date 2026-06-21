@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { X, Users, Bell, Settings } from 'lucide-react'
@@ -20,6 +21,25 @@ export default function MobileNavDrawer({ isOpen, onClose, onOpenNotifications }
     const openLogModal = useUIStore(state => state.openLogModal)
     const navigate = useNavigate()
     const openHandbook = useUIStore(state => state.openHandbook)
+
+    // ANDROID FIX: Lock body scroll when mobile drawer is open.
+    // iOS handles this via the fixed overlay, but Android Chrome lets
+    // the page behind scroll. Save/restore scroll position to prevent jump.
+    useEffect(() => {
+        if (!isOpen) return
+        const scrollY = window.scrollY
+        document.body.style.position = 'fixed'
+        document.body.style.top = `-${scrollY}px`
+        document.body.style.left = '0'
+        document.body.style.right = '0'
+        return () => {
+            document.body.style.position = ''
+            document.body.style.top = ''
+            document.body.style.left = ''
+            document.body.style.right = ''
+            window.scrollTo(0, scrollY)
+        }
+    }, [isOpen])
 
     return (
         <AnimatePresence>

@@ -1,10 +1,10 @@
 /**
  * HandbookModal — User handbook / guide.
  */
-import { View, Text, StyleSheet, Modal, ScrollView } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
-import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { colors, fonts } from '@/src/theme/theme';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 const SECTIONS = [
     { title: 'THE RATING SCALE', body: '1 Reel — Abysmal\n2 Reels — Below Average\n3 Reels — Decent\n4 Reels — Excellent\n5 Reels — Masterpiece' },
@@ -17,7 +17,7 @@ const SECTIONS = [
 export default function HandbookModal({ visible, onClose }: { visible: boolean; onClose: () => void }) {
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View style={s.overlay}>
+            <View style={s.overlay} accessibilityViewIsModal={true}>
                 <View style={s.card}>
                     <View style={s.header}>
                         <Text style={s.title}>The Society Handbook</Text>

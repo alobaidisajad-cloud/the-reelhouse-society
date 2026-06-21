@@ -361,7 +361,7 @@ describe('logSlice', () => {
         });
     });
 
-    // ── CONVERGENCE FIX: 23505 unique-violation merge ──
+    // ── 23505 unique-violation merge ──
     // When a concurrent insert (e.g. the same film logged from another device) wins
     // the logs(user_id, film_id) unique race, the online addLog path must MERGE the
     // attempt into the existing row (as the offline executor does) instead of throwing

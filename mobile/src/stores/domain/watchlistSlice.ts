@@ -1,11 +1,11 @@
+import { Image } from 'expo-image';
 import { StateCreator } from 'zustand';
 import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../auth';
-import { FilmState } from '../films';
-import reelToast from '../../utils/reelToast';
 import { WatchlistItem } from '../../types';
-import { Image } from 'expo-image';
+import { isNetworkError } from '../../utils/networkError';
 import { enqueueMutation } from '../../utils/offlineQueue';
+import reelToast from '../../utils/reelToast';
+import { useAuthStore } from '../auth';
 
 export interface WatchlistSlice {
     watchlist: WatchlistItem[];
@@ -13,18 +13,22 @@ export interface WatchlistSlice {
     watchlistPage: number;
     _fetchingWatchlist: boolean;
     _watchlistIndex: Record<number, true>;
+    _watchlistPromises: Record<number, Promise<void>>;
+    _watchlistCursor: string | null;
 
     fetchWatchlist: (loadMore?: boolean) => Promise<void>;
     addToWatchlist: (film: { id: number; title?: string; name?: string; poster_path?: string | null; release_date?: string }) => Promise<void>;
     removeFromWatchlist: (filmId: number) => Promise<void>;
 }
 
-export const createWatchlistSlice: StateCreator<FilmState, [], [], WatchlistSlice> = (set, get) => ({
+export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], WatchlistSlice> = (set, get) => ({
     watchlist: [],
     watchlistHasMore: true,
     watchlistPage: 0,
     _fetchingWatchlist: false,
     _watchlistIndex: {},
+    _watchlistPromises: {},
+    _watchlistCursor: null,
 
     fetchWatchlist: async (loadMore = false) => {
         const user = useAuthStore.getState().user;
@@ -35,31 +39,47 @@ export const createWatchlistSlice: StateCreator<FilmState, [], [], WatchlistSlic
         set({ _fetchingWatchlist: true });
 
         const PAGE_SIZE = 50;
-        const page = loadMore ? state.watchlistPage : 0;
 
-        const { data, error } = await supabase
+        let query = supabase
             .from('watchlists').select('id, user_id, film_id, film_title, poster_path, year, created_at').eq('user_id', user.id)
             .order('created_at', { ascending: false })
-            .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+            .order('id', { ascending: false })
+            .limit(PAGE_SIZE);
+
+        // Cursor-based keyset pagination
+        const cursor = loadMore ? state._watchlistCursor : null;
+        if (cursor) {
+            const [cursorDate, cursorId] = cursor.split('|');
+            if (cursorDate && cursorId) {
+                query = query.or(`created_at.lt.${cursorDate},and(created_at.eq.${cursorDate},id.lt.${cursorId})`);
+            }
+        }
+
+        const { data, error } = await query;
 
         if (error || !data) { set({ _fetchingWatchlist: false }); return; }
 
         const hasMore = data.length === PAGE_SIZE;
-        const newItems = data.map((w) => ({ id: w.film_id, title: w.film_title, poster_path: w.poster_path ?? null, year: w.year ?? null }));
+        const newItems = data.map((w) => ({ id: w.film_id, title: w.film_title, poster: w.poster_path ?? null, poster_path: w.poster_path ?? null, year: w.year ?? null }));
         const nextWatchlist = loadMore ? [...state.watchlist, ...newItems] : newItems;
         const cappedWatchlist = nextWatchlist.slice(0, 500);
         const idx: Record<number, true> = {};
         cappedWatchlist.forEach(w => { idx[w.id] = true; });
+
+        // Compute next cursor from last row
+        const lastRow = data.length > 0 ? data[data.length - 1] : null;
+        const nextCursor = hasMore && lastRow ? `${lastRow.created_at}|${lastRow.id}` : null;
         
         set({
             watchlist: cappedWatchlist,
             _watchlistIndex: idx,
-            watchlistPage: page + 1,
+            watchlistPage: (loadMore ? state.watchlistPage : 0) + 1,
             watchlistHasMore: hasMore,
             _fetchingWatchlist: false,
+            _watchlistCursor: nextCursor,
         });
 
-        // Background Image Prefetching (Cache Warming) — D4-01 FIX: only prefetch NEW entries
+        // Background image prefetching: only prefetch new entries
         const newEntries = loadMore ? newItems : cappedWatchlist;
         const posterUrls = newEntries
             .filter(w => w.poster_path)
@@ -79,6 +99,7 @@ export const createWatchlistSlice: StateCreator<FilmState, [], [], WatchlistSlic
         const newEntry = {
             id: film.id,
             title: film.title ?? film.name ?? 'Untitled',
+            poster: film.poster_path ?? null,
             poster_path: film.poster_path ?? null,
             year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
         };
@@ -87,47 +108,53 @@ export const createWatchlistSlice: StateCreator<FilmState, [], [], WatchlistSlic
             watchlist: [newEntry, ...state.watchlist],
             _watchlistIndex: { ...state._watchlistIndex, [film.id]: true }
         }));
+        try { require('react-native').AccessibilityInfo.announceForAccessibility('Added to watchlist'); } catch { /* test env */ }
 
-        const { error } = await supabase.from('watchlists').insert([{
-            user_id: user.id,
-            film_id: film.id,
-            film_title: film.title ?? film.name ?? 'Untitled',
-            poster_path: film.poster_path ?? null,
-            year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
-        }]);
+        const dbOperation = async () => {
+            const { error } = await supabase.from('watchlists').insert([{
+                user_id: user.id,
+                film_id: film.id,
+                film_title: film.title ?? film.name ?? 'Untitled',
+                poster_path: film.poster_path ?? null,
+                year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
+            }]);
 
-        if (error) {
-            const errMsg = error?.message ?? '';
-            const errLower = errMsg.toLowerCase();
-            if (errLower.includes('fetch') || errLower.includes('network')) {
-                // H-06 AUDIT FIX: Queue for offline sync instead of silent rollback
-                enqueueMutation({ type: 'add_watchlist', payload: {
-                    user_id: user.id, film_id: film.id,
-                    film_title: film.title ?? film.name ?? 'Untitled',
-                    poster_path: film.poster_path ?? null,
-                    year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
-                } });
+            if (error) {
+                if (isNetworkError(error)) {
+                    // Queue for offline sync instead of silent rollback
+                    enqueueMutation({ type: 'add_watchlist', payload: {
+                        user_id: user.id, film_id: film.id,
+                        film_title: film.title ?? film.name ?? 'Untitled',
+                        poster_path: film.poster_path ?? null,
+                        year: film.release_date ? (parseInt(film.release_date.slice(0, 4)) || null) : null,
+                    } });
+                } else {
+                    set((state) => {
+                        const nextIdx = { ...state._watchlistIndex };
+                        delete nextIdx[film.id];
+                        return {
+                            watchlist: state.watchlist.filter((f) => f.id !== film.id),
+                            _watchlistIndex: nextIdx
+                        };
+                    });
+                    reelToast.error('Failed to add to watchlist.');
+                }
             } else {
-                set((state) => {
-                    const nextIdx = { ...state._watchlistIndex };
-                    delete nextIdx[film.id];
-                    return {
-                        watchlist: state.watchlist.filter((f) => f.id !== film.id),
-                        _watchlistIndex: nextIdx
-                    };
-                });
-                reelToast.error('Failed to add to watchlist.');
+                reelToast(`"${newEntry.title}" added to watchlist.`);
             }
-        } else {
-            reelToast(`"${newEntry.title}" added to watchlist.`);
-        }
+        };
+
+        const prevPromise = get()._watchlistPromises[film.id] || Promise.resolve();
+        const nextPromise = prevPromise.then(dbOperation).catch(() => {});
+        set(state => ({ _watchlistPromises: { ...state._watchlistPromises, [film.id]: nextPromise } }));
     },
 
     removeFromWatchlist: async (filmId) => {
         const user = useAuthStore.getState().user;
         if (!user) return;
 
-        const itemToRemove = get().watchlist.find((f) => f.id === filmId);
+        const previousWatchlist = [...get().watchlist];
+        const itemToRemove = previousWatchlist.find((f) => f.id === filmId);
         if (!itemToRemove) return;
 
         set((state) => {
@@ -139,21 +166,25 @@ export const createWatchlistSlice: StateCreator<FilmState, [], [], WatchlistSlic
             };
         });
 
-        const { error } = await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId);
+        const dbOperation = async () => {
+            const { error } = await supabase.from('watchlists').delete().eq('user_id', user.id).eq('film_id', filmId);
 
-        if (error) {
-            const errMsg = error?.message ?? '';
-            const errLower = errMsg.toLowerCase();
-            if (errLower.includes('fetch') || errLower.includes('network')) {
-                // H-06 AUDIT FIX: Queue removal for offline sync
-                enqueueMutation({ type: 'remove_watchlist', payload: { user_id: user.id, film_id: filmId } });
-            } else {
-                set((state) => ({
-                    watchlist: [itemToRemove, ...state.watchlist],
-                    _watchlistIndex: { ...state._watchlistIndex, [filmId]: true }
-                }));
-                reelToast.error('Failed to remove from watchlist.');
+            if (error) {
+                if (isNetworkError(error)) {
+                    // Queue removal for offline sync
+                    enqueueMutation({ type: 'remove_watchlist', payload: { user_id: user.id, film_id: filmId } });
+                } else {
+                    set((state) => ({
+                        watchlist: previousWatchlist,
+                        _watchlistIndex: { ...state._watchlistIndex, [filmId]: true }
+                    }));
+                    reelToast.error('Failed to remove from watchlist.');
+                }
             }
-        }
+        };
+
+        const prevPromise = get()._watchlistPromises[filmId] || Promise.resolve();
+        const nextPromise = prevPromise.then(dbOperation).catch(() => {});
+        set(state => ({ _watchlistPromises: { ...state._watchlistPromises, [filmId]: nextPromise } }));
     },
 });

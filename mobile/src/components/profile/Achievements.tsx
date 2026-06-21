@@ -9,7 +9,7 @@ interface AchievementLog {
     review?: string;
     genres?: { id: number | string }[] | number[];
     year?: number;
-    watchedDate?: string;
+    watchedDate?: string | Date;
     createdAt?: string;
 }
 
@@ -65,7 +65,10 @@ const BADGES = [
       const genres = new Set<string>();
       logs.forEach((l) => {
         if (Array.isArray(l.genres)) {
-          l.genres.forEach((g) => genres.add(typeof g === 'object' ? String(g.id) : String(g)));
+          // Explicit null check prevents TypeError when backend returns null genres
+          l.genres.forEach((g) => {
+            if (g !== null) genres.add(typeof g === 'object' ? String((g as any).id) : String(g));
+          });
         }
       });
       return genres.size >= 5;
@@ -78,7 +81,10 @@ const BADGES = [
     glyph: '⊗',
     check: (logs: AchievementLog[]) => {
       const decades = new Set<number>();
-      logs.forEach((l) => { if (l.year) decades.add(Math.floor(l.year / 10) * 10); });
+      // Strict isNaN sanitization prevents Math.floor(NaN) crashes
+      logs.forEach((l) => { 
+        if (l.year && !isNaN(Number(l.year))) decades.add(Math.floor(Number(l.year) / 10) * 10); 
+      });
       return decades.size >= 4;
     },
   },
@@ -90,7 +96,7 @@ const BADGES = [
     check: (logs: AchievementLog[]) => {
       const counts: Record<string, number> = {};
       logs.forEach((l) => {
-        const d = (l.watchedDate || l.createdAt || '').slice(0, 10);
+        const d = (l.watchedDate instanceof Date ? l.watchedDate.toISOString() : String(l.watchedDate || l.createdAt || '')).slice(0, 10);
         if (d) counts[d] = (counts[d] || 0) + 1;
       });
       return Object.values(counts).some(c => c >= 3);

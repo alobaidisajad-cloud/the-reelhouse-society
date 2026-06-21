@@ -1,6 +1,6 @@
-import React, { useMemo, useCallback, useEffect } from 'react';
+import React, { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { View, Text, TextInput, StyleSheet, ActivityIndicator } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { CinematicFlashList } from '../layout/CinematicFlashList';
 import { Bookmark, Search, X, Dice5 } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
@@ -25,6 +25,9 @@ interface ProfileWatchlistTabProps {
   POSTER_COL_3: number;
   onLoadMore?: () => void;
   isLoadingMore?: boolean;
+  refreshing?: boolean;
+  onRefresh?: () => void;
+  bottomInset?: number;
 }
 
 type WatchlistRowItem = { type: 'row'; data: ProfileWatchlistItem[]; id: string };
@@ -41,7 +44,10 @@ export default function ProfileWatchlistTab({
   renderPosterCard,
   POSTER_COL_3,
   onLoadMore,
-  isLoadingMore
+  isLoadingMore,
+  refreshing = false,
+  onRefresh,
+  bottomInset
 }: ProfileWatchlistTabProps) {
   const router = useRouter();
 
@@ -69,15 +75,24 @@ export default function ProfileWatchlistTab({
       return () => cancelAnimation(searchEmberOpacity);
   }, [watchlistSearch.length, searchEmberOpacity]);
 
+  // Reanimated props must map from useSharedValue to prevent UI thread sync failures
   const animatedSearchProps = useAnimatedProps(() => ({
-      color: watchlistSearch.length > 0 ? colors.bloodReel : colors.fog,
+      color: searchEmberOpacity.value > 0.5 ? colors.bloodReel : colors.fog,
   }));
   const animatedSearchStyle = useAnimatedStyle(() => ({
       opacity: searchEmberOpacity.value,
   }));
 
+  // Debounce JS thread string search to prevent ANR freezes
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [localSearch, setLocalSearch] = useState(watchlistSearch);
+
   const handleSearchChange = useCallback((val: string) => {
-      setWatchlistSearch(val);
+      setLocalSearch(val);
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+      searchTimeoutRef.current = setTimeout(() => {
+          setWatchlistSearch(val);
+      }, 300);
   }, [setWatchlistSearch]);
 
   const flashData = useMemo(() => {
@@ -137,7 +152,7 @@ export default function ProfileWatchlistTab({
               <AnimatedSearchIcon size={12} animatedProps={animatedSearchProps} strokeWidth={1.5} style={[s.searchIconStyle, animatedSearchStyle]} />
               <TextInput 
                 style={s.searchInput} 
-                value={watchlistSearch} 
+                value={localSearch} 
                 onChangeText={handleSearchChange} 
                 placeholder="Search watchlist..." 
                 placeholderTextColor={colors.fog}
@@ -146,8 +161,8 @@ export default function ProfileWatchlistTab({
                 accessibilityLabel="Filter your watchlist"
                 returnKeyType="search"
               />
-              {watchlistSearch.length > 0 && (
-                <PressableScale onPress={() => setWatchlistSearch('')} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
+              {localSearch.length > 0 && (
+                <PressableScale onPress={() => { setLocalSearch(''); setWatchlistSearch(''); }} style={s.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic>
                   <X size={14} color={colors.fog} strokeWidth={1.5} />
                 </PressableScale>
               )}
@@ -180,7 +195,7 @@ export default function ProfileWatchlistTab({
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
           <Bookmark size={32} color={colors.parchment} strokeWidth={1.5} style={s.emptyLockIcon} />
           <Text style={s.emptyTitleSelf}>An Empty Queue</Text>
-          <PressableScale style={s.ctaBtnSelf} onPress={() => router.push('/search-modal' as never)} haptic>
+          <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
             <Text style={s.ctaBtnTextSelf}>CURATE FUTURE VIEWINGS</Text>
           </PressableScale>
         </Animated.View>
@@ -207,7 +222,7 @@ export default function ProfileWatchlistTab({
 
   return (
     <View style={s.container}>
-      <FlashList<WatchlistRowItem>
+      <CinematicFlashList
         data={flashData}
         renderItem={renderItem}
         keyExtractor={(item: WatchlistRowItem) => item.id}
@@ -215,10 +230,12 @@ export default function ProfileWatchlistTab({
         ListEmptyComponent={ListEmptyComponent}
         estimatedItemSize={150}
         contentContainerStyle={s.listContent}
-        showsVerticalScrollIndicator={false}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
         onEndReached={onLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={isLoadingMore ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
+        bottomInset={bottomInset}
       />
     </View>
   );

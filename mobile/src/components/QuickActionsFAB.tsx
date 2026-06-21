@@ -16,7 +16,7 @@ export default function QuickActionsFAB() {
     const [open, setOpen] = useState(false);
     const router = useRouter();
     const insets = useSafeAreaInsets();
-    // #10 AUDIT FIX: Derive from actual tab bar height safely via Context instead of throw
+    // Derive from actual tab bar height safely via Context instead of throw
     const tabBarHeightContext = React.useContext(BottomTabBarHeightContext);
     const tabBarHeight = tabBarHeightContext ?? 60;
 
@@ -36,7 +36,7 @@ export default function QuickActionsFAB() {
         Haptics.selectionAsync();
         setOpen(false);
         InteractionManager.runAfterInteractions(() => {
-            router.push(route);
+            (router.push as any)(route);
         });
     };
 

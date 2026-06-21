@@ -20,6 +20,9 @@
 
 import { Platform } from 'react-native';
 import { supabase } from './supabase';
+import { logger } from '../utils/logger';
+import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
+import { resolveTier } from '../utils/tier';
 
 // ── Type Definitions (no runtime dependency until package is installed) ──
 // These mirror RevenueCat's actual types for type-safety before the package exists
@@ -67,11 +70,7 @@ export async function initRevenueCat(userId?: string): Promise<void> {
   }
 }
 
-/**
- * Check current entitlements — returns the user's active tier.
- * Falls back to 'cinephile' (free) if no active subscription.
- */
-export async function checkEntitlements(): Promise<EntitlementInfo> {
+export function parseEntitlements(customerInfo: any | null): EntitlementInfo {
   const fallback: EntitlementInfo = {
     tier: 'cinephile',
     isActive: false,
@@ -80,48 +79,58 @@ export async function checkEntitlements(): Promise<EntitlementInfo> {
     productIdentifier: null,
   };
 
-  if (!isConfigured || !Purchases) return fallback;
+  if (!customerInfo) return fallback;
+
+  const entitlements = customerInfo.entitlements?.active;
+  if (!entitlements) return fallback;
+
+  // Check in priority order: founding > auteur > archivist
+  if (entitlements.founding) {
+    return {
+      tier: 'founding',
+      isActive: true,
+      expiresAt: null, // Lifetime
+      willRenew: false,
+      productIdentifier: entitlements.founding.productIdentifier,
+    };
+  }
+
+  if (entitlements.auteur) {
+    return {
+      tier: 'auteur',
+      isActive: true,
+      expiresAt: entitlements.auteur.expirationDate ?? null,
+      willRenew: entitlements.auteur.willRenew !== false,
+      productIdentifier: entitlements.auteur.productIdentifier,
+    };
+  }
+
+  if (entitlements.archivist) {
+    return {
+      tier: 'archivist',
+      isActive: true,
+      expiresAt: entitlements.archivist.expirationDate ?? null,
+      willRenew: entitlements.archivist.willRenew !== false,
+      productIdentifier: entitlements.archivist.productIdentifier,
+    };
+  }
+
+  return fallback;
+}
+
+/**
+ * Check current entitlements — returns the user's active tier.
+ * Falls back to 'cinephile' (free) if no active subscription.
+ */
+export async function checkEntitlements(): Promise<EntitlementInfo> {
+  if (!isConfigured || !Purchases) return parseEntitlements(null);
 
   try {
     const customerInfo = await Purchases.getCustomerInfo();
-    const entitlements = customerInfo.entitlements?.active;
-
-    if (!entitlements) return fallback;
-
-    // Check in priority order: founding > auteur > archivist
-    if (entitlements.founding) {
-      return {
-        tier: 'founding',
-        isActive: true,
-        expiresAt: null, // Lifetime
-        willRenew: false,
-        productIdentifier: entitlements.founding.productIdentifier,
-      };
-    }
-
-    if (entitlements.auteur) {
-      return {
-        tier: 'auteur',
-        isActive: true,
-        expiresAt: entitlements.auteur.expirationDate ?? null,
-        willRenew: entitlements.auteur.willRenew !== false,
-        productIdentifier: entitlements.auteur.productIdentifier,
-      };
-    }
-
-    if (entitlements.archivist) {
-      return {
-        tier: 'archivist',
-        isActive: true,
-        expiresAt: entitlements.archivist.expirationDate ?? null,
-        willRenew: entitlements.archivist.willRenew !== false,
-        productIdentifier: entitlements.archivist.productIdentifier,
-      };
-    }
-
-    return fallback;
-  } catch {
-    return fallback;
+    return parseEntitlements(customerInfo);
+  } catch (e) {
+    logger.warn('[revenueCat] checkEntitlements failed', e);
+    return parseEntitlements(null);
   }
 }
 
@@ -136,7 +145,8 @@ export async function getOfferings(): Promise<any[]> {
     const offerings = await Purchases.getOfferings();
     if (!offerings.current) return [];
     return offerings.current.availablePackages ?? [];
-  } catch {
+  } catch (e) {
+    logger.info('[revenueCat] getOfferings failed', e);
     return [];
   }
 }
@@ -149,14 +159,14 @@ export async function purchasePackage(pkg: any): Promise<EntitlementInfo | null>
   if (!isConfigured || !Purchases) return null;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // Atomic Parsing: extract entitlement directly from the purchase payload
+    // This completely eliminates the post-purchase network race condition!
     const { customerInfo } = await Purchases.purchasePackage(pkg);
-    const entitlement = await checkEntitlements();
+    const entitlement = parseEntitlements(customerInfo);
 
     // Sync tier to Supabase backend
-    if (entitlement.isActive) {
-      await syncEntitlementToSupabase(entitlement.tier);
-    }
+    // ALWAYS sync, even if inactive, to ensure downgrades are properly recorded
+    await syncEntitlementToSupabase(entitlement.tier);
 
     return entitlement;
   } catch (err: any) {
@@ -173,8 +183,14 @@ export async function purchaseTier(tier: ReelHouseTier): Promise<EntitlementInfo
   if (!isConfigured || !Purchases) return null;
   try {
     const packages = await getOfferings();
-    // Default matching logic: try to find a package that contains the tier name (e.g. 'auteur_annual')
-    const pkg = packages.find(p => p.identifier.toLowerCase().includes(tier));
+    // Prioritize annual packages since the UI hardcodes annual pricing.
+    let pkg = packages.find((p: any) => p.identifier.toLowerCase().includes(`${tier}_annual`));
+    
+    // Fallback if there is no annual specific tier (e.g., founding_lifetime or custom)
+    if (!pkg) {
+      pkg = packages.find((p: any) => p.identifier.toLowerCase().includes(tier));
+    }
+    
     if (!pkg) throw new Error(`No package found for tier: ${tier}`);
     
     return await purchasePackage(pkg);
@@ -189,28 +205,21 @@ export async function purchaseTier(tier: ReelHouseTier): Promise<EntitlementInfo
  * Use when a user reinstalls the app or switches devices.
  */
 export async function restorePurchases(): Promise<EntitlementInfo> {
-  const fallback: EntitlementInfo = {
-    tier: 'cinephile',
-    isActive: false,
-    expiresAt: null,
-    willRenew: false,
-    productIdentifier: null,
-  };
-
-  if (!isConfigured || !Purchases) return fallback;
+  if (!isConfigured || !Purchases) return parseEntitlements(null);
 
   try {
-    await Purchases.restorePurchases();
-    const entitlement = await checkEntitlements();
+    // Atomic Parsing: extract entitlement directly from restore payload
+    const customerInfo = await Purchases.restorePurchases();
+    const entitlement = parseEntitlements(customerInfo);
 
     // Sync restored tier to Supabase
-    if (entitlement.isActive) {
-      await syncEntitlementToSupabase(entitlement.tier);
-    }
+    // ALWAYS sync, even if inactive, to ensure downgrades are properly recorded
+    await syncEntitlementToSupabase(entitlement.tier);
 
     return entitlement;
-  } catch {
-    return fallback;
+  } catch (e) {
+    logger.warn('[revenueCat] restorePurchases failed', e);
+    return parseEntitlements(null);
   }
 }
 
@@ -223,13 +232,23 @@ async function syncEntitlementToSupabase(tier: ReelHouseTier): Promise<void> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    await supabase
-      .from('profiles')
-      .update({ role: tier })
-      .eq('id', user.id);
-  } catch {
-    // Silently fail — the entitlement is still valid client-side
-    // Will retry on next app open
+    // VIP Database Corruption Shield
+    // Prevent client-side downward syncs from destroying manually granted founding VIPs.
+    const { useAuthStore } = await import('../stores/auth');
+    const currentRole = resolveTier(useAuthStore.getState().user);
+
+    if (currentRole === 'founding' && tier !== 'founding') {
+       logger.info('[revenueCat] Protected manual founding grant from downward sync');
+       return;
+    }
+
+    // Securely queue the sync through the MMKV offline queue.
+    // This guarantees delivery if the network drops and ensures the transaction
+    // is securely validated by the Edge Function instead of trusting the client.
+    enqueueMutation({ type: 'sync_entitlement', payload: { tier } });
+    flushOfflineQueue();
+  } catch (e) {
+    logger.warn('[revenueCat] Entitlement sync enqueue failed', e);
   }
 }
 
@@ -242,8 +261,8 @@ export async function identifyUser(userId: string): Promise<void> {
 
   try {
     await Purchases.logIn(userId);
-  } catch {
-    // Non-critical — purchases still work without identification
+  } catch (e) {
+    logger.info('[revenueCat] identifyUser failed', e);
   }
 }
 
@@ -256,7 +275,7 @@ export async function logoutRevenueCat(): Promise<void> {
 
   try {
     await Purchases.logOut();
-  } catch {
-    // Non-critical
+  } catch (e) {
+    logger.info('[revenueCat] logoutRevenueCat failed', e);
   }
 }

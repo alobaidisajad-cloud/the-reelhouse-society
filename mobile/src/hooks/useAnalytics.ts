@@ -63,7 +63,7 @@ export function useAnalytics() {
   // Auto-flush on interval + flush on app background
   useEffect(() => {
     const timer = setInterval(flush, FLUSH_INTERVAL)
-    // #2 AUDIT FIX: Flush buffer when app goes to background to prevent data loss
+    // Flush buffer when app goes to background to prevent data loss
     const sub = AppState.addEventListener('change', (state: string) => {
       if (state === 'inactive' || state === 'background') flush()
     })

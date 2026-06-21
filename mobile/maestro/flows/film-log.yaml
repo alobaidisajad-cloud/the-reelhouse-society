@@ -1,0 +1,73 @@
+## T4-4: Maestro E2E — Film Detail + Log Flow
+## ────────────────────────────────────────────
+## Tests the core user journey: search → film detail → log a watch.
+##
+## Run: maestro test maestro/flows/film-log.yaml
+## ────────────────────────────────────────────
+
+appId: com.reelhouse.mobile
+name: Film Detail and Logging - Critical Path
+
+---
+
+# ── Step 1: Launch and navigate to search ──
+- launchApp
+
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "tab-search"
+    retryTapIfNoChange: true
+
+- waitForAnimationToEnd
+
+# ── Step 2: Search for a film ──
+- tapOn:
+    id: "search-input"
+
+- inputText: "Fight Club"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# ── Step 3: Tap first search result ──
+- tapOn:
+    index: 0
+    id: "search-result"
+    retryTapIfNoChange: true
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# ── Step 4: Verify film detail screen ──
+- assertVisible:
+    id: "film-title"
+
+- assertVisible:
+    id: "film-poster"
+
+# ── Step 5: Scroll down to see more details ──
+- scroll:
+    direction: "DOWN"
+    
+- waitForAnimationToEnd
+
+# ── Step 6: Tap "Log" button ──
+- tapOn:
+    id: "log-button"
+    retryTapIfNoChange: true
+    optional: true
+
+- waitForAnimationToEnd
+
+# ── Step 7: If log modal opens, verify it ──
+- assertVisible:
+    id: "log-modal"
+    optional: true
+
+# ── Step 8: Go back to film detail ──
+- tapOn:
+    id: "close-modal"
+    optional: true
+
+- waitForAnimationToEnd

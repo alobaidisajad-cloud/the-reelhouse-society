@@ -3,13 +3,14 @@ import { View, Text, StyleSheet } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Heart, MessageSquare, Edit3, Bookmark, MessageCircle } from 'lucide-react-native';
-import { useFilmStore } from '@/src/stores/films';
+import { useWatchlistStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
+import { isArchivistPlusTier } from '@/src/utils/tier';
 
 interface ActionDeckProps {
   itemId: string;
@@ -31,18 +32,21 @@ export const ActionDeck = React.memo(function ActionDeck({
   const router = useRouter();
   
   // Zustand slices purely for THIS specific component. ActivityCard won't re-render.
-  const { hasEndorsed, toggleEndorse, _watchlistIndex, addToWatchlist, removeFromWatchlist } = useFilmStore();
-  const { user: currentUser } = useAuthStore();
+  const endorsed = useWatchlistStore(s => !!s._endorsedIndex[itemId]);
+  const filmSaved = useWatchlistStore(s => !!s._watchlistIndex[filmId]);
+  
+  const toggleEndorse = useWatchlistStore(s => s.toggleEndorse);
+  const addToWatchlist = useWatchlistStore(s => s.addToWatchlist);
+  const removeFromWatchlist = useWatchlistStore(s => s.removeFromWatchlist);
+
+  const isOwner = useAuthStore(s => s.user?.username === ownerUsername);
+  const isLoungeEligible = useAuthStore(s => s.user ? isArchivistPlusTier(s.user) : false);
 
   const [showShareModal, setShowShareModal] = useState(false);
 
-  const endorsed = hasEndorsed(itemId);
-  const filmSaved = !!_watchlistIndex[filmId];
-  const isOwner = currentUser?.username === ownerUsername;
-  const isLoungeEligible = currentUser && ['archivist', 'auteur'].includes(currentUser.role ?? '');
-
   const heartScale = useSharedValue(1);
   const bookmarkScale = useSharedValue(1);
+  const isAnimating = React.useRef(false);
 
   const animatedHeartStyle = useAnimatedStyle(() => ({
     transform: [{ scale: heartScale.value }]
@@ -51,9 +55,27 @@ export const ActionDeck = React.memo(function ActionDeck({
     transform: [{ scale: bookmarkScale.value }]
   }));
 
+  // FIX 6: View Recycling Animation Bleed fix
+  React.useEffect(() => {
+    heartScale.value = 1;
+    bookmarkScale.value = 1;
+    isAnimating.current = false;
+    setShowShareModal(false);
+  }, [itemId, heartScale, bookmarkScale]);
+
   const handleCertify = useCallback(() => {
+    if (!useAuthStore.getState().user) {
+        (router.push as any)('/login' as any);
+        return;
+    }
+    if (isAnimating.current) return;
+    isAnimating.current = true;
+    setTimeout(() => { isAnimating.current = false; }, 500);
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    toggleEndorse(itemId);
+    toggleEndorse(itemId).catch((e) => {
+      if (__DEV__) console.warn('Certify failed:', e);
+    });
     heartScale.value = withSequence(
       withSpring(1.5, { damping: 12, stiffness: 400 }),
       withSpring(1, { damping: 14, stiffness: 300 })
@@ -61,14 +83,22 @@ export const ActionDeck = React.memo(function ActionDeck({
   }, [itemId, toggleEndorse, heartScale]);
 
   const handleCritique = useCallback(() => {
+    if (!useAuthStore.getState().user) {
+        (router.push as any)('/login' as any);
+        return;
+    }
     Haptics.selectionAsync();
-    router.push(`/log/${itemId}` as any);
+    (router.push as any)(`/log/${itemId}` as any);
   }, [itemId, router]);
 
   const handleSaveOrEdit = useCallback(() => {
+    if (!useAuthStore.getState().user) {
+        (router.push as any)('/login' as any);
+        return;
+    }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (isOwner) {
-      router.push({
+      (router.push as any)({
         pathname: '/log-modal',
         params: {
           filmId: String(filmId),
@@ -99,6 +129,10 @@ export const ActionDeck = React.memo(function ActionDeck({
   }, [isOwner, filmSaved, addToWatchlist, removeFromWatchlist, router, filmId, itemId, filmTitle, posterPath, year, bookmarkScale]);
 
   const handleLounge = useCallback(() => {
+    if (!useAuthStore.getState().user) {
+        (router.push as any)('/login' as any);
+        return;
+    }
     if (!isLoungeEligible) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       reelToast.error('Archivist or Auteur tier required to share to The Lounge.');
@@ -111,19 +145,19 @@ export const ActionDeck = React.memo(function ActionDeck({
   return (
     <>
       <View style={s.actionDeck}>
-        <PressableScale style={s.actionBtn} onPress={handleCertify} haptic="medium" pressedScale={0.92}>
+        <PressableScale style={s.actionBtn} onPress={handleCertify} pressedScale={0.92}>
           <Animated.View style={animatedHeartStyle}>
             <Heart size={16} strokeWidth={2} color={endorsed ? colors.bloodReel : colors.fog} fill={endorsed ? colors.bloodReel : 'transparent'} />
           </Animated.View>
           <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]}>{endorsed ? 'CERTIFIED' : 'CERT'}</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleCritique} haptic="light">
+        <PressableScale style={s.actionBtn} onPress={handleCritique}>
           <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
           <Text style={s.actionLabel}>CRITIQUE</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleSaveOrEdit} haptic="medium" pressedScale={0.92}>
+        <PressableScale style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92}>
           <Animated.View style={animatedBookmarkStyle}>
             {isOwner ? (
               <Edit3 size={16} strokeWidth={2} color={colors.fog} />
@@ -134,7 +168,7 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelCertified]}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleLounge} haptic="medium">
+        <PressableScale style={s.actionBtn} onPress={handleLounge}>
           <MessageCircle size={16} strokeWidth={2} color={isLoungeEligible ? colors.fog : colors.ash} />
           <Text style={[s.actionLabel, !isLoungeEligible && s.actionIconLocked]}>LOUNGE</Text>
         </PressableScale>
@@ -146,6 +180,8 @@ export const ActionDeck = React.memo(function ActionDeck({
         filmTitle={filmTitle}
         filmId={String(filmId)}
         posterPath={posterPath}
+        logId={itemId}
+        ownerUsername={ownerUsername}
       />
     </>
   );

@@ -1,34 +1,194 @@
-/**
- * Jest Setup — Mock Native Modules
- *
- * Mocks all native modules that would crash in a Node.js test environment.
- * These are no-ops that prevent import errors without testing native behavior.
- */
+// ─────────────────────────────────────────────────────────────────────────────
+// jest.setup.ts — Global mocks for ReelHouse mobile test suite
+// ─────────────────────────────────────────────────────────────────────────────
 
-// ── react-native-mmkv ──
-jest.mock('react-native-mmkv', () => {
-  const store = new Map<string, string>();
-  return {
-    MMKV: jest.fn().mockImplementation(() => ({
-      set: (key: string, value: any) => store.set(key, JSON.stringify(value)),
-      getString: (key: string) => store.get(key) ?? undefined,
-      getBoolean: (key: string) => {
-        const val = store.get(key);
-        return val ? JSON.parse(val) : undefined;
-      },
-      getNumber: (key: string) => {
-        const val = store.get(key);
-        return val ? JSON.parse(val) : undefined;
-      },
-      delete: (key: string) => store.delete(key),
-      contains: (key: string) => store.has(key),
-      clearAll: () => store.clear(),
-      getAllKeys: () => Array.from(store.keys()),
+// Mock AccessibilityInfo (used by stores for announceForAccessibility)
+jest.mock('react-native/Libraries/Components/AccessibilityInfo/AccessibilityInfo', () => ({
+  announceForAccessibility: jest.fn(),
+  isReduceMotionEnabled: jest.fn().mockResolvedValue(false),
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+  isBoldTextEnabled: jest.fn().mockResolvedValue(false),
+  isScreenReaderEnabled: jest.fn().mockResolvedValue(false),
+}));
+
+// Also make it available on the RN mock
+const RN = jest.requireActual('react-native');
+if (!RN.AccessibilityInfo?.announceForAccessibility) {
+  RN.AccessibilityInfo = {
+    ...RN.AccessibilityInfo,
+    announceForAccessibility: jest.fn(),
+    isReduceMotionEnabled: jest.fn().mockResolvedValue(false),
+    addEventListener: jest.fn(() => ({ remove: jest.fn() })),
+  };
+}
+
+// Mock react-native-mmkv (C++ native module not available in Jest)
+jest.mock('react-native-mmkv', () => ({
+  MMKV: jest.fn(() => ({
+    set: jest.fn(),
+    getString: jest.fn(() => undefined),
+    getNumber: jest.fn(() => undefined),
+    getBoolean: jest.fn(() => undefined),
+    delete: jest.fn(),
+    contains: jest.fn(() => false),
+    getAllKeys: jest.fn(() => []),
+    clearAll: jest.fn(),
+  })),
+}));
+
+// Mock mmkv-storage module (used by stores)
+const _mockMMKVStore: Record<string, string> = {};
+jest.mock('./src/stores/mmkv-storage', () => ({
+  storage: {
+    set: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),
+    getString: jest.fn((key: string) => _mockMMKVStore[key]),
+    getNumber: jest.fn(() => undefined),
+    getBoolean: jest.fn(() => undefined),
+    delete: jest.fn((key: string) => { delete _mockMMKVStore[key]; }),
+    contains: jest.fn((key: string) => key in _mockMMKVStore),
+    getAllKeys: jest.fn(() => Object.keys(_mockMMKVStore)),
+    clearAll: jest.fn(() => { Object.keys(_mockMMKVStore).forEach(k => delete _mockMMKVStore[k]); }),
+  },
+  zustandMMKVStorage: {
+    getItem: jest.fn((key: string) => _mockMMKVStore[key] ?? null),
+    setItem: jest.fn((key: string, value: string) => { _mockMMKVStore[key] = value; }),
+    removeItem: jest.fn((key: string) => { delete _mockMMKVStore[key]; }),
+  },
+  createAsyncMMKVStorage: jest.fn(() => ({
+    getItem: jest.fn(() => null),
+    setItem: jest.fn(),
+    removeItem: jest.fn(),
+  })),
+  getSecureStorage: jest.fn().mockResolvedValue({
+    getString: jest.fn(),
+    set: jest.fn(),
+    delete: jest.fn(),
+    contains: jest.fn(() => false),
+    clearAll: jest.fn(),
+  }),
+}));
+
+// Mock expo-crypto (native module)
+jest.mock('expo-crypto', () => ({
+  randomUUID: jest.fn(() => 'test-uuid-' + Math.random().toString(36).slice(2, 11)),
+}));
+
+// Mock Sentry (native module)
+jest.mock('@sentry/react-native', () => ({
+  init: jest.fn(),
+  captureException: jest.fn(),
+  captureMessage: jest.fn(),
+  setUser: jest.fn(),
+  addBreadcrumb: jest.fn(),
+  withScope: jest.fn((cb) => cb({ setExtras: jest.fn(), setLevel: jest.fn() })),
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock @supabase/supabase-js — prevents "supabaseUrl is required" error
+// ─────────────────────────────────────────────────────────────────────────────
+const mockSupabaseAuth = {
+  getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
+  getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+  signInWithPassword: jest.fn().mockResolvedValue({ data: { user: null, session: null }, error: null }),
+  signUp: jest.fn().mockResolvedValue({ data: { user: null, session: null }, error: null }),
+  signOut: jest.fn().mockResolvedValue({ error: null }),
+  onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
+  startAutoRefresh: jest.fn(),
+  stopAutoRefresh: jest.fn(),
+  resetPasswordForEmail: jest.fn().mockResolvedValue({ data: null, error: null }),
+  updateUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
+};
+
+const mockSupabaseFrom = jest.fn(() => {
+  const chainable: Record<string, jest.Mock> = {};
+  const self = () => chainable;
+  chainable.select = jest.fn().mockImplementation(self);
+  chainable.insert = jest.fn().mockImplementation(self);
+  chainable.update = jest.fn().mockImplementation(self);
+  chainable.upsert = jest.fn().mockImplementation(self);
+  chainable.delete = jest.fn().mockImplementation(self);
+  chainable.eq = jest.fn().mockImplementation(self);
+  chainable.neq = jest.fn().mockImplementation(self);
+  chainable.in = jest.fn().mockImplementation(self);
+  chainable.is = jest.fn().mockImplementation(self);
+  chainable.gt = jest.fn().mockImplementation(self);
+  chainable.gte = jest.fn().mockImplementation(self);
+  chainable.lt = jest.fn().mockImplementation(self);
+  chainable.lte = jest.fn().mockImplementation(self);
+  chainable.like = jest.fn().mockImplementation(self);
+  chainable.ilike = jest.fn().mockImplementation(self);
+  chainable.not = jest.fn().mockImplementation(self);
+  chainable.or = jest.fn().mockImplementation(self);
+  chainable.order = jest.fn().mockImplementation(self);
+  chainable.limit = jest.fn().mockImplementation(self);
+  chainable.range = jest.fn().mockImplementation(self);
+  chainable.abortSignal = jest.fn().mockImplementation(self);
+  chainable.single = jest.fn().mockResolvedValue({ data: null, error: null });
+  chainable.maybeSingle = jest.fn().mockResolvedValue({ data: null, error: null });
+  chainable.then = jest.fn((cb) => Promise.resolve(cb({ data: [], error: null, count: 0 })));
+  return chainable;
+});
+
+const mockSupabaseClient = {
+  auth: mockSupabaseAuth,
+  from: mockSupabaseFrom,
+  rpc: jest.fn().mockResolvedValue({ data: null, error: null }),
+  storage: {
+    from: jest.fn(() => ({
+      upload: jest.fn().mockResolvedValue({ data: { path: 'test' }, error: null }),
+      getPublicUrl: jest.fn(() => ({ data: { publicUrl: 'https://test.com/image.jpg' } })),
+      download: jest.fn().mockResolvedValue({ data: new Blob(), error: null }),
+      remove: jest.fn().mockResolvedValue({ data: null, error: null }),
     })),
+  },
+  channel: jest.fn(() => ({
+    on: jest.fn().mockReturnThis(),
+    subscribe: jest.fn().mockReturnThis(),
+    unsubscribe: jest.fn(),
+  })),
+  removeChannel: jest.fn(),
+  realtime: { disconnect: jest.fn() },
+};
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => mockSupabaseClient),
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock expo-router — prevents navigation context errors
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('expo-router', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
+  return {
+    router: { push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() },
+    useRouter: jest.fn(() => ({ push: jest.fn(), replace: jest.fn(), back: jest.fn(), navigate: jest.fn() })),
+    useLocalSearchParams: jest.fn(() => ({})),
+    useGlobalSearchParams: jest.fn(() => ({})),
+    useSegments: jest.fn(() => []),
+    usePathname: jest.fn(() => '/'),
+    useNavigation: jest.fn(() => ({ navigate: jest.fn(), goBack: jest.fn(), setOptions: jest.fn() })),
+    Link: ({ children, ...props }: any) => React.createElement(Text, props, children),
+    Redirect: ({ href }: any) => React.createElement(Text, { testID: 'redirect' }, `Redirect:${href}`),
+    Stack: { Screen: ({ children }: any) => children || null },
+    Tabs: { Screen: ({ children }: any) => children || null },
+    Slot: () => null,
+    useFocusEffect: jest.fn((cb: any) => cb()),
   };
 });
 
-// ── expo-haptics ──
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock expo-secure-store — native module
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('expo-secure-store', () => ({
+  getItemAsync: jest.fn().mockResolvedValue(null),
+  setItemAsync: jest.fn().mockResolvedValue(undefined),
+  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock expo-haptics — native module
+// ─────────────────────────────────────────────────────────────────────────────
 jest.mock('expo-haptics', () => ({
   impactAsync: jest.fn(),
   notificationAsync: jest.fn(),
@@ -37,129 +197,172 @@ jest.mock('expo-haptics', () => ({
   NotificationFeedbackType: { Success: 'success', Warning: 'warning', Error: 'error' },
 }));
 
-// ── @shopify/react-native-skia ──
-jest.mock('@shopify/react-native-skia', () => ({
-  Canvas: 'Canvas',
-  Rect: 'Rect',
-  RuntimeShader: 'RuntimeShader',
-  Skia: {
-    RuntimeEffect: {
-      Make: jest.fn(() => ({})),
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock expo-image — native module
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('expo-image', () => {
+  return {
+    Image: {
+      prefetch: jest.fn().mockResolvedValue(true),
     },
-  },
-}));
-
-// ── expo-image ──
-jest.mock('expo-image', () => ({
-  Image: 'Image',
-}));
-
-// ── expo-router ──
-jest.mock('expo-router', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    back: jest.fn(),
-    replace: jest.fn(),
-    canGoBack: () => false,
-  }),
-  useLocalSearchParams: () => ({}),
-  useSegments: () => [],
-  router: {
-    push: jest.fn(),
-    back: jest.fn(),
-    replace: jest.fn(),
-  },
-  Stack: { Screen: 'Screen' },
-  Tabs: { Screen: 'Screen' },
-}));
-
-// ── react-native-reanimated ──
-jest.mock('react-native-reanimated', () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const Reanimated = require('react-native-reanimated/mock');
-  Reanimated.default.call = () => {};
-  return Reanimated;
+    ImageBackground: jest.fn(() => null),
+    prefetch: jest.fn().mockResolvedValue(true),
+  };
 });
 
-// ── @supabase/supabase-js ──
-jest.mock('@supabase/supabase-js', () => ({
-  createClient: jest.fn(() => ({
-    auth: {
-      getSession: jest.fn().mockResolvedValue({ data: { session: null }, error: null }),
-      getUser: jest.fn().mockResolvedValue({ data: { user: null }, error: null }),
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-      onAuthStateChange: jest.fn(() => ({ data: { subscription: { unsubscribe: jest.fn() } } })),
-    },
-    from: jest.fn(() => ({
-      select: jest.fn().mockReturnThis(),
-      insert: jest.fn().mockReturnThis(),
-      update: jest.fn().mockReturnThis(),
-      upsert: jest.fn().mockReturnThis(),
-      delete: jest.fn().mockReturnThis(),
-      eq: jest.fn().mockReturnThis(),
-      neq: jest.fn().mockReturnThis(),
-      gt: jest.fn().mockReturnThis(),
-      lt: jest.fn().mockReturnThis(),
-      gte: jest.fn().mockReturnThis(),
-      lte: jest.fn().mockReturnThis(),
-      like: jest.fn().mockReturnThis(),
-      ilike: jest.fn().mockReturnThis(),
-      is: jest.fn().mockReturnThis(),
-      in: jest.fn().mockReturnThis(),
-      order: jest.fn().mockReturnThis(),
-      limit: jest.fn().mockReturnThis(),
-      range: jest.fn().mockReturnThis(),
-      single: jest.fn().mockResolvedValue({ data: null, error: null }),
-      maybeSingle: jest.fn().mockResolvedValue({ data: null, error: null }),
-      then: jest.fn().mockResolvedValue({ data: [], error: null }),
-    })),
-    channel: jest.fn(() => ({
-      on: jest.fn().mockReturnThis(),
-      subscribe: jest.fn(),
-      unsubscribe: jest.fn(),
-    })),
-    functions: {
-      invoke: jest.fn().mockResolvedValue({ data: null, error: null }),
-    },
-  })),
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock expo-linking — native module
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('expo-linking', () => ({
+  createURL: jest.fn((path: string) => `reelhouse://${path}`),
+  openURL: jest.fn(),
+  canOpenURL: jest.fn().mockResolvedValue(true),
+  getInitialURL: jest.fn().mockResolvedValue(null),
+  addEventListener: jest.fn(() => ({ remove: jest.fn() })),
 }));
 
-// ── Sentry ──
-jest.mock('@sentry/react-native', () => ({
-  init: jest.fn(),
-  setUser: jest.fn(),
-  captureException: jest.fn(),
-  addBreadcrumb: jest.fn(),
-  withScope: jest.fn((cb: any) => cb({ setExtras: jest.fn() })),
-}));
-
-// ── expo-secure-store ──
-jest.mock('expo-secure-store', () => ({
-  getItemAsync: jest.fn().mockResolvedValue(null),
-  setItemAsync: jest.fn().mockResolvedValue(undefined),
-  deleteItemAsync: jest.fn().mockResolvedValue(undefined),
-}));
-
-// ── expo-constants ──
-jest.mock('expo-constants', () => ({
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock @react-native-community/netinfo
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('@react-native-community/netinfo', () => ({
+  useNetInfo: jest.fn(() => ({ isConnected: true, isInternetReachable: true, type: 'wifi' })),
+  fetch: jest.fn().mockResolvedValue({ isConnected: true, isInternetReachable: true }),
+  addEventListener: jest.fn(() => jest.fn()),
+  __esModule: true,
   default: {
-    expoConfig: {
-      extra: { eas: { projectId: 'test-project-id' } },
-    },
+    fetch: jest.fn().mockResolvedValue({ isConnected: true }),
+    addEventListener: jest.fn(() => jest.fn()),
   },
 }));
 
-// ── @react-native-community/netinfo ──
-jest.mock('@react-native-community/netinfo', () => ({
-  addEventListener: jest.fn(() => jest.fn()),
-  fetch: jest.fn().mockResolvedValue({ isConnected: true, isInternetReachable: true }),
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock expo-constants
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('expo-constants', () => ({
+  expoConfig: { extra: {} },
+  Constants: { expoConfig: { extra: {} } },
+  __esModule: true,
+  default: { expoConfig: { extra: {} } },
 }));
 
-// ── Silence console warnings in tests ──
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock react-native-reanimated
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('react-native-reanimated', () => {
+  const React = require('react');
+  const { View, Text, ScrollView } = require('react-native');
+
+  const animatedComponent = (Component: any) => React.forwardRef((props: any, ref: any) =>
+    React.createElement(Component, { ...props, ref })
+  );
+
+  return {
+    __esModule: true,
+    default: {
+      View: animatedComponent(View),
+      Text: animatedComponent(Text),
+      ScrollView: animatedComponent(ScrollView),
+      Image: animatedComponent(View),
+      FlatList: animatedComponent(View),
+      createAnimatedComponent: animatedComponent,
+    },
+    useSharedValue: jest.fn((v: any) => ({ value: v })),
+    useAnimatedStyle: jest.fn((fn: any) => fn()),
+    useDerivedValue: jest.fn((fn: any) => ({ value: fn() })),
+    useAnimatedScrollHandler: jest.fn(() => jest.fn()),
+    withTiming: jest.fn((v: any) => v),
+    withSpring: jest.fn((v: any) => v),
+    withSequence: jest.fn((...args: any[]) => args[0]),
+    withRepeat: jest.fn((v: any) => v),
+    withDelay: jest.fn((_d: any, v: any) => v),
+    Easing: { inOut: jest.fn(() => jest.fn()), ease: 'ease', linear: 'linear', bezier: jest.fn() },
+    FadeIn: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
+    FadeOut: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
+    FadeInUp: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
+    FadeOutUp: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
+    FadeInDown: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
+    FadeOutDown: { duration: jest.fn().mockReturnThis(), delay: jest.fn().mockReturnThis() },
+    SlideInRight: { duration: jest.fn().mockReturnThis() },
+    SlideOutLeft: { duration: jest.fn().mockReturnThis() },
+    SlideInLeft: { duration: jest.fn().mockReturnThis() },
+    SlideOutRight: { duration: jest.fn().mockReturnThis() },
+    Layout: { duration: jest.fn().mockReturnThis(), springify: jest.fn().mockReturnThis() },
+    LinearTransition: { duration: jest.fn().mockReturnThis(), springify: jest.fn().mockReturnThis() },
+    cancelAnimation: jest.fn(),
+    runOnJS: jest.fn((fn: any) => fn),
+    runOnUI: jest.fn((fn: any) => fn),
+    interpolate: jest.fn((v: any) => v),
+    Extrapolate: { CLAMP: 'clamp', EXTEND: 'extend' },
+    createAnimatedComponent: animatedComponent,
+    useAnimatedRef: jest.fn(() => ({ current: null })),
+    measure: jest.fn(() => ({ x: 0, y: 0, width: 0, height: 0, pageX: 0, pageY: 0 })),
+    scrollTo: jest.fn(),
+    useReducedMotion: jest.fn(() => false),
+  };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock dynamic imports in films store (prevents module load errors in Jest)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Mock react-native-url-polyfill (imported by supabase.ts)
+jest.mock('react-native-url-polyfill/auto', () => ({}));
+
+// Mock imagePrefetcher and tmdb (used by films store onRehydrateStorage)
+jest.mock('./src/utils/imagePrefetcher', () => ({
+  ImagePrefetcher: {
+    preloadFilmBatch: jest.fn(),
+    prefetchImage: jest.fn(),
+  },
+}));
+jest.mock('./src/lib/tmdb', () => ({
+  tmdb: {
+    trending: jest.fn().mockResolvedValue({ results: [] }),
+    search: jest.fn().mockResolvedValue({ results: [] }),
+    movie: jest.fn().mockResolvedValue({}),
+    poster: jest.fn((path: string, size?: string) => path ? `https://image.tmdb.org/t/p/${size || 'w500'}${path}` : null),
+    backdrop: jest.fn((path: string, size?: string) => path ? `https://image.tmdb.org/t/p/${size || 'original'}${path}` : null),
+  },
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock expo-notifications
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('expo-notifications', () => ({
+  getPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({ status: 'granted' }),
+  getExpoPushTokenAsync: jest.fn().mockResolvedValue({ data: 'test-push-token' }),
+  setNotificationHandler: jest.fn(),
+  addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+  scheduleNotificationAsync: jest.fn(),
+  AndroidImportance: { MAX: 5, HIGH: 4, DEFAULT: 3, LOW: 2, MIN: 1 },
+}));
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mock react-native-safe-area-context
+// ─────────────────────────────────────────────────────────────────────────────
+jest.mock('react-native-safe-area-context', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    SafeAreaProvider: ({ children }: any) => React.createElement(View, null, children),
+    SafeAreaView: ({ children, ...props }: any) => React.createElement(View, props, children),
+    useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+    useSafeAreaFrame: () => ({ x: 0, y: 0, width: 375, height: 812 }),
+  };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Silence console.warn for tests (noisy reanimated/navigation warnings)
+// ─────────────────────────────────────────────────────────────────────────────
 const originalWarn = console.warn;
 console.warn = (...args: any[]) => {
-  if (typeof args[0] === 'string' && args[0].includes('Animated')) return;
+  const msg = typeof args[0] === 'string' ? args[0] : '';
+  if (
+    msg.includes('[Reanimated]') ||
+    msg.includes('Animated:') ||
+    msg.includes('[react-native-gesture-handler]')
+  ) return;
   originalWarn(...args);
 };

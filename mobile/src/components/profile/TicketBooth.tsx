@@ -1,9 +1,10 @@
 /**
  * TicketBooth — Decorative ticket-style display for profile.
  */
-import { View, Text, StyleSheet } from 'react-native';
-import Animated, { FadeIn } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
+import { formatDateMonthYear } from '@/src/utils/timeAgo';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 interface TicketBoothProps {
     username: string;
@@ -12,7 +13,7 @@ interface TicketBoothProps {
 }
 
 export function TicketBooth({ username, memberSince, filmCount = 0 }: TicketBoothProps) {
-    const since = memberSince ? new Date(memberSince).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'Unknown';
+    const since = memberSince ? formatDateMonthYear(memberSince) : 'Unknown';
 
     return (
         <Animated.View entering={FadeIn.duration(500)} style={s.container}>

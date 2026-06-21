@@ -18,10 +18,16 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
     async function authenticate() {
         try {
             const hasHardware = await LocalAuthentication.hasHardwareAsync();
-            if (!hasHardware) return setLocked(false);
+            if (!hasHardware) {
+                onUnlocked();
+                return setLocked(false);
+            }
 
             const isEnrolled = await LocalAuthentication.isEnrolledAsync();
-            if (!isEnrolled) return setLocked(false);
+            if (!isEnrolled) {
+                onUnlocked();
+                return setLocked(false);
+            }
 
             const result = await LocalAuthentication.authenticateAsync({
                 promptMessage: 'Unlock Vault',
@@ -30,13 +36,14 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
             });
 
             if (result.success) {
-                setLocked(false);
                 onUnlocked();
+                setLocked(false);
             } else {
                 setError('Authentication Failed');
             }
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (e) {
+            onUnlocked();
             setLocked(false);
         }
     }

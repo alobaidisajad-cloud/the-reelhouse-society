@@ -70,6 +70,7 @@ export interface LoungeStoreState {
     kickMember: (loungeId: string, userId: string) => Promise<void>
     fetchMembers: (loungeId: string) => Promise<Array<{ user_id: string; username: string; avatar_url: string | null; joined_at: string }>>
     subscribeToGlobalNotifications: () => () => void
+    deleteLounge: (loungeId: string) => Promise<void>
 }
 
 // ── Realtime channel reference ──
@@ -201,7 +202,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 is_private: isPrivate,
                 invite_code,
                 cover_image: coverImage || null,
-                member_count: 1,
+                member_count: 0, // Begins at 0; auto-join trigger increments to 1
             }])
             .select()
             .single()
@@ -232,18 +233,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             user_id: user.id,
         }])
 
-        // Increment member count
-        const { data: currentLounge } = await supabase
-            .from('lounges')
-            .select('member_count')
-            .eq('id', loungeId)
-            .single()
-
-        if (currentLounge) {
-            await supabase.from('lounges')
-                .update({ member_count: (currentLounge.member_count || 0) + 1 })
-                .eq('id', loungeId)
-        }
+        // Rely on trigger_sync_lounge_member_count for member_count
 
         await get().fetchMyLounges()
         await get().fetchPublicLounges()
@@ -272,18 +262,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .eq('lounge_id', loungeId)
             .eq('user_id', user.id)
 
-        // Decrement member count
-        const { data: lounge } = await supabase
-            .from('lounges')
-            .select('member_count')
-            .eq('id', loungeId)
-            .single()
-
-        if (lounge) {
-            await supabase.from('lounges')
-                .update({ member_count: Math.max(0, (lounge.member_count || 1) - 1) })
-                .eq('id', loungeId)
-        }
+        // Rely on trigger_sync_lounge_member_count for member_count
 
         // Remove from local state
         set(s => ({
@@ -390,11 +369,18 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                     reply_to_username: payload.new.reply_to_username || null,
                 }
 
-                // Don't duplicate messages we sent ourselves (optimistic)
+                // Bi-directional deterministic sync (solves race conditions)
                 set(s => {
+                    // If REST arrived first, it's already here
                     if (s.messages.some(m => m.id === newMsg.id)) return s
-                    const next = [...s.messages, newMsg]
-                    // Cap in-memory messages to prevent unbounded growth (older msgs can be paged-in)
+                    
+                    // If WS arrives first, replace the optimistic "temp" payload
+                    const filtered = s.messages.filter(m => 
+                        !(m.id.startsWith('temp-') && m.user_id === newMsg.user_id && m.content === newMsg.content && m.type === newMsg.type)
+                    )
+                    
+                    const next = [...filtered, newMsg]
+                    // Cap in-memory messages to prevent unbounded growth
                     return { messages: next.length > 500 ? next.slice(-500) : next }
                 })
 
@@ -676,12 +662,27 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
             .eq('lounge_id', loungeId)
             .eq('user_id', userId)
 
-        // Decrement member count
-        if (lounge) {
-            await supabase.from('lounges')
-                .update({ member_count: Math.max(0, (lounge.member_count || 1) - 1) })
-                .eq('id', loungeId)
-        }
+        // Rely on trigger_sync_lounge_member_count for member_count
+    },
+
+    deleteLounge: async (loungeId) => {
+        const user = useAuthStore.getState().user
+        if (!user) return
+
+        // Verify caller is creator
+        const lounge = get().myLounges.find(l => l.id === loungeId) || get().activeLounge
+        if (lounge?.creator_id !== user.id) return
+
+        await supabase.from('lounges')
+            .delete()
+            .eq('id', loungeId)
+
+        set(s => ({
+            myLounges: s.myLounges.filter(l => l.id !== loungeId),
+            publicLounges: s.publicLounges.filter(l => l.id !== loungeId),
+            activeLounge: s.activeLounge?.id === loungeId ? null : s.activeLounge,
+            messages: s.activeLounge?.id === loungeId ? [] : s.messages
+        }))
     },
 
     fetchMembers: async (loungeId) => {
@@ -704,7 +705,7 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
         const user = useAuthStore.getState().user
         if (!user) return () => {}
 
-        // Subscribe to all messages across joined lounges
+        // Subscribe to messages — filtered client-side to user's joined lounges
         const channel = supabase
             .channel('lounge-notifications')
             .on('postgres_changes', {
@@ -715,9 +716,13 @@ export const useLoungeStore = create<LoungeStoreState>()((set, get) => ({
                 // Skip own messages
                 if (payload.new.user_id === user.id) return
 
-                // Check if we're a member of this lounge
-                const { activeLounge } = get()
-                if (activeLounge?.id === payload.new.lounge_id) return // Already in the room
+                // Only process messages from lounges the user has joined
+                const { myLounges, activeLounge } = get()
+                const isJoinedLounge = myLounges.some(l => l.id === payload.new.lounge_id)
+                if (!isJoinedLounge) return
+
+                // Skip if user is already in the room viewing messages
+                if (activeLounge?.id === payload.new.lounge_id) return
 
                 // Update unread count
                 set(s => ({

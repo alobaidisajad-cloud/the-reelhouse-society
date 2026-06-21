@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { Crown, Star, Upload } from 'lucide-react'
@@ -15,6 +15,16 @@ export default function MembershipPage() {
     const navigate = useNavigate()
     const [csvImportOpen, setCsvImportOpen] = useState(false)
 
+    // ── Founding seat cap ──────────────────────────────────────
+    const [foundingCount, setFoundingCount] = useState<number | null>(null)
+    useEffect(() => {
+        supabase
+            .from('profiles')
+            .select('*', { count: 'exact', head: true })
+            .eq('is_founding', true)
+            .then(({ count }) => setFoundingCount(count ?? 0))
+    }, [])
+
     const containerVariants = {
         hidden: { opacity: 0 },
         visible: {
@@ -30,10 +40,16 @@ export default function MembershipPage() {
 
     const [isRedirecting, setIsRedirecting] = useState(false)
 
-    // Role detection for "YOUR CURRENT RANK" badges
-    const userRole = user?.role as string
-    const isCurrentArchivist = userRole === 'archivist'
-    const isCurrentAuteur = userRole === 'auteur'
+    // Tier hierarchy for CTA logic — prevents dead-end buttons and accidental downgrades.
+    // Mirrors the mobile membership.tsx TIER_RANK system.
+    const userRole = (user?.role as string) ?? 'cinephile'
+    const TIER_RANK: Record<string, number> = { cinephile: 0, archivist: 1, auteur: 2 }
+    const userRank = TIER_RANK[userRole] ?? 0
+    const isCurrentTier = (id: string) => {
+        if (id === 'cinephile') return userRank === 0
+        return userRole === id
+    }
+    const isLowerTier = (id: string) => userRank > (TIER_RANK[id] ?? 0)
 
     const handleCheckout = async (tier: string) => {
         if (!isAuthenticated || !user) { navigate('/join'); return }
@@ -105,8 +121,10 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        {isAuthenticated && (!user?.role || (user?.role as string) === 'cinephile') ? (
+                        {isAuthenticated && isCurrentTier('cinephile') ? (
                             <div className="current-rank">YOUR CURRENT RANK</div>
+                        ) : isAuthenticated && isLowerTier('cinephile') ? (
+                            <div className="current-rank" style={{ borderColor: 'rgba(139,105,20,0.15)', color: 'var(--fog)', opacity: 0.6 }}>INCLUDED IN YOUR RANK</div>
                         ) : (
                             <button className="btn btn-ghost" style={{ width: '100%', justifyContent: 'center', padding: '1rem', fontSize: '0.8rem', letterSpacing: '0.2em' }} onClick={() => navigate('/join')}>
                                 JOIN FREE
@@ -152,8 +170,10 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        {isAuthenticated && isCurrentArchivist ? (
+                        {isAuthenticated && isCurrentTier('archivist') ? (
                             <div className="current-rank" style={{ borderColor: 'var(--sepia)', color: 'var(--sepia)' }}>✦ YOUR CURRENT RANK ✦</div>
+                        ) : isAuthenticated && isLowerTier('archivist') ? (
+                            <div className="current-rank" style={{ borderColor: 'rgba(139,105,20,0.15)', color: 'var(--fog)', opacity: 0.6 }}>INCLUDED IN YOUR RANK</div>
                         ) : (
                             <button
                                 className="btn btn-primary tier-btn"
@@ -205,8 +225,10 @@ export default function MembershipPage() {
                             ))}
                         </div>
 
-                        {isAuthenticated && isCurrentAuteur ? (
+                        {isAuthenticated && isCurrentTier('auteur') ? (
                             <div className="current-rank" style={{ borderColor: '#7d1f1f', color: '#7d1f1f' }}>★ YOUR CURRENT RANK ★</div>
+                        ) : isAuthenticated && isLowerTier('auteur') ? (
+                            <div className="current-rank" style={{ borderColor: 'rgba(139,105,20,0.15)', color: 'var(--fog)', opacity: 0.6 }}>INCLUDED IN YOUR RANK</div>
                         ) : (
                             <button
                                 className="btn btn-primary tier-btn tier-btn--auteur"
@@ -220,7 +242,8 @@ export default function MembershipPage() {
                     </motion.div>
                 </motion.div>
 
-                {/* —— FOUNDING MEMBERS BANNER —— */}
+                {/* —— FOUNDING MEMBERS BANNER (visible until 100 seats filled) —— */}
+                {foundingCount !== null && foundingCount < 100 && (
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
@@ -234,10 +257,10 @@ export default function MembershipPage() {
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                     </div>
 
-                    <div className="founding-tag">LIMITED OFFER · CLASS OF 1924</div>
+                    <div className="founding-tag">LIMITED OFFER · {100 - foundingCount} SEATS REMAINING</div>
                     <h2 className="founding-title">Founding Members</h2>
                     <p className="founding-desc">
-                        The first 100 members to join The Society receive <em>Archivist access for life</em> — permanently, with no recurring charges, ever. A single entry in the ledger. A permanent seat in the house.
+                        The first 100 members to join The Society receive <em>Auteur access for life</em> — permanently, with no recurring charges, ever. A single entry in the ledger. A permanent seat in the house.
                     </p>
 
                     <div className="founding-price">
@@ -276,9 +299,10 @@ export default function MembershipPage() {
                     </button>
 
                     <div className="founding-footer">
-                        POWERED BY PAYTABS · SECURE CHECKOUT · SEATS FILLING FAST
+                        SECURE CHECKOUT · SEATS FILLING FAST
                     </div>
                 </motion.div>
+                )}
 
                 {/* Philosophy */}
                 <motion.div

@@ -12,6 +12,7 @@ import { useFilmStore, useAuthStore, useUIStore } from '../../store'
 import { useViewport } from '../../hooks/useViewport'
 import reelToast from '../../utils/reelToast'
 import { throttleAction } from '../../errorLogger'
+import { supabase } from '../../lib/supabase'
 import FocusView from './FocusView'
 import FeedView from './FeedView'
 
@@ -87,6 +88,23 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
 
     const endorsed = optimisticEndorsed
 
+    // ── REPORT & MUTE (TRUST & SAFETY) ──
+    const [isMuted, setIsMuted] = useState(false)
+    const handleReport = async () => {
+        if (!currentUser) return reelToast.error('You must be logged in to report.')
+        if (window.confirm("Hide this log and report the author to the Society?")) {
+            setIsMuted(true)
+            reelToast.success('Reported. This user has been muted from your feed.')
+            if (log.user_id || log.userId) {
+                await supabase.from('user_reports').insert({
+                    reported_id: log.user_id || log.userId,
+                    log_id: log.id,
+                    reason: 'Inappropriate content via Web'
+                }).catch(() => {}) // Fire and forget
+            }
+        }
+    }
+
     // ── Navigation routing ──
     const handleCardClick = () => {
         if (!isExpandedView) {
@@ -149,8 +167,11 @@ export default function ActivityCard({ log, isExpandedView = false }: { log: any
         stampRotation, isPremiumLog, isAuteurLog, isArchivistLog,
         strippedReview, showFullText, spoilersRevealed, setSpoilersRevealed,
         isExpanded, setIsExpanded,
-        currentUser, reelToast, handleCardClick,
+        currentUser, reelToast, handleCardClick, handleReport
     }
+
+    // ── EARLY RETURN IF MUTED ──
+    if (isMuted) return null;
 
     // ── DELEGATE TO APPROPRIATE VIEW ──
     if (isExpandedView) {

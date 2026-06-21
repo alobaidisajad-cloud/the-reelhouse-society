@@ -53,6 +53,25 @@ function LobbyDivider({ label }: { label?: string }) {
     )
 }
 
+// ── Extracted styles — prevents new object allocation on every render ──
+const STYLES = {
+    heroOverlay: {
+        position: 'absolute' as const, inset: 0,
+        background: 'radial-gradient(circle at center, transparent 0%, var(--ink) 90%)',
+        zIndex: 0, pointerEvents: 'none' as const,
+    },
+    sectionBeaconRow: {
+        display: 'flex', alignItems: 'center', gap: '0.6rem', padding: '0 1rem',
+    },
+    sectionBeaconLabel: {
+        fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em',
+        color: 'var(--sepia)', opacity: 0.7,
+    },
+    mainContent: {
+        background: 'var(--ink)', position: 'relative' as const, zIndex: 1,
+    },
+} as const
+
 // ── MAIN HOME PAGE ──
 export default function HomePage() {
     const navigate = useNavigate()
@@ -85,6 +104,25 @@ export default function HomePage() {
     const heroFilm = trending?.results?.[0]
     const films = trending?.results || []
     const topFilms = topRated?.results || []
+
+    // ── P0 LCP FIX: Preload hero backdrop as soon as TMDB data arrives ──
+    // The image URL is only known after the trending query resolves, so we inject
+    // a <link rel="preload"> programmatically to parallelize the image fetch.
+    useEffect(() => {
+        if (!heroFilm?.backdrop_path) return
+        const size = IS_TOUCH ? 'w780' : 'w1280'
+        const url = tmdb.backdrop(heroFilm.backdrop_path, size)
+        if (!url) return
+        // Avoid duplicate preload links
+        if (document.querySelector(`link[rel="preload"][href="${url}"]`)) return
+        const link = document.createElement('link')
+        link.rel = 'preload'
+        link.as = 'image'
+        link.href = url
+        link.setAttribute('fetchpriority', 'high')
+        document.head.appendChild(link)
+        return () => { link.remove() }
+    }, [heroFilm?.backdrop_path, IS_TOUCH])
 
     const tickerItems = films.slice(0, 10).map((f: any) => f.title).filter(Boolean)
 
@@ -153,13 +191,7 @@ export default function HomePage() {
                 )}
 
                 {/* Spotlight ambient glow */}
-                <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background: 'radial-gradient(circle at center, transparent 0%, var(--ink) 90%)',
-                    zIndex: 0,
-                    pointerEvents: 'none',
-                }} />
+                <div style={STYLES.heroOverlay} />
 
                 {/* Warm projector beam — desktop only */}
                 {!IS_TOUCH && (
@@ -311,15 +343,9 @@ export default function HomePage() {
                     <div className="scroll-reveal">
                         <LobbyDivider />
                         {/* Section accent header */}
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.6rem',
-                            padding: '0 1rem',
-                            marginBottom: IS_TOUCH ? '0.5rem' : '0',
-                        }}>
+                        <div style={{ ...STYLES.sectionBeaconRow, marginBottom: IS_TOUCH ? '0.5rem' : '0' }}>
                             <div className="section-beacon" />
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--sepia)', opacity: 0.7 }}>
+                            <span style={STYLES.sectionBeaconLabel}>
                                 LIVE — UPDATED WEEKLY
                             </span>
                         </div>
@@ -369,15 +395,9 @@ export default function HomePage() {
                     {/* ── SECTION: THE CANON ── */}
                     <div className="scroll-reveal">
                         <LobbyDivider />
-                        <div style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.6rem',
-                            padding: '0 1rem',
-                            marginBottom: IS_TOUCH ? '0.5rem' : '0',
-                        }}>
+                        <div style={{ ...STYLES.sectionBeaconRow, marginBottom: IS_TOUCH ? '0.5rem' : '0' }}>
                             <div className="section-beacon" style={{ background: 'var(--fog)', boxShadow: 'none', animationDelay: '1.2s' }} />
-                            <span style={{ fontFamily: 'var(--font-ui)', fontSize: '0.5rem', letterSpacing: '0.35em', color: 'var(--fog)', opacity: 0.6 }}>
+                            <span style={{ ...STYLES.sectionBeaconLabel, color: 'var(--fog)', opacity: 0.6 }}>
                                 CERTIFIED MASTERWORKS
                             </span>
                         </div>

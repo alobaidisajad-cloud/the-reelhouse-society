@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { StyleSheet, Platform } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 
@@ -11,6 +12,7 @@ export const st = StyleSheet.create({
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 16, borderBottomWidth: 1, borderBottomColor: colors.ash },
     editBadge: { backgroundColor: colors.bloodReel, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 2, alignSelf: 'flex-start', marginBottom: 4 },
     editBadgeText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: '#fff' },
+    headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, paddingRight: 10 },
     headerTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.parchment },
     closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8 },
     closeBtnText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog },

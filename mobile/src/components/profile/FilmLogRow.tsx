@@ -8,9 +8,9 @@ import { tmdb } from '@/src/lib/tmdb';
 
 interface FilmLogRowData {
     id: string;
-    film_title: string;
-    poster_path?: string | null;
-    year?: number | null;
+    title: string;
+    poster?: string | null;
+    year?: number | string | null;
     rating: number;
     review?: string | null;
 }
@@ -22,7 +22,7 @@ interface FilmLogRowProps {
 }
 
 export const FilmLogRow = memo(function FilmLogRow({ log, onPress, isOwnProfile }: FilmLogRowProps) {
-    const posterUri = log.poster_path ? tmdb.poster(log.poster_path, 'w92') : null;
+    const posterUri = log.poster ? tmdb.poster(log.poster, 'w92') : null;
     return (
         <PressableScale style={s.container} onPress={() => { onPress?.(); }} pressedScale={0.98} haptic="selection">
             {posterUri ? (
@@ -31,7 +31,7 @@ export const FilmLogRow = memo(function FilmLogRow({ log, onPress, isOwnProfile 
                 <View style={[s.poster, s.posterPlaceholder]} />
             )}
             <View style={s.info}>
-                <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{log.film_title}</Text>
+                <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{log.title}</Text>
                 <View style={s.meta}>
                     <Text style={s.year}>{log.year}</Text>
                     {log.rating > 0 && <ReelRating rating={log.rating} size={10} />}

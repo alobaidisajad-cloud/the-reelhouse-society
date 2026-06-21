@@ -39,28 +39,13 @@ export const ShimmerRule = memo(() => {
  
 export const VelvetRopeCTA = memo(() => {
     const router = useRouter();
-    const shimmer = useSharedValue(-1);
-
-    useEffect(() => {
-       shimmer.value = withRepeat(
-         withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
-         -1, false
-       );
-       return () => cancelAnimation(shimmer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const shimmerStyle = useAnimatedStyle(() => ({
-       transform: [{ translateX: interpolate(shimmer.value, [-1, 1], [-50, 200]) }]
-    }));
 
     return (
        <PressableScale
           style={s.ctaSecondaryNoir}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); router.push('/login' as any); }}
+          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); (router.push as any)('/login' as any); }}
        >
-          <Text style={[s.ctaSecondaryNoirText, { textDecorationLine: 'none' }]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.7}>ALREADY A MEMBER?</Text>
+          <Text style={s.ctaSecondaryNoirText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.7}>ALREADY A MEMBER?</Text>
           <ShimmerRule />
        </PressableScale>
     );
@@ -91,7 +76,7 @@ export const BrassSheen = memo(() => {
 
 const s = StyleSheet.create({
   ctaSecondaryNoir: { paddingVertical: 12, paddingHorizontal: 24 },
-  ctaSecondaryNoirText: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 3, color: colors.bone, opacity: 0.6, textDecorationLine: 'underline' },
+  ctaSecondaryNoirText: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 3, color: colors.bone, opacity: 0.6 },
 });
 
 

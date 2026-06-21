@@ -13,6 +13,13 @@ import { queryClient } from './queryClient'
 import './index.css'
 import './styles/reel.css'
 
+declare global {
+  interface Window {
+    __rh_toast?: { log: (msg: string) => void; err: (msg: string) => void; info: (msg: string) => void; };
+    _reactRoot?: ReactDOM.Root;
+  }
+}
+
 // ── Sentry Error Monitoring (production only, zero dev overhead) ──
 // DSN is intentionally public — it's a client-side key by Sentry's design
 if (import.meta.env.PROD) {
@@ -62,16 +69,17 @@ setTimeout(() => {
 
 // ── Global Broken Image Fallback Interceptor ──
 // Prevents the UI from shattering when TMDB lacks a poster or the connection drops.
-window.addEventListener('error', (e: any) => {
-  if (e.target && e.target.tagName === 'IMG') {
-    if (!e.target.dataset.fallbackApplied) {
-      e.target.dataset.fallbackApplied = 'true'
-      e.target.src = '/reelhouse-logo.svg' // The ReelHouse master geometric mark
-      e.target.style.filter = 'grayscale(100%) opacity(0.2)'
-      e.target.style.objectFit = 'contain'
-      e.target.style.padding = '2rem'
-      e.target.style.backgroundColor = '#0A0703'
-      e.target.style.border = '1px solid #1C1710'
+window.addEventListener('error', (e: ErrorEvent) => {
+  if (e.target && (e.target as HTMLElement).tagName === 'IMG') {
+    const target = e.target as HTMLImageElement;
+    if (!target.dataset.fallbackApplied) {
+      target.dataset.fallbackApplied = 'true'
+      target.src = '/reelhouse-logo.svg' // The ReelHouse master geometric mark
+      target.style.filter = 'grayscale(100%) opacity(0.2)'
+      target.style.objectFit = 'contain'
+      target.style.padding = '2rem'
+      target.style.backgroundColor = '#0A0703'
+      target.style.border = '1px solid #1C1710'
     }
   }
 }, true) // Capture phase is required because 'error' events do not bubble
@@ -93,7 +101,7 @@ window.addEventListener('unhandledrejection', (e) => {
 
 
 // ── Custom Nitrate Noir Toast Renderer ──
-function NoirToast({ t, message, icon }: any) {
+function NoirToast({ t, message, icon }: { t: any, message: string, icon: string }) {
   return (
     <div
       style={{
@@ -125,20 +133,20 @@ function NoirToast({ t, message, icon }: any) {
 
 // Expose custom toast helpers globally (dev only — tree-shaken in production)
 if (!import.meta.env.PROD) {
-  (window as any).__rh_toast = {
+  window.__rh_toast = {
     log: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="✦" />),
     err: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="†" />),
     info: (msg: string) => toast.custom((t) => <NoirToast t={t} message={msg} icon="◈" />),
   }
 }
 
-let root = (window as any)._reactRoot
+let root = window._reactRoot
 const rootElement = document.getElementById('root')
 
 if (rootElement) {
   if (!root) {
     root = ReactDOM.createRoot(rootElement)
-    ;(window as any)._reactRoot = root
+    window._reactRoot = root
   }
 
   root.render(

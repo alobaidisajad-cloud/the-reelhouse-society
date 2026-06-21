@@ -2,13 +2,13 @@
  * OnboardingModal — Multi-step onboarding flow for new users.
  * Introduces ReelHouse Society concepts.
  */
-import { useState } from 'react';
-import { View, Text, StyleSheet, Modal } from 'react-native';
-import Animated, { SlideInRight, SlideOutLeft } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
-import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { colors, fonts } from '@/src/theme/theme';
+import { BlurView } from 'expo-blur';
+import * as Haptics from 'expo-haptics';
+import { useState } from 'react';
+import { Modal, StyleSheet, Text, View } from 'react-native';
+import Animated, { SlideInRight, SlideOutLeft } from 'react-native-reanimated';
 
 
 
@@ -57,8 +57,8 @@ export default function OnboardingModal({ visible, onComplete }: OnboardingModal
 
     return (
         <Modal visible={visible} transparent animationType="none" onRequestClose={onComplete}>
-            {/* #6 AUDIT FIX: Reanimated-driven entry instead of system-default fade */}
-            <View style={s.overlay}>
+            {/* Reanimated-driven entry instead of system-default fade */}
+            <View style={s.overlay} accessibilityViewIsModal={true}>
                 <BlurView intensity={70} tint="dark" style={StyleSheet.absoluteFill} />
                 <View style={s.card}>
                     {/* Progress dots */}
@@ -87,7 +87,7 @@ export default function OnboardingModal({ visible, onComplete }: OnboardingModal
                             </Text>
                         </PressableScale>
                     </View>
-                    {/* M-11 AUDIT FIX: Skip option for returning users */}
+                    {/* Skip option for returning users */}
                     <PressableScale onPress={onComplete} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection" pressedScale={0.96}>
                         <Text style={s.skipText}>SKIP</Text>
                     </PressableScale>

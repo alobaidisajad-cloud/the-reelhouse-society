@@ -24,42 +24,33 @@
  *  • Zero cheap emoji — all Lucide vector icons
  *  • Zero performance regression — all animations native thread
  */
-import { useEffect, useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   View, Text, StyleSheet,
   RefreshControl, useWindowDimensions,
 } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import { Image } from 'expo-image';
-import Animated, {
-  useSharedValue, useAnimatedStyle,
-  withTiming, Easing,
-  cancelAnimation
-} from 'react-native-reanimated';
+import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { tmdb, getYear, obscurityScore } from '@/src/lib/tmdb';
-import { useFilmStore } from '@/src/stores/films';
+import { useLocalSearchParams } from 'expo-router';
+import { nav } from '@/src/utils/typedRouter';
+import { useQuery } from '@tanstack/react-query';
+import { tmdb } from '@/src/lib/tmdb';
+import { useArchiveStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts, effects } from '@/src/theme/theme';
-import { SectionDivider, MarqueeLights } from '@/src/components/Decorative';
+import { isArchivistPlusTier } from '@/src/utils/tier';
+import { colors } from '@/src/theme/theme';
+import { MarqueeLights } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
-import {
-  Film as FilmIcon, ArrowLeft, Star, MessageCircle,
-  MapPin, Calendar, Skull, Clock,
-} from 'lucide-react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
+import NetInfo from '@react-native-community/netinfo';
 
-import type { StyleProp, ViewStyle } from 'react-native';
-
-const PORTRAIT_W = 130;
-const POSTER_GRID_GAP = 10;
-const AnimatedView = Animated.createAnimatedComponent(View);
-const PERF_COUNT = 40;
-
-/** Warm sepia-toned blurhash — used as placeholder while images load */
-const SEPIA_HASH = 'LGF5]+Yk^6#M@-5c,1J5@[or[Q6.';
+import { s } from '@/app/person/personStyles';
+import { ShimmerBlock } from '@/src/components/person/PersonOrnaments';
+import { PersonHero, formatDossierDate, calcCareerSpan } from '@/src/components/person/PersonHero';
+import { PersonBio } from '@/src/components/person/PersonBio';
+import { PersonDefining } from '@/src/components/person/PersonDefining';
+import { renderGridItem, FilmographyHeader } from '@/src/components/person/PersonFilmography';
 
 // ── Strict Interfaces ────────────────────────────────────────
 interface PersonDetail {
@@ -86,260 +77,217 @@ interface PersonCredit {
   job?: string;
 }
 
-// ── Shimmer Pulse ────────────────────────────────────────────
-function ShimmerBlock({ style }: { style: StyleProp<ViewStyle> }) {
-  const opacity = useSharedValue(0.3);
-  useEffect(() => {
-    // Round 7: Removed infinite loop to allow UI thread idling
-    opacity.value = withTiming(0.7, { duration: 1800, easing: Easing.inOut(Easing.ease) });
-    return () => cancelAnimation(opacity);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
-  return <Animated.View style={[st.shimmer, style, animStyle]} />;
-}
-
-// ── Obscurity Badge ──────────────────────────────────────────
-const ObscurityBadge = memo(function ObscurityBadge({ score }: { score: number }) {
-  if (score <= 0) return null;
-  const label = score > 80 ? 'GHOST REEL' : score > 60 ? 'DEEP CUT' : score > 40 ? 'INDIE' : score > 20 ? 'KNOWN' : 'MAINSTREAM';
-  const color = score > 70 ? colors.sepia : score > 40 ? colors.bone : colors.fog;
-  return (
-    <View style={[st.obsBadge, { borderColor: color }]}>
-      <Text style={[st.obsScore, { color }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{score}</Text>
-      <Text style={st.obsLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{label}</Text>
-    </View>
-  );
-});
-
-// ── Film-strip Perforations ──────────────────────────────────
-const FilmStripPerforations = memo(function FilmStripPerforations() {
-  return (
-    <View style={st.perfRow}>
-      {Array.from({ length: PERF_COUNT }).map((_, i) => (
-        <View key={i} style={st.perfHole} />
-      ))}
-    </View>
-  );
-});
-
-// ── Film Poster Card (grid item) ─────────────────────────────
-const FilmPosterCard = memo(function FilmPosterCard({ film }: { film: PersonCredit }) {
-  const router = useRouter();
-  const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w185') : null;
-
-  const handlePress = useCallback(() => {
-    Haptics.selectionAsync();
-    router.push(`/film/${film.id}` as any);
-  }, [film.id, router]);
-
-  return (
-    <PressableScale
-      style={st.gridCard}
-      onPress={handlePress}
-    >
-      {posterUri ? (
-        <Image
-          source={{ uri: posterUri }}
-          style={[st.gridPoster, { width: '100%', aspectRatio: 2 / 3 }]}
-          contentFit="cover"
-          cachePolicy="memory-disk"
-          placeholder={{ blurhash: SEPIA_HASH }}
-          transition={50}
-        />
-      ) : (
-        <View style={[st.gridPoster, st.gridPosterPlaceholder, { width: '100%', aspectRatio: 2 / 3 }]}>
-          <FilmIcon size={16} color={colors.fog} strokeWidth={1} />
-        </View>
-      )}
-      <Text style={st.gridTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{film.title}</Text>
-      <Text style={st.gridYear}>{getYear(film.release_date) || 'TBA'}</Text>
-    </PressableScale>
-  );
-});
-
-// ── Defining Work Card ───────────────────────────────────────
-const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }) {
-  const router = useRouter();
-  const posterUri = film.poster_path ? tmdb.poster(film.poster_path, 'w342') : null;
-  const score = obscurityScore(film);
-
-  const handlePress = useCallback(() => {
-    Haptics.selectionAsync();
-    router.push(`/film/${film.id}` as any);
-  }, [film.id, router]);
-
-  return (
-    <PressableScale
-      style={st.defCard}
-      onPress={handlePress}
-    >
-      <View style={st.defPosterWrap}>
-        {posterUri ? (
-          <Image source={{ uri: posterUri }} style={st.defPoster} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
-        ) : (
-          <View style={[st.defPoster, st.defPosterPlaceholder]}>
-            <FilmIcon size={20} color={colors.fog} strokeWidth={1} />
-          </View>
-        )}
-        <LinearGradient
-          colors={['transparent', 'rgba(10,7,3,0.5)', 'rgba(10,7,3,0.92)']}
-          locations={[0, 0.45, 1]}
-          style={st.defOverlay}
-        >
-          <Text style={st.defTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{film.title}</Text>
-          <View style={st.defMetaRow}>
-            <Text style={st.defYear}>{getYear(film.release_date) || 'TBA'}</Text>
-            {film.vote_average !== undefined && film.vote_average > 0 && (
-              <View style={st.defRatingRow}>
-                <Star size={7} color={colors.sepia} fill={colors.sepia} />
-                <Text style={st.defRatingText}>{film.vote_average.toFixed(1)}</Text>
-              </View>
-            )}
-          </View>
-        </LinearGradient>
-      </View>
-      <View style={st.defBadgeWrap}>
-        <ObscurityBadge score={score} />
-      </View>
-    </PressableScale>
-  );
-});
-
-// ════════════════════════════════════════════════════════════
-//  UTILITY — career span in years
-// ════════════════════════════════════════════════════════════
-function calcCareerSpan(credits: PersonCredit[]): number {
-  if (credits.length === 0) return 0;
-  const years = credits
-    .map((c) => parseInt(c.release_date?.substring(0, 4) ?? '', 10))
-    .filter((y) => !isNaN(y));
-  if (years.length === 0) return 0;
-  return Math.max(...years) - Math.min(...years);
-}
-
 // ════════════════════════════════════════════════════════════
 //  MAIN PERSON DETAIL SCREEN
 // ════════════════════════════════════════════════════════════
 export default function PersonDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  const [person, setPerson] = useState<PersonDetail | null>(null);
-  const [allCredits, setAllCredits] = useState<PersonCredit[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [showFullBio, setShowFullBio] = useState(false);
-  const { logs } = useFilmStore();
-  const { user } = useAuthStore();
+  const [isManualRefresh, setIsManualRefresh] = useState(false);
+  const _loggedIndex = useArchiveStore(s => s._loggedIndex);
+  const user = useAuthStore(s => s.user);
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
 
+  const heroDynStyle = useMemo(() => ({ height: windowWidth * 0.6 }), [windowWidth]);
+  const floatingBackDynStyle = useMemo(() => ({ top: Math.max(insets.top + 10, 20) }), [insets.top]);
+  const scrollContentDynStyle = useMemo(() => ({ paddingBottom: 100 + insets.bottom }), [insets.bottom]);
+
   const personId = Number(id);
-  const isArchivist = user && ['archivist', 'auteur'].includes(user.role);
-  
+  const isArchivist = isArchivistPlusTier(user);
 
+  const {
+    data,
+    isLoading: loading,
+    error,
+    refetch: handleRefresh,
+  } = useQuery({
+    queryKey: ['person', personId],
+    queryFn: async () => {
+      const netState = await NetInfo.fetch();
+      if (netState.isConnected === false) {
+        throw new Error('NETWORK_OFFLINE');
+      }
 
-  const fetchData = useCallback(async () => {
-    if (!personId || isNaN(personId)) return;
-    try {
       const [personData, creditData] = await Promise.all([
         tmdb.person(personId),
         tmdb.personCredits(personId),
       ]);
-      setPerson(personData as any);
 
+      let credits: PersonCredit[] = [];
       if (creditData) {
-        const seen = new Set<number>();
-        const merged: PersonCredit[] = [];
-        for (const c of [...(creditData.cast || []), ...(creditData.crew || [])]) {
-          if (!seen.has(c.id)) { seen.add(c.id); merged.push(c as any); }
+        const seen = new Map<number, PersonCredit>();
+        for (const cRaw of [...(creditData.cast || []), ...(creditData.crew || [])]) {
+          const c = cRaw as any;
+          const existing = seen.get(c.id);
+          if (!existing) {
+            seen.set(c.id, { ...c } as any);
+          } else {
+            if (c.job === 'Director') existing.job = 'Director';
+            if (c.character) existing.character = c.character;
+            if ((c.popularity ?? 0) > (existing.popularity ?? 0)) {
+              existing.popularity = c.popularity;
+            }
+          }
         }
-        setAllCredits(merged.filter((f) => f.poster_path && (f.vote_count ?? 0) > 5).sort((a, b) => (b.popularity ?? 0) - (a.popularity ?? 0)));
+        credits = Array.from(seen.values());
       }
-    } catch (err) { if (__DEV__) console.warn('[Person] fetchData error:', err); }
-    finally { setLoading(false); setRefreshing(false); }
-  }, [personId]);
+      return {
+        person: personData as unknown as PersonDetail,
+        allCredits: credits,
+      };
+    },
+    enabled: !!personId && !isNaN(personId),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => { setLoading(true); fetchData(); }, [fetchData]);
+  const person = data?.person || null;
+  const allCredits = useMemo(() => data?.allCredits || [], [data?.allCredits]);
+  const isLongBio = person?.biography ? (person.biography.length > 300 || (person.biography.match(/\n/g) || []).length > 3) : false;
 
   // ── Stable Handlers ──
   const handleBack = useCallback(() => {
-    Haptics.selectionAsync();
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(tabs)');
-    }
-  }, [router]);
+    nav.back();
+  }, []);
 
-  const handleRefresh = useCallback(() => {
-    setRefreshing(true);
-    fetchData();
-  }, [fetchData]);
+  const onPullToRefresh = useCallback(async () => {
+    setIsManualRefresh(true);
+    try {
+      await handleRefresh();
+    } finally {
+      setIsManualRefresh(false);
+    }
+  }, [handleRefresh]);
 
   const handleToggleBio = useCallback(() => {
-    Haptics.selectionAsync();
     setShowFullBio((prev) => !prev);
   }, []);
 
   const handleLoungeShare = useCallback(() => {
     if (!person) return;
-    Haptics.selectionAsync();
-    router.push({
-      pathname: '/(tabs)/lounge',
-      params: {
-        shareFilmId: '',
-        shareFilmTitle: person.name,
-        shareFilmPoster: person.profile_path || '',
-        shareFilmYear: person.known_for_department || '',
-      },
+    nav.push('/(modals)/social-modal', {
+      mode: 'share-person',
+      personId: String(id),
+      personName: person.name,
     });
-  }, [person, router]);
-
-  const renderGridItem = useCallback(({ item, index }: { item: PersonCredit; index: number }) => (
-    <View style={GRID_COL_STYLES[index % 3]}>
-      <FilmPosterCard film={item} />
-    </View>
-  ), []);
-
-  const renderDefiningItem = useCallback(({ item }: { item: PersonCredit }) => (
-    <DefiningCard film={item} />
-  ), []);
+  }, [person, id]);
 
   // ── Derived data ──
-  const definingFilm = useMemo(() => allCredits.find((f) => f.backdrop_path) || null, [allCredits]);
-  const heroBackdrop = definingFilm?.backdrop_path ? tmdb.backdrop(definingFilm.backdrop_path) : null;
-  const definingWorks = useMemo(() => allCredits.slice(0, 4), [allCredits]);
-  const remainingCredits = useMemo(() => allCredits.slice(4), [allCredits]);
-  const totalFilms = allCredits.length;
-  const careerSpan = useMemo(() => calcCareerSpan(allCredits), [allCredits]);
+  const { definingWorks, definingFilm } = useMemo(() => {
+    const popularWithPosters: PersonCredit[] = [];
+    let bestBackdropFilm: PersonCredit | null = null;
+    let highestBackdropScore = -1;
+    let bestOverallFilm: PersonCredit | null = null;
+    let highestOverallScore = -1;
 
-  const isDirector = person?.known_for_department === 'Directing';
-  const directedFilms = useMemo(() => allCredits.filter((c) => c.job === 'Director' || (isDirector && c.character)), [allCredits, isDirector]);
+    for (const film of allCredits) {
+      const legacyScore = (film.vote_count ?? 0) * 10 + (film.popularity ?? 0);
+      const votes = film.vote_count ?? 0;
+      
+      if (film.poster_path && votes > 5) {
+        popularWithPosters.push(film);
+      }
+      
+      if (film.backdrop_path && legacyScore > highestBackdropScore) {
+        highestBackdropScore = legacyScore;
+        bestBackdropFilm = film;
+      }
+
+      if (legacyScore > highestOverallScore) {
+        highestOverallScore = legacyScore;
+        bestOverallFilm = film;
+      }
+    }
+    
+    popularWithPosters.sort((a, b) => {
+      const scoreA = (a.vote_count ?? 0) * 10 + (a.popularity ?? 0);
+      const scoreB = (b.vote_count ?? 0) * 10 + (b.popularity ?? 0);
+      return scoreB - scoreA;
+    });
+    
+    return {
+      definingWorks: popularWithPosters.slice(0, 4),
+      definingFilm: bestBackdropFilm || bestOverallFilm
+    };
+  }, [allCredits]);
+
+  const heroBackdrop = definingFilm?.backdrop_path ? tmdb.backdrop(definingFilm.backdrop_path) : null;
+  const filmography = useMemo(() => {
+    return [...allCredits].sort((a, b) => {
+      const dateA = a.release_date || '9999-99-99';
+      const dateB = b.release_date || '9999-99-99';
+      if (dateA > dateB) return -1;
+      if (dateA < dateB) return 1;
+      return (b.popularity || 0) - (a.popularity || 0);
+    });
+  }, [allCredits]);
+  const remainingCredits = filmography; // Replaced truncated list with true historical archive
+  const totalFilms = allCredits.length;
+  const careerSpan = useMemo(() => calcCareerSpan(person, allCredits), [person, allCredits]);
+
+  const directedFilms = useMemo(() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const localToday = `${y}-${m}-${day}`;
+
+    return allCredits.filter((c) => {
+      if (c.job !== 'Director') return false;
+      const isLogged = _loggedIndex[c.id] !== undefined;
+      const isReleased = !!(c.release_date && c.release_date <= localToday);
+      const hasVotes = (c.vote_count ?? 0) > 0;
+      return isReleased || isLogged || hasVotes;
+    });
+  }, [allCredits, _loggedIndex]);
   const seenCount = useMemo(() => {
-    if (!isDirector || directedFilms.length === 0) return 0;
-    const seenFilmIds = new Set(logs.map(l => l.filmId));
-    return directedFilms.filter(f => seenFilmIds.has(f.id)).length;
-  }, [logs, directedFilms, isDirector]);
+    if (directedFilms.length === 0) return 0;
+    return directedFilms.filter(f => {
+      const log = _loggedIndex[f.id] as any;
+      return log !== undefined && log.status !== 'abandoned';
+    }).length;
+  }, [_loggedIndex, directedFilms]);
   const auteurPct = directedFilms.length > 0 ? Math.round((seenCount / directedFilms.length) * 100) : 0;
+  const isAuteurMastery = directedFilms.length > 0 && seenCount === directedFilms.length;
+  const auteurHuntDynStyle = useMemo(() => ({ width: `${auteurPct}%` as import('react-native').DimensionValue }), [auteurPct]);
+
+  // ── Error (Offline) ──
+  if (error) return (
+    <View style={[s.container, s.notFoundContainer]}>
+      <View style={[s.floatingBack, floatingBackDynStyle]}>
+        <PressableScale onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+          <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
+        </PressableScale>
+      </View>
+      <Text style={s.notFoundLabel}>CONNECTION TIMED OUT</Text>
+      <Text style={s.notFoundTitle}>Signal Disrupted</Text>
+      <Text style={s.notFoundBody}>The telegraph to the TMDB archive failed. Please check your connection.</Text>
+      <PressableScale style={s.backBtnBottom} onPress={() => handleRefresh()} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="selection">
+        <View style={s.backBtnRow}>
+          <Text style={s.backBtnBottomText}>RETRY TRANSMISSION</Text>
+        </View>
+      </PressableScale>
+    </View>
+  );
 
   // ── Loading ──
   if (loading) return (
     <View style={s.container}>
-      <AnimatedView style={[s.floatingBack, { top: Math.max(insets.top + 10, 20), zIndex: 100 }]}>
+      <View style={[s.floatingBack, floatingBackDynStyle]}>
         <PressableScale onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
           <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
         </PressableScale>
-      </AnimatedView>
-      <View style={[s.shimmerBackdrop, { height: windowWidth * 0.55 }]}>
+      </View>
+      <View style={[s.shimmerBackdrop, heroDynStyle]}>
         <ShimmerBlock style={StyleSheet.absoluteFillObject} />
         <LinearGradient colors={['rgba(11,10,8,0.1)', 'rgba(11,10,8,0.6)', colors.ink]} locations={[0, 0.7, 1]} style={StyleSheet.absoluteFill} />
       </View>
       <View style={s.shimmerContent}>
         <ShimmerBlock style={s.shimmerPortrait} />
-        <ShimmerBlock style={s.shimmerBadge} />
+        <ShimmerBlock style={s.shimmerSocietyMark} />
+        <ShimmerBlock style={s.shimmerDeptBadge} />
         <ShimmerBlock style={s.shimmerName} />
-        <ShimmerBlock style={s.shimmerDept} />
+        <ShimmerBlock style={s.shimmerDateRow} />
         <View style={s.shimmerStatsRow}>
           <ShimmerBlock style={s.shimmerStat} />
           <ShimmerBlock style={s.shimmerStat} />
@@ -370,241 +318,73 @@ export default function PersonDetailScreen() {
   return (
     <View style={s.container}>
       {/* ── Floating Back Button ── */}
-      <PressableScale style={[s.floatingBack, { top: Math.max(insets.top + 10, 20) }]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
+      <PressableScale style={[s.floatingBack, floatingBackDynStyle]} onPress={handleBack} hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }} haptic="light">
         <ArrowLeft size={16} color={colors.sepia} strokeWidth={1.5} />
       </PressableScale>
 
-      <FlashList
+      <CinematicFlashList
+        bottomInset={insets.bottom}
         data={remainingCredits}
         numColumns={3}
         estimatedItemSize={200}
-        contentContainerStyle={s.scrollContent}
+        contentContainerStyle={[s.scrollContent, scrollContentDynStyle]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.sepia} />}
-        ListHeaderComponent={<>
-        {/* ═══════════════════════════════════════════════════════
-            CINEMATIC HERO BACKDROP
-        ═══════════════════════════════════════════════════════ */}
-        <View style={[s.heroWrap, { height: windowWidth * 0.6 }]}>
-          {heroBackdrop ? (
-            <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
-          ) : (
-            <LinearGradient
-              colors={['rgba(139,105,20,0.12)', 'rgba(10,7,3,0.95)']}
-              style={s.heroBg}
-            />
-          )}
-          {heroBackdrop && <View style={s.heroSepia} />}
-          <LinearGradient
-            colors={['rgba(10,7,3,0.05)', 'rgba(10,7,3,0.45)', colors.ink]}
-            locations={[0, 0.55, 1]}
-            style={StyleSheet.absoluteFillObject}
+        refreshControl={<RefreshControl refreshing={isManualRefresh} onRefresh={onPullToRefresh} tintColor={colors.sepia} />}
+        ListHeaderComponent={<View>
+          <PersonHero
+            person={person}
+            heroBackdrop={heroBackdrop ?? null}
+            photoUri={photoUri ?? null}
+            heroDynStyle={heroDynStyle}
+            totalFilms={totalFilms}
+            careerSpan={careerSpan}
+            definingFilm={definingFilm}
+            isArchivist={!!isArchivist}
+            handleLoungeShare={handleLoungeShare}
+            directedFilms={directedFilms}
+            seenCount={seenCount}
+            auteurPct={auteurPct}
+            isAuteurMastery={isAuteurMastery}
+            auteurHuntDynStyle={auteurHuntDynStyle}
+            formatDossierDate={formatDossierDate}
           />
-          {/* Film-strip perforations — ReelHouse signature */}
-          <View style={s.perfBar}>
-            <FilmStripPerforations />
-          </View>
-        </View>
 
-        {/* ═══════════════════════════════════════════════════════
-            PROFILE DOSSIER — overlaps hero
-        ═══════════════════════════════════════════════════════ */}
-        <View style={s.dossierSection}>
-          {/* Portrait with sepia glow */}
-          <AnimatedView style={s.portraitWrap}>
-            <View style={s.portraitGlow} />
-            <View style={s.portraitCard}>
-              {photoUri ? (
-                <Image source={{ uri: photoUri }} style={s.portrait} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} accessibilityLabel={`${person.name} portrait photo`} />
-              ) : (
-                <View style={[s.portrait, s.portraitPlaceholder]}>
-                  <Text style={s.portraitInitial}>{person.name?.charAt(0) || '?'}</Text>
-                </View>
-              )}
-            </View>
-          </AnimatedView>
-
-          {/* Society watermark */}
-          <AnimatedView>
-            <Text style={s.societyMark}>THE REELHOUSE SOCIETY · EST. 1924</Text>
-          </AnimatedView>
-
-          {/* Department badge */}
-          {person.known_for_department && (
-            <AnimatedView style={s.deptBadge}>
-              <FilmIcon size={8} color={colors.sepia} strokeWidth={1.5} />
-              <Text style={s.deptLabel}>{person.known_for_department.toUpperCase()}</Text>
-            </AnimatedView>
-          )}
-
-          {/* Name */}
-          <AnimatedView>
-            <Text style={s.personName} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={2} minimumFontScale={0.6}>{person.name}</Text>
-          </AnimatedView>
-
-          {/* Birth / Death / Place */}
-          <AnimatedView style={s.dateRow}>
-            {person.birthday && (
-              <View style={s.dateItem}>
-                <Calendar size={9} color={colors.fog} strokeWidth={1.5} />
-                <Text style={s.dateText}>
-                  {new Date(person.birthday + 'T12:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}
-                </Text>
-              </View>
-            )}
-            {person.deathday && (
-              <View style={s.dateItem}>
-                <Skull size={9} color="rgba(200,80,80,0.7)" strokeWidth={1.5} />
-                <Text style={s.dateTextDeath}>
-                  {new Date(person.deathday + 'T12:00').toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }).toUpperCase()}
-                </Text>
-              </View>
-            )}
-            {person.place_of_birth && (
-              <View style={s.dateItem}>
-                <MapPin size={9} color={colors.fog} strokeWidth={1.5} />
-                <Text style={s.dateTextFaded}>{person.place_of_birth.toUpperCase()}</Text>
-              </View>
-            )}
-          </AnimatedView>
-
-          {/* Career stats strip */}
-          {totalFilms > 0 && (
-            <AnimatedView style={s.statsStrip}>
-              <View style={s.statChip}>
-                <FilmIcon size={11} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.statText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{totalFilms} CREDITS</Text>
-              </View>
-              {careerSpan > 0 && (
-                <View style={s.statChip}>
-                  <Clock size={10} color={colors.sepia} strokeWidth={1.5} />
-                  <Text style={s.statText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{careerSpan} YEARS IN CINEMA</Text>
-                </View>
-              )}
-              {definingFilm && (
-                <Text style={s.knownForText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-                  KNOWN FOR: <Text style={s.knownForTitle}>{definingFilm.title}</Text>
-                </Text>
-              )}
-            </AnimatedView>
-          )}
-
-          {/* Share to Lounge — archivist+ only */}
-          {isArchivist && (
-            <AnimatedView>
-              <PressableScale
-                style={s.loungeBtn}
-                onPress={handleLoungeShare}
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                haptic="light"
-              >
-                <MessageCircle size={11} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.loungeBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SHARE TO LOUNGE</Text>
-              </PressableScale>
-            </AnimatedView>
-          )}
-
-          {/* Auteur Hunt (directors only) */}
-          {isDirector && directedFilms.length > 0 && (
-            <AnimatedView style={s.auteurHuntWrap}>
-              <View style={s.auteurHunt}>
-                <View style={s.auteurHuntHeader}>
-                  <Text style={s.auteurHuntTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>THE AUTEUR HUNT</Text>
-                  <Text style={s.auteurHuntCount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{seenCount} OF {directedFilms.length} SEEN</Text>
-                </View>
-                <View style={s.auteurHuntTrack}>
-                  <View style={[s.auteurHuntFill, { width: `${auteurPct}%` as import('react-native').DimensionValue }, auteurPct >= 100 && s.auteurHuntMastery]} />
-                </View>
-                {auteurPct >= 100 && (
-                  <Text style={s.auteurComplete} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>AUTEUR MASTERY — COMPLETE</Text>
-                )}
-              </View>
-            </AnimatedView>
-          )}
-        </View>
-
-        {/* ═══ CLASSIFIED DOSSIER — BIOGRAPHY ═══ */}
-        {person.biography ? (
-          <AnimatedView style={s.bioSection}>
-            <LinearGradient
-              colors={['rgba(139,105,20,0.4)', 'transparent']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={s.bioTopLine}
+          {/* ═══ CLASSIFIED DOSSIER — BIOGRAPHY ═══ */}
+          {person.biography ? (
+            <PersonBio
+              biography={person.biography}
+              isLongBio={isLongBio}
+              showFullBio={showFullBio}
+              handleToggleBio={handleToggleBio}
             />
-            <Text style={s.bioLabel}>CLASSIFIED DOSSIER — BIOGRAPHY</Text>
-            <View style={s.bioTextWrap}>
-              <Text style={s.bioText} numberOfLines={showFullBio ? undefined : 6}>{person.biography}</Text>
-              {!showFullBio && (
-                <LinearGradient
-                  colors={['transparent', 'rgba(11,10,8,0.7)', colors.ink]}
-                  style={s.bioFadeMask}
-                  pointerEvents="none"
-                />
-              )}
-            </View>
-            <PressableScale 
-              style={s.toggleTicketBtn} 
-              onPress={handleToggleBio}
-              hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-              haptic="light"
-            >
-              <Text style={s.toggleTicketText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{showFullBio ? '[ SEAL EXTRACT ]' : '[ READ EXTRACT ]'}</Text>
-            </PressableScale>
-          </AnimatedView>
-        ) : null}
+          ) : null}
 
-        {/* ═══ DEFINING WORKS ═══ */}
-        {definingWorks.length > 0 && (
-          <AnimatedView style={s.sectionFlush}>
-            <View style={s.sectionPadded}>
-              <SectionDivider label="DEFINING WORKS" />
-              <Text style={s.sectionSubtitle}>The Legacy</Text>
-            </View>
-            <FlashList
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              data={definingWorks}
-              keyExtractor={(item) => String(item.id)}
-              contentContainerStyle={s.definingList}
-              estimatedItemSize={240}
-              snapToInterval={152}
-              snapToAlignment="start"
-              decelerationRate="fast"
-              renderItem={renderDefiningItem}
-            />
-          </AnimatedView>
-        )}
+          {/* ═══ DEFINING WORKS ═══ */}
+          {definingWorks.length > 0 && (
+            <PersonDefining definingWorks={definingWorks} />
+          )}
 
-        {/* ── Marquee lights transition ── */}
-        {definingWorks.length > 0 && remainingCredits.length > 0 && (
-          <MarqueeLights count={16} />
-        )}
+          {/* ── Marquee lights transition ── */}
+          {definingWorks.length > 0 && remainingCredits.length > 0 && (
+            <MarqueeLights count={16} />
+          )}
 
-        {/* ═══ COMPLETE FILMOGRAPHY ═══ */}
-        {remainingCredits.length > 0 && (
-          <AnimatedView style={s.section}>
-            {/* Gold gradient separator */}
-            <LinearGradient
-              colors={['transparent', 'rgba(139,105,20,0.35)', 'transparent']}
-              start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-              style={s.goldSep}
-            />
-            <SectionDivider label="COMPLETE FILMOGRAPHY" />
-            <Text style={s.sectionSubtitle}>The Full Archive</Text>
-          </AnimatedView>
-        )}
-        </>}
+          {/* ═══ COMPLETE FILMOGRAPHY ═══ */}
+          {remainingCredits.length > 0 && (
+            <FilmographyHeader />
+          )}
+        </View>}
         renderItem={renderGridItem}
         keyExtractor={(item) => String(item.id)}
-        ListFooterComponent={<>
+        ListFooterComponent={<View>
 
         {/* ── Empty state ── */}
         {allCredits.length === 0 && !loading && (
-          <AnimatedView style={s.emptyState}>
+          <View style={s.emptyState}>
             <Text style={s.emptyLabel}>THE VAULT IS SEALED</Text>
             <Text style={s.emptyTitle}>No Known Works Found</Text>
             <Text style={s.emptyBody}>The archive has no film records on file for this artist.</Text>
-          </AnimatedView>
+          </View>
         )}
 
         {/* ── Closing society bar ── */}
@@ -616,253 +396,8 @@ export default function PersonDetailScreen() {
           />
           <Text style={s.closingText}>THE REELHOUSE SOCIETY</Text>
         </View>
-        </>}
+        </View>}
       />
     </View>
   );
 }
-
-// ════════════════════════════════════════════════════════════
-//  MAIN STYLES — NITRATE NOIR
-// ════════════════════════════════════════════════════════════
-const s = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.ink },
-  scrollContent: { paddingBottom: 100 },
-
-  // ── Shimmer ──
-  shimmerBackdrop: { maxHeight: 280, backgroundColor: 'rgba(8,6,4,0.98)', position: 'relative' },
-  shimmerContent: { alignItems: 'center', marginTop: -70 },
-  shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 4, marginBottom: 14 },
-  shimmerBadge: { width: 90, height: 14, borderRadius: 2, marginBottom: 10 },
-  shimmerName: { width: 200, height: 22, borderRadius: 2, marginBottom: 8 },
-  shimmerDept: { width: 120, height: 12, borderRadius: 2, marginBottom: 12 },
-  shimmerStatsRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
-  shimmerStat: { width: 80, height: 10, borderRadius: 2 },
-
-  // ── Not Found ──
-  notFoundContainer: { justifyContent: 'center', alignItems: 'center', padding: 32 },
-  notFoundLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4, color: colors.sepia, marginBottom: 8 },
-  notFoundTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8, ...effects.textGlowSepia },
-  notFoundBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 22 },
-
-  // ── Floating Back ──
-  floatingBack: {
-    position: 'absolute', top: 54, left: 16, zIndex: 100,
-    width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(10,7,3,0.65)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-
-  // ── Hero Backdrop ──
-  heroWrap: { minHeight: 240, maxHeight: 300, position: 'relative', overflow: 'hidden' },
-  heroBg: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, width: '100%', height: '100%' },
-  heroSepia: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.5)' },
-  perfBar: { position: 'absolute', bottom: 4, left: 0, right: 0, zIndex: 2 },
-
-  // ── Dossier Section ──
-  dossierSection: { alignItems: 'center', marginTop: -75, paddingHorizontal: 20, zIndex: 2 },
-
-  // ── Portrait ──
-  portraitWrap: { marginBottom: 10, position: 'relative' },
-  portraitGlow: {
-    position: 'absolute', top: -10, left: -10, right: -10, bottom: -10,
-    backgroundColor: 'rgba(139,105,20,0.15)',
-    borderRadius: 8, shadowColor: colors.sepia,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6, shadowRadius: 20, elevation: 15,
-  },
-  portraitCard: {
-    width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
-  },
-  portrait: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
-  portraitPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
-  portraitInitial: { fontFamily: fonts.display, fontSize: 40, color: colors.fog },
-
-  // ── Society Watermark ──
-  societyMark: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
-    color: colors.sepia, opacity: 0.55, marginBottom: 12,
-  },
-
-  // ── Department Badge ──
-  deptBadge: {
-    flexDirection: 'row', alignItems: 'center', gap: 5,
-    paddingHorizontal: 12, paddingVertical: 5, borderRadius: 2,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
-    marginBottom: 10,
-  },
-  deptLabel: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 3.5, color: colors.sepia },
-
-  // ── Name ──
-  personName: {
-    fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
-    textAlign: 'center', lineHeight: 34, marginBottom: 12,
-  },
-
-  // ── Dates ──
-  dateRow: { alignItems: 'center', gap: 6, marginBottom: 16 },
-  dateItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  dateText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
-  dateTextDeath: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: 'rgba(200,80,80,0.7)' },
-  dateTextFaded: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog, opacity: 0.8 },
-
-  // ── Stats Strip ──
-  statsStrip: {
-    flexDirection: 'row', gap: 14, flexWrap: 'wrap',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 14,
-  },
-  statChip: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  statText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.bone },
-  knownForText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
-  knownForTitle: { color: colors.bone, textDecorationLine: 'underline', textDecorationColor: 'rgba(139,105,20,0.3)' } as import('react-native').TextStyle,
-
-  // ── Share to Lounge ──
-  loungeBtn: {
-    flexDirection: 'row', alignItems: 'center', gap: 6,
-    paddingHorizontal: 16, paddingVertical: 12,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2,
-    backgroundColor: 'rgba(14,11,8,0.9)',
-    marginBottom: 14,
-  },
-  loungeBtnText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
-
-  // ── Auteur Hunt ──
-  auteurHuntWrap: { width: '100%', alignItems: 'center' },
-  auteurHunt: {
-    width: '100%', maxWidth: 300,
-    paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: 'rgba(196,150,26,0.06)', borderRadius: 4,
-    borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)',
-    marginBottom: 8,
-  },
-  auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 } as import('react-native').ViewStyle,
-  auteurHuntTitle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
-  auteurHuntCount: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1, color: colors.parchment },
-  auteurHuntTrack: { height: 4, backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 2, overflow: 'hidden' },
-  auteurHuntFill: { height: '100%', backgroundColor: colors.sepia, borderRadius: 2 } as import('react-native').ViewStyle,
-  auteurHuntMastery: { shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 10, elevation: 10 } as import('react-native').ViewStyle,
-  auteurComplete: {
-    fontFamily: fonts.uiBold, fontSize: 7, letterSpacing: 2.5,
-    color: colors.flicker, marginTop: 6, textAlign: 'center',
-  },
-
-  // ── Biography ──
-  bioSection: {
-    marginHorizontal: 20, marginBottom: 24, marginTop: 8,
-    padding: 20,
-    backgroundColor: 'rgba(25,20,15,0.6)',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
-    borderLeftWidth: 3, borderLeftColor: 'rgba(139,105,20,0.4)',
-    borderRadius: 4, borderTopLeftRadius: 0,
-    position: 'relative', overflow: 'hidden',
-  },
-  bioTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 } as import('react-native').ViewStyle,
-  bioLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 12, opacity: 0.8 },
-  bioTextWrap: { position: 'relative' },
-  bioText: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, lineHeight: 24 },
-  bioFadeMask: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
-  toggleTicketBtn: {
-    marginTop: 16, paddingVertical: 12, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
-    backgroundColor: 'rgba(14,11,8,0.9)', borderRadius: 2,
-  },
-  toggleTicketText: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 3, color: colors.sepia },
-
-  // ── Sections ──
-  section: { marginTop: 8, marginBottom: 16, paddingHorizontal: 20 },
-  sectionFlush: { marginTop: 8, marginBottom: 16 },
-  sectionPadded: { paddingHorizontal: 20 },
-  sectionSubtitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 16, paddingHorizontal: 0 },
-
-  // ── Defining List ──
-  definingList: { paddingHorizontal: 20, gap: 12 },
-
-  // ── Gold Separator ──
-  goldSep: { height: 1, marginBottom: 20 },
-
-  // ── Filmography Grid ──
-  filmGridRow: { gap: POSTER_GRID_GAP, marginBottom: POSTER_GRID_GAP },
-
-  // ── Empty State ──
-  emptyState: {
-    padding: 32, marginHorizontal: 20, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
-    borderRadius: 4, backgroundColor: 'rgba(18,14,9,0.4)',
-  },
-  emptyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8 },
-  emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, opacity: 0.7, marginBottom: 4 },
-  emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
-
-  // ── Back Button ──
-  backBtnBottom: { marginTop: 24, paddingVertical: 14, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2 },
-  backBtnBottomText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.bone },
-  backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-
-  // ── Closing Bar ──
-  closingBar: { alignItems: 'center', marginTop: 32, marginBottom: 8, paddingHorizontal: 40 },
-  closingLine: { width: '100%', height: 1, marginBottom: 12 },
-  closingText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5, color: colors.sepia, opacity: 0.4 },
-});
-
-// ═══════════════════════════════════════════════════════════
-//  SHARED SUB-COMPONENT STYLES
-// ═══════════════════════════════════════════════════════════
-const st = StyleSheet.create({
-  shimmer: { backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 3 },
-
-  // ── Obscurity Badge ──
-  obsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 4, borderWidth: 1, borderRadius: 2 },
-  obsScore: { fontFamily: fonts.uiBold, fontSize: 10 },
-  obsLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog },
-
-  // ── Film-strip Perforations ──
-  perfRow: {
-    flexDirection: 'row', justifyContent: 'center', gap: 6, opacity: 0.15,
-  },
-  perfHole: {
-    width: 14, height: 8,
-    borderWidth: 1, borderColor: colors.sepia, borderRadius: 1,
-  },
-
-  // ── Grid Poster Cards ──
-  gridCard: { width: '100%', marginBottom: 8 },
-  gridPoster: {
-    borderRadius: 2, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
-  },
-  gridPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
-  gridTitle: {
-    fontFamily: fonts.sub, fontSize: 10, color: colors.bone,
-    marginTop: 5, width: '100%',
-  },
-  gridMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 },
-  gridYear: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1 },
-
-  // ── Grid Column Spacing (pre-computed for FlashList hot path) ──
-  gridColLeft: { flex: 1, paddingRight: 5, marginBottom: 10 } as import('react-native').ViewStyle,
-  gridColCenter: { flex: 1, paddingHorizontal: 5, marginBottom: 10 } as import('react-native').ViewStyle,
-  gridColRight: { flex: 1, paddingLeft: 5, marginBottom: 10 } as import('react-native').ViewStyle,
-
-  // ── Defining Work Cards ──
-  defCard: { width: 140 },
-  defPosterWrap: {
-    width: 140, height: 210, borderRadius: 4, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
-    position: 'relative',
-  },
-  defPoster: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
-  defPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
-  defOverlay: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    paddingHorizontal: 8, paddingBottom: 8, paddingTop: 50,
-  } as import('react-native').ViewStyle,
-  defTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 16 },
-  defMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
-  defYear: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog },
-  defRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  defRatingText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.5, color: colors.fog },
-  defBadgeWrap: { marginTop: 6 },
-});
-
-/** Pre-computed column styles for FlashList grid — zero allocations in hot path */
-const GRID_COL_STYLES = [st.gridColLeft, st.gridColCenter, st.gridColRight];

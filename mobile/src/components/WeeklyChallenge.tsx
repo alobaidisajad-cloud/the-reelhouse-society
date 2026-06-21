@@ -37,7 +37,7 @@ export function WeeklyChallenge() {
 
             <PressableScale
                 style={s.acceptBtn}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); router.push('/(tabs)/darkroom' as any); }}
+                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)('/(tabs)/darkroom' as any); }}
                 pressedScale={0.95}
             >
                 <Text style={s.acceptText}>ACCEPT CHALLENGE</Text>

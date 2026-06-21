@@ -1,0 +1,12 @@
+﻿{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/services", "src/stores", "src/utils"],
+  "entryPointStrategy": "expand",
+  "out": "docs/api",
+  "exclude": ["**/__tests__/**", "**/*.test.*"],
+  "excludePrivate": true,
+  "excludeInternal": true,
+  "tsconfig": "tsconfig.json",
+  "name": "ReelHouse Mobile API",
+  "readme": "docs/ARCHITECTURE.md"
+}

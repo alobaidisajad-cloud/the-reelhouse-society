@@ -2,14 +2,13 @@ import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
-import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
+import Animated, { FadeIn, Easing, useSharedValue, useAnimatedStyle, withRepeat, withTiming, cancelAnimation } from 'react-native-reanimated';
 import { Search, Sparkles, Star } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
-// Module-scoped: prevents remount on every render cycle
-const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
+
 
 export interface LogSearchResult {
     id: number;
@@ -48,6 +47,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
     const [searchType, setSearchType] = useState('');
     const [searchContext, setSearchContext] = useState('');
     const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const searchGenRef = useRef(0);
 
     // Nitrate Noir Breathing Ember Protocol
     const emberOpacity = useSharedValue(0.5);
@@ -60,42 +60,55 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
         return () => cancelAnimation(emberOpacity);
     }, [searching, emberOpacity]);
 
-    const animatedIconProps = useAnimatedProps(() => ({
-        color: searching ? colors.bloodReel : colors.fog,
-    }));
     const animatedIconStyle = useAnimatedStyle(() => ({
         opacity: emberOpacity.value,
     }));
 
     const handleSearch = useCallback((q: string) => {
         setQuery(q);
-        if (!q.trim()) { setResults([]); setSearching(false); return; }
+        if (!q.trim()) { 
+            if (searchTimeout.current) clearTimeout(searchTimeout.current);
+            ++searchGenRef.current;
+            setResults([]); 
+            setSearching(false); 
+            return; 
+        }
         setSearching(true);
         if (searchTimeout.current) clearTimeout(searchTimeout.current);
+        const gen = ++searchGenRef.current;
         searchTimeout.current = setTimeout(async () => {
-            // Stale guard: if query changed during async, bail
             try {
                 const res = await tmdb.search(q, 1);
+                if (gen !== searchGenRef.current || !isMounted.current) return; // Stale or unmounted — discard
                 const filtered = (res.results || []).filter((r: Record<string, any>) => r.media_type !== 'person').slice(0, 8);
                 setResults(filtered);
                 setSearchType(res.searchType || 'exact');
                 setSearchContext(res.matchedContext || '');
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            } catch (err: unknown) { setResults([]); }
-            finally { setSearching(false); }
+            } catch (err: unknown) { if (gen === searchGenRef.current && isMounted.current) setResults([]); }
+            finally { if (gen === searchGenRef.current && isMounted.current) setSearching(false); }
         }, 400);
     }, []);
 
+    const isMounted = useRef(true);
     useEffect(() => {
+        isMounted.current = true;
         return () => {
+            isMounted.current = false;
             if (searchTimeout.current) clearTimeout(searchTimeout.current);
         };
     }, []);
 
+    const renderItem = useCallback(({ item: r }: { item: LogSearchResult }) => (
+        <LogSearchResultRow r={r} onSelectFilm={onSelectFilm} />
+    ), [onSelectFilm]);
+
     return (
         <Animated.View entering={FadeIn.duration(400).easing(Easing.out(Easing.cubic))} style={st.searchStep}>
             <View style={st.searchWrap}>
-                <AnimatedSearchIcon size={16} animatedProps={animatedIconProps} style={[st.searchIcon, animatedIconStyle]} />
+                <Animated.View style={[st.searchIcon, animatedIconStyle]}>
+                    <Search size={16} color={searching ? colors.bloodReel : colors.fog} />
+                </Animated.View>
                 <TextInput
                     style={st.searchInput}
                     placeholder="Search for a film..."
@@ -136,7 +149,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
                 style={st.searchResults}
                 contentContainerStyle={st.searchResultsContent}
                 estimatedItemSize={74}
-                renderItem={({ item: r }) => <LogSearchResultRow r={r} onSelectFilm={onSelectFilm} />}
+                renderItem={renderItem}
                 keyboardShouldPersistTaps="handled"
             />
             {!searching && query.length > 0 && results.length === 0 && (

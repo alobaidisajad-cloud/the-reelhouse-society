@@ -1,14 +1,14 @@
 import React, { useMemo, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import Svg, { Rect, G, Defs, LinearGradient as SvgLinearGradient, Stop } from 'react-native-svg';
-import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing } from 'react-native-reanimated';
+import Animated, { FadeInUp, useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
 import { Flame } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import PressableScale from '../PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 
 interface CalendarGridLog {
-  watchDate?: string;
+  watchedDate?: string;
   createdAt?: string;
 }
 
@@ -34,7 +34,12 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
         withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
         -1, true
       );
+    } else {
+      // Explicitly cancel orphaned animations to prevent UI thread leaks
+      cancelAnimation(flickerAnim);
+      flickerAnim.value = 1;
     }
+    return () => cancelAnimation(flickerAnim);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logs.length, isSelf]);
 
@@ -50,11 +55,27 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
     // Map logs to counts per day
     const countsMap = new Map<string, number>();
     logs.forEach(log => {
-      if (log.watchDate || log.createdAt) {
-        const d = new Date(log.watchDate || log.createdAt || new Date().toISOString());
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        countsMap.set(key, (countsMap.get(key) || 0) + 1);
+      const dayRaw = log.watchedDate || log.createdAt;
+      let key = '';
+      if (typeof dayRaw === 'string') {
+        if (dayRaw.includes('T')) {
+          // Extract exact YYYY-MM-DD from UTC string to ensure universal chronological accuracy
+          key = dayRaw.substring(0, 10);
+        } else {
+          const match = dayRaw.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (match) {
+            key = match[1];
+          } else {
+            const dateObj = new Date(dayRaw);
+            if (!isNaN(dateObj.getTime())) {
+              key = `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(dateObj.getDate()).padStart(2, '0')}`;
+            }
+          }
+        }
       }
+      if (!key) return;
+
+      countsMap.set(key, (countsMap.get(key) || 0) + 1);
     });
 
     // Build grid (cols: weeks, rows: days)
@@ -140,7 +161,7 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
 
       {logs.length === 0 && isSelf && (
         <Animated.View style={[s.ctaContainer, flickerStyle]}>
-          <PressableScale style={s.ctaBtn} onPress={() => router.push('/search-modal' as never)} haptic>
+          <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
             <Flame size={14} color={colors.flicker} style={{ marginRight: 8 }} />
             <Text style={s.ctaText}>IGNITE THE TIMELINE</Text>
           </PressableScale>

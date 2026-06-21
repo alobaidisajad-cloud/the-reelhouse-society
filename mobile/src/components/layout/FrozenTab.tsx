@@ -11,7 +11,7 @@ interface FrozenTabProps {
  * 
  * When this tab is out of focus, React completely suspends its rendering tree.
  * This prevents background tabs from eating CPU cycles and memory bandwidth,
- * guaranteeing the active tab runs at a perfectly locked 60fps/120fps.
+ * keeping the active tab at a locked 60/120fps.
  */
 export default function FrozenTab({ children }: FrozenTabProps) {
   const isFocused = useIsFocused();

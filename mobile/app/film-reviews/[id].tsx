@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
+import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { supabase } from '../../src/lib/supabase';
 import { colors, fonts } from '../../src/theme/theme';
@@ -177,7 +177,8 @@ export default function FilmReviewsScreen() {
           <ActivityIndicator color={colors.sepia} />
         </View>
       ) : (
-        <FlashList
+        <CinematicFlashList
+          bottomInset={insets.bottom}
           data={reviews}
           keyExtractor={item => item.id}
           renderItem={renderReview}

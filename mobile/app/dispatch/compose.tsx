@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert } from 'react-native';
+import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -11,6 +12,7 @@ import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-re
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatchStore } from '@/src/stores/content';
+import { isAuteurPlusTier } from '@/src/utils/tier';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { colors, fonts, spacing } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
@@ -21,7 +23,7 @@ export default function ComposeDossierScreen() {
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
     const { user } = useAuthStore();
     const insets = useSafeAreaInsets();
-    const canWrite = user?.role === 'auteur';
+    const canWrite = isAuteurPlusTier(user);
 
     const keyboard = useAnimatedKeyboard();
     const animatedContainerStyle = useAnimatedStyle(() => ({
@@ -58,6 +60,10 @@ export default function ComposeDossierScreen() {
     };
 
     const handlePublish = async () => {
+        if (!canWrite) {
+            reelToast.error('Auteur tier required');
+            return;
+        }
         if (!title.trim() || !content.trim() || isPublishing) return;
         Keyboard.dismiss();
         setIsPublishing(true);
@@ -120,7 +126,7 @@ export default function ComposeDossierScreen() {
             </View>
 
             {isPreview ? (
-                <ScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false}>
+                <CinematicScrollView style={styles.workspace} contentContainerStyle={styles.previewContent} showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
                     <Text style={styles.previewEyebrow}>LIVE PREVIEW</Text>
                     {title ? <Text style={styles.previewTitle}>{title}</Text> : null}
                     {content ? (
@@ -132,10 +138,10 @@ export default function ComposeDossierScreen() {
                             <Text style={styles.emptyPreviewText}>Your cinematic essay will appear here...</Text>
                         </View>
                     )}
-                </ScrollView>
+                </CinematicScrollView>
             ) : (
                 <Animated.View style={[styles.kavFlex, animatedContainerStyle]}>
-                    <ScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                    <CinematicScrollView style={styles.workspace} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} bottomInset={insets.bottom}>
                         <TextInput
                             style={styles.titleInput}
                             placeholder="Headline..."
@@ -162,7 +168,7 @@ export default function ComposeDossierScreen() {
                             keyboardAppearance="dark"
                             accessibilityLabel="Dossier content body"
                         />
-                    </ScrollView>
+                    </CinematicScrollView>
 
                     <View style={styles.toolbar}>
                         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.toolsScroll} keyboardShouldPersistTaps="handled">

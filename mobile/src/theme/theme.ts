@@ -14,7 +14,7 @@ export const colors = {
   danger: '#E74C3C',      // Alert red
   ash: '#2A2118',         // Borders, dividers, subtle backgrounds
   bone: '#C2B492',        // Secondary text (more weathered)
-  fog: '#82786B',         // Muted text, disabled (brightened for WCAG contrast)
+  fog: '#9E9488',         // Muted text, disabled — WCAG AA compliant (4.62:1 on ink)
   silverNitrate: '#D8E0E8', // System/info accent
   rust: '#8B4513',           // Tarnished copper — dossier accents, warm highlights
 
@@ -23,10 +23,15 @@ export const colors = {
   sepiaFaint: 'rgba(196, 150, 26, 0.08)',
   sepiaSubtle: 'rgba(196, 150, 26, 0.15)',
   sepiaBorder: 'rgba(196, 150, 26, 0.25)',
+  sepiaBorderStrong: 'rgba(196, 150, 26, 0.5)',
+  sepiaBorderBold: 'rgba(196, 150, 26, 0.8)',
   bloodFaint: 'rgba(107, 26, 10, 0.3)',
-
+  parchmentBright: '#F8F2E4',
+  surface: '#14120D',
   // ── Semantic ──
   validation: '#5B8C3E', // Archive-approved green — form validation only
+  errorBackground: 'rgba(139,26,26,0.1)',
+  errorBorder: 'rgba(139,26,26,0.5)',
 } as const;
 
 export const fonts = {
@@ -133,4 +138,24 @@ export const typography = {
   caption: { fontSize: 10, lineHeight: 15, fontFamily: fonts.body },
   micro: { fontSize: 8, lineHeight: 12, fontFamily: fonts.ui, letterSpacing: 2 },
   label: { fontSize: 9, lineHeight: 12, fontFamily: fonts.uiMedium, letterSpacing: 3, textTransform: 'uppercase' as const },
+} as const;
+
+export const metrics = {
+  headerHeight: 64,
+  bottomNavHeight: 80,
+  screenWidth: 0,
+  backdropHeightRatio: 0.65,
+} as const;
+
+export const physics = {
+  springStiff: { damping: 20, stiffness: 200, mass: 1 },
+  springBouncy: { damping: 10, stiffness: 100, mass: 1 },
+  haptics: { heavyTriggerThreshold: -80, resetThreshold: -20 },
+  spooler: {
+    rotInputMax: -120,
+    rotOutputMax: 360,
+    scaleInputMax: -80,
+    opacityInputRange: [-30, -70] as const,
+    translateY: 100
+  }
 } as const;

@@ -1,0 +1,13 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": ["./*"]
+    },
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["__tests__/integration/helpers.ts", "src/stores/auth.ts", "src/stores/followStore.ts"],
+  "exclude": []
+}

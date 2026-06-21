@@ -1,9 +1,26 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Linking } from 'react-native';
 import { Image } from 'expo-image';
 import { Tv } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { tmdb } from '@/src/lib/tmdb';
+
+const getDeviceRegion = () => {
+  try {
+    const locale = Intl.DateTimeFormat().resolvedOptions().locale || '';
+    const parts = locale.split('-');
+    if (parts.length > 1) {
+      const regionPart = parts[1];
+      if (/^[A-Za-z]{2}$/.test(regionPart)) {
+        return regionPart.toUpperCase();
+      }
+    }
+    return 'US';
+  } catch {
+    return 'US';
+  }
+};
 
 interface Provider {
   provider_id: number;
@@ -19,15 +36,21 @@ interface CountryProviders {
 }
 
 const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: Provider, providerLink?: string }) {
-  const handlePress = React.useCallback(() => {
-    if (providerLink) Linking.openURL(providerLink);
+  const handlePress = React.useCallback(async () => {
+    if (providerLink) {
+      try {
+        await Linking.openURL(providerLink);
+      } catch (e) {
+        console.warn('Failed to open Watch Provider link', e);
+      }
+    }
   }, [providerLink]);
 
   return (
     <PressableScale onPress={handlePress} haptic="light" hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
       {p.logo_path ? (
         <Image
-          source={{ uri: `https://image.tmdb.org/t/p/original${p.logo_path}` }}
+          source={{ uri: tmdb.logo(p.logo_path) }}
           style={s.logo}
           contentFit="cover"
           cachePolicy="memory-disk"
@@ -36,7 +59,7 @@ const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: 
         />
       ) : (
         <View style={s.logoFallback}>
-          <Text style={s.logoFallbackText} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>{p.provider_name}</Text>
+          <Text style={s.logoFallbackText} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.5}>{p.provider_name}</Text>
         </View>
       )}
     </PressableScale>
@@ -44,15 +67,27 @@ const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: 
 });
 
 export const WatchProviders = React.memo(function WatchProviders({ providers }: { providers: Record<string, CountryProviders> | null }) {
-  const countryData = providers ? (providers['US'] ?? providers[Object.keys(providers)[0]]) : null;
+  const region = useMemo(() => getDeviceRegion(), []);
+  const countryData = useMemo(() => {
+    if (!providers) return null;
+    const keys = Object.keys(providers);
+    if (keys.length === 0) return null;
+    return providers[region] ?? providers['US'] ?? providers[keys[0]] ?? null;
+  }, [providers, region]);
   const flatrate = countryData?.flatrate ?? [];
   const rent = countryData?.rent ?? [];
   const buy = countryData?.buy ?? [];
   const hasAny = flatrate.length > 0 || rent.length > 0 || buy.length > 0;
   const link = countryData?.link;
 
-  const handleViewAll = React.useCallback(() => {
-    if (link) Linking.openURL(link);
+  const handleViewAll = React.useCallback(async () => {
+    if (link) {
+      try {
+        await Linking.openURL(link);
+      } catch (e) {
+        console.warn('Failed to open View All Watch Providers link', e);
+      }
+    }
   }, [link]);
 
   return (

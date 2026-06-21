@@ -1,33 +1,37 @@
 import { StateCreator } from 'zustand';
 import { supabase } from '../../lib/supabase';
-import { useAuthStore } from '../auth';
-import { FilmState } from '../films';
-import reelToast from '../../utils/reelToast';
-import { enqueueMutation } from '../../utils/offlineQueue';
+import { InteractionService } from '../../services/InteractionService';
 import { Interaction } from '../../types';
+import { isNetworkError } from '../../utils/networkError';
+import { enqueueMutation, flushOfflineQueue } from '../../utils/offlineQueue';
+import reelToast from '../../utils/reelToast';
+import { useAuthStore } from '../auth';
 
-// ── Per-target endorsement throttle — prevents double-tap race conditions ──
-const _endorseThrottles = new Map<string, number>();
-const ENDORSE_COOLDOWN = 500; // 500ms between toggles on the same target
-function isEndorseThrottled(targetId: string): boolean {
-    const last = _endorseThrottles.get(targetId);
-    const now = Date.now();
-    if (last && now - last < ENDORSE_COOLDOWN) return true;
-    _endorseThrottles.set(targetId, now);
-    // L-09 AUDIT FIX: Batch-prune oldest 50 entries to prevent linear growth
-    if (_endorseThrottles.size > 200) {
-        const keys = Array.from(_endorseThrottles.keys());
-        for (let i = 0; i < 50 && i < keys.length; i++) {
-            _endorseThrottles.delete(keys[i]);
+// ── Transient Module-Scoped Mutex Queue — guarantees FIFO execution & zero memory leaks ──
+const _endorseMutexes = new Map<string, Promise<void>>();
+
+async function runWithMutex(targetId: string, task: () => Promise<void>): Promise<void> {
+    const previous = _endorseMutexes.get(targetId) || Promise.resolve();
+    
+    // Chain the new task to run after the previous one finishes (regardless of success/fail)
+    const current = previous.then(task, task);
+    _endorseMutexes.set(targetId, current);
+    
+    // Active Garbage Collection: remove the promise from the map once it resolves,
+    // ONLY if it's still the latest promise for this target.
+    current.finally(() => {
+        if (_endorseMutexes.get(targetId) === current) {
+            _endorseMutexes.delete(targetId);
         }
-    }
-    return false;
+    });
+    
+    return current;
 }
 
 export interface InteractionSlice {
     interactions: Interaction[];
-    _endorsedIndex: Record<string, true>;
-    _listEndorsedIndex: Record<string, true>;
+    _endorsedIndex: Record<string, Interaction>;
+    _listEndorsedIndex: Record<string, Interaction>;
 
     toggleEndorse: (targetId: string) => Promise<void>;
     hasEndorsed: (targetId: string) => boolean;
@@ -38,69 +42,79 @@ export interface InteractionSlice {
     fetchListEndorsements: () => Promise<void>;
 }
 
-export const createInteractionSlice: StateCreator<FilmState, [], [], InteractionSlice> = (set, get) => ({
+export const createInteractionSlice: StateCreator<InteractionSlice, [], [], InteractionSlice> = (set, get) => ({
     interactions: [],
     _endorsedIndex: {},
     _listEndorsedIndex: {},
 
     toggleEndorse: async (targetId) => {
-        const user = useAuthStore.getState().user;
-        if (!user) return;
-        if (isEndorseThrottled(`endorse:${targetId}`)) return; // Prevent double-tap race
-        const prevInteractions = get().interactions;
-        const exists = prevInteractions.find((i) => i.targetId === targetId && i.type === 'endorse');
+        return runWithMutex(`endorse:${targetId}`, async () => {
+            const user = useAuthStore.getState().user;
+            if (!user) return;
+            const exists = get()._endorsedIndex[targetId];
 
-        if (exists) {
-            const current = get().interactions;
-            const next = current.filter((i: Interaction) => !(i.targetId === targetId && i.type === 'endorse'));
-            const idx: Record<string, true> = {};
-            next.forEach((i: Interaction) => { if (i.type === 'endorse') idx[i.targetId] = true; });
-            set({ interactions: next, _endorsedIndex: idx });
-        } else {
-            const current = get().interactions;
-            const next: Interaction[] = [...current, { type: 'endorse' as const, targetId, timestamp: new Date().toISOString() }];
-            set({ interactions: next, _endorsedIndex: { ...get()._endorsedIndex, [targetId]: true as const } });
-        }
-
-        try {
             if (exists) {
-                const { error } = await supabase.from('interactions').delete()
-                    .eq('user_id', user.id).eq('target_log_id', targetId).eq('type', 'endorse_log');
-                if (error) throw error;
+                const current = get().interactions;
+                const next = current.filter((i: Interaction) => !(i.targetId === targetId && i.type === 'endorse'));
+                const idx: Record<string, Interaction> = { ...get()._endorsedIndex };
+                delete idx[targetId];
+                set({ interactions: next, _endorsedIndex: idx });
             } else {
-                const { error } = await supabase.from('interactions_queue_buffer').insert([
-                    { user_id: user.id, target_log_id: targetId, type: 'endorse_log' }
-                ]);
-                if (error && !error.message?.includes('duplicate')) throw error;
+                const current = get().interactions;
+                const newInteraction: Interaction = { type: 'endorse' as const, targetId, timestamp: new Date().toISOString() };
+                const next: Interaction[] = [...current, newInteraction];
+                set({ interactions: next, _endorsedIndex: { ...get()._endorsedIndex, [targetId]: newInteraction } });
             }
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : '';
-            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
-                // C-03 AUDIT FIX: Queue BOTH add and remove for offline sync
+
+            try {
                 if (exists) {
-                    enqueueMutation({ type: 'remove_endorsement', payload: { user_id: user.id, target_log_id: targetId } });
-                } else {
-                    enqueueMutation({ type: 'endorse_log', payload: { user_id: user.id, target_log_id: targetId } });
-                }
-            } else {
-                if (exists) {
-                    set((state) => {
-                        const next = [...state.interactions, exists];
-                        const idx: Record<string, true> = {};
-                        next.forEach((i: Interaction) => { if (i.type === 'endorse') idx[i.targetId] = true; });
-                        return { interactions: next, _endorsedIndex: idx };
+                    await InteractionService.removeEndorsement({
+                        user_id: user.id,
+                        type: 'endorse_log',
+                        target_log_id: targetId,
                     });
+                    try { require('react-native').AccessibilityInfo.announceForAccessibility('Certification removed'); } catch { /* test env */ }
                 } else {
-                    set((state) => {
-                        const next = state.interactions.filter((i) => !(i.targetId === targetId && i.type === 'endorse'));
-                        const idx: Record<string, true> = {};
-                        next.forEach((i: Interaction) => { if (i.type === 'endorse') idx[i.targetId] = true; });
-                        return { interactions: next, _endorsedIndex: idx };
+                    await InteractionService.addEndorsement({
+                        user_id: user.id,
+                        type: 'endorse_log',
+                        target_log_id: targetId,
                     });
+                    try { require('react-native').AccessibilityInfo.announceForAccessibility('Entry certified'); } catch { /* test env */ }
                 }
-                reelToast.error('Endorsement failed — please try again.');
+            } catch (e: any) {
+                // Idempotent: silently succeed if the row already exists
+                if (e?.code === '23505') {
+                    return;
+                }
+                
+                if (isNetworkError(e)) {
+                    // Queue BOTH add and remove for offline sync
+                    if (exists) {
+                        enqueueMutation({ type: 'remove_endorsement', payload: { user_id: user.id, type: 'endorse_log', target_log_id: targetId } });
+                    } else {
+                        enqueueMutation({ type: 'endorse_log', payload: { user_id: user.id, type: 'endorse_log', target_log_id: targetId } });
+                    }
+                    flushOfflineQueue();
+                } else {
+                    if (exists) {
+                        set((state) => {
+                            const next = [...state.interactions, exists];
+                            return { interactions: next, _endorsedIndex: { ...state._endorsedIndex, [targetId]: exists } };
+                        });
+                    } else {
+                        set((state) => {
+                            const next = state.interactions.filter((i: Interaction) => !(i.targetId === targetId && i.type === 'endorse'));
+                            const idx: Record<string, Interaction> = { ...state._endorsedIndex };
+                            delete idx[targetId];
+                            return { interactions: next, _endorsedIndex: idx };
+                        });
+                    }
+                    reelToast.error('Failed to certify entry.');
+                    throw e; // Propagate to trigger caller rollback
+                }
             }
-        }
+        });
     },
 
     hasEndorsed: (targetId) => !!get()._endorsedIndex[targetId],
@@ -113,15 +127,16 @@ export const createInteractionSlice: StateCreator<FilmState, [], [], Interaction
             .select('target_log_id, created_at')
             .eq('user_id', user.id)
             .eq('type', 'endorse_log')
-            .limit(500); // M-03 AUDIT FIX: Reduced from 2000 — prevents massive payloads
+            .order('created_at', { ascending: false })
+            .limit(500); // Reduced from 2000 — prevents massive payloads
         if (!error && data) {
             const mapped: Interaction[] = (data ?? []).map(r => ({
                 type: 'endorse' as const,
                 targetId: r.target_log_id,
                 timestamp: r.created_at,
             }));
-            const idx: Record<string, true> = {};
-            mapped.forEach(i => { if (i.type === 'endorse') idx[i.targetId] = true; });
+            const idx: Record<string, Interaction> = {};
+            mapped.forEach(i => { if (i.type === 'endorse') idx[i.targetId] = i; });
             set((state) => ({
                 interactions: [
                     ...state.interactions.filter(i => i.type !== 'endorse'),
@@ -133,55 +148,70 @@ export const createInteractionSlice: StateCreator<FilmState, [], [], Interaction
     },
 
     toggleListEndorse: async (listId) => {
-        const user = useAuthStore.getState().user;
-        if (!user) return;
-        if (isEndorseThrottled(`list:${listId}`)) return; // Prevent double-tap race
-        const prev = get().interactions;
-        const exists = prev.find((i) => i.targetId === listId && i.type === 'endorse_list');
+        return runWithMutex(`list:${listId}`, async () => {
+            const user = useAuthStore.getState().user;
+            if (!user) return;
+            const exists = get()._listEndorsedIndex[listId];
 
-        if (exists) {
-            const next = prev.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'));
-            const idx: Record<string, true> = {};
-            next.forEach((i) => { if (i.type === 'endorse_list') idx[i.targetId] = true; });
-            set({ interactions: next, _listEndorsedIndex: idx });
-        } else {
-            const next = [...prev, { type: 'endorse_list', targetId: listId, timestamp: new Date().toISOString() }];
-            set({ interactions: next as Interaction[], _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: true } });
-        }
-
-        try {
             if (exists) {
-                const { error } = await supabase.from('interactions').delete()
-                    .eq('user_id', user.id).eq('target_list_id', listId).eq('type', 'endorse_list');
-                if (error) throw error;
+                const next = get().interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'));
+                const idx: Record<string, Interaction> = { ...get()._listEndorsedIndex };
+                delete idx[listId];
+                set({ interactions: next, _listEndorsedIndex: idx });
             } else {
-                const { error } = await supabase.from('interactions_queue_buffer').insert([
-                    { user_id: user.id, target_list_id: listId, type: 'endorse_list' }
-                ]);
-                if (error && !error.message?.includes('duplicate')) throw error;
+                const newInteraction: Interaction = { type: 'endorse_list', targetId: listId, timestamp: new Date().toISOString() };
+                const next = [...get().interactions, newInteraction];
+                set({ interactions: next, _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: newInteraction } });
             }
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : '';
-            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
-                // C-03 AUDIT FIX: Queue BOTH add and remove for offline sync
+
+            try {
                 if (exists) {
-                    enqueueMutation({ type: 'remove_endorsement', payload: { user_id: user.id, target_list_id: listId, type: 'endorse_list' } });
+                    await InteractionService.removeEndorsement({
+                        user_id: user.id,
+                        type: 'endorse_list',
+                        target_list_id: listId,
+                    });
                 } else {
-                    enqueueMutation({ type: 'endorse_list', payload: { user_id: user.id, target_list_id: listId } });
+                    await InteractionService.addEndorsement({
+                        user_id: user.id,
+                        type: 'endorse_list',
+                        target_list_id: listId,
+                    });
                 }
-            } else {
-                if (exists) {
-                    const next = [...get().interactions, exists];
-                    set({ interactions: next, _listEndorsedIndex: { ...get()._listEndorsedIndex, [listId]: true } });
+            } catch (e: any) {
+                // Idempotent: silently succeed if the row already exists
+                if (e?.code === '23505') {
+                    return;
+                }
+                
+                if (isNetworkError(e)) {
+                    // Queue BOTH add and remove for offline sync
+                    if (exists) {
+                        enqueueMutation({ type: 'remove_endorsement', payload: { user_id: user.id, target_list_id: listId, type: 'endorse_list' } });
+                    } else {
+                        enqueueMutation({ type: 'endorse_list', payload: { user_id: user.id, type: 'endorse_list', target_list_id: listId } });
+                    }
+                    flushOfflineQueue();
                 } else {
-                    const next = get().interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'));
-                    const idx: Record<string, true> = {};
-                    next.forEach((i) => { if (i.type === 'endorse_list') idx[i.targetId] = true; });
-                    set({ interactions: next, _listEndorsedIndex: idx });
+                    // FIX 7: Race Condition in Rollback fix
+                    if (exists) {
+                        set((state) => {
+                            const next = [...state.interactions, exists];
+                            return { interactions: next, _listEndorsedIndex: { ...state._listEndorsedIndex, [listId]: exists } };
+                        });
+                    } else {
+                        set((state) => {
+                            const next = state.interactions.filter((i) => !(i.targetId === listId && i.type === 'endorse_list'));
+                            const idx = { ...state._listEndorsedIndex };
+                            delete idx[listId];
+                            return { interactions: next, _listEndorsedIndex: idx };
+                        });
+                    }
+                    reelToast.error('Failed to certify list.');
+                    throw e; // Propagate to trigger caller rollback
                 }
-                reelToast.error('Failed to certify list.');
             }
-        }
+        });
     },
 
     hasListEndorsed: (listId) => !!get()._listEndorsedIndex[listId],
@@ -194,7 +224,8 @@ export const createInteractionSlice: StateCreator<FilmState, [], [], Interaction
             .select('target_list_id, created_at')
             .eq('user_id', user.id)
             .eq('type', 'endorse_list')
-            .limit(500); // M-03 AUDIT FIX: Reduced from 2000
+            .order('created_at', { ascending: false })
+            .limit(500); // Reduced from 2000
         if (!error && data) {
             const newListEndorsements = (data ?? []).map(r => ({
                 type: 'endorse_list' as const,
@@ -202,8 +233,8 @@ export const createInteractionSlice: StateCreator<FilmState, [], [], Interaction
                 timestamp: r.created_at,
             }));
             
-            const idx: Record<string, true> = {};
-            newListEndorsements.forEach(i => { idx[i.targetId] = true; });
+            const idx: Record<string, Interaction> = {};
+            newListEndorsements.forEach(i => { idx[i.targetId] = i; });
 
             set((state) => ({
                 interactions: [

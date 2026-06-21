@@ -1,15 +1,15 @@
 /**
  * ShareToLoungeModal — Share films/logs to lounge rooms.
  */
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import Animated, { FadeIn } from 'react-native-reanimated';
 import PressableScale from '@/src/components/PressableScale';
-import { colors, fonts } from '@/src/theme/theme';
-import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
+import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
+import { colors, fonts } from '@/src/theme/theme';
+
 import reelToast from '@/src/utils/reelToast';
 
 interface ShareToLoungeProps {
@@ -18,69 +18,136 @@ interface ShareToLoungeProps {
     filmTitle?: string;
     filmId?: string | number;
     posterPath?: string | null;
+    logId?: string;
+    ownerUsername?: string;
+    listId?: string;
+    listTitle?: string;
+    listFilmCount?: number;
+    listCurator?: string;
+    listTopPosters?: string[];
 }
 
 interface LoungeMemberRow {
     lounge_id: string;
-    lounges: { id: string; name: string } | null;
+    lounges: LoungeRoom | null;
 }
 
-export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId }: ShareToLoungeProps) {
+const LoungeItem = React.memo(({ item, isSelected, onSelect }: { item: LoungeRoom, isSelected: boolean, onSelect: (id: string) => void }) => (
+    <PressableScale
+        style={[s.loungeItem, isSelected && s.loungeActive]}
+        onPress={() => onSelect(item.id)}
+        disabled={isSelected}
+        haptic="selection"
+        pressedScale={0.98}
+    >
+        <Text style={[s.loungeName, isSelected && s.loungeNameActive]}>
+            {item.name}
+        </Text>
+    </PressableScale>
+));
+LoungeItem.displayName = 'LoungeItem';
+
+export default function ShareToLoungeModal({ 
+    visible, onClose, filmTitle, filmId, posterPath, logId, ownerUsername,
+    listId, listTitle, listFilmCount, listCurator, listTopPosters 
+}: ShareToLoungeProps) {
     const { user } = useAuthStore();
-    const [lounges, setLounges] = useState<{ id: string; name: string }[]>([]);
-    const [loading, setLoading] = useState(true);
+    const allLounges = useLoungeStore(s => s.lounges);
+    const isFetching = useLoungeStore(s => s.loading);
+    const lounges = allLounges.filter(l => l.is_member || l.unread_count !== undefined);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
     const [selectedLounge, setSelectedLounge] = useState<string | null>(null);
+    const [shouldRender, setShouldRender] = useState(visible);
+
+    // FIX 1: Delayed Unmount for Android OOM safety
+    useEffect(() => {
+        if (visible) {
+            setShouldRender(true);
+        } else {
+            const timer = setTimeout(() => setShouldRender(false), 350);
+            return () => clearTimeout(timer);
+        }
+    }, [visible]);
+
+    // FIX 3: View Recycling Input Bleed fix
+    useEffect(() => {
+        setMessage('');
+        setSelectedLounge(null);
+        setSending(false);
+    }, [filmId, logId, listId]);
 
     useEffect(() => {
         if (!visible || !user) return;
-        setLoading(true);
-        (async () => {
-            const { data } = await supabase
-                .from('lounge_members')
-                .select('lounge_id, lounges(id, name)')
-                .eq('user_id', user.id);
-            setLounges((data as unknown as LoungeMemberRow[] ?? []).map(d => d.lounges).filter((l): l is { id: string; name: string } => l !== null));
-            setLoading(false);
-        })();
+        // Prevent UI blocking. Fetch silently if we already have lounges.
+        useLoungeStore.getState().fetchLounges();
     }, [visible, user]);
 
     const handleSend = async () => {
         if (!selectedLounge || !user) return;
         setSending(true);
 
-        try {
-            const content = message.trim()
-                ? `🎬 **${filmTitle}**\n${message}`
-                : `🎬 Check out **${filmTitle}** — just shared from my archive.`;
+        let shareType: 'film_share' | 'log_share' | 'list_share' = 'film_share';
+        if (listId) shareType = 'list_share';
+        else if (logId) shareType = 'log_share';
 
-            // FIX #5: Use top-level columns matching the lounge store schema
-            // (was using nested `metadata` JSON that no renderer reads)
-            await supabase.from('lounge_messages').insert({
-                lounge_id: selectedLounge,
-                user_id: user.id,
-                content,
-                type: 'film_share',
+        let metadata: any = {};
+        if (shareType === 'log_share' && logId) {
+             metadata = { log_id: logId, owner_username: ownerUsername };
+        }
+
+        let payload: any = {};
+        if (shareType === 'list_share') {
+            payload = {
+                listId: listId,
+                title: listTitle,
+                filmCount: listFilmCount,
+                curator: listCurator,
+                topPosters: listTopPosters || []
+            };
+        } else {
+            payload = {
                 film_id: filmId ? Number(filmId) : null,
                 film_title: filmTitle ?? null,
                 film_poster: posterPath ?? null,
-            });
-        } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : 'Signal failed to transmit. Try again.';
-            reelToast.error(msg);
-            return; // Don't close modal on error
-        } finally {
-            setSending(false);
+                metadata
+            };
         }
 
+        const content = message.trim() || '';
+
+        // Fire and forget
+        useLoungeStore.getState().sendMessage(
+            selectedLounge,
+            content,
+            shareType,
+            payload
+        ).catch((e: unknown) => {
+            const msg = e instanceof Error ? e.message : 'Signal failed to transmit. Try again.';
+            reelToast.error(msg);
+        });
+
         onClose();
-        setMessage(''); setSelectedLounge(null);
+        // State wipe is deferred to unmount by the useEffect
     };
+
+    const handleSelectLounge = useCallback((id: string) => {
+        setSelectedLounge(id);
+    }, []);
+
+    const renderLoungeItem = useCallback(({ item, extraData: selectedId }: { item: LoungeRoom, extraData: any }) => (
+        <LoungeItem 
+            item={item} 
+            isSelected={selectedId === item.id} 
+            onSelect={handleSelectLounge} 
+        />
+    ), [handleSelectLounge]);
+
+    if (!shouldRender) return null;
 
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View style={s.overlay}>
+            <View style={s.overlay} accessibilityViewIsModal={true}>
                 <View style={s.card}>
                     <View style={s.header}>
                         <Text style={s.title}>Share to Lounge</Text>
@@ -89,9 +156,13 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
                         </PressableScale>
                     </View>
 
-                    <Text style={s.filmLabel}>SHARING: {filmTitle?.toUpperCase()}</Text>
+                    {listId ? (
+                        <Text style={s.filmLabel}>SHARING STACK: {listTitle?.toUpperCase()}</Text>
+                    ) : (
+                        <Text style={s.filmLabel}>SHARING: {filmTitle?.toUpperCase()}</Text>
+                    )}
 
-                    {loading ? (
+                    {(isFetching && lounges.length === 0) ? (
                         <ActivityIndicator color={colors.sepia} style={s.loadingIndicator} />
                     ) : lounges.length === 0 ? (
                         <Text style={s.emptyText}>You haven&apos;t joined any lounges yet.</Text>
@@ -103,18 +174,10 @@ export default function ShareToLoungeModal({ visible, onClose, filmTitle, filmId
                                 estimatedItemSize={52}
                                 keyExtractor={(item) => item.id}
                                 style={s.loungeList}
-                                renderItem={({ item }) => (
-                                    <PressableScale
-                                        style={[s.loungeItem, selectedLounge === item.id && s.loungeActive]}
-                                        onPress={() => { setSelectedLounge(item.id); }}
-                                        haptic="selection"
-                                        pressedScale={0.98}
-                                    >
-                                        <Text style={[s.loungeName, selectedLounge === item.id && s.loungeNameActive]}>
-                                            {item.name}
-                                        </Text>
-                                    </PressableScale>
-                                )}
+                                extraData={selectedLounge}
+                                renderItem={renderLoungeItem as any}
+                                showsVerticalScrollIndicator={false}
+                                keyboardDismissMode="on-drag"
                             />
 
                             <TextInput

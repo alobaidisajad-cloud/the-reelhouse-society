@@ -1,0 +1,17 @@
+# D-08: ReelHouse Maestro E2E Test Suite
+# Critical user flows for regression testing.
+# Requires: Maestro CLI (https://maestro.mobile.dev)
+# Run: maestro test .maestro/
+
+appId: com.reelhouse.mobile
+---
+# ── Critical Path: Authentication ──
+- assertVisible: "Sign in"
+- tapOn: "Continue with Google"
+- assertVisible:
+    id: "auth-callback"
+    optional: true
+
+# After auth, should land on home feed
+- waitForAnimationToEnd
+- assertVisible: "THE REELHOUSE SOCIETY"

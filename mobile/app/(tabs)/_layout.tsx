@@ -3,10 +3,8 @@ import React from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BlurView } from 'expo-blur';
-import { BackdropFilter, Blur, Canvas, Fill } from '@shopify/react-native-skia';
 import Animated, {
   useAnimatedStyle, withSpring, useSharedValue, withTiming,
-  withRepeat, withSequence,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -16,7 +14,6 @@ import { ReelEyeIcon } from '@/src/components/ReelEyeIcon';
 import { HapticTab } from '@/src/components/HapticTab';
 import { colors } from '@/src/theme/theme';
 import { TopNavBar } from '@/src/components/layout/TopNavBar';
-import { useNotificationStore } from '@/src/stores/social';
 
 // ════════════════════════════════════════════════════════════════
 //  TAB ICON — Icons only. No labels. Pure cinema.
@@ -26,37 +23,17 @@ import { useNotificationStore } from '@/src/stores/social';
 //  - Gradient dot indicator below active icon
 //  - Center tab (Lobby) elevated with warm flicker glow
 // ════════════════════════════════════════════════════════════════
+
 function TabIcon({
   IconComponent,
   focused,
-  isCenter = false,
-  hasNotification = false,
 }: {
   IconComponent: typeof Newspaper;
   focused: boolean;
-  isCenter?: boolean;
-  hasNotification?: boolean;
 }) {
-  const scale = useSharedValue(1);
-  const iconOpacity = useSharedValue(0.35);
-  const badgeAlpha = useSharedValue(0.4);
-
-  React.useEffect(() => {
-    // P7-FIX #11: Capped breathing pulse (10 repeats) instead of static opacity
-    badgeAlpha.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: 1500 }),
-        withTiming(0.5, { duration: 1500 }),
-      ),
-      10,
-      true,
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const badgeAlphaStyle = useAnimatedStyle(() => ({
-    opacity: badgeAlpha.value,
-  }));
+  const scale = useSharedValue(focused ? 1.15 : 1);
+  const iconOpacity = useSharedValue(focused ? 1 : 0.35);
+  const dotScale = useSharedValue(focused ? 1 : 0);
 
   React.useEffect(() => {
     scale.value = withSpring(focused ? 1.15 : 1, {
@@ -65,18 +42,27 @@ function TabIcon({
       mass: 0.5,
     });
     iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: 200 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focused]);
+    dotScale.value = withSpring(focused ? 1 : 0, {
+      damping: 15,
+      stiffness: 220,
+      mass: 0.5,
+    });
+  }, [focused, scale, iconOpacity, dotScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: iconOpacity.value,
   }));
 
+  const dotStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: dotScale.value }],
+    opacity: dotScale.value,
+  }));
+
   const iconColor = focused
-    ? (isCenter ? colors.flicker : colors.sepia)
+    ? colors.sepia
     : colors.bone;
-  const iconSize = isCenter ? 26 : 22;
+  const iconSize = 22;
   const strokeW = focused ? 2 : 1.5;
 
   return (
@@ -89,30 +75,22 @@ function TabIcon({
         />
       </Animated.View>
 
-      {/* Nitrate Noir Breathing Ember Notification Badge */}
-      {hasNotification && !focused && (
-        <Animated.View style={[s.badgeDot, badgeAlphaStyle]} pointerEvents="none">
-          <View style={s.badgeDotInner} />
-        </Animated.View>
-      )}
-
       {/* Active indicator — tiny gradient dot */}
       <View style={s.indicatorSlot}>
-        {focused && (
-          <View style={[
-            s.indicatorDot,
-            { backgroundColor: isCenter ? colors.flicker : colors.sepia },
-            isCenter && s.centerGlow,
-          ]} />
-        )}
+        <Animated.View style={[
+          s.indicatorDot,
+          { backgroundColor: colors.sepia },
+          dotStyle
+        ]} />
       </View>
     </View>
   );
 }
 
 function LobbyTabIcon({ focused }: { focused: boolean }) {
-  const scale = useSharedValue(1);
-  const iconOpacity = useSharedValue(0.35);
+  const scale = useSharedValue(focused ? 1.15 : 1);
+  const iconOpacity = useSharedValue(focused ? 1 : 0.35);
+  const dotScale = useSharedValue(focused ? 1 : 0);
 
   React.useEffect(() => {
     scale.value = withSpring(focused ? 1.15 : 1, {
@@ -121,12 +99,21 @@ function LobbyTabIcon({ focused }: { focused: boolean }) {
       mass: 0.5,
     });
     iconOpacity.value = withTiming(focused ? 1 : 0.35, { duration: 200 });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [focused]);
+    dotScale.value = withSpring(focused ? 1 : 0, {
+      damping: 15,
+      stiffness: 220,
+      mass: 0.5,
+    });
+  }, [focused, scale, iconOpacity, dotScale]);
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scale.value }],
     opacity: iconOpacity.value,
+  }));
+
+  const dotStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: dotScale.value }],
+    opacity: dotScale.value,
   }));
 
   const iconColor = focused ? colors.flicker : colors.bone;
@@ -140,13 +127,12 @@ function LobbyTabIcon({ focused }: { focused: boolean }) {
         />
       </Animated.View>
       <View style={s.indicatorSlot}>
-        {focused && (
-          <View style={[
-            s.indicatorDot,
-            { backgroundColor: colors.flicker },
-            s.centerGlow,
-          ]} />
-        )}
+        <Animated.View style={[
+          s.indicatorDot,
+          { backgroundColor: colors.flicker },
+          s.centerGlow,
+          dotStyle
+        ]} />
       </View>
     </View>
   );
@@ -155,37 +141,21 @@ function LobbyTabIcon({ focused }: { focused: boolean }) {
 // ════════════════════════════════════════════════════════════════
 //  TAB BAR BACKGROUND — Frosted ink glass
 // ════════════════════════════════════════════════════════════════
-function TabBarBackground() {
-  if (Platform.OS === 'android') {
-    return (
-      <View style={StyleSheet.absoluteFill}>
-        {/* Audit Fix #5: Premium Skia Blur for Android */}
-        <Canvas style={StyleSheet.absoluteFill}>
-          <BackdropFilter filter={<Blur blur={25} />}>
-            <Fill color="rgba(8, 6, 4, 0.65)" />
-          </BackdropFilter>
-        </Canvas>
-        <LinearGradient
-          colors={['transparent', 'rgba(196,150,26,0.15)', 'transparent']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={s.topBorder}
-        />
-      </View>
-    );
-  }
+const TAB_BAR_BORDER_COLORS = ['rgba(196,150,26,0)', 'rgba(196,150,26,0.1)', 'rgba(196,150,26,0)'] as const;
 
+function TabBarBackground() {
   return (
-    <View style={StyleSheet.absoluteFill}>
+    <View style={StyleSheet.absoluteFill} pointerEvents="none">
       <BlurView
         intensity={65}
         tint="dark"
+        experimentalBlurMethod="dimezisBlurView"
         style={StyleSheet.absoluteFill}
       />
       <View style={[StyleSheet.absoluteFill, s.tabBarTint]} />
       {/* Sepia gradient border at top */}
       <LinearGradient
-        colors={['transparent', 'rgba(196,150,26,0.1)', 'transparent']}
+        colors={TAB_BAR_BORDER_COLORS}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 0 }}
         style={s.topBorder}
@@ -194,23 +164,31 @@ function TabBarBackground() {
   );
 }
 
+const renderHeader = () => <TopNavBar />;
+const renderTabBarBackground = () => <TabBarBackground />;
+const renderDispatchIcon = ({ focused }: { focused: boolean }) => <TabIcon IconComponent={Newspaper} focused={focused} />;
+const renderReelsIcon = ({ focused }: { focused: boolean }) => <TabIcon IconComponent={Film} focused={focused} />;
+const renderLobbyIcon = ({ focused }: { focused: boolean }) => <LobbyTabIcon focused={focused} />;
+const renderDarkroomIcon = ({ focused }: { focused: boolean }) => <TabIcon IconComponent={Clapperboard} focused={focused} />;
+const renderProfileIcon = ({ focused }: { focused: boolean }) => <TabIcon IconComponent={User} focused={focused} />;
+
 // ════════════════════════════════════════════════════════════════
 //  TAB LAYOUT
 //  Dispatch • The Reel • LOBBY • Darkroom • Profile
 // ════════════════════════════════════════════════════════════════
 export default function TabLayout() {
-  const unreadCount = useNotificationStore((s) => s._unreadCount);
   const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
-        header: () => <TopNavBar />,
+        header: renderHeader,
         headerTransparent: true,
         headerShown: true,
+        tabBarHideOnKeyboard: true,
         tabBarButton: HapticTab,
         tabBarStyle: [s.tabBar, { height: 56 + Math.max(insets.bottom, 10), paddingBottom: Math.max(insets.bottom, 10) }],
-        tabBarBackground: () => <TabBarBackground />,
+        tabBarBackground: renderTabBarBackground,
         tabBarShowLabel: false,
         tabBarActiveTintColor: colors.sepia,
         tabBarInactiveTintColor: colors.fog,
@@ -223,9 +201,7 @@ export default function TabLayout() {
         options={{
           title: 'Dispatch',
           tabBarAccessibilityLabel: 'Dispatch tab',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon IconComponent={Newspaper} focused={focused} hasNotification={unreadCount > 0} />
-          ),
+          tabBarIcon: renderDispatchIcon,
         }}
       />
 
@@ -234,9 +210,7 @@ export default function TabLayout() {
         options={{
           title: 'The Reel',
           tabBarAccessibilityLabel: 'The Reel tab',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon IconComponent={Film} focused={focused} />
-          ),
+          tabBarIcon: renderReelsIcon,
         }}
       />
 
@@ -245,9 +219,7 @@ export default function TabLayout() {
         options={{
           title: 'Lobby',
           tabBarAccessibilityLabel: 'Lobby tab',
-          tabBarIcon: ({ focused }) => (
-            <LobbyTabIcon focused={focused} />
-          ),
+          tabBarIcon: renderLobbyIcon,
         }}
       />
 
@@ -256,9 +228,7 @@ export default function TabLayout() {
         options={{
           title: 'Darkroom',
           tabBarAccessibilityLabel: 'Darkroom tab',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon IconComponent={Clapperboard} focused={focused} />
-          ),
+          tabBarIcon: renderDarkroomIcon,
         }}
       />
 
@@ -267,9 +237,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarAccessibilityLabel: 'Profile tab',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon IconComponent={User} focused={focused} />
-          ),
+          tabBarIcon: renderProfileIcon,
         }}
       />
 
@@ -331,30 +299,6 @@ const s = StyleSheet.create({
     width: 4,
     height: 4,
     borderRadius: 2,
-  },
-
-  badgeDot: {
-    position: 'absolute',
-    top: 6,
-    right: 12,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: colors.ink,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.bloodReel,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-
-  badgeDotInner: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.bloodReel,
   },
 
   tabBarTint: {

@@ -80,6 +80,23 @@ export function captureError(error: unknown, context?: Record<string, unknown>) 
 }
 
 /**
+ * Capture a non-fatal warning for production observability.
+ * Uses Sentry.captureMessage at 'warning' severity — does NOT trigger
+ * error-level alerts but remains searchable in the Sentry dashboard.
+ *
+ * Enables logger.warn() to forward schema validation
+ * mismatches and non-critical failures to Sentry in production.
+ */
+export function captureWarning(message: string, context?: Record<string, unknown>) {
+  if (!SENTRY_DSN) return;
+  Sentry.withScope((scope) => {
+    scope.setLevel('warning');
+    if (context) scope.setExtras(context);
+    Sentry.captureMessage(message);
+  });
+}
+
+/**
  * Add a breadcrumb for debugging crash context.
  */
 export function addBreadcrumb(message: string, category: string = 'navigation') {

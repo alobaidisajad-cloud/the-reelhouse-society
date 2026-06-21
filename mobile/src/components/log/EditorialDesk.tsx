@@ -19,9 +19,21 @@ interface Props {
     availableBackdrops: { file_path: string }[];
 }
 
-export default function EditorialDesk({
+const backdropKeyExtractor = (p: { file_path: string }) => p.file_path;
+
+export default React.memo(function EditorialDesk({
     dropCap, setDropCap, pullQuote, setPullQuote, editorialHeader, setEditorialHeader, availableBackdrops
 }: Props) {
+    const renderBackdropItem = React.useCallback(({ item: p }: { item: { file_path: string } }) => p.file_path === '__none__' ? (
+        <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96}>
+            <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
+        </PressableScale>
+    ) : (
+        <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96}>
+            <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
+        </PressableScale>
+    ), [editorialHeader, setEditorialHeader]);
+
     return (
         <View style={st.editDesk}>
             <Sparkles size={10} color={colors.sepia} strokeWidth={1.5} />
@@ -43,24 +55,18 @@ export default function EditorialDesk({
             <View>
                 <Text style={st.editLabel}>ARTICLE HEADER (STILL)</Text>
                 {availableBackdrops.length > 0 ? (
-                    <FlashList horizontal data={[{ file_path: '__none__' }, ...availableBackdrops]} showsHorizontalScrollIndicator={false} keyExtractor={p => p.file_path} contentContainerStyle={st.flatListGap}
+                    <FlashList horizontal data={[{ file_path: '__none__' }, ...availableBackdrops]} showsHorizontalScrollIndicator={false} 
+                        keyExtractor={backdropKeyExtractor} 
+                        contentContainerStyle={st.flatListGap}
                         estimatedItemSize={88}
                         ListFooterComponent={<View style={{ width: 16 }} />}
-                        renderItem={({ item: p }) => p.file_path === '__none__' ? (
-                            <PressableScale onPress={() => { setEditorialHeader(null); }} style={[st.stillThumb, editorialHeader === null && st.stillActive]} haptic="selection" pressedScale={0.96}>
-                                <Text style={[st.stillNone, editorialHeader === null && st.stillNoneActive]}>NONE</Text>
-                            </PressableScale>
-                        ) : (
-                            <PressableScale onPress={() => { setEditorialHeader(p.file_path); }} haptic="selection" pressedScale={0.96}>
-                                <Image source={{ uri: tmdb.backdrop(p.file_path, 'w300') }} style={[st.stillImg, editorialHeader === p.file_path && st.stillImgActive, editorialHeader && editorialHeader !== p.file_path && st.stillImgFaded]} contentFit="cover" cachePolicy="memory-disk" />
-                            </PressableScale>
-                        )}
+                        renderItem={renderBackdropItem}
                     />
                 ) : <Text style={st.noData}>No stills found.</Text>}
             </View>
         </View>
     );
-}
+});
 
 const st = StyleSheet.create({
     editDesk: { padding: 16, borderWidth: 1, borderColor: colors.sepia, borderRadius: 6, backgroundColor: 'rgba(196,150,26,0.05)', gap: 16, marginBottom: 20 },

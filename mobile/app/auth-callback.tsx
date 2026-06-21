@@ -4,10 +4,13 @@ import Animated, { FadeIn, FadeInDown, ReduceMotion } from 'react-native-reanima
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
+import { hydrateFollowing } from '@/src/stores/domain/socialSlice';
 import { storage } from '@/src/stores/mmkv-storage';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
-import type { EmailOtpType } from '@supabase/supabase-js';
+import type { EmailOtpType, Session } from '@supabase/supabase-js';
+import { AuthService } from '@/src/services/AuthService';
+import * as Linking from 'expo-linking';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -16,83 +19,97 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 // URL: reelhouse://auth/callback?token_hash=xxx&type=signup|recovery
 export default function AuthCallbackScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ token_hash?: string; type?: string }>();
+  const params = useLocalSearchParams<{ token_hash?: string; type?: string; url?: string; code?: string }>();
   const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying');
   const [errorMsg, setErrorMsg] = useState('');
+  
+  // Extract type from params to use in rescue UI
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const flowType = params.type || (params.url ? Linking.parse(params.url).queryParams?.type as string : undefined);
 
   useEffect(() => {
     handleCallback();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  async function handleSuccessfulVerification(session: Session, type: string) {
+    if (type === 'recovery') {
+      setStatus('success');
+      setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/reset-password'); }), 1500);
+      return;
+    }
+
+    // The auth session itself is already valid at this point (verifyOtp/
+    // exchangeCodeForSession succeeded). Don't let a slow `profiles` row
+    // (e.g. a delayed DB trigger) discard it — sign the user in immediately
+    // with session-only data, matching the pattern in stores/auth.ts's
+    // login(), and enrich with the profile in the background.
+    const sessionOnlyUser = { ...session.user, following: [] } as unknown as import('@/src/types').User;
+    useAuthStore.setState({ user: sessionOnlyUser, isAuthenticated: true });
+    try {
+      storage.set(`ironvault_user_cache_${sessionOnlyUser.id}`, JSON.stringify(sessionOnlyUser));
+      storage.set('last_user_id', sessionOnlyUser.id);
+    } catch { /* non-critical */ }
+
+    hydrateFollowing();
+    setStatus('success');
+    setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} (router.replace as any)('/(tabs)'); }), 2000);
+
+    AuthService.getSessionProfile(session.user.id).then((profile) => {
+      if (!profile) return;
+      useAuthStore.setState((s) => {
+        const updatedUser = s.user ? { ...s.user, ...profile } : null;
+        if (updatedUser) {
+          try {
+            storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+          } catch { /* non-critical */ }
+        }
+        return { user: updatedUser };
+      });
+    }).catch(() => { /* profile enrichment is best-effort here; restoreSession will retry on next launch */ });
+  }
+
   async function handleCallback() {
     try {
+      const url = params.url;
       const tokenHash = params.token_hash;
-      const type = params.type; // 'signup' | 'recovery' | 'email_change'
-
-      if (!tokenHash || !type) {
-        // Fallback: try to get an existing session
-        const { data: sessionData } = await supabase.auth.getSession();
-        if (sessionData?.session) {
-          setStatus('success');
-          // D3-01 FIX: Clear ghost stack entries before replacing route
-          setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} router.replace('/(tabs)'); }), 2000);
-        } else {
-          throw new Error('No valid token found in this link. It may have expired.');
+      const type = params.type;
+      
+      // Attempt 1: Modern PKCE code exchange
+      if (url || params.code) {
+        const code = params.code || (url ? (Linking.parse(url).queryParams?.code as string) : undefined);
+        if (code) {
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          if (data?.session) {
+            const inferredType = (url ? Linking.parse(url).queryParams?.type as string : params.type) || 'signup';
+            await handleSuccessfulVerification(data.session, inferredType);
+            return;
+          }
         }
-        return;
       }
 
-      // Exchange the OTP token for a real session
-      const { data, error } = await supabase.auth.verifyOtp({
-        token_hash: tokenHash,
-        type: type as EmailOtpType,
-      });
-      if (error) throw error;
-
-      if (type === 'recovery') {
-        // Password recovery — redirect to reset-password screen
-        // The session is now active, so supabase.auth.updateUser will work
-        setStatus('success');
-        // D3-01 FIX: Clear ghost stack entries before replacing route
-        setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} router.replace('/reset-password'); }), 1500);
-        return;
-      }
-
-      if (data?.session) {
-        // Email verification — fetch profile and set auth state
-        let profile = null;
-        const maxAttempts = 15;
-        for (let attempt = 0; attempt < maxAttempts; attempt++) {
-          const { data: p } = await supabase
-            .from('profiles')
-            .select('id, username, role, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at')
-            .eq('id', data.session.user.id)
-            .maybeSingle();
-          if (p) { profile = p; break; }
-          const delay = Math.min(500 * Math.pow(1.5, attempt), 5000);
-          await new Promise(r => setTimeout(r, delay));
-        }
-
-        if (!profile) throw new Error('Profile synchronization timed out. Please return to login.');
-
-        const completeUser = { ...data.session.user, ...profile, following: [] } as import('@/src/types').User;
-        useAuthStore.setState({
-          user: completeUser,
-          isAuthenticated: true,
+      // Attempt 2: Legacy OTP token_hash verification
+      if (tokenHash && type) {
+        const { data, error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: type as EmailOtpType,
         });
-        // C-04 AUDIT FIX: Static import replaces dynamic require()
-        try {
-          // D1-03 FIX: Write to per-user cache key (was legacy 'ironvault_user_cache')
-          storage.set(`ironvault_user_cache_${completeUser.id}`, JSON.stringify(completeUser));
-        } catch { /* non-critical */ }
-
-        setStatus('success');
-        // D3-01 FIX: Clear ghost stack entries before replacing route
-        setTimeout(() => InteractionManager.runAfterInteractions(() => { try { router.dismissAll(); } catch {} router.replace('/(tabs)'); }), 2000);
-      } else {
-        throw new Error('Verification succeeded but no session was created.');
+        if (error) throw error;
+        if (data?.session) {
+          await handleSuccessfulVerification(data.session, type);
+          return;
+        }
       }
+
+      // Attempt 3: Implicit flow or Pre-existing session
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        await handleSuccessfulVerification(sessionData.session, type || 'recovery');
+        return;
+      }
+
+      throw new Error('No valid authentication token found. The link may have expired.');
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Verification failed. The link may have expired.';
       setErrorMsg(msg);
@@ -145,7 +162,7 @@ export default function AuthCallbackScreen() {
               {params.type === 'recovery' ? (
                 <PressableScale
                   style={s.retryBtn}
-                  onPress={() => router.replace({ pathname: '/login', params: { action: 'forgot_password' } })}
+                  onPress={() => (router.replace as any)({ pathname: '/login', params: { action: 'forgot_password' } })}
                   pressedScale={0.97}
                   haptic="medium"
                 >
@@ -154,7 +171,7 @@ export default function AuthCallbackScreen() {
               ) : params.type === 'signup' ? (
                 <PressableScale
                   style={s.retryBtn}
-                  onPress={() => router.replace({ pathname: '/login', params: { action: 'resend_signup' } })}
+                  onPress={() => (router.replace as any)({ pathname: '/login', params: { action: 'resend_signup' } })}
                   pressedScale={0.97}
                   haptic="medium"
                 >
@@ -163,7 +180,7 @@ export default function AuthCallbackScreen() {
               ) : params.type === 'email_change' ? (
                 <PressableScale
                   style={s.retryBtn}
-                  onPress={() => router.replace({ pathname: '/login', params: { action: 'resend_verification' } })}
+                  onPress={() => (router.replace as any)({ pathname: '/login', params: { action: 'resend_verification' } })}
                   pressedScale={0.97}
                   haptic="medium"
                 >
@@ -172,7 +189,7 @@ export default function AuthCallbackScreen() {
               ) : (
                 <PressableScale
                   style={s.retryBtn}
-                  onPress={() => router.replace('/login')}
+                  onPress={() => (router.replace as any)('/login')}
                   pressedScale={0.97}
                   haptic="medium"
                 >
@@ -182,7 +199,7 @@ export default function AuthCallbackScreen() {
 
               <PressableScale
                 style={s.retryBtnSecondary}
-                onPress={() => router.replace('/(tabs)')}
+                onPress={() => (router.replace as any)('/(tabs)')}
                 pressedScale={0.97}
                 haptic="light"
               >
@@ -191,7 +208,7 @@ export default function AuthCallbackScreen() {
 
               <PressableScale
                 style={s.retryBtnTertiary}
-                onPress={() => router.replace('/login')}
+                onPress={() => (router.replace as any)('/login')}
                 pressedScale={0.97}
                 haptic="light"
               >

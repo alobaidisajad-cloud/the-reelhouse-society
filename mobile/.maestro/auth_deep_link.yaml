@@ -1,0 +1,21 @@
+appId: com.divisionops.reelhouse
+---
+# Auth Deep Link Flow
+# Tests: deep link routing for auth callbacks and reset password
+
+- launchApp
+- extendedWaitUntil:
+    visible: "THE REELHOUSE SOCIETY"
+    timeout: 10000
+
+# Test that app handles a reset-password deep link gracefully
+- openLink: "reelhouse://reset-password"
+- extendedWaitUntil:
+    visible: "Password"
+    timeout: 5000
+
+# Navigate back to main screen
+- tapOn: "Cancel"
+- extendedWaitUntil:
+    visible: "THE REELHOUSE SOCIETY"
+    timeout: 5000

@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelSection } from './types';
+import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 
 
 // ══════════════════════════════════════════════════════════════
@@ -22,16 +23,16 @@ export const InterlockingGearTabs = memo(({ activeTab, onTabSwitch }: { activeTa
   const { width } = useWindowDimensions();
 
   const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateX: interpolate(position.value, [0, 1], [0, (width - 32) / 2]) }]
+    transform: [{ translateX: interpolate(position.value, [0, 1], [0, (width - 34) / 2]) }]
   }));
 
   return (
     <View style={st.tabsContainer}>
       <Animated.View style={[StyleSheet.absoluteFillObject, st.tabsActiveBg, pillStyle]} />
-      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light">
+      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('logs')} haptic="light" accessibilityLabel="Logs tab" accessibilityState={{ selected: activeTab === 'logs' }}>
         <Text style={[st.tabText, { color: activeTab === 'logs' ? '#E4DFCC' : colors.fog, opacity: activeTab === 'logs' ? 1 : 0.6 }]}>LOGS</Text>
       </PressableScale>
-      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light">
+      <PressableScale style={st.tabButton} onPress={() => onTabSwitch('stacks')} haptic="light" accessibilityLabel="Stacks tab" accessibilityState={{ selected: activeTab === 'stacks' }}>
         <Text style={[st.tabText, { color: activeTab === 'stacks' ? '#E4DFCC' : colors.fog, opacity: activeTab === 'stacks' ? 1 : 0.6 }]}>STACKS</Text>
       </PressableScale>
     </View>
@@ -79,8 +80,8 @@ export const SharedReelHeader = memo(function SharedReelHeader({
           <View style={st.liveRow}>
             <Animated.View style={[
               st.liveDot,
-              userRole === 'auteur' ? st.liveDotAuteur
-                : userRole === 'archivist' ? st.liveDotArchivist
+              isAuteurPlusTier(userRole) ? st.liveDotAuteur
+                : isArchivistPlusTier(userRole) ? st.liveDotArchivist
                 : st.liveDotDefault,
               pulseStyle
             ]} />

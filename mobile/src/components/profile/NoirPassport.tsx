@@ -12,16 +12,77 @@ interface PassportLog {
     status?: string;
 }
 
+export interface ProfileAnalyticsPayload {
+    stamps?: {
+        total_logs: number;
+        pre_1960_count: number;
+        perfect_ratings_count: number;
+        has_physical_media: boolean;
+        has_abandoned: boolean;
+        decades_logged_count: number;
+        has_rewatched: boolean;
+    };
+    dna?: any;
+    autopsy_math?: any;
+}
+
 
 const PASSPORT_STAMPS = [
     { id: 'archivist', label: 'THE ARCHIVIST', sub: '100 FILMS LOGGED', glyph: '◈', test: (logs: PassportLog[]) => logs.length >= 100 },
     { id: 'devotee', label: 'THE DEVOTEE', sub: '500 FILMS LOGGED', glyph: '✦', test: (logs: PassportLog[]) => logs.length >= 500 },
-    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs: PassportLog[]) => logs.filter((l) => l.year && parseInt(String(l.year)) < 1960).length >= 20 },
-    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs: PassportLog[]) => logs.filter((l) => l.rating === 5).length >= 10 },
-    { id: 'vault_keeper', label: 'VAULT KEEPER', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: PassportLog[]) => logs.some((l) => l.physicalMedia) },
-    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', test: (logs: PassportLog[]) => logs.some((l) => l.status === 'abandoned') },
-    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs: PassportLog[]) => new Set(logs.filter((l) => l.year).map((l) => Math.floor(parseInt(String(l.year)) / 10) * 10)).size >= 7 },
-    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↻', test: (logs: PassportLog[]) => { const seen = new Set<number>(); return logs.some((l) => { if (l.filmId && seen.has(l.filmId)) return true; if (l.filmId) seen.add(l.filmId); return false; }); } },
+    { id: 'silver_screen', label: 'SILVER SCREEN', sub: '20 FILMS PRE-1960', glyph: '†', test: (logs: PassportLog[]) => {
+        let count = 0;
+        for (const l of logs) {
+            if (!l.year) continue;
+            const y = parseInt(String(l.year), 10);
+            if (!isNaN(y) && y < 1960) {
+                if (++count >= 20) return true;
+            }
+        }
+        return false;
+    } },
+    { id: 'masterpiece', label: 'MASTERPIECE HUNTER', sub: '10 PERFECT RATINGS', glyph: '★', test: (logs: PassportLog[]) => {
+        let count = 0;
+        for (const l of logs) {
+            if (l.rating === 5) {
+                if (++count >= 10) return true;
+            }
+        }
+        return false;
+    } },
+    { id: 'vault_keeper', label: 'VAULT KEEPER', sub: 'PHYSICAL MEDIA LOGGED', glyph: '▣', test: (logs: PassportLog[]) => {
+        for (const l of logs) {
+            if (l.physicalMedia) return true;
+        }
+        return false;
+    } },
+    { id: 'honest_critic', label: 'HONEST CRITIC', sub: 'ABANDONED A FILM', glyph: '✕', test: (logs: PassportLog[]) => {
+        for (const l of logs) {
+            if (l.status === 'abandoned') return true;
+        }
+        return false;
+    } },
+    { id: 'completionist', label: 'THE COMPLETIONIST', sub: 'FILMS FROM 7 DECADES', glyph: '∞', test: (logs: PassportLog[]) => {
+        const decades = new Set<number>();
+        for (const l of logs) {
+            if (!l.year) continue;
+            const y = parseInt(String(l.year), 10);
+            if (!isNaN(y) && y >= 1880) {
+                decades.add(Math.floor(y / 10) * 10);
+                if (decades.size >= 7) return true;
+            }
+        }
+        return false;
+    } },
+    { id: 'half_life', label: 'THE RETURNER', sub: 'REWATCHED A FILM', glyph: '↻', test: (logs: PassportLog[]) => { 
+        const seen = new Set<number>(); 
+        for (const l of logs) {
+            if (!l.filmId) continue;
+            if (seen.has(l.filmId)) return true;
+            seen.add(l.filmId);
+        }
+        return false;
+    } },
 ];
 
 const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }: { stamp: { id: string; label: string; sub: string; glyph: string }; earned: boolean; index: number; size: number }) {
@@ -101,13 +162,30 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
     );
 });
 
-export const NoirPassport = memo(function NoirPassport({ logs }: { logs?: PassportLog[] }) {
+export const NoirPassport = memo(function NoirPassport({ logs, analytics }: { logs?: PassportLog[], analytics?: ProfileAnalyticsPayload | null }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const safeLogs = logs ?? [];
 
-    const earned = useMemo(() =>
-        PASSPORT_STAMPS.map(s => ({ ...s, earned: s.test(safeLogs) })),
-        [safeLogs]);
+    const earned = useMemo(() => {
+        if (analytics?.stamps) {
+            const s = analytics.stamps;
+            return PASSPORT_STAMPS.map(stamp => {
+                let isEarned = false;
+                switch (stamp.id) {
+                    case 'archivist': isEarned = s.total_logs >= 100; break;
+                    case 'devotee': isEarned = s.total_logs >= 500; break;
+                    case 'silver_screen': isEarned = s.pre_1960_count >= 20; break;
+                    case 'masterpiece': isEarned = s.perfect_ratings_count >= 10; break;
+                    case 'vault_keeper': isEarned = s.has_physical_media; break;
+                    case 'honest_critic': isEarned = s.has_abandoned; break;
+                    case 'completionist': isEarned = s.decades_logged_count >= 7; break;
+                    case 'half_life': isEarned = s.has_rewatched; break;
+                }
+                return { ...stamp, earned: isEarned };
+            });
+        }
+        return PASSPORT_STAMPS.map(s => ({ ...s, earned: s.test(safeLogs) }));
+    }, [safeLogs, analytics]);
 
     const earnedCount = earned.filter(s => s.earned).length;
 

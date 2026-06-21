@@ -1,7 +1,7 @@
 /**
  * +not-found.tsx — Deep Link Catch-All
  * ─────────────────────────────────────
- * R-02 AUDIT FIX: Handles malformed deep links (reelhouse://...)
+ * Handles malformed deep links (reelhouse://...)
  * and unmatched routes to prevent blank screens.
  * 
  * Displays a themed "Not in the Archive" screen with a
@@ -25,7 +25,7 @@ export default function NotFoundScreen() {
       </Text>
       <PressableScale
         style={s.backBtn}
-        onPress={() => router.replace('/(tabs)')}
+        onPress={() => (router.replace as any)('/(tabs)')}
         hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         haptic="selection"
         accessibilityRole="button"

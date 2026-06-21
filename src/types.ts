@@ -9,24 +9,45 @@ export interface User {
     email?: string
     bio?: string
     avatar?: string
+    /** @deprecated Use `avatar` instead — kept for Supabase column compatibility */
     avatar_url?: string
     role: 'free' | 'cinephile' | 'archivist' | 'auteur'
+    /** @deprecated Use `role` instead */
     tier?: 'free' | 'cinephile' | 'archivist' | 'auteur'
     displayName?: string
+    /** @deprecated Use `displayName` instead */
     display_name?: string
     persona?: string
     socialVisibility?: 'public' | 'members' | 'private'
+    /** @deprecated Use `socialVisibility` instead */
     social_visibility?: string
     following?: string[]
+    requested?: string[]
     followers_count?: number
     following_count?: number
     isSocialPrivate?: boolean
+    /** @deprecated Use `isSocialPrivate` instead */
     is_social_private?: boolean
     created_at?: string
     preferences?: Record<string, unknown>
     is_banned?: boolean
     ban_reason?: string
     social_links?: Record<string, string>
+}
+
+/**
+ * Normalize a raw Supabase profile into canonical camelCase properties.
+ * Apply once at the hydration boundary (login, auth state change).
+ */
+export function normalizeUser(raw: Record<string, unknown>): Partial<User> {
+    return {
+        ...raw,
+        avatar: (raw.avatar_url as string) || (raw.avatar as string) || undefined,
+        displayName: (raw.display_name as string) || (raw.displayName as string) || undefined,
+        isSocialPrivate: raw.is_social_private != null ? Boolean(raw.is_social_private) : (raw.isSocialPrivate as boolean | undefined),
+        socialVisibility: (raw.social_visibility as string) || (raw.socialVisibility as string) || undefined,
+        role: (raw.role as User['role']) || 'free',
+    } as Partial<User>
 }
 
 // ── Film Log ──
@@ -150,16 +171,26 @@ export interface TicketStub {
 export interface Dossier {
     id: string
     title: string
-    content: string
     excerpt?: string
+    fullContent?: string
+    // DB-mapped fields
+    content?: string          // Legacy alias — prefer fullContent
+    full_content?: string     // Raw DB column name
+    author?: string           // Uppercase display name
+    authorUsername?: string
+    authorId?: string
     author_id?: string
     author_name?: string
     author_avatar?: string
+    views?: number
+    certifyCount?: number
+    date?: string             // Formatted display date
     film_id?: number
     film_title?: string
     film_poster?: string | null
-    type: 'essay' | 'review' | 'list' | 'letter'
-    published: boolean
+    type?: 'essay' | 'review' | 'list' | 'letter'
+    published?: boolean
+    is_published?: boolean
     endorsements?: number
     created_at?: string
 }
@@ -170,6 +201,8 @@ export interface Programme {
     title: string
     description?: string
     films: Array<{ id: number; title?: string; poster_path?: string | null }>
+    isPublic?: boolean
+    createdAt?: string
     date?: string
     user_id?: string
     created_at?: string

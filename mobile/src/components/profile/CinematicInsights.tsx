@@ -53,8 +53,35 @@ interface Insights {
     fetchedFilms: number;
 }
 
+// Bounded LRU Cache to prevent OOM
+class LRUCache<K, V> extends Map<K, V> {
+    constructor(private maxSize: number) {
+        super();
+    }
+    set(key: K, value: V) {
+        if (this.has(key)) {
+            this.delete(key);
+        } else if (this.size >= this.maxSize) {
+            const firstKey = this.keys().next().value;
+            if (firstKey !== undefined) {
+                this.delete(firstKey);
+            }
+        }
+        return super.set(key, value);
+    }
+    get(key: K) {
+        const value = super.get(key);
+        if (value !== undefined) {
+            this.delete(key);
+            super.set(key, value);
+        }
+        return value as V;
+    }
+}
+
 // Global cache to persist TMDB details across tab unmounts, drastically reducing network payloads.
-export const GLOBAL_TMDB_CACHE = new Map<number, TMDBMovieDetail>();
+export const GLOBAL_TMDB_CACHE = new LRUCache<number, TMDBMovieDetail>(200);
+export const INFLIGHT_TMDB_REQUESTS = new Map<number, Promise<any>>();
 
 export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
     const [insights, setInsights] = useState<Insights | null>(null);
@@ -97,7 +124,16 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
                 if (cancelled) return;
                 const batch = idsToNetworkFetch.slice(i, i + BATCH_SIZE);
                 const results = await Promise.allSettled(
-                    batch.map(id => tmdb.detail(id))
+                    batch.map(id => {
+                        if (INFLIGHT_TMDB_REQUESTS.has(id)) {
+                            return INFLIGHT_TMDB_REQUESTS.get(id)!;
+                        }
+                        const promise = tmdb.detail(id).finally(() => {
+                            INFLIGHT_TMDB_REQUESTS.delete(id);
+                        });
+                        INFLIGHT_TMDB_REQUESTS.set(id, promise);
+                        return promise;
+                    })
                 );
 
                 for (let j = 0; j < results.length; j++) {
@@ -108,8 +144,7 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
                             GLOBAL_TMDB_CACHE.set(batch[j], parsed.data as any);
                             allMovies.push(parsed.data as any);
                         } else {
-                            GLOBAL_TMDB_CACHE.set(batch[j], result.value as any);
-                            allMovies.push(result.value as any);
+                            console.warn(`[CinematicInsights] Malformed TMDB payload for ID ${batch[j]}`);
                         }
                     }
                 }

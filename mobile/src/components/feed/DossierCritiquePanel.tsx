@@ -8,12 +8,16 @@ import { useAuthStore } from '@/src/stores/auth';
 import reelToast from '@/src/utils/reelToast';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { enqueueMutation, flushOfflineQueue } from '@/src/utils/offlineQueue';
+import { isNetworkError } from '@/src/utils/networkError';
+import * as Crypto from 'expo-crypto';
 
 interface DossierComment {
     id: string;
     username: string;
     body: string;
     created_at: string;
+    isOptimistic?: boolean;
 }
 
 export default function DossierCritiquePanel({ dossierId, open }: { dossierId: string; open: boolean }) {
@@ -34,73 +38,171 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
         setText(t);
     }, []);
 
-    useEffect(() => {
-        if (open && comments.length === 0) loadComments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open]);
+    const [loadedDossierId, setLoadedDossierId] = useState<string | null>(null);
+    const [fetchedDossierId, setFetchedDossierId] = useState<string | null>(null);
+    const currentDossierIdRef = React.useRef(dossierId);
+    currentDossierIdRef.current = dossierId;
 
-    const loadComments = async () => {
-        if (!dossierId) return;
+    // FIX 4: View Recycling Data Bleed & Race Condition fix
+    useEffect(() => {
+        if (dossierId !== loadedDossierId) {
+            setComments([]);
+            setText('');
+            setEditingId(null);
+            setEditBody('');
+            setLoadedDossierId(dossierId);
+            setFetchedDossierId(null);
+        }
+        
+        // Prevent zero-state database hammering
+        if (open && dossierId !== fetchedDossierId) {
+            setFetchedDossierId(dossierId);
+            loadComments(dossierId);
+        }
+     
+    }, [open, dossierId, loadedDossierId, fetchedDossierId]);
+
+    const loadComments = async (targetId: string) => {
+        if (!targetId) return;
         setLoading(true);
         const { data } = await supabase
             .from('dossier_comments')
             .select('id, username, body, created_at')
-            .eq('dossier_id', dossierId)
+            .eq('dossier_id', targetId)
             .order('created_at', { ascending: true })
             .limit(50);
-        setComments(data || []);
-        setLoading(false);
+            
+        if (currentDossierIdRef.current === targetId) {
+            setComments(prev => {
+                const serverComments = data || [];
+                // Deduplicate optimistic comments that have successfully synced
+                const optimistic = prev.filter(c => c.isOptimistic && !serverComments.some(sc => sc.username === c.username && sc.body === c.body));
+                return [...serverComments, ...optimistic];
+            });
+            setLoading(false);
+        }
     };
 
     const handleSubmit = async () => {
         if (!text.trim() || !currentUser || submitting) return;
-        setSubmitting(true);
-        const { error, data } = await supabase.from('dossier_comments').insert({
-            dossier_id: dossierId,
-            user_id: currentUser.id,
+        
+        const tempId = Crypto.randomUUID();
+        const body = text.trim();
+        const tempComment: DossierComment = {
+            id: tempId,
             username: currentUser.username,
-            body: text.trim(),
-        }).select().single();
+            body: body,
+            created_at: new Date().toISOString(),
+            isOptimistic: true,
+        };
 
-        if (!error && data) {
-            setComments(prev => [...prev, { id: data.id, username: currentUser.username, body: text.trim(), created_at: new Date().toISOString() }]);
-            setText('');
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            reelToast('Critique filed.');
-        } else {
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-            reelToast('Could not save critique.');
-        }
+        // Optimistic UI update
+        setComments(prev => [...prev, tempComment]);
+        setText('');
+        // Clear submitting instantly to unblock rapid typing
         setSubmitting(false);
+
+        try {
+            const { error, data } = await supabase.from('dossier_comments').insert({
+                dossier_id: dossierId,
+                user_id: currentUser.id,
+                username: currentUser.username,
+                body: body,
+            }).select().single();
+
+            if (error) throw error;
+            if (data) {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                setComments(prev => prev.map(c => c.id === tempId ? { id: data.id, username: currentUser.username, body: data.body, created_at: data.created_at } : c));
+                reelToast('Critique filed.');
+            }
+        } catch (err: any) {
+            if (isNetworkError(err)) {
+                enqueueMutation({
+                    type: 'add_dossier_comment',
+                    payload: {
+                        _tempId: tempId,
+                        dossier_id: dossierId,
+                        user_id: currentUser.id,
+                        username: currentUser.username,
+                        body: body,
+                    }
+                });
+                flushOfflineQueue();
+                reelToast.success('Critique queued offline.');
+            } else {
+                setComments(prev => prev.filter(c => c.id !== tempId));
+                setText(prev => prev.length > 0 ? prev : body);
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                reelToast('Could not save critique.');
+            }
+        }
     };
 
     const handleDelete = (id: string) => {
         Alert.alert('Delete Critique?', 'Are you sure you want to permanently delete this critique?', [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Delete', style: 'destructive', onPress: async () => {
-                const { error } = await supabase.from('dossier_comments').delete().eq('id', id);
-                if (!error) {
-                    setComments(prev => prev.filter(c => c.id !== id));
+                const removed = comments.find(c => c.id === id);
+                setComments(prev => prev.filter(c => c.id !== id));
+                try {
+                    const { error } = await supabase.from('dossier_comments').delete().eq('id', id).eq('user_id', currentUser!.id);
+                    if (error) throw error;
                     reelToast('Critique deleted.');
-                } else {
-                    reelToast('Could not delete critique.');
+                } catch (err: any) {
+                    if (isNetworkError(err)) {
+                        enqueueMutation({
+                            type: 'delete_dossier_comment',
+                            payload: { comment_id: id, user_id: currentUser!.id }
+                        });
+                        flushOfflineQueue();
+                        reelToast.success('Deletion queued offline.');
+                    } else {
+                        if (removed) {
+                            setComments(prev => [...prev, removed].sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+                        }
+                        reelToast('Could not delete critique.');
+                    }
                 }
             }}
         ]);
     };
 
     const handleUpdate = async (id: string) => {
-        if (!editBody.trim()) return;
+        if (!editBody.trim() || !currentUser) return;
+        const newBody = editBody.trim();
+        
+        // Optimistic update
+        const previousComments = [...comments];
+        setComments(prev => prev.map(c => c.id === id ? { ...c, body: newBody } : c));
+        setEditingId(null);
         setIsUpdating(true);
-        const { error } = await supabase.from('dossier_comments').update({ body: editBody.trim() }).eq('id', id);
-        if (!error) {
-            setComments(prev => prev.map(c => c.id === id ? { ...c, body: editBody.trim() } : c));
-            setEditingId(null);
+
+        try {
+            const { error } = await supabase.from('dossier_comments').update({ body: newBody }).eq('id', id).eq('user_id', currentUser.id);
+            if (error) throw error;
             reelToast('Critique updated.');
-        } else {
-            reelToast('Could not update critique.');
+        } catch (err: any) {
+            if (isNetworkError(err)) {
+                enqueueMutation({
+                    type: 'update_dossier_comment',
+                    payload: {
+                        id,
+                        user_id: currentUser.id,
+                        updates: { body: newBody }
+                    }
+                });
+                flushOfflineQueue();
+                reelToast.success('Update queued offline.');
+            } else {
+                // Rollback: Revert only this critique to avoid clobbering concurrent changes
+                setComments(prev => prev.map(c => c.id === id ? previousComments.find(pc => pc.id === id)! : c));
+                setEditingId(id); // FIX 5: Hard Error Edit Erasure fix
+                reelToast('Could not update critique.');
+            }
+        } finally {
+            setIsUpdating(false);
         }
-        setIsUpdating(false);
     };
 
     if (!open) return null;
@@ -116,7 +218,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
             {loading && <Text style={s.loading}>RETRIEVING CRITIQUES…</Text>}
 
             {comments.length > 3 && !showAll && (
-                <PressableScale onPress={() => router.push(`/user/${comments[0].username}` as any)} style={s.viewAllBtn} haptic="light" pressedScale={0.96}>
+                <PressableScale onPress={() => (router.push as any)(`/user/${comments[0].username}` as any)} style={s.viewAllBtn} haptic="light" pressedScale={0.96}>
                     <ChevronDown size={14} color={colors.fog} />
                     <Text style={s.viewAllText}>VIEW ALL CRITIQUES</Text>
                 </PressableScale>
@@ -125,7 +227,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
             <View style={s.commentsList}>
                 {visibleComments.map(c => (
                     <View key={c.id} style={s.commentItem}>
-                        <PressableScale onPress={() => router.push(`/user/${c.username}`)} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" pressedScale={0.97}>
+                        <PressableScale onPress={() => (router.push as any)(`/user/${c.username}`)} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" pressedScale={0.97}>
                             <Text style={s.commentUsername}>@{c.username}</Text>
                         </PressableScale>
 
@@ -137,6 +239,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                                     onChangeText={setEditBody}
                                     multiline
                                     autoFocus
+                                    maxLength={1000}
                                     keyboardAppearance="dark"
                                     accessibilityLabel="Edit critique text"
                                     selectionColor={'rgba(218,165,32,0.3)'}
@@ -159,7 +262,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
                         ) : (
                             <View style={s.commentBodyContainer}>
                                 <Text style={s.commentBody}>{c.body}</Text>
-                                {currentUser?.username === c.username && (
+                                {currentUser?.username === c.username && !c.isOptimistic && (
                                     <View style={s.userActions}>
                                         <PressableScale onPress={() => { setEditingId(c.id); setEditBody(c.body); }} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" pressedScale={0.95}>
                                             <Text style={s.actionText}>EDIT</Text>

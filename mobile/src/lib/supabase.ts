@@ -2,6 +2,7 @@ import 'react-native-url-polyfill/auto';
 import { createClient } from '@supabase/supabase-js';
 import { Platform, AppState } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
+import { logger } from '../utils/logger';
 
 const ExpoSecureStoreAdapter = {
   getItem: (key: string) => SecureStore.getItemAsync(key),
@@ -9,7 +10,7 @@ const ExpoSecureStoreAdapter = {
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 
-// S-01 AUDIT VERIFICATION: The Supabase anon key is intentionally exposed in
+// The Supabase anon key is intentionally exposed in
 // the JS bundle — this is Supabase's design. All data security is enforced by
 // Row Level Security (RLS) policies on every table. The anon key only grants
 // access to operations explicitly permitted by RLS. Auth tokens are stored in
@@ -26,17 +27,17 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-// #15 AUDIT FIX: TOKEN_REFRESH_FAILED is emitted by @supabase/auth-js >=2.64.0
+// TOKEN_REFRESH_FAILED is emitted by @supabase/auth-js >=2.64.0
 // but is not part of the public TypeScript enum. The cast is intentional.
 // As a belt-and-suspenders approach, we also handle TOKEN_REFRESHED with an
 // invalid session to catch edge cases across SDK versions.
 supabase.auth.onAuthStateChange(async (event, session) => {
     if ((event as string) === 'TOKEN_REFRESH_FAILED') {
-        supabase.auth.signOut({ scope: 'local' }).catch(() => { });
+        supabase.auth.signOut({ scope: 'local' }).catch((e) => { logger.warn('[supabase] SignOut on refresh failure error', e); });
     }
     // Fallback: if a token refresh fires but the session has no valid access token, force sign-out
     if (event === 'TOKEN_REFRESHED' && !session?.access_token) {
-        supabase.auth.signOut({ scope: 'local' }).catch(() => { });
+        supabase.auth.signOut({ scope: 'local' }).catch((e) => { logger.warn('[supabase] SignOut on invalid session error', e); });
     }
 });
 

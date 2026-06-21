@@ -127,13 +127,20 @@ export default function ModalShell({
         return () => document.removeEventListener('keydown', trapHandler)
     }, [open, trapFocus])
 
-    // ── Body scroll lock ──
+    // ── Body scroll lock (Android-safe: position:fixed preserves scroll position) ──
     useEffect(() => {
         if (!open) return
-        const prev = document.body.style.overflow
-        document.body.style.overflow = 'hidden'
+        const scrollY = window.scrollY
+        document.body.style.position = 'fixed'
+        document.body.style.top = `-${scrollY}px`
+        document.body.style.left = '0'
+        document.body.style.right = '0'
         return () => {
-            document.body.style.overflow = prev
+            document.body.style.position = ''
+            document.body.style.top = ''
+            document.body.style.left = ''
+            document.body.style.right = ''
+            window.scrollTo(0, scrollY)
         }
     }, [open])
 

@@ -24,7 +24,7 @@ export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
       withSequence(
         withTiming(0.25, { duration: 6000, easing: Easing.inOut(Easing.sin) }),
         withTiming(0.12, { duration: 6000, easing: Easing.inOut(Easing.sin) })
-      ), 20, true
+      ), -1, true
     );
     return () => cancelAnimation(pulse);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -42,13 +42,18 @@ export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
 });
 
 // Breathing skeleton for loading states
-export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton() {
-  const op = useSharedValue(0.4);
+export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton({ sharedOp }: { sharedOp?: any }) {
+  const localOp = useSharedValue(0.4);
+  const op = sharedOp || localOp;
+  
   useEffect(() => {
-    op.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), 30, true);
-    return () => cancelAnimation(op);
+    if (!sharedOp) {
+      op.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), -1, true);
+      return () => cancelAnimation(op);
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [sharedOp]);
+  
   const animStyle = useAnimatedStyle(() => ({ opacity: op.value }));
   return (
     <Animated.View style={[s.posterWrap, animStyle, { backgroundColor: 'rgba(14,11,8,0.7)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.06)' }]} />
@@ -58,43 +63,54 @@ export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton
 export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: DiscoverFilm }) {
   const router = useRouter();
   const isPerson = item.media_type === 'person';
-  const isLogged = useFilmStore(s => !isPerson && !!s._loggedIndex[item.id]);
-  const isSaved = useFilmStore(s => !isPerson && !!s._watchlistIndex[item.id]);
-  const addToWatchlist = useFilmStore(s => s.addToWatchlist);
-  const removeFromWatchlist = useFilmStore(s => s.removeFromWatchlist);
+  const isLogged = useFilmStore((s: any) => !isPerson && !!s._loggedIndex[item.id]);
+  const isSaved = useFilmStore((s: any) => !isPerson && !!s._watchlistIndex[item.id]);
+  const addToWatchlist = useFilmStore((s: any) => s.addToWatchlist);
+  const removeFromWatchlist = useFilmStore((s: any) => s.removeFromWatchlist);
   const isAuthenticated = useAuthStore(s => !!s.user);
 
   const posterPath = isPerson ? item.profile_path : item.poster_path;
-  const posterUri = posterPath ? (isPerson ? tmdb.profile(posterPath, 'w185') : tmdb.poster(posterPath)) : null;
+  const posterUri = posterPath ? (isPerson ? tmdb.profile(posterPath, 'w185') : tmdb.poster(posterPath, 'w342')) : null;
 
   const handlePress = () => {
-    router.push((isPerson ? `/person/${item.id}` : `/film/${item.id}`) as any);
+    (router.push as any)((isPerson ? `/person/${item.id}` : `/film/${item.id}`) as any);
   };
 
   const isMutatingWatchlist = useRef(false);
+  const currentItemId = useRef(item.id);
+
+  if (currentItemId.current !== item.id) {
+    currentItemId.current = item.id;
+    isMutatingWatchlist.current = false;
+  }
+
   const toggleWatchlist = async () => {
     if (!isAuthenticated) {
-      router.push('/login' as any);
+      (router.push as any)('/login' as any);
       return;
     }
     if (isMutatingWatchlist.current) return;
     isMutatingWatchlist.current = true;
+    const captureId = item.id;
     try {
       if (isSaved) {
-        await removeFromWatchlist(item.id);
+        await removeFromWatchlist(captureId);
       } else {
-        await addToWatchlist({ id: item.id, title: item.title ?? item.name, poster_path: item.poster_path, release_date: item.release_date });
+        await addToWatchlist({ id: captureId, title: item.title || item.name || 'Unknown Title', poster_path: item.poster_path, release_date: item.release_date });
       }
     } catch (e) {
       if (__DEV__) console.warn('[FilmGridCard] Watchlist mutation failed:', e);
     } finally {
-      isMutatingWatchlist.current = false;
+      if (currentItemId.current === captureId) {
+        isMutatingWatchlist.current = false;
+      }
     }
   };
 
   return (
     <View style={s.posterWrap}>
       <PressableScale
+        style={StyleSheet.absoluteFillObject}
         onPress={handlePress}
         haptic
         accessibilityRole="button"
@@ -118,19 +134,6 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
           )}
         </View>
 
-        {!isPerson && (
-          <PressableScale 
-            style={[s.quickSaveIcon, isSaved ? s.quickSaveIconActive : s.quickSaveIconInactive]} 
-            onPress={toggleWatchlist}
-            haptic="light"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            accessibilityRole="button"
-            accessibilityLabel={isSaved ? `Remove ${item.title || 'film'} from watchlist` : `Add ${item.title || 'film'} to watchlist`}
-          >
-            <Bookmark size={12} color={isSaved ? colors.ink : colors.parchment} fill={isSaved ? colors.ink : 'transparent'} />
-          </PressableScale>
-        )}
-
         {isLogged && (
           <View style={s.loggedBadge}>
             <Text style={s.loggedText}>✓</Text>
@@ -143,6 +146,19 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
           </Text>
         )}
       </PressableScale>
+
+      {!isPerson && (
+        <PressableScale 
+          style={[s.quickSaveIcon, isSaved ? s.quickSaveIconActive : s.quickSaveIconInactive]} 
+          onPress={toggleWatchlist}
+          haptic="light"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          accessibilityRole="button"
+          accessibilityLabel={isSaved ? `Remove ${item.title || 'film'} from watchlist` : `Add ${item.title || 'film'} to watchlist`}
+        >
+          <Bookmark size={12} color={isSaved ? colors.ink : colors.parchment} fill={isSaved ? colors.ink : 'transparent'} />
+        </PressableScale>
+      )}
     </View>
   );
 });
@@ -151,7 +167,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
 export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: DiscoverFilm; onPress: (item: DiscoverFilm) => void }) => {
   const isPerson = item.media_type === 'person';
   const imgPath = isPerson ? item.profile_path : item.poster_path;
-  const imgUri = imgPath ? (isPerson ? tmdb.profile(imgPath, 'w185') : tmdb.poster(imgPath)) : null;
+  const imgUri = imgPath ? (isPerson ? tmdb.profile(imgPath, 'w185') : tmdb.poster(imgPath, 'w92')) : null;
 
   return (
     <PressableScale 

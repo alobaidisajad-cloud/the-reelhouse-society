@@ -12,6 +12,7 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   Easing,
+  useReducedMotion,
 } from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { setToastListener, ToastPayload, ToastType } from '@/src/utils/reelToast';
@@ -39,13 +40,14 @@ export function ToastOverlay() {
 
   useEffect(() => {
     const unsubscribe = setToastListener((payload) => {
-      // #11 AUDIT FIX: Cap queue at 5 to prevent unbounded memory growth
+      // Cap queue at 5 to prevent unbounded memory growth
       setQueue((prev) => [...prev, payload].slice(-5));
     });
     return unsubscribe;
   }, []);
 
   const toast = queue[0];
+  const reducedMotion = useReducedMotion();
 
   useEffect(() => {
     if (!toast) return;
@@ -53,20 +55,35 @@ export function ToastOverlay() {
     // Slide in
     translateY.value = -80;
     opacity.value = 0;
-    translateY.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.quad) });
-    opacity.value = withTiming(1, { duration: 250 });
+    
+    if (reducedMotion) {
+      translateY.value = 0;
+      opacity.value = 1;
+    } else {
+      translateY.value = withTiming(0, { duration: 300, easing: Easing.out(Easing.quad) });
+      opacity.value = withTiming(1, { duration: 250 });
+    }
 
     // Auto dismiss after 2.5s (or 5s if actionable)
     const duration = toast.action ? 5000 : 2500;
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => {
-      opacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.quad) });
-      translateY.value = withTiming(-80, { duration: 400 });
-      // Round 8: Remove from queue after exit animation finishes
+      if (reducedMotion) {
+        opacity.value = 0;
+        translateY.value = -80;
+      } else {
+        opacity.value = withTiming(0, { duration: 400, easing: Easing.in(Easing.quad) });
+        translateY.value = withTiming(-80, { duration: 400 });
+      }
+      // Phase 2 Remove from queue safely by ID to prevent race conditions during rapid firing
       setTimeout(() => {
-        setQueue((prev) => prev.slice(1));
+        setQueue((prev) => prev.filter(t => t.id !== toast.id));
       }, 450);
     }, duration);
+
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast]);
 
@@ -81,8 +98,13 @@ export function ToastOverlay() {
   const glyph = GLYPH[toast.type];
 
   return (
-    <Animated.View style={[styles.container, { top: insets.top + 12 }, animatedStyle]} pointerEvents="box-none">
-      {/* M-01 AUDIT FIX: pointerEvents="auto" only on the pill itself */}
+    <Animated.View 
+      style={[styles.container, { top: insets.top + 12 }, animatedStyle]} 
+      pointerEvents="box-none"
+      accessibilityRole="alert"
+      accessibilityLiveRegion="polite"
+    >
+      {/* pointerEvents="auto" only on the pill itself */}
       <View style={[styles.toast, { borderLeftColor: accent, maxWidth: width - 40 }]} pointerEvents="auto">
         <Text style={[styles.glyph, { color: accent }]}>{glyph}</Text>
         <Text style={styles.message} numberOfLines={2}>{toast.message}</Text>

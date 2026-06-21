@@ -29,8 +29,8 @@ export default function SettingsPage() {
     const [changingPassword, setChangingPassword] = useState(false)
 
     // ── Privacy ──
-    const [socialVisibility, setSocialVisibility] = useState<string>(
-        (user?.preferences as any)?.social_visibility || (user?.is_social_private ? 'private' : 'public')
+    const [isSocialPrivate, setIsSocialPrivate] = useState<boolean>(
+        user?.is_social_private ?? false
     )
     const [privacyEndorsements, setPrivacyEndorsements] = useState<string>(
         (user?.preferences as any)?.privacy_endorsements || 'everyone'
@@ -109,8 +109,6 @@ export default function SettingsPage() {
     useEffect(() => {
         if (!user) return
         try {
-            const p = (user.preferences || {}) as Record<string, any>
-            setSocialVisibility(p.social_visibility || (user.is_social_private ? 'private' : 'public'))
             setPrivacyEndorsements(p.privacy_endorsements || 'everyone')
             setPrivacyAnnotations(p.privacy_annotations || 'everyone')
             setNotifFollows(p.notif_follows !== undefined ? !!p.notif_follows : true)
@@ -132,7 +130,7 @@ export default function SettingsPage() {
             const { error } = await supabase
                 .from('profiles')
                 .update({
-                    is_social_private: socialVisibility === 'private',
+                    is_social_private: isSocialPrivate,
                 })
                 .eq('id', user.id)
             if (error) throw error
@@ -141,12 +139,11 @@ export default function SettingsPage() {
             await useAuthStore.getState().setPreference('notif_endorsements', notifEndorsements)
             await useAuthStore.getState().setPreference('notif_comments', notifComments)
             await useAuthStore.getState().setPreference('notif_system', notifSystem)
-            await useAuthStore.getState().setPreference('social_visibility', socialVisibility)
             await useAuthStore.getState().setPreference('privacy_endorsements', privacyEndorsements)
             await useAuthStore.getState().setPreference('privacy_annotations', privacyAnnotations)
 
             useAuthStore.getState().updateUser({
-                is_social_private: socialVisibility === 'private',
+                is_social_private: isSocialPrivate,
             } as any)
 
             reelToast.success('Settings archived successfully ✦')
@@ -381,22 +378,14 @@ export default function SettingsPage() {
                     <Eye size={14} /> PRIVACY
                 </div>
 
-                <div className="settings-privacy-group">
-                    <label className="settings-label" style={{ marginBottom: '0.75rem' }}>SOCIAL VISIBILITY</label>
-                    {[
-                        { value: 'public', label: 'Public — Visible to everyone' },
-                        { value: 'followers', label: 'Followers Only — Only your followers can see' },
-                        { value: 'private', label: 'Private — Only you can see your activity' },
-                    ].map(opt => (
-                        <label key={opt.value} className={`settings-radio-option ${socialVisibility === opt.value ? 'settings-radio-option--active' : 'settings-radio-option--inactive'}`}>
-                            <input
-                                type="radio" name="visibility"
-                                checked={socialVisibility === opt.value}
-                                onChange={() => setSocialVisibility(opt.value)}
-                            />
-                            {opt.label}
-                        </label>
-                    ))}
+                <div className="settings-privacy-group" style={{ marginBottom: '1.5rem' }}>
+                    <div className="settings-notif-row" style={{ padding: '0', border: 'none', background: 'transparent' }}>
+                        <div>
+                            <div className="settings-notif-label">Private Account</div>
+                            <div className="settings-notif-desc">When your account is private, only people you approve can see your logs, lists, and watchlists. Your follower and following counts remain visible.</div>
+                        </div>
+                        <Toggle active={isSocialPrivate} onToggle={() => setIsSocialPrivate(!isSocialPrivate)} label="Private Account" />
+                    </div>
                 </div>
 
                 <div className="settings-privacy-group">

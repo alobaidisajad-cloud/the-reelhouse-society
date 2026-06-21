@@ -1,18 +1,27 @@
 /**
  * PaywallModal — Membership tier upgrade modal.
  */
-import { View, Text, StyleSheet, Modal, InteractionManager } from 'react-native';
+import { InteractionManager, Modal, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 
-import { useRouter } from 'expo-router';
-import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { TIERS } from '@/src/constants/membership';
+import { colors, fonts } from '@/src/theme/theme';
+import { useRouter } from 'expo-router';
 
-// C-05 AUDIT FIX: Pricing now matches the single source of truth in membership.tsx
-const TIERS = [
-    { name: 'ARCHIVIST', price: '$1.99/mo', features: ['The Editorial Desk', 'The Physical Archive', 'The Vault (Private Notes)', 'Exclusive Animated Gold Borders', 'The Lounge (Cinema Chat)'] },
-    { name: 'AUTEUR', price: '$4.99/mo', features: ['Everything in Archivist', 'The Breakdown Engine', 'Publish to The Dispatch', 'Curatorial Control', 'Poster Glow Aesthetics', 'Gold Foil Badge'] },
-];
+// dynamically map the single source of truth into compact modal variants
+const upgradeTiers = TIERS.filter(t => t.id !== 'cinephile').map(t => {
+    const compactFeatures = [];
+    if (t.featuredFeature) compactFeatures.push(t.featuredFeature.title.replace(/\n/g, ' '));
+    compactFeatures.push(...t.features.map(f => f.split('\n')[0]));
+    
+    return {
+        id: t.id,
+        name: t.name.replace(/\n/g, ' ').toUpperCase(),
+        price: `$${t.price}${t.pricePeriod}`.toLowerCase(),
+        features: compactFeatures,
+    };
+});
 
 interface PaywallModalProps {
     visible: boolean;
@@ -25,14 +34,14 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
 
     const handleUpgrade = () => {
         onClose();
-        // #9 AUDIT FIX: Use InteractionManager instead of arbitrary timeout
+        // Use InteractionManager instead of arbitrary timeout
         InteractionManager.runAfterInteractions(() => {
-            router.push('/membership' as any);
+            (router.push as any)('/membership' as any);
         });
     };
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <View style={s.overlay}>
+            <View style={s.overlay} accessibilityViewIsModal={true}>
                 <View style={s.card}>
                     <PressableScale style={s.closeBtn} onPress={onClose} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light" pressedScale={0.96}>
                         <Text style={s.closeBtnText}>✕</Text>
@@ -44,17 +53,17 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
                         <Text style={s.subtitle}>Unlock premium features reserved for the most devoted cinephiles.</Text>
                     </Animated.View>
 
-                    {TIERS.map((tier, i) => (
+                    {upgradeTiers.map((tier, i) => (
                         <Animated.View key={tier.name} entering={FadeInUp.delay(i * 150).duration(400)}>
                             <PressableScale
-                                style={[s.tierCard, recommendedTier === tier.name.toLowerCase() && s.tierRecommended]}
+                                style={[s.tierCard, recommendedTier === tier.id && s.tierRecommended]}
                                 onPress={handleUpgrade}
                                 haptic="medium"
                                 pressedScale={0.98}
                                 accessibilityRole="button"
                                 accessibilityLabel={`Subscribe to ${tier.name} for ${tier.price}`}
                             >
-                                {recommendedTier === tier.name.toLowerCase() && (
+                                {recommendedTier === tier.id && (
                                     <Text style={s.recommendedBadge}>RECOMMENDED</Text>
                                 )}
                                 <Text style={s.tierName}>{tier.name}</Text>

@@ -6,12 +6,21 @@ import { Eye, Heart, Sparkles, ChevronRight } from 'lucide-react-native';
 
 import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
-import { Dossier } from '@/src/stores/content';
+import { Dossier, useDispatchStore } from '@/src/stores/content';
 import { WireStory } from './types';
 import { st } from './styles';
 
 export const DossierCard = memo(function DossierCard({ dossier, index, onPress }: { dossier: Dossier; index: number; onPress: (d: Dossier) => void }) {
   const isFeature = index === 0;
+  const isCertified = useDispatchStore(s => s.certifiedDossierIds.has(dossier.id));
+
+  let dropCap = '';
+  if (dossier.excerpt && isFeature) {
+    for (const char of dossier.excerpt) {
+      dropCap = char;
+      break;
+    }
+  }
 
   return (
     <PressableScale style={[st.dossierCard, isFeature && st.dossierCardFeature]} onPress={() => onPress(dossier)} pressedScale={isFeature ? 0.98 : 0.96} haptic accessibilityRole="button" accessibilityLabel={`Dossier: ${dossier.title} by ${dossier.author}`}>
@@ -29,8 +38,8 @@ export const DossierCard = memo(function DossierCard({ dossier, index, onPress }
 
       {dossier.excerpt && isFeature ? (
         <View style={st.dossierExcerptRow}>
-          <Text style={st.dossierDropCap}>{dossier.excerpt.charAt(0)}</Text>
-          <Text style={st.dossierExcerpt} numberOfLines={4}>{dossier.excerpt.slice(1)}</Text>
+          <Text style={st.dossierDropCap}>{dropCap}</Text>
+          <Text style={st.dossierExcerpt} numberOfLines={4}>{dossier.excerpt.slice(dropCap.length)}</Text>
         </View>
       ) : null}
 
@@ -41,7 +50,7 @@ export const DossierCard = memo(function DossierCard({ dossier, index, onPress }
             <Text style={st.dossierStatText}>{dossier.views || 0}</Text>
           </View>
           <View style={st.dossierStatItem}>
-            <Heart size={10} color={dossier.certifyCount ? colors.sepia : colors.fog} strokeWidth={1.5} fill={dossier.certifyCount ? colors.sepia : 'transparent'} />
+            <Heart size={10} color={isCertified ? colors.sepia : colors.fog} strokeWidth={1.5} fill={isCertified ? colors.sepia : 'transparent'} />
             <Text style={[st.dossierStatText, !!dossier.certifyCount && st.dossierStatTextActive]}>{dossier.certifyCount || 0}</Text>
           </View>
         </View>
@@ -74,7 +83,7 @@ export const WireItem = memo(function WireItem({ item, isLead, onPress }: { item
           <Text style={st.wireLeadTitle} numberOfLines={3}>{item.title}</Text>
           <Text style={st.wireLeadExcerpt} numberOfLines={3}>{item.excerpt}</Text>
           <Text style={st.wireMeta} numberOfLines={1}>
-            {item.date} · {item.time} · BY {(item.author ?? 'THE ORACLE').toUpperCase()}
+            {[item.date, item.time, `BY ${item.author?.trim() ? item.author.trim().toUpperCase() : 'THE ORACLE'}`].filter(Boolean).join(' · ')}
           </Text>
         </View>
       </PressableScale>
@@ -88,7 +97,7 @@ export const WireItem = memo(function WireItem({ item, isLead, onPress }: { item
         <Text style={st.wireTitle} numberOfLines={2}>{item.title}</Text>
         <Text style={st.wireExcerpt} numberOfLines={2}>{item.excerpt}</Text>
         <Text style={st.wireMeta} numberOfLines={1}>
-          {item.date} · {item.time} · BY {(item.author ?? 'THE ORACLE').toUpperCase()}
+          {[item.date, item.time, `BY ${item.author?.trim() ? item.author.trim().toUpperCase() : 'THE ORACLE'}`].filter(Boolean).join(' · ')}
         </Text>
       </View>
     </PressableScale>

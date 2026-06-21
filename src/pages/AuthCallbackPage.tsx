@@ -82,7 +82,8 @@ export default function AuthCallbackPage() {
             minHeight: '100dvh', background: 'var(--ink)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '2rem',
-        }}>
+        }}> 
+            <PageSEO title="Verifying — The ReelHouse Society" />
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}

@@ -4,16 +4,18 @@ import { Image } from 'expo-image';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, withSequence, Easing, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Plus, X } from 'lucide-react-native';
+import PressableScale from '@/src/components/PressableScale';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import PressableScale from '../PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
-
+import { ProfileService } from '@/src/services/ProfileWriteService';
+import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 // Module-scoped: prevents remount on every render cycle
@@ -94,7 +96,7 @@ function TierSlotGlow({ tier, children }: { tier: 'archivist' | 'auteur'; childr
     );
 }
 
-interface TriptychFilm {
+export interface TriptychFilm {
     id: number;
     title: string;
     poster_path: string;
@@ -141,11 +143,20 @@ const TriptychResultRow = React.memo(({ film, handleSetFilm }: { film: TriptychS
 export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: TriptychUser, isOwnProfile: boolean, userRole?: string }) {
     const { updateUser } = useAuthStore();
     const router = useRouter();
-    const isArchivist = userRole === 'archivist';
-    const isAuteur = userRole === 'auteur';
+    const isArchivistPlus = isArchivistPlusTier(userRole);
+    const isAuteurPlus = isAuteurPlusTier(userRole);
     
-    const favorites = (user?.preferences?.favorites as TriptychFilm[]) ?? [];
-    const slots: (TriptychFilm | null)[] = [favorites[0] ?? null, favorites[1] ?? null, favorites[2] ?? null];
+    // Handle favorites array regardless of data source format (it might come back raw)
+    const rawFavorites = user?.preferences?.favorites;
+    const safeFavorites = Array.isArray(rawFavorites) ? rawFavorites : [];
+    
+    // Safely transform strings to objects if needed (prevent Zod mismatch crash)
+    const validFavorites = safeFavorites.map(f => {
+        if (typeof f === 'string') return { id: -1, title: f, poster_path: '' } as TriptychFilm;
+        if (f && typeof f === 'object') return { id: f.id || -1, title: f.title || '', poster_path: f.poster_path || '' } as TriptychFilm;
+        return null;
+    }).filter(Boolean) as TriptychFilm[];
+    const slots: (TriptychFilm | null)[] = [validFavorites[0] ?? null, validFavorites[1] ?? null, validFavorites[2] ?? null];
     const insets = useSafeAreaInsets();
 
     const [isEditing, setIsEditing] = useState(false);
@@ -220,7 +231,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         
         const newFavs = [...slots];
-        newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path as string };
+        newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path ?? '' };
         
         const currentPrefs = user?.preferences ?? {};
         const updatedPrefs = { ...currentPrefs, favorites: newFavs };
@@ -229,12 +240,13 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         setIsEditing(false);
 
         try {
-            await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id);
+            await ProfileService.updateProfile(user.id, { preferences: updatedPrefs });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : '';
             if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
             } else {
+                updateUser({ preferences: currentPrefs });
                 if (__DEV__) console.error('[ProfileTriptych] Failed to set film:', e);
             }
         }
@@ -251,12 +263,13 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         updateUser({ preferences: updatedPrefs });
 
         try {
-            await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id);
+            await ProfileService.updateProfile(user.id, { preferences: updatedPrefs });
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : '';
             if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
             } else {
+                updateUser({ preferences: currentPrefs });
                 if (__DEV__) console.error('[ProfileTriptych] Failed to clear slot:', e);
             }
         }
@@ -279,13 +292,13 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                                 s.slot,
                                 film ? s.slotFilled : s.slotEmpty,
                                 // Only apply static border for non-tiered users
-                                film && !isArchivist && !isAuteur && s.slotFilled,
+                                film && !isArchivistPlus && s.slotFilled,
                                 // Remove border when TierSlotGlow handles it
-                                film && (isArchivist || isAuteur) && s.slotNoBorder,
+                                film && isArchivistPlus && s.slotNoBorder,
                             ]}
                             onPress={() => {
-                                if (film && !isOwnProfile) {
-                                    router.push(`/film/${film.id}` as never);
+                                if (film && !isOwnProfile && film.id && film.id !== -1) {
+                                    (router.push as any)(`/film/${film.id}` as never);
                                 } else if (isOwnProfile) {
                                     handleSelectSlot(i);
                                 }
@@ -314,11 +327,11 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
                     );
 
                     // Wrap filled slots in TierSlotGlow for archivist/auteur
-                    if (film && isArchivist) {
-                        return <TierSlotGlow key={i} tier="archivist">{slotContent}</TierSlotGlow>;
-                    }
-                    if (film && isAuteur) {
+                    if (film && isAuteurPlus) {
                         return <TierSlotGlow key={i} tier="auteur">{slotContent}</TierSlotGlow>;
+                    }
+                    if (film && isArchivistPlus) {
+                        return <TierSlotGlow key={i} tier="archivist">{slotContent}</TierSlotGlow>;
                     }
                     return <View key={i} style={s.slotFlexWrap}>{slotContent}</View>;
                 })}

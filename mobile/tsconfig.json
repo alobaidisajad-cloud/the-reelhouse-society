@@ -17,6 +17,7 @@
   "exclude": [
     "**/__tests__/**",
     "jest.setup.ts",
-    "jest.config.js"
+    "jest.config.js",
+    "supabase/**"
   ]
 }

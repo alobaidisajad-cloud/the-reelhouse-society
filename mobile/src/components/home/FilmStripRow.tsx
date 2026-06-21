@@ -52,7 +52,7 @@ export const FilmStripRow = memo(function FilmStripRow({ title, label, films }: 
   const router = useRouter();
   const handlePress = useCallback((filmId: number) => {
     Haptics.selectionAsync();
-    router.push(`/film/${filmId}` as any);
+    (router.push as any)(`/film/${filmId}` as any);
   }, [router]);
 
   const renderFilmCard = useCallback(({ item, index }: { item: TMDBFilm; index: number }) => (

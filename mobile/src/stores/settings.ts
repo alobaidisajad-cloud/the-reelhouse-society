@@ -21,7 +21,7 @@ export const useSettingsStore = create<SettingsState>()(
     )
 );
 
-// C-04 AUDIT FIX: Register cleanup handler for centralized logout
+// Register cleanup handler for centralized logout
 registerStoreReset(() => {
     useSettingsStore.setState({ tactileAudioEnabled: true });
 });

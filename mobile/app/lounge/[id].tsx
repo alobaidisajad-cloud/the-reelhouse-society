@@ -1,30 +1,51 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import {
-  View, Text, StyleSheet, TextInput,
-  Platform, Modal, Alert, InteractionManager,
-  AppState, ActivityIndicator,
-} from 'react-native';
+import Buster from '@/src/components/Buster';
+import { ActionSheet } from '@/src/components/lounge/ActionSheet';
+import ReportSheet from '@/src/components/moderation/ReportSheet';
+import PressableScale from '@/src/components/PressableScale';
+import { supabase } from '@/src/lib/supabase';
+import { tmdb } from '@/src/lib/tmdb';
+import { useAuthStore } from '@/src/stores/auth';
+import { useBlockStore } from '@/src/stores/blockStore';
+import { LoungeMessage, LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
+import { colors, fonts } from '@/src/theme/theme';
+import { LoungeMember } from '@/src/types';
+import { isArchivistPlusTier } from '@/src/utils/tier';
 import { FlashList } from '@shopify/flash-list';
+import { BlurView } from 'expo-blur';
 import * as ExpoClipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
-import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import {
-  ArrowLeft, Users, Settings, Send, Reply, Copy, Trash2,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  LogOut, X, Lock, Globe, Crown, Sparkles, Check, MessageCircle,
+    ArrowLeft,
+    Check,
+    Copy,
+    Crown,
+    Lock,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    LogOut,
+    Reply,
+    Send,
+    Settings,
+    Sparkles,
+    Trash2,
+    Users,
+    X
 } from 'lucide-react-native';
-import { useLoungeStore, LoungeMessage, LoungeRoom } from '@/src/stores/lounge';
-import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts } from '@/src/theme/theme';
-import { tmdb } from '@/src/lib/tmdb';
-import { supabase } from '@/src/lib/supabase';
-import { LoungeMember } from '@/src/types';
-import PressableScale from '@/src/components/PressableScale';
-import Buster from '@/src/components/Buster';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    ActivityIndicator,
+    Alert,
+    AppState,
+    InteractionManager,
+    Modal,
+    StyleSheet,
+    Text,
+    TextInput,
+    View,
+} from 'react-native';
+import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
@@ -103,67 +124,6 @@ const MessageBubble = React.memo(({ msg, isSelf, showAuthor, onLongPress }: {
   );
 });
 
-// ════════════════════════════════════════════════════════════
-// ACTION SHEET — Long-press menu
-// ════════════════════════════════════════════════════════════
-interface ActionSheetProps {
-  visible: boolean;
-  msg: LoungeMessage | null;
-  isSelf: boolean;
-  onClose: () => void;
-  onReply: (msg: LoungeMessage) => void;
-  onDelete: (messageId: string) => void;
-}
-
-function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete }: ActionSheetProps) {
-  const insets = useSafeAreaInsets();
-  
-  if (!visible || !msg) return null;
-
-  const handleCopy = async () => {
-    ExpoClipboard.setStringAsync(msg.content || '');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    onClose();
-  };
-
-  return (
-    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-      <BlurView intensity={30} tint="dark" style={StyleSheet.absoluteFill}>
-        <PressableScale style={s.actionBackdrop} onPress={onClose}><View /></PressableScale>
-      </BlurView>
-      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.actionSheet, { paddingBottom: Math.max(insets.bottom + 20, 24) }]}>
-        <View style={s.actionHandle} />
-        <PressableScale style={s.actionBtn} onPress={() => { onReply(msg); onClose(); }} haptic="selection" accessibilityRole="button">
-          <Reply size={18} color={colors.bone} strokeWidth={1.5} />
-          <Text style={s.actionBtnText}>REPLY</Text>
-        </PressableScale>
-        <PressableScale style={s.actionBtn} onPress={handleCopy} accessibilityRole="button">
-          <Copy size={18} color={colors.bone} strokeWidth={1.5} />
-          <Text style={s.actionBtnText}>COPY TEXT</Text>
-        </PressableScale>
-        {isSelf && (
-          <PressableScale
-            style={[s.actionBtn, s.actionBtnLast]}
-            onPress={() => {
-              onClose();
-              Alert.alert('Delete Message?', 'This message will be permanently removed.', [
-                { text: 'Cancel', style: 'cancel' },
-                { text: 'Delete', style: 'destructive', onPress: () => {
-                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-                  onDelete(msg.id);
-                }},
-              ]);
-            }}
-            accessibilityRole="button"
-          >
-            <Trash2 size={18} color={colors.bloodReel} strokeWidth={1.5} />
-            <Text style={[s.actionBtnText, s.actionBtnDanger]}>DELETE MESSAGE</Text>
-          </PressableScale>
-        )}
-      </AnimatedView>
-    </Modal>
-  );
-}
 
 // ════════════════════════════════════════════════════════════
 // SETTINGS PANEL
@@ -306,8 +266,10 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
 // ════════════════════════════════════════════════════════════
 export default function LoungeRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const user = useAuthStore(s => s.user);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const isArchivist = isArchivistPlusTier(user);
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   const keyboard = useAnimatedKeyboard();
@@ -322,6 +284,10 @@ export default function LoungeRoomScreen() {
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<LoungeMessage | null>(null);
   const [actionSheetMsg, setActionSheetMsg] = useState<LoungeMessage | null>(null);
+  const [reportSheetVisible, setReportSheetVisible] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<LoungeMessage | null>(null);
+
+  const blockStore = useBlockStore();
 
   // Callback isolation: stabilize chat input handler
   const handleInputChange = useCallback((text: string) => {
@@ -379,11 +345,22 @@ export default function LoungeRoomScreen() {
 
   const activeLounge = localLounge || lounges.find(l => l.id === id);
   const isCreator = activeLounge?.creator_id === user?.id;
-  const isMember = localLounge?.is_member !== false; // Default to true if not loaded yet, or false if explicitly known
+  const isMember = localLounge?.is_member === true;
 
   const handleLongPress = useCallback((msg: LoungeMessage) => {
     setActionSheetMsg(msg);
   }, []);
+
+  const handleReport = useCallback((msg: LoungeMessage) => {
+    setSelectedMessage(msg);
+    setActionSheetMsg(null);
+    setReportSheetVisible(true);
+  }, []);
+
+  const handleBlock = useCallback((userId: string) => {
+    setActionSheetMsg(null);
+    blockStore.blockUser(userId);
+  }, [blockStore]);
 
   // App state handling
   useEffect(() => {
@@ -624,7 +601,22 @@ export default function LoungeRoomScreen() {
         onClose={() => setActionSheetMsg(null)}
         onReply={setReplyTo}
         onDelete={deleteMessage}
+        onReport={handleReport}
+        onBlock={handleBlock}
       />
+      {selectedMessage && (
+        <ReportSheet
+          visible={reportSheetVisible}
+          contentType="lounge_message"
+          contentId={selectedMessage.id}
+          targetUserId={selectedMessage.user_id}
+          targetUsername={selectedMessage.username || ''}
+          onDismiss={() => {
+            setReportSheetVisible(false);
+            setSelectedMessage(null);
+          }}
+        />
+      )}
       <LoungeSettingsPanel
         lounge={activeLounge}
         members={members}

@@ -14,6 +14,7 @@ let _modalLocks = 0
 export function useFocusTrap(isOpen: boolean, onClose?: () => void) {
     const containerRef = useRef<HTMLDivElement>(null)
     const previousFocusRef = useRef<Element | null>(null)
+    const scrollYRef = useRef(0)
 
     useEffect(() => {
         if (!isOpen) return
@@ -65,7 +66,11 @@ export function useFocusTrap(isOpen: boolean, onClose?: () => void) {
         
         _modalLocks++
         if (_modalLocks === 1) {
-            document.body.style.overflow = 'hidden'
+            scrollYRef.current = window.scrollY
+            document.body.style.position = 'fixed'
+            document.body.style.top = `-${scrollYRef.current}px`
+            document.body.style.left = '0'
+            document.body.style.right = '0'
         }
 
         return () => {
@@ -74,7 +79,11 @@ export function useFocusTrap(isOpen: boolean, onClose?: () => void) {
             
             _modalLocks--
             if (_modalLocks === 0) {
-                document.body.style.overflow = ''
+                document.body.style.position = ''
+                document.body.style.top = ''
+                document.body.style.left = ''
+                document.body.style.right = ''
+                window.scrollTo(0, scrollYRef.current)
             }
             // Restore focus to the previously focused element
             if (previousFocusRef.current && typeof (previousFocusRef.current as HTMLElement).focus === 'function') {

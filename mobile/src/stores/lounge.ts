@@ -1,7 +1,15 @@
+import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
+import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
-import { useAuthStore } from './auth';
+import { LoungeMessagePayloadSchema } from '../services/LoungeService';
+import { logger } from '../utils/logger';
+import { isNetworkError } from '../utils/networkError';
+import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
+import { sanitizeInput } from '../utils/sanitizeInput';
+import { useAuthStore } from './auth';
+import { useBlockStore } from './blockStore';
 import { registerStoreReset } from './resetAllStores';
 
 // ── Types ──
@@ -18,6 +26,7 @@ export interface LoungeRoom {
   unread_count?: number;
   last_message?: string;
   last_message_at?: string;
+  is_member?: boolean;
 }
 
 export interface LoungeMessage {
@@ -34,7 +43,18 @@ export interface LoungeMessage {
   film_id?: number | null;
   film_title?: string | null;
   film_poster?: string | null;
+  metadata?: Record<string, unknown>;
   created_at: string;
+}
+
+export interface LoungeMessageMeta {
+  film_id?: number;
+  film_title?: string;
+  film_poster?: string;
+  reply_to_id?: string;
+  reply_to_username?: string;
+  reply_to_content?: string;
+  [key: string]: unknown;
 }
 
 export interface LoungeState {
@@ -47,27 +67,26 @@ export interface LoungeState {
   fetchLounges: () => Promise<void>;
   fetchMessages: (loungeId: string) => Promise<void>;
   loadMoreMessages: (loungeId: string) => Promise<void>;
-  sendMessage: (loungeId: string, content: string, type?: string, meta?: {
-    reply_to_id?: string | null;
-    reply_to_username?: string | null;
-    reply_to_content?: string | null;
-    film_id?: number | null;
-    film_title?: string | null;
-    film_poster?: string | null;
-  }) => Promise<void>;
+  sendMessage: (loungeId: string, content: string, type?: string, meta?: LoungeMessageMeta) => Promise<boolean>;
   deleteMessage: (messageId: string) => Promise<void>;
   createLounge: (name: string, description: string, isPrivate: boolean) => Promise<string | null>;
   joinLounge: (inviteCode: string) => Promise<boolean>;
   joinLoungeById: (loungeId: string) => Promise<boolean>;
   leaveLounge: (loungeId: string) => Promise<void>;
-  deleteLounge: (loungeId: string) => Promise<void>;
+  deleteLounge: (loungeId: string) => Promise<boolean>;
   subscribeToLounge: (loungeId: string) => () => void;
   markRead: (loungeId: string) => Promise<void>;
+  clearMessages: (loungeId?: string) => void;
+  canSendMessage: (loungeId?: string) => boolean;
+  syncGlobalAvatar: (userId: string, avatarUrl: string | null) => void;
+  _pendingLeaveLoungeIds: Set<string>;
+  _lastMarkReadMap: Record<string, number>;
 }
 
 // ── Throttle ── (800ms between sends, matching web)
 let _lastSendAt = 0;
 const SEND_THROTTLE = 800;
+const MESSAGE_DEDUP_CAP = 100;
 
 // ── Create lounge cooldown — prevents spam-creation ──
 let _lastCreateAt = 0;
@@ -104,6 +123,7 @@ interface RawLoungePayload {
   film_id?: number | null;
   film_title?: string | null;
   film_poster?: string | null;
+  metadata?: Record<string, unknown>;
   created_at: string;
 }
 
@@ -120,6 +140,7 @@ interface LoungeMessageRow {
   film_id?: number | null;
   film_title?: string | null;
   film_poster?: string | null;
+  metadata?: Record<string, unknown>;
   created_at: string;
   profiles: { username: string; avatar_url?: string } | { username: string; avatar_url?: string }[] | null;
 }
@@ -130,6 +151,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   currentLoungeId: null,
   loading: false,
   sending: false,
+  _pendingLeaveLoungeIds: new Set(),
+  _lastMarkReadMap: {},
 
   fetchLounges: async () => {
     const user = useAuthStore.getState().user;
@@ -270,7 +293,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('lounge_messages')
-        .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, created_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
+        .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
         .eq('lounge_id', loungeId)
         .order('created_at', { ascending: false })
         .limit(100);
@@ -290,9 +313,38 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           film_id: m.film_id,
           film_title: m.film_title,
           film_poster: m.film_poster,
+          metadata: m.metadata,
           created_at: m.created_at,
         }));
-        set({ currentMessages: messages });
+        // Offline Queue Stitching
+        const queue = getOfflineQueue();
+        const pendingMessages = queue.filter(q => q.type === 'send_lounge_message' && q.payload.lounge_id === loungeId);
+        
+        let finalMessages = [...messages];
+        for (const pa of pendingMessages) {
+            const p = pa.payload;
+            // Prepend offline messages (at the end of the array, since UI likely renders from end)
+            // Wait, fetchMessages maps and reverses them. Let's see. The fetch order is 'created_at' descending, so newest first.
+            // Then it does `.reverse()`, so oldest first. UI renders from bottom.
+            // So we need to append offline messages to the end of finalMessages.
+            finalMessages.push({
+                id: p._tempId || `offline-${Date.now()}-${Math.random()}`,
+                lounge_id: p.lounge_id,
+                user_id: p.user_id,
+                username: useAuthStore.getState().user?.username || 'anonymous',
+                content: p.content,
+                type: p.type || 'text',
+                reply_to_id: p.reply_to_id,
+                reply_to_username: p.reply_to_username,
+                reply_to_content: p.reply_to_content,
+                film_id: p.film_id,
+                film_title: p.film_title,
+                film_poster: p.film_poster,
+                metadata: p.metadata,
+                created_at: new Date().toISOString(),
+            } as unknown as LoungeMessage);
+        }
+        set({ currentMessages: finalMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id)) });
       }
     } catch {
       reelToast.error('Could not load messages — check your connection.');
@@ -311,7 +363,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('lounge_messages')
-        .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, created_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
+        .select('id, lounge_id, user_id, content, type, reply_to_id, reply_to_username, reply_to_content, film_id, film_title, film_poster, metadata, created_at, profiles!lounge_messages_user_id_fkey(username, avatar_url)')
         .eq('lounge_id', loungeId)
         .lt('created_at', oldestMessage.created_at)
         .order('created_at', { ascending: false })
@@ -332,11 +384,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           film_id: m.film_id,
           film_title: m.film_title,
           film_poster: m.film_poster,
+          metadata: m.metadata,
           created_at: m.created_at,
         }));
         
-        // Prepend older messages
-        set({ currentMessages: [...olderMessages, ...current] });
+        // Prepend older messages (filter blocked/muted)
+        const filteredOlder = olderMessages.filter(m => !useBlockStore.getState().isHidden(m.user_id));
+        set({ currentMessages: [...filteredOlder, ...current] });
       }
     } catch {
       // FIX #10: Surface pagination failures instead of silently swallowing
@@ -344,48 +398,101 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     }
   },
 
-  sendMessage: async (loungeId, content, type = 'text', meta = {}) => {
-    const user = useAuthStore.getState().user;
-    const ALLOWED_TYPES = ['text', 'film_share', 'log_share', 'system'] as const;
-    const safeType = (ALLOWED_TYPES as readonly string[]).includes(type) ? type : 'text';
-    if (!user || !content.trim()) return;
+  clearMessages: () => set({ currentMessages: [] }),
 
-    // Throttle
+  canSendMessage: (loungeId) => {
+    const s = get();
+    const targetId = loungeId || s.currentLoungeId;
+    return s.currentLoungeId === targetId && !s.sending;
+  },
+
+  syncGlobalAvatar: (userId, avatarUrl) => {
+    set(state => ({
+      currentMessages: state.currentMessages.map(msg =>
+        msg.user_id === userId ? { ...msg, avatar_url: avatarUrl ?? undefined } : msg
+      ),
+    }));
+  },
+
+  sendMessage: async (loungeId: string, content: string, type = 'text', meta: LoungeMessageMeta = {}) => {
+    const user = useAuthStore.getState().user;
+    const ALLOWED_TYPES = ['text', 'film_share', 'log_share', 'list_share', 'system'] as const;
+    const safeType = (ALLOWED_TYPES as readonly string[]).includes(type) ? type : 'text';
+    
+    const cleanContent = content.trim().slice(0, 500);
+    if (!user || (!cleanContent && type === 'text')) return false;
+
     const now = Date.now();
-    if (now - _lastSendAt < SEND_THROTTLE) return;
+    if (now - _lastSendAt < SEND_THROTTLE) return false;
     _lastSendAt = now;
 
     set({ sending: true });
 
-    // Optimistic insert
-    const optimisticMsg: LoungeMessage = {
-      id: `optimistic-${now}`,
+    // Smart schema boundary validation & metadata packaging
+    const explicitMetaKeys = ['film_id', 'film_title', 'film_poster', 'reply_to_id', 'reply_to_username', 'reply_to_content'];
+    const explicitMeta: Record<string, unknown> = {};
+    const nestedMeta: Record<string, unknown> = {};
+    
+    for (const key in meta) {
+      if (explicitMetaKeys.includes(key)) {
+        explicitMeta[key] = meta[key];
+      } else if (key !== 'metadata') {
+        nestedMeta[key] = meta[key];
+      }
+    }
+    
+    if (meta.metadata) {
+      Object.assign(nestedMeta, meta.metadata);
+    }
+
+    const messageId = Crypto.randomUUID();
+    const rawPayload = {
+      id: messageId,
       lounge_id: loungeId,
       user_id: user.id,
-      username: user.username,
-      content: content.trim().slice(0, 500),
-      type: safeType as LoungeMessage['type'],
-      created_at: new Date().toISOString(),
-      ...meta,
+      content: cleanContent,
+      type: safeType,
+      ...explicitMeta,
+      metadata: Object.keys(nestedMeta).length > 0 ? nestedMeta : undefined,
     };
+    
+    const parseResult = LoungeMessagePayloadSchema.safeParse(rawPayload);
+    if (!parseResult.success) {
+      logger.warn('[LoungeStore.sendMessage] Payload failed schema validation:', parseResult.error.message);
+      set({ sending: false });
+      reelToast.error('Message could not be sent.');
+      return false;
+    }
+    const payload = parseResult.data;
 
-    set(s => ({
-      currentMessages: [...s.currentMessages, optimisticMsg],
-      sending: false,
-    }));
+    const optimisticMsg = {
+      id: messageId,
+      username: user.username,
+      avatar_url: user.avatar_url,
+      created_at: new Date().toISOString(),
+      ...payload,
+    } as unknown as LoungeMessage;
+
+    set(s => {
+      if (s.currentLoungeId === loungeId) {
+        return {
+          currentMessages: [...s.currentMessages, optimisticMsg].slice(0, Math.max(MESSAGE_DEDUP_CAP, s.currentMessages.length + 1)),
+          sending: false,
+        };
+      }
+      return { sending: false };
+    });
 
     try {
-      const { data, error } = await supabase.from('lounge_messages').insert([{
-        lounge_id: loungeId,
-        user_id: user.id,
-        content: content.trim().slice(0, 500).replace(/<[^>]*>/g, ''),
-        type: safeType,
-        ...meta,
-      }]).select('id, created_at').single();
+      const { data, error } = await supabase.from('lounge_messages')
+        .upsert([payload], { onConflict: 'id' })
+        .select('id, created_at')
+        .single();
       
       if (error) throw error;
       
       set(s => {
+        if (s.currentLoungeId !== loungeId) return s;
         const alreadyReplaced = s.currentMessages.some(m => m.id === data.id);
         if (alreadyReplaced) {
           return { currentMessages: s.currentMessages.filter(m => m.id !== optimisticMsg.id) };
@@ -395,15 +502,31 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             m.id === optimisticMsg.id 
               ? { ...m, id: data.id, created_at: data.created_at } 
               : m
-          ).sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+          ).sort((a, b) => {
+            const diff = (new Date(a.created_at).getTime() || 0) - (new Date(b.created_at).getTime() || 0);
+            return diff !== 0 ? diff : a.id.localeCompare(b.id);
+          })
         };
       });
-    } catch {
-      // Remove optimistic message on failure
-      set(s => ({
-        currentMessages: s.currentMessages.filter(m => m.id !== optimisticMsg.id),
-      }));
+      return true;
+    } catch (error: unknown) {
+      if (isNetworkError(error)) {
+        enqueueMutation({
+          type: 'send_lounge_message',
+          payload: { ...payload, _tempId: payload.id }
+        });
+        flushOfflineQueue();
+        reelToast('Message queued for offline network transmission.');
+        return true;
+      }
+      set(s => {
+        if (s.currentLoungeId !== loungeId) return s;
+        return {
+          currentMessages: s.currentMessages.filter(m => m.id !== optimisticMsg.id),
+        };
+      });
       reelToast.error('Failed to send message.');
+      return false;
     }
   },
 
@@ -411,15 +534,35 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     if (!user) return;
     
-    const prev = get().currentMessages;
+    const targetMessage = get().currentMessages.find(m => m.id === messageId);
     set(s => ({ currentMessages: s.currentMessages.filter(m => m.id !== messageId) }));
     
-    const { error } = await supabase.from('lounge_messages').delete()
-      .eq('id', messageId)
-      .eq('user_id', user.id);
-    
-    if (error) {
-      set({ currentMessages: prev });
+    try {
+      const { error } = await supabase.from('lounge_messages').delete()
+        .eq('id', messageId)
+        .eq('user_id', user.id);
+        
+      if (error) throw error;
+    } catch (e) {
+      if (isNetworkError(e)) {
+        enqueueMutation({
+          type: 'delete_lounge_message',
+          payload: { message_id: messageId, user_id: user.id },
+        });
+        flushOfflineQueue();
+        return;
+      }
+      if (targetMessage) {
+        set(s => ({ 
+          currentMessages: [...s.currentMessages, targetMessage].sort(
+            (a, b) => {
+              const diff = (new Date(a.created_at).getTime() || 0) - (new Date(b.created_at).getTime() || 0);
+              return diff !== 0 ? diff : a.id.localeCompare(b.id);
+            }
+          )
+        }));
+      }
+      reelToast.error('Failed to delete message.');
     }
   },
 
@@ -427,7 +570,17 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const user = useAuthStore.getState().user;
     if (!user) return null;
 
-    // Rate-limit creation to prevent abuse
+    const trimmedName = sanitizeInput(name, 'loungeName');
+    const trimmedDesc = sanitizeInput(description, 'listDescription');
+    if (!trimmedName || trimmedName.length < 2) {
+      reelToast.error('Lounge name must be at least 2 characters.');
+      return null;
+    }
+    if (trimmedName.length > 50) {
+      reelToast.error('Lounge name cannot exceed 50 characters.');
+      return null;
+    }
+
     const now = Date.now();
     if (now - _lastCreateAt < CREATE_COOLDOWN) {
         reelToast.error('Please wait before creating another lounge.');
@@ -436,107 +589,206 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     _lastCreateAt = now;
     
     const inviteCode = isPrivate
-      ? Math.random().toString(36).slice(2, 10).toUpperCase()
+      ? Crypto.randomUUID().slice(0, 8).toUpperCase()
       : null;
     
-    const { data, error } = await supabase.from('lounges').insert([{
-      name,
-      description,
-      is_private: isPrivate,
-      invite_code: inviteCode,
-      creator_id: user.id,
-      member_count: 0, // Begins at 0; auto-join trigger increments to 1
-    }]).select().single();
-    
-    if (error || !data) {
-      reelToast.error('Failed to create lounge.');
+    try {
+      const { data: loungeId, error } = await supabase.rpc('create_lounge_with_member', {
+        p_name: trimmedName,
+        p_description: trimmedDesc,
+        p_is_private: isPrivate,
+        p_invite_code: inviteCode
+      });
+
+      if (error || !loungeId) {
+        logger.error('[LoungeStore.createLounge] RPC failed:', error);
+        reelToast.error('Failed to create lounge.');
+        return null;
+      }
+
+      const newLounge: LoungeRoom = {
+        id: loungeId,
+        name: trimmedName,
+        description: trimmedDesc,
+        is_private: isPrivate,
+        invite_code: inviteCode,
+        creator_id: user.id,
+        created_at: new Date().toISOString(),
+        member_count: 1,
+        unread_count: 0,
+        is_member: true,
+      };
+
+      set(s => ({ lounges: [newLounge, ...s.lounges] }));
+
+      get().fetchLounges();
+      return loungeId;
+    } catch (e) {
+      logger.error('[LoungeStore.createLounge] Unhandled error:', e);
+      reelToast.error('Could not create lounge. Check your connection and try again.');
       return null;
     }
-    
-    // Auto-join
-    await supabase.from('lounge_members').insert([{
-      lounge_id: data.id,
-      user_id: user.id,
-    }]);
-    
-    await get().fetchLounges();
-    return data.id;
   },
 
   joinLounge: async (inviteCode) => {
     const user = useAuthStore.getState().user;
     if (!user) return false;
     
-    const { data: lounge } = await supabase
-      .from('lounges')
-      .select('id')
-      .eq('invite_code', inviteCode.toUpperCase())
-      .single();
-    
-    if (!lounge) {
-      reelToast.error('Invalid invite code.');
+    try {
+      const { data: lounge, error: fetchError } = await supabase
+        .from('lounges')
+        .select('*')
+        .eq('invite_code', inviteCode.toUpperCase())
+        .maybeSingle();
+
+      if (fetchError) throw fetchError;
+      
+      if (!lounge) {
+        reelToast.error('Invalid invite code.');
+        return false;
+      }
+      
+      const { error } = await supabase.from('lounge_members').insert([{
+        lounge_id: lounge.id,
+        user_id: user.id,
+      }]);
+      
+      const isDuplicate = error?.code === '23505';
+      if (error && !isDuplicate) {
+        logger.error('[LoungeStore.joinLounge] Insert failed:', error);
+        reelToast.error('Could not join lounge. Please check your connection.');
+        return false;
+      }
+      
+      set(s => ({
+        lounges: s.lounges.some(l => l.id === lounge.id)
+          ? s.lounges.map(l => l.id === lounge.id ? { 
+              ...l, 
+              is_member: true, 
+              member_count: isDuplicate ? l.member_count : (l.member_count || 0) + 1 
+            } : l)
+          : [...s.lounges, {
+              id: lounge.id,
+              name: lounge.name,
+              description: lounge.description || '',
+              is_private: lounge.is_private,
+              invite_code: lounge.invite_code,
+              creator_id: lounge.creator_id,
+              created_at: lounge.created_at,
+              member_count: isDuplicate ? (lounge.member_count || 0) : (lounge.member_count || 0) + 1,
+              unread_count: 0,
+              is_member: true,
+            }]
+      }));
+
+      await get().fetchLounges();
+      queryClient.invalidateQueries({ queryKey: ['lounge_membership', lounge.id] });
+      queryClient.invalidateQueries({ queryKey: ['lounge_members', lounge.id] });
+      return true;
+    } catch (e) {
+      logger.error('[LoungeStore.joinLounge] Unhandled error:', e);
+      reelToast.error('Could not join lounge. Check your connection and try again.');
       return false;
     }
-    
-    const { error } = await supabase.from('lounge_members').insert([{
-      lounge_id: lounge.id,
-      user_id: user.id,
-    }]);
-    
-    if (error && !error.message?.includes('duplicate')) {
-      reelToast.error('Failed to join lounge.');
-      return false;
-    }
-    
-    await get().fetchLounges();
-    return true;
   },
 
   joinLoungeById: async (loungeId) => {
     const user = useAuthStore.getState().user;
     if (!user) return false;
     
-    const { error } = await supabase.from('lounge_members').insert([{
-      lounge_id: loungeId,
-      user_id: user.id,
-    }]);
-    
-    if (error && !error.message?.includes('duplicate')) {
-      reelToast.error('Failed to take a seat.');
+    try {
+      const { error } = await supabase.from('lounge_members').insert([{
+        lounge_id: loungeId,
+        user_id: user.id,
+      }]);
+      
+      const isDuplicate = error?.code === '23505';
+      if (error && !isDuplicate) {
+        reelToast.error('Failed to take a seat.');
+        return false;
+      }
+      
+      set(s => ({
+        lounges: s.lounges.map(l => l.id === loungeId ? { 
+          ...l, 
+          is_member: true, 
+          member_count: isDuplicate ? l.member_count : (l.member_count || 0) + 1 
+        } : l)
+      }));
+
+      await get().fetchLounges();
+      queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
+      queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
+      return true;
+    } catch (e) {
+      logger.error('[LoungeStore.joinLoungeById] Unhandled error:', e);
+      reelToast.error('Could not join lounge. Check your connection and try again.');
       return false;
     }
-    
-    await get().fetchLounges();
-    return true;
   },
 
   leaveLounge: async (loungeId) => {
     const user = useAuthStore.getState().user;
     if (!user) return;
 
-    // Guard: Creator cannot leave their own lounge — they must delete it
     const lounge = get().lounges.find(l => l.id === loungeId);
     if (lounge && lounge.creator_id === user.id) {
         reelToast.error('You created this lounge. Delete it instead of leaving.');
         return;
     }
 
-    // Optimistic removal
-    set(s => ({ lounges: s.lounges.filter(l => l.id !== loungeId) }));
+    set(s => {
+      const newSet = new Set(s._pendingLeaveLoungeIds);
+      newSet.add(loungeId);
+      return { _pendingLeaveLoungeIds: newSet };
+    });
+    const timeoutId = setTimeout(() => {
+      if (get()._pendingLeaveLoungeIds.has(loungeId)) {
+        set(s => {
+          const newSet = new Set(s._pendingLeaveLoungeIds);
+          newSet.delete(loungeId);
+          return { _pendingLeaveLoungeIds: newSet };
+        });
+      }
+    }, 5000);
+
+    set(s => {
+      const target = s.lounges.find(l => l.id === loungeId);
+      if (!target || !target.is_member) return s;
+      if (target.is_private) {
+        return { lounges: s.lounges.filter(l => l.id !== loungeId) };
+      }
+      return { 
+        lounges: s.lounges.map(l => l.id === loungeId ? { 
+          ...l, 
+          is_member: false,
+          member_count: Math.max(0, (l.member_count || 1) - 1)
+        } : l) 
+      };
+    });
 
     const { error } = await supabase.from('lounge_members').delete()
       .eq('lounge_id', loungeId)
       .eq('user_id', user.id);
 
     if (error) {
+      set(s => {
+        const newSet = new Set(s._pendingLeaveLoungeIds);
+        newSet.delete(loungeId);
+        return { _pendingLeaveLoungeIds: newSet };
+      });
+      clearTimeout(timeoutId);
       reelToast.error('Failed to leave — please try again.');
-      await get().fetchLounges(); // Rollback by re-fetching
+      await get().fetchLounges();
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
+      queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
     }
   },
 
   deleteLounge: async (loungeId) => {
     const user = useAuthStore.getState().user;
-    if (!user) return;
+    if (!user) return false;
     
     // Optimistic removal
     set(s => ({ lounges: s.lounges.filter(l => l.id !== loungeId) }));
@@ -548,7 +800,11 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (error) {
       reelToast.error('Failed to incinerate lounge.');
       await get().fetchLounges(); // Revert
+      return false;
     }
+    queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
+    queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
+    return true;
   },
 
   subscribeToLounge: (loungeId: string) => {
@@ -563,10 +819,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           filter: `lounge_id=eq.${loungeId}`,
         },
         async (payload) => {
+          if (!payload.new) return;
           const msg = payload.new as RawLoungePayload;
           // Ignore our own optimistic messages (they're already rendered)
           const existing = get().currentMessages.find(m => m.id === msg.id);
           if (existing) return;
+
+          // Filter messages from blocked/muted users
+          if (useBlockStore.getState().isHidden(msg.user_id)) return;
 
           // Resolve username via cache — prevents N+1 queries in busy lounges
           const { username, avatar_url } = await resolveProfile(msg.user_id);
@@ -585,16 +845,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
             film_id: msg.film_id,
             film_title: msg.film_title,
             film_poster: msg.film_poster,
+            metadata: msg.metadata,
             created_at: msg.created_at,
           };
 
-          // Find the exact optimistic message and replace it
+          // Dedup incoming message and re-sort
           set(s => {
-            const optMatch = s.currentMessages.find(
-              m => m.id.startsWith('optimistic-') && m.user_id === msg.user_id && m.content === msg.content
-            );
-            
-            const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== optMatch?.id && m.id !== newMsg.id);
+            const messagesWithoutOpt = s.currentMessages.filter(m => m.id !== newMsg.id);
             
             return {
               currentMessages: [...messagesWithoutOpt, newMsg].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
@@ -620,17 +877,30 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   markRead: async (loungeId) => {
     const user = useAuthStore.getState().user;
     if (!user) return;
-    await supabase
-      .from('lounge_members')
-      .update({ last_read_at: new Date().toISOString() })
-      .eq('lounge_id', loungeId)
-      .eq('user_id', user.id);
+    
+    set(s => ({
+      lounges: s.lounges.map(l => l.id === loungeId ? { ...l, unread_count: 0 } : l),
+      _lastMarkReadMap: { ...s._lastMarkReadMap, [loungeId]: Date.now() }
+    }));
+
+    try {
+      const { error } = await supabase
+        .from('lounge_members')
+        .update({ last_read_at: new Date().toISOString() })
+        .eq('lounge_id', loungeId)
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+    } catch (e) {
+      logger.warn('[Lounge] markRead failed:', e);
+    }
   },
 }));
 
-// F-10 FIX: Register cleanup handler for centralized logout
+// Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], currentMessages: [], currentLoungeId: null, loading: false, sending: false });
-    // D-1 FIX: Purge profile cache to prevent cross-session PII leakage
+    useLoungeStore.setState({ lounges: [], currentMessages: [], currentLoungeId: null, loading: false, sending: false, _pendingLeaveLoungeIds: new Set(), _lastMarkReadMap: {} });
+    _lastCreateAt = 0;
+    // Purge profile cache to prevent cross-session PII leakage
     _profileCache.clear();
 });

@@ -11,6 +11,7 @@ import PageSEO from '../components/PageSEO'
 import Poster from '../components/film/Poster'
 
 import { useViewport } from '../hooks/useViewport'
+import { useFilmMutations } from '../features/film/hooks/useFilmMutations'
 
 
 // ── FILTER DATA ──
@@ -160,8 +161,9 @@ const FilmGrid = ({ films }: { films: any[] }) => {
     const { isAuthenticated } = useAuthStore()
     const logs = useFilmStore(s => s.logs)
     const watchlist = useFilmStore(s => s.watchlist)
-    const addToWatchlist = useFilmStore(s => s.addToWatchlist)
-    const removeFromWatchlist = useFilmStore(s => s.removeFromWatchlist)
+    const { useAddToWatchlist, useRemoveFromWatchlist } = useFilmMutations()
+    const { mutateAsync: addToWatchlist } = useAddToWatchlist()
+    const { mutateAsync: removeFromWatchlist } = useRemoveFromWatchlist()
     const navigate = useNavigate()
     const loggedFilmIds = useMemo(() => new Set(logs.map((l: any) => l.filmId)), [logs])
     const watchlistIds = useMemo(() => new Set(watchlist.map((w: any) => w.filmId)), [watchlist])

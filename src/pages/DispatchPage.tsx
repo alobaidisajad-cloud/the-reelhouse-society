@@ -197,7 +197,12 @@ export default function DispatchPage() {
 
     // Cleanup scroll lock if user navigates away mid-article
     useEffect(() => {
-        return () => { document.body.style.overflow = 'unset' }
+        return () => {
+            document.body.style.position = ''
+            document.body.style.top = ''
+            document.body.style.left = ''
+            document.body.style.right = ''
+        }
     }, [])
 
     const openArticle = async (item: any) => {
@@ -208,7 +213,10 @@ export default function DispatchPage() {
         setShowShareLounge(false)
         setLocalCertifyCount(item.certifyCount || 0)
         setLocalViews((item.views || 0) + 1)
-        document.body.style.overflow = 'hidden'
+        document.body.style.position = 'fixed'
+        document.body.style.top = `-${scrollPos.current}px`
+        document.body.style.left = '0'
+        document.body.style.right = '0'
 
         // Real DB operations for non-seed articles
         if (item.id && !item.id.startsWith('seed-')) {
@@ -234,7 +242,10 @@ export default function DispatchPage() {
         setCertified(false)
         setCritiqueOpen(false)
         setShowShareLounge(false)
-        document.body.style.overflow = 'unset'
+        document.body.style.position = ''
+        document.body.style.top = ''
+        document.body.style.left = ''
+        document.body.style.right = ''
         window.scrollTo(0, scrollPos.current)
     }
 

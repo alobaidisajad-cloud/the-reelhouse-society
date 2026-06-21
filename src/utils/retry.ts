@@ -111,3 +111,25 @@ export class LRUCache<T> {
         this.cache.clear()
     }
 }
+
+/**
+ * Predicate: Don't retry on auth errors (401/403) — they won't succeed on retry.
+ * Use with withRetry({ shouldRetry: isRetryable }) for Supabase operations.
+ */
+export function isRetryable(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return true
+
+    const e = error as Record<string, unknown>
+
+    // HTTP status codes that should NOT be retried
+    const nonRetryableStatuses = [400, 401, 403, 404, 409, 422]
+    if (typeof e.status === 'number' && nonRetryableStatuses.includes(e.status)) {
+        return false
+    }
+    if (typeof e.code === 'string' && e.code.startsWith('PGRST')) {
+        // PostgREST errors are usually client-side issues (bad query, missing column)
+        return false
+    }
+
+    return true
+}

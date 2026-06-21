@@ -1,0 +1,32 @@
+# D-08: ReelHouse Maestro E2E Test Suite — Darkroom Search
+# Tests the discovery/search flow in The Darkroom.
+# Requires: Maestro CLI (https://maestro.mobile.dev)
+# Run: maestro test .maestro/
+
+appId: com.reelhouse.mobile
+---
+# Navigate to Darkroom tab
+- tapOn: "The Darkroom"
+- waitForAnimationToEnd
+
+# Verify hero header renders
+- assertVisible: "THE REELHOUSE SOCIETY"
+
+# Tap search field and type
+- tapOn:
+    id: "search-films-input"
+    optional: true
+- inputText: "Pulp Fiction"
+- waitForAnimationToEnd
+
+# Should show suggestion results
+- assertVisible:
+    text: "Pulp Fiction"
+    enabled: true
+
+# Select a suggestion
+- tapOn: "Pulp Fiction"
+- waitForAnimationToEnd
+
+# Should navigate to film detail
+- assertVisible: "Quentin Tarantino"

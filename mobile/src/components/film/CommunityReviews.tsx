@@ -1,6 +1,7 @@
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
+import { colors, fonts } from '@/src/theme/theme';
+import { formatDate } from '@/src/utils/timeAgo';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface CommunityReview {
     id: string;
@@ -20,13 +21,13 @@ export function CommunityReviews({ reviews }: { reviews: CommunityReview[] }) {
                     <View style={s.reviewHeader}>
                         <View style={s.reviewAvatar}>
                             <Text style={s.reviewAvatarText}>
-                                {review.username?.charAt(0)?.toUpperCase() ?? '?'}
+                                {review.username?.charAt(0)?.toUpperCase() || '?'}
                             </Text>
                         </View>
                         <View style={s.reviewMeta}>
                             <Text style={s.reviewUsername}>@{review.username}</Text>
                             <Text style={s.reviewDate}>
-                                {new Date(review.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}
+                                {formatDate(review.created_at)}
                             </Text>
                         </View>
                         {review.rating > 0 && <ReelRating rating={review.rating} size={11} />}

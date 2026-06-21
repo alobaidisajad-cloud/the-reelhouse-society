@@ -17,15 +17,17 @@ import { useRouter } from 'expo-router';
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
-import { useNotificationStore } from '@/src/stores/social';
+import { useNotificationStore } from '@/src/stores/notificationStore';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import Buster from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
-import { setScrollY } from '@/src/utils/scrollBridge';
+import { globalScrollY } from '@/src/lib/scrollBridge';
 import { FilmGrain, Vignette } from '@/src/components/CinematicOverlays';
 import FrozenTab from '@/src/components/layout/FrozenTab';
+import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
+import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 
 // Extracted Architectural Components
 import type { TMDBFilm } from '@/src/components/home/types';
@@ -37,7 +39,6 @@ import { FeaturedCritique } from '@/src/components/home/FeaturedCritique';
 import { SocialPulseSection } from '@/src/components/home/SocialPulse';
 import { VelvetRopeCTA, BrassSheen } from '@/src/components/home/VelvetRopeCTA';
 
-const AnimatedScrollView = Animated.createAnimatedComponent(ScrollView);
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
 
@@ -86,10 +87,13 @@ export default function LobbyScreen() {
 
   // Parallax Scroll Tracking & Breathing Atmospherics
   const scrollY = useSharedValue(0);
+  const scrollHeight = useSharedValue(0);
+  const viewHeight = useSharedValue(0);
+  const isScrolling = useSharedValue(false);
   const breath = useSharedValue(1.0);
 
   useEffect(() => {
-    // #7 AUDIT FIX: Finite breathing loop (5 cycles ≈ 90s) instead of one-shot withTiming
+    // Finite breathing loop (5 cycles ≈ 90s) instead of one-shot withTiming
     breath.value = withRepeat(
       withSequence(
         withTiming(1.08, { duration: 9000, easing: Easing.inOut(Easing.sin) }),
@@ -102,10 +106,26 @@ export default function LobbyScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onScroll = useAnimatedScrollHandler((event) => {
-    scrollY.value = event.contentOffset.y;
-    // Bridge scroll offset to JS-thread for TopNavBar blur/tint interpolation
-    runOnJS(setScrollY)(event.contentOffset.y);
+  const onScroll = useAnimatedScrollHandler({
+    onScroll: (event) => {
+      scrollY.value = event.contentOffset.y;
+      scrollHeight.value = event.contentSize.height;
+      viewHeight.value = event.layoutMeasurement.height;
+      // Bridge scroll offset to UI-thread for TopNavBar blur/tint interpolation
+      globalScrollY.value = event.contentOffset.y;
+    },
+    onBeginDrag: () => {
+      isScrolling.value = true;
+    },
+    onEndDrag: (event) => {
+      isScrolling.value = false;
+    },
+    onMomentumBegin: () => {
+      isScrolling.value = true;
+    },
+    onMomentumEnd: () => {
+      isScrolling.value = false;
+    }
   });
   
   // Parallax styles for the backdrop
@@ -135,7 +155,7 @@ export default function LobbyScreen() {
     try {
       setRefreshing(true);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      // #8 AUDIT FIX: Removed redundant queryClient.invalidateQueries({ queryKey: ['lobby'] })
+      // Removed redundant queryClient.invalidateQueries({ queryKey: ['lobby'] })
       // SocialPulse and FeaturedCritique use raw Supabase calls, not React Query —
       // they only respond to refreshTrigger. The invalidation was hitting no observers.
       setRefreshTrigger(t => t + 1);
@@ -150,16 +170,7 @@ export default function LobbyScreen() {
 
   const heroFilm = trending[0] ?? null;
 
-  // ── Pull-to-refresh haptic gate (must be before conditional returns — Rules of Hooks) ──
-  const hasTriggeredHaptic = useSharedValue(false);
-  useAnimatedReaction(() => scrollY.value, (y) => {
-      if (y < -80 && !hasTriggeredHaptic.value) {
-         hasTriggeredHaptic.value = true;
-         runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Heavy);
-      } else if (y > -20 && hasTriggeredHaptic.value) {
-         hasTriggeredHaptic.value = false;
-      }
-  });
+  // ── (Removed custom haptic to let the OS RefreshControl sync cleanly) ──
 
   const pullAnimStyle = useAnimatedStyle(() => {
      let rotVal = interpolate(scrollY.value, [0, -120], [0, 360], Extrapolation.CLAMP);
@@ -288,10 +299,14 @@ export default function LobbyScreen() {
         </Animated.View>
       )}
 
-      <AnimatedScrollView
+      <CinematicScrollView
+        scrollMetrics={{ scrollY, scrollHeight, viewHeight, isScrolling }}
+        topInset={topPad}
+        bottomInset={insets.bottom + 49}
         contentContainerStyle={[s.scrollContent, { paddingTop: topPad }]}
         showsVerticalScrollIndicator={false}
         onScroll={onScroll}
+
         scrollEventThrottle={16}
         refreshControl={
           <RefreshControl 
@@ -337,10 +352,10 @@ export default function LobbyScreen() {
           <Text style={s.lobbyFooterWhisper}>The projection booth never closes.</Text>
           <View style={s.lobbyFooterRule} />
         </View>
-      </AnimatedScrollView>
+      </CinematicScrollView>
 
       {/* Global Atmospherics over everything EXCEPT UI elements that need hard touches */}
-      {/* We use pointerEvents="none" so buttons remain perfectly clickable */}
+      {/* We use pointerEvents="none" so buttons remain clickable */}
       <FilmGrain />
 
       <QuickActionsFAB />

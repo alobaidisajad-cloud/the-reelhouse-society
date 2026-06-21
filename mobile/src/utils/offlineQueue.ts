@@ -24,7 +24,7 @@ import reelToast from './reelToast';
 
 export interface QueuedMutation {
     id: string;
-    // H-01 AUDIT FIX: Expanded type union to cover all domain slices
+    // Expanded type union to cover all domain slices
     type: 'endorse_log' | 'endorse_list' | 'endorse_film' | 'endorse_review' | 'mark_watched' | 'remove_log' | 'remove_watchlist' | 'remove_endorsement' | 'add_log' | 'update_log' | 'update_profile'
         | 'add_watchlist' | 'create_list' | 'update_list' | 'delete_list' | 'add_film_to_list' | 'remove_film_from_list' | 'add_list_items' | 'restore_list_items'
         | 'add_archive' | 'update_archive' | 'remove_archive' | 'save_stub'
@@ -39,7 +39,7 @@ const QUEUE_KEY = 'reelhouse-offline-mutations';
 const MAX_QUEUE_SIZE = 100;
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// T1-1 FIX: User-scoped queueing — prevents mutations from leaking between accounts
+// User-scoped queueing — prevents mutations from leaking between accounts
 let _queueUserId: string | null = null;
 
 /** Set the current user ID for queue scoping */
@@ -113,7 +113,7 @@ export function enqueueMutation(mutation: Omit<QueuedMutation, 'id' | 'timestamp
     };
 
     // Cap queue size — drop oldest to prevent unbounded growth
-    // TRIBUNAL FIX: Notify user when mutations are dropped at capacity
+    // Notify user when mutations are dropped at capacity
     if (queue.length >= MAX_QUEUE_SIZE) {
         const droppedCount = queue.length - MAX_QUEUE_SIZE + 1;
         const dropped = queue.slice(0, droppedCount);
@@ -139,7 +139,7 @@ export async function flushOfflineQueue() {
     }
     isFlushing = true;
     try {
-    // P0 SECURITY FIX: Verify active session before executing any mutations.
+    // Verify active session before executing any mutations.
     // Prevents cross-user mutation execution after unclean logout (crash, force-kill).
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
@@ -148,7 +148,7 @@ export async function flushOfflineQueue() {
     }
     const authenticatedUserId = session.user.id;
 
-    // P0 SECURITY FIX: Ban enforcement at the queue level.
+    // Ban enforcement at the queue level.
     // A banned user's offline queue must NOT execute write mutations.
     // The client-side useBanCheck() only gates UI — the offline queue can bypass it
     // if the user was banned while offline or if MMKV cache has stale is_banned state.
@@ -193,7 +193,7 @@ export async function flushOfflineQueue() {
     // pass through executeMutation.
     const processedIds = new Set<string>();
 
-    // P0 SECURITY FIX: Partition queue by ownership — only execute mutations
+    // Partition queue by ownership — only execute mutations
     // belonging to the currently authenticated user. Orphaned mutations from
     // a previous user (e.g., after crash during account switch) are dead-lettered.
     const ownedMutations: QueuedMutation[] = [];
@@ -243,7 +243,7 @@ export async function flushOfflineQueue() {
 
     logger.debug(`[OfflineSync] Flushing ${queue.length} queued mutations...`);
 
-    // CONCURRENCY FIX: Track which mutation IDs were actually disposed of (orphaned, stale,
+    // Track which mutation IDs were actually disposed of (orphaned, stale,
     // succeeded, dead-lettered, or discarded as duplicates) instead of building a replacement
     // queue from this stale snapshot. Mutations enqueued by the UI while this loop is awaiting
     // network calls are NOT part of `queue` and must survive the final write — diffing by
@@ -287,7 +287,7 @@ export async function flushOfflineQueue() {
 
             if (__DEV__) console.error(`[OfflineSync] Failed to execute ${mutation.type}:`, error);
 
-            // T1-4 FIX: Correctly intercept network/gateway errors, timeouts, and connection errors.
+            // Correctly intercept network/gateway errors, timeouts, and connection errors.
             // Breaking the loop preserves causal consistency for dependent child mutations.
             if (isNetworkError(error)) {
                 // Network/Database failure — halt flush to preserve causal consistency.
@@ -316,7 +316,7 @@ export async function flushOfflineQueue() {
         try {
             const existing = storage.getString(QUEUE_KEY + '_dead_letter');
             let prev: QueuedMutation[] = existing ? JSON.parse(existing) : [];
-            // M-02 AUDIT FIX: Prune dead-letter entries older than 7 days
+            // Prune dead-letter entries older than 7 days
             const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
             prev = prev.filter(m => m.timestamp > sevenDaysAgo);
             const combined = [...prev, ...deadLetterQueue].slice(-50); // Cap at 50

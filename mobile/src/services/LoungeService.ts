@@ -16,12 +16,12 @@ export const LoungeMessagePayloadSchema = z.object({
   reply_to_id: z.string().uuid().nullable().optional(),
   reply_to_username: z.string().nullable().optional(),
   reply_to_content: z.string().nullable().optional(),
-  // T1-5 FIX: z.any() → z.record() — preserves Zod type safety. z.any() was the
+  // z.any() → z.record() — preserves Zod type safety. z.any() was the
   // only unvalidated field in the entire schema layer, bypassing runtime validation.
   metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
-// ── S3 FIX: Zod schemas for read-path boundary validation ──────────────────
+// ── Zod schemas for read-path boundary validation ──────────────────
 
 const LoungeDetailSchema = z.object({
   id: z.string(),
@@ -61,8 +61,8 @@ export const LoungeService = {
 
     if (error) throw error;
     if (!data) throw new Error('Lounge not found');
-    // S3 FIX: Validate response shape
-    // TRIBUNAL FIX: Production observability via Sentry on schema drift
+    // Validate response shape
+    // Production observability via Sentry on schema drift
     const parsed = LoungeDetailSchema.safeParse(data);
     if (!parsed.success) {
       logger.warn('[LoungeService.getLoungeDetails] Schema mismatch:', parsed.error.message);
@@ -90,7 +90,7 @@ export const LoungeService = {
       .eq('lounge_id', loungeId);
 
     if (error) throw error;
-    // S3 FIX: Validate member rows
+    // Validate member rows
     const { valid } = validateWithTelemetry({
       schema: LoungeMemberSchema,
       context: 'LoungeService.getLoungeMembers',
@@ -106,7 +106,7 @@ export const LoungeService = {
       .eq('user_id', userId);
 
     if (error) throw error;
-    // F3 FIX: Return Zod-parsed data with proper typing — eliminates the need
+    // Return Zod-parsed data with proper typing — eliminates the need
     // for `as unknown as` casts in consumers (ShareToLoungeModal, etc.)
     // CONSISTENCY: salvage valid rows + telemetry (matches getLoungeMembers above)
     // instead of throwing the entire call when a single row drifts from the schema.

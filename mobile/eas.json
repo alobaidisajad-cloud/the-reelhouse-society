@@ -10,11 +10,7 @@
     "preview": {
       "distribution": "internal"
     },
-    "production": {
-      "env": {
-        "EXPO_PUBLIC_API_URL": "production_url_here"
-      }
-    }
+    "production": {}
   },
   "submit": {
     "production": {}

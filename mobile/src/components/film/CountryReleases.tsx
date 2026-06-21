@@ -2,12 +2,13 @@
  * CountryReleases — International release dates with certification badges.
  * Collapsible section matching web's 82-line component.
  */
-import { useState, memo, useCallback } from 'react';
+import { useState, memo, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Globe } from 'lucide-react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { formatTMDBDate } from '@/src/utils/timeAgo';
 
 interface ReleaseDate {
     release_date: string;
@@ -26,6 +27,22 @@ const RELEASE_TYPES: Record<number, string> = {
     1: 'PREMIERE', 2: 'LIMITED', 3: 'THEATRICAL', 4: 'DIGITAL', 5: 'PHYSICAL', 6: 'TV',
 };
 
+const getDeviceRegion = () => {
+  try {
+    const locale = Intl.DateTimeFormat().resolvedOptions().locale || '';
+    const parts = locale.split('-');
+    if (parts.length > 1) {
+      const regionPart = parts[1];
+      if (/^[A-Za-z]{2}$/.test(regionPart)) {
+        return regionPart.toUpperCase();
+      }
+    }
+    return 'US';
+  } catch {
+    return 'US';
+  }
+};
+
 export default memo(function CountryReleases({ releaseDates }: { releaseDates: ReleaseDatesResponse | null }) {
     const [open, setOpen] = useState(false);
     const [expanded, setExpanded] = useState(false);
@@ -33,15 +50,20 @@ export default memo(function CountryReleases({ releaseDates }: { releaseDates: R
     const handleToggleOpen = useCallback(() => setOpen(o => !o), []);
     const handleToggleExpanded = useCallback(() => setExpanded(e => !e), []);
 
-    if (!releaseDates?.results?.length) return null;
 
-    const releases = releaseDates.results
-        .filter((r: CountryRelease) => r.release_dates?.some((d: ReleaseDate) => d.type <= 3))
-        .sort((a: CountryRelease, b: CountryRelease) => {
-            if (a.iso_3166_1 === 'US') return -1;
-            if (b.iso_3166_1 === 'US') return 1;
-            return a.iso_3166_1.localeCompare(b.iso_3166_1);
-        });
+    const releases = useMemo(() => {
+        const region = getDeviceRegion();
+        if (!releaseDates?.results) return [];
+        return releaseDates.results
+            .filter((r: CountryRelease) => r.release_dates?.some((d: ReleaseDate) => d.type <= 6))
+            .sort((a: CountryRelease, b: CountryRelease) => {
+                if (a.iso_3166_1 === region) return -1;
+                if (b.iso_3166_1 === region) return 1;
+                return (a.iso_3166_1 || '').localeCompare(b.iso_3166_1 || '');
+            });
+    }, [releaseDates]);
+
+    if (!releaseDates?.results?.length) return null;
 
     if (!releases.length) return null;
 
@@ -62,9 +84,17 @@ export default memo(function CountryReleases({ releaseDates }: { releaseDates: R
             {open && (
                 <Animated.View entering={FadeIn.duration(300)}>
                     {visible.map(({ iso_3166_1, release_dates }: CountryRelease) => {
-                        const mainRelease = release_dates.find((d: ReleaseDate) => d.type === 3) || release_dates[0];
+                        const mainRelease = release_dates.find((d: ReleaseDate) => d.type === 3) || 
+                                            release_dates.find((d: ReleaseDate) => d.type === 4) || 
+                                            release_dates.find((d: ReleaseDate) => d.type === 2) || 
+                                            release_dates.find((d: ReleaseDate) => d.type === 5) || 
+                                            release_dates.find((d: ReleaseDate) => d.type === 1) || 
+                                            release_dates.find((d: ReleaseDate) => d.type === 6) || 
+                                            release_dates[0];
                         if (!mainRelease?.release_date) return null;
-                        const date = new Date(mainRelease.release_date);
+                        const rawDate = mainRelease.release_date;
+                        const formattedDate = formatTMDBDate(rawDate, 'long');
+                        if (!formattedDate) return null;
                         const cert = mainRelease.certification;
                         return (
                             <View key={iso_3166_1} style={s.row}>
@@ -74,7 +104,7 @@ export default memo(function CountryReleases({ releaseDates }: { releaseDates: R
                                     <Text style={s.typeText}>{RELEASE_TYPES[mainRelease.type] ?? ''}</Text>
                                 </View>
                                 <Text style={s.dateText}>
-                                    {date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                                    {formattedDate}
                                 </Text>
                             </View>
                         );

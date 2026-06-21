@@ -5,6 +5,8 @@ const TMDB_BASE = 'https://api.themoviedb.org/3'
 const TMDB_IMG = 'https://image.tmdb.org/t/p'
 
 import { LRUCache, dedup } from './utils/retry'
+import { get as idbGet, set as idbSet } from 'idb-keyval'
+import type { TMDBMovie, TMDBPaginatedResponse, TMDBPerson, TMDBCredits } from './types/tmdb'
 
 // ── Response cache: prevents redundant API calls across components (5min TTL) ──
 const _responseCache = new LRUCache<unknown>(200, 5 * 60 * 1000)
@@ -12,11 +14,9 @@ const _responseCache = new LRUCache<unknown>(200, 5 * 60 * 1000)
 // Resilient fetch wrapper — 10s timeout, retry on 429/503, LRU cached, deduped
 // `path` is the TMDB API path (e.g. /search/multi?query=...)
 async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): Promise<T | null> {
-    // Check LRU cache first
     const cached = _responseCache.get(path)
     if (cached !== undefined) return cached as T
 
-    // Deduplicate: if same path is already inflight, reuse existing promise
     return dedup(`tmdb:${path}`, async () => {
         let lastError: unknown
         for (let attempt = 0; attempt < 3; attempt++) {
@@ -28,16 +28,17 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
                 const res = await fetch(url, { signal: controller.signal })
                 clearTimeout(timer)
 
-                // Retry on transient errors (429 rate limit, 503 service unavailable)
                 if (res.status === 429 || res.status === 503) {
                     const delay = Math.min(500 * Math.pow(2, attempt) + Math.random() * 200, 4000)
                     await new Promise(r => setTimeout(r, delay))
                     continue
                 }
 
-                if (!res.ok) return fallback
+                if (!res.ok) {
+                    // Throwing explicitly instead of returning fallback on API error responses
+                    throw new Error(`TMDB Error: ${res.status} ${res.statusText}`)
+                }
                 const data = await res.json()
-                // Cache successful responses (skip search results which vary)
                 if (!path.includes('/search/')) {
                     _responseCache.set(path, data)
                 }
@@ -45,48 +46,45 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
             } catch (e: unknown) {
                 lastError = e
                 if (e instanceof Error && e.name === 'AbortError') return fallback
-                // Retry on network errors
                 if (attempt < 2) {
                     await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)))
                     continue
                 }
             }
         }
-        if (lastError) { /* All retries exhausted — return fallback */ }
+        if (lastError) {
+            console.error(`TMDB fetch failed for ${path}:`, lastError)
+        }
         return fallback
     })
 }
 
-// Decode HTML entities from RSS text (fixes â€", â€™, &amp; etc.)
 function decodeEntities(str: string): string {
     if (!str || typeof str !== 'string') return str
     try {
-        return new DOMParser().parseFromString(str, 'text/html').documentElement.textContent
+        return new DOMParser().parseFromString(str, 'text/html').documentElement.textContent || str
     } catch {
         return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'")
     }
 }
 
+export type MultiSearchResult = (TMDBMovie & { media_type: 'movie' }) | (TMDBPerson & { media_type: 'person', popularity?: number, known_for?: any[] })
+
 export const tmdb = {
     search: async (query: string, page: number = 1) => {
-        // TIER 1: Omni-Search (Movies + Actors + Directors simultaneously)
-        const res = await fetch(
-            `${TMDB_BASE}/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false&api_key=${TMDB_API_KEY}`
+        const data = await fetchTMDB<TMDBPaginatedResponse<MultiSearchResult> & { searchType?: string, matchedContext?: string }>(
+            `/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`,
+            { results: [], total_pages: 0, total_results: 0, page: 1 }
         )
-        if (!res.ok) throw new Error('TMDB search failed')
-        let data = await res.json()
+        if (!data) return { results: [], searchType: 'failed' }
 
-        let items = []
-        let topPerson = null
+        let items: MultiSearchResult[] = []
+        let topPerson: string | null = null
 
         if (data.results?.length > 0) {
-            // Sort multi-search results with surgical precision:
-            // 1. Exact name/title matches for the query string come first
-            // 2. People matching the name come before movies where they just appear
-            // 3. Fall back to raw popularity
-            const sortedResults = [...data.results].sort((a: { name?: string; title?: string; media_type?: string; popularity?: number }, b: { name?: string; title?: string; media_type?: string; popularity?: number }) => {
-                const aName = (a.name || a.title || '').toLowerCase()
-                const bName = (b.name || b.title || '').toLowerCase()
+            const sortedResults = [...data.results].sort((a, b) => {
+                const aName = ('name' in a ? a.name : 'title' in a ? a.title : '').toLowerCase()
+                const bName = ('name' in b ? b.name : 'title' in b ? b.title : '').toLowerCase()
                 const queryLower = query.toLowerCase()
 
                 const aExact = aName === queryLower
@@ -94,7 +92,6 @@ export const tmdb = {
                 if (aExact && !bExact) return -1
                 if (!aExact && bExact) return 1
 
-                // If both are exact or neither, prioritize people in a multi-search
                 if (a.media_type === 'person' && b.media_type !== 'person') return -1
                 if (a.media_type !== 'person' && b.media_type === 'person') return 1
 
@@ -103,30 +100,27 @@ export const tmdb = {
 
             for (const item of sortedResults) {
                 if (item.media_type === 'movie') {
-                    items.push({ ...item, media_type: 'movie' })
+                    items.push(item)
                 } else if (item.media_type === 'person') {
                     const isExact = (item.name || '').toLowerCase() === query.toLowerCase()
                     const hasPhoto = !!item.profile_path
                     const isHighPop = (item.popularity || 0) > 5
 
-                    // Only include the person in the main grid if they are a real match
-                    // We don't want to clutter the grid with 50 "Tom Hardys" that have no photos
                     if (isExact || hasPhoto || isHighPop) {
                         if (!topPerson) topPerson = item.name
-                        items.push({ ...item, media_type: 'person' })
+                        items.push(item)
                     }
 
-                    // Always consider their movies if they are somewhat known
                     if (hasPhoto || isHighPop || isExact) {
-                        const knownFor = item.known_for?.filter((k: any) => k.media_type === 'movie') || []
-                        items.push(...knownFor.map((m: any) => ({ ...m, media_type: 'movie' })))
+                        const knownFor = item.known_for?.filter(k => k.media_type === 'movie') || []
+                        items.push(...knownFor.map(m => ({ ...m, media_type: 'movie' as const } as unknown as MultiSearchResult)))
                     }
                 }
             }
 
             if (items.length > 0 || page > 1) {
-                const ids = new Set()
-                const unique = items.filter((m: any) => {
+                const ids = new Set<string>()
+                const unique = items.filter(m => {
                     const key = `${m.media_type || 'movie'}-${m.id}`
                     if (ids.has(key)) return false
                     ids.add(key)
@@ -136,7 +130,7 @@ export const tmdb = {
                 data.results = unique
 
                 const firstMatch = unique[0]
-                const firstText = (firstMatch?.title || firstMatch?.name || '').toLowerCase()
+                const firstText = ('title' in firstMatch ? firstMatch.title : 'name' in firstMatch ? firstMatch.name : '').toLowerCase()
                 const queryText = query.toLowerCase()
 
                 if (topPerson && !firstText.includes(queryText)) {
@@ -149,10 +143,7 @@ export const tmdb = {
             }
         }
 
-        // TIER 2: Typo-Tolerance Fallback (Fuzzy Rescue)
-        // If "med max fury road" failed because of "med", we try dropping one word at a time
-        // and concurrently search the fragments, returning the variation that yields the most popular movie
-        const cleanWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter((w: any) => w.length > 0)
+        const cleanWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 0)
 
         if (cleanWords.length > 1) {
             const fallbacks = []
@@ -165,23 +156,21 @@ export const tmdb = {
                 }
             }
 
-            const fallbackResults = await Promise.all(fallbacks.map(async (fb: any) => {
+            const fallbackResults = await Promise.all(fallbacks.map(async fb => {
                 try {
-                    // Search both movies and people in fallback
-                    const fRes = await fetch(`${TMDB_BASE}/search/multi?query=${encodeURIComponent(fb.text)}&page=1&api_key=${TMDB_API_KEY}`)
-                    if (fRes.ok) {
-                        const fData = await fRes.json()
-                        if (fData.results?.length > 0) {
-                            // Find the best match in the multi-result (movie or person)
-                            const bestItem = fData.results.sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))[0]
-                            return { data: fData, fallback: fb, bestItem }
-                        }
+                    const fData = await fetchTMDB<TMDBPaginatedResponse<MultiSearchResult>>(
+                        `/search/multi?query=${encodeURIComponent(fb.text)}&page=1&include_adult=false`,
+                        { results: [], total_pages: 0, total_results: 0, page: 1 }
+                    )
+                    if (fData?.results?.length > 0) {
+                        const bestItem = fData.results.sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0]
+                        return { data: fData, fallback: fb, bestItem }
                     }
                 } catch { }
                 return null
             }))
 
-            let winner = null;
+            let winner: { data: any, fallback: any, bestItem: any } | null = null;
             let highestPopularity = -1;
 
             for (const res of fallbackResults) {
@@ -194,19 +183,18 @@ export const tmdb = {
             }
 
             if (winner) {
-                // Post-process winning results to include person/movie flags
-                const items = []
+                const items: MultiSearchResult[] = []
                 for (const item of winner.data.results) {
-                    if (item.media_type === 'movie') items.push({ ...item, media_type: 'movie' })
+                    if (item.media_type === 'movie') items.push(item)
                     else if (item.media_type === 'person') {
-                        items.push({ ...item, media_type: 'person' })
+                        items.push(item)
                         const known = item.known_for?.filter((k: any) => k.media_type === 'movie') || []
-                        items.push(...known.map((k: any) => ({ ...k, media_type: 'movie' })))
+                        items.push(...known.map((k: any) => ({ ...k, media_type: 'movie' as const } as unknown as MultiSearchResult)))
                     }
                 }
 
                 const ids = new Set()
-                winner.data.results = items.filter((m: any) => {
+                winner.data.results = items.filter(m => {
                     const key = `${m.media_type || 'movie'}-${m.id}`
                     if (ids.has(key)) return false
                     ids.add(key); return true
@@ -218,92 +206,100 @@ export const tmdb = {
             }
         }
 
-        // TIER 3: Semantic / Natural Lang Phrase Parsing (e.g. "dark neo tokyo car street")
-        // Strip grammar and look for words > 3 chars
-        const words = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter((w: any) => w.length > 2)
+        const words = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter(w => w.length > 2)
         if (words.length > 0) {
             const keywordIds: number[] = []
-            // Look up TMDB's internal keyword Dictionary for each word
-            await Promise.all(words.map(async (word: any) => {
+            await Promise.all(words.map(async word => {
                 try {
-                    const kwRes = await fetch(`${TMDB_BASE}/search/keyword?query=${encodeURIComponent(word)}&api_key=${TMDB_API_KEY}`)
-                    const kwData = await kwRes.json()
-                    // Take the most popular exact keyword match
-                    if (kwData.results?.length > 0) {
+                    const kwData = await fetchTMDB<TMDBPaginatedResponse<{ id: number }>>(
+                        `/search/keyword?query=${encodeURIComponent(word)}`,
+                        { results: [], total_pages: 0, total_results: 0, page: 1 }
+                    )
+                    if (kwData?.results?.length > 0) {
                         keywordIds.push(kwData.results[0].id)
                     }
                 } catch { }
             }))
 
             if (keywordIds.length > 0) {
-                // Use a 'Discover' query to mathematically group films that have these keywords!
-                // Using an OR (|) operator for fuzzier matching, AND (,) for strict.
-                const discoverRes = await fetch(`${TMDB_BASE}/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1&api_key=${TMDB_API_KEY}`)
-                if (discoverRes.ok) {
-                    const discoverData = await discoverRes.json()
-                    if (discoverData.results?.length > 0) {
-                        discoverData.searchType = 'semantic'
-                        discoverData.matchedContext = words.join(', ')
-                        return discoverData
-                    }
+                const discoverData = await fetchTMDB<TMDBPaginatedResponse<MultiSearchResult> & { searchType?: string, matchedContext?: string }>(
+                    `/discover/movie?with_keywords=${keywordIds.join('|')}&sort_by=popularity.desc&page=1`,
+                    { results: [], total_pages: 0, total_results: 0, page: 1 }
+                )
+                if (discoverData?.results?.length > 0) {
+                    discoverData.searchType = 'semantic'
+                    discoverData.matchedContext = words.join(', ')
+                    return discoverData
                 }
             }
         }
 
-        // Return empty if all 3 tiers fail
         data.searchType = 'failed'
         return data
     },
 
-    trending: async (timeWindow: string = 'week') => fetchTMDB<any>(
+    trending: async (timeWindow: string = 'week') => fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
         `/trending/movie/${timeWindow}`,
-        { results: [] }
+        { results: [], total_pages: 0, total_results: 0, page: 1 }
     ),
 
     searchMulti: async (query: string) => {
-        const data = await fetchTMDB<any>(
+        const data = await fetchTMDB<TMDBPaginatedResponse<MultiSearchResult>>(
             `/search/multi?query=${encodeURIComponent(query)}&page=1&include_adult=false`,
-            { results: [] }
+            { results: [], total_pages: 0, total_results: 0, page: 1 }
         )
         return (data?.results || [])
-            .filter((r: any) => r.media_type === 'movie' || (r.media_type === 'person' && r.profile_path))
-            .sort((a: any, b: any) => (b.popularity || 0) - (a.popularity || 0))
+            .filter((r) => r.media_type === 'movie' || (r.media_type === 'person' && r.profile_path))
+            .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))
             .slice(0, 6)
     },
 
-    topRated: async (page: number = 1) => fetchTMDB<any>(
+    topRated: async (page: number = 1) => fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
         `/movie/top_rated?page=${page}`,
-        { results: [] }
+        { results: [], total_pages: 0, total_results: 0, page: 1 }
     ),
 
-    nowPlaying: async () => fetchTMDB<any>(
+    nowPlaying: async () => fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
         `/movie/now_playing`,
-        { results: [] }
+        { results: [], total_pages: 0, total_results: 0, page: 1 }
     ),
 
-    upcoming: async () => fetchTMDB<any>(
+    upcoming: async () => fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(
         `/movie/upcoming`,
-        { results: [] }
+        { results: [], total_pages: 0, total_results: 0, page: 1 }
     ),
 
-    detail: async (id: number) => fetchTMDB<any>(
-        `/movie/${id}?append_to_response=credits,videos,similar,watch/providers,release_dates`,
-        null
-    ),
+    detail: async (id: number) => {
+        const IDB_KEY = `tmdb-detail-${id}`
+        const result = await fetchTMDB<TMDBMovie>(
+            `/movie/${id}?append_to_response=credits,videos,similar,watch/providers,release_dates`,
+            null
+        )
+        if (result) {
+            // Cache successful response to IDB for offline fallback
+            idbSet(IDB_KEY, { data: result, ts: Date.now() }).catch(() => {})
+            return result
+        }
+        // Offline fallback: serve stale cached data (7-day max age)
+        try {
+            const cached = await idbGet(IDB_KEY) as { data: TMDBMovie; ts: number } | undefined
+            if (cached && Date.now() - cached.ts < 7 * 24 * 60 * 60 * 1000) {
+                return cached.data
+            }
+        } catch { /* IDB read failure — return null */ }
+        return null
+    },
 
-    // Watch providers (streaming, rent, buy) for a specific movie
     watchProviders: async (id: number) => {
         const data = await fetchTMDB<{ results: Record<string, unknown> }>(`/movie/${id}/watch/providers`, { results: {} })
         return data?.results || {}
     },
 
-    // Release dates by country for a movie
     releaseDates: async (id: number) => {
         const data = await fetchTMDB<{ results: unknown[] }>(`/movie/${id}/release_dates`, { results: [] })
         return data?.results || []
     },
 
-    // Search production companies by name (for Discover filter)
     companySearch: async (query: string) => {
         const data = await fetchTMDB<{ results: unknown[] }>(`/search/company?query=${encodeURIComponent(query)}`, { results: [] })
         return data?.results || []
@@ -311,14 +307,13 @@ export const tmdb = {
 
     discover: async (params: Record<string, string> = {}) => {
         const qs = new URLSearchParams(params).toString()
-        return fetchTMDB(`/discover/movie?${qs}`, { results: [] })
+        return fetchTMDB<TMDBPaginatedResponse<TMDBMovie>>(`/discover/movie?${qs}`, { results: [], total_pages: 0, total_results: 0, page: 1 })
     },
 
     poster: (path: string | null | undefined, size: string = 'w185') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
     backdrop: (path: string | null | undefined, size: string = 'w1280') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
     profile: (path: string | null | undefined, size: string = 'w185') => path ? `${TMDB_IMG}/${size}${path}` : undefined,
 
-    // Responsive poster — picks smallest size that still looks good at current viewport
     responsivePoster: (path: string | null | undefined) => {
         if (!path) return undefined
         const w = typeof window !== 'undefined' ? window.innerWidth : 1280
@@ -326,7 +321,6 @@ export const tmdb = {
         return `${TMDB_IMG}/${size}${path}`
     },
 
-    // B1: Responsive poster srcSet — browser picks the optimal size automatically
     posterSrcSet: (path: string | null | undefined) => {
         if (!path) return { src: undefined, srcSet: undefined, sizes: undefined }
         const widths = [92, 154, 185, 342] as const
@@ -338,7 +332,6 @@ export const tmdb = {
         }
     },
 
-    // B1: Responsive backdrop srcSet
     backdropSrcSet: (path: string | null | undefined) => {
         if (!path) return { src: undefined, srcSet: undefined, sizes: undefined }
         const widths = [300, 780, 1280] as const
@@ -350,42 +343,32 @@ export const tmdb = {
         }
     },
 
-    // B2: Tiny placeholder URL for blur-up effect
     posterThumb: (path: string | null | undefined) => path ? `${TMDB_IMG}/w92${path}` : undefined,
 
-
-    // Separate similar endpoint (avoids double-fetching detail)
     similar: async (id: number) => {
-        const data = await fetchTMDB<{ results: unknown[] }>(`/movie/${id}/similar?page=1`, { results: [] })
+        const data = await fetchTMDB<{ results: TMDBMovie[] }>(`/movie/${id}/similar?page=1`, { results: [] })
         return data?.results || []
     },
 
-    // Aliases used by hover-prefetch in FilmCard
-    movieDetails: async (id: number) => fetchTMDB<any>(
+    movieDetails: async (id: number) => fetchTMDB<TMDBMovie>(
         `/movie/${id}?append_to_response=credits,videos,similar`,
         null
     ),
 
-    movieCredits: async (id: number) => fetchTMDB<any>(`/movie/${id}/credits`, null),
+    movieCredits: async (id: number) => fetchTMDB<TMDBCredits>(`/movie/${id}/credits`, null),
 
-    // Fetch all images for a movie (posters, backdrops, logos)
     movieImages: async (id: number) => fetchTMDB(`/movie/${id}/images`, { posters: [], backdrops: [], logos: [] }),
 
-    // Fetch person details (Actor/Director profile)
-    person: async (id: number) => fetchTMDB<any>(`/person/${id}`, null),
+    person: async (id: number) => fetchTMDB<TMDBPerson>(`/person/${id}`, null),
 
-    // Fetch person's movie credits
-    personCredits: async (id: number) => fetchTMDB<any>(`/person/${id}/movie_credits`, null),
+    personCredits: async (id: number) => fetchTMDB<{ cast: TMDBMovie[], crew: TMDBMovie[] }>(`/person/${id}/movie_credits`, null),
 
-    // NEW: Real-time News Proxy (Aggregates Film News)
-    // ── Cached for 15 minutes to prevent hammering RSS endpoints ──
     getNews: async () => {
         const NEWS_CACHE_KEY = '__rh_news_cache'
-        const NEWS_TTL = 15 * 60 * 1000 // 15 minutes
-        const cached = (window as any)[NEWS_CACHE_KEY]
+        const NEWS_TTL = 15 * 60 * 1000 
+        const cached = (window as Record<string, any>)[NEWS_CACHE_KEY]
         if (cached && Date.now() - cached.ts < NEWS_TTL) return cached.data
 
-        // Compute relative dates at runtime so fallback news never looks stale
         const relDate = (daysAgo: number) => {
             const d = new Date()
             d.setDate(d.getDate() - daysAgo)
@@ -439,14 +422,12 @@ export const tmdb = {
             }
         ]
 
-        // We use a public RSS-to-JSON bridge to fetch real movie industry news
-        // movieweb.com removed — consistently returns 500 on the rss2json bridge
         const feeds = [
             'https://www.theguardian.com/film/rss',
         ]
 
         try {
-            const results = await Promise.all(feeds.map(async (url: any) => {
+            const results = await Promise.all(feeds.map(async (url) => {
                 try {
                     const controller = new AbortController()
                     const timer = setTimeout(() => controller.abort(), 4000)
@@ -466,13 +447,12 @@ export const tmdb = {
             const liveItems = results.flat()
 
             if (liveItems.length === 0) {
-                ;(window as any)[NEWS_CACHE_KEY] = { ts: Date.now(), data: FALLBACK_NEWS }
+                ;(window as Record<string, any>)[NEWS_CACHE_KEY] = { ts: Date.now(), data: FALLBACK_NEWS }
                 return FALLBACK_NEWS
             }
 
-            // Flatten, sort by date, and format for the UI
             const allItems = liveItems
-                .sort((a: any, b: any) => (new Date(b.pubDate) as any) - (new Date(a.pubDate) as any))
+                .sort((a: any, b: any) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
                 .map((item: any) => ({
                     id: item.guid || item.link,
                     title: decodeEntities(item.title),
@@ -487,19 +467,16 @@ export const tmdb = {
                 }))
 
             const newsResult = [...allItems, ...FALLBACK_NEWS]
-            ;(window as any)[NEWS_CACHE_KEY] = { ts: Date.now(), data: newsResult }
+            ;(window as Record<string, any>)[NEWS_CACHE_KEY] = { ts: Date.now(), data: newsResult }
             return newsResult
         } catch (e) {
             console.warn("Archive Wire failed, switching to Deep Archive:", e)
-            ;(window as any)[NEWS_CACHE_KEY] = { ts: Date.now(), data: FALLBACK_NEWS }
+            ;(window as Record<string, any>)[NEWS_CACHE_KEY] = { ts: Date.now(), data: FALLBACK_NEWS }
             return FALLBACK_NEWS
         }
     }
 }
 
-// Compute obscurity score (0–100, higher = more obscure)
-// Uses a continuous log10 scale so every film gets a unique score.
-// pop ~3000+ → near 2 (MAINSTREAM), pop ~1 → near 99 (GHOST REEL)
 export function obscurityScore(movie: { popularity?: number }) {
     const pop = movie.popularity || 0
     if (pop <= 0) return 99
@@ -507,7 +484,6 @@ export function obscurityScore(movie: { popularity?: number }) {
     return Math.max(2, Math.min(99, score))
 }
 
-// Format runtime
 export function formatRuntime(minutes: number | null | undefined) {
     if (!minutes) return '—'
     const h = Math.floor(minutes / 60)
@@ -515,7 +491,6 @@ export function formatRuntime(minutes: number | null | undefined) {
     return h ? `${h}h ${m}m` : `${m}m`
 }
 
-// Get year from date string
 export function getYear(dateStr: string | null | undefined) {
     return dateStr ? dateStr.slice(0, 4) : '—'
 }

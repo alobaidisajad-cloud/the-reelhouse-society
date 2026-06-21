@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View, Text, TextInput, StyleSheet,
@@ -97,10 +98,10 @@ export default function ResetPasswordScreen() {
         await useAuthStore.getState().restoreSession();
       }
 
-      // M-12 AUDIT FIX: Timer now matches the "3 SECONDS" copy
+      // Timer now matches the "3 SECONDS" copy
       // FIX #1: Store timer ref so cleanup on unmount prevents stale navigation
       redirectTimerRef.current = setTimeout(() => {
-        router.replace('/(tabs)');
+        (router.replace as any)('/(tabs)');
       }, 3000);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Failed to reset password.';
@@ -158,7 +159,7 @@ export default function ResetPasswordScreen() {
             </Text>
             <PressableScale
               style={[s.submitBtn, { marginTop: 20 }]}
-              onPress={() => router.replace({ pathname: '/login', params: { action: 'forgot_password' } })}
+              onPress={() => (router.replace as any)({ pathname: '/login', params: { action: 'forgot_password' } })}
               pressedScale={0.97}
               accessibilityRole="button"
               accessibilityLabel="Request new reset link"
@@ -167,7 +168,7 @@ export default function ResetPasswordScreen() {
             </PressableScale>
             <PressableScale
               style={{ marginTop: 16, padding: 8 }}
-              onPress={() => router.replace('/(tabs)')}
+              onPress={() => (router.replace as any)('/(tabs)')}
               pressedScale={0.95}
               haptic="light"
               accessibilityRole="button"
@@ -197,7 +198,7 @@ export default function ResetPasswordScreen() {
             if (router.canGoBack()) {
               router.back();
             } else {
-              router.replace('/(tabs)');
+              (router.replace as any)('/(tabs)');
             }
           }}
           hitSlop={{ top: 12, right: 12, bottom: 12, left: 12 }}

@@ -446,7 +446,7 @@ export default function ListsPage() {
                     </div>
 
                     {/* Filter Pills + Sort */}
-                    <div style={{ width: '100%', maxWidth: '100vw', overflowX: 'hidden' }}>
+                    <div style={{ width: '100%', maxWidth: '100vw', overflowX: 'clip' }}>
                         <div style={{ display: 'flex', gap: IS_TOUCH ? '0.35rem' : '0.5rem', alignItems: 'center', overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: '2px', msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
                         <FilterPill label="ALL TIME" active={timeFilter === 'all'} onClick={() => setTimeFilter('all')} />
                         <FilterPill label="THIS WEEK" active={timeFilter === 'week'} onClick={() => setTimeFilter('week')} />

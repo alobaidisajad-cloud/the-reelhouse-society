@@ -1,26 +1,26 @@
-import { useMemo, useState, useCallback } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import { FlashList } from '@shopify/flash-list';
-import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
-import { useRouter } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { X, Film } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
+import { Film, X } from 'lucide-react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 
-import { useFilmStore } from '@/src/stores/films';
-import { useAuthStore } from '@/src/stores/auth';
-import { colors, fonts } from '@/src/theme/theme';
+import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
-import { ReelRating } from '@/src/components/Decorative';
+import { useAuthStore } from '@/src/stores/auth';
+import { useLogStore } from '@/src/stores/films';
+import { colors, fonts } from '@/src/theme/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ── Static slide definitions (module-scope to avoid re-creation on every render) ──
 const SLIDES = [
   { type: 'intro' },
   { type: 'total' },
-  { type: 'directors' },
+  { type: 'rhythm' },
   { type: 'top' },
   { type: 'outro' },
 ];
@@ -28,8 +28,7 @@ const SLIDES = [
 
 
 export default function YearInCinemaScreen() {
-  const router = useRouter();
-  const logs = useFilmStore(s => s.logs);
+  const logs = useLogStore(s => s.logs);
   const { user } = useAuthStore();
   const insets = useSafeAreaInsets();
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -44,19 +43,23 @@ export default function YearInCinemaScreen() {
 
     const total = yearLogs.length;
     const rated = yearLogs.filter(l => l.rating > 0);
-    const avgRating = rated.length > 0 ? (rated.reduce((acc, l) => acc + l.rating, 0) / rated.length).toFixed(1) : '—';
+    const avgRating = rated.length > 0 ? (rated.reduce((acc: number, l: any) => acc + l.rating, 0) / rated.length).toFixed(1) : '—';
     
-    // Top Directors
-    const directorsMap: Record<string, number> = {};
-    yearLogs.forEach(l => {
-      if (l.director) directorsMap[l.director] = (directorsMap[l.director] || 0) + 1;
+    // Monthly Viewing Rhythm
+    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const monthsMap: Record<string, number> = {};
+    yearLogs.forEach((l: any) => {
+      const d = l.watchedDate || l.createdAt;
+      if (!d) return;
+      const month = MONTH_NAMES[new Date(d).getMonth()];
+      monthsMap[month] = (monthsMap[month] || 0) + 1;
     });
-    const topDirectors = Object.entries(directorsMap).sort((a,b) => b[1] - a[1]).slice(0, 3);
+    const topMonths = Object.entries(monthsMap).sort((a, b) => b[1] - a[1]).slice(0, 3);
 
     // Highest Rated
     const topFilms = [...rated].sort((a,b) => b.rating - a.rating).slice(0, 3);
 
-    return { year: currentYear, total, avgRating, topDirectors, topFilms };
+    return { year: currentYear, total, avgRating, topMonths, topFilms };
   }, [logs]);
 
 
@@ -91,12 +94,12 @@ export default function YearInCinemaScreen() {
             </Animated.View>
           )}
 
-          {isActive && item.type === 'directors' && (
+          {isActive && item.type === 'rhythm' && (
             <Animated.View entering={FadeInDown.duration(800).springify()} style={[s.contentBox, { paddingTop: Math.max(insets.top + 20, 60) }]}>
-              <Text style={s.title}>The Auteurs</Text>
-              <Text style={s.sub}>Your most explored directors of the year.</Text>
+              <Text style={s.title}>Your Rhythm</Text>
+              <Text style={s.sub}>Your most active viewing months of the year.</Text>
               <View style={s.rankingWrap}>
-                {stats.topDirectors.map((d, i) => (
+                {stats.topMonths.map((d, i) => (
                   <Animated.View key={d[0]} entering={FadeInDown.delay(i * 200)} style={s.rankingRow}>
                     <Text style={s.rankNum}>{i + 1}</Text>
                     <Text style={s.rankName}>{d[0]}</Text>

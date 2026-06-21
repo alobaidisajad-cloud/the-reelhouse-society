@@ -8,7 +8,7 @@
   min-height: 100dvh;
   background: var(--ink);
   color: var(--parchment);
-  overflow-x: hidden;
+  overflow-x: clip;
   padding-bottom: 6rem;
 }
 

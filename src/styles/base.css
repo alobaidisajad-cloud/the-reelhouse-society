@@ -106,7 +106,9 @@
 /* ── BASE ── */
 html {
   background: var(--ink);
-  overscroll-behavior: none;
+  /* ANDROID FIX: 'overscroll-behavior: none' on html creates a scroll-locked BFC on Android Chrome.
+     Use x-only to block horizontal overscroll without killing vertical scroll. */
+  overscroll-behavior-x: none;
   /* Lock base font size against extreme OS accessibility inflation to preserve Nitrate Noir ratios */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
@@ -124,7 +126,9 @@ body {
   color: var(--parchment);
   min-height: 100dvh;
   position: relative;
-  overflow-x: hidden;
+  /* ANDROID FIX: 'overflow-x: hidden' creates a new BFC that traps scrolling on Android.
+     'clip' does the same visual clipping without creating a scroll container. */
+  overflow-x: clip;
   overscroll-behavior-y: none;
   line-height: var(--read-height);
   font-size: var(--text-base);

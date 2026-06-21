@@ -1,15 +1,18 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { FlashList, AnimatedFlashList } from '@shopify/flash-list';
+import Animated, { FadeInDown, useSharedValue, withTiming, useAnimatedScrollHandler, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
+import { useFocusEffect } from 'expo-router';
 import { storage } from '@/src/stores/mmkv-storage';
 
 import { colors, fonts, spacing, effects } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { useDiscoverStore, type DiscoverFilm } from '@/src/stores/discover';
-import { setScrollY } from '@/src/utils/scrollBridge';
+import { globalScrollY } from '@/src/lib/scrollBridge';
+import { useShallow } from 'zustand/react/shallow';
 
 import Buster from '@/src/components/Buster';
 import { EmptyOffline } from '@/src/components/EmptyStates';
@@ -22,18 +25,48 @@ import { FilmGridCard, AnimatedPosterSkeleton } from '@/src/components/darkroom/
 // === MAIN SCREEN ===
 export default function DarkRoomScreen() {
   const insets = useSafeAreaInsets();
-  const [loading, setLoading] = useState(false);
-  const [filtersVisible, setFiltersVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
   const loadingRef = useRef(false);
+
+  const fetchRequestId = useRef(0);
+  const totalPagesRef = useRef(1000);
   const network = useNetInfo();
+  const [lastFetchedKey, setLastFetchedKey] = useState<string>('');
   
   const {
     page, mood, query, accumulatedFilms, filters,
-    setPage, setAccumulatedFilms
-  } = useDiscoverStore();
+    setPage, setAccumulatedFilms, clearFilters: clearAllFilters, clearSearch: clearAllSearch
+  } = useDiscoverStore(
+    useShallow((s) => ({
+      page: s.page,
+      mood: s.mood,
+      query: s.query,
+      accumulatedFilms: s.accumulatedFilms,
+      filters: s.filters,
+      setPage: s.setPage,
+      setAccumulatedFilms: s.setAccumulatedFilms,
+      clearFilters: s.clearFilters,
+      clearSearch: s.clearSearch
+    }))
+  );
+
+  const localScrollY = useSharedValue(0);
+  const skeletonOpacity = useSharedValue(0.4);
+
+  useEffect(() => {
+    skeletonOpacity.value = withRepeat(withTiming(0.8, { duration: 1000, easing: Easing.inOut(Easing.ease) }), -1, true);
+    return () => cancelAnimation(skeletonOpacity);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Reset scroll bridge so NavBar returns to transparent on this tab
-  useEffect(() => { setScrollY(0); }, []);
+  useEffect(() => { globalScrollY.value = 0; }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      globalScrollY.value = withTiming(localScrollY.value, { duration: 250 });
+    }, [localScrollY])
+  );
 
   const isSearching = !!query;
 
@@ -43,37 +76,89 @@ export default function DarkRoomScreen() {
     [insets.top]
   );
 
-  // Stable onScroll reference to avoid FlashList re-subscribing per render
-  const handleScroll = useCallback(
-    (e: { nativeEvent: { contentOffset: { y: number } } }) => setScrollY(e.nativeEvent.contentOffset.y),
-    []
-  );
+  // Stable UI-thread scroll handler
+  const handleScroll = useAnimatedScrollHandler({
+    onScroll: (e) => {
+      localScrollY.value = e.contentOffset.y;
+      globalScrollY.value = e.contentOffset.y;
+    },
+  });
 
-  // F-11 FIX: Cache key based on current discovery params
+  // Cache key based on current discovery params
   const cacheKey = useMemo(() => {
-    if (isSearching) return `darkroom_cache_search_${query}`;
-    const moodKey = mood?.label ?? 'default';
-    const filterKey = `${filters.genreId}_${filters.sortBy}_${filters.decade?.label ?? ''}`;
-    return `darkroom_cache_${moodKey}_${filterKey}`;
+    let rawKey = '';
+    if (isSearching) {
+      rawKey = `darkroom_cache_search_${query}`;
+    } else {
+      const moodKey = mood?.label ?? 'default';
+      const filterKey = `${filters.genreId}_${filters.sortBy}_${filters.decade?.label ?? ''}_${filters.yearFrom ?? ''}_${filters.yearTo ?? ''}_${filters.language ?? ''}_${filters.minRating}`;
+      rawKey = `darkroom_cache_${moodKey}_${filterKey}`;
+    }
+    // Pure alphanumeric sanitation & truncation to guarantee JNI/C++ safety
+    return rawKey.replace(/[^a-zA-Z0-9_-]/g, '_').substring(0, 128);
   }, [isSearching, query, mood, filters]);
+
+  // Synchronous cache injection to completely eliminate the 3-stage UI flash
+  const displayData = useMemo(() => {
+    if (accumulatedFilms.length > 0) return accumulatedFilms;
+    if (page === 1) {
+      try {
+        const cachedStr = storage.getString(cacheKey);
+        if (cachedStr) {
+          const parsed = JSON.parse(cachedStr);
+          if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        }
+      } catch {}
+    }
+    return [];
+  }, [accumulatedFilms, page, cacheKey]);
 
   // -- Main Fetching Logic --
   useEffect(() => {
     let active = true;
+    const reqId = ++fetchRequestId.current;
+
     const fetchContent = async () => {
-      if (loadingRef.current) return;
       loadingRef.current = true;
       setLoading(true);
+
+      // Optimistic UI & Skeleton Activation
+      if (page === 1) {
+        try {
+          const cachedStr = storage.getString(cacheKey);
+          if (cachedStr) {
+            const parsed = JSON.parse(cachedStr);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setAccumulatedFilms(parsed);
+            } else {
+              setAccumulatedFilms([]);
+            }
+          } else {
+            setAccumulatedFilms([]);
+          }
+        } catch {
+          setAccumulatedFilms([]);
+        }
+      }
+
       try {
-        let results = [];
+        let results: any[] = [];
+        let isNetworkFailure = false;
+
         if (isSearching) {
           const res = await tmdb.search(query, page);
           results = res?.results ?? [];
+          if (res && (res.total_pages ?? 0) > 0) totalPagesRef.current = res.total_pages ?? 0;
+          else if (res?.total_pages === 0) isNetworkFailure = true;
         } else {
+          let voteCount = mood?.voteGte ?? 20;
+          if (!mood && filters.sortBy === 'vote_average.desc') {
+            voteCount = Math.max(voteCount, 300);
+          }
           const params: Record<string, string | number> = {
             sort_by: mood ? mood.sort : filters.sortBy,
             page,
-            'vote_count.gte': mood?.voteGte ?? 20,
+            'vote_count.gte': voteCount,
           };
           if (filters.genreId) params.with_genres = filters.genreId;
           else if (mood) params.with_genres = mood.genre;
@@ -92,41 +177,71 @@ export default function DarkRoomScreen() {
           for (const [k, v] of Object.entries(params)) strParams[k] = String(v);
           const discoverRes = await tmdb.discover(strParams);
           results = discoverRes?.results ?? [];
+          // Preserve known total_pages to prevent network flicker kill-switch, bounded to 500
+          const apiPages = discoverRes?.total_pages;
+          if (apiPages && apiPages > 0) {
+            totalPagesRef.current = Math.min(apiPages, 500);
+          } else if (apiPages === 0) {
+            isNetworkFailure = true;
+          } else if (page === 1) {
+            totalPagesRef.current = 1;
+          }
         }
 
-        if (active) {
-          const withPosters = results.filter((f: DiscoverFilm) => f.poster_path || f.profile_path);
+        if (active && reqId === fetchRequestId.current) {
+          // Detect network failure to prevent permanent page skipping
+          if (isNetworkFailure && page > 1) {
+            useDiscoverStore.getState().setPage(page - 1);
+            return; // Gracefully abort this cycle, let the rollback re-trigger cache
+          }
+
+          const withPostersRaw = results.filter((f: DiscoverFilm) => f.poster_path || f.profile_path);
+
+          const getFilmKey = (f: DiscoverFilm) => `${f.media_type || 'movie'}-${f.id}`;
+
+          // Absolute best O(N) deduplication natively
+          const uniqueWithPosters: DiscoverFilm[] = [];
+          const seenKeys = new Set<string>();
+          for (let i = 0; i < withPostersRaw.length; i++) {
+             const key = getFilmKey(withPostersRaw[i]);
+             if (!seenKeys.has(key)) {
+                seenKeys.add(key);
+                uniqueWithPosters.push(withPostersRaw[i]);
+             }
+          }
+
           if (page === 1) {
-            setAccumulatedFilms(withPosters);
-            // F-11 FIX: Cache successful page-1 results for offline access
-            try { storage.set(cacheKey, JSON.stringify(withPosters.slice(0, 60))); } catch { /* non-critical */ }
+            setAccumulatedFilms(uniqueWithPosters);
+            try { storage.set(cacheKey, JSON.stringify(uniqueWithPosters.slice(0, 60))); } catch { /* non-critical */ }
           } else {
-            setAccumulatedFilms((prev: DiscoverFilm[]) => {
-              const keys = new Set(prev.map(p => p.id));
-              const merged = [...prev, ...withPosters.filter((f: DiscoverFilm) => !keys.has(f.id))];
-              return merged.slice(0, 500);
+            // Merge safely via Zustand functional updater to eliminate micro race conditions
+            setAccumulatedFilms((prev) => {
+              const currentKeys = new Set(prev.map(getFilmKey));
+              const newUnique = uniqueWithPosters.filter(f => !currentKeys.has(getFilmKey(f)));
+              if (newUnique.length === 0) return prev;
+              return [...prev, ...newUnique].slice(0, 5000);
             });
           }
         }
       } catch (error) {
         if (__DEV__) console.error(error);
-        // F-11 FIX: Restore cached results when fetch fails (offline)
-        if (active && useDiscoverStore.getState().accumulatedFilms.length === 0) {
-          try {
-            const cached = storage.getString(cacheKey);
-            if (cached) setAccumulatedFilms(JSON.parse(cached));
-          } catch { /* cache corrupted, show empty */ }
+        // Graceful Pagination Rollback on Hard Network Failure
+        if (active && reqId === fetchRequestId.current && page > 1) {
+          useDiscoverStore.getState().setPage(page - 1);
         }
+        // Optimistic cache was already injected at the start of fetchContent.
+        // No redundant MMKV read or array allocation needed here.
       } finally {
-        if (active) {
+        if (active && reqId === fetchRequestId.current) {
           setLoading(false);
           loadingRef.current = false;
+          setLastFetchedKey(cacheKey);
         }
       }
     };
     fetchContent();
     return () => { active = false; };
-  }, [query, page, filters, mood, isSearching, setAccumulatedFilms, cacheKey]);
+  }, [query, page, filters, mood, isSearching, setAccumulatedFilms, cacheKey, network.isConnected]);
 
   const renderFooter = useCallback(() => {
     if (loading && page > 1) {
@@ -141,15 +256,16 @@ export default function DarkRoomScreen() {
     return <View style={s.footerSpacer} />;
   }, [loading, page]);
 
-  const { clearFilters: clearAllFilters, clearSearch: clearAllSearch } = useDiscoverStore();
-
   const renderEmpty = useMemo(() => {
-    if (loading) {
+    const isStale = cacheKey !== lastFetchedKey;
+    const showSkeleton = loading || (isStale && network.isConnected !== false);
+
+    if (showSkeleton) {
       return (
         <View style={s.skeletonGrid}>
           {Array.from({ length: 21 }).map((_, i) => (
             <View key={i} style={s.skeletonItem}>
-              <AnimatedPosterSkeleton />
+              <AnimatedPosterSkeleton sharedOp={skeletonOpacity} />
             </View>
           ))}
         </View>
@@ -166,7 +282,7 @@ export default function DarkRoomScreen() {
 
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={s.emptyWrap}>
-        {/* L-04 AUDIT FIX: Removed empty onPress handler — was doing nothing */}
+        {/* Removed empty onPress handler — was doing nothing */}
         <View style={{ alignItems: 'center' }}>
           <Buster size={56} mood="crying" />
         </View>
@@ -194,7 +310,7 @@ export default function DarkRoomScreen() {
         </PressableScale>
       </Animated.View>
     );
-  }, [loading, network.isConnected, isSearching, clearAllFilters, clearAllSearch, setPage]);
+  }, [loading, network.isConnected, isSearching, clearAllFilters, clearAllSearch, setPage, cacheKey, lastFetchedKey, skeletonOpacity]);
 
   const renderFilmItem = useCallback(({ item }: { item: DiscoverFilm }) => (
     <View style={s.filmItemWrap}>
@@ -202,88 +318,35 @@ export default function DarkRoomScreen() {
     </View>
   ), []);
 
-  const viewabilityConfig = useRef({
-    minimumViewTime: 400,
-    itemVisiblePercentThreshold: 80,
-  }).current;
 
-  const inflightFetches = useRef(new Set<number>());
-  const prefetchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pendingIdsRef = useRef<Set<number>>(new Set());
-
-  // F-03 AUDIT FIX: Clear pending prefetch timer on unmount to prevent stale fetches
-  useEffect(() => {
-    return () => {
-      if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
-    };
-  }, []);
-
-  // F-06 FIX: Debounced batch prefetch — collects IDs over 300ms then fires once
-  const onViewableItemsChanged = useRef(({ viewableItems }: { viewableItems: import('react-native').ViewToken[] }) => {
-    if (inflightFetches.current.size > 200) {
-      inflightFetches.current.clear();
-    }
-
-    // Collect IDs
-    viewableItems.forEach((vi) => {
-      if (vi.item && vi.item.id && !inflightFetches.current.has(vi.item.id)) {
-        pendingIdsRef.current.add(vi.item.id);
-      }
-    });
-
-    // Debounce: wait 300ms after last viewability change before firing
-    if (prefetchTimerRef.current) clearTimeout(prefetchTimerRef.current);
-    prefetchTimerRef.current = setTimeout(() => {
-      const ids = Array.from(pendingIdsRef.current);
-      pendingIdsRef.current.clear();
-      if (ids.length === 0) return;
-
-      // S3-02 FIX: Process ALL collected IDs in staggered batches of 3
-      // Previously only the first 3 were prefetched, silently discarding the rest.
-      ids.forEach(id => inflightFetches.current.add(id));
-      const BATCH_SIZE = 3;
-      const BATCH_DELAY = 200; // ms between batches
-      for (let i = 0; i < ids.length; i += BATCH_SIZE) {
-        const chunk = ids.slice(i, i + BATCH_SIZE);
-        const delay = (i / BATCH_SIZE) * BATCH_DELAY;
-        setTimeout(() => {
-          chunk.forEach(id => {
-            tmdb.detail(id)
-              .catch(() => {})
-              .finally(() => {
-                inflightFetches.current.delete(id);
-              });
-          });
-        }, delay);
-      }
-    }, 300);
-  }).current;
 
   return (
     <FrozenTab>
       <View style={s.container}>
-        <FlashList
-          data={accumulatedFilms}
-          keyExtractor={(item) => String(item.id)}
+        <AnimatedFlashList
+          data={displayData}
+          keyExtractor={(item: any) => `${item.media_type || 'movie'}-${item.id}`}
           estimatedItemSize={190}
           numColumns={3}
           contentContainerStyle={listContentStyle}
-          ListHeaderComponent={<DarkroomHeader filtersVisible={filtersVisible} setFiltersVisible={setFiltersVisible} />}
+          ListHeaderComponent={<DarkroomHeader />}
           ListFooterComponent={renderFooter}
           ListEmptyComponent={renderEmpty}
           renderItem={renderFilmItem}
           onEndReached={() => {
-            if (!loadingRef.current && accumulatedFilms.length > 0 && accumulatedFilms.length < 500) {
-              setPage(useDiscoverStore.getState().page + 1);
+            if (!loadingRef.current && displayData.length > 0 && displayData.length < 5000 && network.isConnected !== false) {
+              const statePage = useDiscoverStore.getState().page;
+              if (statePage < totalPagesRef.current) {
+                loadingRef.current = true;
+                setPage(statePage + 1);
+              }
             }
           }}
           onEndReachedThreshold={0.5}
           onScroll={handleScroll}
-          scrollEventThrottle={32}
+          scrollEventThrottle={16}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
-          viewabilityConfig={viewabilityConfig}
-          onViewableItemsChanged={onViewableItemsChanged}
         />
       </View>
     </FrozenTab>

@@ -82,7 +82,7 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
             wasDateNull: (lastRow as any).watched_date === null
         }) : null;
 
-        // --- AUDIT FIX: Prevent Optimistic Clobbering ---
+        // --- Prevent optimistic clobbering ---
         const queue = getOfflineQueue();
         const pendingRemoves = new Set(queue.filter(q => q.type === 'remove_log').map(q => q.payload.log_id));
         const pendingUpdates = queue.filter(q => q.type === 'update_log');
@@ -109,7 +109,7 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
         const nextLogs = loadMore ? [...state.logs, ...newLogs] : [...pendingAdds, ...newLogs];
         // ------------------------------------------------
         
-        // Elite deduplication to prevent React key collision crashes
+        // Deduplicate to prevent React key collisions
         const uniqueLogsMap = new Map<string, DomainLog>();
         nextLogs.forEach(l => uniqueLogsMap.set(l.id, l as DomainLog));
         const deduplicatedLogs = sortLogs(Array.from(uniqueLogsMap.values()));
@@ -136,7 +136,7 @@ export const fetchLogsOp = async (set: SetState, get: GetState, loadMore: boolea
     }
 
 /**
- * CONVERGENCE FIX: Merge a new log attempt into an existing row as a rewatch —
+ * Merge a new log attempt into an existing row as a rewatch —
  * archives the existing entry into viewing_history and bumps view_count. Shared by
  * the upfront duplicate check AND the 23505 unique-violation recovery in addLogOp,
  * so a concurrent multi-device insert merges the user's review instead of discarding
@@ -258,7 +258,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
 
             let finalData = data;
             if (error) {
-                // O-01 AUDIT FIX: Use shared network error detection
+                // Use shared network error detection
                 if (isNetworkError(error)) {
                     enqueueMutation({ type: 'add_log', payload: payload });
                     reelToast('Archived offline. Will sync when connected.');
@@ -267,7 +267,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                     (error as any)?.code === '23505' ||
                     /duplicate|unique|23505/i.test(String((error as any)?.message ?? ''))
                 ) {
-                    // CONVERGENCE FIX: a concurrent insert (e.g. the same film logged from another
+                    // a concurrent insert (e.g. the same film logged from another
                     // device) won the logs(user_id, film_id) unique race. Mirror the offline
                     // executor's handleDuplicateLogMerge: re-fetch the winning row and merge this
                     // attempt in as a rewatch instead of discarding the user's review/rating.
@@ -344,6 +344,7 @@ export const addLogOp = async (set: SetState, get: GetState, log: Partial<Domain
                 }
             }
         } finally {
+            try { require('react-native').AccessibilityInfo.announceForAccessibility('Film logged to your archive'); } catch { /* test env */ }
             set({ _addLogMutex: false });
         }
     }
@@ -401,7 +402,7 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
         let createdAt = new Date().toISOString();
 
         if (error) {
-            // O-01 AUDIT FIX: Use shared network error detection
+            // Use shared network error detection
             if (isNetworkError(error)) {
                 enqueueMutation({ type: 'mark_watched', payload });
                 reelToast('Marked watched offline. Will sync when connected.');
@@ -409,7 +410,7 @@ export const markAsWatchedOp = async (set: SetState, get: GetState, film: any, s
                 (error as any)?.code === '23505' ||
                 /duplicate|unique|23505/i.test(String((error as any)?.message ?? ''))
             ) {
-                // CONVERGENCE FIX: the row already exists (concurrent insert won the
+                // the row already exists (concurrent insert won the
                 // logs(user_id, film_id) unique race). Treat as existing — update the
                 // status if it differs — instead of throwing and dropping the action.
                 const { data: serverRows } = await supabase.from('logs')
@@ -633,7 +634,7 @@ export const updateLogOp = async (set: SetState, get: GetState, id: string, upda
         try {
             const { error } = await supabase.from('logs').update(dbUpdates).eq('id', id);
             if (error) {
-                // O-01 AUDIT FIX: Use shared network error detection
+                // Use shared network error detection
                 if (isNetworkError(error)) {
                     enqueueMutation({ type: 'update_log', payload: { id, updates: dbUpdates } });
                     reelToast('Saved offline. Will sync when connected.');
@@ -688,7 +689,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
         const logToRemove = get().logs.find((l) => l.id === id);
         if (!logToRemove) return;
         
-        // Elite Feature: Pop History instead of Hard Delete
+        // Pop history instead of a hard delete
         const history = Array.isArray(logToRemove.viewingHistory) ? logToRemove.viewingHistory : [];
         if (!forceDeleteAll && history.length > 0) {
             const poppedEntry = history[0];
@@ -751,7 +752,7 @@ export const removeLogOp = async (set: SetState, get: GetState, id: string, forc
             if (!user) { throw new Error('Must be authenticated to delete logs'); }
             const { error } = await supabase.from('logs').delete().eq('id', id).eq('user_id', user.id);
             if (error) {
-                // O-01 AUDIT FIX: Use shared network error detection
+                // Use shared network error detection
                 if (isNetworkError(error)) {
                     enqueueMutation({ type: 'remove_log', payload: { log_id: id, user_id: user.id } });
                     reelToast('Removed offline. Will sync when connected.');

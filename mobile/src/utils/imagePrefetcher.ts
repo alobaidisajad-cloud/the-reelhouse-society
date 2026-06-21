@@ -7,13 +7,13 @@ import { tmdb } from '../lib/tmdb';
  * 
  * Preloads essential imagery (posters, backdrops) into the Expo Image
  * memory cache before the user navigates, eliminating pop-in and layout
- * shift to ensure a world-class, instantaneous aesthetic.
+ * shift so images appear instantly.
  */
 export const ImagePrefetcher = {
     /**
      * Prefetch a single TMDB poster path
      */
-    preloadPoster: async (posterPath: string | null | undefined, size = 'w500') => {
+    preloadPoster: async (posterPath: string | null | undefined, size: 'w92' | 'w154' | 'w185' | 'w342' | 'w500' | 'w780' | 'original' = 'w500') => {
         if (!posterPath) return;
         const url = tmdb.poster(posterPath, size);
         if (url) {
@@ -24,7 +24,7 @@ export const ImagePrefetcher = {
     /**
      * Prefetch a batch of films (useful for grids, lists, watchlists)
      */
-    preloadFilmBatch: async (films: { poster_path?: string | null }[], size = 'w342') => {
+    preloadFilmBatch: async (films: { poster_path?: string | null }[], size: 'w92' | 'w154' | 'w185' | 'w342' | 'w500' | 'w780' | 'original' = 'w342') => {
         const urlsToPrefetch = films
             .map(f => f.poster_path ? tmdb.poster(f.poster_path, size) : null)
             .filter((url): url is string => !!url);

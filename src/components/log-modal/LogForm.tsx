@@ -12,6 +12,7 @@ import LogReviewEditor from './LogReviewEditor'
 import LogActionRow from './LogActionRow'
 import reelToast from '../../utils/reelToast'
 import { useNavigate } from 'react-router-dom'
+import { useFilmMutations } from '../../features/film/hooks/useFilmMutations'
 
 const AUTOPSY_INIT = Object.freeze({ story: 0, script: 0, acting: 0, cinematography: 0, editing: 0, sound: 0 })
 const ABANDONED_REASONS = ['Too Slow', 'Too Upsetting', 'Life Got in the Way', "I'll Return Someday", "Lost the Plot", "Wrong Mood"]
@@ -22,9 +23,10 @@ export default function LogForm({ film }: { film: any }) {
     const logModalEditLogId = useUIStore(state => state.logModalEditLogId)
     const closeLogModal = useUIStore(state => state.closeLogModal)
 
-    const addLog = useFilmStore(state => state.addLog)
-    const updateLog = useFilmStore(state => state.updateLog)
-    const removeLog = useFilmStore(state => state.removeLog)
+    const { useAddLog, useUpdateLog, useRemoveLog } = useFilmMutations()
+    const { mutateAsync: addLog } = useAddLog()
+    const { mutateAsync: updateLog } = useUpdateLog()
+    const { mutateAsync: removeLog } = useRemoveLog()
     const logs = useFilmStore(state => state.logs)
     const lists = useFilmStore(state => state.lists)
     const addFilmToList = useFilmStore(state => state.addFilmToList)
@@ -187,10 +189,10 @@ export default function LogForm({ film }: { film: any }) {
         setSubmitting(true)
         try {
             if (logModalEditLogId) {
-                await updateLog(logModalEditLogId, logData as any)
+                await updateLog({ id: logModalEditLogId, updates: logData })
                 reelToast.success('Log updated flawlessly.')
             } else {
-                await addLog(logData as any)
+                await addLog(logData)
                 localStorage.removeItem(`reelhouse_draft_${film.id}`)
                 reelToast.success('Film logged to your archive.')
             }

@@ -44,10 +44,13 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     const [reason, setReason] = useState('');
     const [flickerItem, setFlickerItem] = useState<RouletteFilm | null>(null);
     const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const isMounted = useRef(true);
 
     // Clean up on unmount
     useEffect(() => {
+        isMounted.current = true;
         return () => {
+            isMounted.current = false;
             if (intervalRef.current) clearInterval(intervalRef.current);
         };
     }, []);
@@ -73,6 +76,12 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
         if (intervalRef.current) clearInterval(intervalRef.current);
 
         intervalRef.current = setInterval(() => {
+            // Prevent unmounted component state updates if aggressively dismissed
+            if (!isMounted.current) {
+                if (intervalRef.current) clearInterval(intervalRef.current);
+                return;
+            }
+
             ticks++;
             setFlickerItem(watchlist[Math.floor(Math.random() * watchlist.length)]);
 
@@ -101,7 +110,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
         if (onSelect) {
             onSelect(filmId as number);
         } else {
-            router.push(`/film/${filmId}` as never);
+            (router.push as any)(`/film/${filmId}` as never);
         }
     }, [result, onSelect, onClose, router]);
 

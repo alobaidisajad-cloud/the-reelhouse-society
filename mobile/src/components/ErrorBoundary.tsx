@@ -6,12 +6,12 @@
  * 
  * Usage: Wrap the root <Stack /> in _layout.tsx
  */
-import React, { Component, type ReactNode } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
-import { colors, fonts } from '../theme/theme';
-import { captureError } from '../lib/sentry';
-import PressableScale from './PressableScale';
 import { router } from 'expo-router';
+import React, { Component, type ReactNode } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { captureError } from '../lib/sentry';
+import { colors, fonts } from '../theme/theme';
+import PressableScale from './PressableScale';
 
 interface Props {
   children: ReactNode;
@@ -30,6 +30,7 @@ const MAX_RETRIES = 3;
 
 export default class ErrorBoundary extends Component<Props, State> {
   state: State = { hasError: false, error: null, errorId: null, retryCount: 0 };
+  private _stabilityTimer: ReturnType<typeof setTimeout> | null = null;
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     const errorId = `ERR-${Date.now().toString(36).toUpperCase()}`;
@@ -40,7 +41,7 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (__DEV__) {
       console.error(`[ErrorBoundary] [${this.state.errorId}] Caught render error:`, error, errorInfo.componentStack);
     } else {
-      // M-07 AUDIT FIX: Use static import instead of dynamic require()
+      // Use static import instead of dynamic require()
       captureError(error, {
         errorId: this.state.errorId,
         componentStack: errorInfo.componentStack?.slice(0, 200),
@@ -49,24 +50,46 @@ export default class ErrorBoundary extends Component<Props, State> {
     }
   }
 
+  // Reset retryCount after successful recovery persists for 3 seconds.
+  // Prevents users from permanently losing retry capability due to unrelated transient errors.
+  componentDidUpdate(_prevProps: Props, prevState: State) {
+    // Retry just succeeded — children rendered without re-throwing
+    if (prevState.hasError && !this.state.hasError) {
+      this._stabilityTimer = setTimeout(() => {
+        this._stabilityTimer = null;
+        this.setState({ retryCount: 0 });
+      }, 3000);
+    }
+    // Error recurred during stability window — cancel the reset
+    if (!prevState.hasError && this.state.hasError && this._stabilityTimer) {
+      clearTimeout(this._stabilityTimer);
+      this._stabilityTimer = null;
+    }
+  }
+
+  componentWillUnmount() {
+    if (this._stabilityTimer) clearTimeout(this._stabilityTimer);
+  }
+
   handleRetry = () => {
     if (this.state.retryCount >= MAX_RETRIES) {
       // Max retries reached — don't allow infinite loops
       return;
     }
-    // #10 AUDIT FIX: Clear potentially corrupt cached data before retry
+    // Clear potentially corrupt cached data before retry
     try {
+                // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { queryClient } = require('../lib/queryClient');
       queryClient.clear();
     } catch {
       // queryClient may not be available — proceed with retry anyway
     }
-    // E-01 AUDIT FIX: Reset navigation to known-good state.
+    // Reset navigation to known-good state.
     // If the router context itself is corrupt (e.g., the error was in the
     // navigation tree), this will throw — but we still reset the boundary
     // state so the component tree can attempt a clean re-mount.
     try {
-      router.replace('/(tabs)');
+      (router.replace as any)('/(tabs)');
     } catch {
       // Router context may be corrupt — the state reset below will
       // still allow the component tree to re-mount cleanly.
@@ -96,7 +119,7 @@ export default class ErrorBoundary extends Component<Props, State> {
             </Text>
 
             {__DEV__ && this.state.error && (
-              <ScrollView style={styles.errorBox} contentContainerStyle={styles.errorBoxContent}>
+              <ScrollView style={styles.errorBox} contentContainerStyle={styles.errorBoxContent} showsVerticalScrollIndicator={false}>
                 <Text style={styles.errorText}>
                   {this.state.error.message}
                 </Text>

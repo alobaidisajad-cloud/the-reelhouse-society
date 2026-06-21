@@ -62,6 +62,7 @@ export interface DiscoverState {
   clearFilters: () => void;
   updateFilter: (obj: Partial<DiscoverFilters>) => void;
   clearSearch: () => void;
+  applyMood: (m: DiscoverMood | null) => void;
 }
 
 const defaultFilters = {
@@ -74,7 +75,7 @@ const defaultFilters = {
   yearTo: null,
 };
 
-// H-03 AUDIT FIX: Persist discover state to MMKV so users don't lose their
+// Persist discover state to MMKV so users don't lose their
 // darkroom results when going offline or when the store is reset by navigation.
 export const useDiscoverStore = create<DiscoverState>()(
   persist(
@@ -87,8 +88,8 @@ export const useDiscoverStore = create<DiscoverState>()(
   filters: { ...defaultFilters },
 
   setPage: (page) => set({ page }),
-  setMood: (mood) => set({ mood }),
-  setQuery: (query) => set({ query }),
+  setMood: (mood) => set({ mood, page: 1, accumulatedFilms: [] }),
+  setQuery: (query) => set({ query, page: 1, accumulatedFilms: [] }),
   setInputVal: (inputVal) => set({ inputVal }),
   
   setAccumulatedFilms: (updater) => set((s) => ({
@@ -96,31 +97,51 @@ export const useDiscoverStore = create<DiscoverState>()(
   })),
 
   setFilters: (updater) => set((s) => ({
-    filters: typeof updater === 'function' ? updater(s.filters) : updater
+    filters: typeof updater === 'function' ? updater(s.filters) : updater,
+    page: 1,
+    accumulatedFilms: []
   })),
 
-  clearFilters: () => set({ filters: { ...defaultFilters } }),
+  clearFilters: () => set({ filters: { ...defaultFilters }, mood: null, page: 1, accumulatedFilms: [] }),
 
   updateFilter: (obj) => set((s) => ({ 
-    filters: { ...s.filters, ...obj } 
+    filters: { ...s.filters, ...obj },
+    mood: null,
+    page: 1,
+    accumulatedFilms: []
   })),
 
-  clearSearch: () => set({ query: '', inputVal: '' }),
+  clearSearch: () => set({ query: '', inputVal: '', page: 1, accumulatedFilms: [] }),
+
+  applyMood: (m) => set(() => {
+    if (!m) {
+      return { mood: null, filters: { ...defaultFilters }, page: 1, accumulatedFilms: [] };
+    }
+    return {
+      mood: m,
+      filters: { ...defaultFilters, genreId: m.genre },
+      query: '',
+      inputVal: '',
+      page: 1,
+      accumulatedFilms: []
+    };
+  }),
     }),
     {
       name: 'reelhouse-discover',
       storage: createJSONStorage(() => zustandMMKVStorage),
-      // Only persist the film results and filters — not ephemeral UI state
+      // Only persist the filters — not ephemeral UI state or accumulatedFilms (which is handled manually by cacheKey)
       partialize: (state) => ({
-        accumulatedFilms: state.accumulatedFilms.slice(0, 100), // Cap persisted data
         filters: state.filters,
         mood: state.mood,
+        query: state.query,
+        inputVal: state.inputVal,
       }),
     }
   )
 );
 
-// F-10 FIX: Register cleanup handler for centralized logout
+// Register cleanup handler for centralized logout
 registerStoreReset(() => {
     useDiscoverStore.setState({
         page: 1, mood: null, query: '', inputVal: '', accumulatedFilms: [],

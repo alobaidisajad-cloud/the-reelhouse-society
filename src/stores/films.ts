@@ -22,15 +22,23 @@ function scheduleDeletion(id: string, fn: () => Promise<void>, delayMs = 5200) {
 const _undoCallbacks = new Map<string, () => void>()
 if (typeof document !== 'undefined') {
     document.addEventListener('click', (e) => {
-        // Walk up from click target to find a toast container with role="status"
         const target = e.target as HTMLElement
-        const toastEl = target.closest('[role="status"]')
+        // Walk up from click target to find a toast container with data-toast-id
+        const toastEl = target.closest('[data-toast-id]') || target.closest('[role="status"]')
         if (!toastEl) return
-        // Check all registered undo callbacks
-        for (const [toastId, callback] of _undoCallbacks) {
-            // Toast text content should include "undo" and the toast container should be visible
-            if (toastEl.textContent?.includes('undo')) {
+        // Match by data-toast-id attribute first (precise), fallback to role="status" parent
+        const dataId = toastEl.getAttribute('data-toast-id')
+        if (dataId && _undoCallbacks.has(dataId)) {
+            _undoCallbacks.get(dataId)!()
+            _undoCallbacks.delete(dataId)
+            return
+        }
+        // Fallback: find any undo callback associated with a visible toast
+        const statusEl = target.closest('[role="status"]')
+        if (statusEl?.textContent?.toLowerCase().includes('undo')) {
+            for (const [toastId, callback] of _undoCallbacks) {
                 callback()
+                _undoCallbacks.delete(toastId)
                 return
             }
         }
@@ -357,7 +365,8 @@ export const useFilmStore = create<FilmState>()(
                 let allItems: { film_id: number; film_title: string; poster_path: string | null; year: number | null; created_at: string }[] = []
                 let page = 0
                 const PAGE_SIZE = 1000
-                while (true) {
+                const MAX_PAGES = 10 // Safety cap — 10,000 items max to prevent infinite loops
+                while (page < MAX_PAGES) {
                     const { data, error } = await supabase
                         .from('watchlists').select('id, user_id, film_id, film_title, poster_path, year, created_at').eq('user_id', user.id)
                         .order('created_at', { ascending: false })
@@ -967,17 +976,34 @@ export const useFilmStore = create<FilmState>()(
         }),
         {
             name: 'reelhouse-films',
-            storage: createJSONStorage(() => ({
-                getItem: async (name: string): Promise<string | null> => {
-                    return (await get(name)) || null
-                },
-                setItem: async (name: string, value: string): Promise<void> => {
-                    await set(name, value)
-                },
-                removeItem: async (name: string): Promise<void> => {
-                    await del(name)
-                },
-            })),
+            storage: createJSONStorage(() => {
+                // Debounce IDB writes — coalesces rapid mutations into a single write
+                let _pendingWrite: ReturnType<typeof setTimeout> | null = null
+                let _pendingValue: string | null = null
+                let _pendingName: string | null = null
+                const DEBOUNCE_MS = 2000
+
+                return {
+                    getItem: async (name: string): Promise<string | null> => {
+                        return (await get(name)) || null
+                    },
+                    setItem: async (name: string, value: string): Promise<void> => {
+                        _pendingValue = value
+                        _pendingName = name
+                        if (_pendingWrite) clearTimeout(_pendingWrite)
+                        _pendingWrite = setTimeout(async () => {
+                            if (_pendingName && _pendingValue) {
+                                await set(_pendingName, _pendingValue)
+                            }
+                            _pendingWrite = null
+                        }, DEBOUNCE_MS)
+                    },
+                    removeItem: async (name: string): Promise<void> => {
+                        if (_pendingWrite) { clearTimeout(_pendingWrite); _pendingWrite = null }
+                        await del(name)
+                    },
+                }
+            }),
             partialize: (state) => ({
                 // IndexedDB has virtually unlimited space, so we persist the full dataset and indexes
                 logs: state.logs,

@@ -679,6 +679,10 @@
   display: grid;
   grid-template-columns: 1fr 1fr auto 1fr 1fr;
   align-items: center;
+  /* ANDROID FIX: Prevent touch events from scrolling page behind bottom nav */
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform;
 }
 
 .reel-toast-container {
@@ -699,6 +703,8 @@
   min-width: 52px;
   transition: color 0.2s, transform 0.15s;
   -webkit-tap-highlight-color: transparent;
+  /* Re-enable taps inside the touch-action:none parent */
+  touch-action: manipulation;
 }
 
 .bottom-nav-tab.active {

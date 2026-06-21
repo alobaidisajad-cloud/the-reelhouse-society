@@ -13,6 +13,10 @@
   border-top: 1px solid rgba(139, 105, 20, 0.4);
   transition: background 0.4s, box-shadow 0.4s;
   contain: layout style;
+  /* ANDROID FIX: Prevent touch events on the fixed navbar from scrolling
+     the page content behind it. On iOS this is handled natively. */
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .navbar.scrolled {
@@ -33,6 +37,8 @@
   margin: 0 auto;
   gap: 1rem;
   position: relative;
+  /* Re-enable touch for interactive children inside the navbar */
+  touch-action: manipulation;
 }
 
 .nav-logo {
@@ -184,8 +190,11 @@
   justify-content: flex-start;
   text-align: center;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   padding: 5rem 2rem 4rem;
   overscroll-behavior: contain;
+  /* ANDROID FIX: Lock body scroll while menu is open */
+  touch-action: pan-y;
 }
 
 .mobile-nav-link {

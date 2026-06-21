@@ -1,11 +1,11 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, AuthChangeEvent } from '@supabase/supabase-js'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
 export const isSupabaseConfigured = !!(supabaseUrl && supabaseAnonKey)
 
-if (!isSupabaseConfigured) {
+if (!isSupabaseConfigured && import.meta.env.DEV) {
     console.warn("Supabase env vars missing. Running in offline mode.")
 }
 
@@ -31,7 +31,7 @@ if (!isSupabaseConfigured) {
 // Supabase fires TOKEN_REFRESH_FAILED which causes an AuthApiError in the console.
 // We catch it here and clear the dead session from localStorage gracefully.
 if (isSupabaseConfigured) {
-    supabase.auth.onAuthStateChange((event: any) => {
+    supabase.auth.onAuthStateChange((event: AuthChangeEvent) => {
         if (event === 'TOKEN_REFRESH_FAILED') {
             // Sign out locally only (no server round-trip needed)
             supabase.auth.signOut({ scope: 'local' }).catch(() => { })

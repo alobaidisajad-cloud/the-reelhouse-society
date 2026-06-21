@@ -1,7 +1,7 @@
 /**
  * FeedService — Service Boundary Tests
  * ─────────────────────────────────────
- * T4-03 AUDIT: Validates Zod schema enforcement, error wrapping,
+ * Validates Zod schema enforcement, error wrapping,
  * and edge cases for the community feed service layer.
  */
 

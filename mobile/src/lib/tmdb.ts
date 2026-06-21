@@ -3,8 +3,9 @@
 // Resilient, cached, deduplicated — ported from web
 // ============================================================
 
-const TMDB_API_KEY = process.env.EXPO_PUBLIC_TMDB_API_KEY || '';
-const TMDB_BASE = 'https://api.themoviedb.org/3';
+const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+const PROXY_URL = `${SUPABASE_URL}/functions/v1/tmdb-proxy`;
 const TMDB_IMG = 'https://image.tmdb.org/t/p';
 
 // ── Response interfaces ──
@@ -90,7 +91,7 @@ interface TMDBMovieDetail {
     tagline?: string;
     vote_count?: number;
     'watch/providers'?: { results?: Record<string, TMDBWatchProviderResult> };
-    release_dates?: { results?: { iso_3166_1: string; release_dates: { certification: string }[] }[] };
+    release_dates?: { results?: { iso_3166_1: string; release_dates: { certification?: string; type: number; release_date: string }[] }[] };
     popularity?: number;
 }
 
@@ -120,20 +121,25 @@ interface TMDBPersonCredits {
     crew?: TMDBSearchResult[];
 }
 
-// ── Simple LRU cache (memory-only, 200 entries, 5min TTL) ──
+// ── Simple LRU cache (memory-only, 200 entries, 10min TTL) ──
 const _cache = new Map<string, { data: unknown; ts: number }>();
 const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
-const MAX_CACHE = 200;             // M-01 AUDIT FIX: Reduced from 500 — mobile memory safety
+const MAX_CACHE = 200;             // Reduced from 500 — mobile memory safety
 
 function cacheGet(key: string): unknown | undefined {
   const entry = _cache.get(key);
   if (!entry) return undefined;
   if (Date.now() - entry.ts > CACHE_TTL) { _cache.delete(key); return undefined; }
+  
+  // LRU bump: Move to the end of the Map to mark as recently used
+  _cache.delete(key);
+  _cache.set(key, entry);
+  
   return entry.data;
 }
 
 function cacheSet(key: string, data: unknown) {
-  // L-12 FIX: Batch prune oldest 50 entries to prevent single-eviction linear growth
+  // Batch prune oldest 50 entries to prevent single-eviction linear growth
   if (_cache.size >= MAX_CACHE) {
     const keys = [..._cache.keys()].slice(0, 50);
     keys.forEach(k => _cache.delete(k));
@@ -154,12 +160,23 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
   const promise = (async () => {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
-        const sep = path.includes('?') ? '&' : '?';
-        const url = `${TMDB_BASE}${path}${sep}api_key=${TMDB_API_KEY}`;
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 10000);
-        const res = await fetch(url, { signal: controller.signal });
-        clearTimeout(timer);
+        let res: Response;
+        try {
+          res = await fetch(PROXY_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            },
+            body: JSON.stringify({ path }),
+            signal: controller.signal,
+          });
+        } finally {
+          clearTimeout(timer);
+        }
 
         if (res.status === 429 || res.status === 503) {
           await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
@@ -169,8 +186,8 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
         const data = await res.json();
         if (!path.includes('/search/')) cacheSet(path, data);
         return data as T;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (e: unknown) {
-        if (e instanceof Error && e.name === 'AbortError') return fallback;
         if (attempt < 2) await new Promise(r => setTimeout(r, 500 * Math.pow(2, attempt)));
       }
     }
@@ -185,6 +202,9 @@ async function fetchTMDB<T = unknown>(path: string, fallback: T | null = null): 
 export const tmdb = {
   // ── Search ──
   search: async (query: string, page = 1) => {
+    const searchStart = Date.now();
+    const SEARCH_BUDGET_MS = 6000;
+
     // TIER 1: Omni-Search — routed through hardened fetchTMDB (timeout + retry + dedup)
     let data = await fetchTMDB<TMDBSearchResponse>(
         `/search/multi?query=${encodeURIComponent(query)}&page=${page}&include_adult=false`,
@@ -257,9 +277,15 @@ export const tmdb = {
         }
     }
 
+    // Budget check: skip fallback tiers if Tier 1 already consumed most of the time budget
+    if (Date.now() - searchStart > SEARCH_BUDGET_MS) {
+        data.searchType = 'failed';
+        return data;
+    }
+
     // TIER 2: Typo Fallback — also routed through fetchTMDB
     const cleanWords = query.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/).filter((w) => w.length > 0);
-    if (cleanWords.length > 1) {
+    if (cleanWords.length > 1 && cleanWords.length <= 6) {
         const fallbacks = [];
         for (let i = 0; i < cleanWords.length; i++) {
             const words = [...cleanWords];
@@ -313,6 +339,12 @@ export const tmdb = {
             winner.data.matchedContext = `IGNORED "${winner.fallback.dropped.toUpperCase()}"`;
             return winner.data;
         }
+    }
+
+    // Budget check: skip semantic tier if budget exhausted
+    if (Date.now() - searchStart > SEARCH_BUDGET_MS) {
+        data.searchType = 'failed';
+        return data;
     }
 
     // TIER 3: Semantic Logic — also routed through fetchTMDB
@@ -407,89 +439,8 @@ export const tmdb = {
     return fetchTMDB<TMDBMovieListResponse>(`/discover/movie?${qs}`, { results: [] });
   },
 
-  // ── Real-time News Proxy ──
-  getNews: async () => {
-        // Simple fallback
-        const relDate = (daysAgo: number) => {
-            const d = new Date();
-            d.setDate(d.getDate() - daysAgo);
-            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
-        };
-
-        const FALLBACK_NEWS = [
-            {
-                id: 'fb1',
-                title: "OSCAR RADAR: The Monochrome Revival",
-                excerpt: "Why modern auteurs are returning to black and white for their most personal statements. A deep look at this year's Academy favorites.",
-                date: relDate(1),
-                time: "10:30 AM",
-                category: "AWARDS",
-                author: "THE ARCHIVIST",
-                link: "#",
-                image: "https://images.unsplash.com/photo-1542204147-993abd55f2eb?q=80&w=2000"
-            },
-            {
-                id: 'fb2',
-                title: "CANNES UNVEILED: The Latest Selection",
-                excerpt: "The festival returns to its roots with a heavy focus on European surrealism and South American neo-noir.",
-                date: relDate(2),
-                time: "02:15 PM",
-                category: "FESTIVALS",
-                author: "MIDNIGHT DEVOTEE",
-                link: "#",
-                image: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?q=80&w=2000"
-            }
-        ];
-
-        const feeds = ['https://www.theguardian.com/film/rss'];
-        try {
-            const results = await Promise.all(feeds.map(async (url: string) => {
-                try {
-                    const controller = new AbortController();
-                    const timer = setTimeout(() => controller.abort(), 4000);
-                    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`, { signal: controller.signal });
-                    clearTimeout(timer);
-                    if (!res.ok) return [];
-                    const data = await res.json();
-                    return data.items || [];
-                } catch {
-                    return [];
-                }
-            }));
-
-            const liveItems = results.flat();
-            if (liveItems.length === 0) return FALLBACK_NEWS;
-
-            const decodeEntities = (s: string) => s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#039;/g, "'");
-
-            interface RSSItem {
-                guid?: string; link?: string; title: string; description?: string;
-                pubDate: string; categories?: string[]; enclosure?: { link?: string };
-                thumbnail?: string; author?: string;
-            }
-            const allItems = (liveItems as RSSItem[])
-                .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
-                .map((item) => ({
-                    id: item.guid || item.link,
-                    title: decodeEntities(item.title),
-                    excerpt: decodeEntities((item.description?.replace(/<[^>]*>?/gm, '') ?? '').slice(0, 160)) + '...',
-                    date: new Date(item.pubDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase(),
-                    time: new Date(item.pubDate).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
-                    category: item.categories?.[0]?.toUpperCase() || 'WIRE',
-                    image: item.enclosure?.link || item.thumbnail || null,
-                    author: item.author || 'THE ORACLE',
-                    link: item.link
-                }));
-
-            return [...allItems, ...FALLBACK_NEWS];
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (e: unknown) {
-            return FALLBACK_NEWS;
-        }
-    },
-
   // ── Image URLs ──
-  poster: (path: string | null | undefined, size = 'w185') =>
+  poster: (path: string | null | undefined, size: 'w92' | 'w154' | 'w185' | 'w342' | 'w500' | 'w780' | 'original') =>
     path ? `${TMDB_IMG}/${size}${path}` : undefined,
 
   backdrop: (path: string | null | undefined, size = 'w1280') =>
@@ -498,8 +449,13 @@ export const tmdb = {
   profile: (path: string | null | undefined, size = 'w185') =>
     path ? `${TMDB_IMG}/${size}${path}` : undefined,
 
+  logo: (path: string | null | undefined, size = 'w45') =>
+    path ? `${TMDB_IMG}/${size}${path}` : undefined,
+
   posterThumb: (path: string | null | undefined) =>
     path ? `${TMDB_IMG}/w92${path}` : undefined,
+
+  youtubeThumbnail: (key: string) => `https://img.youtube.com/vi/${key}/hqdefault.jpg`,
 };
 
 // ── Utility Functions ──

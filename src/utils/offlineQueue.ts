@@ -4,7 +4,7 @@ import reelToast from './reelToast';
 
 export interface QueuedMutation {
     id: string;
-    type: 'endorse_log' | 'endorse_list' | 'mark_watched';
+    type: 'endorse_log' | 'endorse_list' | 'mark_watched' | 'add_log' | 'add_watchlist' | 'remove_watchlist';
     payload: any;
     timestamp: number;
 }
@@ -45,6 +45,16 @@ export async function flushOfflineQueue() {
                 dbError = error;
             } else if (mutation.type === 'mark_watched') {
                 const { error } = await supabase.from('logs').insert([mutation.payload]);
+                dbError = error;
+            } else if (mutation.type === 'add_log') {
+                const { error } = await supabase.from('logs').insert([mutation.payload]);
+                dbError = error;
+            } else if (mutation.type === 'add_watchlist') {
+                const { error } = await supabase.from('watchlists').insert([mutation.payload]);
+                dbError = error;
+            } else if (mutation.type === 'remove_watchlist') {
+                const { user_id, film_id } = mutation.payload;
+                const { error } = await supabase.from('watchlists').delete().eq('user_id', user_id).eq('film_id', film_id);
                 dbError = error;
             }
 

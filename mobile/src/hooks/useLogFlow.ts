@@ -1,13 +1,14 @@
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { InteractionManager } from 'react-native';
+ 
+import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
-import { storage } from '../stores/mmkv-storage';
-import * as Haptics from 'expo-haptics';
-import { tmdb } from '@/src/lib/tmdb';
 import reelToast from '@/src/utils/reelToast';
+import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { InteractionManager } from 'react-native';
+import { storage } from '../stores/mmkv-storage';
 export interface LogSearchResult {
     id: number;
     title?: string;
@@ -40,6 +41,15 @@ export const RATING_LABELS: Record<number, string> = {
     4.5: 'Masterpiece', 5: 'Masterpiece',
 };
 
+export const getLocalDateString = (offsetDays = 0) => {
+    const d = new Date();
+    d.setDate(d.getDate() + offsetDays);
+    const yr = d.getFullYear();
+    const mo = String(d.getMonth() + 1).padStart(2, '0');
+    const da = String(d.getDate()).padStart(2, '0');
+    return `${yr}-${mo}-${da}`;
+};
+
 export function useLogFlow() {
     const router = useRouter();
     const params = useLocalSearchParams<{
@@ -49,8 +59,8 @@ export function useLogFlow() {
     const { logs, lists, addLog, updateLog, removeLog, addFilmToList, removeFilmFromList, _loggedIndex } = useFilmStore();
 
     // ── Tier gating ──
-    const isAuteur = user?.role === 'auteur';
-    const isPremium = user?.role === 'archivist' || isAuteur;
+    const isAuteur = isAuteurPlusTier(user);
+    const isPremium = isArchivistPlusTier(user);
 
     // ── Step state ──
     const [step, setStep] = useState(params.filmId ? 1 : 0);
@@ -111,7 +121,7 @@ export function useLogFlow() {
 
     // ── Populate form from existing log in edit mode ──
     useEffect(() => {
-        // #5 AUDIT FIX: Reset all form state first to prevent stale data flash
+        // Reset all form state first to prevent stale data flash
         // when editLogId changes without unmounting (e.g. edit log A → edit log B)
         setRating(0);
         setReview('');
@@ -190,7 +200,7 @@ export function useLogFlow() {
     }, []);
 
     // ── Draft auto-save ──
-    // S3-04 FIX: Depend on stable scalar fields, not the entire `film` object reference.
+    // Depend on stable scalar fields, not the entire `film` object reference.
     // The film object changes identity on every setFilm() call, which would reset the
     // 1-second debounce timer. Extracting scalars ensures the timer only resets when
     // actual content changes (review, rating, privateNotes, or the selected film).
@@ -238,7 +248,7 @@ export function useLogFlow() {
         }
         setSubmitting(true);
         try {
-            const logData: Partial<import('@/src/types').FilmLog> = {
+            const logData: Record<string, any> = {
                 filmId: film.id, title: film.title ?? film.name ?? 'Untitled',
                 poster: altPoster ?? film.poster_path ?? null,
                 year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
@@ -248,7 +258,7 @@ export function useLogFlow() {
                 abandonedReason: status === 'abandoned' ? abandonedReason : null,
                 physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
                 isAutopsied: isAuteur && isAutopsied,
-                autopsy: isAuteur && isAutopsied ? JSON.stringify(autopsy) : null,
+                autopsy: isAuteur && isAutopsied ? autopsy : null,
                 altPoster: isAuteur ? altPoster : null,
                 editorialHeader: isPremium ? editorialHeader : null,
                 dropCap: isPremium ? dropCap : false,
@@ -279,7 +289,7 @@ export function useLogFlow() {
         }
     };
 
-    // #4 AUDIT FIX: Explicit draft discard — clears MMKV and resets form state
+    // Explicit draft discard — clears MMKV and resets form state
     const discardDraft = useCallback(() => {
         storage.delete(DRAFT_KEY);
         setRating(0);
@@ -346,6 +356,18 @@ export function useLogFlow() {
         handleDelete,
         discardDraft,
         toggleList,
-        lists
+        lists,
+        hasUnsavedChanges: review.trim().length > 0 || rating > 0 || privateNotes.trim().length > 0,
+        // Mock dispatch for backwards compatibility with flattened state
+        dispatch: (action: any) => {
+            switch(action.field) {
+                case 'dropCap': setDropCap(action.value); break;
+                case 'pullQuote': setPullQuote(action.value); break;
+                case 'editorialHeader': setEditorialHeader(action.value); break;
+                case 'autopsyOpen': setAutopsyOpen(action.value); break;
+                case 'isAutopsied': setIsAutopsied(action.value); break;
+                case 'autopsy': setAutopsy(action.value); break;
+            }
+        }
     };
 }

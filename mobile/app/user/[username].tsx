@@ -1,75 +1,87 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useEffect, useState, useCallback, useMemo } from 'react';
-import {
-  View, Text, StyleSheet, ScrollView,
-  RefreshControl, useWindowDimensions
-} from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import AnimatedRN, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, Easing, cancelAnimation, withRepeat } from 'react-native-reanimated';
+import { useCallback, useEffect, useState } from 'react';
+import {
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+    useWindowDimensions
+} from 'react-native';
+import AnimatedRN, { Easing, FadeIn, cancelAnimation, useAnimatedReaction, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import * as Haptics from 'expo-haptics';
-import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry } from '@/src/types';
+import type { ProfileLog, ProfileVaultItem, ProfileWatchlistItem } from '@/src/types';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { supabase } from '@/src/lib/supabase';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { globalScrollY } from '@/src/lib/scrollBridge';
+import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
-import { SectionDivider , ReelRating } from '@/src/components/Decorative';
-import { tmdb } from '@/src/lib/tmdb';
+import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import { CinematicInsights } from '@/src/components/profile/CinematicInsights';
 import { ProgrammesSection } from '@/src/components/profile/ProgrammesSection';
+import { tmdb } from '@/src/lib/tmdb';
+import { colors } from '@/src/theme/theme';
 // CinematicMap is missing from workspace, commenting out to avoid compilation errors
 // import { CinematicMap } from '@/src/components/profile/CinematicMap';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { useProfileData } from '@/src/hooks/useProfileData';
 import { useProfileController } from '@/src/hooks/useProfileController';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { ProfileDataService } from '@/src/services/ProfileDataService';
-import { s } from './profileStyles';
-import { useProfileComputed } from './profileComputed';
-import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
-import { ProfileBackdrop } from '@/src/components/profile/ProfileBackdrop';
-import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
-import { NoirPassport } from '@/src/components/profile/NoirPassport';
-import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
-import { ProjectorRoom } from '@/src/components/profile/ProjectorRoom';
-import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
-import { TasteMatch } from '@/src/components/profile/TasteMatch';
-import { TasteDNA } from '@/src/components/profile/TasteDNA';
 import { Achievements } from '@/src/components/profile/Achievements';
+import { CinemaDNACard } from '@/src/components/profile/CinemaDNACard';
+import NitrateCalendarGrid from '@/src/components/profile/NitrateCalendarGrid';
+import { NoirPassport } from '@/src/components/profile/NoirPassport';
 import ProfileArchiveTab from '@/src/components/profile/ProfileArchiveTab';
+import { ProfileBackdrop } from '@/src/components/profile/ProfileBackdrop';
 import ProfileLedgerTab from '@/src/components/profile/ProfileLedgerTab';
+import { ProfileTriptych } from '@/src/components/profile/ProfileTriptych';
 import ProfileWatchlistTab from '@/src/components/profile/ProfileWatchlistTab';
+import { ProjectorRoom } from '@/src/components/profile/ProjectorRoom';
+import { TasteDNA } from '@/src/components/profile/TasteDNA';
+import { TasteMatch } from '@/src/components/profile/TasteMatch';
+import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
+import { useProfileComputed } from './profileComputed';
+import { s } from './profileStyles';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { safeOpenURL } from '@/src/utils/linking';
-import { normalizeTier, isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
+import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
+import PressableScale from '@/src/components/PressableScale';
 import ProfileListsTab from '@/src/components/profile/ProfileListsTab';
 import ProfilePhysicalTab from '@/src/components/profile/ProfilePhysicalTab';
+import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
 import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Archive, BookOpen, Bookmark, LayoutList, Disc, LineChart,
-  Star, Lock, Settings, ChevronLeft, Globe, Sparkles, Film as FilmIcon,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  ArrowLeft, X,
-  Flame, Crown, Dna, CalendarDays,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    Archive,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    ArrowLeft,
+    CalendarDays,
+    ChevronLeft,
+    Crown, Dna,
+    Film as FilmIcon,
+    Flame,
+    Globe,
+    Lock,
+    MoreVertical,
+    Settings,
+    Sparkles,
+    Star
 } from 'lucide-react-native';
-import PressableScale from '@/src/components/PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ════════════════════════════════════════════════════════════
 // HELPER COMPONENTS
 // ════════════════════════════════════════════════════════════
 
-import { StatCard, SectionLabel, GoldDivider } from '@/src/components/profile/ProfileHelpers';
+import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
+import ReportSheet from '@/src/components/moderation/ReportSheet';
+import { GoldDivider, SectionLabel, StatCard } from '@/src/components/profile/ProfileHelpers';
 import { ProfilePosterCard } from '@/src/components/profile/ProfilePosterCard';
+import { useBlockStore } from '@/src/stores/blockStore';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { timeAgo, timeAgoLower } from '@/src/utils/timeAgo';
 
 const AnimatedView = AnimatedRN.createAnimatedComponent(View);
+const AnimatedScrollView = AnimatedRN.createAnimatedComponent(ScrollView);
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type ProfileTab = 'archive' | 'ledger' | 'watchlist' | 'lists' | 'physical' | 'passport' | 'projector' | 'calendar';
@@ -112,14 +124,33 @@ const TAB_TITLES: Record<string, string> = {
   projector: 'Global Analytics', calendar: "The AUTEUR's Calendar",
 };
 
-export default function UserProfileScreen({ usernameOverride }: { usernameOverride?: string } = {}) {
+export default function UserProfileScreen({ usernameOverride, isRootTab = false }: { usernameOverride?: string, isRootTab?: boolean } = {}) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const params = useLocalSearchParams<{ username: string; tab?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { width: windowWidth } = useWindowDimensions();
 
-  // ── Elite State Controller ──
+  const scrollY = useSharedValue(0);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (isRootTab) {
+        globalScrollY.value = withTiming(scrollY.value, { duration: 250 });
+      }
+    }, [scrollY, isRootTab])
+  );
+
+  useAnimatedReaction(
+    () => scrollY.value,
+    (current) => {
+      if (isRootTab) {
+        globalScrollY.value = current;
+      }
+    }
+  );
+
+  // ── State controller ──
   const ctrl = useProfileController(usernameOverride);
   const { nav, data } = ctrl;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -128,8 +159,15 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   const { username, isSelf, isFollowing, isRequested, activeTab, myLogs, myWatchlist, myVault, myLists, setActiveTab } = ctrl;
   const { archiveSieve, ledgerSearch, ledgerRatingFilter, watchlistSearch, watchlistSort, physicalFilter, setArchiveSieve, setLedgerSearch, setLedgerRatingFilter, setWatchlistSearch, setWatchlistSort, setPhysicalFilter } = ctrl;
 
-  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  
   const filmStore = useFilmStore();
+
+  // ── Moderation State ──
+  const [actionSheetVisible, setActionSheetVisible] = useState(false);
+  const [reportSheetVisible, setReportSheetVisible] = useState(false);
+  const isBlocked = useBlockStore((state) => state.isBlocked(targetUser?.id ?? ''));
+  const isMuted = useBlockStore((state) => state.isMuted(targetUser?.id ?? ''));
+  const blockStore = useBlockStore();
 
   const POSTER_COL_4 = (windowWidth - 32 - 18) / 4;
   const POSTER_COL_3 = (windowWidth - 32 - 16) / 3;
@@ -166,10 +204,9 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
   const hasMoreLists = data.hasMoreLists;
   const isLoadingMore = data.isLoadingMore;
 
-  const rawRole = targetUser?.tier || targetUser?.role;
-  const tier = normalizeTier(rawRole);
-  const isArchivistPlus = isArchivistPlusTier(tier);
-  const isAuteurPlus = isAuteurPlusTier(tier);
+  const tier = resolveTier(targetUser);
+  const isArchivistPlus = isArchivistPlusTier(targetUser);
+  const isAuteurPlus = isAuteurPlusTier(targetUser);
   const isPrivate = targetUser?.is_social_private && !isSelf && !isFollowing;
 
   const {
@@ -305,6 +342,33 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
     <>
       {dnaCardOpen && <CinemaDNACard {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, user: targetUser, analytics: serverAnalytics, onClose: closeDnaCard} as any} />}
       <WatchlistRoulette visible={rouletteOpen} watchlist={watchlistFiltered} onClose={closeRoulette} onSelect={onRouletteSelect} />
+      {!isSelf && (
+        <>
+          <ContentActionSheet
+            visible={actionSheetVisible}
+            targetUserId={targetUser.id}
+            targetUsername={targetUser.username || ''}
+            contentType="profile"
+            contentId={targetUser.id}
+            onClose={() => setActionSheetVisible(false)}
+            onReport={() => { setActionSheetVisible(false); setReportSheetVisible(true); }}
+            onBlock={() => { setActionSheetVisible(false); blockStore.blockUser(targetUser.id); }}
+            onMute={() => { setActionSheetVisible(false); blockStore.muteUser(targetUser.id); }}
+            onUnblock={() => { setActionSheetVisible(false); blockStore.unblockUser(targetUser.id); }}
+            onUnmute={() => { setActionSheetVisible(false); blockStore.unmuteUser(targetUser.id); }}
+            showUnblock={isBlocked}
+            showUnmute={isMuted}
+          />
+          <ReportSheet
+            visible={reportSheetVisible}
+            contentType="profile"
+            contentId={targetUser.id}
+            targetUserId={targetUser.id}
+            targetUsername={targetUser.username || ''}
+            onDismiss={() => setReportSheetVisible(false)}
+          />
+        </>
+      )}
     </>
   );
 
@@ -342,6 +406,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 isLoadingMore={(isSelf && archiveSieve === 'all') ? filmStore._fetchingLogs : isLoadingMore.logs_archive}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
+                bottomInset={insets.bottom}
               />
             )}
 
@@ -363,6 +428,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 isSelf={isSelf}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
+                bottomInset={insets.bottom}
               />
             )}
 
@@ -383,6 +449,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 setRouletteOpen={setRouletteOpen}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
+                bottomInset={insets.bottom}
               />
             )}
 
@@ -396,6 +463,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 isSelf={isSelf}
                 refreshing={refreshing}
                 onRefresh={onRefresh}
+                bottomInset={insets.bottom}
               />
             )}
 
@@ -415,6 +483,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                   hasMore={(isSelf && physicalFilter === 'all') ? filmStore.archiveHasMore : hasMoreVault}
                   refreshing={refreshing}
                   onRefresh={onRefresh}
+                  bottomInset={insets.bottom}
                 />
               ) : (
                 <View style={s.tabContentPad}>
@@ -584,7 +653,8 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
         </View>
       )}
 
-      <ScrollView contentContainerStyle={[s.mainScrollContent, { paddingBottom: Math.max(insets.bottom + 60, 60) }]} showsVerticalScrollIndicator={false}
+      <CinematicScrollView contentContainerStyle={[s.mainScrollContent, { paddingBottom: Math.max(insets.bottom + 60, 60) }]} showsVerticalScrollIndicator={false}
+        externalScrollY={scrollY} bottomInset={Math.max(insets.bottom + 60, 60)} scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}>
 
         {/* ═══ ATMOSPHERIC HEADER ═══ */}
@@ -701,11 +771,23 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
                 </PressableScale>
               </View>
             ) : (
-              <PressableScale style={[s.followBtn, (isFollowing || isRequested) && s.followingBtn, followLoading && { opacity: 0.5 }]} onPress={toggleFollow} disabled={followLoading || isRequested} pressedScale={0.92} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityRole="button" accessibilityLabel={isFollowing ? "Unfollow user" : "Follow user"}>
-                <AnimatedRN.Text entering={FadeIn.duration(300)} style={[s.followBtnText, (isFollowing || isRequested) && s.followingBtnText]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>
-                  {followLoading ? '...' : isFollowing ? 'SYNDICATED' : isRequested ? 'REQUESTED' : targetUser.is_social_private ? '+ REQUEST' : '+ FOLLOW'}
-                </AnimatedRN.Text>
-              </PressableScale>
+              <View style={s.profileActionRow}>
+                <PressableScale style={[s.followBtn, (isFollowing || isRequested) && s.followingBtn, followLoading && { opacity: 0.5 }]} onPress={toggleFollow} disabled={followLoading || isRequested} pressedScale={0.92} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityRole="button" accessibilityLabel={isFollowing ? "Unfollow user" : "Follow user"}>
+                  <AnimatedRN.Text entering={FadeIn.duration(300)} style={[s.followBtnText, (isFollowing || isRequested) && s.followingBtnText]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>
+                    {followLoading ? '...' : isFollowing ? 'SYNDICATED' : isRequested ? 'REQUESTED' : targetUser.is_social_private ? '+ REQUEST' : '+ FOLLOW'}
+                  </AnimatedRN.Text>
+                </PressableScale>
+                <PressableScale
+                  style={s.moreBtn}
+                  onPress={() => setActionSheetVisible(true)}
+                  hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                  haptic="selection"
+                  pressedScale={0.92}
+                  accessibilityLabel="More options for this member"
+                >
+                  <MoreVertical size={18} color={colors.fog} strokeWidth={1.5} />
+                </PressableScale>
+              </View>
             )}
 
             {/* ── Stats Row ── */}
@@ -844,7 +926,7 @@ export default function UserProfileScreen({ usernameOverride }: { usernameOverri
           )}
         </View>
         )}
-      </ScrollView>
+      </CinematicScrollView>
 
         {modals}
     </View>

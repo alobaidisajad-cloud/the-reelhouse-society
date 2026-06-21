@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, { FadeInUp } from 'react-native-reanimated';
+import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import * as Haptics from 'expo-haptics';
+
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
@@ -17,7 +16,7 @@ interface AutopsyViewProps {
 export const AutopsyView = React.memo(function AutopsyView({ isAutopsied, autopsy }: AutopsyViewProps) {
   const [autopsyOpen, setAutopsyOpen] = useState(false);
 
-  if (!isAutopsied && !autopsy) return null;
+  if (!isAutopsied || !autopsy || Object.keys(autopsy).length === 0) return null;
 
   return (
     <View style={s.autopsySectionWrap}>
@@ -28,7 +27,7 @@ export const AutopsyView = React.memo(function AutopsyView({ isAutopsied, autops
           pressedScale={0.97}
         >
           <View style={s.autopsyToggleContent}>
-            <AnimatedView style={s.autopsyDot} />
+            <View style={s.autopsyDot} />
             <Text style={s.autopsyTitle}>THE AUTOPSY</Text>
             <Text style={s.autopsyConfidential}>CONFIDENTIAL</Text>
           </View>
@@ -36,7 +35,7 @@ export const AutopsyView = React.memo(function AutopsyView({ isAutopsied, autops
        </PressableScale>
 
        {autopsyOpen && (
-         <AnimatedView entering={FadeInUp.duration(300)} style={s.autopsyCard}>
+         <AnimatedView entering={FadeInUp.duration(300)} layout={LinearTransition.springify()} style={s.autopsyCard}>
            <View style={s.autopsyInner}>
              {[
                 { key: 'story', label: 'STORY', value: autopsy?.story !== undefined ? autopsy.story : autopsy?.screenplay ?? 0 },
@@ -46,21 +45,17 @@ export const AutopsyView = React.memo(function AutopsyView({ isAutopsied, autops
                 { key: 'editing', label: 'EDITING & PACING', value: autopsy?.editing !== undefined ? autopsy.editing : autopsy?.pacing ?? 0 },
                 { key: 'sound', label: 'SOUND DESIGN & SCORE', value: autopsy?.sound ?? 0 },
              ].map(stat => (
-               <View key={stat.key} style={{ marginBottom: 12 }}>
+               <View key={stat.key} style={s.autopsyBarWrap}>
                  <View style={s.autopsyBarHeader}>
                    <Text style={s.autopsyLabel}>{stat.label}</Text>
                    <Text style={s.autopsyValue}>{stat.value === 10 ? '10.0' : parseFloat(String(stat.value)).toFixed(1)}</Text>
                  </View>
-                 <PressableScale haptic="medium" style={s.autopsyTrack} pressedScale={0.99}>
-                   <View style={s.sprocketStrip}>
-                     {Array.from({ length: 30 }).map((_, i) => (
-                       <View key={i} style={s.sprocketHole} />
-                     ))}
-                   </View>
-                   <LinearGradient colors={[colors.sepia, '#5a430d']} style={[s.autopsyFill, { width: `${(stat.value / 10) * 100}%` }]} start={{x:0, y:0}} end={{x:0, y:1}}>
-                     <View style={s.cutMarker} />
-                   </LinearGradient>
-                 </PressableScale>
+                  <View style={s.autopsyTrack}>
+                    <View style={s.sprocketStrip} />
+                    <LinearGradient colors={[colors.sepia, '#5a430d']} style={[s.autopsyFill, { width: `${(stat.value / 10) * 100}%` }]} start={{x:0, y:0}} end={{x:0, y:1}}>
+                      <View style={s.cutMarker} />
+                    </LinearGradient>
+                  </View>
                </View>
              ))}
            </View>
@@ -140,6 +135,9 @@ const s = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 10,
   },
+  autopsyBarWrap: {
+    marginBottom: 12,
+  },
   autopsyBarHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -173,18 +171,14 @@ const s = StyleSheet.create({
   },
   sprocketStrip: {
     ...StyleSheet.absoluteFillObject,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 2,
+    top: '50%',
+    marginTop: -2,
+    height: 4,
+    borderTopWidth: 4,
+    borderColor: '#000',
+    borderStyle: 'dashed',
     opacity: 0.15,
     zIndex: 1,
-  },
-  sprocketHole: {
-    width: 2,
-    height: 4,
-    backgroundColor: '#000',
-    borderRadius: 1,
   },
   autopsyFill: {
     height: '100%',
