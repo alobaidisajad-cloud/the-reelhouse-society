@@ -4,7 +4,6 @@
  * Single import point for all custom hooks.
  * Import from '@/src/hooks' instead of individual files.
  */
-export { useAchievements } from './useAchievements';
 export { useAmbientGlow } from './useAmbientGlow';
 export { useAnalytics } from './useAnalytics';
 export { useAuthThrottle } from './useAuthThrottle';
