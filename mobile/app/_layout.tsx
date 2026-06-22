@@ -13,6 +13,11 @@ import { ToastOverlay } from '@/src/components/ToastOverlay';
 import AppBootstrapper from '@/src/providers/AppBootstrapper';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
+import { initEncryptedStorage } from '@/src/stores/mmkv-storage';
+import { rehydrateFilmStore } from '@/src/stores/films';
+import { rehydrateSettingsStore } from '@/src/stores/settings';
+import { rehydrateDiscoverStore } from '@/src/stores/discover';
+import { rehydrateNotificationStore } from '@/src/stores/notificationStore';
 import { colors } from '@/src/theme/theme';
 import { CourierPrime_400Regular, CourierPrime_400Regular_Italic, CourierPrime_700Bold } from '@expo-google-fonts/courier-prime';
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
@@ -63,6 +68,17 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
+        // Resolve the MMKV encryption key (and run the one-time plaintext→
+        // encrypted migration) BEFORE any persisted store reads from disk.
+        await initEncryptedStorage();
+        // Persisted stores skip auto-hydration; rehydrate them now that the
+        // encrypted instance is live.
+        await Promise.all([
+          rehydrateFilmStore(),
+          rehydrateSettingsStore(),
+          rehydrateDiscoverStore(),
+          rehydrateNotificationStore(),
+        ]);
         await restoreSession();
         // Hydrate BlockStore from MMKV cache (synchronous, before first render)
         const userId = useAuthStore.getState().user?.id;

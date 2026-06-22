@@ -26,6 +26,8 @@ const useFilmStoreBase = create<FilmState>()(
         {
             name: 'reelhouse-films',
             storage: createAsyncMMKVStorage(),
+            // Deferred hydration until the encryption key is resolved (LIB-5).
+            skipHydration: true,
             // Explicit allowlist instead of fragile `_` prefix filter
             partialize: (state) => {
                 const PERSISTED_KEYS = ['logs', 'watchlist', 'lists', 'interactions', 'physicalArchive'];
@@ -103,6 +105,8 @@ const useFilmStoreBase = create<FilmState>()(
 );
 
 export const useFilmStore = createSelectors(useFilmStoreBase);
+
+export const rehydrateFilmStore = () => useFilmStoreBase.persist.rehydrate();
 
 // Re-export aliases to satisfy components that were migrated to the split architecture
 export const useLogStore = useFilmStore;
