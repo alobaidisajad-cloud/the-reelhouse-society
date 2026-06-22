@@ -11,7 +11,7 @@ jobs:
     name: 🔬 Strict Architecture Analysis
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: strict-analysis
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -58,7 +58,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: strict-analysis
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -75,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: strict-analysis
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Fast PR-time signal: catches malformed flow YAML without needing a
       # real build or device. The real device run happens post-merge, below.
@@ -92,7 +92,7 @@ jobs:
     # only fires post-merge on main, not on every PR push.
     if: github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
