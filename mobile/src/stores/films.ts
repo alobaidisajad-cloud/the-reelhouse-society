@@ -29,8 +29,20 @@ const useFilmStoreBase = create<FilmState>()(
             // Explicit allowlist instead of fragile `_` prefix filter
             partialize: (state) => {
                 const PERSISTED_KEYS = ['logs', 'watchlist', 'lists', 'interactions', 'physicalArchive'];
+                // The large, server-paginated arrays are persisted only as a recent
+                // window so MMKV stays well under its size budget; the full arrays
+                // remain in session memory and are refreshed by fetch* on launch.
+                // This window exists purely for instant cold-start display.
+                const PERSIST_WINDOW = 150;
+                const WINDOWED_KEYS = new Set(['logs', 'watchlist']);
                 return Object.fromEntries(
-                    Object.entries(state).filter(([key]) => PERSISTED_KEYS.includes(key))
+                    Object.entries(state)
+                        .filter(([key]) => PERSISTED_KEYS.includes(key))
+                        .map(([key, value]) =>
+                            WINDOWED_KEYS.has(key) && Array.isArray(value)
+                                ? [key, value.slice(0, PERSIST_WINDOW)]
+                                : [key, value]
+                        )
                 );
             },
             onRehydrateStorage: () => (state) => {
