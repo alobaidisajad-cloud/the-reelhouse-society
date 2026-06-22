@@ -48,3 +48,15 @@ export function stripHTML(html: string): string {
         .replace(/<\/?(strong|em|b|i|u|span|h[1-6]|ul|li|ol|a)(?:\s+[^>]*|)\/?>/gi, '')
         .trim();
 }
+
+/**
+ * Word-boundary review truncation — single source of truth shared by every
+ * share card (Dossier, ShareCardModal, LogShareCard) and matched to the web
+ * card, so the same review yields the same truncated text on both platforms.
+ */
+export function truncateReview(text: string, max = 350): string {
+    const raw = String(text || '').trim();
+    if (raw.length <= max) return raw;
+    const cut = raw.lastIndexOf(' ', max);
+    return raw.slice(0, cut > 40 ? cut : max).trimEnd() + '…';
+}

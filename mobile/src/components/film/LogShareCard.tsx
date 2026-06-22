@@ -10,6 +10,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import reelToast from '@/src/utils/reelToast';
 import { ReelRating } from '@/src/components/Decorative';
+import { truncateReview as sharedTruncateReview } from '@/src/utils/text';
 
 export interface ShareCardData {
     filmTitle: string;
@@ -43,11 +44,9 @@ function cleanReviewText(text: string): string {
     return text.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<(?:\/?(?:p|div|br|b|i|strong|em|span|a|ul|li))[^>]*>/gi, '').trim();
 }
 
+// Pre-clean review HTML to plain text, then apply the shared truncation.
 function truncateReview(text: string, maxLength = 350) {
-    const raw = cleanReviewText(text);
-    if (raw.length <= maxLength) return raw;
-    const cut = raw.lastIndexOf(' ', maxLength);
-    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '…';
+    return sharedTruncateReview(cleanReviewText(text), maxLength);
 }
 
 function CardContent({ data }: { data: ShareCardData }) {
