@@ -2,7 +2,8 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Edit3, ExternalLink, Eye, Heart, MessageSquare, Share2, Sparkles, Trash2, X as XIcon } from 'lucide-react-native';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Linking, Modal, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, Modal, ScrollView, Share, Text, View } from 'react-native';
+import { safeOpenURL } from '@/src/utils/linking';
 import Markdown from 'react-native-markdown-display';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -397,7 +398,7 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
           {'link' in displayArticle && (displayArticle as WireStory).link && (
             <PressableScale
               style={st.wireReadFullBtn}
-              onPress={() => { Linking.openURL((displayArticle as WireStory).link!); }}
+              onPress={() => { void safeOpenURL((displayArticle as WireStory).link!); }}
               pressedScale={0.97}
             >
               <View style={st.wireReadFullRow}>
