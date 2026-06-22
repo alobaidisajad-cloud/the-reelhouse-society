@@ -14,7 +14,6 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
-import { ProfileService } from '@/src/services/ProfileWriteService';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
 import { isNetworkError } from '@/src/utils/networkError';
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -243,7 +242,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         setIsEditing(false);
 
         try {
-            await ProfileService.updateProfile(user.id, { preferences: updatedPrefs });
+            // Send only the changed key; the server merges it (COMP-7 cross-device).
+            const { error } = await supabase.rpc('update_my_preferences', { p_preferences: { favorites: newFavs } });
+            if (error) throw error;
         } catch (e: unknown) {
             if (isNetworkError(e)) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
@@ -265,7 +266,9 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         updateUser({ preferences: updatedPrefs });
 
         try {
-            await ProfileService.updateProfile(user.id, { preferences: updatedPrefs });
+            // Send only the changed key; the server merges it (COMP-7 cross-device).
+            const { error } = await supabase.rpc('update_my_preferences', { p_preferences: { favorites: newFavs } });
+            if (error) throw error;
         } catch (e: unknown) {
             if (isNetworkError(e)) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });

@@ -248,8 +248,10 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
 
     // ── Profile ──
     update_profile: async (p: any) => {
-        const { user_id, preferences } = p;
-        throwIfError(await supabase.from('profiles').update({ preferences }).eq('id', user_id as string));
+        const { preferences } = p;
+        // Merge (not overwrite) so a queued offline change can't clobber prefs
+        // set on another device while this one was offline (COMP-7).
+        throwIfError(await supabase.rpc('update_my_preferences', { p_preferences: preferences }));
         return {};
     },
 

@@ -132,7 +132,9 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
         if (!user?.id) return;
 
         try {
-            await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id);
+            // Send only the changed key; the server merges it (COMP-7 cross-device).
+            const { error } = await supabase.rpc('update_my_preferences', { p_preferences: { programmes: updatedPrefs.programmes } });
+            if (error) throw error;
         } catch (e: unknown) {
             if (isNetworkError(e)) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });

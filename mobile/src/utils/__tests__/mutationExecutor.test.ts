@@ -199,17 +199,15 @@ describe('Logs', () => {
 
 describe('Profile', () => {
     describe('update_profile', () => {
-        it('updates preferences by user_id', async () => {
-            makeChainResolveTo(mockChain, { error: null });
+        it('merges preferences via the update_my_preferences RPC', async () => {
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: null });
             const prefs = { theme: 'dark', language: 'en' };
             await runMutation('update_profile', { user_id: 'u1', preferences: prefs });
-            expect(supabase.from).toHaveBeenCalledWith('profiles');
-            expect(mockChain.update).toHaveBeenCalledWith({ preferences: prefs });
-            expect(mockChain.eq).toHaveBeenCalledWith('id', 'u1');
+            expect(supabase.rpc).toHaveBeenCalledWith('update_my_preferences', { p_preferences: prefs });
         });
 
-        it('throws on update error', async () => {
-            makeChainResolveTo(mockChain, { error: { message: 'forbidden' } });
+        it('throws on RPC error', async () => {
+            (supabase.rpc as jest.Mock) = jest.fn().mockResolvedValue({ data: null, error: { message: 'forbidden' } });
             await expect(runMutation('update_profile', { user_id: 'u1', preferences: {} })).rejects.toBeTruthy();
         });
     });
