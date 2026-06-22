@@ -549,16 +549,20 @@ all-pass). Final state: **tsc clean, 753/753 jest pass.**
 | `183c38c` | HOOK-8, HOOK-9 (read-surface block filter) |
 | `a48a79d` | COMP-8, HOOK-9 (badge convergence) |
 | `4e98b72` | UTIL-2 (haptics codemod — ~43 files) |
+| `(LIB-5)` | LIB-5 (MMKV encryption-at-rest via deferred-hydration bootstrap) |
 
-### Deferred (1) — needs a dedicated refactor, not a surgical fix
-- **LIB-5 (encrypt MMKV via expo-secure-store)** — MMKV needs the encryption key
-  *synchronously at construction*, but expo-secure-store is async-only and the
-  Zustand stores hydrate at module import (before AppBootstrapper runs). A
-  correct fix requires async-gating all store hydration on key load **plus** a
-  one-time plaintext→encrypted migration + on-device testing. The MMKV cache
-  holds only non-sensitive data (auth tokens already live in SecureStore), so a
-  half-migration that risks corrupting existing users' cache on 2nd launch was
-  deliberately NOT shipped. Revisit as a bootstrap refactor.
+### LIB-5 — DONE (was previously deferred)
+Encryption-at-rest was implemented via a deferred-hydration bootstrap, resolving
+the synchronous-MMKV / async-keystore mismatch without data loss:
+- `initEncryptedStorage()` generates a 256-bit key (persisted to the OS keychain
+  via expo-secure-store), and on first run recrypts the existing plaintext store
+  **in place** (one-time migration, data preserved); later launches reopen with
+  the key. Graceful degrade to unencrypted if the keystore is unavailable.
+- The 4 MMKV-persisted stores use `skipHydration` + rehydrate helpers; `_layout`
+  awaits the key init and rehydrates before any disk read, behind the existing
+  app-ready splash gate.
+
+**All 61 findings are now landed. Zero deferrals.**
 
 ### Phase 4 — SERVER-SIDE (cannot be done from the mobile repo)
 These remain the responsibility of the Supabase project (SQL / Edge Functions):
