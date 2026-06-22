@@ -1,0 +1,43 @@
+version: 2
+# Dependabot proposes dependency updates as individual PRs. Because CI now runs
+# tsc + the full Jest suite + coverage gate (and Playwright/Maestro), each bump
+# is validated before it can merge — the safe alternative to a blanket
+# `npm audit fix`, which bumps everything at once and broke our tests.
+updates:
+  # ── Mobile (React Native / Expo) ──
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    # Expo pins its own native module versions; never let Dependabot bump the
+    # Expo SDK or React out from under the managed workflow.
+    ignore:
+      - dependency-name: expo
+      - dependency-name: react
+      - dependency-name: react-dom
+      - dependency-name: react-native
+    groups:
+      # One PR for the low-risk patch/minor noise; majors stay individual.
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── Web (Vite beta) ──
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── CI workflow actions ──
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
