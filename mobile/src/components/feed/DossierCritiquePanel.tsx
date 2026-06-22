@@ -27,7 +27,6 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
     const [comments, setComments] = useState<DossierComment[]>([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [showAll, setShowAll] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editBody, setEditBody] = useState('');
@@ -218,9 +217,9 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
             {loading && <Text style={s.loading}>RETRIEVING CRITIQUES…</Text>}
 
             {comments.length > 3 && !showAll && (
-                <PressableScale onPress={() => (router.push as any)(`/user/${comments[0].username}` as any)} style={s.viewAllBtn} haptic="light" pressedScale={0.96}>
+                <PressableScale onPress={() => setShowAll(true)} style={s.viewAllBtn} haptic="light" pressedScale={0.96}>
                     <ChevronDown size={14} color={colors.fog} />
-                    <Text style={s.viewAllText}>VIEW ALL CRITIQUES</Text>
+                    <Text style={s.viewAllText}>VIEW ALL CRITIQUES ({comments.length})</Text>
                 </PressableScale>
             )}
 

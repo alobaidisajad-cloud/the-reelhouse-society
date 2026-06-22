@@ -52,7 +52,7 @@ export function useUniversalSearch(query: string) {
           supabase
             .from('profiles')
             .select('id, username, avatar_url, role')
-            .or(`username.ilike.%${safeText}%,display_name.ilike.%${safeText}%`)
+            .or(`username.ilike."%${safeText}%",display_name.ilike."%${safeText}%"`)
             .limit(15),
           signal
         ),
@@ -60,7 +60,7 @@ export function useUniversalSearch(query: string) {
           supabase
             .from('logs')
             .select('id, user_id, film_title, review, rating, username, role, poster_path, status, abandoned_reason, created_at')
-            .or(`film_title.ilike.%${safeText}%,review.ilike.%${safeText}%,username.ilike.%${safeText}%`)
+            .or(`film_title.ilike."%${safeText}%",review.ilike."%${safeText}%",username.ilike."%${safeText}%"`)
             .not('review', 'is', null)
             .order('created_at', { ascending: false })
             .limit(20),
@@ -70,7 +70,7 @@ export function useUniversalSearch(query: string) {
           supabase
             .from('lists')
             .select('id, user_id, title, description, is_private, is_ranked, created_at')
-            .or(`title.ilike.%${safeText}%,description.ilike.%${safeText}%`)
+            .or(`title.ilike."%${safeText}%",description.ilike."%${safeText}%"`)
             .eq('is_private', false)
             .order('created_at', { ascending: false })
             .limit(12),

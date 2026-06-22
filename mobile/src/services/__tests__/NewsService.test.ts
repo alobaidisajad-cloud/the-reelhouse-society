@@ -34,7 +34,7 @@ describe('NewsService (getNews) — Comprehensive', () => {
   // ════════════════════════════════════════════════════════════════════
 
   describe('happy path — Edge Function returns data', () => {
-    it('returns parsed, decoded, and sorted items with fallback appended', async () => {
+    it('returns parsed, decoded, and sorted live items WITHOUT appending stale fallback', async () => {
       const rssItems = [
         {
           guid: 'item-1',
@@ -65,8 +65,8 @@ describe('NewsService (getNews) — Comprehensive', () => {
       jest.runAllTimers();
       const result = await promise;
 
-      // Live items + fallback items
-      expect(result.length).toBeGreaterThan(2);
+      // Live items ONLY — curated fallback must NOT pollute a live feed (SVC-2)
+      expect(result.length).toBe(2);
 
       // Sorted by pubDate descending: item-2 (June) before item-1 (Jan)
       expect(result[0].id).toBe('item-2');
@@ -85,9 +85,8 @@ describe('NewsService (getNews) — Comprehensive', () => {
       // Image from enclosure
       expect(result[0].image).toBe('https://img.example.com/photo.jpg');
 
-      // Fallback items appended at end
-      expect(result[result.length - 2].id).toBe('fb1');
-      expect(result[result.length - 1].id).toBe('fb2');
+      // No fallback ids present when live data exists
+      expect(result.some((i) => i.id === 'fb1' || i.id === 'fb2')).toBe(false);
     });
   });
 

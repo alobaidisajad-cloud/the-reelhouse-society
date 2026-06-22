@@ -8,7 +8,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 
 const SECTIONS = [
     { title: 'THE RATING SCALE', body: '1 Reel — Abysmal\n2 Reels — Below Average\n3 Reels — Decent\n4 Reels — Excellent\n5 Reels — Masterpiece' },
-    { title: 'MEMBERSHIP TIERS', body: 'Patron — Free tier, basic logging\nArchivist — Full access, CSV export, priority\nAuteur — Ultimate tier with Projector Room & Programmes' },
+    { title: 'MEMBERSHIP TIERS', body: 'Cinephile — Free tier: log, rate, lists & archive export\nArchivist — The Editorial Desk, Physical Archive & The Lounge\nAuteur — The Breakdown Engine, Dispatch essays & curatorial control' },
     { title: 'PASSPORT STAMPS', body: 'Earn stamps by reaching milestones: 100 logs, pre-1960 classics, perfect ratings, physical media, and more.' },
     { title: 'THE LOUNGE', body: 'Real-time chat rooms for Society members. Discuss films, share recommendations, and debate the canon.' },
     { title: 'CINEMA DNA', body: 'Your unique cinematic fingerprint. Computed from your genre preferences, decade distribution, and viewing patterns.' },

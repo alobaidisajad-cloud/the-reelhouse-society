@@ -105,7 +105,7 @@ export function ProjectorRoom({ stats, user }: { stats?: CinephileStats; user?: 
             {/* CSV Export button */}
             <AnimatedView entering={FadeInDown.delay(400).duration(600)} style={s.exportWrap}>
                 <PressableScale style={s.exportBtn} onPress={handleCSVExport} haptic>
-                    <Text style={s.exportText}>DOWNLOAD ARCHIVAL RECORD</Text>
+                    <Text style={s.exportText}>SHARE YOUR STANDING</Text>
                 </PressableScale>
             </AnimatedView>
         </View>

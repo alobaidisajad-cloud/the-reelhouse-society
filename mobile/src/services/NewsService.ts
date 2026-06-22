@@ -135,7 +135,10 @@ export async function getNews(signal?: AbortSignal): Promise<NewsItem[]> {
                 link: item.link || '',
             }));
 
-        return [...allItems, ...FALLBACK_NEWS];
+        // Live results stand on their own — FALLBACK_NEWS is ONLY for the
+        // empty/failure cases (handled above and in catch). Appending it here
+        // would surface fabricated articles with faked dates + dead links.
+        return allItems;
     } catch (e: unknown) {
         logger.warn('[NewsService] RSS news fetch failed:', e);
         return FALLBACK_NEWS;
