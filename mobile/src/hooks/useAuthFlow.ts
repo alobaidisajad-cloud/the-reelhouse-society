@@ -10,6 +10,7 @@ import reelToast from '@/src/utils/reelToast';
 import { getPasswordChecks } from '@/src/components/auth/PasswordStrengthMeter';
 import { useAuthThrottle } from './useAuthThrottle';
 import { AuthService } from '@/src/services/AuthService';
+import { validateUsername } from '@/src/utils/validateUsername';
 
 export function useAuthFlow() {
   const router = useRouter();
@@ -182,12 +183,13 @@ export function useAuthFlow() {
       reelToast('Your cipher does not meet Society encryption standards.');
       return;
     }
-    if (!isLogin) {
-      const formatted = username.trim().toLowerCase().replace(/\s+/g, '_');
-      if (!/^[a-z0-9_]+$/.test(formatted)) {
-        reelToast('Handle may only contain letters, numbers, and underscores.');
-        return;
-      }
+    // Single source of truth for handle rules (length, charset, reserved
+    // words, profanity, underscore placement). Enforced here at signup so the
+    // server never has to reject a malformed handle after the fact.
+    const usernameCheck = isLogin ? null : validateUsername(username);
+    if (usernameCheck && !usernameCheck.valid) {
+      reelToast(usernameCheck.error ?? 'That handle is not allowed.');
+      return;
     }
     if (!isLogin && usernameStatus === 'taken') {
       reelToast('That handle is already claimed by another patron.');
@@ -202,12 +204,7 @@ export function useAuthFlow() {
         await login(emailOrUsername.trim(), password);
         (router.replace as any)('/(tabs)');
       } else {
-        const formattedUsername = username.trim().toLowerCase().replace(/\s+/g, '_');
-        if (formattedUsername.length < 3) {
-          reelToast('Handle must be at least 3 characters.');
-          setSubmitting(false);
-          return;
-        }
+        const formattedUsername = usernameCheck!.sanitized;
         const result = await signup(emailOrUsername.trim(), password, formattedUsername);
         if (result.needsConfirmation) {
           setConfirmedEmail(emailOrUsername.trim());

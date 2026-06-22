@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { UserPreferencesSchema } from './user';
+import { validateUsername } from '@/src/utils/validateUsername';
 
 /**
  * Schema for profile update mutations via ProfileWriteService.
@@ -12,7 +13,17 @@ import { UserPreferencesSchema } from './user';
  * - social_links supports both legacy Record and new array-of-objects format
  */
 export const ProfileUpdateSchema = z.object({
-  username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores').optional(),
+  // Single source of truth for handle rules — same validator used at signup and
+  // in the edit form (length, charset, reserved words, profanity, underscores).
+  username: z
+    .string()
+    .superRefine((v, ctx) => {
+      const result = validateUsername(v);
+      if (!result.valid) {
+        ctx.addIssue({ code: 'custom', message: result.error ?? 'Invalid username.' });
+      }
+    })
+    .optional(),
   bio: z.string().max(160, 'Bio cannot exceed 160 characters').optional(),
   display_name: z.string().max(50).optional(),
   avatar_url: z.string().url().nullable().optional(),
