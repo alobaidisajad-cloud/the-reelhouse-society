@@ -16,6 +16,7 @@ import { useFilmStore } from '@/src/stores/films';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
+import { isNetworkError } from '@/src/utils/networkError';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 
@@ -116,7 +117,9 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
             ]
         };
 
-        const currentPrefs = user?.preferences ?? {};
+        // Merge onto the freshest prefs from the store, not a stale prop snapshot,
+        // so a concurrent change to another key (e.g. favorites) isn't clobbered.
+        const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
         const currentProgrammes = currentPrefs.programmes ?? [];
         const updatedPrefs = { ...currentPrefs, programmes: [newProgramme, ...currentProgrammes] };
 
@@ -131,10 +134,11 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
         try {
             await supabase.from('profiles').update({ preferences: updatedPrefs }).eq('id', user.id);
         } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : '';
-            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+            if (isNetworkError(e)) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
             } else {
+                // Hard failure — roll the optimistic programme back out of local state.
+                useAuthStore.getState().updateUser({ preferences: currentPrefs });
                 if (__DEV__) console.error('[ProgrammesSection] Failed to create programme:', e);
             }
         }

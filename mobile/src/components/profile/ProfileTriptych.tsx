@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
+import { isNetworkError } from '@/src/utils/networkError';
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 // Module-scoped: prevents remount on every render cycle
@@ -232,18 +233,19 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         
         const newFavs = [...slots];
         newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path ?? '' };
-        
-        const currentPrefs = user?.preferences ?? {};
+
+        // Merge onto the freshest prefs from the store, not a stale prop snapshot,
+        // so a concurrent change to another key (e.g. programmes) isn't clobbered.
+        const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
         const updatedPrefs = { ...currentPrefs, favorites: newFavs };
-        
+
         updateUser({ preferences: updatedPrefs });
         setIsEditing(false);
 
         try {
             await ProfileService.updateProfile(user.id, { preferences: updatedPrefs });
         } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : '';
-            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+            if (isNetworkError(e)) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
             } else {
                 updateUser({ preferences: currentPrefs });
@@ -256,17 +258,16 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
         const newFavs = [...slots];
         newFavs[index] = null;
-        
-        const currentPrefs = user?.preferences ?? {};
+
+        const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
         const updatedPrefs = { ...currentPrefs, favorites: newFavs };
-        
+
         updateUser({ preferences: updatedPrefs });
 
         try {
             await ProfileService.updateProfile(user.id, { preferences: updatedPrefs });
         } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : '';
-            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+            if (isNetworkError(e)) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
             } else {
                 updateUser({ preferences: currentPrefs });
