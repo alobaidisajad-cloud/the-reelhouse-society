@@ -71,25 +71,60 @@ jobs:
         run: npx playwright test src/test/e2e/feed.spec.ts
 
   native-smoke-test:
-    name: 📱 Native Maestro UI Automation
-    runs-on: macos-latest
+    name: 📱 Maestro Flow YAML Lint
+    runs-on: ubuntu-latest
     needs: strict-analysis
+    steps:
+      - uses: actions/checkout@v4
+
+      # Fast PR-time signal: catches malformed flow YAML without needing a
+      # real build or device. The real device run happens post-merge, below.
+      - name: Lint All Maestro Flows
+        run: |
+          pip install --quiet yamllint
+          yamllint -d relaxed mobile/.maestro/
+
+  native-cloud-e2e:
+    name: ☁️ Maestro Cloud E2E (Android, real device)
+    runs-on: ubuntu-latest
+    needs: strict-analysis
+    # Real device runs cost EAS build minutes + Maestro Cloud minutes, so this
+    # only fires post-merge on main, not on every PR push.
+    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
-      - name: Install Dependencies
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install Mobile Dependencies
         working-directory: ./mobile
         run: npm ci
-        
-      - name: Install Maestro
-        run: curl -Ls "https://get.maestro.mobile.dev" | bash
-        
-      # Note: In a true CI, we would build the iOS simulator app here or use EAS Build,
-      # then run the Maestro flows against it.
-      - name: Lint Maestro Flows
+
+      - name: Install EAS CLI
+        run: npm install -g eas-cli
+
+      - name: Build Android APK (EAS, e2e profile)
         working-directory: ./mobile
-        run: ~/.maestro/bin/maestro test .maestro/social_pulse_flow.yaml --format junit
+        env:
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+          EAS_NO_VCS: 1
+        run: eas build --platform android --profile e2e --non-interactive --wait --json > eas-build-output.json
+
+      - name: Download build artifact
+        working-directory: ./mobile
+        run: |
+          BUILD_URL=$(node -e "console.log(JSON.parse(require('fs').readFileSync('eas-build-output.json','utf8'))[0].artifacts.buildUrl)")
+          curl -L "$BUILD_URL" -o app-e2e.apk
+
+      # Official Maestro Cloud action: uploads the APK and runs every flow in
+      # mobile/.maestro/ against a real hosted device.
+      - name: Run Full Flow Suite on Maestro Cloud
+        uses: mobile-dev-inc/action-maestro-cloud@v2.0.2
+        with:
+          api-key: ${{ secrets.MAESTRO_CLOUD_API_KEY }}
+          project-id: proj_01kvrb5qmxe7xaqgktvvg0seeb
+          app-file: mobile/app-e2e.apk
+          workspace: mobile/.maestro

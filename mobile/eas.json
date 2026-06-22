@@ -10,6 +10,13 @@
     "preview": {
       "distribution": "internal"
     },
+    "e2e": {
+      "extends": "preview",
+      "channel": "e2e",
+      "android": {
+        "buildType": "apk"
+      }
+    },
     "production": {}
   },
   "submit": {
