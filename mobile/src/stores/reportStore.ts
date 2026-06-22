@@ -20,7 +20,7 @@ import { isNetworkError } from '@/src/utils/networkError';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
 import NetInfo from '@react-native-community/netinfo';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { create } from 'zustand';
 
 interface ReportState {
@@ -74,7 +74,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
             // Fall back to offline queue
             enqueueMutation({ type: 'submit_report', payload: payload as unknown as Record<string, unknown> });
             set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            TactileEngine.success();
             reelToast('Report queued. Will be filed when connected.');
             return { status: 'queued' };
           }
@@ -83,7 +83,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
 
         // Success
         set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        TactileEngine.success();
         reelToast('Report filed. The Tribunal will review.');
 
         // Handle optional block
@@ -96,7 +96,7 @@ export const useReportStore = create<ReportState>()((set, get) => ({
         // Offline: enqueue
         enqueueMutation({ type: 'submit_report', payload: payload as unknown as Record<string, unknown> });
         set(s => ({ recentReports: new Set([...s.recentReports, payload.content_id]) }));
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        TactileEngine.success();
         reelToast('Report queued. Will be filed when connected.');
 
         if (payload.block_target && payload.target_user_id) {

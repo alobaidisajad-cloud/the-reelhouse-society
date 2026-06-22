@@ -7,6 +7,8 @@ import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { applyPendingToDossierRow, buildDossierFromPendingCreate, parseDossierPendingState } from '../utils/dossierReconciliation';
+import { DossierRowSchema, type ValidatedDossierRow } from '../schemas/dossier.schema';
+import { sanitizeInput } from '../utils/sanitizeInput';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
@@ -56,10 +58,23 @@ export interface DispatchState {
 
 
 // ── Supabase row shape for dispatch_dossiers ──
-interface DossierRow {
-  id: string; title: string; excerpt: string | null; full_content: string | null;
-  author_username: string | null; user_id: string; views: number | null;
-  certify_count: number | null; created_at: string;
+// Canonical shape + runtime validation now come from DossierRowSchema; this is
+// its inferred type so existing references keep their name.
+type DossierRow = ValidatedDossierRow;
+
+/**
+ * Validate raw Supabase rows at the boundary, dropping any that don't match the
+ * expected dispatch_dossiers shape (e.g. after a column rename) instead of
+ * letting undefined values flow through as blank dispatch cards.
+ */
+function parseDossierRows(rows: unknown[]): ValidatedDossierRow[] {
+  const out: ValidatedDossierRow[] = [];
+  for (const r of rows) {
+    const parsed = DossierRowSchema.safeParse(r);
+    if (parsed.success) out.push(parsed.data);
+    else if (__DEV__) console.warn('[content] Dropped malformed dossier row');
+  }
+  return out;
 }
 
 // ── DISPATCH STORE ──
@@ -150,7 +165,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
             return {
               hasMoreDossiers: data.length === 20,
               dossiers: (() => {
-                const mapped = (data as DossierRow[])
+                const mapped = parseDossierRows(data)
                   .map(d => applyPendingToDossierRow(d, pending, serverCertifiedIds))
                   .filter((d): d is NonNullable<typeof d> => d !== null);
 
@@ -228,6 +243,14 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
   addDossier: async (dossier) => {
     const user = useAuthStore.getState().user;
     if (!user) throw new Error('Must be logged in to file a dossier');
+
+    // Single sanitization choke point: clean title/excerpt/content once, before
+    // the optimistic update, online insert, and offline-queue payload all read it.
+    dossier = {
+      title: sanitizeInput(dossier.title ?? '', 'dossierTitle'),
+      excerpt: sanitizeInput(dossier.excerpt ?? '', 'dossierExcerpt'),
+      fullContent: sanitizeInput(dossier.fullContent ?? '', 'dossierContent'),
+    };
 
     const tempId = Crypto.randomUUID();
     const newDossier: Dossier = {
@@ -374,7 +397,7 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
 
           const serverCertifiedIds = new Set(certData.map((c: { dossier_id: string }) => c.dossier_id));
 
-          const moreDossiers = (data as DossierRow[])
+          const moreDossiers = parseDossierRows(data)
             .map(d => applyPendingToDossierRow(d, pending, serverCertifiedIds))
             .filter((d): d is NonNullable<typeof d> => d !== null);
           
@@ -434,6 +457,15 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
   updateDossier: async (id, updates) => {
     const user = useAuthStore.getState().user;
     if (!user) throw new Error('Must be logged in');
+
+    // Sanitize edited fields once (parity with addDossier) so the optimistic
+    // update, online write, and offline-queue payload share clean values.
+    updates = {
+      ...updates,
+      ...(updates.title !== undefined && { title: sanitizeInput(updates.title, 'dossierTitle') }),
+      ...(updates.excerpt !== undefined && { excerpt: sanitizeInput(updates.excerpt, 'dossierExcerpt') }),
+      ...(updates.fullContent !== undefined && { fullContent: sanitizeInput(updates.fullContent, 'dossierContent') }),
+    };
 
     const originalDossier = get().dossiers.find(d => d.id === id);
 

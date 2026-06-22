@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 
@@ -152,13 +152,13 @@ export default function LobbyScreen() {
   const handleRefresh = useCallback(async () => {
     try {
       setRefreshing(true);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      TactileEngine.destroy();
       // Removed redundant queryClient.invalidateQueries({ queryKey: ['lobby'] })
       // SocialPulse and FeaturedCritique use raw Supabase calls, not React Query —
       // they only respond to refreshTrigger. The invalidation was hitting no observers.
       setRefreshTrigger(t => t + 1);
       if (isAuthenticated) await fetchLogs();
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      TactileEngine.mutate();
     } catch (error) {
       if (__DEV__) console.warn('[Lobby] Refresh failed:', error);
     } finally {
@@ -237,7 +237,7 @@ export default function LobbyScreen() {
             <View style={s.welcomeCtaContainer}>
               <PressableScale
                 style={s.ctaPrimaryNoir}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); router.push('/login' as any); }}
+                onPress={() => { TactileEngine.destroy(); router.push('/login' as any); }}
                 accessibilityRole="button"
                 accessibilityLabel="Seek admission — sign up or log in"
               >

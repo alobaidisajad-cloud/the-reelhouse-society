@@ -8,7 +8,7 @@ import { ActivityIndicator, RefreshControl, StyleSheet, Text, View } from 'react
 import Animated, { FadeIn, FadeInDown, useAnimatedScrollHandler, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { FileText, Pen, Radio, Sparkles } from 'lucide-react-native';
@@ -154,7 +154,7 @@ export default function DispatchScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    TactileEngine.navigate();
     await loadData(true);
     setRefreshing(false);
   }, [loadData]);

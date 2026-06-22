@@ -5,12 +5,13 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
 import reelToast from '@/src/utils/reelToast';
 import { ReelRating } from '@/src/components/Decorative';
+import { truncateReview as sharedTruncateReview } from '@/src/utils/text';
 
 export interface ShareCardData {
     filmTitle: string;
@@ -44,11 +45,9 @@ function cleanReviewText(text: string): string {
     return text.replace(/<(p|div|br)[^>]*>/gi, '\n').replace(/<(?:\/?(?:p|div|br|b|i|strong|em|span|a|ul|li))[^>]*>/gi, '').trim();
 }
 
+// Pre-clean review HTML to plain text, then apply the shared truncation.
 function truncateReview(text: string, maxLength = 350) {
-    const raw = cleanReviewText(text);
-    if (raw.length <= maxLength) return raw;
-    const cut = raw.lastIndexOf(' ', maxLength);
-    return raw.substring(0, cut > 40 ? cut : maxLength).trimEnd() + '…';
+    return sharedTruncateReview(cleanReviewText(text), maxLength);
 }
 
 function CardContent({ data }: { data: ShareCardData }) {
@@ -186,7 +185,7 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
     const handleShare = useCallback(async () => {
         if (!cardRef.current?.capture) return;
         setSharing(true);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        TactileEngine.mutate();
 
         try {
             const uri = await cardRef.current?.capture?.();
@@ -204,7 +203,7 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
                     message: `${data.filmTitle}${yearText}${ratingText}\n\n${cleanReviewText(data.review || '')}\n\n• via The ReelHouse Society`.trim(),
                 });
             }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            TactileEngine.success();
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : 'Unknown error';
             if (msg !== 'User did not share') reelToast.error(msg);

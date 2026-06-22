@@ -5,7 +5,7 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
@@ -37,7 +37,7 @@ export function WeeklyChallenge() {
 
             <PressableScale
                 style={s.acceptBtn}
-                onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)('/(tabs)/darkroom' as any); }}
+                onPress={() => { TactileEngine.navigate(); (router.push as any)('/(tabs)/darkroom' as any); }}
                 pressedScale={0.95}
             >
                 <Text style={s.acceptText}>ACCEPT CHALLENGE</Text>

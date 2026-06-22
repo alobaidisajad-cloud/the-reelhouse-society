@@ -4,7 +4,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useFilmStore } from '@/src/stores/films';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { InteractionManager } from 'react-native';
@@ -231,7 +231,7 @@ export function useLogFlow() {
     const selectFilm = (f: LogSearchResult) => {
         setFilm({ id: f.id, title: f.title, name: f.name, poster_path: f.poster_path, release_date: f.release_date }); 
         setStep(1);
-        Haptics.selectionAsync();
+        TactileEngine.selection();
     };
 
     // ── SUBMIT LOG ──
@@ -267,7 +267,7 @@ export function useLogFlow() {
             if (isEditing && editLogId) { await updateLog(editLogId, logData); }
             else { await addLog(logData); }
             storage.delete(DRAFT_KEY);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            TactileEngine.success();
             InteractionManager.runAfterInteractions(() => {
                 router.back();
             });
@@ -280,7 +280,7 @@ export function useLogFlow() {
         if (!editLogId) return;
         try {
             await removeLog(editLogId);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            TactileEngine.warn();
             InteractionManager.runAfterInteractions(() => {
                 router.back();
             });
@@ -319,7 +319,7 @@ export function useLogFlow() {
         const isIn = list.films.some(f => f.id === film.id);
         if (isIn) removeFilmFromList(listId, film.id);
         else addFilmToList(listId, { id: film.id, title: film.title || '', poster_path: film.poster_path });
-        Haptics.selectionAsync();
+        TactileEngine.selection();
     };
 
     return {

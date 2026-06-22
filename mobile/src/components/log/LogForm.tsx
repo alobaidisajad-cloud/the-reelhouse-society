@@ -3,7 +3,7 @@ import { View, Text, TextInput, ScrollView } from 'react-native';
 
 import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -74,7 +74,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 <View style={st.deleteConfirm}>
                     <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
                     <View style={st.deleteConfirmRow}>
-                        <PressableScale style={st.deleteYes} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); handleDelete(); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
+                        <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
                         <PressableScale style={st.deleteNo} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'showDeleteConfirm', value: false }); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
                     </View>
                 </View>
@@ -169,7 +169,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         )}
                     </View>
                     <View style={st.ratingBody}>
-                        <ReelRating rating={rating} size={44} onChange={(v: number) => { dispatch({ type: 'SET_FIELD', field: 'rating', value: v === rating ? 0 : v }); Haptics.impactAsync(Number.isInteger(v) ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light); }} />
+                        <ReelRating rating={rating} size={44} onChange={(v: number) => { dispatch({ type: 'SET_FIELD', field: 'rating', value: v === rating ? 0 : v }); if (Number.isInteger(v)) { TactileEngine.mutate(); } else { TactileEngine.navigate(); } }} />
                         <View style={st.ratingFooter}>
                             {rating > 0 ? <Text style={st.ratingLabel}>{RATING_LABELS[rating] || ''}</Text> : <View />}
                             <Text style={st.ratingHint}>TAP LEFT HALF FOR ½ STARS</Text>
@@ -346,14 +346,14 @@ export default function LogForm({ flow, user }: LogFormProps) {
 
             {/* SUBMIT */}
             <View style={st.submitRow}>
-                <PressableScale style={[st.submitBtn, submitting && st.submitBtnSubmitting]} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); handleLog(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15}} pressedScale={0.97}>
+                <PressableScale style={[st.submitBtn, submitting && st.submitBtnSubmitting]} onPress={() => { TactileEngine.mutate(); handleLog(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15}} pressedScale={0.97}>
                     <Text style={st.submitText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{submitting ? 'SEALING RECORD…' : (isEditing ? 'EDIT CRITIQUE' : 'CERTIFY CRITIQUE')}</Text>
                 </PressableScale>
                 <PressableScale style={[st.cancelBtn, submitting && { opacity: 0.5 }]} onPress={() => { router.back(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
                     <Text style={st.cancelText}>CANCEL</Text>
                 </PressableScale>
                 {hasUnsavedChanges && (
-                    <PressableScale style={[st.cancelBtn, { marginTop: 8 }, submitting && { opacity: 0.5 }]} onPress={() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning); discardDraft(); router.back(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="heavy">
+                    <PressableScale style={[st.cancelBtn, { marginTop: 8 }, submitting && { opacity: 0.5 }]} onPress={() => { TactileEngine.warn(); discardDraft(); router.back(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="heavy">
                         <Text style={[st.cancelText, { color: colors.danger }]}>DISCARD DRAFT</Text>
                     </PressableScale>
                 )}

@@ -57,7 +57,9 @@ export function initSentry() {
 export function setSentryUser(user: { id: string; username: string; role: string } | null) {
   if (!SENTRY_DSN) return;
   if (user) {
-    Sentry.setUser({ id: user.id, username: user.username, segment: user.role });
+    // Privacy: send only the pseudonymous id — username is a public-facing handle
+    // we choose not to forward to a third-party error tracker.
+    Sentry.setUser({ id: user.id });
   } else {
     Sentry.setUser(null);
   }

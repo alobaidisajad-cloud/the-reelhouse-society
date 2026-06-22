@@ -21,7 +21,6 @@ import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as Crypto from 'expo-crypto';
-import * as Haptics from 'expo-haptics';
 import { z } from 'zod';
 
 // In-flight guard (not a timestamp throttle): blocks re-tapping certify on the same
@@ -188,7 +187,7 @@ export default function DossierReaderScreen() {
 
             if (error) throw error;
             if (data) {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                TactileEngine.success();
                 setComments(prev => prev.map(c => c.id === tempId ? data : c));
             }
         } catch (err: any) { 
@@ -218,7 +217,7 @@ export default function DossierReaderScreen() {
 
     const handleDeleteComment = async (commentId: string) => {
         if (!user) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        TactileEngine.destroy();
         
         const removed = comments.find(c => c.id === commentId);
         setComments(prev => prev.filter(c => c.id !== commentId));
@@ -256,7 +255,7 @@ export default function DossierReaderScreen() {
         if (_certifyPending.has(id)) return;
         _certifyPending.add(id);
 
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        TactileEngine.navigate();
 
         const wasCertified = certified;
         const certifyDelta = wasCertified ? -1 : 1;

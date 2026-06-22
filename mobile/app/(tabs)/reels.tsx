@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useScrollToTop } from '@react-navigation/native';
 
@@ -91,7 +91,7 @@ const AutonomousSearchBar = memo(({ value, onChangeText, onClear }: { value: str
         selectionColor={colors.sepia}
         keyboardAppearance="dark"
         accessibilityLabel="Search curated stacks"
-        onFocus={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+        onFocus={() => TactileEngine.navigate()}
       />
       {localText.length > 0 && (
         <PressableScale onPress={handleClear} style={st.searchClear} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}>
@@ -185,7 +185,7 @@ export default function ReelScreen() {
   }, [stacksData, stackFilter, followingCount]);
 
   const onRefresh = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    TactileEngine.navigate();
     setIsManualRefreshing(true);
     const isFollowingAnyone = useSocialStore.getState().following.length > 0;
     
@@ -227,7 +227,7 @@ export default function ReelScreen() {
 
   const switchSection = useCallback((s: ReelSection) => {
     if (s === section) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     activeTabSV.value = s;
     setSection(s);
     
@@ -243,7 +243,7 @@ export default function ReelScreen() {
 
   const switchFeedFilter = useCallback((f: FeedFilter) => {
     if (f === feedFilter) return;
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     
     // Synchronously kill momentum before batching state updates
     logsFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
@@ -255,7 +255,7 @@ export default function ReelScreen() {
 
   const switchStackFilter = useCallback((f: FeedFilter) => {
     if (f === stackFilter) return;
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     
     // Synchronously kill momentum before batching state updates
     stacksFlatListRef.current?.scrollToOffset({ offset: 0, animated: false });
@@ -312,11 +312,11 @@ export default function ReelScreen() {
             : 'Be the first to log a film and leave your mark.'}
         </Text>
         {feedFilter === 'following' ? (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); switchFeedFilter('all'); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); switchFeedFilter('all'); }}>
             <Text style={st.emptyBtnText}>GLOBAL REEL</Text>
           </PressableScale>
         ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); (router.push as any)('/log-modal' as any); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); (router.push as any)('/log-modal' as any); }}>
             <Text style={st.emptyBtnText}>LOG A FILM</Text>
           </PressableScale>
         )}
@@ -344,7 +344,7 @@ export default function ReelScreen() {
       <SectionDivider label="CURATED STACKS" />
       <PressableScale
         style={st.createStackBtn}
-        onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); (router.push as any)('/list-modal' as any); }}
+        onPress={() => { TactileEngine.destroy(); (router.push as any)('/list-modal' as any); }}
       >
         <BrassSheen />
         <LinearGradient
@@ -379,15 +379,15 @@ export default function ReelScreen() {
             : 'Create a collection to immortalize your cinematic taste.'}
         </Text>
         {stackSearch ? (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); handleClearSearch(); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); handleClearSearch(); }}>
             <Text style={st.emptyBtnText}>CLEAR FILTERS</Text>
           </PressableScale>
         ) : stackFilter === 'following' ? (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); switchStackFilter('all'); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); switchStackFilter('all'); }}>
             <Text style={st.emptyBtnText}>GLOBAL STACKS</Text>
           </PressableScale>
         ) : (
-          <PressableScale style={st.emptyBtn} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); (router.push as any)('/list-modal' as any); }}>
+          <PressableScale style={st.emptyBtn} onPress={() => { TactileEngine.mutate(); (router.push as any)('/list-modal' as any); }}>
             <Text style={st.emptyBtnText}>CREATE COLLECTION</Text>
           </PressableScale>
         )}
@@ -405,7 +405,7 @@ export default function ReelScreen() {
         <Image source={require('../../assets/images/reelhouse-logo.png')} style={st.gateLogo} contentFit="contain" />
         <Text style={st.gateTitle}>Admit One Required</Text>
         <Text style={st.gateSub}>Join the Society to access The Reel.</Text>
-        <PressableScale style={st.gateCta} onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); (router.push as any)('/login' as any); }}>
+        <PressableScale style={st.gateCta} onPress={() => { TactileEngine.destroy(); (router.push as any)('/login' as any); }}>
           <BrassSheen />
           <Text style={st.gateCtaText}>REQUEST MEMBERSHIP</Text>
         </PressableScale>

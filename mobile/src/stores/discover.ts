@@ -137,9 +137,13 @@ export const useDiscoverStore = create<DiscoverState>()(
         query: state.query,
         inputVal: state.inputVal,
       }),
+      // Deferred hydration until the encryption key is resolved (LIB-5).
+      skipHydration: true,
     }
   )
 );
+
+export const rehydrateDiscoverStore = () => useDiscoverStore.persist.rehydrate();
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {

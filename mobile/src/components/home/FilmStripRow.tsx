@@ -7,7 +7,7 @@ import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { SectionDivider } from '@/src/components/Decorative';
@@ -51,7 +51,7 @@ const FilmCard = memo(function FilmCard({ film, onPress }: { film: TMDBFilm; onP
 export const FilmStripRow = memo(function FilmStripRow({ title, label, films }: { title: string; label: string; films: TMDBFilm[] }) {
   const router = useRouter();
   const handlePress = useCallback((filmId: number) => {
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     (router.push as any)(`/film/${filmId}` as any);
   }, [router]);
 

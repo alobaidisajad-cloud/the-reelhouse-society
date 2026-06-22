@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import { useAuthStore } from '@/src/stores/auth';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import PressableScale from '@/src/components/PressableScale';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -83,12 +83,12 @@ export default function ResetPasswordScreen() {
     }
 
     setLoading(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     try {
       const { error } = await supabase.auth.updateUser({ password });
       if (error) throw error;
       setSuccess(true);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
 
       // IMP #3: Re-trigger auth + fully hydrate the auth store
       const { data: { session } } = await supabase.auth.getSession();

@@ -5,7 +5,8 @@ import { BlurView } from 'expo-blur';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import * as Haptics from 'expo-haptics';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Camera, Image as ImageIcon, X, Check } from 'lucide-react-native';
@@ -30,7 +31,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   const insets = useSafeAreaInsets();
 
   const handlePick = async (source: 'camera' | 'library') => {
-    Haptics.selectionAsync();
+    TactileEngine.selection();
 
     let result;
     if (source === 'camera') {
@@ -39,8 +40,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       result = await ImagePicker.launchCameraAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.5,
-        base64: true,
+        quality: 1,
       });
     } else {
       const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -48,26 +48,31 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.5,
-        base64: true,
+        quality: 1,
       });
     }
 
-    if (!result.canceled && result.assets[0].base64 && user) {
-      await uploadAvatar(result.assets[0].base64);
+    if (!result.canceled && result.assets[0]?.uri && user) {
+      await processAndUpload(result.assets[0].uri);
     }
   };
 
-  const uploadAvatar = async (base64Str: string) => {
+  // Re-encode every chosen image before it leaves the device. This strips all
+  // embedded metadata (EXIF — including GPS coordinates the photo may carry),
+  // normalizes the output to a square 512px JPEG, and bounds the upload size.
+  const processAndUpload = async (uri: string) => {
     setUploading(true);
     try {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onSuccess(base64Str);
+      const rendered = await ImageManipulator.manipulate(uri).resize({ width: 512 }).renderAsync();
+      const out = await rendered.saveAsync({ compress: 0.7, format: SaveFormat.JPEG, base64: true });
+      if (!out.base64) throw new Error('Could not process the selected image.');
+      TactileEngine.success();
+      onSuccess(out.base64);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       if (__DEV__) console.error(msg);
       reelToast.error(msg);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      TactileEngine.error();
     } finally {
       setUploading(false);
     }

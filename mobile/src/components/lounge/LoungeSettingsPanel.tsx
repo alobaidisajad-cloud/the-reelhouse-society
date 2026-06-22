@@ -2,7 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react';
 import { View, Text, Alert, Modal, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import * as ExpoClipboard from 'expo-clipboard';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -90,7 +90,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
   const handleCopyCode = useCallback(async () => {
     if (!lounge?.invite_code) return;
     await ExpoClipboard.setStringAsync(lounge.invite_code);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    TactileEngine.success();
   }, [lounge?.invite_code]);
 
   const onLeave = useCallback(() => {
@@ -104,7 +104,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
           text: 'Leave', 
           style: 'destructive', 
           onPress: async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            TactileEngine.mutate();
             handleClose();
             await leaveLounge(lounge.id);
             (router.replace as any)('/(tabs)/lounge');
@@ -125,7 +125,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
           text: 'Destroy', 
           style: 'destructive', 
           onPress: async () => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+            TactileEngine.destroy();
             handleClose();
             const success = await deleteLounge(lounge.id);
             if (success) {

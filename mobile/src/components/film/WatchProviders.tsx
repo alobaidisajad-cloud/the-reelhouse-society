@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Linking } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import { Tv } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
+import { safeOpenURL } from '@/src/utils/linking';
 
 const getDeviceRegion = () => {
   try {
@@ -36,13 +37,9 @@ interface CountryProviders {
 }
 
 const ProviderLogo = React.memo(function ProviderLogo({ p, providerLink }: { p: Provider, providerLink?: string }) {
-  const handlePress = React.useCallback(async () => {
+  const handlePress = React.useCallback(() => {
     if (providerLink) {
-      try {
-        await Linking.openURL(providerLink);
-      } catch (e) {
-        console.warn('Failed to open Watch Provider link', e);
-      }
+      void safeOpenURL(providerLink);
     }
   }, [providerLink]);
 
@@ -80,13 +77,9 @@ export const WatchProviders = React.memo(function WatchProviders({ providers }: 
   const hasAny = flatrate.length > 0 || rent.length > 0 || buy.length > 0;
   const link = countryData?.link;
 
-  const handleViewAll = React.useCallback(async () => {
+  const handleViewAll = React.useCallback(() => {
     if (link) {
-      try {
-        await Linking.openURL(link);
-      } catch (e) {
-        console.warn('Failed to open View All Watch Providers link', e);
-      }
+      void safeOpenURL(link);
     }
   }, [link]);
 

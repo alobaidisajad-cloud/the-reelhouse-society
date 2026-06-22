@@ -10,12 +10,13 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { isArchivistPlusTier, isAuteurPlusTier } from '@/src/utils/tier';
+import { isNetworkError } from '@/src/utils/networkError';
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 // Module-scoped: prevents remount on every render cycle
@@ -219,7 +220,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
     const handleSelectSlot = (index: number) => {
         if (!isOwnProfile) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        TactileEngine.navigate();
         setEditingSlotIndex(index);
         setIsEditing(true);
         setSearchQuery('');
@@ -228,22 +229,23 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
     const handleSetFilm = async (film: TriptychSearchResult) => {
         if (editingSlotIndex === null) return;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        TactileEngine.success();
         
         const newFavs = [...slots];
         newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path ?? '' };
-        
-        const currentPrefs = user?.preferences ?? {};
+
+        // Merge onto the freshest prefs from the store, not a stale prop snapshot,
+        // so a concurrent change to another key (e.g. programmes) isn't clobbered.
+        const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
         const updatedPrefs = { ...currentPrefs, favorites: newFavs };
-        
+
         updateUser({ preferences: updatedPrefs });
         setIsEditing(false);
 
         try {
             await ProfileService.updateProfile(user.id, { preferences: updatedPrefs });
         } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : '';
-            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+            if (isNetworkError(e)) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
             } else {
                 updateUser({ preferences: currentPrefs });
@@ -253,20 +255,19 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     };
 
     const handleClearSlot = async (index: number) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+        TactileEngine.rigid();
         const newFavs = [...slots];
         newFavs[index] = null;
-        
-        const currentPrefs = user?.preferences ?? {};
+
+        const currentPrefs = useAuthStore.getState().user?.preferences ?? {};
         const updatedPrefs = { ...currentPrefs, favorites: newFavs };
-        
+
         updateUser({ preferences: updatedPrefs });
 
         try {
             await ProfileService.updateProfile(user.id, { preferences: updatedPrefs });
         } catch (e: unknown) {
-            const msg = e instanceof Error ? e.message : '';
-            if (msg.toLowerCase().includes('fetch') || msg.toLowerCase().includes('network')) {
+            if (isNetworkError(e)) {
                 enqueueMutation({ type: 'update_profile', payload: { user_id: user.id, preferences: updatedPrefs } });
             } else {
                 updateUser({ preferences: currentPrefs });
@@ -340,7 +341,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
             {/* Selection Modal */}
             <Modal visible={isEditing} transparent animationType="slide">
                 <View style={[s.modalOverlay, { paddingBottom: insets.bottom }]}>
-                    <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { Haptics.selectionAsync(); setIsEditing(false); }} />
+                    <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { TactileEngine.selection(); setIsEditing(false); }} />
                     <View style={s.modalContent}>
                         <View style={s.modalHeader}>
                             <Text style={s.modalEyebrow}>CURATE DOSSIER SLOT {editingSlotIndex !== null ? editingSlotIndex + 1 : ''}</Text>

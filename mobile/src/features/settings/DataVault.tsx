@@ -25,6 +25,7 @@ import { importArchiveZip, importArchiveJSON, ImportProgress, ImportResult } fro
 import { supabase } from '@/src/lib/supabase';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
+import { escapeCsvCell } from '@/src/utils/csv';
 
 export default function DataVault() {
   const _logs = useFilmStore(s => s.logs);
@@ -171,13 +172,13 @@ export default function DataVault() {
 
       const headers = ['"Title"', '"Year"', '"Rating"', '"Status"', '"Date Watched"', '"Review"', '"Format"'];
       const rows = dbLogs.map((l: any) => [
-        `"${String(l.film_title ?? '').replace(/"/g, '""')}"`,
-        `"${String(l.year ?? '').replace(/"/g, '""')}"`,
-        `"${String(l.rating ?? '').replace(/"/g, '""')}"`,
-        `"${String(l.status ?? 'watched').replace(/"/g, '""')}"`,
-        `"${String(l.watched_date ?? l.created_at?.slice(0, 10) ?? '').replace(/"/g, '""')}"`,
-        `"${String(l.review ?? '').replace(/"/g, '""')}"`,
-        `"${String(l.physical_media ?? 'Digital').replace(/"/g, '""')}"`,
+        escapeCsvCell(l.film_title),
+        escapeCsvCell(l.year),
+        escapeCsvCell(l.rating),
+        escapeCsvCell(l.status ?? 'watched'),
+        escapeCsvCell(l.watched_date ?? l.created_at?.slice(0, 10)),
+        escapeCsvCell(l.review),
+        escapeCsvCell(l.physical_media ?? 'Digital'),
       ]);
       const csv = [headers.join(','), ...rows.map((r: any) => r.join(','))].join('\n');
 

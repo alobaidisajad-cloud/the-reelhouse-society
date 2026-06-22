@@ -61,17 +61,19 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
 
         const hasMore = data.length === PAGE_SIZE;
         const newItems = data.map((w) => ({ id: w.film_id, title: w.film_title, poster: w.poster_path ?? null, poster_path: w.poster_path ?? null, year: w.year ?? null }));
+        // No arbitrary cap: keyset pagination bounds each fetch and the list is
+        // virtualized, so capping here only served to silently drop a power
+        // user's items past 500 whenever loadMore ran.
         const nextWatchlist = loadMore ? [...state.watchlist, ...newItems] : newItems;
-        const cappedWatchlist = nextWatchlist.slice(0, 500);
         const idx: Record<number, true> = {};
-        cappedWatchlist.forEach(w => { idx[w.id] = true; });
+        nextWatchlist.forEach(w => { idx[w.id] = true; });
 
         // Compute next cursor from last row
         const lastRow = data.length > 0 ? data[data.length - 1] : null;
         const nextCursor = hasMore && lastRow ? `${lastRow.created_at}|${lastRow.id}` : null;
         
         set({
-            watchlist: cappedWatchlist,
+            watchlist: nextWatchlist,
             _watchlistIndex: idx,
             watchlistPage: (loadMore ? state.watchlistPage : 0) + 1,
             watchlistHasMore: hasMore,
@@ -80,7 +82,7 @@ export const createWatchlistSlice: StateCreator<WatchlistSlice, [], [], Watchlis
         });
 
         // Background image prefetching: only prefetch new entries
-        const newEntries = loadMore ? newItems : cappedWatchlist;
+        const newEntries = loadMore ? newItems : nextWatchlist;
         const posterUrls = newEntries
             .filter(w => w.poster_path)
             .map(w => `https://image.tmdb.org/t/p/w500${w.poster_path}`);

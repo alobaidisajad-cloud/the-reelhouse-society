@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useAuthStore } from '@/src/stores/auth';
 import { useProfileData, ProfileTab } from '@/src/hooks/useProfileData';
 import { safeOpenURL } from '@/src/utils/linking';
@@ -177,7 +177,7 @@ export function useProfileController(usernameOverride?: string) {
 
   const onRefresh = useCallback(async () => {
     setRefreshingLocal(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    TactileEngine.navigate();
     await data.fetchUserData();
     
     if (activeTab) {
@@ -333,7 +333,7 @@ export function useProfileController(usernameOverride?: string) {
       toCalendar: useCallback(() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: 'calendar' } } as never), [router, username]),
       openSocialLink: useCallback((url: string) => safeOpenURL(url.startsWith('http') ? url : `https://${url}`), []),
       handleBack: useCallback(() => {
-        Haptics.selectionAsync();
+        TactileEngine.selection();
         if (router.canGoBack()) {
           router.back();
         } else {

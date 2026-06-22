@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { ChevronDown, Send } from 'lucide-react-native';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
@@ -27,7 +27,6 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
     const [comments, setComments] = useState<DossierComment[]>([]);
     const [loading, setLoading] = useState(false);
     const [submitting, setSubmitting] = useState(false);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [showAll, setShowAll] = useState(false);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editBody, setEditBody] = useState('');
@@ -112,7 +111,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
 
             if (error) throw error;
             if (data) {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                TactileEngine.success();
                 setComments(prev => prev.map(c => c.id === tempId ? { id: data.id, username: currentUser.username, body: data.body, created_at: data.created_at } : c));
                 reelToast('Critique filed.');
             }
@@ -133,7 +132,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
             } else {
                 setComments(prev => prev.filter(c => c.id !== tempId));
                 setText(prev => prev.length > 0 ? prev : body);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                TactileEngine.error();
                 reelToast('Could not save critique.');
             }
         }
@@ -218,9 +217,9 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
             {loading && <Text style={s.loading}>RETRIEVING CRITIQUES…</Text>}
 
             {comments.length > 3 && !showAll && (
-                <PressableScale onPress={() => (router.push as any)(`/user/${comments[0].username}` as any)} style={s.viewAllBtn} haptic="light" pressedScale={0.96}>
+                <PressableScale onPress={() => setShowAll(true)} style={s.viewAllBtn} haptic="light" pressedScale={0.96}>
                     <ChevronDown size={14} color={colors.fog} />
-                    <Text style={s.viewAllText}>VIEW ALL CRITIQUES</Text>
+                    <Text style={s.viewAllText}>VIEW ALL CRITIQUES ({comments.length})</Text>
                 </PressableScale>
             )}
 

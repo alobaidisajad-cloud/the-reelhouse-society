@@ -397,9 +397,13 @@ export const useNotificationStore = create<NotificationState>()(
                 _hasMore: state._hasMore,
                 _cursor: state._cursor,
             }),
+            // Deferred hydration until the encryption key is resolved (LIB-5).
+            skipHydration: true,
         }
     )
 );
+
+export const rehydrateNotificationStore = () => useNotificationStore.persist.rehydrate();
 
 // Register cleanup handler for centralized logout
 // Also tear down realtime channel on logout

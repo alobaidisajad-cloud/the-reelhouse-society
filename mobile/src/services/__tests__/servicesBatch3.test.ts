@@ -239,8 +239,8 @@ describe('NewsService (getNews)', () => {
         ];
         global.fetch = jest.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ items: rssItems }) });
         const result = await getNews();
-        // Should have live items + fallback appended
-        expect(result.length).toBeGreaterThan(2);
+        // Live items only — stale fallback is NOT appended to a live feed (SVC-2)
+        expect(result.length).toBe(1);
         expect(result[0].title).toBe('Film & Art'); // HTML entity decoded
     });
 

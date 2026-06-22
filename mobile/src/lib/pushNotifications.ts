@@ -115,9 +115,26 @@ export async function registerForPushNotifications(userId: string): Promise<stri
 /**
  * Store the push token in Supabase.
  * Upserts to handle token refresh on app reinstall.
+ *
+ * A push token identifies a physical device install, not a user. When a
+ * different account signs in on a device that still carries a previous user's
+ * token row, that token would otherwise be associated with two users at once —
+ * causing the new owner's device to receive the previous owner's push
+ * notifications. We first detach the token from any other user, then upsert it
+ * onto the current (user, platform) row.
+ *
+ * Server-side ideal (tracked in the server checklist): add a UNIQUE(token)
+ * constraint and switch onConflict to 'token' so this is atomic in one write.
  */
 async function storePushToken(userId: string, token: string): Promise<void> {
   try {
+    // Detach this device token from any OTHER user before claiming it.
+    await supabase
+      .from('push_tokens')
+      .delete()
+      .eq('token', token)
+      .neq('user_id', userId);
+
     await supabase
       .from('push_tokens')
       .upsert(

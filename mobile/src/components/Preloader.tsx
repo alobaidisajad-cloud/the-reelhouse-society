@@ -11,7 +11,7 @@ import Animated, {
   runOnJS,
   cancelAnimation,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { storage } from '@/src/stores/mmkv-storage';
 import { fonts } from '@/src/theme/theme';
 import { useReducedMotion } from '@/src/hooks/useReducedMotion';
@@ -109,9 +109,9 @@ export default function Preloader({ onComplete }: { onComplete: () => void }) {
     if (isFirstLaunch) {
       storage.set('reelhouse_has_launched', true);
       // Bass-rumble haptic pattern: Heavy → Medium → Light
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-      hapticT1.current = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium), D1);
-      hapticT2.current = setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), D1 + D2);
+      TactileEngine.destroy();
+      hapticT1.current = setTimeout(() => TactileEngine.mutate(), D1);
+      hapticT2.current = setTimeout(() => TactileEngine.navigate(), D1 + D2);
     }
 
     const FAST_PATH = !isFirstLaunch || reduceMotion || throttleDevice;

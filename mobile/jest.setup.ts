@@ -66,6 +66,7 @@ jest.mock('./src/stores/mmkv-storage', () => ({
     contains: jest.fn(() => false),
     clearAll: jest.fn(),
   }),
+  initEncryptedStorage: jest.fn().mockResolvedValue(undefined),
 }));
 
 // Mock expo-crypto (native module)

@@ -3,7 +3,6 @@ import React, { useCallback, useRef, useState } from 'react';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -307,7 +306,7 @@ export default function StackDetailScreen() {
     // Pre-flight Zod validation
     if (!user || isCertifying || !z.string().uuid().safeParse(id).success) return;
     setIsCertifying(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     const wasCertified = isCertified;
     
     const delta = wasCertified ? -1 : 1;
@@ -381,7 +380,7 @@ export default function StackDetailScreen() {
   });
 
   const handleToggleComments = useCallback(() => {
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     setShowComments((prev) => !prev);
     setTimeout(() => {
       commentInputRef.current?.focus();
@@ -414,7 +413,7 @@ export default function StackDetailScreen() {
     });
 
     setCommentText('');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    TactileEngine.success();
 
     try {
       const newComment = await StackService.addStackComment({
@@ -453,7 +452,7 @@ export default function StackDetailScreen() {
   }, [commentText, submittingComment, user, id, queryClient]);
 
   const handleOpenShareLounge = useCallback(async () => {
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     if (!user) {
       reelToast.error('You must be logged in to access the lounge.');
       return;
@@ -462,7 +461,7 @@ export default function StackDetailScreen() {
   }, [user]);
 
   const handleDelete = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    TactileEngine.destroy();
     Alert.alert(
       'Incinerate Stack',
       'This will permanently destroy this collection. This action is irreversible.',
@@ -476,7 +475,7 @@ export default function StackDetailScreen() {
               await deleteList(id);
               queryClient.removeQueries({ queryKey: ['stack', id] });
               queryClient.invalidateQueries({ queryKey: ['stacks'] });
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+              TactileEngine.warn();
               router.back();
              
             } catch (err: unknown) {
@@ -489,7 +488,7 @@ export default function StackDetailScreen() {
   }, [id, deleteList, router, queryClient]);
 
   const handlePressFilm = useCallback((filmId: number) => {
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     (router.push as any)(`/film/${filmId}` as any);
   }, [router]);
 

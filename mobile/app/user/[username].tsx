@@ -557,7 +557,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Society Honors */}
                     <View>
                       <SectionLabel text="SOCIETY HONORS" />
-                      <Achievements {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs} as any} />
+                      <Achievements {...{logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} />
                     </View>
 
                     {/* Your Favourites */}

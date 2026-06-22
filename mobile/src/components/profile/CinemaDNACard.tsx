@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, useWindowDimensions } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { X } from 'lucide-react-native';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Buster from '@/src/components/Buster';
 import { RadarChart } from '@/src/components/profile/RadarChart';

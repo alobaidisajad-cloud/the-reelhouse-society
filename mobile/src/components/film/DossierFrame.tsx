@@ -47,14 +47,5 @@ export function DossierFooter() {
   );
 }
 
-/** Word-boundary review truncation — identical algorithm to the web card, so the same
- * review produces the same truncated text on both platforms. */
-export function truncateReview(text: string, max = 350): string {
-  const raw = String(text || '').trim();
-  if (raw.length <= max) return raw;
-  const cut = raw.lastIndexOf(' ', max);
-  return raw.slice(0, cut > 40 ? cut : max).trimEnd() + '…';
-}
-
 export const DOSSIER_CARD_WIDTH = 360;
 export const DOSSIER_CARD_HEIGHT = 640;

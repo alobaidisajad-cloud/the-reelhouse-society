@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase';
 import { FilmReviewSchema, type FilmReview } from '@/src/schemas/film.schema';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
+import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import { z } from 'zod';
 
 /**
@@ -79,24 +80,33 @@ export const FilmService = {
     if (error) throw error;
     if (!data || data.length === 0) return { items: [], nextCursor: null };
 
-    // Zod-first validation replaces `as unknown as` cast
-    const rows = z.array(FilmReviewRowSchema).parse(data);
-    
-    const items = rows.map((d) => {
-      const profile = Array.isArray(d.profiles) ? d.profiles[0] : d.profiles;
-      const rawItem = {
-        ...d,
-        username: profile?.username,
-        role: profile?.role,
-      };
-      return FilmReviewSchema.parse(rawItem);
-    });
+    // Resilient validation: drop a single malformed row instead of failing the
+    // entire reviews page (one bad record must never blank out all reviews).
+    const items = data
+      .map((d) => {
+        const rowParsed = FilmReviewRowSchema.safeParse(d);
+        if (!rowParsed.success) {
+          if (__DEV__) console.warn('[FilmService] Dropped malformed review row');
+          return null;
+        }
+        const row = rowParsed.data;
+        const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
+        const itemParsed = FilmReviewSchema.safeParse({ ...row, username: profile?.username, role: profile?.role });
+        return itemParsed.success ? itemParsed.data : null;
+      })
+      .filter((x): x is NonNullable<typeof x> => x !== null);
 
-    // Compute next cursor from last row
-    const lastRow = rows[rows.length - 1];
-    const hasMore = rows.length === pageSize;
-    const nextCursor = hasMore && lastRow ? `${lastRow.created_at}|${lastRow.id}` : null;
+    // Hide reviews authored by blocked/muted users (HOOK-8 parity with feeds,
+    // search, and lounge). Applied to the validated items only; cursor/hasMore
+    // below derive from the RAW page so filtering can't truncate pagination.
+    const visibleItems = filterContentByBlocks(items, (r) => r.user_id ?? '');
 
-    return { items, nextCursor };
+    // Cursor/hasMore are computed from the RAW page (not the validated subset),
+    // so dropping a malformed row can never truncate pagination early.
+    const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
+    const hasMore = data.length === pageSize;
+    const nextCursor = hasMore && lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
+
+    return { items: visibleItems, nextCursor };
   }
 };

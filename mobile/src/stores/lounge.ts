@@ -419,7 +419,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     const ALLOWED_TYPES = ['text', 'film_share', 'log_share', 'list_share', 'system'] as const;
     const safeType = (ALLOWED_TYPES as readonly string[]).includes(type) ? type : 'text';
     
-    const cleanContent = content.trim().slice(0, 500);
+    // Parity with the offline mutationExecutor path: strip zero-width/control
+    // chars and length-cap via the shared sanitizer (was a bare trim+slice).
+    const cleanContent = sanitizeInput(content.slice(0, 500), 'loungeMessage');
     if (!user || (!cleanContent && type === 'text')) return false;
 
     const now = Date.now();

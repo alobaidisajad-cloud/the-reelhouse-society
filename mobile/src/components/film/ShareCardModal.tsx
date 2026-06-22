@@ -4,11 +4,12 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
+import { truncateReview } from '@/src/utils/text';
 
 export const DOSSIER_CARD_WIDTH = 360;
 export const DOSSIER_CARD_HEIGHT = 640;
@@ -38,13 +39,6 @@ interface ShareCardModalProps {
   log?: ShareLog | null;
   username?: string | null;
 }
-
-const truncateReview = (text: string, max = 350): string => {
-  const raw = String(text || '').trim();
-  if (raw.length <= max) return raw;
-  const cut = raw.lastIndexOf(' ', max);
-  return raw.slice(0, cut > 40 ? cut : max).trimEnd() + '…';
-};
 
 function CardContent({ film, log, username }: { film: ShareFilm; log?: ShareLog | null; username?: string | null }) {
   const posterToUse = log?.altPoster || film.poster_path;
@@ -191,7 +185,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
   const handleShare = async () => {
     if (!viewShotRef.current?.capture || !film) return;
     setSharing(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
 
     try {
       const uri = await viewShotRef.current.capture();
@@ -208,7 +202,7 @@ export const ShareCardModal = memo(function ShareCardModal({ visible, onClose, f
           message: `${film.title}${ratingText}\n\n"${truncateReview(log?.review || '')}"\n\n• view on ReelHouse: ${deepLink}`.trim(),
         });
       }
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
     } catch (err: unknown) {
       if (__DEV__) console.warn('[ShareCard] Share failed:', err);
     } finally {

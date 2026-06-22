@@ -4,7 +4,7 @@ import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { Lock } from 'lucide-react-native';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';

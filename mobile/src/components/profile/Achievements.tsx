@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
+import type { ProfileAnalyticsPayload } from './NoirPassport';
 
 interface AchievementLog {
     rating: number;
@@ -13,41 +14,49 @@ interface AchievementLog {
     createdAt?: string;
 }
 
+/**
+ * Server-computed authoritative totals (same source NoirPassport uses). When
+ * present, count-based badges read from these instead of the in-memory paginated
+ * `logs`, which otherwise undercount for users whose history isn't fully loaded.
+ */
+type Stamps = ProfileAnalyticsPayload['stamps'];
+
 const BADGES = [
   {
     id: 'first-reel',
     title: 'FIRST REEL',
     desc: 'Log your first film',
     glyph: '✦',
-    check: (logs: AchievementLog[]) => logs.length >= 1,
+    check: (logs: AchievementLog[], s?: Stamps) => (s?.total_logs ?? logs.length) >= 1,
   },
   {
     id: 'the-regular',
     title: 'THE REGULAR',
     desc: 'Log 10 films',
     glyph: '❖',
-    check: (logs: AchievementLog[]) => logs.length >= 10,
+    check: (logs: AchievementLog[], s?: Stamps) => (s?.total_logs ?? logs.length) >= 10,
   },
   {
     id: 'midnight-devotee',
     title: 'MIDNIGHT DEVOTEE',
     desc: 'Log 25 films',
     glyph: '◆',
-    check: (logs: AchievementLog[]) => logs.length >= 25,
+    check: (logs: AchievementLog[], s?: Stamps) => (s?.total_logs ?? logs.length) >= 25,
   },
   {
     id: 'the-oracle',
     title: 'THE ORACLE',
     desc: 'Log 100 films',
     glyph: '◈',
-    check: (logs: AchievementLog[]) => logs.length >= 100,
+    check: (logs: AchievementLog[], s?: Stamps) => (s?.total_logs ?? logs.length) >= 100,
   },
   {
     id: 'the-connoisseur',
     title: 'THE CONNOISSEUR',
     desc: 'Rate 5 films with 5 reels',
     glyph: '✧',
-    check: (logs: AchievementLog[]) => logs.filter((l) => l.rating === 5).length >= 5,
+    check: (logs: AchievementLog[], s?: Stamps) =>
+      (s?.perfect_ratings_count ?? logs.filter((l) => l.rating === 5).length) >= 5,
   },
   {
     id: 'the-critic',
@@ -79,11 +88,12 @@ const BADGES = [
     title: 'DECADE DRIFTER',
     desc: 'Watch films from 4+ decades',
     glyph: '⊗',
-    check: (logs: AchievementLog[]) => {
+    check: (logs: AchievementLog[], s?: Stamps) => {
+      if (s?.decades_logged_count != null) return s.decades_logged_count >= 4;
       const decades = new Set<number>();
       // Strict isNaN sanitization prevents Math.floor(NaN) crashes
-      logs.forEach((l) => { 
-        if (l.year && !isNaN(Number(l.year))) decades.add(Math.floor(Number(l.year) / 10) * 10); 
+      logs.forEach((l) => {
+        if (l.year && !isNaN(Number(l.year))) decades.add(Math.floor(Number(l.year) / 10) * 10);
       });
       return decades.size >= 4;
     },
@@ -111,10 +121,11 @@ const BADGES = [
   },
 ];
 
-export function Achievements({ logs }: { logs: AchievementLog[] }) {
+export function Achievements({ logs, analytics }: { logs: AchievementLog[]; analytics?: ProfileAnalyticsPayload | null }) {
+  const stamps = analytics?.stamps;
   const earned = useMemo(() =>
-    BADGES.map(b => ({ ...b, unlocked: b.check(logs) })),
-    [logs]
+    BADGES.map(b => ({ ...b, unlocked: b.check(logs, stamps) })),
+    [logs, stamps]
   );
 
   const unlockedCount = earned.filter(b => b.unlocked).length;

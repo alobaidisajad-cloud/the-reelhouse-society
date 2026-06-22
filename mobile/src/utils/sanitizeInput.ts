@@ -24,6 +24,8 @@ export const MAX_LENGTHS = {
   dossierComment: 2000,
   loungeName: 50,
   username: 30,
+  dossierTitle: 200,
+  dossierExcerpt: 500,
   dossierContent: 10000,
 } as const;
 

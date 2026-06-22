@@ -3,7 +3,7 @@ import { LoungeMessage } from '@/src/stores/lounge';
 import { colors } from '@/src/theme/theme';
 import { BlurView } from 'expo-blur';
 import * as ExpoClipboard from 'expo-clipboard';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { Ban, Copy, Reply, ShieldAlert, Trash2 } from 'lucide-react-native';
 import React from 'react';
 import { Alert, Modal, StyleSheet, Text, View } from 'react-native';
@@ -73,7 +73,7 @@ function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete, onRepor
 
   const handleCopy = async () => {
     ExpoClipboard.setStringAsync(internalMsg.content || '');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    TactileEngine.success();
     onClose();
   };
 
@@ -121,7 +121,7 @@ function ActionSheet({ visible, msg, isSelf, onClose, onReply, onDelete, onRepor
                 Alert.alert('Delete Message?', 'This message will be permanently removed.', [
                   { text: 'Cancel', style: 'cancel' },
                   { text: 'Delete', style: 'destructive', onPress: () => {
-                    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+                    TactileEngine.warn();
                     onDelete(internalMsg.id);
                   }},
                 ]);

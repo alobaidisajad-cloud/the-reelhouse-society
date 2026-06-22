@@ -17,9 +17,14 @@ export const useSettingsStore = create<SettingsState>()(
         {
             name: 'reelhouse-settings',
             storage: createJSONStorage(() => zustandStorage),
+            // Hydration is deferred until after initEncryptedStorage() (LIB-5);
+            // _layout calls rehydrateSettingsStore() once the key is resolved.
+            skipHydration: true,
         }
     )
 );
+
+export const rehydrateSettingsStore = () => useSettingsStore.persist.rehydrate();
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {

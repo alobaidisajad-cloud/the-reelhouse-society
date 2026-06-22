@@ -1,6 +1,6 @@
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import reelToast from './reelToast';
 import { View } from 'react-native';
 
@@ -38,7 +38,7 @@ export const StoryExporter = {
                 UTI: 'public.png' // For iOS
             });
 
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            TactileEngine.success();
         } catch (error) {
             if (__DEV__) console.error('Failed to export story:', error);
             reelToast.error('Failed to capture frame');

@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bold, Italic, Type, Quote, Minus, Link2 } from 'lucide-react-native';
 import Markdown from 'react-native-markdown-display';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 
 import { useAuthStore } from '@/src/stores/auth';
