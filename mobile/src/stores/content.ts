@@ -8,6 +8,7 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { applyPendingToDossierRow, buildDossierFromPendingCreate, parseDossierPendingState } from '../utils/dossierReconciliation';
 import { DossierRowSchema, type ValidatedDossierRow } from '../schemas/dossier.schema';
+import { sanitizeInput } from '../utils/sanitizeInput';
 import { isNetworkError } from '../utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
@@ -243,6 +244,14 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
     const user = useAuthStore.getState().user;
     if (!user) throw new Error('Must be logged in to file a dossier');
 
+    // Single sanitization choke point: clean title/excerpt/content once, before
+    // the optimistic update, online insert, and offline-queue payload all read it.
+    dossier = {
+      title: sanitizeInput(dossier.title ?? '', 'dossierTitle'),
+      excerpt: sanitizeInput(dossier.excerpt ?? '', 'dossierExcerpt'),
+      fullContent: sanitizeInput(dossier.fullContent ?? '', 'dossierContent'),
+    };
+
     const tempId = Crypto.randomUUID();
     const newDossier: Dossier = {
       id: tempId,
@@ -448,6 +457,15 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
   updateDossier: async (id, updates) => {
     const user = useAuthStore.getState().user;
     if (!user) throw new Error('Must be logged in');
+
+    // Sanitize edited fields once (parity with addDossier) so the optimistic
+    // update, online write, and offline-queue payload share clean values.
+    updates = {
+      ...updates,
+      ...(updates.title !== undefined && { title: sanitizeInput(updates.title, 'dossierTitle') }),
+      ...(updates.excerpt !== undefined && { excerpt: sanitizeInput(updates.excerpt, 'dossierExcerpt') }),
+      ...(updates.fullContent !== undefined && { fullContent: sanitizeInput(updates.fullContent, 'dossierContent') }),
+    };
 
     const originalDossier = get().dossiers.find(d => d.id === id);
 

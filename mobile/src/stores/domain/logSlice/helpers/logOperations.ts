@@ -8,6 +8,7 @@ import { LOG_SELECT_COLUMNS, mapLogRow, mapLogToDbPayload } from '../../../../ut
 import { isNetworkError } from '../../../../utils/networkError';
 import { enqueueMutation, getOfflineQueue } from '../../../../utils/offlineQueue';
 import reelToast from '../../../../utils/reelToast';
+import { sanitizeInput } from '../../../../utils/sanitizeInput';
 import { resolveTier } from '../../../../utils/tier';
 import { useAuthStore } from '../../../auth';
 import type { FilmState } from '../../../films';
@@ -204,6 +205,13 @@ const applyRewatchMerge = async (set: SetState, get: GetState, existingLog: Doma
 export const addLogOp = async (set: SetState, get: GetState, log: Partial<DomainLog>) => {
         const user = useAuthStore.getState().user;
         if (!user) return;
+
+        // Single sanitization choke point: clean the review BEFORE the online/
+        // offline branch so the DB write, optimistic cache, and offline-queued
+        // payload all carry identical, length-capped, control-char-free text.
+        if (log.review !== undefined) {
+            log.review = sanitizeInput(log.review ?? '', 'review');
+        }
 
         // Anchor date to noon UTC to prevent timezone shifting
         if (log.watchedDate && log.watchedDate.length === 10) {
@@ -538,7 +546,13 @@ export const updateLogOp = async (set: SetState, get: GetState, id: string, upda
         if (!user) return;
         
         const cleanUpdates = { ...updates };
-        
+
+        // Single sanitization choke point (parity with addLogOp): clean the
+        // review on the clone before any online/offline path consumes it.
+        if (cleanUpdates.review !== undefined) {
+            cleanUpdates.review = sanitizeInput(cleanUpdates.review ?? '', 'review');
+        }
+
         // Anchor date to noon UTC to prevent timezone shifting (strictly on the clone)
         if (cleanUpdates.watchedDate && cleanUpdates.watchedDate.length === 10) {
             cleanUpdates.watchedDate = `${cleanUpdates.watchedDate}T12:00:00Z`;
