@@ -525,3 +525,44 @@ The critical screens are **excellent and security-conscious** — no new finding
   1. **Adopt-or-delete dead abstractions.**
   2. **Online/offline parity** — converge sanitization, length caps, and guards on one choke point.
 - **Headline so far:** the core (lib/utils/services/stores) is architecturally excellent with **zero P0/P1**. The "gaps to perfect" are consistency, dead code, scale caps, and a few real-but-bounded bugs (placeholder news, avatar EXIF, haptics-setting bypass).
+
+---
+
+# ▶ EXECUTION LOG (remediation complete)
+
+All 61 active findings were executed on branch `fix/perfection-remediation`,
+in 13 verified commits (each gated on `npx tsc --noEmit` exit 0 + `npx jest`
+all-pass). Final state: **tsc clean, 753/753 jest pass.**
+
+| Commit | Findings landed |
+|---|---|
+| Phase 0 `9c28e76` | 20 dead/unadopted files deleted (featureFlags, errorPipeline/errorHandling, NotificationService, NotificationCenter, ReportButton, useSendMessage, useBiometricLock, branded/unions types, queryKeys/limits consts, flashlist shim, lounge store) |
+| `22ba18c` | HOOK-1, SVC-2, SVC-3, COMP-5, COMP-3, COMP-9, LIB-4, COMP-10 |
+| `cc717e8` | LIB-3, FEAT-1, SCREEN-1, SVC-4 |
+| `1d769a3` | COMP-6 |
+| `08ef8d1` | COMP-7 |
+| `46c1aee` | COMP-4, HOOK-2, SCHEMA-1 |
+| `15110f1` | UTIL-5 |
+| `a955399` | STORE-1, STORE-2 |
+| `44b85a4` | LIB-2, TYPE-3, SCHEMA-2 |
+| `b488a41` | SVC-1 |
+| `183c38c` | HOOK-8, HOOK-9 (read-surface block filter) |
+| `a48a79d` | COMP-8, HOOK-9 (badge convergence) |
+| `4e98b72` | UTIL-2 (haptics codemod — ~43 files) |
+
+### Deferred (1) — needs a dedicated refactor, not a surgical fix
+- **LIB-5 (encrypt MMKV via expo-secure-store)** — MMKV needs the encryption key
+  *synchronously at construction*, but expo-secure-store is async-only and the
+  Zustand stores hydrate at module import (before AppBootstrapper runs). A
+  correct fix requires async-gating all store hydration on key load **plus** a
+  one-time plaintext→encrypted migration + on-device testing. The MMKV cache
+  holds only non-sensitive data (auth tokens already live in SecureStore), so a
+  half-migration that risks corrupting existing users' cache on 2nd launch was
+  deliberately NOT shipped. Revisit as a bootstrap refactor.
+
+### Phase 4 — SERVER-SIDE (cannot be done from the mobile repo)
+These remain the responsibility of the Supabase project (SQL / Edge Functions):
+entitlement receipt validation, RLS/tier enforcement, moderation admin-RPC
+`auth.uid()` checks, `handle_new_user` reserved-word enforcement, atomic
+founding-member cap, a server-side JSONB merge for preferences (completes
+COMP-7 cross-device), and `UNIQUE(token)` on `push_tokens` (completes LIB-3).
