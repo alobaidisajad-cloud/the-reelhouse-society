@@ -36,15 +36,17 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
             });
 
             if (result.success) {
+                setError('');
                 onUnlocked();
                 setLocked(false);
             } else {
                 setError('Authentication Failed');
             }
-         
+
         } catch (e) {
-            onUnlocked();
-            setLocked(false);
+            // Fail CLOSED: an error in the auth flow must never grant access.
+            // The vault stays locked and the member can retry.
+            setError('Authentication Unavailable');
         }
     }
 
@@ -53,7 +55,7 @@ export default function VaultLock({ onUnlocked }: { onUnlocked: () => void }) {
     return (
         <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.container}>
             <Text style={styles.title}>RESTRICTED ACCESS</Text>
-            <Text style={styles.subtitle}>The Vault is encrypted.</Text>
+            <Text style={styles.subtitle}>Authenticate to view your private archive.</Text>
             {error ? <Text style={styles.error}>{error}</Text> : null}
             <PressableScale style={styles.button} onPress={authenticate}>
                 <Text style={styles.btnText}>AUTHENTICATE</Text>

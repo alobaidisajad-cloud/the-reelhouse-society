@@ -8,6 +8,7 @@ import type { ProfileLog } from '../../types';
 import { useRouter } from 'expo-router';
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
 import VaultLock from './VaultLock';
+import { useAuthStore } from '@/src/stores/auth';
 
 interface ProfileArchiveTabProps {
   logs: ProfileLog[];
@@ -45,7 +46,11 @@ export default function ProfileArchiveTab({
   bottomInset
 }: ProfileArchiveTabProps) {
   const router = useRouter();
-  const [archiveReady, setArchiveReady] = useState(!isSelf);
+  // The Vault only guards the member's OWN archive, and only when they have
+  // explicitly enabled the biometric lock in Settings.
+  const biometricLock = useAuthStore((s) => s.user?.preferences?.biometric_lock === true);
+  const requiresVault = isSelf && biometricLock;
+  const [unlocked, setUnlocked] = useState(false);
 
   const breatheAnim = useSharedValue(0.2);
   useEffect(() => {
@@ -66,7 +71,7 @@ export default function ProfileArchiveTab({
   }));
 
   const handleUnlocked = useCallback(() => {
-    setArchiveReady(true);
+    setUnlocked(true);
   }, []);
 
   // Flatten month groupings into a predictable FlashList array
@@ -154,7 +159,7 @@ export default function ProfileArchiveTab({
 
   return (
     <View style={s.container}>
-      {isSelf && !archiveReady && <VaultLock onUnlocked={handleUnlocked} />}
+      {requiresVault && !unlocked && <VaultLock onUnlocked={handleUnlocked} />}
       <CinematicFlashList
         estimatedItemSize={200}
         data={flashData}
