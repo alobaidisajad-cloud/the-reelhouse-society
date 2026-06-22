@@ -36,7 +36,6 @@ export const ProfileUpdateSchema = z.object({
   ]).optional(),
 });
 
-export const ProfilePreferencesUpdateSchema = UserPreferencesSchema;
 
 /**
  * Read-side profile schema — validates Supabase profile rows
