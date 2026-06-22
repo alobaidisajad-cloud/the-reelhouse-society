@@ -110,7 +110,6 @@ jest.mock('../notificationStore', () => ({
 jest.mock('../../services/ProfileWriteService', () => ({
   ProfileService: {
     updateProfile: jest.fn().mockResolvedValue(undefined),
-    updatePreferences: jest.fn().mockResolvedValue(undefined),
   },
 }));
 

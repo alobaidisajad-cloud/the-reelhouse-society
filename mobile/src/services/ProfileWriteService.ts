@@ -1,6 +1,6 @@
 import { decode } from 'base64-arraybuffer';
 import { supabase } from '../lib/supabase';
-import { ProfilePreferencesUpdateSchema, ProfileUpdateSchema } from '../schemas/profile.schema';
+import { ProfileUpdateSchema } from '../schemas/profile.schema';
 import type { User } from '../types';
 import { withAbortSignal } from '../utils/withAbortSignal';
 
@@ -65,18 +65,6 @@ export const ProfileService = {
 
     // 3. Database Sync
     const { error } = await supabase.from('profiles').update(validatedData).eq('id', userId);
-    if (error) throw error;
-  },
-
-  async updatePreferences(userId: string, preferences: Record<string, unknown>) {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-    if (sessionError || !session?.user || session.user.id !== userId) {
-      throw new Error('Unauthorized');
-    }
-    
-    const validatedPrefs = ProfilePreferencesUpdateSchema.parse(preferences);
-    
-    const { error } = await supabase.from('profiles').update({ preferences: validatedPrefs }).eq('id', userId);
     if (error) throw error;
   },
 
