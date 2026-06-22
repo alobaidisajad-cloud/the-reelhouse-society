@@ -5,7 +5,7 @@
  *   reelToast.success('Saved to watchlist ✦')
  *   reelToast.error('Connection failed')
  */
-import * as Haptics from 'expo-haptics';
+import TactileEngine from './TactileEngine';
 
 // ── Global toast state (singleton pattern) ──
 export type ToastType = 'success' | 'error' | 'info';
@@ -31,10 +31,11 @@ export function setToastListener(fn: (payload: ToastPayload) => void) {
 
 function emitToast(message: string, type: ToastType, action?: ToastPayload['action']) {
   _toastId++;
+  // Route through TactileEngine so the user's tactile setting is respected.
   if (type === 'error') {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    TactileEngine.error();
   } else {
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    TactileEngine.success();
   }
   _listeners.forEach(fn => fn({ message, type, id: _toastId, action }));
 }

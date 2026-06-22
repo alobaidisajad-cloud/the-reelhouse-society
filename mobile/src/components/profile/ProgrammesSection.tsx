@@ -7,7 +7,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -58,7 +58,7 @@ const PickerItemRow = React.memo(({ f, selectingFor, setFilm1, setFilm2, setSele
             if (selectingFor === 1) setFilm1(f);
             else setFilm2(f);
             setSelectingFor(null);
-            Haptics.selectionAsync();
+            TactileEngine.selection();
         }}
         haptic="selection"
     >
@@ -105,7 +105,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
             reelToast.error('Please fill in all fields and select both films.');
             return;
         }
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        TactileEngine.success();
         
         const newProgramme: Programme = {
             id: `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
@@ -172,7 +172,7 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
         <View style={s.container}>
             {/* Create button */}
             {isOwnProfile && isAuteur && !isCreating && (
-                <PressableScale style={s.createBtn} onPress={() => { setIsCreating(true); Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); }}>
+                <PressableScale style={s.createBtn} onPress={() => { setIsCreating(true); TactileEngine.navigate(); }}>
                     <Text style={s.createBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>+ CURATE NIGHTLY PROGRAMME</Text>
                 </PressableScale>
             )}
@@ -213,14 +213,14 @@ export function ProgrammesSection({ programmes, user, uniqueFilms, isOwnProfile 
                             <View key={label} style={s.filmSelectBox}>
                                 <Text style={s.filmSelectLabel}>{label}</Text>
                                 {selected ? (
-                                    <PressableScale style={s.selectedFilm} onPress={() => { Haptics.selectionAsync(); setSelectingFor(slot); setSearchText(''); }}>
+                                    <PressableScale style={s.selectedFilm} onPress={() => { TactileEngine.selection(); setSelectingFor(slot); setSearchText(''); }}>
                                         {posterUri(selected.poster_path ?? selected.poster) && (
                                             <Image source={{ uri: posterUri(selected.poster_path ?? selected.poster)! }} style={s.selectedPoster} contentFit="cover" />
                                         )}
                                         <Text style={s.selectedTitle} numberOfLines={2}>{selected.title ?? selected.name}</Text>
                                     </PressableScale>
                                 ) : (
-                                    <PressableScale style={s.filmSelectTrigger} onPress={() => { Haptics.selectionAsync(); setSelectingFor(slot); setSearchText(''); }}>
+                                    <PressableScale style={s.filmSelectTrigger} onPress={() => { TactileEngine.selection(); setSelectingFor(slot); setSearchText(''); }}>
                                         <Text style={s.filmSelectTriggerText}>Select from Archive...</Text>
                                     </PressableScale>
                                 )}

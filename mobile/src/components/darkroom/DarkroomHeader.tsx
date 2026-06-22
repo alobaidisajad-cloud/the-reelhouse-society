@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Keyboard } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SlidersHorizontal } from 'lucide-react-native';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, useAnimatedProps, cancelAnimation } from 'react-native-reanimated';
@@ -154,7 +154,7 @@ export const DarkroomHeader = React.memo(() => {
             const match = await tmdb.detail(semanticMatchId);
             if (active && match) {
               setSuggestions([{ ...match, media_type: 'movie' }]);
-              Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+              TactileEngine.success();
             }
             return;
         }
@@ -183,7 +183,7 @@ export const DarkroomHeader = React.memo(() => {
 
   const handleSearchSubmit = useCallback(() => {
     Keyboard.dismiss();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     setQuery(inputVal);
     setPage(1);
     setSuggestions([]);

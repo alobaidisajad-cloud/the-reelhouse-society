@@ -6,7 +6,7 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Camera, Image as ImageIcon, X, Check } from 'lucide-react-native';
@@ -31,7 +31,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
   const insets = useSafeAreaInsets();
 
   const handlePick = async (source: 'camera' | 'library') => {
-    Haptics.selectionAsync();
+    TactileEngine.selection();
 
     let result;
     if (source === 'camera') {
@@ -66,13 +66,13 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       const rendered = await ImageManipulator.manipulate(uri).resize({ width: 512 }).renderAsync();
       const out = await rendered.saveAsync({ compress: 0.7, format: SaveFormat.JPEG, base64: true });
       if (!out.base64) throw new Error('Could not process the selected image.');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
       onSuccess(out.base64);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Unknown error';
       if (__DEV__) console.error(msg);
       reelToast.error(msg);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      TactileEngine.error();
     } finally {
       setUploading(false);
     }

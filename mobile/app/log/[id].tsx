@@ -4,7 +4,7 @@ import { useBlockStore } from '@/src/stores/blockStore';
 import { useFilmStore, useInteractionStore } from '@/src/stores/films';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import * as Crypto from 'expo-crypto';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -314,7 +314,7 @@ export default function LogDetailScreen() {
     });
     
     setNewComment('');
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    TactileEngine.success();
 
     try {
       const data = await LogService.addLogComment({
@@ -355,7 +355,7 @@ export default function LogDetailScreen() {
            }
         });
         flushOfflineQueue();
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        TactileEngine.success();
       } else {
         queryClient.setQueryData(['log', id], (old: any) => {
             if (!old) return old;
@@ -372,7 +372,7 @@ export default function LogDetailScreen() {
   };
 
   const handleDeleteComment = useCallback(async (commentId: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    TactileEngine.destroy();
     
     await queryClient.cancelQueries({ queryKey: ['log', id] });
     const previousData = queryClient.getQueryData<any>(['log', id]);
@@ -398,7 +398,7 @@ export default function LogDetailScreen() {
             payload: { comment_id: commentId, user_id: user?.id }
         });
         flushOfflineQueue();
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        TactileEngine.success();
       } else {
         queryClient.setQueryData(['log', id], (old: any) => {
             if (!old || !targetComment) return old;
@@ -415,7 +415,7 @@ export default function LogDetailScreen() {
   const handleShare = async () => {
     if (!isReadyToShare || !viewShotRef.current) return;
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      TactileEngine.navigate();
       setSharing(true);
       
       // Additional deterministic UI lock: wait one frame to ensure layout is fully calculated
@@ -441,7 +441,7 @@ export default function LogDetailScreen() {
         });
       }
     } catch {
-       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+       TactileEngine.error();
     } finally {
        setSharing(false);
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { ChevronDown, Send } from 'lucide-react-native';
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
@@ -111,7 +111,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
 
             if (error) throw error;
             if (data) {
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                TactileEngine.success();
                 setComments(prev => prev.map(c => c.id === tempId ? { id: data.id, username: currentUser.username, body: data.body, created_at: data.created_at } : c));
                 reelToast('Critique filed.');
             }
@@ -132,7 +132,7 @@ export default function DossierCritiquePanel({ dossierId, open }: { dossierId: s
             } else {
                 setComments(prev => prev.filter(c => c.id !== tempId));
                 setText(prev => prev.length > 0 ? prev : body);
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+                TactileEngine.error();
                 reelToast('Could not save critique.');
             }
         }

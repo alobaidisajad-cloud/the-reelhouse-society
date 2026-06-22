@@ -5,7 +5,11 @@
 import React, { memo, useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeInRight, runOnJS } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
+
+// Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
+// TactileEngine.navigate would lose its `this` binding).
+function hapticLight() { TactileEngine.navigate(); }
 import * as Sharing from 'expo-sharing';
 import { Share2 } from 'lucide-react-native';
 import ViewShot from 'react-native-view-shot';
@@ -147,7 +151,7 @@ export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps
     const handleShare = async () => {
         if (isSharing || !viewShotRef.current) return;
         try {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+            TactileEngine.mutate();
             setIsSharing(true);
             const uri = await viewShotRef.current.capture?.();
             if (uri) {
@@ -178,7 +182,7 @@ export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps
                     const barWidth = `${(count / maxCount) * 100}%`;
                     const anim = FadeInRight.delay(i * 60).duration(300).withCallback((finished) => {
                         if (finished) {
-                            runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+                            runOnJS(hapticLight)();
                         }
                     });
                     return (

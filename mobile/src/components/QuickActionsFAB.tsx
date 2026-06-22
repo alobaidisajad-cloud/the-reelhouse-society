@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, Pressable, InteractionManager } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
@@ -27,13 +27,13 @@ export default function QuickActionsFAB() {
     }));
 
     const handlePress = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        TactileEngine.mutate();
         rotation.value = withSpring(open ? 0 : 45, { damping: 14, stiffness: 200 });
         setOpen(!open);
     };
 
     const handleAction = (route: import('expo-router').Href) => {
-        Haptics.selectionAsync();
+        TactileEngine.selection();
         setOpen(false);
         InteractionManager.runAfterInteractions(() => {
             (router.push as any)(route);

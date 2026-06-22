@@ -62,6 +62,11 @@ jest.mock('@/src/utils/TactileEngine', () => ({
     navigate: jest.fn(),
     mutate: jest.fn(),
     destroy: jest.fn(),
+    success: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    rigid: jest.fn(),
+    soft: jest.fn(),
   },
 }));
 

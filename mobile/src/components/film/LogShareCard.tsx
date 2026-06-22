@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import ViewShot from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { tmdb } from '@/src/lib/tmdb';
@@ -136,7 +136,7 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
     const handleShare = useCallback(async () => {
         if (!cardRef.current?.capture) return;
         setSharing(true);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        TactileEngine.mutate();
 
         try {
             const uri = await cardRef.current?.capture?.();
@@ -154,7 +154,7 @@ function LogShareCardModal({ visible, data, onClose }: { visible: boolean; data:
                     message: `${data.filmTitle}${yearText}${ratingText}\n\n${cleanReviewText(data.review || '')}\n\n• via The ReelHouse Society`.trim(),
                 });
             }
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            TactileEngine.success();
         } catch (e: unknown) {
             const msg = e instanceof Error ? e.message : 'Unknown error';
             if (msg !== 'User did not share') reelToast.error(msg);

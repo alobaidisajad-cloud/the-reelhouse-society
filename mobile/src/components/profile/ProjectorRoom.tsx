@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Share } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '../PressableScale';
 import reelToast from '@/src/utils/reelToast';
@@ -54,7 +54,7 @@ export function ProjectorRoom({ stats, user }: { stats?: CinephileStats; user?: 
     if (!stats) return null;
 
     const handleCSVExport = async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        TactileEngine.mutate();
         try {
             await Share.share({
                 message: `My ReelHouse Archive:\n\n${stats.count} films logged\nRanking: ${stats.level}\n\nThe ReelHouse Society`,

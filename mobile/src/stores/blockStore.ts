@@ -15,7 +15,7 @@
  *   • React Query cache invalidation on block/mute changes
  *   • Haptic feedback and reelToast confirmations on all mutations
  */
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { create } from 'zustand';
 import { queryClient } from '../lib/queryClient';
 import { captureError } from '../lib/sentry';
@@ -132,7 +132,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
 
       // Success feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      TactileEngine.warn();
       reelToast.info(`User blocked. Their content is now hidden.`);
     } catch (err) {
       // Rollback optimistic update
@@ -188,7 +188,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
       reelToast.info('User unblocked.');
     } catch (err) {
       // Rollback
@@ -252,7 +252,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
       reelToast.info('User muted. Their content will be hidden from your feeds.');
     } catch (err) {
       // Rollback
@@ -306,7 +306,7 @@ export const useBlockStore = create<BlockState>()((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['feed'] });
       queryClient.invalidateQueries({ queryKey: ['universalSearch'] });
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
       reelToast.info('User unmuted.');
     } catch (err) {
       // Rollback

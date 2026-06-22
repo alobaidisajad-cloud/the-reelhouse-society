@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { Heart, MessageSquare, Edit3, Bookmark, MessageCircle } from 'lucide-react-native';
 import { useWatchlistStore } from '@/src/stores/films';
@@ -72,7 +72,7 @@ export const ActionDeck = React.memo(function ActionDeck({
     isAnimating.current = true;
     setTimeout(() => { isAnimating.current = false; }, 500);
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     toggleEndorse(itemId).catch((e) => {
       if (__DEV__) console.warn('Certify failed:', e);
     });
@@ -87,7 +87,7 @@ export const ActionDeck = React.memo(function ActionDeck({
         (router.push as any)('/login' as any);
         return;
     }
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     (router.push as any)(`/log/${itemId}` as any);
   }, [itemId, router]);
 
@@ -96,7 +96,7 @@ export const ActionDeck = React.memo(function ActionDeck({
         (router.push as any)('/login' as any);
         return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     if (isOwner) {
       (router.push as any)({
         pathname: '/log-modal',
@@ -134,11 +134,11 @@ export const ActionDeck = React.memo(function ActionDeck({
         return;
     }
     if (!isLoungeEligible) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      TactileEngine.warn();
       reelToast.error('Archivist or Auteur tier required to share to The Lounge.');
       return;
     }
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     setShowShareModal(true);
   }, [isLoungeEligible]);
 

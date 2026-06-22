@@ -8,7 +8,7 @@ import { useAuthStore } from '@/src/stores/auth';
 import { useLogStore } from '@/src/stores/films';
 import { colors, fonts } from '@/src/theme/theme';
 import { FlashList } from '@shopify/flash-list';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { Image } from 'expo-image';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Lock, Sparkles } from 'lucide-react-native';
@@ -26,7 +26,7 @@ const LedgerLogCard = React.memo(({ item, index, router }: { item: Record<string
   const posterUri = item.poster ? `${TMDB_IMG}${item.poster}` : null;
   return (
     <AnimatedView entering={FadeInUp.duration(350).delay(Math.min(index * 40, 300))}>
-      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)(`/log/${item.id}` as any); }}>
+      <PressableScale onPress={() => { TactileEngine.navigate(); (router.push as any)(`/log/${item.id}` as any); }}>
         <View style={s.logRow}>
           {posterUri ? <Image source={{ uri: posterUri }} style={s.logPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`log-${item.id}`} /> : <View style={[s.logPoster, s.noPoster]} />}
           <View style={s.logInfo}>
@@ -46,7 +46,7 @@ const LedgerWatchlistCard = React.memo(({ item, index, router }: { item: Record<
   const posterUri = item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null;
   return (
     <AnimatedView entering={FadeInUp.duration(300).delay(Math.min(index * 30, 250))} style={s.gridItem}>
-      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)(`/film/${item.id}` as any); }}>
+      <PressableScale onPress={() => { TactileEngine.navigate(); (router.push as any)(`/film/${item.id}` as any); }}>
         {posterUri ? <Image source={{ uri: posterUri }} style={s.gridPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`wl-${item.id}`} /> : <View style={[s.gridPoster, s.noPoster]}><Text style={s.noPosterText}>?</Text></View>}
         <Text style={s.gridTitle} numberOfLines={1}>{item.title}</Text>
       </PressableScale>
@@ -59,7 +59,7 @@ const LedgerVaultCard = React.memo(({ item, index, router }: { item: Record<stri
   const posterUri = item.poster_path ? `${TMDB_IMG}${item.poster_path}` : null;
   return (
     <AnimatedView entering={FadeInUp.duration(300).delay(Math.min(index * 30, 250))} style={s.gridItem}>
-      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)(`/film/${item.id}` as any); }}>
+      <PressableScale onPress={() => { TactileEngine.navigate(); (router.push as any)(`/film/${item.id}` as any); }}>
         {posterUri ? <Image source={{ uri: posterUri }} style={s.gridPoster} contentFit="cover" cachePolicy="memory-disk" recyclingKey={`vault-${item.id}`} /> : <View style={[s.gridPoster, s.noPoster]}><Text style={s.noPosterText}>?</Text></View>}
         <Text style={s.gridTitle} numberOfLines={1}>{item.title}</Text>
         <Text style={s.gridFormat}>{item.format}</Text>
@@ -72,7 +72,7 @@ LedgerVaultCard.displayName = 'LedgerVaultCard';
 const LedgerListCard = React.memo(({ item, index, router }: { item: Record<string, any>, index: number, router: import('expo-router').Router }) => {
   return (
     <AnimatedView entering={FadeInUp.duration(350).delay(Math.min(index * 50, 300))}>
-      <PressableScale onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light); (router.push as any)(`/stacks/${item.id}` as any); }}>
+      <PressableScale onPress={() => { TactileEngine.navigate(); (router.push as any)(`/stacks/${item.id}` as any); }}>
         <View style={s.listCard}>
           <Text style={s.listTitle}>{item.title}</Text>
           <Text style={s.listMeta}>{item.films?.length ?? 0} films{item.description ? ` · ${item.description}` : ''}</Text>

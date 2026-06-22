@@ -11,7 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FlashList } from '@shopify/flash-list';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useQuery } from '@tanstack/react-query';
 import { colors, fonts } from '@/src/theme/theme';
 import { SectionDivider } from '@/src/components/Decorative';
@@ -82,7 +82,7 @@ const GhostEmptyState = memo(() => {
   const style = useAnimatedStyle(() => ({ transform: [{ translateY: float.value }] }));
 
   const handlePoke = () => {
-     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+     TactileEngine.destroy();
      setMood('peeking');
      if (pokeTimer.current) clearTimeout(pokeTimer.current);
      pokeTimer.current = setTimeout(() => setMood('sleeping'), 1500);

@@ -5,7 +5,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import * as WebBrowser from 'expo-web-browser';
 import * as Linking from 'expo-linking';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import reelToast from '@/src/utils/reelToast';
 import { getPasswordChecks } from '@/src/components/auth/PasswordStrengthMeter';
 import { useAuthThrottle } from './useAuthThrottle';
@@ -143,7 +143,7 @@ export function useAuthFlow() {
   const handleResend = async () => {
     if (resendCooldown > 0) return;
     setResending(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    TactileEngine.success();
     try {
       await supabase.auth.resend({ 
         type: 'signup', 
@@ -197,7 +197,7 @@ export function useAuthFlow() {
     }
     if (submitting) return;
     setSubmitting(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
 
     try {
       if (isLogin) {
@@ -250,7 +250,7 @@ export function useAuthFlow() {
   };
 
   const toggleMode = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    TactileEngine.navigate();
     setIsLogin(v => !v);
     setEmailOrUsername('');
     setPassword('');

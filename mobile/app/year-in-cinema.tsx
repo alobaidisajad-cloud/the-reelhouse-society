@@ -1,5 +1,5 @@
 import { FlashList } from '@shopify/flash-list';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -180,7 +180,7 @@ export default function YearInCinemaScreen() {
         onMomentumScrollEnd={(e) => {
           const index = Math.round(e.nativeEvent.contentOffset.x / width);
           if (index !== currentIndex) {
-            Haptics.selectionAsync();
+            TactileEngine.selection();
             setCurrentIndex(index);
           }
         }}

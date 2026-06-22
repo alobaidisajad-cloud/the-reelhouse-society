@@ -8,7 +8,7 @@ import Animated, {
   Easing, interpolate, cancelAnimation
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
@@ -43,7 +43,7 @@ export const VelvetRopeCTA = memo(() => {
     return (
        <PressableScale
           style={s.ctaSecondaryNoir}
-          onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy); (router.push as any)('/login' as any); }}
+          onPress={() => { TactileEngine.destroy(); (router.push as any)('/login' as any); }}
        >
           <Text style={s.ctaSecondaryNoirText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.7}>ALREADY A MEMBER?</Text>
           <ShimmerRule />

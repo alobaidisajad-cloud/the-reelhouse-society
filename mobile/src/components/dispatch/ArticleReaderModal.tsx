@@ -1,4 +1,4 @@
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { Edit3, ExternalLink, Eye, Heart, MessageSquare, Share2, Sparkles, Trash2, X as XIcon } from 'lucide-react-native';
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
@@ -128,7 +128,7 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
     }
     if (isCertifying || isClosingRef.current || isDeleting) return;
     
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     setIsCertifying(true);
 
     const targetId = displayArticle.id;
@@ -172,7 +172,7 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
 
   const handleShare = async () => {
     if (!displayArticle || isClosingRef.current || isDeleting) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    TactileEngine.navigate();
     
     let url = '';
     const isDossier = 'authorId' in displayArticle;

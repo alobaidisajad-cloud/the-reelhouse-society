@@ -8,7 +8,7 @@ import { View, Text, StyleSheet, Pressable, Modal } from 'react-native';
 import { Image } from 'expo-image';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import Animated, { FadeIn, FadeInDown, ZoomIn } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
@@ -59,14 +59,14 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
         if (!watchlist || watchlist.length === 0) return;
         setPicking(true);
         setResult(null);
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        TactileEngine.navigate();
 
         // If exactly 1 film, resolve instantly without spin loop
         if (watchlist.length === 1) {
             setResult(watchlist[0]);
             setReason(ORACLE_REASONS[Math.floor(Math.random() * ORACLE_REASONS.length)]);
             setPicking(false);
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+            TactileEngine.success();
             return;
         }
 
@@ -87,7 +87,7 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
 
             // Haptic tick every few frames
             if (ticks % 3 === 0) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                TactileEngine.navigate();
             }
 
             if (ticks > 30) {
@@ -96,13 +96,13 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
                 setReason(ORACLE_REASONS[Math.floor(Math.random() * ORACLE_REASONS.length)]);
                 setPicking(false);
                 // Heavy clunk on lock-in
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                TactileEngine.success();
             }
         }, 50); // 20fps projector simulation
     }, [watchlist]);
 
     const handleSelect = useCallback(() => {
-        Haptics.selectionAsync();
+        TactileEngine.selection();
         if (!result) return;
         const filmId = result.id ?? result.filmId;
         onClose?.();
@@ -123,8 +123,8 @@ export function WatchlistRoulette({ visible, watchlist, onClose, onSelect }: {
     };
 
     return (
-        <Modal visible transparent animationType="fade" onRequestClose={() => { Haptics.selectionAsync(); onClose?.(); }}>
-            <Pressable style={s.overlay} onPress={() => { Haptics.selectionAsync(); onClose?.(); }}>
+        <Modal visible transparent animationType="fade" onRequestClose={() => { TactileEngine.selection(); onClose?.(); }}>
+            <Pressable style={s.overlay} onPress={() => { TactileEngine.selection(); onClose?.(); }}>
                 <Pressable style={s.card} onPress={() => {}}>
                     {/* Scanlines when picking */}
                     {picking && <View style={s.scanlines} pointerEvents="none" />}

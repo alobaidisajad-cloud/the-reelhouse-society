@@ -1,4 +1,4 @@
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import {
     AlertTriangle,
@@ -361,7 +361,7 @@ export default function TribunalScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
       reelToast('Directive executed. Action recorded in the archives.');
     },
     onError: (err: unknown) => {
@@ -378,7 +378,7 @@ export default function TribunalScreen() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'pending'] });
       queryClient.invalidateQueries({ queryKey: ['admin', 'reports', 'priority'] });
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
       reelToast(`${selectedReports.size} report(s) dismissed.`);
       setSelectedReports(new Set());
       setMultiSelectMode(false);
@@ -392,7 +392,7 @@ export default function TribunalScreen() {
   // ── Multi-select handlers ──────────────────────────────────────────────
 
   const toggleMultiSelect = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     setMultiSelectMode((prev) => {
       if (prev) setSelectedReports(new Set());
       return !prev;
@@ -400,7 +400,7 @@ export default function TribunalScreen() {
   }, []);
 
   const toggleReportSelection = useCallback((reportId: string) => {
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     setSelectedReports((prev) => {
       const next = new Set(prev);
       if (next.has(reportId)) {
@@ -414,7 +414,7 @@ export default function TribunalScreen() {
 
   const handleBulkDismiss = useCallback(() => {
     if (selectedReports.size === 0) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    TactileEngine.destroy();
     Alert.alert(
       'Bulk Dismiss',
       `Dismiss ${selectedReports.size} report(s) without action?`,
@@ -432,7 +432,7 @@ export default function TribunalScreen() {
   // ── View toggle handler ────────────────────────────────────────────────
 
   const switchView = useCallback((view: TribunalView) => {
-    Haptics.selectionAsync();
+    TactileEngine.selection();
     setActiveView(view);
     setMultiSelectMode(false);
     setSelectedReports(new Set());
@@ -444,7 +444,7 @@ export default function TribunalScreen() {
   }, []);
 
   const onRefresh = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    TactileEngine.navigate();
     if (activeView === 'pending') {
       refetch();
     } else {
@@ -458,7 +458,7 @@ export default function TribunalScreen() {
   // ── Open action modal for graduated enforcement ────────────────────────
 
   const openActionModal = useCallback((action: EnforcementAction, report: TribunalReport) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     setActionModal({ visible: true, action, report });
   }, []);
 
@@ -466,7 +466,7 @@ export default function TribunalScreen() {
 
   const handleBanOrExile = useCallback(
     (action: 'ban' | 'permanent_exile', report: TribunalReport) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+      TactileEngine.destroy();
       const title = action === 'ban' ? 'Ban Member' : 'Permanent Exile';
       const message =
         action === 'ban'
@@ -489,7 +489,7 @@ export default function TribunalScreen() {
 
   const handleDismiss = useCallback(
     (report: TribunalReport) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      TactileEngine.navigate();
       Alert.alert('Dismiss Report', 'Dismiss this report without action?', [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -511,7 +511,7 @@ export default function TribunalScreen() {
   const handleActionSubmit = useCallback(
     (action: EnforcementAction, reason: string, durationHours?: number) => {
       if (!actionModal.report) return;
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      TactileEngine.warn();
       resolveV2Mutation.mutate({
         reportId: actionModal.report.id,
         action,

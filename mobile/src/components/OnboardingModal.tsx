@@ -5,7 +5,7 @@
 import PressableScale from '@/src/components/PressableScale';
 import { colors, fonts } from '@/src/theme/theme';
 import { BlurView } from 'expo-blur';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useState } from 'react';
 import { Modal, StyleSheet, Text, View } from 'react-native';
 import Animated, { SlideInRight, SlideOutLeft } from 'react-native-reanimated';
@@ -44,7 +44,7 @@ export default function OnboardingModal({ visible, onComplete }: OnboardingModal
     const [step, setStep] = useState(0);
 
     const handleNext = () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        TactileEngine.navigate();
         if (step < STEPS.length - 1) {
             setStep(step + 1);
         } else {

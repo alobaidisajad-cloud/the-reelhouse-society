@@ -13,7 +13,7 @@ import { isArchivistPlusTier } from '@/src/utils/tier';
 import { FlashList } from '@shopify/flash-list';
 import { BlurView } from 'expo-blur';
 import * as ExpoClipboard from 'expo-clipboard';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
@@ -153,7 +153,7 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
   const handleCopyCode = async () => {
     if (lounge.invite_code) {
       ExpoClipboard.setStringAsync(lounge.invite_code);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      TactileEngine.success();
       setCopied(true);
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => setCopied(false), 2000);
@@ -164,7 +164,7 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
     Alert.alert('Leave Lounge?', 'You will need a new invite to rejoin a private lounge.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Leave', style: 'destructive', onPress: async () => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        TactileEngine.destroy();
         await leaveLounge(lounge.id);
         onClose();
         InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as any));
@@ -176,7 +176,7 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
     Alert.alert('Incinerate Lounge?', 'All messages and member history will be permanently destroyed.', [
       { text: 'Cancel', style: 'cancel' },
       { text: 'Incinerate', style: 'destructive', onPress: async () => {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        TactileEngine.warn();
         await deleteLounge(lounge.id);
         onClose();
         InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as any));
@@ -454,7 +454,7 @@ export default function LoungeRoomScreen() {
   const handleTakeSeat = async () => {
     if (!id) return;
     setJoining(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    TactileEngine.mutate();
     const success = await useLoungeStore.getState().joinLoungeById(id);
     if (success) {
       setLocalLounge(prev => prev ? { ...prev, is_member: true } : null);

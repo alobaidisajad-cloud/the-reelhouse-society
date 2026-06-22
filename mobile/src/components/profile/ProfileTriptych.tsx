@@ -10,7 +10,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { tmdb } from '@/src/lib/tmdb';
 import { colors, fonts } from '@/src/theme/theme';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { enqueueMutation } from '@/src/utils/offlineQueue';
@@ -220,7 +220,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
     const handleSelectSlot = (index: number) => {
         if (!isOwnProfile) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        TactileEngine.navigate();
         setEditingSlotIndex(index);
         setIsEditing(true);
         setSearchQuery('');
@@ -229,7 +229,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
 
     const handleSetFilm = async (film: TriptychSearchResult) => {
         if (editingSlotIndex === null) return;
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        TactileEngine.success();
         
         const newFavs = [...slots];
         newFavs[editingSlotIndex] = { id: film.id, title: film.title, poster_path: film.poster_path ?? '' };
@@ -255,7 +255,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
     };
 
     const handleClearSlot = async (index: number) => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid);
+        TactileEngine.rigid();
         const newFavs = [...slots];
         newFavs[index] = null;
 
@@ -341,7 +341,7 @@ export function ProfileTriptych({ user, isOwnProfile, userRole }: { user: Tripty
             {/* Selection Modal */}
             <Modal visible={isEditing} transparent animationType="slide">
                 <View style={[s.modalOverlay, { paddingBottom: insets.bottom }]}>
-                    <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { Haptics.selectionAsync(); setIsEditing(false); }} />
+                    <Pressable style={StyleSheet.absoluteFillObject} onPress={() => { TactileEngine.selection(); setIsEditing(false); }} />
                     <View style={s.modalContent}>
                         <View style={s.modalHeader}>
                             <Text style={s.modalEyebrow}>CURATE DOSSIER SLOT {editingSlotIndex !== null ? editingSlotIndex + 1 : ''}</Text>

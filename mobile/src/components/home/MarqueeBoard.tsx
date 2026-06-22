@@ -10,7 +10,11 @@ import Animated, {
   Easing, interpolate, Extrapolation, cancelAnimation, useAnimatedReaction, runOnJS, useReducedMotion
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
+import TactileEngine from '@/src/utils/TactileEngine';
+
+// Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
+// TactileEngine.navigate would lose its `this` binding).
+function hapticLight() { TactileEngine.navigate(); }
 import { useRouter } from 'expo-router';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
@@ -98,7 +102,7 @@ const TungstenIgnition = memo(function TungstenIgnition() {
     () => flicker.value > 0.5,
     (isHigh, wasHigh) => {
       if (isHigh && !wasHigh) {
-        runOnJS(Haptics.impactAsync)(Haptics.ImpactFeedbackStyle.Light);
+        runOnJS(hapticLight)();
       }
     }
   );
@@ -171,7 +175,7 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
   return (
     <PressableScale
       style={s.marqueeShell}
-      onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium); (router.push as any)(`/film/${film.id}` as any); }}
+      onPress={() => { TactileEngine.mutate(); (router.push as any)(`/film/${film.id}` as any); }}
     >
       <MarqueeBulbRow count={8} />
 
