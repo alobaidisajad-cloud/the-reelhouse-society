@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase';
 import { FilmReviewSchema, type FilmReview } from '@/src/schemas/film.schema';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
+import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import { z } from 'zod';
 
 /**
@@ -95,12 +96,17 @@ export const FilmService = {
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);
 
+    // Hide reviews authored by blocked/muted users (HOOK-8 parity with feeds,
+    // search, and lounge). Applied to the validated items only; cursor/hasMore
+    // below derive from the RAW page so filtering can't truncate pagination.
+    const visibleItems = filterContentByBlocks(items, (r) => r.user_id ?? '');
+
     // Cursor/hasMore are computed from the RAW page (not the validated subset),
     // so dropping a malformed row can never truncate pagination early.
     const lastRaw = data[data.length - 1] as { created_at?: string; id?: string } | undefined;
     const hasMore = data.length === pageSize;
     const nextCursor = hasMore && lastRaw?.created_at && lastRaw?.id ? `${lastRaw.created_at}|${lastRaw.id}` : null;
 
-    return { items, nextCursor };
+    return { items: visibleItems, nextCursor };
   }
 };

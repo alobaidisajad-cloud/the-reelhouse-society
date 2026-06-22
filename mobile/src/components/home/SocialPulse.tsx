@@ -19,6 +19,7 @@ import PressableScale from '@/src/components/PressableScale';
 import Buster from '@/src/components/Buster';
 import { useAuthStore } from '@/src/stores/auth';
 import { supabase } from '@/src/lib/supabase';
+import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import type { FeaturedLog, PulseActivity } from './types';
 import { timeAgo } from './types';
 import { isAuteurPlusTier } from '@/src/utils/tier';
@@ -133,8 +134,8 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
         }
 
         if (!data) return [];
-        
-        return data.map((log: FeaturedLog) => ({
+
+        const mapped = data.map((log: FeaturedLog) => ({
           id: log.id,
           user_id: log.user_id,
           user: (Array.isArray(log.profiles) ? log.profiles[0]?.username : log.profiles?.username) ?? 'cinephile',
@@ -152,6 +153,9 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
           editorialHeader: log.editorial_header ?? null,
           time: timeAgo(log.created_at),
         }));
+
+        // Hide logs from blocked/muted users (HOOK-8).
+        return filterContentByBlocks(mapped, (a) => a.user_id ?? '');
     },
     staleTime: 5 * 60 * 1000,
   });

@@ -18,6 +18,7 @@ import { colors, fonts, effects } from '@/src/theme/theme';
 import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { supabase } from '@/src/lib/supabase';
+import { filterContentByBlocks } from '@/src/utils/filterContentByBlocks';
 import type { FeaturedLog, PulseActivity } from './types';
 import { timeAgo } from './types';
 import { PulseCardItem } from './PulseCardItem';
@@ -38,7 +39,12 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
           if (__DEV__) console.error('[FeaturedCritique] Sync error:', error);
           return null;
         }
-        return featuredLog as FeaturedLog;
+        const log = featuredLog as FeaturedLog;
+        // Don't surface a featured critique authored by a blocked/muted user (HOOK-8).
+        if (log?.user_id && filterContentByBlocks([log], (l) => l.user_id ?? '').length === 0) {
+          return null;
+        }
+        return log;
     },
     staleTime: 5 * 60 * 1000,
   });
