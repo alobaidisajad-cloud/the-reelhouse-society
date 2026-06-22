@@ -16,12 +16,16 @@ module.exports = {
     __DEV__: true,
   },
   // ── Coverage Enforcement ──────────────────────────────────────────
-  // Prevents silent test coverage regression. Thresholds set just below
-  // current baseline — the coverage-ratchet script auto-raises them.
+  // Per-DIRECTORY floors so a regression in one layer can't be masked by gains
+  // in another. Floors sit just under current measured coverage; Batch B raises
+  // hooks/stores/lib as real tests are added, then these ratchet up with them.
   coverageThreshold: {
+    // Locks total coverage at the current baseline so it can never silently
+    // regress — now actually enforced by the new CI Jest job (Batch A). Batch B
+    // adds tightened per-directory floors once hooks/stores/lib tests land.
     global: {
       branches: 13,
-      functions: 15,
+      functions: 16,
       lines: 18,
       statements: 18,
     },
