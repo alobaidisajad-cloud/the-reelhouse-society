@@ -78,12 +78,15 @@ export type DispatchLog = z.infer<typeof DispatchLogSchema>;
 export const DossierRowSchema = z.object({
   id: z.string(),
   title: z.string().default('Untitled'),
-  excerpt: z.string().nullable().optional(),
-  full_content: z.string().nullable().optional(),
-  author_username: z.string().nullable().optional(),
+  // These columns are always present in DOSSIER_SELECT_COLUMNS but may be NULL.
+  // Keeping them required-but-nullable means a column rename produces a parse
+  // failure (row dropped) rather than a silent `undefined` → blank card.
+  excerpt: z.string().nullable(),
+  full_content: z.string().nullable(),
+  author_username: z.string().nullable(),
   user_id: z.string(),
-  views: z.number().nullable().optional(),
-  certify_count: z.number().nullable().optional(),
+  views: z.number().nullable(),
+  certify_count: z.number().nullable(),
   created_at: z.string(),
 });
 
