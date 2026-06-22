@@ -113,41 +113,24 @@ export async function registerForPushNotifications(userId: string): Promise<stri
 }
 
 /**
- * Store the push token in Supabase.
- * Upserts to handle token refresh on app reinstall.
+ * Store the push token in Supabase via the register_push_token RPC.
  *
- * A push token identifies a physical device install, not a user. When a
- * different account signs in on a device that still carries a previous user's
- * token row, that token would otherwise be associated with two users at once —
- * causing the new owner's device to receive the previous owner's push
- * notifications. We first detach the token from any other user, then upsert it
- * onto the current (user, platform) row.
- *
- * Server-side ideal (tracked in the server checklist): add a UNIQUE(token)
- * constraint and switch onConflict to 'token' so this is atomic in one write.
+ * A push token identifies a physical device install, not a user. The RPC runs
+ * SECURITY DEFINER so it can atomically detach the token from any previous
+ * owner before claiming it for the current user (auth.uid()) — something a
+ * plain client write can't do under row-level security. This is the LIB-3 fix:
+ * a device that changes accounts can never keep delivering the old owner's
+ * notifications.
  */
-async function storePushToken(userId: string, token: string): Promise<void> {
+async function storePushToken(_userId: string, token: string): Promise<void> {
   try {
-    // Detach this device token from any OTHER user before claiming it.
-    await supabase
-      .from('push_tokens')
-      .delete()
-      .eq('token', token)
-      .neq('user_id', userId);
-
-    await supabase
-      .from('push_tokens')
-      .upsert(
-        {
-          user_id: userId,
-          token,
-          platform: Platform.OS,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: 'user_id,platform' }
-      );
+    const { error } = await supabase.rpc('register_push_token', {
+      p_token: token,
+      p_platform: Platform.OS,
+    });
+    if (error && __DEV__) console.warn('[Push] register_push_token failed:', error.message);
   } catch {
-    // Non-critical — token will be stored on next app open
+    // Non-critical — token will be re-registered on next app open
   }
 }
 

@@ -80,7 +80,9 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
             try {
               const cached = JSON.parse(cachedData);
               if (cached.preferences) {
-                await supabase.from('profiles').update({ preferences: cached.preferences }).eq('id', session.user.id);
+                // Merge, don't overwrite: another device may have set keys while
+                // this one was offline with dirty prefs (COMP-7 cross-device).
+                await supabase.rpc('update_my_preferences', { p_preferences: cached.preferences });
                 storage.delete(`dirty_prefs_${session.user.id}`);
               }
             } catch {
@@ -351,7 +353,10 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       try {
         const currentPrefs = get().user?.preferences;
         if (!currentPrefs) return;
-        await supabase.from('profiles').update({ preferences: currentPrefs }).eq('id', user.id);
+        // Server-side JSONB merge (COMP-7 cross-device): keys set on other
+        // devices are preserved instead of being overwritten by this blob.
+        const { error } = await supabase.rpc('update_my_preferences', { p_preferences: currentPrefs });
+        if (error) throw error;
         storage.delete(`dirty_prefs_${user.id}`);
       } catch {
         // DB write failed — roll back local state to prevent cache/server divergence.
