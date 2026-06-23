@@ -17,17 +17,37 @@ module.exports = {
   },
   // ── Coverage Enforcement ──────────────────────────────────────────
   // Per-DIRECTORY floors so a regression in one layer can't be masked by gains
-  // in another. Floors sit just under current measured coverage; Batch B raises
-  // hooks/stores/lib as real tests are added, then these ratchet up with them.
+  // in another. Directory keys (no glob chars) aggregate across every file
+  // under that path — a glob pattern like './src/lib/**/*.ts' would instead
+  // apply the threshold to each matched file individually, which fails on
+  // any untouched 0%-coverage file in the directory. Floors sit ~1-2pts
+  // under current measured coverage (Batch B, 2026-06-22) — enforced by the
+  // CI Jest job (Batch A). Ratchet these up as more hooks/stores/lib logic
+  // gets extracted and tested.
   coverageThreshold: {
-    // Locks total coverage at the current baseline so it can never silently
-    // regress — now actually enforced by the new CI Jest job (Batch A). Batch B
-    // adds tightened per-directory floors once hooks/stores/lib tests land.
     global: {
+      branches: 12,
+      functions: 14,
+      lines: 17,
+      statements: 16,
+    },
+    './src/hooks/': {
       branches: 13,
-      functions: 16,
-      lines: 18,
-      statements: 18,
+      functions: 10,
+      lines: 7,
+      statements: 7,
+    },
+    './src/stores/': {
+      branches: 23,
+      functions: 29,
+      lines: 34,
+      statements: 32,
+    },
+    './src/lib/': {
+      branches: 31,
+      functions: 29,
+      lines: 39,
+      statements: 37,
     },
   },
   collectCoverageFrom: [

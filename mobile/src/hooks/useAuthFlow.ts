@@ -12,6 +12,54 @@ import { useAuthThrottle } from './useAuthThrottle';
 import { AuthService } from '@/src/services/AuthService';
 import { validateUsername } from '@/src/utils/validateUsername';
 
+export interface LoginSubmissionInput {
+  isLogin: boolean;
+  emailOrUsername: string;
+  password: string;
+  username: string;
+  canAttempt: boolean;
+  secondsRemaining: number;
+  pwStrong: boolean;
+  usernameStatus: 'idle' | 'checking' | 'available' | 'taken';
+  usernameCheck: { valid: boolean; error?: string } | null;
+}
+
+// Returns a user-facing block message, or null if the form can be submitted.
+// Order matters: each gate matches the exact check handleLoginSubmit used to
+// run inline, so the earliest applicable reason is always the one returned.
+export function validateLoginSubmission(input: LoginSubmissionInput): string | null {
+  const { isLogin, emailOrUsername, password, username, canAttempt, secondsRemaining, pwStrong, usernameStatus, usernameCheck } = input;
+  if (!emailOrUsername || !password || (!isLogin && !username)) {
+    return 'All fields are required for clearance.';
+  }
+  if (isLogin && !canAttempt) {
+    return `Credentials suspended. Retry in ${secondsRemaining}s.`;
+  }
+  if (!isLogin && !pwStrong) {
+    return 'Your cipher does not meet Society encryption standards.';
+  }
+  if (usernameCheck && !usernameCheck.valid) {
+    return usernameCheck.error ?? 'That handle is not allowed.';
+  }
+  if (!isLogin && usernameStatus === 'taken') {
+    return 'That handle is already claimed by another patron.';
+  }
+  return null;
+}
+
+// Maps a raw Supabase/auth error message to its user-facing copy.
+// isInvalidCredentials tells the caller whether to record a throttle attempt.
+export function mapAuthError(rawMsg: string): { message: string; isInvalidCredentials: boolean } {
+  let message = rawMsg;
+  let isInvalidCredentials = false;
+  if (message.includes('Database error saving new user')) message = 'Username is already taken.';
+  if (message.includes('Invalid login credentials')) {
+    isInvalidCredentials = true;
+    message = 'Identity not recognized. Check your credentials.';
+  }
+  return { message, isInvalidCredentials };
+}
+
 export function useAuthFlow() {
   const router = useRouter();
   const params = useLocalSearchParams<{ action?: string }>();
@@ -171,30 +219,14 @@ export function useAuthFlow() {
   };
 
   const handleLoginSubmit = async () => {
-    if (!emailOrUsername || !password || (!isLogin && !username)) {
-      reelToast('All fields are required for clearance.');
-      return;
-    }
-    if (isLogin && !canAttempt) {
-      reelToast(`Credentials suspended. Retry in ${secondsRemaining}s.`);
-      return;
-    }
-    if (!isLogin && !pwStrong) {
-      reelToast('Your cipher does not meet Society encryption standards.');
-      return;
-    }
     // Single source of truth for handle rules (length, charset, reserved
     // words, profanity, underscore placement). Enforced here at signup so the
     // server never has to reject a malformed handle after the fact.
     const usernameCheck = isLogin ? null : validateUsername(username);
-    if (usernameCheck && !usernameCheck.valid) {
-      reelToast(usernameCheck.error ?? 'That handle is not allowed.');
-      return;
-    }
-    if (!isLogin && usernameStatus === 'taken') {
-      reelToast('That handle is already claimed by another patron.');
-      return;
-    }
+    const blockReason = validateLoginSubmission({
+      isLogin, emailOrUsername, password, username, canAttempt, secondsRemaining, pwStrong, usernameStatus, usernameCheck,
+    });
+    if (blockReason) { reelToast(blockReason); return; }
     if (submitting) return;
     setSubmitting(true);
     TactileEngine.mutate();
@@ -215,13 +247,9 @@ export function useAuthFlow() {
       }
     } catch (error: unknown) {
       const rawMsg = error instanceof Error ? error.message : 'Authentication failed.';
-      let msg = rawMsg;
-      if (msg.includes('Database error saving new user')) msg = 'Username is already taken.';
-      if (msg.includes('Invalid login credentials')) {
-        recordAttempt();
-        msg = 'Identity not recognized. Check your credentials.';
-      }
-      reelToast.error(msg);
+      const { message, isInvalidCredentials } = mapAuthError(rawMsg);
+      if (isInvalidCredentials) recordAttempt();
+      reelToast.error(message);
     } finally {
       if (isMounted.current) setSubmitting(false);
     }

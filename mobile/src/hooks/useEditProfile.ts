@@ -22,7 +22,7 @@ type ProfileFormData = z.infer<typeof editProfileSchema>;
 
 // Parse both legacy Record structures and modern Array structures
 // to guarantee 0% data loss when editing profiles.
-const parseLinks = (raw: any): { title: string; url: string }[] => {
+export const parseLinks = (raw: any): { title: string; url: string }[] => {
   if (!raw) return [];
   if (Array.isArray(raw)) {
     return raw.map(l => ({ title: l.title || '', url: l.url || '' }));
@@ -35,6 +35,47 @@ const parseLinks = (raw: any): { title: string; url: string }[] => {
   }
   return [];
 };
+
+// Drops blank entries and trims the rest before persisting to social_links.
+export function sanitizeLinks(links: { title: string; url: string }[]): { title: string; url: string }[] {
+  return links
+    .filter((l) => l.title.trim() && l.url.trim())
+    .map((l) => ({ title: l.title.trim(), url: l.url.trim() }));
+}
+
+// Mirrors the isDirty memo's avatar branch: true if a new image was picked,
+// or the existing avatar was explicitly removed.
+export function computeHasNewAvatar(
+  avatarBase64: string | null,
+  avatarPreview: string | null,
+  currentAvatarUrl: string | null | undefined,
+): boolean {
+  return !!avatarBase64 || (avatarPreview === null && currentAvatarUrl != null);
+}
+
+export interface ProfileUpdateInput {
+  sanitizedUsername: string;
+  displayName: string;
+  bio: string;
+  links: { title: string; url: string }[];
+  finalAvatarUrl: string | null | undefined;
+}
+
+// Assembles the DB update payload sent to ProfileService.updateProfile.
+// finalAvatarUrl is `undefined` when the avatar wasn't touched, so avatar_url
+// is only included in the update when it actually changed.
+export function buildProfileUpdates(input: ProfileUpdateInput): Record<string, any> {
+  const updates: Record<string, any> = {
+    username: input.sanitizedUsername,
+    display_name: input.displayName,
+    bio: input.bio,
+    social_links: sanitizeLinks(input.links),
+  };
+  if (input.finalAvatarUrl !== undefined) {
+    updates.avatar_url = input.finalAvatarUrl;
+  }
+  return updates;
+}
 
 export function useEditProfile() {
   const { user, updateUser } = useAuthStore();
@@ -76,7 +117,7 @@ export function useEditProfile() {
   const { isDirty: isFormDirty } = form.formState;
 
   const isDirty = useMemo(() => {
-    const hasNewAvatar = !!avatarBase64 || (avatarPreview === null && user?.avatar_url != null);
+    const hasNewAvatar = computeHasNewAvatar(avatarBase64, avatarPreview, user?.avatar_url);
     return isFormDirty || hasNewAvatar;
   }, [isFormDirty, avatarBase64, avatarPreview, user?.avatar_url]);
 
@@ -112,16 +153,13 @@ export function useEditProfile() {
         finalAvatarUrl = null;
       }
 
-      const updates: any = {
-        username: sanitizedUsername,
-        display_name: data.displayName,
+      const updates = buildProfileUpdates({
+        sanitizedUsername,
+        displayName: data.displayName,
         bio: data.bio,
-        social_links: data.links.filter((l: any) => l.title.trim() && l.url.trim()).map((l: any) => ({ title: l.title.trim(), url: l.url.trim() })),
-      };
-      
-      if (finalAvatarUrl !== undefined) {
-        updates.avatar_url = finalAvatarUrl;
-      }
+        links: data.links,
+        finalAvatarUrl,
+      });
 
       await ProfileService.updateProfile(user.id, updates);
 
