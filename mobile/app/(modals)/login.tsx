@@ -254,6 +254,7 @@ export default function LoginScreen() {
             <Text style={s.inputLabel}>{isLogin ? 'EMAIL OR USERNAME' : 'EMAIL ADDRESS'}</Text>
             <View style={s.inputWrap}>
               <TextInput
+                testID="email-input"
                 style={[s.input, submitting && s.inputDisabled]}
                 placeholder={isLogin ? 'patron@cinema.org' : 'your@email.com'}
                 placeholderTextColor={colors.fog}
@@ -333,6 +334,7 @@ export default function LoginScreen() {
             <Text style={s.inputLabel}>PASSWORD</Text>
             <View style={s.inputWrap}>
               <TextInput
+                testID="password-input"
                 ref={passwordRef}
                 style={[s.input, { paddingRight: 60 }, submitting && s.inputDisabled]}
                 placeholder="••••••••"
@@ -385,6 +387,7 @@ export default function LoginScreen() {
 
           {/* Submit */}
           <PressableScale
+            testID="sign-in-submit"
             style={[s.submitBtn, (submitting || (!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)) && s.submitDisabled]}
             onPress={handleLoginSubmit}
             disabled={submitting || (!isLogin && usernameStatus === 'taken') || (isLogin && !canAttempt)}

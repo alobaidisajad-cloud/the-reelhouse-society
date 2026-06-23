@@ -1,4 +1,4 @@
-appId: com.reelhouse.app
+appId: com.reelhouse.society
 ---
 # 🏛️ Nitrate Noir: Social Pulse Smoke Test
 # This verifies the 120fps FlashList cover-flow engine doesn't crash on render.

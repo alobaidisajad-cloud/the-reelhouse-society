@@ -1,20 +1,30 @@
 appId: com.reelhouse.society
 ---
+# Login is reached via the Profile tab's sign-in prompt — there is no
+# global auth redirect, so a guest lands on the Lobby tab by default.
 - launchApp:
     clearState: true
-- assertVisible:
-    id: "sign-in-button"
 - tapOn:
-    id: "sign-in-button"
+    id: "profile-tab"
 - assertVisible:
-    text: "Enter your email"
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "email-input"
+- tapOn:
+    id: "email-input"
 - inputText: "test@reelhouse.app"
 - tapOn:
-    id: "continue-button"
-- assertVisible:
-    text: "Enter your password"
+    id: "password-input"
 - inputText: "password123"
 - tapOn:
     id: "sign-in-submit"
-- assertVisible:
-    id: "home-tab"
+- waitForAnimationToEnd
+
+# Confirm we're actually authenticated — the sign-in prompt should be
+# replaced by real profile content.
+- tapOn:
+    id: "profile-tab"
+- assertNotVisible:
+    id: "profile-sign-in-prompt"

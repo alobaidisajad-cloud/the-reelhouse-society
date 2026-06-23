@@ -110,6 +110,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
   return (
     <View style={s.posterWrap}>
       <PressableScale
+        testID="film-card"
         style={StyleSheet.absoluteFillObject}
         onPress={handlePress}
         haptic

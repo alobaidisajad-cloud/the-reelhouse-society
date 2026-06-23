@@ -201,6 +201,7 @@ export default function TabLayout() {
         options={{
           title: 'Dispatch',
           tabBarAccessibilityLabel: 'Dispatch tab',
+          tabBarButtonTestID: 'dispatch-tab',
           tabBarIcon: renderDispatchIcon,
         }}
       />
@@ -210,6 +211,7 @@ export default function TabLayout() {
         options={{
           title: 'The Reel',
           tabBarAccessibilityLabel: 'The Reel tab',
+          tabBarButtonTestID: 'reels-tab',
           tabBarIcon: renderReelsIcon,
         }}
       />
@@ -219,6 +221,7 @@ export default function TabLayout() {
         options={{
           title: 'Lobby',
           tabBarAccessibilityLabel: 'Lobby tab',
+          tabBarButtonTestID: 'home-tab',
           tabBarIcon: renderLobbyIcon,
         }}
       />
@@ -228,6 +231,7 @@ export default function TabLayout() {
         options={{
           title: 'Darkroom',
           tabBarAccessibilityLabel: 'Darkroom tab',
+          tabBarButtonTestID: 'darkroom-tab',
           tabBarIcon: renderDarkroomIcon,
         }}
       />
@@ -237,6 +241,7 @@ export default function TabLayout() {
         options={{
           title: 'Profile',
           tabBarAccessibilityLabel: 'Profile tab',
+          tabBarButtonTestID: 'profile-tab',
           tabBarIcon: renderProfileIcon,
         }}
       />

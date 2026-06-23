@@ -3,7 +3,7 @@
 # Verifies that the app completes its full boot sequence by asserting
 # the lobby/feed screen becomes visible. If AppBootstrapper or any
 # critical subsystem fails to initialize, this test will timeout.
-appId: com.divisionops.reelhouse
+appId: com.reelhouse.society
 ---
 - launchApp
 
