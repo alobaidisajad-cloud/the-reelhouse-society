@@ -66,9 +66,12 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps
       
-      # Runs Playwright tests and compares pixel-perfect screenshots
+      # Runs the maintained Playwright feed suite (testDir: ./tests per
+      # playwright.config.ts). The old src/test/e2e/feed.spec.ts path is a
+      # stale leftover from before the suite moved to ./tests/ — Playwright
+      # silently finds zero matching tests for any path outside testDir.
       - name: Run E2E Feed Tests
-        run: npx playwright test src/test/e2e/feed.spec.ts
+        run: npx playwright test tests/feed.spec.ts
 
   native-smoke-test:
     name: 📱 Maestro Flow YAML Lint
