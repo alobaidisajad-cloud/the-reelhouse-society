@@ -159,7 +159,7 @@ function CardContent({ data }: { data: ShareCardData }) {
                 {/* Footer */}
                 <View style={s.slabFooter}>
                     <View style={s.slabFooterLeft}>
-                        <Image source={require('@/assets/images/reelhouse-logo-transparent.png')} style={s.slabFooterLogo} />
+                        <Image source={require('@/assets/images/reelhouse-logo.png')} style={s.slabFooterLogo} />
                         <Text style={s.slabFooterText}>REELHOUSE</Text>
                     </View>
                     {data.username && (
