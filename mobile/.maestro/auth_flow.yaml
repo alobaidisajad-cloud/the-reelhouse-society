@@ -6,6 +6,8 @@
 appId: com.reelhouse.society
 ---
 # ── Critical Path: Authentication ──
+- launchApp:
+    clearState: true
 - assertVisible: "Sign in"
 - tapOn: "Continue with Google"
 - assertVisible:
