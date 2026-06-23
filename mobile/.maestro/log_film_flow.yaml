@@ -4,6 +4,14 @@ appId: com.reelhouse.society
 - launchApp:
     clearState: true
 
+# The branded Preloader runs a deterministic ~2.4s "3...2...1" countdown
+# AFTER real boot work (encrypted storage init, store rehydration, session
+# restore) completes — give it real headroom rather than racing it.
+- extendedWaitUntil:
+    visible:
+      id: "profile-tab"
+    timeout: 15000
+
 # Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
 - tapOn:
     id: "profile-tab"
