@@ -1,17 +1,30 @@
-# Boot Verification Flow
-# ─────────────────────────────────────────────────────────────
-# Verifies that the app completes its full boot sequence by asserting
-# the lobby/feed screen becomes visible. If AppBootstrapper or any
-# critical subsystem fails to initialize, this test will timeout.
 appId: com.reelhouse.society
 ---
+# Boot Verification Flow
+# ─────────────────────────────────────────────────────────────
+# Verifies that the app completes its full boot sequence by asserting the
+# tab navigator mounts. There is no header text rendered on any tab screen
+# (TopNavBar in src/components/layout/TopNavBar.tsx is just a logo + icon
+# buttons, no title) — the tab bar's real testIDs from
+# app/(tabs)/_layout.tsx are the reliable signal that boot succeeded. If
+# AppBootstrapper or any critical subsystem fails to initialize, this test
+# will timeout.
 - launchApp
 
-# Wait for the app to complete boot and show the lobby
 - extendedWaitUntil:
-    visible: "The Lobby"
+    visible:
+      id: "home-tab"
     timeout: 15000
 
-# Verify tab bar is rendered (proves navigation tree mounted correctly)
+# Verify the full tab bar is rendered (proves navigation tree mounted
+# correctly).
 - assertVisible:
-    id: "tab-search"
+    id: "dispatch-tab"
+- assertVisible:
+    id: "reels-tab"
+- assertVisible:
+    id: "home-tab"
+- assertVisible:
+    id: "darkroom-tab"
+- assertVisible:
+    id: "profile-tab"

@@ -1,19 +1,38 @@
-# D-08: ReelHouse Maestro E2E Test Suite
-# Critical user flows for regression testing.
-# Requires: Maestro CLI (https://maestro.mobile.dev)
-# Run: maestro test .maestro/
-
 appId: com.reelhouse.society
 ---
-# ── Critical Path: Authentication ──
+# Auth Flow: invalid credentials + forgot-password recovery.
+# There is no Google OAuth anywhere in src/hooks/useAuthFlow.ts — the real
+# login screen (app/(modals)/login.tsx) is email/username + password only.
+# login_flow.yaml already covers the happy-path sign-in, so this flow
+# exercises the credential-recovery path instead.
 - launchApp:
     clearState: true
-- assertVisible: "Sign in"
-- tapOn: "Continue with Google"
-- assertVisible:
-    id: "auth-callback"
-    optional: true
 
-# After auth, should land on home feed
-- waitForAnimationToEnd
-- assertVisible: "THE REELHOUSE SOCIETY"
+# Login is reached via the Profile tab's sign-in prompt.
+- tapOn:
+    id: "profile-tab"
+- assertVisible:
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "email-input"
+
+# Open the forgot-password modal.
+- tapOn: "Forgot your credentials?"
+- assertVisible: "Reset Password"
+- tapOn:
+    id: "recovery-email-input"
+- inputText: "test@reelhouse.app"
+- tapOn:
+    id: "recovery-submit-button"
+
+# Supabase's resetPasswordForEmail always resolves success (it never
+# reveals whether the address exists), so the modal flips to the
+# "Check Your Inbox" confirmation state.
+- assertVisible: "Check Your Inbox"
+- tapOn: "BACK TO SIGN IN"
+
+# Modal closes, login form is back underneath it.
+- assertVisible:
+    id: "email-input"

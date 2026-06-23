@@ -1,43 +1,49 @@
 appId: com.reelhouse.society
 ---
 # Error Recovery Flow
-# Tests: ErrorBoundary catches crash → user can retry → app recovers
+# Tests: rapid tab navigation never trips the ErrorBoundary fallback
+# ("PROJECTION FAILURE", confirmed in src/components/ErrorBoundary.tsx).
+# The real tab bar testIDs are dispatch-tab/reels-tab/home-tab/
+# darkroom-tab/profile-tab (app/(tabs)/_layout.tsx) — there is no
+# "tab-profile"/"tab-lobby" etc., and no on-screen "Profile"/"Darkroom"/
+# "Dispatch" header text to assert against (TopNavBar has no title).
 
 - launchApp
 - extendedWaitUntil:
-    visible: "The Lobby"
+    visible:
+      id: "home-tab"
     timeout: 10000
 
-# Navigate to a deep screen that may throw
+# Navigate through the tabs — Profile's sign-in prompt is the one stable,
+# time-independent content anchor available without authenticating.
 - tapOn:
-    id: "tab-profile"
+    id: "profile-tab"
+- assertVisible:
+    id: "profile-sign-in-prompt"
 
-# Verify app is still functional after navigation
-- assertVisible: "Profile"
+- tapOn:
+    id: "home-tab"
+- tapOn:
+    id: "darkroom-tab"
+- assertVisible:
+    id: "darkroom-search-input"
+- tapOn:
+    id: "dispatch-tab"
+- assertVisible:
+    id: "dispatch-tab"
 
-# If error boundary ever triggers, verify recovery works
-# This flow primarily ensures no crash occurs during normal navigation
-- tapOn:
-    id: "tab-lobby"
-- assertVisible: "The Lobby"
-- tapOn:
-    id: "tab-darkroom"
-- assertVisible: "Darkroom"
-- tapOn:
-    id: "tab-dispatch"
-- assertVisible: "Dispatch"
-
-# Rapid tab switching stress test (10 cycles)
+# Rapid tab switching stress test (15 cycles)
 - repeat:
     times: 5
     commands:
       - tapOn:
-          id: "tab-lobby"
+          id: "home-tab"
       - tapOn:
-          id: "tab-darkroom"
+          id: "darkroom-tab"
       - tapOn:
-          id: "tab-profile"
+          id: "profile-tab"
 
-# Verify app is still alive
-- assertVisible: "Profile"
+# Verify app is still alive and the ErrorBoundary never tripped.
+- assertVisible:
+    id: "profile-sign-in-prompt"
 - assertNotVisible: "PROJECTION FAILURE"

@@ -1,38 +1,68 @@
 appId: com.reelhouse.society
 ---
-- launchApp
-- assertVisible: "THE REELHOUSE SOCIETY"
-- tapOn: "✦ SEEK ADMISSION ✦"
-- assertVisible: "LOGIN"
+# Critical Path: Login → Search Film → Log Film → Verify Persistence
+# The end-to-end happiest path through the app. Builds on the same
+# verified elements as login_flow.yaml / log_film_flow.yaml, but adds a
+# persistence check: after the modal closes, the underlying film detail
+# screen (app/film/[id].tsx) reads existingLog reactively from
+# useFilmStore, so its CTA should now read "EDIT LOG" instead of
+# "LOG THIS FILM" (FilmActionRow.tsx) — proving the submit actually wrote
+# a record rather than just closing the modal.
+- launchApp:
+    clearState: true
 
-# Mock login flow
-- tapOn: "Email"
-- inputText: "test_critic@reelhouse.app"
-- tapOn: "Password"
-- inputText: "hunter2"
-- tapOn: "SIGN IN"
-
-# Wait for lobby and atmospheric loading
-- extendedWaitUntil:
-    visible: "The Lobby"
-    timeout: 10000
-
-# Open Search and find a film
+# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
 - tapOn:
-    id: "tab-search"
-- tapOn: "Search films, directors, lists..."
-- inputText: "Godfather"
-- assertVisible: "The Godfather"
-- tapOn: "The Godfather"
-
-# Log the film
-- tapOn: "LOG FILM"
-- assertVisible: "Log Film"
+    id: "profile-tab"
+- assertVisible:
+    id: "profile-sign-in-prompt"
 - tapOn:
-    id: "rating-star-5"
-- tapOn: "Review (Optional)..."
+    id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "email-input"
+- tapOn:
+    id: "email-input"
+- inputText: "test@reelhouse.app"
+- tapOn:
+    id: "password-input"
+- inputText: "password123"
+- tapOn:
+    id: "sign-in-submit"
+- waitForAnimationToEnd
+
+# Navigate to Darkroom and find a film
+- tapOn:
+    id: "darkroom-tab"
+- tapOn:
+    id: "darkroom-search-input"
+- inputText: "The Godfather"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "darkroom-suggestion-row"
+- tapOn:
+    id: "darkroom-suggestion-row"
+    index: 0
+- waitForAnimationToEnd
+
+# Log the film with a written review — a rating or review is required to
+# submit a non-abandoned status (see validateLogSubmission in
+# useLogFlow.ts)
+- assertVisible:
+    id: "log-film-button"
+- tapOn:
+    id: "log-film-button"
+- assertVisible:
+    id: "review-input"
+- tapOn:
+    id: "review-input"
 - inputText: "Absolute masterpiece. Essential viewing for the society."
-- tapOn: "SAVE LOG"
+- tapOn:
+    id: "submit-log-button"
+- waitForAnimationToEnd
 
-# Verify Success
-- assertVisible: "Archive updated"
+# Modal closes (router.back()), landing back on the film detail screen.
+- assertNotVisible:
+    id: "submit-log-button"
+
+# Verify the log actually persisted to the store.
+- assertVisible: "EDIT LOG"

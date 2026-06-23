@@ -85,6 +85,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
               </Text>
               <View style={s.inputWrap}>
                 <TextInput
+                  testID="recovery-email-input"
                   style={s.input}
                   placeholder="your@email.com"
                   placeholderTextColor={colors.fog}
@@ -104,6 +105,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                 />
               </View>
               <PressableScale
+                testID="recovery-submit-button"
                 style={[s.modalSubmitBtn, forgotLoading && s.submitDisabled]}
                 onPress={onSubmit}
                 disabled={forgotLoading}

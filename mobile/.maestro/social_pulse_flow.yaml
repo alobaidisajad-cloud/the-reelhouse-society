@@ -1,32 +1,46 @@
 appId: com.reelhouse.society
 ---
-# 🏛️ Nitrate Noir: Social Pulse Smoke Test
-# This verifies the 120fps FlashList cover-flow engine doesn't crash on render.
-
+# Social Pulse Smoke Test — verifies the Lobby's horizontal FlashList
+# cover-flow feed (src/components/home/SocialPulse.tsx) renders without
+# crashing. "The Pulse" is the section title shared by BOTH the empty
+# state ("The screening room is dark.") and the populated state ("THE
+# TELEGRAPH" + the FlashList) — it's the one assertion that holds
+# regardless of whatever test data other flows have logged into the
+# shared backend by the time this runs. There is no "social_pulse_scroll"
+# testID and no "Email"/"Password" plain-text fields on the real login
+# screen (those are accessibilityLabels on testID="email-input" /
+# "password-input").
 - launchApp:
     clearState: true
 
-# 1. Login to a test account
-- tapOn: "Email"
-- inputText: "archivist_test@reelhouse.org"
-- tapOn: "Password"
-- inputText: "hunter2"
-- tapOn: "Enter Society"
+- tapOn:
+    id: "profile-tab"
+- assertVisible:
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "email-input"
+- tapOn:
+    id: "email-input"
+- inputText: "test@reelhouse.app"
+- tapOn:
+    id: "password-input"
+- inputText: "password123"
+- tapOn:
+    id: "sign-in-submit"
+- waitForAnimationToEnd
 
-# 2. Wait for the feed to load
-- extendedWaitUntil:
-    visible: "The Pulse"
+- tapOn:
+    id: "home-tab"
+- scrollUntilVisible:
+    element: "The Pulse"
+    direction: DOWN
     timeout: 10000
 
-# 3. Assert the GhostEmptyState or the first log is visible
-- assertVisible: ".*(The screening room is dark|LIVE FROM THE FOYER).*" # Fallback regex
-- scrollUntilVisible:
-    element:
-      id: "social_pulse_scroll" # Assuming testID="social_pulse_scroll" is on the FlashList
-    direction: RIGHT
-    timeout: 5000
-
-# 4. Interact with a log
-- tapOn:
-    point: 50%, 50%
-- assertVisible: "OPEN FULL LOG"
+# If the feed has data, confirm a card's full-log link renders too.
+- runFlow:
+    when:
+      visible: "OPEN FULL LOG"
+    commands:
+      - assertVisible: "OPEN FULL LOG"

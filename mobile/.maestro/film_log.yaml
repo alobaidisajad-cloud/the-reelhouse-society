@@ -1,35 +1,59 @@
-# D-08: ReelHouse Maestro E2E Test Suite — Film Log
-# Tests logging a film (the core user action).
-# Requires: Maestro CLI (https://maestro.mobile.dev)
-# Run: maestro test .maestro/
-
 appId: com.reelhouse.society
 ---
+# Film Log: the "abandoned" status path. log_film_flow.yaml already covers
+# the "watched + review" path; abandoning a film takes a different branch
+# through LogForm — it requires a reason instead of a rating/review to
+# submit (see validateLogSubmission in src/hooks/useLogFlow.ts).
 - launchApp:
     clearState: true
 
-# Navigate to Darkroom
-- tapOn: "The Darkroom"
+# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
+- tapOn:
+    id: "profile-tab"
+- assertVisible:
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "email-input"
+- tapOn:
+    id: "email-input"
+- inputText: "test@reelhouse.app"
+- tapOn:
+    id: "password-input"
+- inputText: "password123"
+- tapOn:
+    id: "sign-in-submit"
 - waitForAnimationToEnd
 
-# Search for a film
+# Navigate to Darkroom and find a film
 - tapOn:
-    id: "search-films-input"
-    optional: true
+    id: "darkroom-tab"
+- tapOn:
+    id: "darkroom-search-input"
 - inputText: "The Matrix"
 - waitForAnimationToEnd
-
-# Select The Matrix from suggestions
+- assertVisible:
+    id: "darkroom-suggestion-row"
 - tapOn:
-    text: "The Matrix"
+    id: "darkroom-suggestion-row"
     index: 0
 - waitForAnimationToEnd
 
-# Tap the log button on film detail
+# Open the log form
+- assertVisible:
+    id: "log-film-button"
 - tapOn:
-    text: "Log Film"
-    optional: true
+    id: "log-film-button"
+
+# Mark as abandoned and pick a reason — no rating/review required for this
+# status.
+- tapOn: "ABANDONED"
+- tapOn: "Too Slow"
+- tapOn:
+    id: "submit-log-button"
 - waitForAnimationToEnd
 
-# Should show log form
-- assertVisible: "Rating"
+# A successful submit calls router.back(), closing the modal.
+- assertNotVisible:
+    id: "submit-log-button"

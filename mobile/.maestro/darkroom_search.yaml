@@ -1,35 +1,30 @@
-# D-08: ReelHouse Maestro E2E Test Suite — Darkroom Search
-# Tests the discovery/search flow in The Darkroom.
-# Requires: Maestro CLI (https://maestro.mobile.dev)
-# Run: maestro test .maestro/
-
 appId: com.reelhouse.society
 ---
+# Darkroom Search: typing in the search field shows an inline suggestion
+# dropdown (DarkroomHeader's debounced TMDB lookup); selecting a suggestion
+# navigates straight to the film detail screen. There is no separate
+# "search-films-input" testID or "THE DARKROOM" header text in the app —
+# the real input is "darkroom-search-input" on DarkroomHero.tsx.
 - launchApp:
     clearState: true
 
-# Navigate to Darkroom tab
-- tapOn: "The Darkroom"
-- waitForAnimationToEnd
-
-# Verify hero header renders
-- assertVisible: "THE REELHOUSE SOCIETY"
-
-# Tap search field and type
 - tapOn:
-    id: "search-films-input"
-    optional: true
+    id: "darkroom-tab"
+- assertVisible:
+    id: "darkroom-search-input"
+- tapOn:
+    id: "darkroom-search-input"
 - inputText: "Pulp Fiction"
 - waitForAnimationToEnd
 
-# Should show suggestion results
+# Suggestion dropdown row (added testID alongside film-card today).
 - assertVisible:
-    text: "Pulp Fiction"
-    enabled: true
-
-# Select a suggestion
-- tapOn: "Pulp Fiction"
+    id: "darkroom-suggestion-row"
+- tapOn:
+    id: "darkroom-suggestion-row"
+    index: 0
 - waitForAnimationToEnd
 
-# Should navigate to film detail
-- assertVisible: "Quentin Tarantino"
+# Should navigate to film detail.
+- assertVisible:
+    id: "log-film-button"

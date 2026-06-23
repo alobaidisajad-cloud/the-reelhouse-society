@@ -37,6 +37,7 @@ export function LoungeGate() {
           </Text>
 
           <PressableScale
+            testID="lounge-gate-cta"
             style={s.gateCta}
             onPress={() => nav.push('/membership')}
             haptic="medium"

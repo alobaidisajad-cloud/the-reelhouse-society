@@ -1,21 +1,20 @@
 appId: com.reelhouse.society
 ---
-# Auth Deep Link Flow
-# Tests: deep link routing for auth callbacks and reset password
+# Auth Deep Link: reelhouse://reset-password with no active Supabase
+# session. app/reset-password.tsx guards on supabase.auth.getSession() —
+# with no prior auth-callback exchange (the original "openLink straight to
+# reset-password" scenario), it shows the "No Active Session" rescue UI
+# rather than a live password form.
+- launchApp:
+    clearState: true
 
-- launchApp
-- extendedWaitUntil:
-    visible: "THE REELHOUSE SOCIETY"
-    timeout: 10000
-
-# Test that app handles a reset-password deep link gracefully
 - openLink: "reelhouse://reset-password"
 - extendedWaitUntil:
-    visible: "Password"
-    timeout: 5000
+    visible: "No Active Session"
+    timeout: 10000
+- assertVisible: "SESSION EXPIRED"
 
-# Navigate back to main screen
-- tapOn: "Cancel"
-- extendedWaitUntil:
-    visible: "THE REELHOUSE SOCIETY"
-    timeout: 5000
+# Return to the app from the rescue screen.
+- tapOn: "RETURN TO LOBBY"
+- assertVisible:
+    id: "dispatch-tab"

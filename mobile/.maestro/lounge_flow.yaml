@@ -1,28 +1,41 @@
-# D-08: ReelHouse Maestro E2E Test Suite — Lounge Chat
-# Tests the lounge (chat room) flow.
-# Requires: Maestro CLI (https://maestro.mobile.dev)
-# Run: maestro test .maestro/
-
 appId: com.reelhouse.society
 ---
+# Lounge: there is no "Lounges" tab — Tabs.Screen name="lounge" is hidden
+# (href: null in app/(tabs)/_layout.tsx). It's only reachable via the
+# /lounge deep-link alias (app/lounge.tsx, redirects to /(tabs)/lounge) or
+# TopNavBar's Lounge icon, which only renders for Archivist+ users. The
+# e2e test account isn't Archivist+, so — same reasoning as
+# browse_vault.yaml's Watchlist substitution — this exercises the real
+# LoungeGate upsell screen rather than a live chat room.
 - launchApp:
     clearState: true
 
-# Navigate to Lounges tab
-- tapOn: "Lounges"
-- waitForAnimationToEnd
-
-# Should show lounge list or create button
+# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
+- tapOn:
+    id: "profile-tab"
 - assertVisible:
-    text: "Create Lounge"
-    optional: true
-
-# Test creating a lounge
-- tapOn: "Create Lounge"
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "email-input"
+- tapOn:
+    id: "email-input"
+- inputText: "test@reelhouse.app"
+- tapOn:
+    id: "password-input"
+- inputText: "password123"
+- tapOn:
+    id: "sign-in-submit"
 - waitForAnimationToEnd
-- inputText: "Test Lounge"
-- tapOn: "Create"
-- waitForAnimationToEnd
 
-# Should show the new lounge
-- assertVisible: "Test Lounge"
+- openLink: "reelhouse://lounge"
+- assertVisible: "The Lounge"
+- assertVisible: "CLEARANCE REQUIRED"
+- assertVisible:
+    id: "lounge-gate-cta"
+- tapOn:
+    id: "lounge-gate-cta"
+
+# CTA routes to the membership/upsell screen.
+- assertVisible: "ELEVATE YOUR DEVOTION"

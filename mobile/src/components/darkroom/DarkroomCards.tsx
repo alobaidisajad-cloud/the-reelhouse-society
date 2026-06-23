@@ -171,7 +171,8 @@ export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: Disc
   const imgUri = imgPath ? (isPerson ? tmdb.profile(imgPath, 'w185') : tmdb.poster(imgPath, 'w92')) : null;
 
   return (
-    <PressableScale 
+    <PressableScale
+      testID="darkroom-suggestion-row"
       style={s.suggestionRow}
       onPress={() => onPress(item)}
       haptic="light"

@@ -1,35 +1,76 @@
 appId: com.reelhouse.society
 ---
 # Offline Resilience Flow
-# Tests: offline queue → sync on reconnect
+# Tests: offline queue -> sync on reconnect. Confirmed against
+# src/utils/offlineQueue.ts and
+# src/stores/domain/logSlice/helpers/logOperations.ts: submitting a log
+# while offline catches the network failure, enqueues an `add_log`
+# mutation, and still resolves locally (toast: "Archived offline. Will
+# sync when connected."); reconnecting flushes the queue and shows
+# "Archive updated with offline actions." The real offline indicator is
+# OfflineBanner.tsx's "OPERATING IN ISOLATION" text — there is no
+# "OFFLINE" banner anywhere in the app.
+- launchApp:
+    clearState: true
 
-- launchApp
+# Authenticate and cache a film's detail screen while still online.
+- tapOn:
+    id: "profile-tab"
+- assertVisible:
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "email-input"
+- tapOn:
+    id: "email-input"
+- inputText: "test@reelhouse.app"
+- tapOn:
+    id: "password-input"
+- inputText: "password123"
+- tapOn:
+    id: "sign-in-submit"
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "darkroom-tab"
+- tapOn:
+    id: "darkroom-search-input"
+- inputText: "Casablanca"
+- waitForAnimationToEnd
+- assertVisible:
+    id: "darkroom-suggestion-row"
+- tapOn:
+    id: "darkroom-suggestion-row"
+    index: 0
+- waitForAnimationToEnd
+- assertVisible:
+    id: "log-film-button"
+
+# Go offline.
+- toggleAirplaneMode
 - extendedWaitUntil:
-    visible: "The Lobby"
+    visible: "OPERATING IN ISOLATION"
     timeout: 10000
 
-# Navigate to a film (from cache)
+# Submitting a log while offline should still succeed locally — the
+# mutation gets queued rather than blocking the user.
 - tapOn:
-    id: "tab-darkroom"
-- assertVisible: "Darkroom"
-
-# Simulate going offline (toggle airplane mode)
-- toggleAirplaneMode
-
-# Verify offline banner appears
-- extendedWaitUntil:
-    visible: "OFFLINE"
-    timeout: 5000
-
-# Try to interact while offline — action should be queued
+    id: "log-film-button"
+- assertVisible:
+    id: "review-input"
 - tapOn:
-    id: "tab-lobby"
-- assertVisible: "The Lobby"
+    id: "review-input"
+- inputText: "Watched this one in the dark, fittingly."
+- tapOn:
+    id: "submit-log-button"
+- waitForAnimationToEnd
+- assertNotVisible:
+    id: "submit-log-button"
 
-# Re-enable connectivity
+# Reconnect and wait for the queue to flush.
 - toggleAirplaneMode
-
-# Wait for sync notification
 - extendedWaitUntil:
-    visible: "Archive updated"
-    timeout: 15000
+    visible: "Archive updated with offline actions."
+    timeout: 20000
+- assertNotVisible: "OPERATING IN ISOLATION"
