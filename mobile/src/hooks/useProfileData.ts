@@ -18,7 +18,7 @@ export type ProfileUser = ValidatedProfileUser;
 // pass, eliminating the micro-jank caused by 22 separate re-renders when
 // loading a profile page.
 
-interface ProfileState {
+export interface ProfileState {
   targetUser: ProfileUser | null;
   loading: boolean;
   error: Error | null;
@@ -56,7 +56,7 @@ interface ProfileState {
   };
 }
 
-type ProfileAction =
+export type ProfileAction =
   | { type: 'SET_USER'; payload: ProfileUser | null | ((prev: ProfileUser | null) => ProfileUser | null) }
   | { type: 'SET_LOADING'; payload: boolean }
   | { type: 'SET_ERROR'; payload: Error | null }
@@ -75,7 +75,7 @@ type ProfileAction =
   | { type: 'SET_ACTIVE_FILTERS'; tab: 'archive' | 'ledger' | 'watchlist' | 'physical'; filters: any }
   | { type: 'RESET_STATE' };
 
-const initialState: ProfileState = {
+export const initialState: ProfileState = {
   targetUser: null,
   loading: true,
   error: null,
@@ -113,7 +113,7 @@ const initialState: ProfileState = {
   },
 };
 
-function profileReducer(state: ProfileState, action: ProfileAction): ProfileState {
+export function profileReducer(state: ProfileState, action: ProfileAction): ProfileState {
   switch (action.type) {
     case 'RESET_STATE':
       return { ...initialState };

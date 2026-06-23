@@ -8,7 +8,7 @@ import { useFilmStore } from '@/src/stores/films';
 import { useSocialStore } from '@/src/stores/socialStore';
 import { followUser, unfollowUser } from '@/src/stores/domain/socialSlice';
 
-const normalizeSocialHash = (links?: any[] | Record<string, string> | null): string => {
+export const normalizeSocialHash = (links?: any[] | Record<string, string> | null): string => {
   if (!links) return '';
   if (Array.isArray(links)) {
     return links.filter(l => l && l.url).map(l => `${l.title || ''}:${l.url}`).sort().join(',');
@@ -18,6 +18,16 @@ const normalizeSocialHash = (links?: any[] | Record<string, string> | null): str
   }
   return '';
 };
+
+// The follower-count delta applied by an optimistic follow/unfollow toggle.
+// Used both to apply the optimistic update and, on failure, to roll it back
+// (by subtracting the same delta) — kept as one function so the two can
+// never drift out of sync.
+export function computeFollowCountDelta(isFollowing: boolean, isRequested: boolean, isPrivate: boolean): number {
+  if (isFollowing) return -1;
+  if (isRequested) return 0;
+  return isPrivate ? 0 : 1;
+}
 
 export function useProfileController(usernameOverride?: string) {
   const params = useLocalSearchParams<{ username: string | string[]; tab?: string }>();
@@ -208,21 +218,8 @@ export function useProfileController(usernameOverride?: string) {
     data.setTargetUser((prev) => {
       if (!prev) return prev;
       const current = prev.followers_count || 0;
-      
-      // If unfollowing (either requested or following)
-      if (isFollowing || isRequested) {
-        // Only decrement if we were actually following (not just requested)
-        const nextCount = isFollowing ? Math.max(0, current - 1) : current;
-        return { ...prev, followers_count: nextCount };
-      }
-      
-      // If following
-      // If private, count doesn't increment until accepted
-      if (prev.is_social_private) {
-        return prev;
-      }
-      
-      return { ...prev, followers_count: current + 1 };
+      const delta = computeFollowCountDelta(isFollowing, isRequested, !!prev.is_social_private);
+      return { ...prev, followers_count: Math.max(0, current + delta) };
     });
 
     try {
@@ -240,12 +237,7 @@ export function useProfileController(usernameOverride?: string) {
           data.setTargetUser(curr => {
             if (!curr || curr.id !== prevUser.id) return curr;
             // Calculate exact applied optimistic delta to prevent drift on failure
-            let optimisticDelta = 0;
-            if (isFollowing || isRequested) {
-              optimisticDelta = isFollowing ? -1 : 0;
-            } else {
-              optimisticDelta = prevUser.is_social_private ? 0 : 1;
-            }
+            const optimisticDelta = computeFollowCountDelta(isFollowing, isRequested, !!prevUser.is_social_private);
             return { ...curr, followers_count: Math.max(0, (curr.followers_count || 0) - optimisticDelta) };
           });
         }
@@ -256,12 +248,7 @@ export function useProfileController(usernameOverride?: string) {
         data.setTargetUser(curr => {
           if (!curr || curr.id !== prevUser.id) return curr;
           // Calculate exact applied optimistic delta to prevent drift on failure
-          let optimisticDelta = 0;
-          if (isFollowing || isRequested) {
-            optimisticDelta = isFollowing ? -1 : 0;
-          } else {
-            optimisticDelta = prevUser.is_social_private ? 0 : 1;
-          }
+          const optimisticDelta = computeFollowCountDelta(isFollowing, isRequested, !!prevUser.is_social_private);
           return { ...curr, followers_count: Math.max(0, (curr.followers_count || 0) - optimisticDelta) };
         });
       }

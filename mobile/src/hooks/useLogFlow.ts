@@ -50,6 +50,70 @@ export const getLocalDateString = (offsetDays = 0) => {
     return `${yr}-${mo}-${da}`;
 };
 
+// Returns a user-facing block message, or null if the log can be submitted.
+export function validateLogSubmission(
+    status: 'watched' | 'rewatched' | 'abandoned',
+    rating: number,
+    review: string,
+    abandonedReason: string,
+): string | null {
+    if (status !== 'abandoned' && rating === 0 && !review.trim()) {
+        return 'A rating or critique is required to seal the record.';
+    }
+    if (status === 'abandoned' && !abandonedReason) {
+        return 'Please specify a reason for abandoning this film.';
+    }
+    return null;
+}
+
+export interface LogPayloadInput {
+    film: SelectedFilm;
+    status: 'watched' | 'rewatched' | 'abandoned';
+    rating: number;
+    review: string;
+    isSpoiler: boolean;
+    date: string;
+    watchedWith: string;
+    privateNotes: string;
+    physicalMedia: string;
+    abandonedReason: string;
+    isAuteur: boolean;
+    isPremium: boolean;
+    isAutopsied: boolean;
+    autopsy: Record<string, number>;
+    altPoster: string | null;
+    editorialHeader: string | null;
+    dropCap: boolean;
+    pullQuote: string;
+}
+
+// Pure transform from form state -> the log record sent to the store.
+// Extracted from handleLog so tier-gating and field-stripping rules are
+// directly testable without rendering the hook.
+export function buildLogPayload(input: LogPayloadInput): Record<string, any> {
+    const {
+        film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
+        physicalMedia, abandonedReason, isAuteur, isPremium, isAutopsied, autopsy,
+        altPoster, editorialHeader, dropCap, pullQuote,
+    } = input;
+    return {
+        filmId: film.id, title: film.title ?? film.name ?? 'Untitled',
+        poster: altPoster ?? film.poster_path ?? null,
+        year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
+        rating: status === 'abandoned' ? 0 : rating, review: review.trim(), status, isSpoiler,
+        watchedDate: date, watchedWith: watchedWith.trim() || null,  // intentional || — empty string should be null
+        privateNotes: isPremium ? (privateNotes.trim() || null) : null,
+        abandonedReason: status === 'abandoned' ? abandonedReason : null,
+        physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
+        isAutopsied: isAuteur && isAutopsied,
+        autopsy: isAuteur && isAutopsied ? autopsy : null,
+        altPoster: isAuteur ? altPoster : null,
+        editorialHeader: isPremium ? editorialHeader : null,
+        dropCap: isPremium ? dropCap : false,
+        pullQuote: isPremium ? pullQuote.trim() : '',
+    };
+}
+
 export function useLogFlow() {
     const router = useRouter();
     const params = useLocalSearchParams<{
@@ -238,32 +302,15 @@ export function useLogFlow() {
     const handleLog = async () => {
         if (!user) { reelToast('Identification required to file a record.'); return; }
         if (!film) { reelToast('No film selected.'); return; }
-        if (status !== 'abandoned' && rating === 0 && !review.trim()) {
-            reelToast('A rating or critique is required to seal the record.');
-            return;
-        }
-        if (status === 'abandoned' && !abandonedReason) {
-            reelToast('Please specify a reason for abandoning this film.');
-            return;
-        }
+        const blockReason = validateLogSubmission(status, rating, review, abandonedReason);
+        if (blockReason) { reelToast(blockReason); return; }
         setSubmitting(true);
         try {
-            const logData: Record<string, any> = {
-                filmId: film.id, title: film.title ?? film.name ?? 'Untitled',
-                poster: altPoster ?? film.poster_path ?? null,
-                year: film.release_date ? parseInt(film.release_date.slice(0, 4)) : undefined,
-                rating: status === 'abandoned' ? 0 : rating, review: review.trim(), status, isSpoiler,
-                watchedDate: date, watchedWith: watchedWith.trim() || null,  // intentional || — empty string should be null
-                privateNotes: isPremium ? (privateNotes.trim() || null) : null,
-                abandonedReason: status === 'abandoned' ? abandonedReason : null,
-                physicalMedia: isPremium && physicalMedia !== 'None' ? physicalMedia : null,
-                isAutopsied: isAuteur && isAutopsied,
-                autopsy: isAuteur && isAutopsied ? autopsy : null,
-                altPoster: isAuteur ? altPoster : null,
-                editorialHeader: isPremium ? editorialHeader : null,
-                dropCap: isPremium ? dropCap : false,
-                pullQuote: isPremium ? pullQuote.trim() : '',
-            };
+            const logData = buildLogPayload({
+                film, status, rating, review, isSpoiler, date, watchedWith, privateNotes,
+                physicalMedia, abandonedReason, isAuteur, isPremium, isAutopsied, autopsy,
+                altPoster, editorialHeader, dropCap, pullQuote,
+            });
             if (isEditing && editLogId) { await updateLog(editLogId, logData); }
             else { await addLog(logData); }
             storage.delete(DRAFT_KEY);
