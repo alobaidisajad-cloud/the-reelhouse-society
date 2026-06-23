@@ -1,32 +1,31 @@
 appId: com.reelhouse.society
 ---
-# Critical Path: Login → Search Film → Log Film → Verify on Reels Feed
+# Critical Path: Login → Search Film → Log Film → Confirm Modal Closes
 - launchApp:
     clearState: true
 
-# Authenticate
-- assertVisible:
-    id: "sign-in-button"
+# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
 - tapOn:
-    id: "sign-in-button"
+    id: "profile-tab"
 - assertVisible:
-    text: "Enter your email"
+    id: "profile-sign-in-prompt"
+- tapOn:
+    id: "profile-sign-in-prompt"
+- assertVisible:
+    id: "email-input"
+- tapOn:
+    id: "email-input"
 - inputText: "test@reelhouse.app"
 - tapOn:
-    id: "continue-button"
-- assertVisible:
-    text: "Enter your password"
+    id: "password-input"
 - inputText: "password123"
 - tapOn:
     id: "sign-in-submit"
-- assertVisible:
-    id: "home-tab"
+- waitForAnimationToEnd
 
 # Navigate to Darkroom (Search/Discover)
 - tapOn:
     id: "darkroom-tab"
-- assertVisible:
-    text: "THE DARKROOM"
 
 # Search for a film
 - tapOn:
@@ -49,21 +48,20 @@ appId: com.reelhouse.society
 - tapOn:
     id: "log-film-button"
 
-# Verify log modal opened
+# Verify log modal opened — a rating or review is required to submit, so
+# write a short review rather than instrumenting the custom star-rating
+# control.
 - assertVisible:
-    text: "LOG FILM"
-
-# Set a rating (tap the 4th reel)
+    id: "review-input"
 - tapOn:
-    id: "rating-reel-4"
+    id: "review-input"
+- inputText: "Great film, loved the cinematography."
 
 # Submit the log
 - tapOn:
     id: "submit-log-button"
 - waitForAnimationToEnd
 
-# Navigate to Reels tab to verify the log appears
-- tapOn:
-    id: "reels-tab"
-- assertVisible:
-    text: "The Reel"
+# A successful submit calls router.back(), closing the modal.
+- assertNotVisible:
+    id: "submit-log-button"

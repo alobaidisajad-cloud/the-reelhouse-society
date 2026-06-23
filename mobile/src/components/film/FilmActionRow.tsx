@@ -64,7 +64,7 @@ export const FilmActionRow = memo(function FilmActionRow({
 
   return (
     <Animated.View style={s.ctaSection}>
-      <PressableScale style={s.ctaPrimary} onPress={handleLog} pressedScale={0.97} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} accessibilityRole="button" accessibilityLabel={existingLog ? 'Edit your log' : 'Log this film'}>
+      <PressableScale testID="log-film-button" style={s.ctaPrimary} onPress={handleLog} pressedScale={0.97} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} accessibilityRole="button" accessibilityLabel={existingLog ? 'Edit your log' : 'Log this film'}>
         <View style={s.ctaIconRow}>
           {existingLog ? <Pencil size={13} color={colors.ink} strokeWidth={2} /> : <Plus size={15} color={colors.ink} strokeWidth={2.5} />}
           <Text style={s.ctaPrimaryText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>

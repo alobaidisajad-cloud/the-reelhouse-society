@@ -1,4 +1,4 @@
-appId: com.divisionops.reelhouse
+appId: com.reelhouse.society
 ---
 # Offline Resilience Flow
 # Tests: offline queue → sync on reconnect

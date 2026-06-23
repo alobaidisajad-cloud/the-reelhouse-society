@@ -1,18 +1,39 @@
 appId: com.reelhouse.society
 ---
-- launchApp
-- assertVisible:
-    id: "vault-tab"
+# There is no top-level "Vault" tab — the bottom tab bar is Dispatch /
+# The Reel / Lobby / Darkroom / Profile. The closest concept to "browse a
+# personal collection" is one of the collection cards inside the Profile
+# screen. "Physical Archive" (the renamed Vault) is gated behind an
+# Archivist+ subscription the e2e test account may not have, so this
+# exercises the Watchlist card instead — same intent, reachable by any
+# authenticated account.
+- launchApp:
+    clearState: true
+
+# Authenticate (via Profile tab's sign-in prompt — see login_flow.yaml)
 - tapOn:
-    id: "vault-tab"
+    id: "profile-tab"
 - assertVisible:
-    text: "THE VAULT"
-- swipe:
-    direction: DOWN
-- assertVisible:
-    id: "film-card"
+    id: "profile-sign-in-prompt"
 - tapOn:
-    id: "film-card"
-    index: 0
+    id: "profile-sign-in-prompt"
 - assertVisible:
-    text: "LOG FILM"
+    id: "email-input"
+- tapOn:
+    id: "email-input"
+- inputText: "test@reelhouse.app"
+- tapOn:
+    id: "password-input"
+- inputText: "password123"
+- tapOn:
+    id: "sign-in-submit"
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "profile-tab"
+- assertVisible:
+    id: "collection-card-watchlist"
+- tapOn:
+    id: "collection-card-watchlist"
+- assertVisible:
+    text: "Watchlist"

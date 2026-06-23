@@ -1,4 +1,4 @@
-appId: com.divisionops.reelhouse
+appId: com.reelhouse.society
 ---
 # Auth Deep Link Flow
 # Tests: deep link routing for auth callbacks and reset password

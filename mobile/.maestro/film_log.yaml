@@ -3,7 +3,7 @@
 # Requires: Maestro CLI (https://maestro.mobile.dev)
 # Run: maestro test .maestro/
 
-appId: com.reelhouse.mobile
+appId: com.reelhouse.society
 ---
 # Navigate to Darkroom
 - tapOn: "The Darkroom"

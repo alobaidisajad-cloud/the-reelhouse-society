@@ -1,4 +1,4 @@
-appId: com.divisionops.reelhouse
+appId: com.reelhouse.society
 ---
 # Error Recovery Flow
 # Tests: ErrorBoundary catches crash → user can retry → app recovers

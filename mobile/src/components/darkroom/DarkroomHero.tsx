@@ -69,6 +69,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
         <View style={s.searchWrap}>
           <AnimatedSearchIcon size={16} animatedProps={animatedSearchProps} style={[animatedSearchStyle, s.searchIcon]} />
           <TextInput
+            testID="darkroom-search-input"
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             style={[s.searchInput, (isFocused || query.length > 0) && s.searchInputActive]}

@@ -872,6 +872,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               {COLLECTION_CARDS.map((item: any, idx: number) => (
                 <View key={item.id}>
                 <PressableScale
+                  testID={`collection-card-${item.id}`}
                   style={[s.collectionCard, item.disabled && s.collectionCardDisabled, item.highlight && s.collectionCardHighlight]}
                   disabled={item.disabled}
                   onPress={() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: item.id } } as any)}

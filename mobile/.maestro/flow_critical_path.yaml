@@ -1,4 +1,4 @@
-appId: com.divisionops.reelhouse
+appId: com.reelhouse.society
 ---
 - launchApp
 - assertVisible: "THE REELHOUSE SOCIETY"

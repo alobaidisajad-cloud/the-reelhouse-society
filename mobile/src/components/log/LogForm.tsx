@@ -243,7 +243,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     {/* Review Editor */}
                     <View style={st.sec}>
                         <SectionDivider label="REVIEW (OPTIONAL)" />
-                        <TextInput style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={(v) => dispatch({ type: 'SET_FIELD', field: 'review', value: v })} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
+                        <TextInput testID="review-input" style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={(v) => dispatch({ type: 'SET_FIELD', field: 'review', value: v })} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
                         <View style={st.reviewFooter}>
                             <PressableScale style={st.spoilerRow} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'isSpoiler', value: !isSpoiler }); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
                                 <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
@@ -346,7 +346,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
 
             {/* SUBMIT */}
             <View style={st.submitRow}>
-                <PressableScale style={[st.submitBtn, submitting && st.submitBtnSubmitting]} onPress={() => { TactileEngine.mutate(); handleLog(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15}} pressedScale={0.97}>
+                <PressableScale testID="submit-log-button" style={[st.submitBtn, submitting && st.submitBtnSubmitting]} onPress={() => { TactileEngine.mutate(); handleLog(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15}} pressedScale={0.97}>
                     <Text style={st.submitText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{submitting ? 'SEALING RECORD…' : (isEditing ? 'EDIT CRITIQUE' : 'CERTIFY CRITIQUE')}</Text>
                 </PressableScale>
                 <PressableScale style={[st.cancelBtn, submitting && { opacity: 0.5 }]} onPress={() => { router.back(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
