@@ -5,6 +5,9 @@
 
 appId: com.reelhouse.society
 ---
+- launchApp:
+    clearState: true
+
 # Navigate to Darkroom tab
 - tapOn: "The Darkroom"
 - waitForAnimationToEnd
