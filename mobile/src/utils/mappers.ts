@@ -400,13 +400,13 @@ export function toProfileLog(log: DomainLog): ProfileLog {
   return {
     id: log.id,
     filmId: log.filmId,
-    title: log.title ?? (log as any).film_title ?? '',
+    title: log.title ?? '',
     poster: log.poster ?? null,
     year: log.year ?? null,
     rating: log.rating,
     review: log.review,
     status: log.status ?? 'watched',
-    watchedDate: log.watchedDate ?? (log as any).watched_date,
+    watchedDate: log.watchedDate,
     isSpoiler: log.isSpoiler ?? false,
     pullQuote: log.pullQuote,
     altPoster: log.altPoster,
@@ -421,7 +421,7 @@ export function toProfileLog(log: DomainLog): ProfileLog {
     format: log.format ?? null,
     dropCap: log.dropCap ?? false,
     editorialHeader: log.editorialHeader ?? null,
-    createdAt: log.createdAt ?? (log as any).created_at ?? '',
+    createdAt: log.createdAt ?? '',
   };
 }
 

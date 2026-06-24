@@ -84,7 +84,7 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
       <Animated.View entering={FadeInUp.springify().damping(15)} exiting={FadeOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom + 20, 40) }]}>
         <View style={s.header}>
           <Text style={s.title}>UPDATE IDENTITY</Text>
-          <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic="selection" pressedScale={0.9}>
+          <PressableScale onPress={() => { onClose(); }} style={s.closeBtn} hitSlop={{top:15,bottom:15,left:15,right:15}} haptic="selection" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Close">
             <X size={20} color={colors.fog} />
           </PressableScale>
         </View>
@@ -96,14 +96,14 @@ export default function AvatarCropSheet({ onClose, onSuccess }: Props) {
           </View>
         ) : (
           <View style={s.actions}>
-            <PressableScale style={s.actionCard} onPress={() => handlePick('camera')} haptic="selection" pressedScale={0.96}>
+            <PressableScale style={s.actionCard} onPress={() => handlePick('camera')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Take a photo with the camera">
               <View style={s.iconWrap}>
                 <Camera size={24} color={colors.sepia} />
               </View>
               <Text style={s.actionText}>USE CAMERA</Text>
             </PressableScale>
 
-            <PressableScale style={s.actionCard} onPress={() => handlePick('library')} haptic="selection" pressedScale={0.96}>
+            <PressableScale style={s.actionCard} onPress={() => handlePick('library')} haptic="selection" pressedScale={0.96} accessibilityRole="button" accessibilityLabel="Choose a photo from your library">
               <View style={s.iconWrap}>
                 <ImageIcon size={24} color={colors.bone} />
               </View>

@@ -261,8 +261,12 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     _prefTimers.clear();
 
     // 10. Report partial cleanup failures
-    if (cleanupErrors.length > 0 && __DEV__) {
-      console.warn('[logout] Partial cleanup failure:', cleanupErrors.join(', '));
+    if (cleanupErrors.length > 0) {
+      if (__DEV__) {
+        console.warn('[logout] Partial cleanup failure:', cleanupErrors.join(', '));
+      } else {
+        captureError(new Error(`[logout] Partial cleanup failure: ${cleanupErrors.join(', ')}`));
+      }
     }
   },
 

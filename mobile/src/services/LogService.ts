@@ -97,7 +97,7 @@ export const LogService = {
     const queue = getOfflineQueue();
 
     // 1. Pending Removes check
-    const isPendingRemove = queue.some((q: any) => q.type === 'remove_log' && q.payload.log_id === logId);
+    const isPendingRemove = queue.some((q) => q.type === 'remove_log' && q.payload.log_id === logId);
     if (isPendingRemove) {
         throw new Error('Log not found');
     }
@@ -114,7 +114,7 @@ export const LogService = {
     // 2. Handle Offline Creations (Prevent 404 crashes)
     let logData: any = data;
     if (error || !logData) {
-        const pendingAdd = queue.find((q: any) => (q.type === 'add_log' || q.type === 'mark_watched') && q.payload.id === logId);
+        const pendingAdd = queue.find((q) => (q.type === 'add_log' || q.type === 'mark_watched') && q.payload.id === logId);
         if (pendingAdd) {
             logData = { ...pendingAdd.payload };
             if (currentUserId) {
@@ -138,7 +138,7 @@ export const LogService = {
     if (logData) {
         // 3. Apply pending offline updates FIRST
         let hasOfflinePrivateNotesUpdate = false;
-        const pendingUpdates = queue.filter((q: any) => q.type === 'update_log' && q.payload.id === logId);
+        const pendingUpdates = queue.filter((q) => q.type === 'update_log' && q.payload.id === logId);
         for (const up of pendingUpdates) {
             logData = { ...logData, ...(up.payload.updates as any) };
             if ('private_notes' in (up.payload.updates as any)) {

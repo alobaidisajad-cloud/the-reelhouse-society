@@ -145,19 +145,19 @@ export const ActionDeck = React.memo(function ActionDeck({
   return (
     <>
       <View style={s.actionDeck}>
-        <PressableScale style={s.actionBtn} onPress={handleCertify} pressedScale={0.92}>
+        <PressableScale style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={endorsed ? 'Remove certification from this critique' : 'Certify this critique'}>
           <Animated.View style={animatedHeartStyle}>
             <Heart size={16} strokeWidth={2} color={endorsed ? colors.bloodReel : colors.fog} fill={endorsed ? colors.bloodReel : 'transparent'} />
           </Animated.View>
           <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]}>{endorsed ? 'CERTIFIED' : 'CERT'}</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleCritique}>
+        <PressableScale style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel="Write a critique">
           <MessageSquare size={16} strokeWidth={2} color={colors.fog} />
           <Text style={s.actionLabel}>CRITIQUE</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92}>
+        <PressableScale style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}>
           <Animated.View style={animatedBookmarkStyle}>
             {isOwner ? (
               <Edit3 size={16} strokeWidth={2} color={colors.fog} />
@@ -168,7 +168,7 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelCertified]}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleLounge}>
+        <PressableScale style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityState={{ disabled: !isLoungeEligible }} accessibilityLabel={isLoungeEligible ? 'Share to a lounge' : 'Lounge sharing locked'}>
           <MessageCircle size={16} strokeWidth={2} color={isLoungeEligible ? colors.fog : colors.ash} />
           <Text style={[s.actionLabel, !isLoungeEligible && s.actionIconLocked]}>LOUNGE</Text>
         </PressableScale>
