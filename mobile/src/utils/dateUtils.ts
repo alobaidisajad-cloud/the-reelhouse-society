@@ -10,9 +10,12 @@ import type { ProfileLog, ProfileVaultItem } from '@/src/types';
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
 /**
- * Format a Date to "MONTH YEAR" display string (e.g. "JANUARY 2026").
+ * Format a Date to a title-case "Month Year" grouping label (e.g. "January 2026").
+ * Used internally for month-section keys in groupByMonth. Distinct from
+ * timeAgo.ts's formatDateMonthYear, which renders an upper-case display string
+ * from a string|Date|null input — kept separately named to avoid confusion.
  */
-export function formatDateMonthYear(date: Date): string {
+export function formatMonthYearLabel(date: Date): string {
   return `${MONTH_NAMES[date.getMonth()]} ${date.getFullYear()}`;
 }
 
@@ -28,7 +31,7 @@ export function groupByMonth<T extends ProfileLog | ProfileVaultItem>(
   for (const item of items) {
     const dateValue = (item[dateKey] as string) || item.createdAt || new Date().toISOString();
     const d = new Date(dateValue);
-    const title = formatDateMonthYear(d);
+    const title = formatMonthYearLabel(d);
     if (!grouped[title]) grouped[title] = [];
     grouped[title].push(item);
   }

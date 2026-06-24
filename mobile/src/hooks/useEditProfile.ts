@@ -9,6 +9,7 @@ import { useRouter } from 'expo-router';
 import { validateUsername } from '@/src/utils/validateUsername';
 import { queryClient } from '@/src/lib/queryClient';
 import { useLoungeStore } from '@/src/stores/lounge';
+import { captureError } from '@/src/lib/sentry';
 
 // Zod schema for the form
 const editProfileSchema = z.object({
@@ -242,6 +243,7 @@ export function useEditProfile() {
       router.back();
     } catch (err: unknown) {
       console.error('Failed to update profile:', err);
+      if (!__DEV__) captureError(err instanceof Error ? err : new Error(String(err)), { context: 'update_profile' });
       setSubmitError(err instanceof Error ? err : new Error('Failed to update profile. Please try again.'));
     } finally {
       setSaving(false);

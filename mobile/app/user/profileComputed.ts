@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react';
-import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry } from '@/src/types';
+import type { ProfileVaultItem, ProfileLog, ProfileWatchlistItem, ProfileList, HalfLifeEntry, DomainLog } from '@/src/types';
 import { ProfileTab } from '@/src/hooks/useProfileData';
 
 import { colors } from '@/src/theme/theme';
@@ -22,7 +22,7 @@ export interface SocialLink {
 
 interface UseProfileComputedParams {
   isSelf: boolean;
-  myLogs: any[];
+  myLogs: DomainLog[];
   myWatchlist: any[];
   myVault: any[];
   myLists: any[];

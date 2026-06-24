@@ -184,6 +184,24 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
     ]);
   };
 
+  const renderMember = useCallback(({ item }: { item: LoungeMember }) => (
+    <View style={s.memberRow}>
+      <View style={s.memberAvatar}>
+        {item.avatar_url
+          ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
+          : <Users size={13} color={colors.fog} strokeWidth={1.5} />
+        }
+      </View>
+      <Text style={[s.memberName, { flexShrink: 1, marginRight: 8 }]} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
+      {item.user_id === lounge.creator_id && (
+        <View style={s.memberBadge}>
+          <Crown size={9} color={colors.sepia} strokeWidth={2} />
+          <Text style={s.memberBadgeText} numberOfLines={1}>FOUNDER</Text>
+        </View>
+      )}
+    </View>
+  ), [lounge.creator_id]);
+
   if (!visible) return null;
 
   return (
@@ -223,23 +241,7 @@ function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: L
               <Text style={s.settingsLabel}>MEMBERS ({members?.length || 0})</Text>
             </View>
           }
-          renderItem={({ item }: { item: LoungeMember }) => (
-            <View style={s.memberRow}>
-              <View style={s.memberAvatar}>
-                {item.avatar_url
-                  ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
-                  : <Users size={13} color={colors.fog} strokeWidth={1.5} />
-                }
-              </View>
-              <Text style={[s.memberName, { flexShrink: 1, marginRight: 8 }]} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
-              {item.user_id === lounge.creator_id && (
-                <View style={s.memberBadge}>
-                  <Crown size={9} color={colors.sepia} strokeWidth={2} />
-                  <Text style={s.memberBadgeText} numberOfLines={1}>FOUNDER</Text>
-                </View>
-              )}
-            </View>
-          )}
+          renderItem={renderMember}
           ListFooterComponent={
             <View style={s.settingsFooter}>
               {isCreator ? (

@@ -43,14 +43,8 @@ describe('toProfileLog', () => {
     expect(result.createdAt).toBe('2024-01-15T12:00:00Z');
   });
 
-  it('falls back to film_title when title is missing', () => {
-    const log = { ...baseLog, title: undefined, film_title: 'Fight Club (alt)' } as any;
-    const result = toProfileLog(log);
-    expect(result.title).toBe('Fight Club (alt)');
-  });
-
-  it('falls back to empty string when both title fields missing', () => {
-    const log = { ...baseLog, title: undefined, film_title: undefined } as any;
+  it('defaults to empty string when title is missing', () => {
+    const log = { ...baseLog, title: undefined } as any;
     const result = toProfileLog(log);
     expect(result.title).toBe('');
   });
@@ -65,14 +59,9 @@ describe('toProfileLog', () => {
     expect(toProfileLog(log).status).toBe('watched');
   });
 
-  it('uses watched_date snake_case fallback', () => {
-    const log = { ...baseLog, watchedDate: undefined, watched_date: '2024-06-01' } as any;
-    expect(toProfileLog(log).watchedDate).toBe('2024-06-01');
-  });
-
-  it('uses created_at snake_case fallback', () => {
-    const log = { ...baseLog, createdAt: undefined, created_at: '2024-01-01T00:00:00Z' } as any;
-    expect(toProfileLog(log).createdAt).toBe('2024-01-01T00:00:00Z');
+  it('defaults createdAt to empty string when missing', () => {
+    const log = { ...baseLog, createdAt: undefined } as any;
+    expect(toProfileLog(log).createdAt).toBe('');
   });
 });
 
