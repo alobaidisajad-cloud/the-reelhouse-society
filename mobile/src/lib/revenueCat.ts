@@ -177,22 +177,91 @@ export async function purchasePackage(pkg: any): Promise<EntitlementInfo | null>
 }
 
 /**
+ * Gather every purchasable package across ALL configured offerings.
+ *
+ * `getOfferings()` only returns `offerings.current`, which is a single
+ * offering. RevenueCat dashboards are commonly set up with one offering per
+ * tier (so `current` holds just one tier's packages) OR a single offering
+ * holding every tier. Collecting from `current` first and then every entry in
+ * `offerings.all` makes tier resolution work under either topology. Deduped by
+ * package + product identifier so the same package isn't considered twice.
+ */
+async function collectPurchasablePackages(): Promise<any[]> {
+  if (!isConfigured || !Purchases) return [];
+  try {
+    const offerings = await Purchases.getOfferings();
+    const seen = new Set<string>();
+    const out: any[] = [];
+    const push = (pkgs: any[] | undefined | null) => {
+      for (const p of pkgs ?? []) {
+        const key = `${p?.identifier}::${p?.product?.identifier}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(p);
+      }
+    };
+    push(offerings?.current?.availablePackages);
+    const all = offerings?.all ?? {};
+    for (const key of Object.keys(all)) push(all[key]?.availablePackages);
+    return out;
+  } catch (e) {
+    logger.info('[revenueCat] collectPurchasablePackages failed', e);
+    return [];
+  }
+}
+
+/**
+ * Resolve the RevenueCat package to purchase for a given tier.
+ *
+ * Critically, this matches on the **store product identifier**
+ * (`pkg.product.identifier` — e.g. `auteur_annual`, `founding_lifetime`, per
+ * the products documented at the top of this file) and the **packageType**,
+ * NOT the package identifier. RevenueCat's predefined packages carry
+ * identifiers like `$rc_annual` / `$rc_lifetime`, which never contain the tier
+ * name — so the previous `pkg.identifier.includes(tier)` match silently failed
+ * for every standard-configured dashboard, making all purchases impossible.
+ *
+ * Match order (most precise → most lenient); the final step preserves the
+ * original package-identifier behavior so custom-named packages still resolve:
+ *   1. Exact documented product id (`<tier>_annual` / `founding_lifetime`).
+ *   2. Product for this tier with the desired billing period (annual/lifetime).
+ *   3. Custom package whose identifier encodes the tier + period.
+ *   4. Any product for this tier (prefer selling a monthly over failing).
+ *   5. Legacy: package identifier contains the tier name.
+ *
+ * Exported for unit testing — it is a pure function of its inputs.
+ */
+export function selectPackageForTier(packages: any[], tier: ReelHouseTier): any | null {
+  if (!packages?.length) return null;
+  const t = tier.toLowerCase();
+  const wantsLifetime = tier === 'founding';
+  const wantType = wantsLifetime ? 'LIFETIME' : 'ANNUAL';
+  const period = wantsLifetime ? 'lifetime' : 'annual';
+  const canonical = `${t}_${period}`;
+
+  const productId = (p: any) => String(p?.product?.identifier ?? '').toLowerCase();
+  const pkgId = (p: any) => String(p?.identifier ?? '').toLowerCase();
+  const pType = (p: any) => String(p?.packageType ?? '').toUpperCase();
+
+  return (
+    packages.find((p) => productId(p) === canonical) ??
+    packages.find((p) => productId(p).startsWith(t) && pType(p) === wantType) ??
+    packages.find((p) => pkgId(p).includes(t) && (pkgId(p).includes(period) || pType(p) === wantType)) ??
+    packages.find((p) => productId(p).startsWith(t)) ??
+    packages.find((p) => pkgId(p).includes(t)) ??
+    null
+  );
+}
+
+/**
  * Helper to purchase by tier name without needing the full package object
  */
 export async function purchaseTier(tier: ReelHouseTier): Promise<EntitlementInfo | null> {
   if (!isConfigured || !Purchases) return null;
   try {
-    const packages = await getOfferings();
-    // Prioritize annual packages since the UI hardcodes annual pricing.
-    let pkg = packages.find((p: any) => p.identifier.toLowerCase().includes(`${tier}_annual`));
-    
-    // Fallback if there is no annual specific tier (e.g., founding_lifetime or custom)
-    if (!pkg) {
-      pkg = packages.find((p: any) => p.identifier.toLowerCase().includes(tier));
-    }
-    
+    const packages = await collectPurchasablePackages();
+    const pkg = selectPackageForTier(packages, tier);
     if (!pkg) throw new Error(`No package found for tier: ${tier}`);
-    
     return await purchasePackage(pkg);
   } catch (err: any) {
     if (err?.userCancelled) return null;
