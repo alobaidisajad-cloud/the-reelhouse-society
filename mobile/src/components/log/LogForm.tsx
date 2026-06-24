@@ -34,7 +34,15 @@ export default function LogForm({ flow, user }: LogFormProps) {
         film,
         status, rating, review, isSpoiler, abandonedReason, date, watchedWith, privateNotes, physicalMedia,
         autopsy, altPoster, editorialHeader, dropCap, pullQuote, autopsyOpen, isAutopsied, moreOpen, calendarOpen, showDeleteConfirm, submitting,
-        dispatch,
+        // Typed field setters from useLogFlow — these replace the removed
+        // `dispatch` compatibility shim (which silently dropped every field
+        // except the 6 premium ones). Using the setters directly restores the
+        // core form (status/rating/review/date/…) and is compile-time checked.
+        setStatus, setRating, setReview, setIsSpoiler, setAbandonedReason,
+        setDate, setWatchedWith, setPrivateNotes, setPhysicalMedia,
+        setMoreOpen, setCalendarOpen, setShowDeleteConfirm,
+        setDropCap, setPullQuote, setEditorialHeader,
+        setAutopsyOpen, setIsAutopsied, setAutopsy, setAltPoster,
         isRewatchMode, previousLog,
         availablePosters, availableBackdrops,
         isEditing,
@@ -49,14 +57,6 @@ export default function LogForm({ flow, user }: LogFormProps) {
     const yesterday = useMemo(() => getLocalDateString(-1), []);
     const todayStr = useMemo(() => getLocalDateString(0), []);
 
-    const setDropCap = useCallback((v: boolean) => dispatch({ type: 'SET_FIELD', field: 'dropCap', value: v }), [dispatch]);
-    const setPullQuote = useCallback((v: string) => dispatch({ type: 'SET_FIELD', field: 'pullQuote', value: v }), [dispatch]);
-    const setEditorialHeader = useCallback((v: string | null) => dispatch({ type: 'SET_FIELD', field: 'editorialHeader', value: v }), [dispatch]);
-    
-    const setAutopsyOpen = useCallback((v: boolean) => dispatch({ type: 'SET_FIELD', field: 'autopsyOpen', value: v }), [dispatch]);
-    const setIsAutopsied = useCallback((v: boolean) => dispatch({ type: 'SET_FIELD', field: 'isAutopsied', value: v }), [dispatch]);
-    const setAutopsy = useCallback((v: Record<string, number>) => dispatch({ type: 'SET_FIELD', field: 'autopsy', value: v }), [dispatch]);
-    const setAltPoster = useCallback((v: string | null) => dispatch({ type: 'SET_FIELD', field: 'altPoster', value: v }), [dispatch]);
     const handleUpgradePress = useCallback(() => (router.push as any)('/membership' as any), [router]);
 
     if (!film) return null;
@@ -65,7 +65,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
         <View style={{ flex: 1 }}>
             {/* DELETE ZONE */}
             {isEditing && !showDeleteConfirm && (
-                <PressableScale style={st.deleteBtn} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'showDeleteConfirm', value: true }); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light">
+                <PressableScale style={st.deleteBtn} onPress={() => { setShowDeleteConfirm(true); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light">
                     <Trash2 size={14} color={colors.danger} />
                     <Text style={st.deleteBtnText}>DELETE THIS ENTIRE LOG</Text>
                 </PressableScale>
@@ -75,7 +75,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <Text style={st.deleteConfirmText}>DELETE THIS LOG? THIS CANNOT BE UNDONE.</Text>
                     <View style={st.deleteConfirmRow}>
                         <PressableScale style={st.deleteYes} onPress={() => { TactileEngine.destroy(); handleDelete(); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}}><Text style={st.deleteBtnLabel}>CONFIRM DELETE</Text></PressableScale>
-                        <PressableScale style={st.deleteNo} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'showDeleteConfirm', value: false }); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
+                        <PressableScale style={st.deleteNo} onPress={() => { setShowDeleteConfirm(false); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection"><Text style={[st.deleteBtnLabel, st.cancelColor]}>CANCEL</Text></PressableScale>
                     </View>
                 </View>
             )}
@@ -135,7 +135,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 <SectionDivider label="STATUS" />
                 <View style={st.statusRow}>
                     {(['watched', 'rewatched', 'abandoned'] as const).map(s => (
-                        <PressableScale key={s} style={[st.statusBtn, status === s && st.statusActive]} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'status', value: s }); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection">
+                        <PressableScale key={s} style={[st.statusBtn, status === s && st.statusActive]} onPress={() => { setStatus(s); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection">
                             {s === 'watched' && <Eye size={14} color={status === s ? colors.ink : colors.fog} />}
                             {s === 'rewatched' && <History size={14} color={status === s ? colors.ink : colors.fog} />}
                             {s === 'abandoned' && <X size={14} color={status === s ? colors.ink : colors.fog} />}
@@ -151,7 +151,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     <SectionDivider label="REASON" />
                     <View style={st.tagRow}>
                         {ABANDONED_REASONS.map((r: string) => (
-                            <PressableScale key={r} style={[st.tag, abandonedReason === r && st.tagActive]} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'abandonedReason', value: r }); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection">
+                            <PressableScale key={r} style={[st.tag, abandonedReason === r && st.tagActive]} onPress={() => { setAbandonedReason(r); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection">
                                 <Text style={[st.tagText, abandonedReason === r && st.tagTextActive]}>{r}</Text>
                             </PressableScale>
                         ))}
@@ -169,7 +169,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         )}
                     </View>
                     <View style={st.ratingBody}>
-                        <ReelRating rating={rating} size={44} onChange={(v: number) => { dispatch({ type: 'SET_FIELD', field: 'rating', value: v === rating ? 0 : v }); if (Number.isInteger(v)) { TactileEngine.mutate(); } else { TactileEngine.navigate(); } }} />
+                        <ReelRating rating={rating} size={44} onChange={(v: number) => { setRating(v === rating ? 0 : v); if (Number.isInteger(v)) { TactileEngine.mutate(); } else { TactileEngine.navigate(); } }} />
                         <View style={st.ratingFooter}>
                             {rating > 0 ? <Text style={st.ratingLabel}>{RATING_LABELS[rating] || ''}</Text> : <View />}
                             <Text style={st.ratingHint}>TAP LEFT HALF FOR ½ STARS</Text>
@@ -179,7 +179,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
             )}
 
             {/* MORE DETAILS Toggle */}
-            <PressableScale style={st.moreToggle} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'moreOpen', value: !moreOpen }); }} haptic="selection">
+            <PressableScale style={st.moreToggle} onPress={() => { setMoreOpen(!moreOpen); }} haptic="selection">
                 <View style={st.moreToggleInner}>
                     {moreOpen ? <ChevronUp size={14} color={colors.sepia} /> : <ChevronDown size={14} color={colors.sepia} />}
                     <Text style={st.moreText}>{moreOpen ? 'COLLAPSE DETAILS' : 'MORE DETAILS'}</Text>
@@ -197,24 +197,24 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             <Text style={st.secLabel}>DATE WATCHED</Text>
                         </View>
                         <View style={st.quickDateRow}>
-                            <PressableScale style={[st.qDateBtn, date === todayStr && st.qDateActive]} onPress={() => { dispatch({ type: 'HYDRATE', payload: { date: todayStr, calendarOpen: false } }); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection">
+                            <PressableScale style={[st.qDateBtn, date === todayStr && st.qDateActive]} onPress={() => { setDate(todayStr); setCalendarOpen(false); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection">
                                 <Text style={[st.qDateText, date === todayStr && st.qDateTextActive]}>TODAY</Text>
                             </PressableScale>
-                            <PressableScale style={[st.qDateBtn, date === yesterday && st.qDateActive]} onPress={() => { dispatch({ type: 'HYDRATE', payload: { date: yesterday, calendarOpen: false } }); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection">
+                            <PressableScale style={[st.qDateBtn, date === yesterday && st.qDateActive]} onPress={() => { setDate(yesterday); setCalendarOpen(false); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection">
                                 <Text style={[st.qDateText, date === yesterday && st.qDateTextActive]}>YESTERDAY</Text>
                             </PressableScale>
                         </View>
-                        <PressableScale style={st.dateDisplay} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'calendarOpen', value: !calendarOpen }); }} haptic="selection">
+                        <PressableScale style={st.dateDisplay} onPress={() => { setCalendarOpen(!calendarOpen); }} haptic="selection">
                             <Text style={st.dateText}>{new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}</Text>
                             <Text style={[st.dateToggle, calendarOpen && st.dateToggleActive]}>{calendarOpen ? '▲ CLOSE' : '▼ CHANGE'}</Text>
                         </PressableScale>
-                        {calendarOpen && <View style={st.calendarWrap}><NitrateCalendar value={date} onChange={(v) => { dispatch({ type: 'HYDRATE', payload: { date: v, calendarOpen: false } }); }} /></View>}
+                        {calendarOpen && <View style={st.calendarWrap}><NitrateCalendar value={date} onChange={(v) => { setDate(v); setCalendarOpen(false); }} /></View>}
                     </View>
 
                     {/* Watched With */}
                     <View style={st.sec}>
                         <SectionDivider label="WATCHED WITH" />
-                        <TextInput style={st.input} placeholder="A name, a memory, or @username..." placeholderTextColor={colors.fog} value={watchedWith} onChangeText={(v) => dispatch({ type: 'SET_FIELD', field: 'watchedWith', value: v })} maxLength={60} selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} autoCorrect={false} autoCapitalize="none" keyboardAppearance="dark" accessibilityLabel="Watched with companion" />
+                        <TextInput style={st.input} placeholder="A name, a memory, or @username..." placeholderTextColor={colors.fog} value={watchedWith} onChangeText={setWatchedWith} maxLength={60} selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} autoCorrect={false} autoCapitalize="none" keyboardAppearance="dark" accessibilityLabel="Watched with companion" />
                         {(watchedWith || '').includes('@') && following && following.length > 0 && (() => {
                             const atMatch = watchedWith.match(/@([\w.]*)$/);
                             if (!atMatch) return null;
@@ -228,7 +228,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                                             key={username}
                                             style={st.autoSuggestItem}
                                             onPress={() => {
-                                                dispatch({ type: 'SET_FIELD', field: 'watchedWith', value: watchedWith.replace(/@[\w.]*$/, '@' + username + ' ') });
+                                                setWatchedWith(watchedWith.replace(/@[\w.]*$/, '@' + username + ' '));
                                             }}
                                             haptic="selection"
                                         >
@@ -243,9 +243,9 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     {/* Review Editor */}
                     <View style={st.sec}>
                         <SectionDivider label="REVIEW (OPTIONAL)" />
-                        <TextInput testID="review-input" style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={(v) => dispatch({ type: 'SET_FIELD', field: 'review', value: v })} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
+                        <TextInput testID="review-input" style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
                         <View style={st.reviewFooter}>
-                            <PressableScale style={st.spoilerRow} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'isSpoiler', value: !isSpoiler }); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
+                            <PressableScale style={st.spoilerRow} onPress={() => { setIsSpoiler(!isSpoiler); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
                                 <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
                                 <Text style={st.spoilerText}>CONTAINS SPOILERS</Text>
                             </PressableScale>
@@ -289,7 +289,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         </View>
                         <View style={[st.tagRow, !isPremium && st.premiumLocked]} pointerEvents={isPremium ? 'auto' : 'none'}>
                             {PHYSICAL_OPTIONS.map(opt => (
-                                <PressableScale key={opt} style={[st.tag, physicalMedia === opt && st.tagActive]} onPress={() => { dispatch({ type: 'SET_FIELD', field: 'physicalMedia', value: opt }); }} haptic="selection">
+                                <PressableScale key={opt} style={[st.tag, physicalMedia === opt && st.tagActive]} onPress={() => { setPhysicalMedia(opt); }} haptic="selection">
                                     <Text style={[st.tagText, physicalMedia === opt && st.tagTextActive]}>{opt}</Text>
                                 </PressableScale>
                             ))}
@@ -308,7 +308,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             <Text style={st.secLabel}>PRIVATE NOTES (THE CUTTING ROOM FLOOR)</Text>
                         </View>
                         {isPremium ? (
-                            <TextInput style={[st.reviewInput, st.privateNotesInput]} placeholder="Notes only you can see..." placeholderTextColor={colors.fog} value={privateNotes} onChangeText={(v) => dispatch({ type: 'SET_FIELD', field: 'privateNotes', value: v })} multiline maxLength={1000} textAlignVertical="top" keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(218,165,32,0.3)'} />
+                            <TextInput style={[st.reviewInput, st.privateNotesInput]} placeholder="Notes only you can see..." placeholderTextColor={colors.fog} value={privateNotes} onChangeText={setPrivateNotes} multiline maxLength={1000} textAlignVertical="top" keyboardAppearance="dark" accessibilityLabel="Private notes" selectionColor={'rgba(218,165,32,0.3)'} />
                         ) : (
                             <View style={st.lockedBox}>
                                 <Lock size={20} color={colors.sepia} />

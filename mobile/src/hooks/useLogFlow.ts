@@ -405,16 +405,5 @@ export function useLogFlow() {
         toggleList,
         lists,
         hasUnsavedChanges: review.trim().length > 0 || rating > 0 || privateNotes.trim().length > 0,
-        // Mock dispatch for backwards compatibility with flattened state
-        dispatch: (action: any) => {
-            switch(action.field) {
-                case 'dropCap': setDropCap(action.value); break;
-                case 'pullQuote': setPullQuote(action.value); break;
-                case 'editorialHeader': setEditorialHeader(action.value); break;
-                case 'autopsyOpen': setAutopsyOpen(action.value); break;
-                case 'isAutopsied': setIsAutopsied(action.value); break;
-                case 'autopsy': setAutopsy(action.value); break;
-            }
-        }
     };
 }
