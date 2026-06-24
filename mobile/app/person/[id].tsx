@@ -329,7 +329,7 @@ export default function PersonDetailScreen() {
         estimatedItemSize={200}
         contentContainerStyle={[s.scrollContent, scrollContentDynStyle]}
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={isManualRefresh} onRefresh={onPullToRefresh} tintColor={colors.sepia} />}
+        refreshControl={<RefreshControl refreshing={isManualRefresh} onRefresh={onPullToRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}
         ListHeaderComponent={<View>
           <PersonHero
             person={person}

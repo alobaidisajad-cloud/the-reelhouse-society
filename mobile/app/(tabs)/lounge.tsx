@@ -286,7 +286,7 @@ export default function LoungeScreen() {
         onScroll={onScroll}
         bottomInset={insets.bottom + 49}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />
         }
         ListHeaderComponent={
           <>

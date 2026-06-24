@@ -287,6 +287,7 @@ function ReportSheet({
                     ]}
                     placeholder="Describe the infraction..."
                     placeholderTextColor={colors.fog}
+                    selectionColor={colors.selection}
                     value={details}
                     onChangeText={setDetails}
                     maxLength={MAX_DETAILS_LENGTH}

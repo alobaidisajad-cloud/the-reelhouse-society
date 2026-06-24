@@ -543,7 +543,7 @@ export default function LogDetailScreen() {
         ref={scrollViewRef}
         contentContainerStyle={s.content}
         bottomInset={insets.bottom}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}
       >
         {/* Transparent Padder for Parallax Overlap — Web: height IS_TOUCH ? '10vh' ≈ 80px */}
         <View style={s.parallaxPadder} />

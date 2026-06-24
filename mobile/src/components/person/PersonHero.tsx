@@ -122,7 +122,7 @@ export const PersonHero = memo(function PersonHero({
       ═══════════════════════════════════════════════════════ */}
       <View style={[s.heroWrap, heroDynStyle]}>
         {heroBackdrop ? (
-          <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
+          <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
         ) : (
           <LinearGradient
             colors={['rgba(139,105,20,0.12)', 'rgba(10,7,3,0.95)']}
@@ -150,7 +150,7 @@ export const PersonHero = memo(function PersonHero({
           <View style={s.portraitGlow} />
           <View style={s.portraitCard}>
             {photoUri ? (
-              <Image source={{ uri: photoUri }} style={s.portrait} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} accessibilityLabel={`${person.name} portrait photo`} />
+              <Image source={{ uri: photoUri }} style={s.portrait} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} accessibilityLabel={`${person.name} portrait photo`} />
             ) : (
               <View style={[s.portrait, s.portraitPlaceholder]}>
                 <Text style={s.portraitInitial}>{person.name?.charAt(0) || '?'}</Text>

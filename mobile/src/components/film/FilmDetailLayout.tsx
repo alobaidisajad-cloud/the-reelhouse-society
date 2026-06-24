@@ -187,7 +187,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
       {/* Parallax Backdrop */}
       <Animated.View style={[s.backdropWrap, { height: BACKDROP_H }, backdropAnimatedStyle]}>
         {film.backdrop_path ? (
-          <Image source={{ uri: tmdb.backdrop(film.backdrop_path) }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} />
+          <Image source={{ uri: tmdb.backdrop(film.backdrop_path) }} style={s.backdrop} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
         ) : (
           <LinearGradient colors={['rgba(8,6,4,0.98)', colors.ink]} style={s.backdrop} />
         )}

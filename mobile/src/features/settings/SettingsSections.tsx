@@ -211,15 +211,15 @@ export function PasswordChangePanel() {
             <>
               <View style={st.fieldWrap}>
                 <Text style={st.fieldLabel}>CURRENT PASSWORD</Text>
-                <TextInput style={st.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry textContentType="password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => newPasswordRef.current?.focus()} placeholder="Your current password" placeholderTextColor={colors.ash} keyboardAppearance="dark" accessibilityLabel="Current password" />
+                <TextInput style={st.fieldInput} value={currentPassword} onChangeText={setCurrentPassword} secureTextEntry textContentType="password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => newPasswordRef.current?.focus()} placeholder="Your current password" placeholderTextColor={colors.ash} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Current password" />
               </View>
               <View style={st.fieldWrap}>
                 <Text style={st.fieldLabel}>NEW PASSWORD</Text>
-                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="Min. 8 characters" placeholderTextColor={colors.ash} keyboardAppearance="dark" accessibilityLabel="New password" />
+                <TextInput ref={newPasswordRef} style={st.fieldInput} value={newPassword} onChangeText={setNewPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => confirmPasswordRef.current?.focus()} placeholder="Min. 8 characters" placeholderTextColor={colors.ash} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="New password" />
               </View>
               <View style={st.fieldWrap}>
                 <Text style={st.fieldLabel}>CONFIRM PASSWORD</Text>
-                <TextInput ref={confirmPasswordRef} style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="done" onSubmitEditing={handlePasswordChange} placeholder="Repeat password" placeholderTextColor={colors.ash} keyboardAppearance="dark" accessibilityLabel="Confirm password" />
+                <TextInput ref={confirmPasswordRef} style={st.fieldInput} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry textContentType="newPassword" autoComplete="new-password" returnKeyType="done" onSubmitEditing={handlePasswordChange} placeholder="Repeat password" placeholderTextColor={colors.ash} selectionColor={colors.selection} keyboardAppearance="dark" accessibilityLabel="Confirm password" />
               </View>
               <PressableScale style={[st.saveFieldBtn, (!currentPassword || !newPassword || !confirmPassword) && st.disabledBtn]} onPress={handlePasswordChange} disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword} haptic="medium" pressedScale={0.96} accessibilityLabel="Update password">
                 <Text style={st.saveFieldBtnText}>{changingPassword ? 'UPDATING...' : 'UPDATE PASSWORD'}</Text>

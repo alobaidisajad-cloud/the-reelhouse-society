@@ -20,6 +20,7 @@ export const ControlledInput = React.memo(function ControlledInput({ name, style
       style={style}
       value={field.value}
       onChangeText={field.onChange}
+      selectionColor={colors.selection}
       {...props}
     />
   );
@@ -41,6 +42,7 @@ export const ControlledBioInput = React.memo(function ControlledBioInput({ name,
         onChangeText={field.onChange}
         multiline
         maxLength={maxLength}
+        selectionColor={colors.selection}
         {...props}
       />
       <Text style={st.charCount}>{(field.value || '').length}/{maxLength}</Text>
@@ -68,6 +70,7 @@ export const ControlledUsernameInput = React.memo(function ControlledUsernameInp
         onChangeText={handleChange}
         autoCapitalize="none"
         autoCorrect={false}
+        selectionColor={colors.selection}
         {...props}
       />
     </View>

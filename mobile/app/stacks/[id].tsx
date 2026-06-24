@@ -587,7 +587,7 @@ export default function StackDetailScreen() {
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={false}
         estimatedItemSize={200}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} progressViewOffset={Math.max(insets.top + 50, 70)} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} progressViewOffset={Math.max(insets.top + 50, 70)} />}
         ListHeaderComponent={
           <>
             {/* Parallax Image Background */}

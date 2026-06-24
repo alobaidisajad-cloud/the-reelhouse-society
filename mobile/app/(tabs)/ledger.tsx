@@ -196,7 +196,7 @@ export default function StacksScreen() {
 
   // Memoize the shared refresh control to prevent re-creation
   const sharedRefreshControl = useMemo(() => (
-    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />
   ), [refreshing, onRefresh]);
 
   const renderLogItem = useCallback(({ item, index }: { item: Record<string, any>, index: number }) => (

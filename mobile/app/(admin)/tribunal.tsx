@@ -220,6 +220,7 @@ function ActionModal({
                 keyboardType="numeric"
                 placeholder="e.g. 24, 48, 72"
                 placeholderTextColor={colors.fog}
+                selectionColor={colors.selection}
                 returnKeyType="next"
               />
             </View>
@@ -233,6 +234,7 @@ function ActionModal({
               onChangeText={setReason}
               placeholder="Describe the reason for this action..."
               placeholderTextColor={colors.fog}
+              selectionColor={colors.selection}
               multiline
               numberOfLines={3}
               textAlignVertical="top"
