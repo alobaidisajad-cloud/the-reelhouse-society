@@ -52,7 +52,10 @@ export async function initRevenueCat(userId?: string): Promise<void> {
   const apiKey = Platform.OS === 'ios' ? RC_IOS_KEY : RC_ANDROID_KEY;
 
   if (!apiKey) {
-    if (__DEV__) console.log('[RevenueCat] No API key configured — skipping');
+    // No key ⇒ monetization is entirely disabled. Surface it (forwarded to
+    // Sentry in prod, deduped by fingerprint) so a missing-config build is
+    // visible rather than silently selling nothing.
+    logger.warn('[revenueCat] No API key configured — monetization disabled', { platform: Platform.OS });
     return;
   }
 
@@ -64,9 +67,12 @@ export async function initRevenueCat(userId?: string): Promise<void> {
     await Purchases.configure({ apiKey, appUserID: userId ?? null });
     isConfigured = true;
 
-    if (__DEV__) console.log('[RevenueCat] Initialized successfully');
+    logger.info('[revenueCat] Initialized successfully');
   } catch (err) {
-    if (__DEV__) console.warn('[RevenueCat] Failed to initialize:', err);
+    // A failed dynamic import / configure leaves isConfigured=false, so every
+    // entitlement & purchase call silently no-ops. This is the single failure
+    // that disables ALL monetization — report it (stack preserved via logger.error).
+    logger.error('[revenueCat] Failed to initialize — monetization disabled', err);
   }
 }
 
