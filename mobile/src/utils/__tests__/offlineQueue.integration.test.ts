@@ -70,6 +70,11 @@ jest.mock('../networkError', () => ({
     ).toLowerCase();
     return msg.includes('network') || msg.includes('offline') || msg.includes('fetch') || msg.includes('timeout');
   }),
+  isTransientError: jest.fn((e: unknown) => {
+    if (typeof e !== 'object' || e === null) return false;
+    const status = 'status' in e ? Number((e as { status: unknown }).status) : NaN;
+    return status === 408 || status === 429 || (Number.isFinite(status) && status >= 500 && status <= 599);
+  }),
 }));
 
 jest.mock('../reelToast', () => {
@@ -541,6 +546,67 @@ describe('Offline Queue — Integration Tests', () => {
       await flushOfflineQueue();
 
       expect(processed).toEqual(['before', 'after']);
+    });
+  });
+
+  describe('Transient server failures retry instead of dead-lettering (OFFQ-1)', () => {
+    const transient = (status: number, msg = 'Server Error') =>
+      Object.assign(new Error(msg), { status });
+
+    it('preserves a mutation that fails with a transient 500 (does NOT dead-letter)', async () => {
+      mockExecuteMutation.mockImplementation(async () => { throw transient(500, 'Internal Server Error'); });
+
+      enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: 't1' } });
+      await flushOfflineQueue();
+
+      expect(getDeadLetter().length).toBe(0);
+      const q = getOfflineQueue();
+      expect(q.length).toBe(1);
+      expect(q[0]._retryCount).toBe(1); // counter bumped, not lost
+    });
+
+    it('halts the flush on a transient 429 to preserve causal order', async () => {
+      let n = 0;
+      mockExecuteMutation.mockImplementation(async () => { n++; if (n === 2) throw transient(429, 'rate limited'); return {}; });
+
+      enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: 'a' } });
+      enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: 'b' } });
+      enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: 'c' } });
+      await flushOfflineQueue();
+
+      expect(n).toBe(2); // first ok, second halts the rest
+      const q = getOfflineQueue();
+      expect(q.length).toBe(2);
+      expect(q[0].payload.target_log_id).toBe('b');
+      expect(q[0]._retryCount).toBe(1);
+      expect(getDeadLetter().length).toBe(0);
+    });
+
+    it('increments the retry counter across flushes and dead-letters after the budget is spent', async () => {
+      mockExecuteMutation.mockImplementation(async () => { throw transient(500, 'Internal Server Error'); });
+
+      enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: 'persist' } });
+
+      // MAX_TRANSIENT_RETRIES = 5 ⇒ attempts 1..4 keep, the 5th exhausts.
+      for (let i = 0; i < 5; i++) await flushOfflineQueue();
+
+      expect(getOfflineQueue().length).toBe(0);
+      const dl = getDeadLetter();
+      expect(dl.length).toBe(1);
+      expect(String(dl[0].payload._failReason)).toContain('transient-exhausted');
+    });
+
+    it('recovers: a mutation that fails transiently then succeeds is never lost', async () => {
+      let attempt = 0;
+      mockExecuteMutation.mockImplementation(async () => { attempt++; if (attempt === 1) throw transient(503, 'Service Unavailable'); return {}; });
+
+      enqueueMutation({ type: 'endorse_log', payload: { user_id: 'u1', type: 'endorse_log', target_log_id: 'recover' } });
+      await flushOfflineQueue(); // attempt 1 → transient halt, kept
+      expect(getOfflineQueue().length).toBe(1);
+
+      await flushOfflineQueue(); // attempt 2 → success
+      expect(getOfflineQueue().length).toBe(0);
+      expect(getDeadLetter().length).toBe(0);
     });
   });
 

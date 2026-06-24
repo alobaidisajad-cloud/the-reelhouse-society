@@ -1,5 +1,5 @@
 import * as fc from 'fast-check';
-import { isNetworkError } from '../networkError';
+import { isNetworkError, isTransientError } from '../networkError';
 
 describe('isNetworkError — Property-Based Tests', () => {
   describe('returns true for known network error patterns', () => {
@@ -89,5 +89,43 @@ describe('isNetworkError — Property-Based Tests', () => {
         { numRuns: 500 }
       );
     });
+  });
+});
+
+describe('isTransientError — retryable server failures (OFFQ-1)', () => {
+  it('returns true for 408, 429, and 5xx HTTP statuses', () => {
+    for (const status of [408, 429, 500, 501, 502, 503, 504, 599]) {
+      expect(isTransientError({ message: 'server', status })).toBe(true);
+    }
+  });
+
+  it('returns true for retryable Postgres codes (serialization/deadlock/lock/limits)', () => {
+    for (const code of ['40001', '40P01', '55P03', '53300', '53400', '57P03']) {
+      expect(isTransientError({ message: 'pg', code })).toBe(true);
+    }
+  });
+
+  it('returns true for rate-limit messages', () => {
+    expect(isTransientError({ message: 'Rate limit exceeded' })).toBe(true);
+    expect(isTransientError({ message: 'Too many requests' })).toBe(true);
+  });
+
+  it('returns false for permanent client errors (400/401/403/404/409/422)', () => {
+    for (const status of [400, 401, 403, 404, 409, 422]) {
+      expect(isTransientError({ message: 'client', status })).toBe(false);
+    }
+  });
+
+  it('returns false for semantic PostgREST/constraint errors', () => {
+    expect(isTransientError({ message: 'duplicate key', code: '23505' })).toBe(false);
+    expect(isTransientError({ message: 'column not found', code: 'PGRST116' })).toBe(false);
+    expect(isTransientError(new Error('Row-level security violation'))).toBe(false);
+  });
+
+  it('never throws for arbitrary inputs', () => {
+    for (const input of [null, undefined, 42, true, [], {}, 'str']) {
+      expect(() => isTransientError(input)).not.toThrow();
+      expect(typeof isTransientError(input)).toBe('boolean');
+    }
   });
 });

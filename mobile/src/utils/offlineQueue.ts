@@ -19,7 +19,7 @@ import { storage } from '../stores/mmkv-storage';
 import { MutationSchemaMap } from '../types/mutations';
 import { logger } from './logger';
 import { applyIdMapToPayload, executeMutation } from './mutationExecutor';
-import { isNetworkError } from './networkError';
+import { isNetworkError, isTransientError } from './networkError';
 import reelToast from './reelToast';
 
 export interface QueuedMutation {
@@ -33,10 +33,21 @@ export interface QueuedMutation {
         | 'submit_report';
     payload: Record<string, unknown>;
     timestamp: number;
+    /**
+     * Bounded retry counter for transient server failures (5xx/429/408). Lives on
+     * the envelope, NOT the payload, so it never reaches the executor/Supabase and
+     * isn't subject to payload schema validation. Incremented on each transient
+     * failure; once it reaches MAX_TRANSIENT_RETRIES the mutation is dead-lettered.
+     */
+    _retryCount?: number;
 }
 
 const QUEUE_KEY = 'reelhouse-offline-mutations';
 const MAX_QUEUE_SIZE = 100;
+// Transient server failures (5xx/429/408) are retried across flushes up to this
+// many times before being dead-lettered, so a brief outage never loses a write
+// while a permanently-failing mutation can't wedge the queue indefinitely.
+const MAX_TRANSIENT_RETRIES = 5;
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // User-scoped queueing — prevents mutations from leaking between accounts
@@ -253,6 +264,9 @@ export async function flushOfflineQueue() {
     let successCount = 0;
 
     const idMap: Record<string, string> = {};
+    // Pending increments to each mutation's transient-retry counter, applied to
+    // the persisted queue in the final write (mirrors how idMap is applied).
+    const retryBumps: Record<string, number> = {};
 
     for (let i = 0; i < queue.length; i++) {
         const mutation = queue[i];
@@ -299,6 +313,26 @@ export async function flushOfflineQueue() {
                 // Constraint violation — safely discard (already synced)
                 if (__DEV__) console.warn(`[OfflineSync] Discarding duplicate mutation: ${mutation.type}`);
                 processedIds.add(mutation.id);
+            } else if (isTransientError(error)) {
+                // Transient server failure (5xx / 429 / 408 / retryable PG code): the
+                // write reached the server but failed temporarily. Preserve it and retry
+                // on a later flush instead of dead-lettering (which silently lost queued
+                // writes under ordinary backend load).
+                const attempts = (mutation._retryCount ?? 0) + 1;
+                if (attempts >= MAX_TRANSIENT_RETRIES) {
+                    // Bounded retries exhausted — dead-letter so a permanently-failing
+                    // mutation can't wedge the queue forever; the rest still get a chance.
+                    logger.warn(`[OfflineSync] Transient failure on ${mutation.type} exhausted ${MAX_TRANSIENT_RETRIES} retries (status=${status}, code=${code}). Dead-lettering.`);
+                    deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: `transient-exhausted: ${errMsg}`, _failedAt: new Date().toISOString() } });
+                    processedIds.add(mutation.id);
+                } else {
+                    // Bump the retry counter (persisted via retryBumps in the final write)
+                    // and halt the flush to preserve causal ordering for dependent child
+                    // mutations — same philosophy as the network-error branch above.
+                    retryBumps[mutation.id] = attempts;
+                    logger.warn(`[OfflineSync] Transient failure on ${mutation.type} (status=${status}, code=${code}), attempt ${attempts}/${MAX_TRANSIENT_RETRIES}. Halting to retry on next flush.`);
+                    break;
+                }
             } else {
                 // Unknown failure — log to dead-letter queue for diagnostics
                 deadLetterQueue.push({ ...mutation, payload: { ...mutation.payload, _failReason: errMsg, _failedAt: new Date().toISOString() } });
@@ -331,7 +365,12 @@ export async function flushOfflineQueue() {
     const freshQueue = readQueue();
     const finalQueue = freshQueue
         .filter(m => !processedIds.has(m.id))
-        .map(m => ({ ...m, payload: applyIdMapToPayload(m.payload, idMap) }));
+        .map(m => {
+            const next = { ...m, payload: applyIdMapToPayload(m.payload, idMap) };
+            // Persist any transient-retry bump so the counter survives to the next flush.
+            if (retryBumps[m.id] !== undefined) next._retryCount = retryBumps[m.id];
+            return next;
+        });
     writeQueue(finalQueue);
     useOfflineQueueStore.setState({ pending: finalQueue.length });
     } finally {
