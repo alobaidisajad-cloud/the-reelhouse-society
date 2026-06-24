@@ -425,8 +425,8 @@ export default function LoungeRoomScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, sending, id, replyTo]);
 
-  // FIX #4: Removed manual .reverse() — FlashList inverted={true} handles display order.
-  // currentMessages is already chronological (oldest→newest) from the store.
+  // currentMessages is chronological (oldest→newest) from the store and rendered
+  // directly in a top→bottom FlashList (newest at the bottom) — no manual reverse.
 
   if (notFound) {
     return (
@@ -504,19 +504,34 @@ export default function LoungeRoomScreen() {
           data: currentMessages,
           keyExtractor: (item: any) => item.id,
           contentContainerStyle: s.messagesList,
-          inverted: true,
+          // FlashList v2 removed `inverted`. `currentMessages` is stored
+          // oldest→newest (newest last), so a normal top→bottom list already
+          // renders in the correct reading order. `maintainVisibleContentPosition`
+          // is the v2-native chat mechanism: it opens on the newest message
+          // (startRenderingFromBottom), keeps the view pinned to the bottom as new
+          // messages arrive (autoscrollToBottomThreshold), and preserves scroll
+          // position when older history is prepended via onStartReached.
           keyboardShouldPersistTaps: "handled",
           showsVerticalScrollIndicator: false,
-          estimatedItemSize: 100,
-          onEndReached: () => {
+          maintainVisibleContentPosition: {
+            startRenderingFromBottom: true,
+            autoscrollToBottomThreshold: 0.2,
+          },
+          // Older history now lives at the TOP, so paginate on start-reached
+          // (scrolling up) — not end-reached, which loadMoreMessages would
+          // otherwise fire at the newest end.
+          onStartReached: () => {
             if (id) useLoungeStore.getState().loadMoreMessages(id);
           },
-          onEndReachedThreshold: 0.5,
+          onStartReachedThreshold: 0.5,
           renderItem: ({ item, index }: any) => {
             const isSelf = item.user_id === user?.id;
-            const olderMessage = currentMessages[index + 1];
-            const showAuthor = !olderMessage || olderMessage.user_id !== item.user_id ||
-              (new Date(item.created_at).getTime() - new Date(olderMessage.created_at).getTime() > 300000);
+            // In a top→bottom list the previous (older) message renders directly
+            // above. Show the author header at the start of a same-sender run or
+            // after a >5min gap from that previous message.
+            const prevMessage = currentMessages[index - 1];
+            const showAuthor = !prevMessage || prevMessage.user_id !== item.user_id ||
+              (new Date(item.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000);
 
             return (
               <MessageBubble
