@@ -499,7 +499,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           </View>
         ) : (
           <ScrollView contentContainerStyle={[s.tabScrollContent, { paddingBottom: Math.max(insets.bottom + 80, 80) }]} showsVerticalScrollIndicator={false}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}>
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
             {/* ═══ PASSPORT TAB ═══ */}
             {activeTab === 'passport' && (
               isAuteurPlus ? (
@@ -654,7 +654,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
       <CinematicScrollView contentContainerStyle={[s.mainScrollContent, { paddingBottom: Math.max(insets.bottom + 60, 60) }]} showsVerticalScrollIndicator={false}
         externalScrollY={scrollY} bottomInset={Math.max(insets.bottom + 60, 60)} scrollEventThrottle={16}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} />}>
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
 
         {/* ═══ ATMOSPHERIC HEADER ═══ */}
         <View style={s.headerWrap}>

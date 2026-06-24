@@ -490,6 +490,7 @@ export function SettingsScreen() {
                 maxLength={6}
                 placeholder="000000"
                 placeholderTextColor={colors.ash}
+                selectionColor={colors.selection}
                 editable={!otpVerifying}
                 autoFocus
               />

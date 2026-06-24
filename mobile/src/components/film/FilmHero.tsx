@@ -78,7 +78,7 @@ export const FilmHero = memo(function FilmHero({
             style={styles.poster}
             cachePolicy="memory-disk"
             placeholder={{ blurhash: SEPIA_HASH }}
-            transition={50}
+            transition={300}
             accessibilityLabel={`${film.title} movie poster`}
           />
         ) : (

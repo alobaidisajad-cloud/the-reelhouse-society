@@ -324,6 +324,8 @@ export default function DispatchScreen() {
             refreshing={refreshing}
             onRefresh={onRefresh}
             tintColor={colors.sepia}
+            colors={[colors.sepia]}
+            progressBackgroundColor={colors.ink}
             progressViewOffset={topPad}
           />
         }

@@ -75,6 +75,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
             style={[s.searchInput, (isFocused || query.length > 0) && s.searchInputActive]}
             placeholder="Film title, director, actor..."
             placeholderTextColor={colors.fog}
+            selectionColor={colors.selection}
             value={inputVal}
             onChangeText={handleInputValChange}
             maxLength={120}

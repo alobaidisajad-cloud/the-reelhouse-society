@@ -28,6 +28,8 @@ export const colors = {
   bloodFaint: 'rgba(107, 26, 10, 0.3)',
   parchmentBright: '#F8F2E4',
   surface: '#14120D',
+  // Text-selection highlight — brand sepia at low alpha so selected text stays legible
+  selection: 'rgba(184, 137, 26, 0.35)',
   // ── Semantic ──
   validation: '#5B8C3E', // Archive-approved green — form validation only
   errorBackground: 'rgba(139,26,26,0.1)',
