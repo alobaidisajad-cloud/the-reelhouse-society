@@ -107,7 +107,11 @@ Full moderation schema: reports extensions + content_type/reason CHECK constrain
 Per-user daily insert caps via `rate_limit_check()` in RLS WITH CHECK (logs 200, interactions 300, watchlists 500, tips 50, video_reviews 10, waitlist 5). Table/col names are hardcoded (`%I`-quoted → no SQLi).
 - **BACKEND-RL-1 (LOW, hardening):** `rate_limit_check` is SECURITY DEFINER with a dynamic `EXECUTE` over **unqualified** table identifiers and **no `SET search_path`** — same vector the team fixed in 20260609/20260622 but missed here. A caller who could create a shadowing table earlier in search_path could bypass the cap. Exploitability LOW (Supabase `authenticated` lacks CREATE on public/schema by default), but inconsistent with the codebase convention. Fix: `SET search_path = public` + schema-qualify the identifiers.
 
-## Still to verify
+### update_my_preferences (20260329_auth_persistence_v2.sql:121-137) — elite; validates COMP-1-orig fix
+`UPDATE profiles SET preferences = preferences || p_preferences WHERE id = auth.uid()` — JSONB shallow-merge, auth.uid()-scoped, SECURITY DEFINER + `SET search_path=public`. This is the cross-device-safe merge path COMP-1-orig recommends routing ALL preference writes through (vs `ProfileWriteService.updateProfile`'s full-column overwrite). The RPC is correct and exists — the fix is purely to stop ALSO calling the overwrite path.
+
+## Still to verify (lower-yield, functional/schema)
+- the_lounge, create_lounge_with_member_rpc, cursor_pagination, following_feed_auth, analytics_rpc, profile_counts_rpc, public_profile_analytics_rpc(orig), atomic_view_increment, hyper_viral_feed_cache, write_avalanche_buffer, lounge_member_count_trigger, badges_streaks, premium_rls/premium_notifications(comment triggers), storage_hardening, schema-sync/hardening rounds, indexes, username_uniqueness_and_reserved, enforce_role_rls, secure_username_lookup. Archive/ migrations are legacy/superseded.
 - Private-profile RLS ✅ (done — `can_view_user_data` + `enforce_privacy_on_follow`; resolves the profile-privacy checkpoint).
 - `ban_enforcement_rls`, `dossier_comments_ownership_rls`, `security_definer_hardening`, `feed_block_filtering`, `following_feed_auth`, baseline schema, rate_limiting.
 - Edge functions: paytabs-handler, send-email, tmdb-proxy, news-proxy/fetch-rss, notify-push, social-pulse, sanitize-input, sync-entitlement.
