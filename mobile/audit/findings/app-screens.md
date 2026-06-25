@@ -33,6 +33,13 @@ Line-level read of Expo Router screens. The earlier pattern sweep already cleare
 - Delete (`:226-228`) has correct `.eq('user_id', user.id)` ownership filter. View-increment (`:93`) and certify (`:266`) go through RPCs (`increment_dossier_views`, `toggle_dossier_certify`) with offline fallback — fine.
 - **Minor (LOW):** inline network detection at `:195,232` (`includes('fetch'|'network'|'timeout')`) is narrower than the shared `isNetworkError` — misses 502/503/504 + PG conn codes, so a gateway error on comment post rolls back instead of queueing. Reinforces COMP-1-orig's "duplicated offline plumbing" point; cleanest fix is routing through the service/`isNetworkError`.
 
+## Screen-layer data/security dimensions — PROVABLY COMPLETE (cross-cutting sweeps)
+1. **Direct Supabase access:** only **2** screens call `supabase.from/.rpc` at all — `dossier/[id].tsx` (COMP-1-orig) and `membership.tsx` (LIB-1/FOUND-1, audited). Every other screen delegates to the already-audited store/service/hook layers.
+2. **Direct writes:** only the 2 `dossier_comments` insert/delete (COMP-1-orig). No other screen bypasses the sanitizing store/service choke point.
+3. **Injection (`.or/.ilike/.like` with template interpolation):** **zero** matches across `app/` — the search/cursor injection surface stays contained to services (SVC-2).
+4. **WebView/eval/dangerouslySetInnerHTML:** only `film/TrailerModal` (COMP-2), scoped.
+⇒ The remaining ~28 unread screens are thin presentation over audited layers; their data/write/security behavior is covered by the layers below. Remaining per-screen reads target **UI-logic nuances only** (e.g. COMP-SPOILER-1-class "wired but not consumed" gaps), not new data/security surface.
+
 ## Direct-write sweep across ALL `app/` screens — COMPLETE
 A full grep for `supabase.from(...).insert|update|delete|upsert` across `app/` returns **only** the two writes in `dossier/[id].tsx:181,226` (COMP-1-orig). **Every other screen routes writes through the store/service layer** (sanitized choke point). So the direct-write/bypass bug class in screens is fully enumerated — no hidden instances. COMP-1 (log/stack/dossier online-comment sanitize) + COMP-1-orig (dossier raw insert) together are the complete picture for screen-level writes.
 
