@@ -26,5 +26,7 @@ Line-level read of Expo Router screens. The earlier pattern sweep already cleare
 - **auth-callback.tsx** (288) — email-verify / recovery / OAuth deep-link handler. 3 layered strategies (PKCE `exchangeCodeForSession` → legacy `verifyOtp` → existing-session), all token verification delegated to the Supabase SDK (no custom token parsing beyond URL param extraction). `recovery` type routes to `/reset-password` **without** granting app auth (correct — recovery session is scoped to password reset). Session-only sign-in avoids losing a valid session to a slow `profiles` row; background profile enrichment.
 - **reset-password.tsx** (439, read :1-140 core) — enforces all 5 password-strength checks + confirm-match; **session guard** (BUG FIX #4: `getSession` check blocks the screen with no active recovery session); `supabase.auth.updateUser({password})`; refreshSession + restoreSession after; redirect-timer cleanup on unmount. Secure.
 
+- **login.tsx** (450) — presentational; delegates `signIn`/`signUp`/resend to its auth controller hook (covered in hooks phase). Has resend-cooldown rate-limiting (`resendCooldown`). No direct `supabase.auth` calls in the screen.
+
 ## Confirmed clean (client-side)
 - **tribunal.tsx** — React Query w/ admin-gated `enabled`, cursor pagination (priority queue), multi-select bulk dismiss, confirmation Alerts for ban/permanent_exile, suspend-duration validation (positive int), enforcement-history panel. Defensive array-or-object shape handling on `reporter`/`target_user` joins. No client logic bug.
