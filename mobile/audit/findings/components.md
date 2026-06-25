@@ -96,10 +96,16 @@ All 8 files read: `ActivityCard`, `ActionDeck`, `ReviewContent`, `AutopsyView`, 
 - **New finding: COMP-SPOILER-1** (above) — `is_spoiler` never consumed in UI.
 - **COMP-FEED-DEAD-1 (LOW):** `src/components/feed/EditorialBanner.tsx` is **dead code** — imported by no file (ActivityCard uses its own inline `ActivityEditorialHeader`; the `EditorialBanner` in `home/PulseCardItem.tsx:27` is a separate local component). Candidate for deletion. Also minor: `ReviewContent.tsx:33-37` re-implements HTML-strip inline instead of `utils/text.stripHTML` (perf-motivated per comment; harmless dup).
 
-## `home/` directory — IN PROGRESS (2 of 9 line-read)
+## `home/` directory — FULLY LINE-READ (9 files), clean
 - **PulseCardItem** — confirms **HOOK-1** still live (reports via `useReportUser` → `user_reports`, line 104). Another **COMP-SPOILER-1** surface (renders `truncReview` unguarded). 3rd inline `stripHTML` re-impl. Otherwise clean (MuseumBreather cancels animation on blur, careful unicode drop-cap).
 - **SocialPulse** — elite cover-flow physics, React Query w/ staleTime, `filterContentByBlocks` (HOOK-8), defensive profiles-join shape; query omits `is_spoiler` (reconfirms COMP-SPOILER-1).
-- _Pending line-read: ProjectorBeam, types.ts, VelvetRopeCTA, FilmTicker, FeaturedCritique, FilmStripRow, MarqueeBoard (presentational/decorative)._
+- **MarqueeBoard** — elite: `useReducedMotion()` a11y across all animated children, stable JS-thread haptic wrapper (documented `this`-binding pitfall), `isMounted`-guarded count query, full animation cleanup.
+- **FeaturedCritique** — `get_featured_critique` RPC + `filterContentByBlocks` (HOOK-8). **FilmStripRow/FilmTicker/MarqueeBulb/ProjectorBeam/VelvetRopeCTA** — clean decorative; ProjectorBeam GPU-culls when scrolled past hero. **types.ts** — `timeAgo` null/NaN-safe (3rd timeAgo variant in codebase — minor dup, not a bug).
+- _Stale/over-applied eslint-disable directives on used imports in FeaturedCritique (cosmetic)._
+
+## Top-level `src/components/*` (29 files) — FULLY LINE-READ, clean
+Deep-read: ShareToLoungeModal (store-routed writes, Android-OOM delayed unmount), NitrateCalendar (correct local-date ISO-week math, no off-by-one), PressableScale (debounced onPress but press-in haptic always fires; 44×44 hitSlop), PaywallModal (TIERS SSOT), QuickActionsFAB (tab-height via Context w/ fallback), ToastOverlay (queue cap 5, race-safe removal, a11y live region), OfflineBanner (NetInfo elapsed, interval cleanup), AutopsyGauge (consistent backward-compat axis mapping), Preloader (first-launch MMKV, FAST_PATH, full cleanup), OnboardingModal, WeeklyChallenge (epoch-week rotation), HapticTab (elite a11y: press-in for touch, onPress fallback for VoiceOver/keyboard), EmptyStates, Buster (time-of-day mood), SkeletonPulse/SkeletonShimmer/ContentSkeleton, FilmGrainOverlay (Skia GPU shader, AppState-pause, reduce-motion), RatingLegend, HandbookModal, FilmGrain, CinematicOverlays, MasterLogo (@ts-nocheck pure SVG), ReelEyeIcon. AuthGuard/ControlledInput/ErrorBoundary/SectionErrorBoundary/Decorative previously confirmed elite.
+- **No new findings.** Uniformly high quality: reduce-motion a11y, animation cleanup, view-recycling resets, store-routed writes throughout. Minor: ReviewContent/PulseCardItem inline-`stripHTML` dup (×3 total); possible Skia/Reanimated uniform interop in FilmGrainOverlay (cosmetic, needs device check).
 
 ## Confirmed elite (no action)
 - `ErrorBoundary` — capped retry + stability-window reset + `queryClient.clear` + corrupt-router fallback + Sentry capture.
