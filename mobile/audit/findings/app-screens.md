@@ -28,5 +28,12 @@ Line-level read of Expo Router screens. The earlier pattern sweep already cleare
 
 - **login.tsx** (450) — presentational; delegates `signIn`/`signUp`/resend to its auth controller hook (covered in hooks phase). Has resend-cooldown rate-limiting (`resendCooldown`). No direct `supabase.auth` calls in the screen.
 
+### dossier/[id].tsx — confirms COMP-1-orig at call site + minor net-detect gap
+- **COMP-1-orig confirmed:** `:181-186` `supabase.from('dossier_comments').insert({ body: newComment.trim(), ... })` — direct DB write, **unsanitized**, bypassing `DossierService`; the offline `add_dossier_comment` executor (`:196`) sanitizes → same online/offline inconsistency. Fix unchanged (route through DossierService + sanitize).
+- Delete (`:226-228`) has correct `.eq('user_id', user.id)` ownership filter. View-increment (`:93`) and certify (`:266`) go through RPCs (`increment_dossier_views`, `toggle_dossier_certify`) with offline fallback — fine.
+- **Minor (LOW):** inline network detection at `:195,232` (`includes('fetch'|'network'|'timeout')`) is narrower than the shared `isNetworkError` — misses 502/503/504 + PG conn codes, so a gateway error on comment post rolls back instead of queueing. Reinforces COMP-1-orig's "duplicated offline plumbing" point; cleanest fix is routing through the service/`isNetworkError`.
+
 ## Confirmed clean (client-side)
+- **dispatch/compose.tsx** (394) — dossier create/edit routed through sanitizing `useDispatchStore.addDossier/updateDossier` (confirms COMP-1 "compose is sanitized"); Auteur-tier `canWrite` gate; title/content validation; discard-draft confirm. Clean.
+- **(tabs)/darkroom.tsx** (436) — film-discovery browse tab (no writes). Elite infinite-scroll: request-ID stale-response guard, `active` unmount flag, network-failure page-rollback (prevents permanent page-skipping), O(N) Set dedup, bounded caps (500 pages / 5000 films), functional state updater. Clean.
 - **tribunal.tsx** — React Query w/ admin-gated `enabled`, cursor pagination (priority queue), multi-select bulk dismiss, confirmation Alerts for ban/permanent_exile, suspend-duration validation (positive int), enforcement-history panel. Defensive array-or-object shape handling on `reporter`/`target_user` joins. No client logic bug.
