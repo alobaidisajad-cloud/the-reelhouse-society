@@ -45,6 +45,41 @@ Each migration's `DROP TRIGGER IF EXISTS` only drops **its own** trigger name be
 For `tier === 'founding'` the handler writes `updatePayload.is_founding = true` and `supabaseAdmin.from('profiles').update(...)` **directly**, NOT via the row-locked `claim_founding_seat` RPC. So the **web/PayTabs founding purchases can exceed the 100-seat cap** (concurrent buyers all pass) — FOUND-1's server-side fix only protects the RevenueCat→`sync-entitlement` path. Two payment paths, only one enforces the cap.
 **Fix:** route the PayTabs founding grant through `claim_founding_seat(userId)` too (and honor its boolean result — grant auteur but not `is_founding` when the cap is hit), mirroring `sync-entitlement`.
 
+## Edge functions — read
+
+### tmdb-proxy (`supabase/functions/tmdb-proxy/index.ts`) — mostly clean
+Key-hiding passthrough to api.themoviedb.org. No SSRF (host fixed to `TMDB_BASE`; `pathPart` is path-only and can't override host via `new URL(base+path)`); `api_key` appended server-side (never exposed); 5-min in-memory cache w/ FIFO eviction (bounded 500).
+- **BACKEND-TMDB-1 (LOW):** endpoint is unauthenticated with no rate-limit → an open proxy that can be abused to burn the TMDB API key's quota/rate-limit. Data is public and the key stays hidden, so impact is quota/cost only. Consider a lightweight auth/anon-key check or per-IP throttle.
+
+### send-email (`supabase/functions/send-email/index.ts`) — LOW issues
+Recipient is always the user's **own** email (`auth.admin.getUserById(userId)`), so no arbitrary-recipient/open-relay or exfiltration. `username` is interpolated into HTML unescaped (`:139,154`) but **safe** because usernames are charset-restricted (validateUsername blocks `<>`).
+- **BACKEND-EMAIL-1 (LOW):** **no auth gate** — any caller can POST `{type,userId}` and trigger a welcome/digest email to any user. Bounded (emails go to that user, 2 types) but enables targeted spam + Resend cost/quota abuse. The rate-limit (`:20,35-38`) is **in-memory per edge instance**, not global (Deno Deploy runs many instances → 1/day not actually enforced). Fix: require service-role/JWT (or a shared secret) since welcome/digest are meant to be triggered by signup hook/cron; make the rate-limit DB-backed.
+- **BACKEND-EMAIL-2 (LOW):** `rateLimitCache` Map never evicts stale date-stamped keys → unbounded memory growth on a long-lived worker. Add TTL/size eviction (as tmdb-proxy does).
+
+### notify-push (`supabase/functions/notify-push/index.ts`) — LOW (systemic pattern)
+DB-webhook target (AFTER INSERT on `notifications` → web-push to `record.user_id`'s subscriptions, service-role). Expired-sub cleanup (410/404→delete) is good; push content is hardcoded per `record.type` (no injectable content).
+- **BACKEND-PUSH-1 (LOW):** **no caller verification** — accepts any POST with `{record:{user_id,type}}`, so an attacker can forge a payload and spam any user with canned push notifications. Same systemic gap as send-email. Fix: verify the Supabase DB-webhook secret header (or restrict to service-role).
+- **Systemic note:** internal/webhook edge fns (`notify-push`, `send-email`) trust the caller. Add a shared-secret/JWT check to all webhook-triggered functions.
+
+### sanitize-input (`supabase/functions/sanitize-input/index.ts`) — DEAD + reinforces COMP-1
+- **BACKEND-SANITIZE-1 (MEDIUM, reinforces COMP-1):** this edge fn's header claims it "enforces input sanitization on the server to prevent client-side bypass" — but a full-repo grep shows it is **invoked by nothing** (client or backend). The advertised server-side enforcement **does not exist**; sanitization is purely the client `sanitizeInput` util, applied inconsistently (offline mutationExecutor yes, online services no — COMP-1). So there is NO server-side sanitization choke point at all. Fix path ties to COMP-1: either enforce in the service layer AND wire real server enforcement (DB triggers/CHECK or actually call this from the write RPCs), or delete this dead function so it doesn't imply false coverage.
+- **Latent LOW:** the profanity regexes false-positive on innocent words — `\bn+i+g+` matches `night_owl`, `nightmare` (verified) → legit usernames would be rejected. Moot while the function is dead, but fix if it's ever wired.
+
+### news-proxy — clean
+Fixed feed URLs (no user input → no SSRF), 5s per-feed timeout, HTML-stripped descriptions, 10-min cache, feed `link` navigation is scheme-allowlisted client-side (linking.ts). No findings.
+
+### social-pulse — LATENT (dead) privacy leak
+- **BACKEND-PULSE-1 (LOW, latent):** uses the **service-role key** to fetch recent logs and serve them to any unauthenticated caller (CORS `*`) — this **bypasses the `can_view_user_data` RLS**, so private users' reviews would appear in a public feed. Currently **unwired/dead** (mobile `SocialPulse.tsx` queries logs via the anon client, RLS-respected). Fix: delete the dead fn, or if intended for use, query with the anon client / add an explicit `is_social_private=false` filter.
+
+### fetch-rss (`mobile/supabase/functions/fetch-rss/index.ts`) — mostly clean
+Proxies a user-supplied `url` through **rss2json.com** (fetches `api.rss2json.com?rss_url=...`, NOT the URL directly) → no internal-network SSRF from this function; 8s timeout; graceful empty-items degradation. Minor (LOW): allows `http://` and is an unauthenticated open proxy to rss2json (abuse/cost only).
+
+### sync-entitlement — clean (re-confirmed)
+Verifies entitlement S2S with RevenueCat, calls `claim_founding_seat` for founding (atomic), writes role via service-role. Correct (see FOUND-1 resolution).
+
+## Edge functions — SUMMARY
+9 functions read. Real findings: **PAY-1 (HIGH)**, PAY-2/SANITIZE-1 (MEDIUM), TMDB-1/EMAIL-1/EMAIL-2/PUSH-1/PULSE-1 (LOW). Clean: news-proxy, fetch-rss, sync-entitlement, tmdb-proxy(core). **Systemic theme:** several edge fns are unauthenticated and/or dead (sanitize-input, social-pulse dead; send-email, notify-push, tmdb-proxy, fetch-rss open) — webhook/internal fns should verify a shared secret; dead fns (sanitize-input, social-pulse) should be deleted so they don't imply coverage that doesn't exist.
+
 ## Still to verify
 - Private-profile RLS ✅ (done — `can_view_user_data` + `enforce_privacy_on_follow`; resolves the profile-privacy checkpoint).
 - `ban_enforcement_rls`, `dossier_comments_ownership_rls`, `security_definer_hardening`, `feed_block_filtering`, `following_feed_auth`, baseline schema, rate_limiting.
