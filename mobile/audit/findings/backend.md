@@ -110,6 +110,15 @@ Per-user daily insert caps via `rate_limit_check()` in RLS WITH CHECK (logs 200,
 ### update_my_preferences (20260329_auth_persistence_v2.sql:121-137) — elite; validates COMP-1-orig fix
 `UPDATE profiles SET preferences = preferences || p_preferences WHERE id = auth.uid()` — JSONB shallow-merge, auth.uid()-scoped, SECURITY DEFINER + `SET search_path=public`. This is the cross-device-safe merge path COMP-1-orig recommends routing ALL preference writes through (vs `ProfileWriteService.updateProfile`'s full-column overwrite). The RPC is correct and exists — the fix is purely to stop ALSO calling the overwrite path.
 
+## 🔴 NEW FINDING — BACKEND-LOUNGE-1 (LOW): private-lounge metadata enumerable by any archivist+
+**File:** `supabase/migrations/20260401_the_lounge.sql:176-185` ("Invite code lookup" SELECT policy).
+The policy is `FOR SELECT USING (invite_code IS NOT NULL AND <caller is archivist+>)`. RLS policies are OR-combined, so this broadens `lounges` SELECT visibility: because **every private lounge has an `invite_code`**, any archivist/auteur/projectionist can run `SELECT * FROM lounges` and receive **all private lounges' rows** — name, description, creator_id, member_count — without being a member and without knowing the code. The condition gates on *having* a code, not on *matching a provided* code (RLS can't compare to a client value). Message content stays protected (lounge_messages requires membership) and joining still needs the code, but the **existence + metadata of "private/invite-only" lounges leaks to the whole Archivist+ userbase**, undermining the privacy promise.
+**Fix:** drop this broad policy; do invite-code lookup via a SECURITY DEFINER RPC `find_lounge_by_invite(p_code text)` that returns only the row whose `invite_code = p_code`. Keep the members-only + public-archivist SELECT policies.
+
+## Other functional migrations — confirmed clean
+- **the_lounge.sql** RLS otherwise correct: public→archivist+ visibility, private→members, INSERT creator=auth.uid()+role, UPDATE creator-only, members read/send (membership-checked) + delete own, creator-kick. `get_lounge_unread_counts` excludes own messages. (Invite-code policy = BACKEND-LOUNGE-1 above.)
+- **update_my_preferences** (above) — validates COMP-1-orig fix path.
+
 ## Still to verify (lower-yield, functional/schema)
 - the_lounge, create_lounge_with_member_rpc, cursor_pagination, following_feed_auth, analytics_rpc, profile_counts_rpc, public_profile_analytics_rpc(orig), atomic_view_increment, hyper_viral_feed_cache, write_avalanche_buffer, lounge_member_count_trigger, badges_streaks, premium_rls/premium_notifications(comment triggers), storage_hardening, schema-sync/hardening rounds, indexes, username_uniqueness_and_reserved, enforce_role_rls, secure_username_lookup. Archive/ migrations are legacy/superseded.
 - Private-profile RLS ✅ (done — `can_view_user_data` + `enforce_privacy_on_follow`; resolves the profile-privacy checkpoint).
