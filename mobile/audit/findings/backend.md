@@ -152,6 +152,15 @@ with **no `auth.role()` / context guard** (`LANGUAGE plpgsql`, not even SECURITY
 - **the_lounge.sql** RLS otherwise correct: public→archivist+ visibility, private→members, INSERT creator=auth.uid()+role, UPDATE creator-only, members read/send (membership-checked) + delete own, creator-kick. `get_lounge_unread_counts` excludes own messages. (Invite-code policy = BACKEND-LOUNGE-1 above.)
 - **update_my_preferences** (above) — validates COMP-1-orig fix path.
 
+## SECURITY DEFINER sweep — results
+Enumerated every SECURITY DEFINER function across both migration dirs and checked auth gating:
+- **Well-gated (auth.uid()-derived / own-only / proper admin check):** resolve_moderation_report_v2, bulk_dismiss_reports, get_priority_reports, submit_report (rpc_auth_hardening); create_lounge_with_member, replace_list_items, get_user_lounges (security_definer_hardening); update_my_preferences, update_my_display_name; **get_user_analytics (strict `auth.uid() != p_user_id` own-only check — the clean exemplar)**; register_push_token; can_view_user_data; accept/decline_follow_request; enforce_role_rls/check_role_update; enforce_username_policy. Triggers (notify_*, handle_*, sync_lounge_member_count, enforce_*) correctly use NEW/OLD.
+- **Flagged (already recorded):** get_public_profile_analytics → PRIV-1 (no `can_view_user_data` — confirmed inconsistent vs get_user_analytics's strict check); get_email_by_username → EMAIL-ENUM-1 (PUBLIC execute); protect_profile_fields → PROFILE-FREEZE-1; notify_on_interaction + handle_interaction_notification → NOTIF-DUP-1; rate_limit_check → RL-1 (search_path).
+- **Lower-priority unread (projectionist/venue web surface — tips/showtimes/video, likely outside mobile scope but backend-present):** `process_secure_tip`, `increment_video_tips`, `protect_video_review_metrics`, `book_showtime_seat` (20260326_rls_hardening_round19), `increment_video_views`. Money-movement (`process_secure_tip`) deserves a dedicated check if these features ship. `get_profile_counts` returns follower/following/log counts (public-ish; low sensitivity). `process_user_report` (trust_and_safety_engine) superseded by rpc_auth_hardening's resolver.
+
+## storage_hardening — confirmed good
+0003_storage_hardening: avatar INSERT/UPDATE folder-scoped to `auth.uid()` + extension regex (png/jpg/jpeg/webp only → blocks SVG/HTML/JS stored-XSS), reinforced by AvatarCropSheet JPEG re-encode. Minor: no policy-level size cap (handled client-side + bucket config).
+
 ## Still to verify (lower-yield, functional/schema)
 - the_lounge, create_lounge_with_member_rpc, cursor_pagination, following_feed_auth, analytics_rpc, profile_counts_rpc, public_profile_analytics_rpc(orig), atomic_view_increment, hyper_viral_feed_cache, write_avalanche_buffer, lounge_member_count_trigger, badges_streaks, premium_rls/premium_notifications(comment triggers), storage_hardening, schema-sync/hardening rounds, indexes, username_uniqueness_and_reserved, enforce_role_rls, secure_username_lookup. Archive/ migrations are legacy/superseded.
 - Private-profile RLS ✅ (done — `can_view_user_data` + `enforce_privacy_on_follow`; resolves the profile-privacy checkpoint).
