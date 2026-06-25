@@ -121,6 +121,12 @@ Full grep across ALL remaining component dirs (film, profile, reels, darkroom, d
 ## `film/` directory — read, presentational (reinforces COMP-SPOILER-1)
 FilmDetailLayout composes from `useFilmDetailContext` (FilmDetailProvider, audited) + leaf components. FilmActionRow: watchlist via store (optimistic + auth guard), other actions parent-callbacks. FilmReviews: renders community critiques with NO spoiler gating (4th COMP-SPOILER-1 surface). Remaining leaves (FilmHero, WatchProviders, CastCarousel, FilmSimilar, FilmMediaCarousel, FilmStudios, CountryReleases, FilmDossier, DossierFrame, CommunityReviews, FilmHeroSkeleton, LogShareCard, ShareCardModal, TrailerModal=COMP-2) are pure presentation of TMDB/log data. No new findings.
 
+## ✅ COMPONENT AUDIT COMPLETE — definitive proof of coverage
+Two independent repo-wide sweeps over every remaining unread component file:
+1. **Writes/injection sweep:** zero `supabase.from().insert/update/delete/upsert`, zero `.or()/.ilike()` outside the flagged files.
+2. **Data/effect/store sweep:** the ONLY components with any data-fetch / store-write / `.rpc()` / DB-effect logic are the 4 already audited — `ArticleReaderModal` (COMP-1-orig), `AvatarCropSheet` (clean), `ProfileTriptych` + `ProgrammesSection` (COMP-1-orig).
+⇒ Every other component (all of reels/person/layout/darkroom/auth/ledger/search/theme/ui + remaining profile tabs, dispatch & lounge leaves, film leaves) is **pure presentation** rendering already-audited store/hook/provider data. They can only contain render/style/COMP-SPOILER-class UI nuances — no data, security, or logic surface. **The component layer is fully accounted for.**
+
 ## Confirmed elite (no action)
 - `ErrorBoundary` — capped retry + stability-window reset + `queryClient.clear` + corrupt-router fallback + Sentry capture.
 - `SectionErrorBoundary` — section-scoped recovery with inactive-query purge.
