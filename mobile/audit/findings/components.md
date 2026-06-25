@@ -107,6 +107,12 @@ All 8 files read: `ActivityCard`, `ActionDeck`, `ReviewContent`, `AutopsyView`, 
 Deep-read: ShareToLoungeModal (store-routed writes, Android-OOM delayed unmount), NitrateCalendar (correct local-date ISO-week math, no off-by-one), PressableScale (debounced onPress but press-in haptic always fires; 44×44 hitSlop), PaywallModal (TIERS SSOT), QuickActionsFAB (tab-height via Context w/ fallback), ToastOverlay (queue cap 5, race-safe removal, a11y live region), OfflineBanner (NetInfo elapsed, interval cleanup), AutopsyGauge (consistent backward-compat axis mapping), Preloader (first-launch MMKV, FAST_PATH, full cleanup), OnboardingModal, WeeklyChallenge (epoch-week rotation), HapticTab (elite a11y: press-in for touch, onPress fallback for VoiceOver/keyboard), EmptyStates, Buster (time-of-day mood), SkeletonPulse/SkeletonShimmer/ContentSkeleton, FilmGrainOverlay (Skia GPU shader, AppState-pause, reduce-motion), RatingLegend, HandbookModal, FilmGrain, CinematicOverlays, MasterLogo (@ts-nocheck pure SVG), ReelEyeIcon. AuthGuard/ControlledInput/ErrorBoundary/SectionErrorBoundary/Decorative previously confirmed elite.
 - **No new findings.** Uniformly high quality: reduce-motion a11y, animation cleanup, view-recycling resets, store-routed writes throughout. Minor: ReviewContent/PulseCardItem inline-`stripHTML` dup (×3 total); possible Skia/Reanimated uniform interop in FilmGrainOverlay (cosmetic, needs device check).
 
+## `profile/` + `lounge/` write/security components — IN PROGRESS (spot-confirmed clean)
+- **VaultLock** (profile) — biometric gate fails **CLOSED** on error; no-hardware bypass is acceptable (UI privacy screen; real protection is server RLS + authed session, not this component).
+- **AvatarCropSheet** (profile) — elite: re-encodes every image to strip EXIF/GPS, normalizes to 512px JPEG, bounds size. (Dead `supabase`/`decode` imports — upload moved to parent; cosmetic.)
+- **CreateLoungeSheet** (lounge) — routes through `useLoungeStore.createLounge` (store-layer sanitize); gesture-dismiss, keyboard-aware, state reset on success.
+- _COMP-1-orig already covers ProfileTriptych/ProgrammesSection (preference double-write) + ArticleReaderModal (dossier writes). ~33 logic-bearing files remain across profile/dispatch/lounge/film/darkroom/reels/moderation; ~60 presentational remain._
+
 ## Confirmed elite (no action)
 - `ErrorBoundary` — capped retry + stability-window reset + `queryClient.clear` + corrupt-router fallback + Sentry capture.
 - `SectionErrorBoundary` — section-scoped recovery with inactive-query purge.
