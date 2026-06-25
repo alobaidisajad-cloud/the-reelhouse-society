@@ -32,6 +32,19 @@ Each migration's `DROP TRIGGER IF EXISTS` only drops **its own** trigger name be
 
 **Scope confirmed:** comments are NOT affected — `log_comments`/`list_comments` each have exactly one notification trigger (`notify_on_log_comment`/`notify_on_list_comment`, only in 0002_premium_notifications). BACKEND-NOTIF-DUP-1 is specific to `interactions` (follow/follow_request/endorse).
 
+## 🔴 NEW FINDING — BACKEND-PAY-1 (HIGH): PayTabs webhook auth = URL shared-token with a hardcoded default
+**File:** `supabase/functions/paytabs-handler/index.ts:7,92,125-129`
+- `const WEBHOOK_SECRET = Deno.env.get('PAYTABS_WEBHOOK_SECRET') || 'dev-secret-123'` (`:7`). The IPN listener authenticates purely by `url.searchParams.get('token') !== WEBHOOK_SECRET` (`:125-129`), and the callback URL embeds the secret as a query param (`:92`).
+- **Risk A (catastrophic, misconfig-gated):** if `PAYTABS_WEBHOOK_SECRET` is unset in prod, the secret falls back to the **publicly-known literal `'dev-secret-123'`** → anyone can POST a forged IPN with `response_status:'A'` and `cart_id:"MEMBERSHIP|<victim_or_self>|founding"` and the handler upgrades that user's `role`/`is_founding` via the service-role client (`:140-156`) — **free tier upgrades / arbitrary role grants**.
+- **Risk B (always):** a secret in a URL query string is logged by proxies, PayTabs, and Supabase edge logs → token leakage re-enables forgery. PayTabs supports an HMAC IPN `signature` header; the handler does **not** verify it.
+- The `/create` route is correctly JWT-gated (`:33-55`) and `cart_id` is server-built (`:76`) — so the create side is fine; the webhook side is the hole.
+**Fix:** (1) remove the `'dev-secret-123'` fallback — fail closed if the env var is missing; (2) verify PayTabs's HMAC `signature` over the raw request body instead of (or in addition to) the URL token; (3) add IPN idempotency keyed on the PayTabs `tran_ref` to prevent replay.
+
+## 🔴 NEW FINDING — BACKEND-PAY-2 (MEDIUM): PayTabs founding path bypasses the atomic seat counter
+**File:** `supabase/functions/paytabs-handler/index.ts:151-156`
+For `tier === 'founding'` the handler writes `updatePayload.is_founding = true` and `supabaseAdmin.from('profiles').update(...)` **directly**, NOT via the row-locked `claim_founding_seat` RPC. So the **web/PayTabs founding purchases can exceed the 100-seat cap** (concurrent buyers all pass) — FOUND-1's server-side fix only protects the RevenueCat→`sync-entitlement` path. Two payment paths, only one enforces the cap.
+**Fix:** route the PayTabs founding grant through `claim_founding_seat(userId)` too (and honor its boolean result — grant auteur but not `is_founding` when the cap is hit), mirroring `sync-entitlement`.
+
 ## Still to verify
 - Private-profile RLS ✅ (done — `can_view_user_data` + `enforce_privacy_on_follow`; resolves the profile-privacy checkpoint).
 - `ban_enforcement_rls`, `dossier_comments_ownership_rls`, `security_definer_hardening`, `feed_block_filtering`, `following_feed_auth`, baseline schema, rate_limiting.
