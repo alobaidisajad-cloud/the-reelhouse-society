@@ -38,6 +38,12 @@ This is an **incomplete refactor**: `useLogFlow` was flattened to `useState` + i
 
 ## MEDIUM
 
+### COMP-SPOILER-1 (MEDIUM) — The "CONTAINS SPOILERS" toggle does nothing: `is_spoiler` is collected & persisted but never consumed by any UI
+**Files (input/persist, all working):** `src/components/log/LogForm.tsx:248` (checkbox → `setIsSpoiler`), `src/hooks/useLogFlow.ts`, `src/utils/mappers.ts:180,186,198,233` (`is_spoiler` in `LOG_SELECT_COLUMNS`/`PUBLIC_LOG_COLUMNS`, mapped to domain `isSpoiler`), `src/services/LogService.ts:62`, `src/stores/domain/logSlice/helpers/logOperations.ts:251,319,608`, `app/log/[id].tsx:67,186`.
+**The gap:** A full-text grep for `is_spoiler`/`isSpoiler`/`spoiler` across `src/` + `app/` shows the flag is written everywhere and **read into the domain model**, but **no rendering component ever branches on it**. The feed card (`ReviewContent.tsx`) doesn't receive it (not in its `Pick<FeedItem>`, and `feed.schema` omits it entirely). The log-detail review (`LogReviewBody.tsx`) has no `isSpoiler` prop. `app/log/[id].tsx:186` only copies the value into a local object — never blurs/hides/warns. So the review text of a film a user explicitly marked "CONTAINS SPOILERS" renders **unguarded** in the feed and on the log page.
+**Why it matters:** In a film-review community this is a visible, broken trust feature — the control exists in the compose UI (creating a user expectation of protection) but is purely decorative. Not a crash/security issue; a product-completeness + trust gap.
+**Fix:** Consume `isSpoiler` on the display side — e.g. blur/tap-to-reveal the review body in `LogReviewBody` (log detail) and add `is_spoiler` to `feed.schema` + `ReviewContent` for a spoiler veil in the feed. (Reader-side reveal state only; the data already flows through.)
+
 ### COMP-1 (MEDIUM) — Online comment writes (log, stack, dossier) skip `sanitizeInput` while offline writes sanitize; dossier comments also bypass the service layer; preference writes overwrite instead of merge
 
 **Broadened scope (verified across the comment paths):** Every **online** comment write bypasses the `sanitizeInput` choke point that the **offline** `mutationExecutor` applies:
@@ -72,6 +78,23 @@ Similarly, `ProfileTriptych`/`ProgrammesSection` write preferences with optimist
 **Fix:** `originWhitelist={['https://www.youtube.com', 'https://www.google.com']}`.
 
 ---
+
+## `log/` directory — FULLY LINE-READ (post-COMP-LOG-1), confirmed clean
+All 10 files read in full: `LogForm` (fixed), `AuteurToolkit`, `EditorialDesk`, `LogActionDeck`, `LogComments`, `LogChronicle`, `LogHero`, `LogReviewBody`, `LogSearchEngine`, `LogModalStyles` (pure styles).
+- **AuteurToolkit/EditorialDesk** — confirm the COMP-LOG-1 fix wiring end-to-end: they call `setAltPoster`/`setAutopsy`/`setDropCap`/etc., which now resolve to the working setters (`setAltPoster` was the one silently broken pre-fix; premium fields worked via the old shim and still work).
+- **LogSearchEngine** — elite: debounced (400ms) TMDB search with a generation counter discarding stale responses + `isMounted` guard + timeout cleanup. No injection (TMDB params encoded; trusted API).
+- **LogChronicle** — defensively parses `viewing_history` as array-or-JSON-string (try/catch), UTC date display, memoized card w/ custom comparator.
+- **LogReviewBody** — `privateNotes` client-gated by `isOwner`, but real protection is server-side (`private_notes` excluded from `PUBLIC_LOG_COLUMNS`). `stripHTML` on review.
+- **Trivial nits (cosmetic, not bugs):** dead `TactileEngine` import in AuteurToolkit/EditorialDesk (already eslint-disabled); harmless dead `estimatedItemSize` prop on FlashList v2 (AuteurToolkit/EditorialDesk/LogSearchEngine); LogActionDeck's `autopsy` type lists 9 axes vs `AUTOPSY_INIT`'s 6 (permissive, not a bug).
+
+## `feed/` directory — FULLY LINE-READ, confirmed clean (1 new finding + 1 dead file)
+All 8 files read: `ActivityCard`, `ActionDeck`, `ReviewContent`, `AutopsyView`, `PosterFrame`, `UserAttributionRow`, `EditorialBanner`, `DossierCritiquePanel` (COMP-1, prior).
+- **ActivityCard** — elite: memoized subcomponents for FlashList recycling, UI-thread parallax via Reanimated `measure` (correctly touches `parentScrollY.value` to force reactivity), Zod `FeedItem` as type source, clamped `getTimeAgo`.
+- **ActionDeck** — elite: per-component granular Zustand selectors, view-recycling animation-bleed reset on `itemId` change, auth guards on every action, optimistic endorse (store rollback), 500ms double-fire debounce, tier-gated lounge (server-enforced).
+- **AutopsyView** — resolves the 9-vs-6 axis question: intentional backward-compat mapping of legacy `screenplay`/`direction`/`pacing` onto the 6 canonical display axes.
+- **PosterFrame** — correct `recyclingKey` + `sharedTransitionTag` for recycled expo-image.
+- **New finding: COMP-SPOILER-1** (above) — `is_spoiler` never consumed in UI.
+- **COMP-FEED-DEAD-1 (LOW):** `src/components/feed/EditorialBanner.tsx` is **dead code** — imported by no file (ActivityCard uses its own inline `ActivityEditorialHeader`; the `EditorialBanner` in `home/PulseCardItem.tsx:27` is a separate local component). Candidate for deletion. Also minor: `ReviewContent.tsx:33-37` re-implements HTML-strip inline instead of `utils/text.stripHTML` (perf-motivated per comment; harmless dup).
 
 ## Confirmed elite (no action)
 - `ErrorBoundary` — capped retry + stability-window reset + `queryClient.clear` + corrupt-router fallback + Sentry capture.

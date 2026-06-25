@@ -27,6 +27,7 @@ Coverage to date: `src/types`, `src/constants`, `src/theme`, `src/schemas`, `src
 | TYPES-4 | src/types/react-native-purchases.d.ts:9-12 · src/lib/revenueCat.ts:44 | Stale stub types the installed SDK's default export as `unknown`; `Purchases:any` makes the entire payments layer uncompiled. | Delete stub; type handle as `typeof import('react-native-purchases').default`. |
 
 | HOOK-1 | src/hooks/useReportUser.ts:15 · src/components/home/PulseCardItem.tsx:77 vs src/services/ModerationService.ts:4-17 | Home-feed report writes to `user_reports`; the Tribunal reads `reports` (via submit_report RPC). Reports from pulse cards may never reach moderators. | Route PulseCardItem report through `reportStore.submitReport` (same path as ReportSheet), or confirm server-side table unification. |
+| COMP-SPOILER-1 | src/components/log/LogForm.tsx:248 · src/components/feed/ReviewContent.tsx · src/components/log/LogReviewBody.tsx · app/log/[id].tsx:186 · feed.schema.ts | **"CONTAINS SPOILERS" toggle does nothing.** `is_spoiler` is collected + persisted + read into the domain model (`mappers.ts:198`) but **no UI ever branches on it** — review text marked as spoiler renders unguarded in the feed and on the log page. Decorative control → trust gap. | Consume `isSpoiler` on display: blur/tap-to-reveal in `LogReviewBody`; add `is_spoiler` to `feed.schema` + `ReviewContent` for a feed spoiler veil. |
 
 ## LOW
 | ID | file:line | Issue | Fix |
