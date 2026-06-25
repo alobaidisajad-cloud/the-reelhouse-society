@@ -96,6 +96,11 @@ All 8 files read: `ActivityCard`, `ActionDeck`, `ReviewContent`, `AutopsyView`, 
 - **New finding: COMP-SPOILER-1** (above) — `is_spoiler` never consumed in UI.
 - **COMP-FEED-DEAD-1 (LOW):** `src/components/feed/EditorialBanner.tsx` is **dead code** — imported by no file (ActivityCard uses its own inline `ActivityEditorialHeader`; the `EditorialBanner` in `home/PulseCardItem.tsx:27` is a separate local component). Candidate for deletion. Also minor: `ReviewContent.tsx:33-37` re-implements HTML-strip inline instead of `utils/text.stripHTML` (perf-motivated per comment; harmless dup).
 
+## `home/` directory — IN PROGRESS (2 of 9 line-read)
+- **PulseCardItem** — confirms **HOOK-1** still live (reports via `useReportUser` → `user_reports`, line 104). Another **COMP-SPOILER-1** surface (renders `truncReview` unguarded). 3rd inline `stripHTML` re-impl. Otherwise clean (MuseumBreather cancels animation on blur, careful unicode drop-cap).
+- **SocialPulse** — elite cover-flow physics, React Query w/ staleTime, `filterContentByBlocks` (HOOK-8), defensive profiles-join shape; query omits `is_spoiler` (reconfirms COMP-SPOILER-1).
+- _Pending line-read: ProjectorBeam, types.ts, VelvetRopeCTA, FilmTicker, FeaturedCritique, FilmStripRow, MarqueeBoard (presentational/decorative)._
+
 ## Confirmed elite (no action)
 - `ErrorBoundary` — capped retry + stability-window reset + `queryClient.clear` + corrupt-router fallback + Sentry capture.
 - `SectionErrorBoundary` — section-scoped recovery with inactive-query purge.
