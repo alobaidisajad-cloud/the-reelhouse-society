@@ -120,6 +120,32 @@ The policy is `FOR SELECT USING (invite_code IS NOT NULL AND <caller is archivis
 `get_email_by_username(lookup_username)` is SECURITY DEFINER and returns the email for a given username. It has **no explicit GRANT → defaults to PUBLIC EXECUTE** (callable by `anon`), no rate-limit, no REVOKE in any later migration. Profiles' usernames are public, so any anonymous caller can iterate/guess usernames and **harvest the entire userbase's email addresses** → targeted phishing + credential-stuffing. The migration's own goal ("read emails without exposing the email column to client-side queries") is undermined: the column is RLS-hidden but this RPC re-exposes it one username at a time. (The username-login UX needs username→email resolution pre-auth, but not an open bulk oracle.)
 **Fix:** `REVOKE EXECUTE ... FROM PUBLIC, anon; GRANT TO authenticated` won't help (login is pre-auth). Better: resolve username→email + sign-in in a single server-side step that never returns the email, OR add strict per-IP rate-limiting + monitoring on this RPC, OR switch to email-only login. At minimum, treat this as a known PII-exposure tradeoff and rate-limit it.
 
+## 🔴🔴 NEW FINDING — BACKEND-PROFILE-FREEZE-1 (HIGH → CRITICAL if live): `protect_profile_fields` freezes tier/role/follower-counts on ALL update paths
+**File:** `supabase/migrations/0002_rls_hardening.sql:14-35`. Defined ONCE, **never superseded** (grep-confirmed: no later DROP/redefine of `protect_profile_fields` or `enforce_profile_security`).
+The BEFORE-UPDATE trigger on `profiles` unconditionally does:
+```
+NEW.role = OLD.role; NEW.tier = OLD.tier;
+NEW.followers_count = OLD.followers_count; NEW.following_count = OLD.following_count;
+NEW.total_logs = OLD.total_logs;
+```
+with **no `auth.role()` / context guard** (`LANGUAGE plpgsql`, not even SECURITY DEFINER). BEFORE triggers fire for **every** writer — service-role and SECURITY DEFINER trigger functions included (only RLS is bypassed by service-role, never triggers). So, as written, every UPDATE that touches these columns is silently reverted:
+- **tier:** `sync-entitlement` (`update {role,tier}`) and any tier write are reverted → `0002_premium_rls` gates vaults/programmes/dossiers on `tier IN ('archivist','auteur')` → **the tier never becomes premium → no user can ever access premium features** (and PayTabs only sets `role` anyway — see below).
+- **role:** reverted on the normal UPDATE path → resolveTier stuck at the signup default.
+- **followers_count / following_count:** the interaction triggers' `UPDATE profiles SET followers_count = followers_count+1` (handle_interaction_notification / handle_privacy_switch / accept_follow_request) are reverted → **counts frozen at 0**.
+- `total_logs` similarly frozen.
+- (Not in the revert list, so these still work: `is_banned`, `suspended_until`, `warning_count`, `is_founding` — which is why moderation + founding appear fine and the bug can hide.)
+
+**Why it may be undetected:** CI runs only Jest with a mocked Supabase (never exercises triggers); Maestro e2e isn't in CI; live testing hasn't begun. So a DB-level freeze of tier/counts wouldn't surface in the existing test suite.
+
+**Severity:** HIGH as a code finding; **CRITICAL if the live DB matches the migration** (premium monetization + social follower counts both broken). **ACTION: verify the live `protect_profile_fields` definition immediately.** If the live DB still upgrades users/counts, the migration is dangerously stale (a fresh deploy / DR rebuild would ship the broken trigger).
+**Fix:** scope the protection to client writes only AND stop protecting derived counts:
+- Remove `followers_count`/`following_count`/`total_logs` from the trigger (let the SECURITY DEFINER count-triggers manage them).
+- For `role`/`tier`, only revert when the write is a client write — but note SECURITY DEFINER count-triggers run with the caller's `auth.role()='authenticated'`, so an `auth.role()` guard alone is insufficient for the count case (hence: just don't protect counts). For role/tier, gate revert on `auth.role() = 'authenticated'` so service-role `sync-entitlement` can set them (matches the surgical `check_role_update` from 20260504, which should then be the single source of role protection).
+- Add an integration test: an authed client UPDATE can't change role/tier; a service-role write can; a follow increments followers_count.
+
+## Premium gating consistency note (ties to PROFILE-FREEZE-1 + PAY-2)
+`0002_premium_rls` gates premium features on `profiles.tier`, but **PayTabs sets only `role`** (`paytabs-handler:153` — no `tier`), and founding VIPs may have `tier='free'`. So even setting aside PROFILE-FREEZE-1, the **gating column (`tier`) and the columns the payment paths write (`role`/`is_founding`) are inconsistent** → web/PayTabs payers and founding members can be locked out of premium features. Fix: gate premium RLS on the same resolved-tier logic the client uses (role + is_founding + tier), or guarantee all payment paths set `tier` consistently. (Folded into BACKEND-PAY-2 fix scope.)
+
 ## Other functional migrations — confirmed clean
 - **20260504_enforce_role_rls.sql** — BEFORE UPDATE trigger blocks `role` changes from `authenticated` callers (service_role only) → server-side role-immutability backstop. Elite.
 - **20260622_02_username_uniqueness_and_reserved.sql** — case-insensitive unique index on `lower(username)` + reserved-handle trigger (block on edit, suffix-sanitize on signup). Note (LOW): `handle_new_user` email-prefix fallback still has no *general* collision handling → an OAuth/no-username signup whose email prefix matches an existing handle fails the unique index (narrow; app signups set username explicitly).
