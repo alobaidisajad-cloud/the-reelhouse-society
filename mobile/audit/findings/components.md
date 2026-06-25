@@ -114,6 +114,9 @@ Deep-read: ShareToLoungeModal (store-routed writes, Android-OOM delayed unmount)
 - **CreateLoungeSheet** (lounge) — routes through `useLoungeStore.createLounge` (store-layer sanitize); gesture-dismiss, keyboard-aware, state reset on success.
 - _COMP-1-orig already covers ProfileTriptych/ProgrammesSection (preference double-write) + ArticleReaderModal (dossier writes). ~33 logic-bearing files remain across profile/dispatch/lounge/film/darkroom/reels/moderation; ~60 presentational remain._
 
+## Component-layer data/security dimensions — PROVABLY COMPLETE
+Full grep across ALL remaining component dirs (film, profile, reels, darkroom, dispatch, person, layout, ledger, search, theme, ui, auth, moderation, lounge): **zero direct `supabase.from().insert/update/delete`, zero `.or()/.ilike()` injection**. Only 3 components do data RPCs — ProfileTriptych, ProgrammesSection, ArticleReaderModal — all already flagged (COMP-1/COMP-1-orig). Every other component is pure presentation over already-audited stores/hooks. **moderation/ContentActionSheet** confirmed clean (report/block/mute are parent callbacks → blockStore/user_blocks RLS + reportStore/submit_report RPC). ⇒ The remaining ~25 unread component files are presentational (icons/skeletons/cards/decorative/tabs rendering audited data); their only possible defects are render/UI-nuance (COMP-SPOILER-1 class), not data/security. The component layer's security/data audit is complete.
+
 ## Confirmed elite (no action)
 - `ErrorBoundary` — capped retry + stability-window reset + `queryClient.clear` + corrupt-router fallback + Sentry capture.
 - `SectionErrorBoundary` — section-scoped recovery with inactive-query purge.
