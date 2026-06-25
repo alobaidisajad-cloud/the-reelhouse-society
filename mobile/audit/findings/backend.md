@@ -169,7 +169,20 @@ Enumerated every SECURITY DEFINER function across both migration dirs and checke
 ## storage_hardening — confirmed good
 0003_storage_hardening: avatar INSERT/UPDATE folder-scoped to `auth.uid()` + extension regex (png/jpg/jpeg/webp only → blocks SVG/HTML/JS stored-XSS), reinforced by AvatarCropSheet JPEG re-encode. Minor: no policy-level size cap (handled client-side + bucket config).
 
-## Still to verify (lower-yield, functional/schema)
+## Recent migrations — elite (no findings) + a fixed pre-existing bug
+- **20260623_logs_dedupe_and_unique_constraint.sql** — folds duplicate `(user_id,film_id)` logs into `viewing_history` (camelCase shape matching mutationExecutor), repoints children (interactions/reports/comments), adds the missing `UNIQUE(user_id,film_id)`. `LOCK TABLE`, single txn, idempotent, data-preserving. Elite.
+- **20260624_log_comments_updated_at.sql** — **fixes a real pre-existing prod bug**: `log_comments` had a `set_updated_at()` BEFORE-UPDATE trigger writing `NEW.updated_at` but no such column → every comment UPDATE raised `42703` (broke comment edits + `LogService.addLogComment` upsert-on-conflict). This migration adds the column (idempotent, backfilled). **Resolved — no open finding.**
+
+### PATTERN for the plan: security debt is concentrated in the EARLY migrations
+The serious latent bugs (PROFILE-FREEZE-1, NOTIF-SPOOF-1) live in the **0001/0002-era "hardening" migrations** — aspirational hardening that didn't actually take effect (typo'd policy DROP; unconditional protect-triggers that also block the app's own increment paths). The **recent migrations (20260609+: rpc_auth_hardening, privacy RLS, ban enforcement, dedupe, log_comments fix) are rigorous** — auth.uid()-derived, idempotent, transactional, well-documented, with verify post-conditions. Remediation should prioritize re-auditing the early 0002-era triggers/policies against the live DB.
+
+- **20260621_atomic_delete_list_cascade.sql** — elite: `auth.uid()` ownership check (no IDOR), atomic single-txn cascade (items/comments/interactions/list), SET search_path, anon revoked, documented. No finding.
+
+## Remaining functional migrations — swept (own-scoped CRUD + indexes, no new surface)
+Policy-level sweep of the unread functional migrations: `optimization_indexes_rls` (own-scoped logs/interactions/follows/notifications CRUD — standard), `schema_hardening_audit` (own archive view/manage), `0004_analytics` (analytics_events: user insert + service-role read — low sensitivity; permissive insert is analytics-spam at most), `profile_counts_rpc`/`cursor_pagination`/`following_feed_auth`/`create_lounge_with_member_rpc` (covered or non-DEFINER read RPCs), plus pure schema/index/perf migrations (schema-sync, hyper_viral_feed_cache, write_avalanche_buffer, hyperscale_covering_indexes, badges_streaks, viewing_chronicle, atomic_view_increment, founding_members, push_tokens, add_email, fix_notification_types). No security/logic findings; these are feature plumbing.
+
+## ✅ BACKEND AUDIT COMPLETE
+Entire server surface covered: baseline schema, all RLS rounds, every SECURITY DEFINER function, all triggers, all 9 edge functions, payment (PayTabs + RevenueCat/sync-entitlement), moderation/report/block/ban system, privacy, rate-limiting, storage. 11 backend findings (3 HIGH, 5 MEDIUM, ~3 LOW + conditionals). Security debt concentrated in early 0002-era migrations; recent migrations (20260609+) are rigorous.
 - the_lounge, create_lounge_with_member_rpc, cursor_pagination, following_feed_auth, analytics_rpc, profile_counts_rpc, public_profile_analytics_rpc(orig), atomic_view_increment, hyper_viral_feed_cache, write_avalanche_buffer, lounge_member_count_trigger, badges_streaks, premium_rls/premium_notifications(comment triggers), storage_hardening, schema-sync/hardening rounds, indexes, username_uniqueness_and_reserved, enforce_role_rls, secure_username_lookup. Archive/ migrations are legacy/superseded.
 - Private-profile RLS ✅ (done — `can_view_user_data` + `enforce_privacy_on_follow`; resolves the profile-privacy checkpoint).
 - `ban_enforcement_rls`, `dossier_comments_ownership_rls`, `security_definer_hardening`, `feed_block_filtering`, `following_feed_auth`, baseline schema, rate_limiting.
