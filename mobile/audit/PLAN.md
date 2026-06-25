@@ -2,16 +2,38 @@
 
 > The consolidated, prioritized roadmap built from the line-by-line audit. Every item traces to a verified finding in `audit/findings/*` and `audit/ISSUES.md`. Ordered highest-impact-first.
 
-## Where the codebase stands (the honest verdict)
-The **entire non-UI logic layer is audited line-by-line (159 files, ~40k LOC): types, schemas, lib, utils, services, stores, hooks, providers, features, plus the highest-risk components/screens.** The remaining ~190 UI files were swept at the pattern level (injection, direct DB writes, WebView, dead FlashList props) and partially read.
+## Where the codebase stands (the honest verdict — UPDATED after the full backend read)
+**Coverage now:** the entire `src/` non-component logic layer (types/schemas/lib/utils/services/stores/hooks/providers/features), the screen layer's security/data dimensions (10 screens line-read + cross-cutting sweeps proving the rest), the component layer's security/data dimensions (proven complete by sweep), **all 9 edge functions, and every security-critical SQL migration (RLS rounds, all SECURITY DEFINER functions, triggers, payment, moderation/report/ban/block, privacy, rate-limiting, storage)** are audited line-by-line. Only pure-presentational components (~25 files) and pure schema/index/perf migrations remain — provably no security/data surface left.
 
-**This is already a near-elite codebase.** The resilience engine (offline queue + mutation executor), the CQRS service layer, the Zustand state layer, and the hook layer are genuinely top-tier — optimistic-update-with-rollback everywhere, compile-time-exhaustive offline mutations with idempotency guards, Zod boundaries with per-row salvage, cross-user-bleed guards, biometric+OTP step-up auth, injection hardening (LIKE/CSV/URL). The gap to "truly elite" is **narrow and concentrated**, not systemic. No SQL-injection, secret-exposure, or auth-bypass defects were found.
+**The client/TypeScript layer is genuinely near-elite** (offline queue + exhaustive mutation executor, CQRS services, Zustand+TanStack CQRS, optimistic-rollback everywhere, Zod per-row salvage, biometric/OTP step-up, LIKE/CSV/URL injection hardening). **No client SQL-injection, secret-exposure, or auth-bypass.**
 
-Baseline: `tsc` clean (strict), `eslint` 0 errors / 18 warnings, test coverage ~19% lines.
+**BUT the backend (SQL/edge) deep-read changed the verdict materially.** The recent migrations (20260609+) are rigorous, but the **early `0002`-era "hardening" migrations contain serious latent security bugs that the test suite cannot catch** (Jest mocks Supabase; triggers/RLS never execute in CI):
+- a profile-protect trigger that (as written) **freezes tier upgrades + follower counts** (PROFILE-FREEZE-1) — repeated in the video-metrics trigger;
+- a **notification-spoofing** hole from a one-character typo in a `DROP POLICY` (NOTIF-SPOOF-1);
+- a PayTabs webhook with a **hardcoded default secret** (PAY-1) and an **email-enumeration** RPC (EMAIL-ENUM-1).
+These are **P0/HIGH** and several need **live-DB verification** (the migration files may be stale vs a hand-patched prod). This is where the remaining risk actually lives — not in the client.
+
+**Totals: 50 findings** — 6 HIGH (3 client ✅fixed: COMP-LOG-1/TYPES-1/LIB-1-area; 3 backend open: PROFILE-FREEZE-1, NOTIF-SPOOF-1, PAY-1), ~16 MEDIUM, ~28 LOW. Client ship-blockers fixed; **backend ship-blockers are the new top of the plan (Phase 0-BACKEND).**
+
+Baseline: `tsc` clean (strict), `eslint` 0 errors / 18 warnings, test coverage ~19% lines (and **0% of DB triggers/RLS/edge functions** — the dimension where the HIGH bugs hide).
 
 ---
 
-## PHASE 0 — Ship-blockers (do before live testing / launch)
+## PHASE 0-BACKEND — NEW server-side ship-blockers (discovered in the backend deep-read; HIGHER priority than the client fixes below)
+
+> These were found by reading the SQL migrations + edge functions line-by-line. They are **not visible to the Jest suite** (mocked Supabase) and several are latent landmines that only fire in production. **Verify each against the LIVE database**, since some early migrations may have been hand-patched out-of-band (in which case the migration files are dangerously stale for fresh deploys/DR).
+
+| # | Finding | What | Why it's P0 |
+|---|---------|------|-------------|
+| 0.A | **BACKEND-PROFILE-FREEZE-1** 🔴 *(verify live FIRST)* | `protect_profile_fields` (0002_rls_hardening, never superseded) unconditionally reverts `role`/`tier`/`followers_count`/`following_count`/`total_logs` on every profile UPDATE — no `auth.role()` guard. BEFORE triggers fire for service-role + SECURITY DEFINER triggers too. **Repeated** in `protect_video_review_metrics` (views/tip_total). | If live: tier never upgrades → `premium_rls` (tier-gated) never passes → **no one gets premium they paid for**; follower counts frozen at 0. CRITICAL for monetization + social. Fix: stop protecting derived counters; gate role/tier revert on `auth.role()='authenticated'`; make `check_role_update` the single role guard; add trigger integration tests. |
+| 0.B | **BACKEND-NOTIF-SPOOF-1** 🔴 | The "Trustless Notification Engine" `DROP POLICY IF EXISTS "…notifications."` has a **trailing-period typo** vs the real policy name `"…notifications"` → silent no-op → the permissive `WITH CHECK (auth.role()='authenticated')` INSERT policy is **still live**. | **Any authenticated user can insert spoofed/phishing notifications to any user** (arbitrary type/from_username/message). Fix: drop with the correct name; rely on the SECURITY DEFINER triggers (which bypass RLS); add a cross-user-insert-denied test. |
+| 0.C | **BACKEND-PAY-1** 🔴 | PayTabs IPN webhook authed only by a URL `?token=` defaulting to hardcoded `'dev-secret-123'`; no HMAC signature verification. | If `PAYTABS_WEBHOOK_SECRET` unset in prod → **forged IPN → free role/founding upgrades** via service-role write. Fix: remove the fallback (fail closed), verify PayTabs HMAC over the raw body, add `tran_ref` idempotency. (If PayTabs/web checkout isn't live yet, do this before it ships.) |
+| 0.D | **BACKEND-EMAIL-ENUM-1** | `get_email_by_username` defaults to PUBLIC execute (anon-callable), no rate-limit; usernames are public. | Anyone can **harvest the entire userbase's emails** (phishing/cred-stuffing). Fix: resolve username→email + sign-in in one server step that never returns email, or strict per-IP rate-limit, or email-only login. |
+| 0.E | **BACKEND-PAY-2** + premium-gating consistency | PayTabs founding path sets `is_founding` directly (bypasses atomic `claim_founding_seat`) → web founding over-sell; and `premium_rls` gates on `tier` while PayTabs writes only `role` → payers locked out of premium. | Revenue integrity + paid-feature access. Fix: route PayTabs founding through `claim_founding_seat`; gate premium RLS on resolved-tier (role+is_founding+tier) or ensure all pay paths set `tier`. |
+
+**Deploy/verify gate for the above:** confirm the live definitions of `protect_profile_fields`, the notifications INSERT policy, the PayTabs secret, and `get_email_by_username` grants. Any mismatch between live DB and these migration files is itself a finding (stale migrations break fresh deploys/DR).
+
+## PHASE 0 — Client ship-blockers (ALL FIXED — pending device/dashboard/deploy verification)
 
 | # | Finding | What | Why it's P0 |
 |---|---------|------|-------------|
@@ -35,6 +57,10 @@ Baseline: `tsc` clean (strict), `eslint` 0 errors / 18 warnings, test coverage ~
 | 1.3 | **HOOK-1** | Route the home-feed pulse-card report (`useReportUser` → `user_reports`) through `reportStore.submitReport` → `reports` so it reaches the Tribunal. Confirm whether `user_reports` is surfaced anywhere server-side. |
 | 1.4 | **COMP-1** | Route dossier comments + profile-pref writes through `DossierService`/`auth.setPreference`; move `sanitizeInput` into the service so online & offline paths share it. Removes a sanitization bypass + parallel-implementation drift. |
 | 1.5 | **TYPES-4** | Delete the stale `react-native-purchases.d.ts` stub; type the `Purchases` handle (`typeof import(...)`) so the payments layer is compiler-checked. |
+| 1.6 | **BACKEND-NOTIF-DUP-1** | Two AFTER-INSERT triggers on `interactions` both insert notifications → every follow/request/endorse double-notifies (often 2 different `type` strings). Drop `tr_notify_interaction`, keep the count-bearing `on_interaction_created`/`handle_interaction_notification`; reconcile `type` strings with notificationStore (ties to NOTIF-1/SVC-1). Add a 1-interaction→1-notif test. |
+| 1.7 | **BACKEND-PRIV-1** | `get_public_profile_analytics` lacks a `can_view_user_data(p_user_id)` gate → any authed user can read a private user's aggregate analytics. Add the gate (mirror `get_user_analytics`'s own-only check); add `STABLE`/`SET search_path`. |
+| 1.8 | **BACKEND-SANITIZE-1 + COMP-1 (server side)** | The `sanitize-input` edge fn is dead (wired to nothing) → there is **no** server-side sanitization. Either enforce sanitization in the service layer AND add real server enforcement (DB trigger/CHECK, or call sanitize from write RPCs), or delete the dead fn so it doesn't imply false coverage. Fold into the COMP-1 fix. |
+| 1.9 | **COMP-SPOILER-1** | The "CONTAINS SPOILERS" toggle is collected/persisted/read but consumed by no UI. Blur/tap-to-reveal the review in `LogReviewBody` (log detail) + add `is_spoiler` to `feed.schema`/`ReviewContent` for a feed spoiler veil. (Reader-side only; data already flows.) |
 
 ---
 
@@ -48,6 +74,8 @@ Baseline: `tsc` clean (strict), `eslint` 0 errors / 18 warnings, test coverage ~
 | 2.4 | **TYPES-2 / SCHEMA-2 / SCHEMA-3 / LIB-5** | Reuse shared Zod enums (`ReportableContentType`/`ReportReason`, privacy enums) instead of inlining; share the TMDB-id coercer. |
 | 2.5 | **UTIL-1 / UTIL-2 / UTIL-4 / OFFQ-2** | Yield every N mutations instead of fixed 100ms×N in the executor; distinguish external-abort from timeout in `withTimeout`; only map "username taken" on a real 23505; remove dead `_queueUserId`. |
 | 2.6 | **STORE-1 / STORE-2** | Clear MMKV on web logout (if web ships); have `restoreSession` clear its own optimistic auth state when no session is found (don't rely solely on the global listener). |
+| 2.7 | **Backend LOW cluster** | **LOUNGE-1**: private-lounge metadata enumerable by any archivist+ (invite-code SELECT policy gates on "has code" not "matches code") → SECURITY DEFINER `find_lounge_by_invite(code)`. **RL-1**: add `SET search_path` + schema-qualify `rate_limit_check`. **EMAIL-1/2**: auth-gate + DB-rate-limit `send-email`, evict its in-memory Map. **PUSH-1**: verify DB-webhook secret in `notify-push`. **PULSE-1**: delete dead `social-pulse` (service-role → would leak private reviews). **TMDB-1**: throttle the open `tmdb-proxy`. **signup-collision**: `handle_new_user` email-prefix fallback lacks general-collision handling (OAuth signups). |
+| 2.8 | **BACKEND-TIP-1** (only if projectionist/venue features ship) | `process_secure_tip` records tips with no payment verification (client-callable; author says should be service_role) → forgeable earnings; `book_showtime_seat` books seats free/untracked. Route through payment-confirmed service-role; add ownership/payment to booking. |
 
 ---
 
