@@ -50,15 +50,13 @@ const MAX_QUEUE_SIZE = 100;
 const MAX_TRANSIENT_RETRIES = 5;
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// OFFQ-2: retained — exercised by integration tests (queue user-scoping). The
-// finding (currently write-only) should be resolved by WIRING this into the flush
-// (reject mutations whose owner != the active user), not by deletion.
-let _queueUserId: string | null = null;
-
-/** Set the current user ID for queue scoping. */
-export function setQueueUserId(userId: string | null) {
-    _queueUserId = userId;
-}
+// OFFQ-2: queue user-scoping is enforced authoritatively inside flushOfflineQueue
+// — it reads the LIVE session and partitions mutations by `payload.user_id`,
+// dead-lettering any that belong to a different user (see "Partition queue by
+// ownership" below). A separate write-only `_queueUserId` module variable was
+// redundant with that (and strictly inferior, since a module var can go stale),
+// so it was removed. The queue is also cleared on logout, so a clean account
+// switch can't leave another user's mutations behind in the first place.
 
 /** Simple zustand-like store for reactive UI binding to queue state */
 interface OfflineQueueStoreState {

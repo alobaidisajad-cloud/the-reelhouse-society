@@ -11,7 +11,6 @@ import {
     enqueueMutation,
     flushOfflineQueue,
     getOfflineQueue,
-    setQueueUserId,
 } from '@/src/utils/offlineQueue';
 
 // ── Track execution order ───────────────────────────────────────────────────
@@ -159,7 +158,6 @@ describe('Offline Queue Flush Integration', () => {
     supabaseMock.__resetExecutionLog();
     supabaseMock.__resetIdCounter();
     clearOfflineQueue();
-    setQueueUserId('test-user-id');
   });
 
   it('enqueue 3 mutations → flush → all execute in FIFO order', async () => {

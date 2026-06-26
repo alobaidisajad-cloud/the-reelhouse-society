@@ -22,7 +22,6 @@ import {
     enqueueMutation,
     getQueueLength,
     clearOfflineQueue,
-    setQueueUserId,
     useOfflineQueueStore,
 } from '../../src/utils/offlineQueue';
 
@@ -114,7 +113,6 @@ describe('offlineQueue', () => {
         jest.clearAllMocks();
         mockUuidState.counter = 0;
         clearOfflineQueue();
-        setQueueUserId('test-user-id');
     });
 
     // ── 1. enqueueMutation basics ──
@@ -205,7 +203,6 @@ describe('offlineQueue', () => {
         it('should allow new enqueues after clear', () => {
             enqueueMutation(makeMutation());
             clearOfflineQueue();
-            setQueueUserId('test-user-id');
 
             enqueueMutation(makeMutation('remove_log'));
             expect(getQueueLength()).toBe(1);
@@ -221,7 +218,6 @@ describe('offlineQueue', () => {
                     fc.integer({ min: 1, max: 50 }),
                     (n) => {
                         clearOfflineQueue();
-                        setQueueUserId('prop-test-user');
                         for (let i = 0; i < n; i++) {
                             enqueueMutation(makeMutation(
                                 MUTATION_TYPES[i % MUTATION_TYPES.length],
@@ -242,7 +238,6 @@ describe('offlineQueue', () => {
                     fc.integer({ min: 0, max: 80 }),
                     (n) => {
                         clearOfflineQueue();
-                        setQueueUserId('prop-clear-user');
                         for (let i = 0; i < n; i++) {
                             enqueueMutation(makeMutation('add_log', { film_id: i }));
                         }
@@ -266,7 +261,6 @@ describe('offlineQueue', () => {
                     ),
                     (mutations) => {
                         clearOfflineQueue();
-                        setQueueUserId('prop-sync-user');
                         for (const m of mutations) {
                             enqueueMutation(makeMutation(m.type, { film_id: m.filmId }));
                         }
@@ -283,7 +277,6 @@ describe('offlineQueue', () => {
                     fc.integer({ min: 2, max: 20 }),
                     (n) => {
                         clearOfflineQueue();
-                        setQueueUserId('prop-dedup-user');
                         // Enqueue the EXACT SAME mutation N times
                         const mutation = makeMutation('add_log', { film_id: 42, rating: 5, review: 'Same review' });
                         for (let i = 0; i < n; i++) {
