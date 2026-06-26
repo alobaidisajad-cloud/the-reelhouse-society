@@ -8,6 +8,5 @@ export * from './dossier.schema';
 export * from './feed.schema';
 export * from './film.schema';
 export * from './profile.schema';
-export * from './profile';
 export * from './settings';
 export * from './user';

@@ -13,10 +13,19 @@ import { captureError } from '@/src/lib/sentry';
 
 // Zod schema for the form
 const editProfileSchema = z.object({
-  username: z.string().min(3).max(30).regex(/^[a-z0-9_]+$/, 'Username can only contain lowercase letters, numbers, and underscores'),
+  // SCHEMA-1: validate via the single source of truth (validateUsername) instead of
+  // a looser inline regex — this also rejects leading/trailing/consecutive
+  // underscores and reserved handles, matching the server-side username policy.
+  username: z.string().superRefine((val, ctx) => {
+    const result = validateUsername(val);
+    if (!result.valid) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: result.error ?? 'Invalid username.' });
+    }
+  }),
   displayName: z.string().max(50).optional().default(''),
   bio: z.string().max(160, 'Bio cannot exceed 160 characters').optional().default(''),
-  links: z.array(z.object({ title: z.string(), url: z.string() })).default([]),
+  // SCHEMA-1: enforce the documented 10-link cap (the LinksEditor advertises it).
+  links: z.array(z.object({ title: z.string(), url: z.string() })).max(10, 'Maximum 10 links allowed').default([]),
 });
 
 type ProfileFormData = z.infer<typeof editProfileSchema>;
