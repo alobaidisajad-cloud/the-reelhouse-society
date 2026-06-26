@@ -50,13 +50,6 @@ const MAX_QUEUE_SIZE = 100;
 const MAX_TRANSIENT_RETRIES = 5;
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
-// User-scoped queueing — prevents mutations from leaking between accounts
-let _queueUserId: string | null = null;
-
-/** Set the current user ID for queue scoping */
-export function setQueueUserId(userId: string | null) {
-    _queueUserId = userId;
-}
 
 /** Simple zustand-like store for reactive UI binding to queue state */
 interface OfflineQueueStoreState {
