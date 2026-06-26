@@ -17,6 +17,9 @@ import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { logger } from '@/src/utils/logger';
+// FEAT-1: imported review/notes text is untrusted (from arbitrary third-party
+// exports) — run it through the same sanitizer as in-app writes.
+import { sanitizeInput } from '@/src/utils/sanitizeInput';
 
 // ═══════════════════════════════════════════════════════════════
 //  PUBLIC TYPES
@@ -549,6 +552,7 @@ async function importLogs(
       review = reviewFromFile;
     }
     if (review.length > 0) reviewCount++;
+    review = sanitizeInput(review, 'review'); // FEAT-1
 
     payloads.push({
       user_id:          userId,
@@ -782,12 +786,15 @@ export async function importArchiveJSON(
         poster_path:      (log.poster ?? log.poster_path ?? null) as string | null,
         year:             (log.year ?? null) as number | null,
         rating:           (log.rating ?? 0) as number,
-        review:           (log.review ?? '') as string,
+        review:           sanitizeInput((log.review ?? '') as string, 'review'), // FEAT-1
         status:           (log.status ?? 'watched') as string,
         watched_date:     normalizeDate(((log.watchedDate ?? log.watched_date ?? '') as string)),
         is_spoiler:       (log.isSpoiler ?? log.is_spoiler ?? false) as boolean,
         watched_with:     (log.watchedWith ?? log.watched_with ?? null) as string | null,
-        private_notes:    (log.privateNotes ?? log.private_notes ?? null) as string | null,
+        // FEAT-1: sanitize the owner-private notes too (strip zero-width/control chars).
+        private_notes:    ((log.privateNotes ?? log.private_notes ?? null) as string | null)
+                            ? sanitizeInput((log.privateNotes ?? log.private_notes) as string, 'review')
+                            : null,
         abandoned_reason: (log.abandonedReason ?? log.abandoned_reason ?? null) as string | null,
         physical_media:   (log.physicalMedia ?? log.physical_media ?? null) as string | null,
         is_autopsied:     (log.isAutopsied ?? log.is_autopsied ?? false) as boolean,
@@ -1045,6 +1052,24 @@ export async function importArchiveZip(
   // ── ZIP archive ──
   const rawBase64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
   const zip = await JSZip.loadAsync(rawBase64, { base64: true });
+
+  // FEAT-2: zip-bomb defense — bound entry count and total uncompressed size
+  // BEFORE reading any entry (a few-KB ZIP can decompress to gigabytes).
+  const MAX_ZIP_ENTRIES = 2000;
+  const MAX_UNCOMPRESSED_BYTES = 50 * 1024 * 1024; // 50 MB
+  const entryNames = Object.keys(zip.files);
+  if (entryNames.length > MAX_ZIP_ENTRIES) {
+    throw new Error('This archive contains too many files to import.');
+  }
+  let totalUncompressed = 0;
+  for (const name of entryNames) {
+    // JSZip exposes the uncompressed size on the internal _data; if unavailable
+    // it's treated as 0 (the entry-count cap still bounds the work).
+    totalUncompressed += (zip.files[name] as unknown as { _data?: { uncompressedSize?: number } })?._data?.uncompressedSize ?? 0;
+    if (totalUncompressed > MAX_UNCOMPRESSED_BYTES) {
+      throw new Error('This archive is too large to import.');
+    }
+  }
 
   const format = detectArchiveFormat(zip);
 
