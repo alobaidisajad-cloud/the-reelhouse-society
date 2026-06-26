@@ -576,6 +576,7 @@ export default function LogDetailScreen() {
             dropCap={log.drop_cap}
             isAuteur={isAuteur}
             isOwner={isOwner}
+            isSpoiler={log.is_spoiler}
             privateNotes={log.private_notes}
           />
 

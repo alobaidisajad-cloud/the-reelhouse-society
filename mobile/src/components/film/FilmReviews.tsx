@@ -10,6 +10,7 @@ import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { stripHtml } from '@/src/utils/html';
 import { extractDropCap } from '@/src/utils/text';
 import { getDisplayTier, isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
+import SpoilerVeil from '@/src/components/SpoilerVeil';
 
 
 
@@ -26,6 +27,7 @@ interface CommunityReview {
   isLocal?: boolean;
   pull_quote?: string | null;
   drop_cap?: boolean | null;
+  is_spoiler?: boolean | null;
 }
 
 interface FilmReviewsProps {
@@ -95,30 +97,33 @@ export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, review
                   ) : null}
                 </View>
                 <PressableScale onPress={() => { if (r.id && !r.isLocal && r.id !== 'local') nav.push(`/log/${r.id}`); }} disabled={r.isLocal || r.id === 'local'} pressedScale={0.99} accessibilityLabel={`Read full review by ${r.username ?? 'anonymous'}`}>
-                  {r.pull_quote && (
-                    <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isArchivist && s.pullQuoteWrapPremium]}>
-                      <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isArchivist && s.pullQuotePremium]}>
-                        « {r.pull_quote} »
-                      </Text>
-                    </View>
-                  )}
-                  {strippedReview ? (
-                    r.drop_cap ? (
-                      <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                        <Text style={s.dropCapLetter}>{dropCapFirst}</Text>
-                        <Text style={[s.reviewText, { flex: 1, marginTop: 4 }]} numberOfLines={7} ellipsizeMode="tail">
-                          {dropCapRest}
+                  {/* COMP-SPOILER-1: veil flagged critiques; the author always sees their own. */}
+                  <SpoilerVeil isSpoiler={r.is_spoiler} bypass={r.isLocal} revealKey={r.id}>
+                    {r.pull_quote && (
+                      <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isArchivist && s.pullQuoteWrapPremium]}>
+                        <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isArchivist && s.pullQuotePremium]}>
+                          « {r.pull_quote} »
                         </Text>
                       </View>
-                    ) : (
-                      <Text style={s.reviewText} numberOfLines={7} ellipsizeMode="tail">
-                        {strippedReview}
-                      </Text>
-                    )
-                  ) : null}
-                  {strippedReview.length > 250 && (
-                    <Text style={s.yourLogReadMore}>READ FULL CRITIQUE →</Text>
-                  )}
+                    )}
+                    {strippedReview ? (
+                      r.drop_cap ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                          <Text style={s.dropCapLetter}>{dropCapFirst}</Text>
+                          <Text style={[s.reviewText, { flex: 1, marginTop: 4 }]} numberOfLines={7} ellipsizeMode="tail">
+                            {dropCapRest}
+                          </Text>
+                        </View>
+                      ) : (
+                        <Text style={s.reviewText} numberOfLines={7} ellipsizeMode="tail">
+                          {strippedReview}
+                        </Text>
+                      )
+                    ) : null}
+                    {strippedReview.length > 250 && (
+                      <Text style={s.yourLogReadMore}>READ FULL CRITIQUE →</Text>
+                    )}
+                  </SpoilerVeil>
                 </PressableScale>
               </View>
             );

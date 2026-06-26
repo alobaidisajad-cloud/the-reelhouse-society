@@ -32,7 +32,7 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
     queryFn: async () => {
         const { data: featuredLog, error } = await supabase
           .rpc('get_featured_critique')
-          .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, created_at, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
+          .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, is_spoiler, created_at, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
           .single();
 
         if (error) {
@@ -69,6 +69,7 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
       watchedWith: featured.watched_with,
       is_autopsied: featured.is_autopsied,
       autopsy: featured.autopsy,
+      is_spoiler: featured.is_spoiler ?? false,
       editorialHeader: featured.editorial_header,
       time: timeAgo(featured.created_at)
   };

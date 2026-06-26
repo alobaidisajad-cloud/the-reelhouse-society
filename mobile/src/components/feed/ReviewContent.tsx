@@ -4,11 +4,12 @@ import { View, Text, StyleSheet } from 'react-native';
 import { colors, fonts } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
+import SpoilerVeil from '@/src/components/SpoilerVeil';
 
 import type { FeedItem } from '@/src/schemas/feed.schema';
 
 interface Props {
-  item: Pick<FeedItem, 'status' | 'abandoned_reason' | 'rating' | 'pull_quote' | 'review' | 'drop_cap' | 'watched_with' | 'role'>;
+  item: Pick<FeedItem, 'id' | 'status' | 'abandoned_reason' | 'rating' | 'pull_quote' | 'review' | 'drop_cap' | 'watched_with' | 'role' | 'is_spoiler'>;
   isPremium: boolean;
   isAuteur: boolean;
   onPress: () => void;
@@ -51,35 +52,39 @@ export const ReviewContent = React.memo(function ReviewContent({ item, isPremium
         <View style={s.ratingWrap}><ReelRating rating={item.rating ?? 0} size={15} /></View>
       ) : null}
 
-      {/* Pull quote */}
-      {item.pull_quote && (
-        <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isPremium && !isAuteur && s.pullQuoteWrapPremium]}>
-          <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium]}>
-            « {item.pull_quote} »
-          </Text>
-        </View>
-      )}
+      {/* COMP-SPOILER-1: veil the pull quote + review preview when flagged.
+          Keyed by item id so a reveal can't leak across recycled FlashList rows. */}
+      <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id} compact>
+        {/* Pull quote */}
+        {item.pull_quote && (
+          <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isPremium && !isAuteur && s.pullQuoteWrapPremium]}>
+            <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isPremium && !isAuteur && s.pullQuotePremium]}>
+              « {item.pull_quote} »
+            </Text>
+          </View>
+        )}
 
-      {/* Review text */}
-      {cleanReview ? (
-        item.drop_cap ? (
-          <Text style={[s.review, s.dropCapReview]} numberOfLines={8}>
-            <Text style={s.dropCapLetter}>{cleanReview.charAt(0).toUpperCase()}</Text>
-            <Text style={s.dropCapText}>{cleanReview.slice(1)}</Text>
-          </Text>
-        ) : (
-          <Text style={s.review} numberOfLines={8}>
-            {cleanReview}
-          </Text>
-        )
-      ) : null}
+        {/* Review text */}
+        {cleanReview ? (
+          item.drop_cap ? (
+            <Text style={[s.review, s.dropCapReview]} numberOfLines={8}>
+              <Text style={s.dropCapLetter}>{cleanReview.charAt(0).toUpperCase()}</Text>
+              <Text style={s.dropCapText}>{cleanReview.slice(1)}</Text>
+            </Text>
+          ) : (
+            <Text style={s.review} numberOfLines={8}>
+              {cleanReview}
+            </Text>
+          )
+        ) : null}
 
-      {/* Read more */}
-      {cleanReview.length > 200 && (
-        <View style={s.readMoreWrap}>
-          <Text style={s.readMoreText}>Read more</Text>
-        </View>
-      )}
+        {/* Read more */}
+        {cleanReview.length > 200 && (
+          <View style={s.readMoreWrap}>
+            <Text style={s.readMoreText}>Read more</Text>
+          </View>
+        )}
+      </SpoilerVeil>
 
       {/* Watched with */}
       {item.watched_with && (

@@ -5,6 +5,7 @@ import { Sparkles, Lock } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
 import { extractDropCap, stripHTML } from '@/src/utils/text';
 import { s } from '@/app/log/logDetailStyles';
+import SpoilerVeil from '@/src/components/SpoilerVeil';
 
 interface LogReviewBodyProps {
   review?: string | null;
@@ -12,6 +13,7 @@ interface LogReviewBodyProps {
   dropCap?: boolean;
   isAuteur: boolean;
   isOwner: boolean;
+  isSpoiler?: boolean;
   privateNotes?: string | null;
 }
 
@@ -21,10 +23,14 @@ export default function LogReviewBody({
   dropCap,
   isAuteur,
   isOwner,
+  isSpoiler,
   privateNotes,
 }: LogReviewBodyProps) {
   return (
     <View style={s.reviewSection}>
+
+      {/* COMP-SPOILER-1: veil the critique when flagged; the author always sees their own. */}
+      <SpoilerVeil isSpoiler={isSpoiler} bypass={isOwner}>
 
       {pullQuote && (
         <View style={s.featuredQuoteWrap}>
@@ -65,6 +71,8 @@ export default function LogReviewBody({
           })()}
         </View>
       )}
+
+      </SpoilerVeil>
 
       {/* PRIVATE NOTES (Only visible to the log owner) */}
       {isOwner && privateNotes && (

@@ -81,6 +81,7 @@ export const FilmReviewSchema = z.object({
   created_at: z.string().default(() => new Date().toISOString()),
   pull_quote: z.string().nullable().optional(),
   drop_cap: z.boolean().nullable().optional(),
+  is_spoiler: z.boolean().nullable().optional(),
   user_id: z.string().nullable().optional(),
   username: z.string().default('unknown'),
   role: z.string().default('cinephile'),

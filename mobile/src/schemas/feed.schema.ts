@@ -40,6 +40,7 @@ export const FeedItemSchema = z.object({
   is_autopsied: z.boolean().nullable().optional(),
   autopsy: z.unknown().nullable().optional(),
   abandoned_reason: z.string().nullable().optional(),
+  is_spoiler: z.boolean().nullable().optional(),
 });
 
 export type FeedItem = z.infer<typeof FeedItemSchema>;
@@ -74,6 +75,7 @@ export const CommunityFeedRowSchema = z.object({
   watched_with: z.string().nullable(),
   is_autopsied: z.boolean().nullable(),
   autopsy: z.unknown().nullable(),
+  is_spoiler: z.boolean().nullable().optional(),
   profiles: z.union([
     ProfileJoinSchema,
     z.array(ProfileJoinSchema),
@@ -108,6 +110,7 @@ export const FollowingFeedRowSchema = z.object({
   watched_with: z.string().nullable(),
   is_autopsied: z.boolean().nullable(),
   autopsy: z.unknown().nullable(),
+  is_spoiler: z.boolean().nullable().optional(),
 });
 
 export type FollowingFeedRow = z.infer<typeof FollowingFeedRowSchema>;

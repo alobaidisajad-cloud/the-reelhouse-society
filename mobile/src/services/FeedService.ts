@@ -146,7 +146,7 @@ export const FeedService = {
     // useFeeds.ts's `select`. Deploy get_community_feed_auth_cursor to close
     // that gap.
     let query = supabase.from('logs')
-      .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, profiles!logs_user_id_fkey(username, avatar_url, role)')
+      .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role)')
       .not('review', 'is', null).neq('review', '')
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
@@ -236,7 +236,7 @@ export const FeedService = {
     if (!profiles || profiles.length === 0) return [];
 
     let query = supabase.from('logs')
-      .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, profiles!logs_user_id_fkey(username, avatar_url, role)')
+      .select('id, film_id, film_title, poster_path, rating, review, drop_cap, status, abandoned_reason, created_at, year, user_id, editorial_header, pull_quote, watched_with, is_autopsied, autopsy, is_spoiler, profiles!logs_user_id_fkey(username, avatar_url, role)')
       .in('user_id', profiles.map(p => p.id))
       .not('review', 'is', null).neq('review', '')
       .order('created_at', { ascending: false })

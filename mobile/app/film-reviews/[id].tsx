@@ -6,6 +6,7 @@ import { supabase } from '../../src/lib/supabase';
 import { colors, fonts } from '../../src/theme/theme';
 import { ArrowLeft, Star } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
+import SpoilerVeil from '@/src/components/SpoilerVeil';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type CommunityReview = {
@@ -19,6 +20,7 @@ type CommunityReview = {
   role: string;
   pull_quote: string | null;
   drop_cap: boolean;
+  is_spoiler: boolean;
 };
 
 interface RawReviewRow {
@@ -31,6 +33,7 @@ interface RawReviewRow {
   user_id: string;
   pull_quote: string | null;
   drop_cap: boolean;
+  is_spoiler: boolean | null;
   profiles: { username: string; role: string } | { username: string; role: string }[] | null;
 }
 
@@ -59,7 +62,7 @@ export default function FilmReviewsScreen() {
 
     const { data } = await supabase
       .from('logs')
-      .select('id, rating, review, status, abandoned_reason, created_at, pull_quote, drop_cap, user_id, profiles!logs_user_id_fkey(username, role)')
+      .select('id, rating, review, status, abandoned_reason, created_at, pull_quote, drop_cap, is_spoiler, user_id, profiles!logs_user_id_fkey(username, role)')
       .eq('film_id', filmId)
       .not('review', 'is', null)
       .order('created_at', { ascending: false })
@@ -79,6 +82,7 @@ export default function FilmReviewsScreen() {
           role: profile?.role || 'cinephile',
           pull_quote: r.pull_quote,
           drop_cap: Boolean(r.drop_cap),
+          is_spoiler: Boolean(r.is_spoiler),
         };
       });
 
@@ -131,26 +135,29 @@ export default function FilmReviewsScreen() {
           ) : null}
         </View>
         <PressableScale onPress={() => router.push(`/log/${item.id}` as any)} pressedScale={0.99}>
-          {item.pull_quote && (
-            <View style={[s.pullQuoteWrap, item.role === 'auteur' && s.pullQuoteWrapAuteur, (item.role === 'archivist' || item.role === 'auteur') && item.role !== 'auteur' && s.pullQuoteWrapPremium]}>
-              <Text style={[s.pullQuote, item.role === 'auteur' && s.pullQuoteAuteur, (item.role === 'archivist' || item.role === 'auteur') && item.role !== 'auteur' && s.pullQuotePremium]}>
-                « {item.pull_quote} »
+          {/* COMP-SPOILER-1: veil flagged critiques; keyed by id for the recycled list. */}
+          <SpoilerVeil isSpoiler={item.is_spoiler} revealKey={item.id}>
+            {item.pull_quote && (
+              <View style={[s.pullQuoteWrap, item.role === 'auteur' && s.pullQuoteWrapAuteur, (item.role === 'archivist' || item.role === 'auteur') && item.role !== 'auteur' && s.pullQuoteWrapPremium]}>
+                <Text style={[s.pullQuote, item.role === 'auteur' && s.pullQuoteAuteur, (item.role === 'archivist' || item.role === 'auteur') && item.role !== 'auteur' && s.pullQuotePremium]}>
+                  « {item.pull_quote} »
+                </Text>
+              </View>
+            )}
+            {strippedReview ? (
+              <Text style={[s.reviewText, item.drop_cap && { lineHeight: undefined }]} numberOfLines={12} ellipsizeMode="tail">
+                {item.drop_cap ? (
+                  <Text style={s.dropCapLetter}>{strippedReview.charAt(0)}</Text>
+                ) : null}
+                <Text style={item.drop_cap ? { lineHeight: 22 } : undefined}>
+                  {item.drop_cap ? strippedReview.slice(1) : strippedReview}
+                </Text>
               </Text>
-            </View>
-          )}
-          {strippedReview ? (
-            <Text style={[s.reviewText, item.drop_cap && { lineHeight: undefined }]} numberOfLines={12} ellipsizeMode="tail">
-              {item.drop_cap ? (
-                <Text style={s.dropCapLetter}>{strippedReview.charAt(0)}</Text>
-              ) : null}
-              <Text style={item.drop_cap ? { lineHeight: 22 } : undefined}>
-                {item.drop_cap ? strippedReview.slice(1) : strippedReview}
-              </Text>
-            </Text>
-          ) : null}
-          {strippedReview.length > 400 && (
-            <Text style={s.yourLogReadMore}>READ FULL CRITIQUE →</Text>
-          )}
+            ) : null}
+            {strippedReview.length > 400 && (
+              <Text style={s.yourLogReadMore}>READ FULL CRITIQUE →</Text>
+            )}
+          </SpoilerVeil>
         </PressableScale>
       </View>
     );

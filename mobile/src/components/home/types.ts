@@ -31,6 +31,7 @@ export interface FeaturedLog {
   editorial_header: string | null;
   is_autopsied: boolean;
   autopsy: string | null;
+  is_spoiler?: boolean | null;
   created_at: string;
   user_id: string;
   profiles: { username: string; role: string; avatar_url?: string | null } | { username: string; role: string; avatar_url?: string | null }[] | null;
@@ -51,6 +52,7 @@ export interface PulseActivity {
   watchedWith: string | null;
   is_autopsied: boolean;
   autopsy: string | null;
+  is_spoiler?: boolean | null;
   editorialHeader?: string | null;
   time: string;
 }

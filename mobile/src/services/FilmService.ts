@@ -17,6 +17,7 @@ const FilmReviewRowSchema = z.object({
   created_at: z.string(),
   pull_quote: z.string().nullable().optional(),
   drop_cap: z.boolean().nullable().optional(),
+  is_spoiler: z.boolean().nullable().optional(),
   user_id: z.string().nullable().optional(),
   profiles: z.union([
     z.object({ username: z.string(), role: z.string() }),
@@ -57,7 +58,7 @@ export const FilmService = {
   async getFilmReviews(filmId: string, pageSize: number, cursor?: string, signal?: AbortSignal): Promise<FilmReviewsPage> {
     let query = supabase
       .from('logs')
-      .select('id, rating, review, status, abandoned_reason, created_at, pull_quote, drop_cap, user_id, profiles!logs_user_id_fkey(username, role)')
+      .select('id, rating, review, status, abandoned_reason, created_at, pull_quote, drop_cap, is_spoiler, user_id, profiles!logs_user_id_fkey(username, role)')
       .eq('film_id', filmId)
       .not('review', 'is', null)
       .neq('review', '')

@@ -122,7 +122,7 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
     queryFn: async () => {
         const { data, error } = await supabase
           .from('logs')
-          .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, created_at, user_id, profiles!logs_user_id_fkey(username, role)')
+          .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, is_spoiler, created_at, user_id, profiles!logs_user_id_fkey(username, role)')
           .neq('review', '')
           .not('review', 'is', null)
           .order('created_at', { ascending: false })
@@ -150,6 +150,7 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
           watchedWith: log.watched_with,
           is_autopsied: log.is_autopsied,
           autopsy: log.autopsy,
+          is_spoiler: log.is_spoiler ?? false,
           editorialHeader: log.editorial_header ?? null,
           time: timeAgo(log.created_at),
         }));

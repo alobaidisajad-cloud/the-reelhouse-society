@@ -14,6 +14,7 @@ import { ReelRating } from '@/src/components/Decorative';
 import { MoreHorizontal } from 'lucide-react-native';
 import { FilmGrain } from '@/src/components/CinematicOverlays';
 import PressableScale from '@/src/components/PressableScale';
+import SpoilerVeil from '@/src/components/SpoilerVeil';
 import Buster from '@/src/components/Buster';
 import { useReportUser } from '@/src/hooks/useReportUser';
 import type { PulseActivity } from './types';
@@ -163,18 +164,21 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
                   </Text>
                 </View>
               )}
-              {act.pullQuote ? (
-                <View style={s.pullQuoteWrap}>
-                  <Text style={s.pullQuoteText} numberOfLines={3}>« {act.pullQuote.replace(/^[«"']+|[»"']+$/g, '').trim()} »</Text>
-                </View>
-              ) : act.dropCap && truncReview ? (
-                <View style={s.dropCapRow}>
-                  <Text style={s.dropCapLetter}>{firstUnicodeChar}</Text>
-                  <Text style={[s.pulseReview, s.dropCapBody]} numberOfLines={3}>{remainingReviewText}</Text>
-                </View>
-              ) : truncReview ? (
-                <Text style={s.pulseReview} numberOfLines={3}>&quot;{truncReview}&quot;</Text>
-              ) : null}
+              {/* COMP-SPOILER-1: veil flagged critiques on the Pulse card. */}
+              <SpoilerVeil isSpoiler={act.is_spoiler} revealKey={act.id} compact>
+                {act.pullQuote ? (
+                  <View style={s.pullQuoteWrap}>
+                    <Text style={s.pullQuoteText} numberOfLines={3}>« {act.pullQuote.replace(/^[«"']+|[»"']+$/g, '').trim()} »</Text>
+                  </View>
+                ) : act.dropCap && truncReview ? (
+                  <View style={s.dropCapRow}>
+                    <Text style={s.dropCapLetter}>{firstUnicodeChar}</Text>
+                    <Text style={[s.pulseReview, s.dropCapBody]} numberOfLines={3}>{remainingReviewText}</Text>
+                  </View>
+                ) : truncReview ? (
+                  <Text style={s.pulseReview} numberOfLines={3}>&quot;{truncReview}&quot;</Text>
+                ) : null}
+              </SpoilerVeil>
               {act.watchedWith && (
                 <Text style={s.pulseWatchedWith} numberOfLines={1} ellipsizeMode="tail">♡ WITH <Text style={s.pulseWatchedWithName}>{act.watchedWith.toUpperCase()}</Text></Text>
               )}
