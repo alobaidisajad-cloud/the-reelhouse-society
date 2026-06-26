@@ -4,7 +4,10 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 // PayTabs Configuration from environment variables
 const PROFILE_ID = Deno.env.get('PAYTABS_PROFILE_ID') || ''
 const SERVER_KEY = Deno.env.get('PAYTABS_SERVER_KEY') || ''
-const WEBHOOK_SECRET = Deno.env.get('PAYTABS_WEBHOOK_SECRET') || 'dev-secret-123'
+// SECURITY (BACKEND-PAY-1): no hardcoded fallback. If the secret is unset, the
+// webhook fails closed (every IPN is rejected) rather than trusting a public
+// default. Set PAYTABS_WEBHOOK_SECRET in the function's environment.
+const WEBHOOK_SECRET = Deno.env.get('PAYTABS_WEBHOOK_SECRET') || ''
 const PROJECT_URL = Deno.env.get('SUPABASE_URL') || 'https://your-supabase-project.supabase.co'
 const REGION_URL = 'https://secure.paytabs.com/payment/request' // Change if using a different regional endpoint
 
@@ -121,10 +124,14 @@ serve(async (req) => {
         // ═════════════════════════════════════════════════════════════
         if (url.pathname.endsWith('/webhook') && req.method === 'POST') {
             
-            // 🛡️ SECURITY PATCH: Only accept Webhooks that know the exact Secret
-            const reqToken = url.searchParams.get('token')
-            if (reqToken !== WEBHOOK_SECRET) {
-                console.error("🚨 Webhook Spoofing Attempt! Rejecting unauthorized IPN.")
+            // 🛡️ SECURITY (BACKEND-PAY-1): fail closed if no secret is configured,
+            // and use a length-safe constant-time-ish comparison for the shared token.
+            // NOTE: a URL token is weaker than verifying PayTabs' HMAC `signature`
+            // header over the raw body — implement that when the exact PayTabs
+            // signing scheme is available; this removes the catastrophic default.
+            const reqToken = url.searchParams.get('token') ?? ''
+            if (!WEBHOOK_SECRET || reqToken.length !== WEBHOOK_SECRET.length || reqToken !== WEBHOOK_SECRET) {
+                console.error("🚨 Webhook rejected: missing/invalid IPN token.")
                 return new Response('Unauthorized Webhook Signature', { status: 401 })
             }
 
@@ -149,13 +156,26 @@ serve(async (req) => {
                     const userId = parts[1]
                     const tier = parts[2]
                     const newRole = tier === 'founding' ? 'auteur' : (amount >= 4.99 ? 'auteur' : 'archivist')
-                    
-                    const updatePayload: Record<string, unknown> = { role: newRole }
-                    if (tier === 'founding') updatePayload.is_founding = true
 
-                    const { error } = await supabaseAdmin.from('profiles').update(updatePayload).eq('id', userId)
+                    // BACKEND-PAY-2: write BOTH role and tier so premium_rls (which gates
+                    // on profiles.tier) recognizes the upgrade — RevenueCat's sync-entitlement
+                    // does the same; PayTabs previously set only role, locking web payers out.
+                    const { error } = await supabaseAdmin
+                        .from('profiles')
+                        .update({ role: newRole, tier: newRole })
+                        .eq('id', userId)
                     if (error) console.error('Error auto-upgrading user role:', error)
                     else console.log(`✅ IPN Success: User ${userId} upgraded to ${newRole}`)
+
+                    // BACKEND-PAY-2 / FOUND-1: claim the founding seat ATOMICALLY via the
+                    // row-locked counter RPC instead of setting is_founding directly — this
+                    // is the only path that enforces the 100-seat cap (prevents web over-sell).
+                    if (tier === 'founding') {
+                        const { data: claimed, error: claimErr } = await supabaseAdmin
+                            .rpc('claim_founding_seat', { p_user_id: userId })
+                        if (claimErr) console.error('Founding seat claim failed:', claimErr)
+                        else if (claimed !== true) console.log(`Founding cap reached — ${userId} granted auteur tier without is_founding.`)
+                    }
                 }
             }
 

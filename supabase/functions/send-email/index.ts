@@ -36,6 +36,15 @@ serve(async (req: Request) => {
     if (rateLimitCache.get(rateKey)) {
       return new Response(JSON.stringify({ error: 'Rate limited — 1 email per type per day' }), { status: 429 })
     }
+    // BACKEND-EMAIL-2: evict stale (older-than-today) entries so the Map can't grow
+    // unbounded on a long-lived edge worker. (Per-instance only; a durable rate-limit
+    // would be DB-backed — see BACKEND-EMAIL-1.)
+    if (rateLimitCache.size > 5000) {
+      const todayPrefix = new Date().toISOString().slice(0, 10)
+      for (const k of rateLimitCache.keys()) {
+        if (!k.endsWith(todayPrefix)) rateLimitCache.delete(k)
+      }
+    }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
