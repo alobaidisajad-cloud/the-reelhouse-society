@@ -1,5 +1,4 @@
 import * as Linking from 'expo-linking';
-import { Platform } from 'react-native';
 import { create } from 'zustand';
 import { removePushToken } from '../lib/pushNotifications';
 import { queryClient } from '../lib/queryClient';
@@ -245,15 +244,16 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
       }
     } catch { /* push module may not be installed */ }
 
-    // 8. Clear user cache + persisted query cache + feed cache from MMKV
-    if (Platform.OS !== 'web') {
-      if (previousUserId) storage.delete(`ironvault_user_cache_${previousUserId}`);
-      storage.delete('last_user_id');
-      storage.delete('ironvault_user_cache'); // clean up legacy
-      storage.delete('reelhouse-offline-mutations');
-      storage.delete('REELHOUSE_QUERY_CACHE');
-      storage.delete('nitrate_memory_feed');
-    }
+    // 8. Clear user cache + persisted query cache + feed cache from storage.
+    // STORE-1: run on ALL platforms. The previous `Platform.OS !== 'web'` guard
+    // left stale auth / cross-user data in a shared browser after logout. Mobile
+    // behavior is unchanged (the block already ran there); this also clears on web.
+    if (previousUserId) storage.delete(`ironvault_user_cache_${previousUserId}`);
+    storage.delete('last_user_id');
+    storage.delete('ironvault_user_cache'); // clean up legacy
+    storage.delete('reelhouse-offline-mutations');
+    storage.delete('REELHOUSE_QUERY_CACHE');
+    storage.delete('nitrate_memory_feed');
 
     // 9. Clear module-level caches
     _actionThrottles.clear();

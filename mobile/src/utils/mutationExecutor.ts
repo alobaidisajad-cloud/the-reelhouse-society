@@ -324,21 +324,14 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
             user_id,
             body: sanitizeInput(content as string, 'listComment')
         };
-        const { data: newComment } = throwIfError(await supabase.from('list_comments').insert([dbPayload]).select('id, list_id').maybeSingle()) as { data: { id: string; list_id: string } | null };
-        
-        // Replicate online notification injection perfectly.
-        if (newComment && newComment.list_id) {
-            const { data: listOwner } = await supabase.from('lists').select('user_id').eq('id', newComment.list_id).maybeSingle();
-            if (listOwner && listOwner.user_id !== user_id) {
-                await supabase.from('notifications').insert([{
-                    user_id: listOwner.user_id,
-                    type: 'list_comment',
-                    actor_id: user_id,
-                    reference_id: newComment.list_id,
-                    entity_id: newComment.id,
-                }]);
-            }
-        }
+        throwIfError(await supabase.from('list_comments').insert([dbPayload]).select('id, list_id').maybeSingle());
+
+        // SVC-1: the previous manual notification insert here used columns that exist
+        // in no migration (actor_id/reference_id/entity_id), an invalid `type`
+        // ('list_comment' violates the notifications type CHECK), and omitted the
+        // NOT NULL `message` — so it always failed silently. The `tr_notify_list_comment`
+        // DB trigger already emits the correct notification on the list_comments INSERT
+        // above, so we rely on that single source of truth (no manual insert).
         return {};
     },
 
@@ -731,8 +724,10 @@ export async function executeMutation(
     // Apply ID remapping for dependent mutations (offline optimistic IDs → real DB IDs)
     const mapped = applyIdMapToPayload(mutation.payload, idMap);
 
-    // JS thread breathing room — prevents UI jank during batch processing
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // UTIL-1: yield to the event loop so a full queue doesn't jank the UI — but a
+    // 0ms macrotask yield (not a fixed 100ms × N) so flushing N mutations no longer
+    // adds ~N×100ms of artificial latency (~10s for a full 100-item queue).
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     return handler(mapped, idMap);
 }

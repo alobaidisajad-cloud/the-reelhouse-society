@@ -12,6 +12,8 @@
  */
 
 import { logger } from '../utils/logger';
+// SVC-3: use the shared, more complete entity decoder instead of a local 5-entity copy.
+import { decodeEntities } from '../utils/html';
 
 // ── Types ──────────────────────────────────────────────────────
 
@@ -47,12 +49,6 @@ const relDate = (daysAgo: number) => {
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
 };
 
-const decodeEntities = (s: string) =>
-    s.replace(/&amp;/g, '&')
-     .replace(/&lt;/g, '<')
-     .replace(/&gt;/g, '>')
-     .replace(/&quot;/g, '"')
-     .replace(/&#039;/g, "'");
 
 const FALLBACK_NEWS: NewsItem[] = [
     {
