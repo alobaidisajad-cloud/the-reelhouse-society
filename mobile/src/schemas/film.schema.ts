@@ -1,7 +1,14 @@
 import { z } from 'zod';
+import type { DomainLog } from '../types/film.types';
 
 /**
- * Exact schema matching the `DomainLog` interface.
+ * Validation schema for the `DomainLog` interface (src/types/film.types.ts).
+ *
+ * SCHEMA-4: the two are bound by the compile-time guard below so they can't
+ * silently drift — if a field is added/retyped on `DomainLog` without a matching
+ * change here (or vice-versa), `tsc` fails. `DomainLog` remains the canonical
+ * hand-authored type (it carries doc comments + a couple of union shapes that
+ * read better written out); this schema is its runtime mirror.
  */
 export const DomainLogSchema = z.object({
   id: z.string().uuid(),
@@ -61,6 +68,15 @@ export const DomainLogSchema = z.object({
     format: z.string().nullable().optional()
   })).nullable().optional()
 });
+
+// SCHEMA-4 drift guard: assert the schema's inferred output and the DomainLog
+// interface are mutually assignable. Either side diverging breaks compilation.
+// (Compile-time only — `AssertExact` resolves to `true` when both directions hold.)
+type AssertExtends<A, B> = A extends B ? true : false;
+type _SchemaInfersToDomainLog = AssertExtends<z.infer<typeof DomainLogSchema>, DomainLog>;
+type _DomainLogSatisfiesSchema = AssertExtends<DomainLog, z.infer<typeof DomainLogSchema>>;
+const _schemaMatchesType: [_SchemaInfersToDomainLog, _DomainLogSatisfiesSchema] = [true, true];
+void _schemaMatchesType;
 
 /**
  * Schema for validating film review entries from `logs` table.
