@@ -7,7 +7,7 @@
 
 ## ✅ ALL CODE FIXES COMPLETE
 
-Every finding that can be resolved in code/SQL/edge-function source has been executed, committed, and verified. The only outstanding items are (1) **deployment/config steps that only you can perform** and (2) **three findings that require a product decision** (listed at the bottom). Nothing else is deferred.
+Every finding that can be resolved in code/SQL/edge-function source has been executed, committed, and verified — **50 of 51**, including the two that needed your decision (EMAIL-ENUM-1 → server-side username login; CONST-3 → RevenueCat-sourced prices). The only outstanding items are (1) **deployment/config steps that only you can perform** and (2) **TIP-1**, which is feature-gated (nothing to build until a tips/showtimes feature ships).
 
 ### Backend migrations (idempotent; written, NOT yet deployed — see Manual Step 2)
 | Finding(s) | Migration | What it does |
@@ -18,6 +18,7 @@ Every finding that can be resolved in code/SQL/edge-function source has been exe
 | SHADOWBAN-1 | `20260626_04_remove_dormant_shadowban.sql` | drops the unreviewed trust_score deduction trigger + the dead shadowban SELECT policy |
 | LOUNGE-1 (LOW) · signup-collision (LOW) | `20260626_05_lounge_invite_and_signup.sql` | SECURITY DEFINER `find_lounge_by_invite(p_code)` (returns only the matching row) + drops the broad enumeration policy; extends `enforce_username_policy` to suffix-dedup general collisions on signup |
 | COMP-SPOILER-1 (LOW) | `20260626_06_feed_spoiler_flag.sql` | adds `is_spoiler` (trailing col) to the two feed cursor RPCs so the spoiler veil works on the RPC feed path |
+| EMAIL-ENUM-1 (MED) | `20260626_07_lock_email_lookup.sql` | REVOKEs `get_email_by_username` from anon/authenticated (username login now goes through the server-side edge function) |
 
 ### Edge functions (written, NOT yet deployed — see Manual Step 3)
 | Finding(s) | File | Fix |
@@ -26,6 +27,7 @@ Every finding that can be resolved in code/SQL/edge-function source has been exe
 | EMAIL-1 (LOW) · EMAIL-2 (LOW) | `send-email` | enforce-if-configured `x-function-secret`; bounds the rate-limit Map with TTL eviction |
 | PUSH-1 (LOW) | `notify-push` | enforce-if-configured `x-function-secret` on the DB-webhook entrypoint |
 | TMDB-1 (LOW) | `tmdb-proxy` | best-effort per-IP throttle (120/min) to deter open-proxy abuse |
+| EMAIL-ENUM-1 (MED) | `sign-in-with-username` | **new** — resolves email + verifies password server-side, returns only session tokens, generic error on failure + per-IP throttle (kills the username-enumeration vector) |
 | PULSE-1 (LOW) | `social-pulse` | **deleted** (dead service-role fn that would leak private reviews) |
 | SANITIZE-1 (LOW) | `sanitize-input` | **deleted** (dead unwired fn; client sanitize choke point covers it — COMP-1) |
 
@@ -42,8 +44,8 @@ COMP-LOG-1, TYPES-1, LIB-1, LIB-2, OFFQ-1 (all tested) · FOUND-1 (resolved in c
 ## 🔴 WHAT YOU MUST DO MANUALLY (in order)
 
 1. **WAVE 0 — verify the live DB FIRST (most important).** In the Supabase SQL editor, dump the live definitions and compare to the migrations (queries are in `MASTER_PLAN.md` → WAVE 0). This tells you whether PROFILE-FREEZE-1 / SHADOWBAN-1 / NOTIF-SPOOF-1 are *live* (then these migrations fix them) or were hand-patched (then they just realign the repo). **If PROFILE-FREEZE-1 is live, premium upgrades + follower counts are currently broken — confirm this first.**
-2. **Deploy the migrations:** take a DB snapshot, then `supabase db push` (applies `20260626_01..06`). All are idempotent — safe to re-run.
-3. **Deploy / remove edge functions:** `supabase functions deploy paytabs-handler send-email notify-push tmdb-proxy`; remove the deleted `social-pulse` and `sanitize-input` functions from the project.
+2. **Deploy the migrations:** take a DB snapshot, then `supabase db push` (applies `20260626_01..07`). All are idempotent — safe to re-run.
+3. **Deploy / remove edge functions:** `supabase functions deploy paytabs-handler send-email notify-push tmdb-proxy sign-in-with-username`; remove the deleted `social-pulse` and `sanitize-input` functions from the project. (`sign-in-with-username` uses the auto-provided `SUPABASE_ANON_KEY` + service-role key — no extra config.)
 4. **Set environment variables / secrets:**
    - `PAYTABS_WEBHOOK_SECRET` — the webhook now **fails closed** without it.
    - `FUNCTION_SHARED_SECRET` — then configure the Supabase DB webhooks for `notify-push` (and any caller of `send-email`) to send it as the `x-function-secret` header. Until set, those endpoints stay open (and log a warning).
@@ -56,13 +58,13 @@ COMP-LOG-1, TYPES-1, LIB-1, LIB-2, OFFQ-1 (all tested) · FOUND-1 (resolved in c
 
 ---
 
-## 🟡 THREE FINDINGS NEED A PRODUCT DECISION (not code-fixable blind)
+## 🟡 ONE FINDING IS FEATURE-GATED (nothing to build yet)
 
-- **EMAIL-ENUM-1** — the username→email lookup at login can confirm account existence. Options: (a) rework to a single server-side `sign_in_with_username` step that never returns the email, (b) move to email-only login, or (c) add per-IP rate-limiting and accept the residual. Pick the direction and I'll implement it.
-- **CONST-3** — membership prices are hardcoded in the UI. The premium fix is to source them from the live RevenueCat offerings (so price changes don't require an app release). Needs the RC offering/price display wired — confirm you want the UI to read RC prices.
 - **TIP-1** — only relevant **if** the projectionist / tips / showtimes feature ships. When it does: payment-confirmed service-role tip path + booking-ownership checks. No-op until then.
+
+*(EMAIL-ENUM-1 and CONST-3 — previously pending your decision — are now implemented per your choices: server-side username login, and RevenueCat-sourced prices.)*
 
 ---
 
 ## Status summary
-**48 of 51 findings fully executed in code** (committed + verified green). The remaining 3 are product decisions above. Everything else now depends only on the manual deploy/config/verify steps. Say the word on EMAIL-ENUM-1 / CONST-3 and I'll implement the chosen direction.
+**50 of 51 findings fully executed in code** (committed + verified green; the suite is at 93 files / 910 tests). The 51st (TIP-1) is feature-gated. Everything else now depends only on the manual deploy/config/verify steps above.
