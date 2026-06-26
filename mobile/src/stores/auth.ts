@@ -4,6 +4,7 @@ import { removePushToken } from '../lib/pushNotifications';
 import { queryClient } from '../lib/queryClient';
 import { logoutRevenueCat } from '../lib/revenueCat';
 import { captureError, setSentryUser } from '../lib/sentry';
+import type { User as AuthUser } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { PROFILE_SELECT_COLUMNS, ProfileService } from '../services/ProfileWriteService';
 import { User } from '../types';
@@ -134,23 +135,35 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
   },
 
   login: async (email, password) => {
-    // Support username login — resolve to email via RPC
-    let loginEmail = email.trim();
-    if (!loginEmail.includes('@')) {
-      const lookupUsername = loginEmail.toLowerCase().replace(/\s+/g, '_');
-      const { data: resolvedEmail, error: rpcError } = await supabase
-        .rpc('get_email_by_username', { lookup_username: lookupUsername });
-      if (rpcError || !resolvedEmail) throw new Error('No account found with that username.');
-      loginEmail = resolvedEmail;
+    const identifier = email.trim();
+    let authedUser: AuthUser;
+
+    if (!identifier.includes('@')) {
+      // EMAIL-ENUM-1: authenticate by username entirely server-side. The edge
+      // function resolves the email + verifies the password without exposing the
+      // email or confirming account existence (generic error on any failure).
+      const { data: fnData, error: fnError } = await supabase.functions.invoke('sign-in-with-username', {
+        body: { username: identifier, password },
+      });
+      if (fnError || !fnData?.access_token || !fnData?.refresh_token) {
+        throw new Error('Invalid username or password.');
+      }
+      const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+        access_token: fnData.access_token,
+        refresh_token: fnData.refresh_token,
+      });
+      if (sessionError || !sessionData.user) throw new Error('Invalid username or password.');
+      authedUser = sessionData.user;
+    } else {
+      const { data, error } = await supabase.auth.signInWithPassword({ email: identifier, password });
+      if (error) throw error;
+      authedUser = data.user;
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
-    if (error) throw error;
-
     // Set auth immediately
-    const completeUser = { ...data.user, following: [] } as unknown as User;
-    storage.set('last_user_id', data.user.id);
-    storage.set(`ironvault_user_cache_${data.user.id}`, JSON.stringify(completeUser));
+    const completeUser = { ...authedUser, following: [] } as unknown as User;
+    storage.set('last_user_id', authedUser.id);
+    storage.set(`ironvault_user_cache_${authedUser.id}`, JSON.stringify(completeUser));
     set({ user: completeUser, isAuthenticated: true });
 
     // Enrich with the full profile in the background. Transient failures are retried;
@@ -158,7 +171,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     withRetry(
       async () => {
         const { data: profileData, error: profileError } = await supabase
-          .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', data.user.id).single();
+          .from('profiles').select(PROFILE_SELECT_COLUMNS).eq('id', authedUser.id).single();
         if (profileError) throw profileError;
         return profileData;
       },
@@ -176,7 +189,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
         }
       }).catch((err) => {
         logger.warn('[auth.login] Profile enrichment failed after retries:', err);
-        captureError(err instanceof Error ? err : new Error(String(err)), { context: 'login_enrichment', userId: data.user.id });
+        captureError(err instanceof Error ? err : new Error(String(err)), { context: 'login_enrichment', userId: authedUser.id });
       });
 
     hydrateFollowing();

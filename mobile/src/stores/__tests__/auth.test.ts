@@ -14,6 +14,8 @@ const mockSignUp = jest.fn();
 const mockSignOut = jest.fn();
 const mockGetSession = jest.fn();
 const mockGetUser = jest.fn();
+const mockSetSession = jest.fn();
+const mockInvoke = jest.fn();
 const mockFrom = jest.fn();
 
 jest.mock('../../lib/supabase', () => ({
@@ -24,7 +26,9 @@ jest.mock('../../lib/supabase', () => ({
       signOut: () => mockSignOut(),
       getSession: () => mockGetSession(),
       getUser: () => mockGetUser(),
+      setSession: (...args: unknown[]) => mockSetSession(...args),
     },
+    functions: { invoke: (...args: unknown[]) => mockInvoke(...args) },
     from: (...args: unknown[]) => mockFrom(...args),
   },
 }));
@@ -167,6 +171,34 @@ describe('AuthStore', () => {
 
       await expect(useAuthStore.getState().login('bad@reel.app', 'wrong'))
         .rejects.toThrow();
+    });
+
+    it('username login authenticates server-side without touching signInWithPassword (EMAIL-ENUM-1)', async () => {
+      const mockUser = { id: 'u9', email: 'hidden@reel.app' };
+      mockInvoke.mockResolvedValue({ data: { access_token: 'at', refresh_token: 'rt' }, error: null });
+      mockSetSession.mockResolvedValue({ data: { user: mockUser, session: {} }, error: null });
+      mockFrom.mockReturnValue({
+        select: jest.fn().mockReturnValue({
+          eq: jest.fn().mockReturnValue({
+            single: jest.fn().mockResolvedValue({ data: { id: 'u9', username: 'noir_fan', role: 'cinephile' }, error: null }),
+          }),
+        }),
+      });
+
+      await useAuthStore.getState().login('noir_fan', 'password123');
+      await new Promise(resolve => setTimeout(resolve, 0));
+
+      // Routed through the edge function + setSession, NOT the client email sign-in.
+      expect(mockInvoke).toHaveBeenCalledWith('sign-in-with-username', { body: { username: 'noir_fan', password: 'password123' } });
+      expect(mockSetSession).toHaveBeenCalledWith({ access_token: 'at', refresh_token: 'rt' });
+      expect(mockSignIn).not.toHaveBeenCalled();
+      expect(useAuthStore.getState().isAuthenticated).toBe(true);
+    });
+
+    it('username login throws a generic error when the edge function fails (no enumeration)', async () => {
+      mockInvoke.mockResolvedValue({ data: null, error: new Error('Unauthorized') });
+      await expect(useAuthStore.getState().login('ghost_account', 'whatever'))
+        .rejects.toThrow('Invalid username or password.');
     });
   });
 
