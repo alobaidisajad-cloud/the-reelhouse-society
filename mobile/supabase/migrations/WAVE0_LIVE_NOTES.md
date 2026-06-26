@@ -20,6 +20,10 @@ These notes record what was verified against the **live** database, so the dated
   ✅ applied.
 - **COMP-SPOILER-1 feed RPCs** (`20260626_06`) — added `is_spoiler` to the two feed cursor
   RPCs (DROP+CREATE, verified against live bodies). ✅ applied — feed now veils spoilers.
+- **Analytics + PRIV-1 + privacy RLS** (`20260626_08`) — restored `get_public_profile_analytics`
+  (+ `can_view_user_data`), which were MISSING live (app dependency + PRIV-1), and applied
+  the privacy RLS that was never deployed (logs/lists/watchlists + comments are now
+  followers-only for private accounts; `USING(true)` reads removed). ✅ applied + verified.
 
 ## To apply with the deploy
 - **EMAIL-ENUM-1** (`20260626_07`) — REVOKE `get_email_by_username` from anon/authenticated.
