@@ -637,11 +637,14 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     if (!user) return false;
     
     try {
-      const { data: lounge, error: fetchError } = await supabase
-        .from('lounges')
-        .select('*')
-        .eq('invite_code', inviteCode.toUpperCase())
+      // LOUNGE-1: resolve by exact invite code via a SECURITY DEFINER RPC instead of
+      // a direct SELECT, so private-lounge metadata can't be enumerated by listing
+      // all invite-coded lounges (the broad "Invite code lookup" policy was dropped).
+      type LoungeRow = { id: string; name: string; description: string | null; is_private: boolean; invite_code: string | null; creator_id: string; created_at: string; member_count: number };
+      const { data: loungeRaw, error: fetchError } = await supabase
+        .rpc('find_lounge_by_invite', { p_code: inviteCode })
         .maybeSingle();
+      const lounge = loungeRaw as LoungeRow | null;
 
       if (fetchError) throw fetchError;
       
