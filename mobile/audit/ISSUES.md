@@ -1,7 +1,8 @@
-# ISSUES — Aggregated (audit in progress: 96/432 files)
+# ISSUES — Aggregated (AUDIT COMPLETE — 51 findings, all re-verified)
 
-Flat, sortable list of every REAL issue found so far. Severity · file:line · description · fix.
-Coverage to date: `src/types`, `src/constants`, `src/theme`, `src/schemas`, `src/lib`, `src/utils`, `src/services` (complete); `src/stores` (5/21). Everything below is verified against current code.
+Flat, sortable list of every REAL issue. Severity · file:line · description · fix.
+
+**Verification pass (this round):** every HIGH + MEDIUM was re-verified with fresh code reads; a sample of LOWs (SVC-2, SCHEMA-4b, HOOK-2) re-confirmed; remaining LOWs verified during the original line-by-line layer audit. **Result: no false positives, with two corrections** — NOTIF-1 ⬇️ downgraded to LOW (its "blanks the screen" premise is prevented by DB NOT NULL + type CHECK and cached-data fallback); SVC-1 sharpened (offline list-comment notif insert always fails silently). **One new finding surfaced:** BACKEND-SHADOWBAN-1. Elite fixes + execution sequence in `MASTER_PLAN.md`.
 
 ## CRITICAL
 | ID | file:line | Issue | Fix |
