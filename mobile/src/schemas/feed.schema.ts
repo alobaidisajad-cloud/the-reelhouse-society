@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { numericId } from '../lib/schemas';
 
 /**
  * RESILIENT YEAR PARSER
@@ -25,7 +26,7 @@ export const FeedItemSchema = z.object({
   avatar_url: z.string().nullable().optional(),
   role: z.string().default('cinephile'),
   film_title: z.string().default('Unknown Film'),
-  film_id: z.union([z.string(), z.number()]).transform(Number),
+  film_id: numericId,
   poster_path: z.string().nullable().optional(),
   rating: z.number().nullable().default(0),
   review: z.string().nullable().optional(),
@@ -37,7 +38,7 @@ export const FeedItemSchema = z.object({
   drop_cap: z.boolean().nullable().optional(),
   watched_with: z.string().nullable().optional(),
   is_autopsied: z.boolean().nullable().optional(),
-  autopsy: z.any().nullable().optional(),
+  autopsy: z.unknown().nullable().optional(),
   abandoned_reason: z.string().nullable().optional(),
 });
 
@@ -57,7 +58,7 @@ const ProfileJoinSchema = z.object({
 
 export const CommunityFeedRowSchema = z.object({
   id: z.union([z.string(), z.number()]).transform(String),
-  film_id: z.union([z.string(), z.number()]).transform(Number),
+  film_id: numericId,
   film_title: z.string(),
   poster_path: z.string().nullable(),
   rating: z.number().nullable().default(0),
@@ -72,7 +73,7 @@ export const CommunityFeedRowSchema = z.object({
   pull_quote: z.string().nullable(),
   watched_with: z.string().nullable(),
   is_autopsied: z.boolean().nullable(),
-  autopsy: z.any().nullable(),
+  autopsy: z.unknown().nullable(),
   profiles: z.union([
     ProfileJoinSchema,
     z.array(ProfileJoinSchema),
@@ -88,7 +89,7 @@ export type CommunityFeedRow = z.infer<typeof CommunityFeedRowSchema>;
  */
 export const FollowingFeedRowSchema = z.object({
   id: z.union([z.string(), z.number()]).transform(String),
-  film_id: z.union([z.string(), z.number()]).transform(Number),
+  film_id: numericId,
   film_title: z.string(),
   poster_path: z.string().nullable(),
   rating: z.number().nullable().default(0),
@@ -106,7 +107,7 @@ export const FollowingFeedRowSchema = z.object({
   pull_quote: z.string().nullable(),
   watched_with: z.string().nullable(),
   is_autopsied: z.boolean().nullable(),
-  autopsy: z.any().nullable(),
+  autopsy: z.unknown().nullable(),
 });
 
 export type FollowingFeedRow = z.infer<typeof FollowingFeedRowSchema>;

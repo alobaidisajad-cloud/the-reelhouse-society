@@ -192,7 +192,8 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
             />
           </View>
 
-          <AutopsyView isAutopsied={item.is_autopsied ?? undefined} autopsy={item.autopsy} />
+          {/* autopsy is unknown JSONB on the wire; AutopsyView guards shape at runtime. */}
+          <AutopsyView isAutopsied={item.is_autopsied ?? undefined} autopsy={(item.autopsy ?? undefined) as Record<string, number> | undefined} />
         </ActivityCardShell>
       </AnimatedView>
     </View>

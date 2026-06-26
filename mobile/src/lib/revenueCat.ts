@@ -19,6 +19,7 @@
  */
 
 import { Platform } from 'react-native';
+import type { CustomerInfo } from 'react-native-purchases';
 import { supabase } from './supabase';
 import { logger } from '../utils/logger';
 import { enqueueMutation, flushOfflineQueue } from '../utils/offlineQueue';
@@ -41,7 +42,9 @@ export interface EntitlementInfo {
 const RC_IOS_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY ?? '';
 const RC_ANDROID_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY ?? '';
 
-let Purchases: any = null;
+// TYPES-4: the package is installed, so type against the real SDK (the stale
+// `react-native-purchases.d.ts` stub that shadowed these as `unknown` is deleted).
+let Purchases: typeof import('react-native-purchases').default | null = null;
 let isConfigured = false;
 
 /**
@@ -62,7 +65,7 @@ export async function initRevenueCat(userId?: string): Promise<void> {
   try {
     // Dynamic import so the app doesn't crash if package isn't installed yet
     const RNPurchases = await import('react-native-purchases');
-    Purchases = RNPurchases.default ?? RNPurchases;
+    Purchases = (RNPurchases.default ?? RNPurchases) as typeof import('react-native-purchases').default;
 
     await Purchases.configure({ apiKey, appUserID: userId ?? null });
     isConfigured = true;
@@ -76,7 +79,7 @@ export async function initRevenueCat(userId?: string): Promise<void> {
   }
 }
 
-export function parseEntitlements(customerInfo: any | null): EntitlementInfo {
+export function parseEntitlements(customerInfo: CustomerInfo | null): EntitlementInfo {
   const fallback: EntitlementInfo = {
     tier: 'cinephile',
     isActive: false,

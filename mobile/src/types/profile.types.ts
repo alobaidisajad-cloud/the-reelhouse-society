@@ -1,6 +1,7 @@
 // ============================================================
 // Profile domain types — extracted from monolithic types.ts
 // ============================================================
+import type { DomainLog } from './film.types';
 
 export interface ProfileVaultItem {
     id: string;
@@ -40,9 +41,11 @@ export interface ProfileLog {
     watchedWith?: string | null | undefined;
     abandonedReason?: string | null | undefined;
     isAutopsied?: boolean;
-    autopsy?: any;
+    // TYPES-3: derive the autopsy/viewingHistory shapes from the canonical
+    // DomainLog instead of leaking `any` (these two interfaces are near-duplicates).
+    autopsy?: Record<string, number> | null;
     viewCount?: number;
-    viewingHistory?: any[] | null;
+    viewingHistory?: NonNullable<DomainLog['viewingHistory']> | null;
     videoUrl?: string | null;
     format?: string | null;
     dropCap?: boolean;

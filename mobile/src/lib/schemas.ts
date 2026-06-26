@@ -11,8 +11,13 @@ import { z } from 'zod';
  * FilmSchema (and its id coercion) consumed by the analytics components.
  */
 
+// Single source for "id arrives as string|number, normalize to number" coercion.
+// Re-used by the feed schemas for `film_id` so the pattern isn't re-spelled
+// (LIB-5). TMDB ids are the canonical consumer, hence the alias below.
+export const numericId = z.union([z.string(), z.number()]).transform((val) => Number(val));
+
 // Coerce TMDB ids, which arrive as either string or number, to a number.
-export const TmdbIdSchema = z.union([z.string(), z.number()]).transform((val) => Number(val));
+export const TmdbIdSchema = numericId;
 
 // Base Film Schema (what we expect from TMDB or our internal DB)
 export const FilmSchema = z.object({

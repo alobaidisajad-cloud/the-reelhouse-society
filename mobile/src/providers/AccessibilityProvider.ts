@@ -17,6 +17,15 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 // React Native's Text component accepts defaultProps to set baseline
 // accessibility behavior. We enable font scaling with a safety cap
 // so layouts don't break at maximum accessibility settings.
+//
+// ⚠️ HOOK-2 — UPGRADE-FRAGILE INTERNAL PATCH.
+// This relies on RN's Text/TextInput being a forwardRef object exposing a
+// mutable `.render`. VERIFIED AGAINST: react-native 0.81.x (Expo SDK 54).
+// On every RN/Expo SDK bump, re-verify that `(Text as any).render` is still a
+// function (the `if` branch is taken, not the `defaultProps` fallback) — the
+// smoke test in AccessibilityProvider.test.ts asserts the wrapper actually
+// injects scaledTextProps. If RN drops `.render`, the fallback below silently
+// no-ops the font cap, so the test is the early-warning signal.
 const origTextRender = (Text as any).render;
 if (origTextRender) {
   // RN 0.81+ uses forwardRef, so we patch render

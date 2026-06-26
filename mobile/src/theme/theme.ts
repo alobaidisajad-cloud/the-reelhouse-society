@@ -18,13 +18,14 @@ export const colors = {
   silverNitrate: '#D8E0E8', // System/info accent
   rust: '#8B4513',           // Tarnished copper — dossier accents, warm highlights
 
-  // Derived
+  // Derived — channels MUST match base `sepia` (#B8891A = rgb(184, 137, 26)).
+  // (CONST-1: previously rgb(196,150,26), a subtly different hue than the base.)
   transparent: 'transparent',
-  sepiaFaint: 'rgba(196, 150, 26, 0.08)',
-  sepiaSubtle: 'rgba(196, 150, 26, 0.15)',
-  sepiaBorder: 'rgba(196, 150, 26, 0.25)',
-  sepiaBorderStrong: 'rgba(196, 150, 26, 0.5)',
-  sepiaBorderBold: 'rgba(196, 150, 26, 0.8)',
+  sepiaFaint: 'rgba(184, 137, 26, 0.08)',
+  sepiaSubtle: 'rgba(184, 137, 26, 0.15)',
+  sepiaBorder: 'rgba(184, 137, 26, 0.25)',
+  sepiaBorderStrong: 'rgba(184, 137, 26, 0.5)',
+  sepiaBorderBold: 'rgba(184, 137, 26, 0.8)',
   bloodFaint: 'rgba(107, 26, 10, 0.3)',
   parchmentBright: '#F8F2E4',
   surface: '#14120D',

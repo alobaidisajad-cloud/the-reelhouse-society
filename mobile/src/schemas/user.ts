@@ -1,6 +1,14 @@
 import { z } from 'zod';
 
 /**
+ * Shared privacy/visibility enums — the single source of truth for both the
+ * settings form (`settings.ts`, camelCase keys) and the persisted preferences
+ * blob below (snake_case keys). Keeps the two from drifting (SCHEMA-2).
+ */
+export const SocialVisibilityEnum = z.enum(['public', 'followers', 'private']);
+export const PrivacyAudienceEnum = z.enum(['everyone', 'followers', 'nobody']);
+
+/**
  * User notification and privacy preferences from the `profiles.preferences` JSONB column.
  * 
  * Used by: SettingsScreen, ProfileWriteService, useProfileData
@@ -10,17 +18,19 @@ import { z } from 'zod';
  * - All fields optional — new users have no preferences set initially
  */
 export const UserPreferencesSchema = z.object({
-  social_visibility: z.string().optional(),
-  privacy_endorsements: z.string().optional(),
-  privacy_annotations: z.string().optional(),
+  // Enum-enforced but resilient: an unrecognized persisted value degrades to
+  // undefined rather than failing the whole preferences parse (SCHEMA-2).
+  social_visibility: SocialVisibilityEnum.optional().catch(undefined),
+  privacy_endorsements: PrivacyAudienceEnum.optional().catch(undefined),
+  privacy_annotations: PrivacyAudienceEnum.optional().catch(undefined),
   notif_follows: z.boolean().optional(),
   notif_endorsements: z.boolean().optional(),
   notif_comments: z.boolean().optional(),
   notif_system: z.boolean().optional(),
   biometric_lock: z.boolean().optional(),
   tactile_audio_enabled: z.boolean().optional(),
-  favorites: z.array(z.any()).nullable().optional(),
-  programmes: z.array(z.any()).nullable().optional(),
+  favorites: z.array(z.unknown()).nullable().optional(),
+  programmes: z.array(z.unknown()).nullable().optional(),
   hide_stats: z.boolean().optional(),
 }).catchall(z.unknown());
 
@@ -48,7 +58,7 @@ export const UserSchema = z.object({
   // (displayName, socialVisibility, isSocialPrivate) to prevent dual-path bugs.
   display_name: z.string().optional(),
   persona: z.string().optional(),
-  social_visibility: z.enum(['public', 'followers', 'private']).optional(),
+  social_visibility: SocialVisibilityEnum.optional(),
   // Runtime-only field: populated in-memory, excluded from MMKV cache via destructuring
   // @deprecated — Use `useSocialStore.getState().following` instead. This field is a cold-start cache only.
   following: z.array(z.string()).optional(),
