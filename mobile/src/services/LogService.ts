@@ -6,6 +6,7 @@ import { PUBLIC_LOG_COLUMNS } from '@/src/utils/mappers';
 import { resolveTier } from '@/src/utils/tier';
 import { validateWithTelemetry } from '@/src/utils/validateWithTelemetry';
 import { withAbortSignal } from '@/src/utils/withAbortSignal';
+import { sanitizeInput } from '@/src/utils/sanitizeInput';
 import { z } from 'zod';
  
 import { getOfflineQueue } from '@/src/utils/offlineQueue';
@@ -191,10 +192,13 @@ export const LogService = {
 
   async addLogComment(payload: unknown) {
     const safePayload = LogCommentPayloadSchema.parse(payload);
-    
+    // COMP-1: sanitize at the service boundary so the ONLINE path matches the
+    // offline mutationExecutor (`sanitizeInput(body, 'logComment')`) — one choke point.
+    const sanitized = { ...safePayload, body: sanitizeInput(safePayload.body, 'logComment') };
+
     const { data, error } = await supabase
       .from('log_comments')
-      .upsert(safePayload, { onConflict: 'id' })
+      .upsert(sanitized, { onConflict: 'id' })
       // Explicit columns replace select('*') — prevents payload bloat
       .select('id, log_id, user_id, body, created_at, profiles(username, avatar_url, display_name)')
       .maybeSingle();

@@ -1,6 +1,7 @@
 import { supabase } from '@/src/lib/supabase';
 import { z } from 'zod';
 import { logger } from '@/src/utils/logger';
+import { sanitizeInput } from '@/src/utils/sanitizeInput';
 
 const CommentPayloadSchema = z.object({
   list_id: z.string().uuid(),
@@ -146,8 +147,10 @@ export const StackService = {
     // Remap API 'content' → DB column 'body' at service boundary.
     // CommentPayloadSchema uses 'content' (matches UI's ListComment.content),
     // but the list_comments table column is 'body' (confirmed by read path L94).
+    // COMP-1: sanitize at the service boundary so the ONLINE path matches the
+    // offline mutationExecutor (`sanitizeInput(content, 'listComment')`).
     const { content, ...rest } = safePayload;
-    const dbPayload = { ...rest, body: content };
+    const dbPayload = { ...rest, body: sanitizeInput(content, 'listComment') };
     
     // Add the comment and fetch joined profile in a single query
     const { data, error } = await supabase
