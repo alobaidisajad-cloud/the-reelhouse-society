@@ -20,6 +20,19 @@ serve(async (req) => {
     return new Response('ok', { headers: corsHeaders })
   }
 
+  // BACKEND-PUSH-1: this is a DB-webhook target, not a client endpoint. If a shared
+  // secret is configured, require it so a forged {record} POST can't spam push
+  // notifications. Enforce-if-configured (set FUNCTION_SHARED_SECRET + configure the
+  // Supabase DB webhook to send it as `x-function-secret`).
+  const FUNCTION_SECRET = Deno.env.get('FUNCTION_SHARED_SECRET') || ''
+  if (FUNCTION_SECRET) {
+    if ((req.headers.get('x-function-secret') || '') !== FUNCTION_SECRET) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+  } else {
+    console.warn('[notify-push] FUNCTION_SHARED_SECRET not set — endpoint is unauthenticated.')
+  }
+
   try {
     // Determine if request is an authorized Database Webhook
     // OR if it's sent manually. For Webhooks, we can use a structural check.

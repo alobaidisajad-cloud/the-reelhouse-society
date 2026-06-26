@@ -69,10 +69,35 @@ async function multiTierSearch(query: string, page = 1): Promise<unknown> {
     return { results: [], total_pages: 0, total_results: 0, page: 1, searchType: 'failed' };
 }
 
+// BACKEND-TMDB-1: best-effort per-IP throttle to deter open-proxy abuse of the
+// hidden TMDB key. In-memory ⇒ per edge instance (not global), but it caps the
+// easy abuse path; the 5-min response cache absorbs most legitimate load.
+const RATE_WINDOW_MS = 60_000
+const RATE_MAX = 120 // requests / IP / minute
+const _ipHits = new Map<string, { count: number; resetAt: number }>()
+function rateLimited(ip: string): boolean {
+    const now = Date.now()
+    const e = _ipHits.get(ip)
+    if (!e || now > e.resetAt) {
+        if (_ipHits.size > 5000) _ipHits.clear() // bound memory
+        _ipHits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS })
+        return false
+    }
+    e.count += 1
+    return e.count > RATE_MAX
+}
+
 serve(async (req) => {
     // Handle CORS preflight
     if (req.method === 'OPTIONS') {
         return new Response('ok', { headers: corsHeaders })
+    }
+
+    const ip = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim() || 'unknown'
+    if (rateLimited(ip)) {
+        return new Response(JSON.stringify({ error: 'Rate limit exceeded' }), {
+            status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
     }
 
     try {

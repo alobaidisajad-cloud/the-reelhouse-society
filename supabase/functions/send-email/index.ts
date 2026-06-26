@@ -24,6 +24,19 @@ serve(async (req: Request) => {
     return new Response('Method not allowed', { status: 405 })
   }
 
+  // BACKEND-EMAIL-1: welcome/digest are meant to be triggered by the signup hook /
+  // cron, not arbitrary clients. If a shared secret is configured, require it.
+  // Enforce-if-configured so deploying this code doesn't break the caller before the
+  // secret is set; set FUNCTION_SHARED_SECRET + send it as `x-function-secret`.
+  const FUNCTION_SECRET = Deno.env.get('FUNCTION_SHARED_SECRET') || ''
+  if (FUNCTION_SECRET) {
+    if ((req.headers.get('x-function-secret') || '') !== FUNCTION_SECRET) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+    }
+  } else {
+    console.warn('[send-email] FUNCTION_SHARED_SECRET not set — endpoint is unauthenticated.')
+  }
+
   try {
     const { type, userId } = await req.json()
 
