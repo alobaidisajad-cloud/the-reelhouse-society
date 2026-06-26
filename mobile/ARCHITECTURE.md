@@ -98,8 +98,9 @@ src/
 
 ## Feature Flags
 
-Resolution: server override -> role-based default -> static default.
-See src/lib/featureFlags.ts for full implementation.
+> Not yet implemented. The intended resolution order is: server override → role-based
+> default → static default. (There is no `src/lib/featureFlags.ts` today; tier gating
+> currently lives in `src/utils/tier.ts`.) Remove this section or add the module when built.
 
 ---
 

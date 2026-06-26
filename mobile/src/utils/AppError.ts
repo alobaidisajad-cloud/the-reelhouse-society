@@ -159,7 +159,12 @@ export function getUserMessage(error: unknown): string {
     const msg = error.message.toLowerCase();
     if (msg.includes('network request failed')) return 'No connection. Your changes will sync later.';
     if (msg.includes('invalid login credentials')) return 'Identity not recognized. Check your credentials.';
-    if (msg.includes('database error saving new user')) return 'Username is already taken.';
+    // UTIL-4: "database error saving new user" is a GENERIC Supabase signup failure
+    // (any constraint/trigger error, incl. the handle_new_user path), not specifically
+    // a username collision — don't assert "username taken". The signup form already
+    // pre-checks username availability; surface an honest, actionable message.
+    if (msg.includes('database error saving new user')) return 'We couldn’t complete sign-up. The username may be taken — try a different one.';
+    if (msg.includes('duplicate key') && msg.includes('username')) return 'Username is already taken.';
     if (msg.includes('jwt expired')) return 'Your session has expired. Please log in again.';
     return 'Something went wrong. Please try again.';
   }

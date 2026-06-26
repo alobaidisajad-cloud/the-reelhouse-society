@@ -1,4 +1,7 @@
 import { z } from 'zod';
+// TYPES-2: reuse the single source of truth for moderation enums instead of
+// inlining the value lists (which silently drift from the canonical enums).
+import { ReportableContentType, ReportReason } from './moderation';
 
 /**
  * mutations.ts — Runtime Mutation Payload Schemas
@@ -78,8 +81,8 @@ export const MutationSchemaMap: Record<string, z.ZodTypeAny> = {
   submit_report: z.object({
     reporter_id: z.string().uuid(),
     content_id: z.string().uuid(),
-    content_type: z.enum(['log', 'list', 'log_comment', 'list_comment', 'dossier', 'dossier_comment', 'lounge_message', 'profile']),
-    reason: z.enum(['spoiler_unmarked', 'harassment', 'hate_speech', 'spam', 'inappropriate', 'impersonation', 'misinformation', 'copyright', 'other']),
+    content_type: ReportableContentType,
+    reason: ReportReason,
     details: z.string().max(500).nullable().optional(),
     target_user_id: z.string().uuid(),
   }),

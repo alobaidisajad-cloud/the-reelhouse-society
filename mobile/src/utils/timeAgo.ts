@@ -21,7 +21,12 @@ export function timeAgo(dateStr: string | Date | undefined | null): string {
   const days = Math.floor(hrs / 24);
   if (days < 7) return `${days}d AGO`;
   if (days < 30) return `${Math.floor(days / 7)}w AGO`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
+  // UTIL-3: include the year for dates in a prior calendar year so old entries
+  // (e.g. a log from 2 years ago) aren't shown ambiguously as just "MAR 5".
+  const includeYear = d.getFullYear() !== new Date().getFullYear();
+  return d.toLocaleDateString('en-US', includeYear
+    ? { month: 'short', day: 'numeric', year: 'numeric' }
+    : { month: 'short', day: 'numeric' }).toUpperCase();
 }
 
 /**

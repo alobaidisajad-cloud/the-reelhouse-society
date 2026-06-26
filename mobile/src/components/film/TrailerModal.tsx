@@ -61,7 +61,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
                         ref={webviewRef}
                         source={{ uri: `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&controls=1&showinfo=0&fs=1&playsinline=1&iv_load_policy=3&enablejsapi=1` }}
                         style={s.webview}
-                        originWhitelist={['https://*']}
+                        originWhitelist={['https://www.youtube.com', 'https://www.google.com']}
                         onShouldStartLoadWithRequest={(request) => {
                             // Security: Only allow YouTube embed and Google OAuth domains
                             return request.url.startsWith('https://www.youtube.com/') ||

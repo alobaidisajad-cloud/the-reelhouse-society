@@ -7,3 +7,6 @@
 export * from './cacheKeys';
 export * from './deepLinks';
 export * from './membership';
+// CONST-2: complete the barrel so it actually re-exports ALL constants as documented.
+export * from './formats';
+export * from './textScaling';

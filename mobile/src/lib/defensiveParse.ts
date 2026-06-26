@@ -7,8 +7,12 @@
  *
  * Strategy:
  *   • DEV: Fail-fast — throws on schema mismatch so drift is caught immediately
- *   • PROD: Graceful degradation — logs to Sentry, returns raw data
- *   • Always returns typed data for downstream consumers
+ *   • PROD: logs to Sentry, then THROWS (SchemaValidationError) to trigger the
+ *     ErrorBoundary — it never returns unvalidated data, since returning raw data
+ *     would bypass Zod defaults/transforms and cause silent downstream crashes.
+ *   • On success, always returns validated, typed data for downstream consumers.
+ *   • (For list endpoints where partial results are fine, use the array-salvage
+ *     variant below instead.)
  */
 import { z, ZodError } from 'zod';
 import { captureError } from './sentry';
