@@ -2,7 +2,10 @@
 
 Flat, sortable list of every REAL issue. Severity · file:line · description · fix.
 
-**Verification pass (this round):** every HIGH + MEDIUM was re-verified with fresh code reads; a sample of LOWs (SVC-2, SCHEMA-4b, HOOK-2) re-confirmed; remaining LOWs verified during the original line-by-line layer audit. **Result: no false positives, with two corrections** — NOTIF-1 ⬇️ downgraded to LOW (its "blanks the screen" premise is prevented by DB NOT NULL + type CHECK and cached-data fallback); SVC-1 sharpened (offline list-comment notif insert always fails silently). **One new finding surfaced:** BACKEND-SHADOWBAN-1. Elite fixes + execution sequence in `MASTER_PLAN.md`.
+**Verification pass — COMPLETE: every one of the 51 findings individually re-verified this round with a fresh code read.** Result: **zero false positives** (every finding is real), with:
+- **2 corrections:** NOTIF-1 ⬇️ downgraded MEDIUM→LOW (its "blanks the screen" premise is prevented by `message NOT NULL` + `type` CHECK + cached-data fallback); SVC-1 sharpened (offline list-comment notif insert uses non-existent columns/invalid type/missing message → fails silently → offline list-comments never notify).
+- **1 new finding:** BACKEND-SHADOWBAN-1 (dormant auto-shadowban via report→trust_score; enforcement OR-defeated, so currently inert but a latent landmine).
+- Each LOW re-confirmed against current code: SVC-2 (raw cursor in `.or()`, RLS-contained), SCHEMA-1 (regex looser than validateUsername; doc says 3-20, code max 30), SCHEMA-2 (persisted `user.ts` privacy fields are bare `z.string()`), SCHEMA-3 (`autopsy: z.any()`), SCHEMA-4b (exported `EditProfileSchema` imported nowhere), CONST-1 (sepia #B8891A vs derived rgb(196,150,26)), CONST-2/3, LIB-3 (header says PROD returns raw, code throws), LIB-4 (featureFlags.ts absent), LIB-5, UTIL-1 (100ms×N), UTIL-2, UTIL-3 (no year >30d), UTIL-4, OFFQ-2 (`_queueUserId` write-only), STORE-1 (web logout skips MMKV purge), STORE-2 (optimistic auth on cache), FEAT-1 (imports unsanitized), FEAT-2 (no zip-bomb cap), TYPES-2/3/4, HOOK-2 (Text.render patch), COMP-2, SVC-3, COMP-FEED-DEAD-1, signup-collision. Elite fixes + execution sequence in `MASTER_PLAN.md`.
 
 ## CRITICAL
 | ID | file:line | Issue | Fix |
