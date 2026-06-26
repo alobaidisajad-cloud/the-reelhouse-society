@@ -116,8 +116,18 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
           hydrateFollowing();
           return;
         }
+        // session valid but profile fetch returned nothing — keep the cached
+        // optimistic user (a transient profile read shouldn't force a logout).
+      } else {
+        // STORE-2: getSession succeeded with NO session → the optimistic auth
+        // restored from cache at startup is stale; clear it here instead of
+        // relying solely on the global onAuthStateChange listener to correct it.
+        set({ user: null, isAuthenticated: false, loading: false });
+        return;
       }
     } catch (err: unknown) {
+      // Network/transient failure — keep the cached optimistic session; the
+      // listener / next restore will reconcile. (Do NOT log out on error.)
       if (__DEV__) console.warn('[restoreSession] Failed:', err instanceof Error ? err.message : String(err));
     }
     set({ loading: false });

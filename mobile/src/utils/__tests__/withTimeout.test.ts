@@ -56,20 +56,32 @@ describe('withTimeout', () => {
     expect(result).toBe(42);
   });
 
-  it('throws AppError with timeout code on AbortError', async () => {
-    const abortError = new Error('The operation was aborted');
-    abortError.name = 'AbortError';
-
+  it('throws AppError TIMEOUT when OUR timeout fires (AbortError + signal aborted)', async () => {
+    // UTIL-2: a real timeout — the internal AbortSignal.timeout fires, so
+    // signal.aborted is true and the AbortError is correctly mapped to TIMEOUT.
     await expect(
       withTimeout(
-        async () => { throw abortError; },
-        5000,
+        (signal) => new Promise((_resolve, reject) => {
+          signal.addEventListener('abort', () => {
+            const e = new Error('The operation was aborted');
+            e.name = 'AbortError';
+            reject(e);
+          });
+        }),
+        20,
         'slow_op',
       ),
-    ).rejects.toMatchObject({
-      name: 'AppError',
-      code: 'TIMEOUT',
-    });
+    ).rejects.toMatchObject({ name: 'AppError', code: 'TIMEOUT' });
+  });
+
+  it('re-throws an EXTERNAL AbortError unchanged (not our timeout)', async () => {
+    // UTIL-2: an AbortError from something other than our timeout (e.g. component
+    // unmount) must propagate unchanged, not be mislabeled as a timeout.
+    const external = new Error('aborted by caller');
+    external.name = 'AbortError';
+    await expect(
+      withTimeout(async () => { throw external; }, 5000, 'op'),
+    ).rejects.toMatchObject({ name: 'AbortError' });
   });
 
   it('throws AppError with timeout code on TimeoutError', async () => {

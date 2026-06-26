@@ -34,9 +34,11 @@ export function withTimeout<T>(
   return fn(signal).catch((err: unknown) => {
     const error = err instanceof Error ? err : new Error(String(err));
 
-    // AbortSignal.timeout() throws a TimeoutError (DOMException) in spec-compliant engines.
-    // Hermes uses AbortError. Handle both for maximum compatibility.
-    if (error.name === 'TimeoutError' || error.name === 'AbortError') {
+    // AbortSignal.timeout() throws a TimeoutError (DOMException) in spec-compliant
+    // engines; Hermes uses AbortError. UTIL-2: an AbortError is only OUR timeout if
+    // our timeout `signal` actually fired — otherwise it's an EXTERNAL abort (e.g.
+    // component unmount) and must propagate unchanged, not be mislabeled "timed out".
+    if (error.name === 'TimeoutError' || (error.name === 'AbortError' && signal.aborted)) {
       logger.warn(`[withTimeout] ${label ?? 'request'} timed out after ${ms}ms`);
       throw new AppError(
         'TIMEOUT',
