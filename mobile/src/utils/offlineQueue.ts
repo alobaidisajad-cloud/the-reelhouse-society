@@ -50,6 +50,15 @@ const MAX_QUEUE_SIZE = 100;
 const MAX_TRANSIENT_RETRIES = 5;
 const STALE_THRESHOLD_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+// OFFQ-2: retained — exercised by integration tests (queue user-scoping). The
+// finding (currently write-only) should be resolved by WIRING this into the flush
+// (reject mutations whose owner != the active user), not by deletion.
+let _queueUserId: string | null = null;
+
+/** Set the current user ID for queue scoping. */
+export function setQueueUserId(userId: string | null) {
+    _queueUserId = userId;
+}
 
 /** Simple zustand-like store for reactive UI binding to queue state */
 interface OfflineQueueStoreState {
