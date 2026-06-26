@@ -6,6 +6,7 @@ import Animated, { FadeIn, FadeInUp } from 'react-native-reanimated';
 
 import PressableScale from '@/src/components/PressableScale';
 import { TIERS } from '@/src/constants/membership';
+import { useMembershipPricing } from '@/src/hooks/useMembershipPricing';
 import { colors, fonts } from '@/src/theme/theme';
 import { useRouter } from 'expo-router';
 
@@ -14,11 +15,13 @@ const upgradeTiers = TIERS.filter(t => t.id !== 'cinephile').map(t => {
     const compactFeatures = [];
     if (t.featuredFeature) compactFeatures.push(t.featuredFeature.title.replace(/\n/g, ' '));
     compactFeatures.push(...t.features.map(f => f.split('\n')[0]));
-    
+
     return {
         id: t.id,
         name: t.name.replace(/\n/g, ' ').toUpperCase(),
+        // Static fallback price (used when live store pricing isn't available).
         price: `$${t.price}${t.pricePeriod}`.toLowerCase(),
+        pricePeriod: t.pricePeriod,
         features: compactFeatures,
     };
 });
@@ -31,6 +34,7 @@ interface PaywallModalProps {
 
 export default function PaywallModal({ visible, onClose, recommendedTier }: PaywallModalProps) {
     const router = useRouter();
+    const pricing = useMembershipPricing(); // CONST-3: live store prices (falls back to static)
 
     const handleUpgrade = () => {
         onClose();
@@ -53,7 +57,11 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
                         <Text style={s.subtitle}>Unlock premium features reserved for the most devoted cinephiles.</Text>
                     </Animated.View>
 
-                    {upgradeTiers.map((tier, i) => (
+                    {upgradeTiers.map((tier, i) => {
+                        // CONST-3: prefer the live localized store price; fall back to static.
+                        const rc = pricing[tier.id];
+                        const displayPrice = rc?.monthly ? `${rc.monthly}${tier.pricePeriod}`.toLowerCase() : tier.price;
+                        return (
                         <Animated.View key={tier.name} entering={FadeInUp.delay(i * 150).duration(400)}>
                             <PressableScale
                                 style={[s.tierCard, recommendedTier === tier.id && s.tierRecommended]}
@@ -61,13 +69,13 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
                                 haptic="medium"
                                 pressedScale={0.98}
                                 accessibilityRole="button"
-                                accessibilityLabel={`Subscribe to ${tier.name} for ${tier.price}`}
+                                accessibilityLabel={`Subscribe to ${tier.name} for ${displayPrice}`}
                             >
                                 {recommendedTier === tier.id && (
                                     <Text style={s.recommendedBadge}>RECOMMENDED</Text>
                                 )}
                                 <Text style={s.tierName}>{tier.name}</Text>
-                                <Text style={s.tierPrice}>{tier.price}</Text>
+                                <Text style={s.tierPrice}>{displayPrice}</Text>
                                 {tier.features.map(f => (
                                     <Text key={f} style={s.tierFeature}>✦ {f}</Text>
                                 ))}
@@ -76,7 +84,8 @@ export default function PaywallModal({ visible, onClose, recommendedTier }: Payw
                                 </View>
                             </PressableScale>
                         </Animated.View>
-                    ))}
+                        );
+                    })}
                 </View>
             </View>
         </Modal>

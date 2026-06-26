@@ -26,11 +26,13 @@ import { resolveTier, getTierWeight } from '@/src/utils/tier';
 // Replaced with Reanimated LinearTransition on animated containers
 
 import { TIERS } from '@/src/constants/membership';
+import { useMembershipPricing } from '@/src/hooks/useMembershipPricing';
 
 export default function MembershipScreen() {
 
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated } = useAuthStore();
+  const pricing = useMembershipPricing(); // CONST-3: live store prices (falls back to static)
   const [isRedirecting, setIsRedirecting] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const [isRestoring, setIsRestoring] = useState(false);
@@ -272,16 +274,28 @@ export default function MembershipScreen() {
                     <Text style={[st.priceAmount, st.priceAmountFree]}>Free</Text>
                     <Text style={st.pricePeriod}>{tier.pricePeriod}</Text>
                   </View>
-                ) : (
-                  <>
-                    <View style={st.tierPriceWrap}>
-                      <Text style={st.priceCurrency}>$</Text>
-                      <Text style={st.priceAmount}>{tier.price}</Text>
-                      <Text style={st.pricePeriod}>{tier.pricePeriod}</Text>
-                    </View>
-                    {tier.billing && <Text style={st.priceBilling}>{tier.billing}</Text>}
-                  </>
-                )}
+                ) : (() => {
+                  // CONST-3: prefer the live localized store price; fall back to static copy.
+                  const rc = pricing[tier.id];
+                  const billing = rc?.annual ? `BILLED ANNUALLY (${rc.annual}/YR)` : tier.billing;
+                  return (
+                    <>
+                      <View style={st.tierPriceWrap}>
+                        {rc?.monthly ? (
+                          // priceString already includes the localized currency symbol.
+                          <Text style={st.priceAmount}>{rc.monthly}</Text>
+                        ) : (
+                          <>
+                            <Text style={st.priceCurrency}>$</Text>
+                            <Text style={st.priceAmount}>{tier.price}</Text>
+                          </>
+                        )}
+                        <Text style={st.pricePeriod}>{tier.pricePeriod}</Text>
+                      </View>
+                      {billing && <Text style={st.priceBilling}>{billing}</Text>}
+                    </>
+                  );
+                })()}
 
                 {/* Features */}
                 <View style={st.featuresWrap}>

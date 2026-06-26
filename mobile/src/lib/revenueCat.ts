@@ -219,6 +219,36 @@ async function collectPurchasablePackages(): Promise<any[]> {
   }
 }
 
+export interface TierPricing { monthly?: string; annual?: string }
+
+/**
+ * CONST-3: resolve localized store prices per tier so the membership UI can
+ * show the REAL StoreKit/Play price (and currency) instead of hardcoded USD
+ * that drifts from the stores. Keyed by tier id (`archivist` / `auteur`) with
+ * each tier's monthly + annual `priceString`. Returns `{}` when RC isn't
+ * configured/available — callers fall back to the static copy in
+ * `constants/membership.ts`.
+ */
+export async function getTierPricing(): Promise<Record<string, TierPricing>> {
+  const packages = await collectPurchasablePackages();
+  const out: Record<string, TierPricing> = {};
+  for (const p of packages) {
+    const productId = String(p?.product?.identifier ?? '').toLowerCase();
+    const priceString = typeof p?.product?.priceString === 'string' ? p.product.priceString : undefined;
+    if (!priceString) continue;
+    const tierId = ['archivist', 'auteur'].find((t) => productId.startsWith(t));
+    if (!tierId) continue;
+    const pType = String(p?.packageType ?? '').toUpperCase();
+    const period: 'monthly' | 'annual' | undefined =
+      productId.includes('annual') || pType === 'ANNUAL' ? 'annual'
+      : productId.includes('monthly') || pType === 'MONTHLY' ? 'monthly'
+      : undefined;
+    if (!period) continue;
+    out[tierId] = { ...out[tierId], [period]: priceString };
+  }
+  return out;
+}
+
 /**
  * Resolve the RevenueCat package to purchase for a given tier.
  *
