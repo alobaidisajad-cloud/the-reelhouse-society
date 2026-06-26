@@ -100,12 +100,16 @@ export const useNotificationStore = create<NotificationState>()(
             // The Realtime WS path already had safeParse (L234) but the initial
             // fetch was unvalidated — if a DB migration changes columns, this
             // would crash on undefined property access instead of gracefully degrading.
-            const parsed = z.array(RealtimeNotifSchema).safeParse(data);
-            if (!parsed.success) {
-                logger.warn('[notificationStore.fetch] Response validation failed:', parsed.error.message);
-                return;
-            }
-            const validated = parsed.data;
+            // NOTIF-1: per-row salvage (drop invalid rows, keep the rest) instead of
+            // all-or-nothing — a single schema-drifted row no longer discards the page.
+            const validated = (data ?? []).flatMap((row) => {
+                const r = RealtimeNotifSchema.safeParse(row);
+                if (!r.success) {
+                    logger.warn('[notificationStore.fetch] Dropped malformed notification row:', r.error.message);
+                    return [];
+                }
+                return [r.data];
+            });
             // Compound cursor (created_at|id) prevents duplicate/skipped
             // notifications when two share the same created_at timestamp.
             const lastItem = validated[validated.length - 1];
@@ -157,13 +161,15 @@ export const useNotificationStore = create<NotificationState>()(
         const { data, error } = await query;
 
         if (!error && data) {
-            // Validate loadMore response, same as initial fetch.
-            const parsed = z.array(RealtimeNotifSchema).safeParse(data);
-            if (!parsed.success) {
-                logger.warn('[notificationStore.loadMore] Response validation failed:', parsed.error.message);
-                return;
-            }
-            const validated = parsed.data;
+            // NOTIF-1: per-row salvage, same as initial fetch.
+            const validated = (data ?? []).flatMap((row) => {
+                const r = RealtimeNotifSchema.safeParse(row);
+                if (!r.success) {
+                    logger.warn('[notificationStore.loadMore] Dropped malformed notification row:', r.error.message);
+                    return [];
+                }
+                return [r.data];
+            });
             // Compound cursor for load-more
             set(state => {
                 // Dedup: match Realtime handler pattern (prevents duplicates from clock skew)
