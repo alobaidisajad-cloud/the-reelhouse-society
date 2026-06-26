@@ -14,13 +14,18 @@ These notes record what was verified against the **live** database, so the dated
   insert notifications` INSERT policy. ✅ confirmed live + applied.
 - **SHADOWBAN-1** (`20260626_04`) — dropped the dormant `Elite Public Feed (Shadowban
   Enforced)` policy on `logs`. ✅ confirmed live + applied.
+- **signup-collision** (`20260626_05`) — extended `enforce_username_policy` to rename on
+  general handle collisions (not just reserved words). ✅ applied.
+- **RL-1** (`20260626_03`) — `ALTER FUNCTION rate_limit_check ... SET search_path = public`.
+  ✅ applied.
+- **COMP-SPOILER-1 feed RPCs** (`20260626_06`) — added `is_spoiler` to the two feed cursor
+  RPCs (DROP+CREATE, verified against live bodies). ✅ applied — feed now veils spoilers.
 
 ## To apply with the deploy
-- **signup-collision** (`20260626_05`) — `enforce_username_policy` superset (also de-dups
-  general handle collisions on signup). Live body verified to match the base. ✅ safe.
 - **EMAIL-ENUM-1** (`20260626_07`) — REVOKE `get_email_by_username` from anon/authenticated.
-  Apply **after** deploying the `sign-in-with-username` edge function + the new app build
-  (username login routes through the function). Function confirmed exposed live.
+  Apply **after** deploying the `sign-in-with-username` edge function (done) + shipping the
+  new app build (username login routes through the function). Function confirmed exposed live.
+  The `sign-in-with-username` edge function is already deployed to production.
 
 ## NOT live — verified repo-only artifacts (no action; migrations made no-ops)
 - **PROFILE-FREEZE-1** (`20260626_02`) — `protect_profile_fields` does not exist live; no
@@ -35,7 +40,4 @@ These notes record what was verified against the **live** database, so the dated
   The client join-by-invite was reverted to the direct lookup that matches the live schema.
 
 ## Deferred (non-blocking)
-- **RL-1** (`20260626_03`) — `rate_limit_check` search_path hardening; needs live body first.
-- **COMP-SPOILER-1 feed RPCs** (`20260626_06`) — every other surface veils spoilers; the
-  feed degrades gracefully. Requires dumping the live feed RPCs + DROP/CREATE (return-type
-  change) before applying.
+- _(none — RL-1 and the feed-spoiler RPCs are now applied; see above.)_
