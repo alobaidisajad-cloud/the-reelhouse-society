@@ -49,8 +49,12 @@ export const ProfileService = {
     if (updates.display_name !== undefined) dbUpdates.display_name = updates.display_name;
     if (updates.persona !== undefined) dbUpdates.persona = updates.persona;
     if (updates.social_links !== undefined) dbUpdates.social_links = updates.social_links;
-    if (updates.preferences !== undefined) dbUpdates.preferences = updates.preferences;
-    
+    // COMP-1-orig: do NOT write `preferences` here. This is a full-column UPDATE that
+    // would overwrite the entire JSONB blob and clobber concurrent cross-device key
+    // changes. All preference writes must go through the server-side JSONB *merge*
+    // (`update_my_preferences` RPC via auth.setPreference / the offline executor).
+    // A preferences-only updateUser() call therefore no-ops here (empty dbUpdates).
+
     // Handle camelCase vs snake_case mapping
     if ('isSocialPrivate' in updates) {
       dbUpdates.is_social_private = updates.isSocialPrivate;
