@@ -97,13 +97,13 @@ Online comment writes (log/stack/dossier) skip `sanitizeInput` while offline san
 Two AFTER-INSERT triggers on `interactions` both insert notifications (one also increments counts) → every follow/request/endorse double-notifies, often with two different `type` strings.
 **Elite fix:** `DROP TRIGGER tr_notify_interaction` (the `notify_on_interaction` path, no counts); keep `on_interaction_created`/`handle_interaction_notification`. Reconcile the surviving `type` strings (`reaction` vs `endorse`) with what `notificationStore` renders (ties to NOTIF-1/SVC-1). Test: 1 interaction → exactly 1 notification row.
 
-### 13. NOTIF-1 — ✅REAL (line-proven)
-All-or-nothing `z.array(schema).safeParse` → one malformed row blanks the whole notifications screen.
-**Elite fix:** per-row `safeParse` salvage (drop bad, keep rest) — the pattern already used elsewhere; make `message` `.nullish()` with a derived default; fix SVC-1's offline shape so rows validate.
+### 13. NOTIF-1 — ⬇️ DOWNGRADED to LOW (re-verify corrected an overstatement)
+Originally flagged as "one invalid row blanks the notifications screen." **Re-verification proved that's not realizable:** `notifications.message` is `NOT NULL` + a `type` CHECK constraint → malformed rows can't be persisted (SVC-1's broken insert *fails* rather than storing a bad row), and on `safeParse` failure the store `return`s keeping MMKV-cached data (never blank). Real residual is only a robustness nit.
+**Elite fix (LOW):** switch the two `z.array().safeParse` calls to per-row salvage so a future schema-drift row can't silently no-op the whole refresh. No urgency.
 
-### 14. SVC-1 — ✅REAL (line-proven)
-List-comment notification has divergent online vs offline row shapes (offline omits `message`, different `type`) → triggers NOTIF-1.
-**Elite fix:** one canonical notification builder shared by `StackService` (online) and `mutationExecutor` (offline); ideally emit notifications **only** from the DB triggers (single source) and have the client stop hand-crafting them.
+### 14. SVC-1 — ✅REAL, SHARPENED (silent notification loss, not just "divergent shapes")
+**Re-verification upgraded the precision:** the offline `add_list_comment` notification insert (`mutationExecutor:333-339`) writes `{type:'list_comment', actor_id, reference_id, entity_id}` — 3 columns that exist in **no migration**, an **invalid `type`** (violates the CHECK constraint), and **no `message`** (NOT NULL). It isn't `throwIfError`-wrapped → **fails silently → offline list-comments never notify the owner.** (Online path is fine.)
+**Elite fix:** emit list-comment notifications from a DB trigger (single source of truth, like follow/endorse), and delete the hand-crafted client insert; or, minimally, fix the offline insert to the canonical valid shape. This also makes NOTIF-1 moot.
 
 ### 15. HOOK-1 — ✅REAL (worse than first stated) — see SHADOWBAN-1
 Pulse-card report → `user_reports` → inert. **Elite fix:** route through `reportStore.submitReport` → `submit_report` RPC → `reports` (reaches Tribunal), identical to `ReportSheet`; retire `user_reports`/trust_score per SHADOWBAN-1 decision.
