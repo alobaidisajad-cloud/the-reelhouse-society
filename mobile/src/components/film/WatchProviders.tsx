@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { Tv } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
+import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { tmdb } from '@/src/lib/tmdb';
 import { safeOpenURL } from '@/src/utils/linking';
 
@@ -85,12 +85,7 @@ export const WatchProviders = React.memo(function WatchProviders({ providers }: 
 
   return (
     <View style={s.container}>
-      <View style={s.header}>
-        <View style={s.headerRow}>
-          <Tv size={12} color={colors.bone} />
-          <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>WHERE TO WATCH</Text>
-        </View>
-      </View>
+      <FilmSectionHeader label="WHERE TO WATCH" />
 
       {!hasAny ? (
         <View style={s.emptyState}>
@@ -151,7 +146,7 @@ const s = StyleSheet.create({
   container: {
     backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 4,
     padding: 16,
     marginVertical: 12,
@@ -176,7 +171,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.15)',
+    borderColor: 'rgba(184,137,26,0.15)',
     borderRadius: 4,
   },
   emptyDisplay: {
@@ -212,7 +207,7 @@ const s = StyleSheet.create({
     height: 38,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
   },
   logoFallback: {
     width: 38,
@@ -222,7 +217,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
     padding: 2,
   },
   logoFallbackText: {
@@ -235,7 +230,7 @@ const s = StyleSheet.create({
     marginTop: 16,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(139,105,20,0.1)',
+    borderTopColor: 'rgba(184,137,26,0.1)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

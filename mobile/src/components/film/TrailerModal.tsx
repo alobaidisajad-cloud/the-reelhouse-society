@@ -53,7 +53,7 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
                     {/* Nitrate Projector Overlay: Tints the raw YouTube feed sepia */}
                     <View style={{ position: 'absolute', zIndex: 2, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
                         <LinearGradient 
-                            colors={['rgba(139,105,20,0.25)', 'transparent', 'rgba(139,105,20,0.15)']} 
+                            colors={['rgba(184,137,26,0.25)', 'transparent', 'rgba(184,137,26,0.15)']} 
                             style={StyleSheet.absoluteFillObject} 
                         />
                     </View>
@@ -119,7 +119,7 @@ const s = StyleSheet.create({
         borderRadius: 2,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: 'rgba(139,105,20,0.3)',
+        borderColor: 'rgba(184,137,26,0.3)',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 40 },
         shadowOpacity: 0.8,

@@ -9,6 +9,7 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import PressableScale from '@/src/components/PressableScale';
+import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 
 interface SimilarFilm {
@@ -67,10 +68,7 @@ export const FilmSimilar = memo(function FilmSimilar({ similarFilms }: FilmSimil
     <SectionErrorBoundary fallbackMessage="Similar films could not be loaded.">
       <Animated.View style={s.sectionFlush}>
         <View style={s.sectionPadded}>
-          <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>YOU MAY ALSO LIKE</Text>
-            <View style={s.sectionLine} />
-          </View>
+          <FilmSectionHeader label="YOU MAY ALSO LIKE" />
         </View>
         <View style={s.similarListContainer}>
           <FlashList
@@ -96,12 +94,12 @@ const s = StyleSheet.create({
   sectionPadded: { paddingHorizontal: 20 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
   sectionTitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(139,105,20,0.3)' },
+  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)' },
   horizontalList: { paddingHorizontal: 20 },
   
   similarListContainer: { height: 180 },
   similarCard: { width: 100, marginRight: 10 },
-  similarPoster: { width: 100, height: 150, borderRadius: 4, marginBottom: 8, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)' },
+  similarPoster: { width: 100, height: 150, borderRadius: 4, marginBottom: 8, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
   similarPosterPlaceholder: { justifyContent: 'center', alignItems: 'center' },
   similarTitle: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, textAlign: 'center' },
 });

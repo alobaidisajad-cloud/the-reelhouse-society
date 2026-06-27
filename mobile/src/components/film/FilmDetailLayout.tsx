@@ -16,7 +16,8 @@ import { resolveTier } from '@/src/utils/tier';
 
 
 import PressableScale from '@/src/components/PressableScale';
-import { ReelRating, SectionDivider } from '@/src/components/Decorative';
+import { ReelRating } from '@/src/components/Decorative';
+import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { WatchProviders } from '@/src/components/film/WatchProviders';
 import { CastCarousel } from '@/src/components/film/CastCarousel';
 import CountryReleases from '@/src/components/film/CountryReleases';
@@ -275,7 +276,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
 
             {/* SYNOPSIS */}
             <Animated.View style={s.section}>
-              <SectionDivider label="SYNOPSIS" />
+              <FilmSectionHeader label="SYNOPSIS" />
               <View style={s.synopsisWrap}>
                 <Text style={s.synopsis}>{film.overview ?? 'No synopsis available.'}</Text>
               </View>
@@ -295,7 +296,7 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
             {/* CAST */}
             {cast.length > 0 && (
               <Animated.View style={s.section}>
-                <SectionDivider label="THE PLAYERS" />
+                <FilmSectionHeader label="THE PLAYERS" />
                 <CastCarousel cast={cast} />
               </Animated.View>
             )}
@@ -361,7 +362,7 @@ const s = StyleSheet.create({
   synopsis: { fontFamily: fonts.ui, fontSize: 14, color: colors.bone, lineHeight: 24, letterSpacing: 0.2 },
   directorCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.6)', padding: 12, borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', borderRadius: 2 },
   directorPhoto: { width: 44, height: 44, borderRadius: 22, marginRight: 14 },
-  directorPhotoPlaceholder: { backgroundColor: 'rgba(139,105,20,0.1)', alignItems: 'center', justifyContent: 'center' },
+  directorPhotoPlaceholder: { backgroundColor: 'rgba(184,137,26,0.1)', alignItems: 'center', justifyContent: 'center' },
   directorPhotoInitial: { fontFamily: fonts.bodyBold, fontSize: 20, color: colors.sepia },
   directorInfo: { flex: 1 },
   directorLabel: { fontFamily: fonts.uiBold, fontSize: 10, color: colors.fog, letterSpacing: 1, marginBottom: 2 },

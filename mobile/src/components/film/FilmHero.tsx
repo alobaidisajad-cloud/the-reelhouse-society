@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   posterGlow: {
     position: 'absolute',
     top: 5, left: -5, right: -5, bottom: -5,
-    backgroundColor: 'rgba(139,105,20,0.25)',
+    backgroundColor: 'rgba(184,137,26,0.25)',
     borderRadius: 8,
     boxShadow: '0 0 20px rgba(184, 137, 26, 0.8)',
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 20,

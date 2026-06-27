@@ -7,6 +7,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ReelRating } from '@/src/components/Decorative';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
+import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { stripHtml } from '@/src/utils/html';
 import { extractDropCap } from '@/src/utils/text';
 import { getDisplayTier, isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
@@ -54,10 +55,7 @@ export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, review
   return (
     <SectionErrorBoundary fallbackMessage="Community critiques could not be loaded.">
       <Animated.View style={s.section}>
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>SOCIETY CRITIQUES</Text>
-          <View style={s.sectionLine} />
-        </View>
+        <FilmSectionHeader label="SOCIETY CRITIQUES" />
         
         {(() => {
           if (mergedReviews.length === 0) return (
@@ -149,12 +147,12 @@ const s = StyleSheet.create({
   section: { paddingHorizontal: 20, marginBottom: 24, zIndex: 2 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
   sectionTitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(139,105,20,0.3)' },
+  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)' },
 
   reviewCard: {
-    backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 4, padding: 16, marginTop: 10,
-    borderLeftWidth: 3, borderLeftColor: 'rgba(196,150,26,0.4)',
+    borderLeftWidth: 3, borderLeftColor: 'rgba(184,137,26,0.4)',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
     position: 'relative', overflow: 'hidden',
   },
@@ -169,9 +167,9 @@ const s = StyleSheet.create({
   reviewText: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.9 },
   reviewCardLocal: { borderLeftColor: colors.sepia, borderLeftWidth: 2 },
   
-  pullQuoteWrap: { marginTop: 6, marginBottom: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(139,105,20,0.4)', paddingVertical: 2 },
+  pullQuoteWrap: { marginTop: 6, marginBottom: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.4)', paddingVertical: 2 },
   pullQuoteWrapAuteur: { borderLeftColor: colors.bloodReel, backgroundColor: 'rgba(125,31,31,0.05)', paddingVertical: 6, borderRadius: 2 },
-  pullQuoteWrapPremium: { borderLeftColor: colors.sepia, backgroundColor: 'rgba(139,105,20,0.05)', paddingVertical: 6, borderRadius: 2 },
+  pullQuoteWrapPremium: { borderLeftColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.05)', paddingVertical: 6, borderRadius: 2 },
   pullQuote: { fontFamily: fonts.display, fontSize: 15, color: colors.sepia, lineHeight: 22 },
   pullQuoteAuteur: { color: colors.bloodReel },
   pullQuotePremium: { color: colors.sepia },
@@ -180,7 +178,7 @@ const s = StyleSheet.create({
   yourLogReadMore: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia, marginTop: 4 },
 
   emptyReviewBox: {
-    padding: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    padding: 24, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 2, alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.98)',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 4,
   },
@@ -190,7 +188,7 @@ const s = StyleSheet.create({
   readAllBtn: {
     marginTop: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 2,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
   },
   readAllText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 3, color: colors.sepia },

@@ -32,7 +32,7 @@ export const FilmHeroSkeleton = memo(function FilmHeroSkeleton({ skeletonAnimSty
 });
 
 const styles = StyleSheet.create({
-  shimmer: { backgroundColor: 'rgba(139,105,20,0.15)' },
+  shimmer: { backgroundColor: 'rgba(184,137,26,0.15)' },
   shimmerBackdrop: { backgroundColor: 'rgba(8,6,4,0.98)', position: 'relative' },
   shimmerContent: { marginTop: -80, alignItems: 'center', paddingHorizontal: 20 },
   shimmerPoster: { width: POSTER_W, height: POSTER_H, borderRadius: 6, marginBottom: 16 },

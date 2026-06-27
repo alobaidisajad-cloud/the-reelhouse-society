@@ -6,6 +6,7 @@ import { Image } from 'expo-image';
 import { FlashList } from '@shopify/flash-list';
 import { Film as FilmIcon } from 'lucide-react-native';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
+import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 import { tmdb } from '@/src/lib/tmdb';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 
@@ -52,10 +53,7 @@ export const FilmStudios = memo(function FilmStudios({ studios }: FilmStudiosPro
     <SectionErrorBoundary fallbackMessage="Production studios could not be loaded.">
       <Animated.View style={s.sectionFlush}>
         <View style={s.sectionPadded}>
-          <View style={s.sectionHeader}>
-            <Text style={s.sectionTitle}>PRODUCTION</Text>
-            <View style={s.sectionLine} />
-          </View>
+          <FilmSectionHeader label="PRODUCTION" />
         </View>
         <View style={sub.studioListContainer}>
           <FlashList
@@ -82,15 +80,15 @@ const s = StyleSheet.create({
   sectionPadded: { paddingHorizontal: 20 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
   sectionTitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(139,105,20,0.3)' },
+  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)' },
   horizontalList: { paddingHorizontal: 20 },
 });
 
 const sub = StyleSheet.create({
   studioListContainer: { height: 80 },
   studioCard: { width: 80, alignItems: 'center' },
-  studioLogo: { width: 60, height: 40, borderRadius: 4, marginBottom: 6, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)' },
-  studioLogoPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', justifyContent: 'center', alignItems: 'center' },
+  studioLogo: { width: 60, height: 40, borderRadius: 4, marginBottom: 6, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
+  studioLogoPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', justifyContent: 'center', alignItems: 'center' },
   studioName: { fontFamily: fonts.ui, fontSize: 8, color: colors.bone, textAlign: 'center', letterSpacing: 0.5 },
   studioCountry: { fontFamily: fonts.ui, fontSize: 7, color: colors.fog, letterSpacing: 1, marginTop: 2 },
 });

@@ -81,7 +81,7 @@ export const CastCarousel = memo(function CastCarousel({ cast }: { cast: CastMem
 const s = StyleSheet.create({
     listContent: { paddingHorizontal: 16 },
     castCard: { width: 100 },
-    castPhotoWrap: { width: 100, height: 150, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', marginBottom: 8 },
+    castPhotoWrap: { width: 100, height: 150, borderRadius: 4, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', marginBottom: 8 },
     castPhoto: { width: '100%', height: '100%' },
     sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.12)', zIndex: 1 },
     castPhotoPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },

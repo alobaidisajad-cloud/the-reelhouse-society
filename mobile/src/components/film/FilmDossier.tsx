@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
 import { colors, fonts } from '@/src/theme/theme';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
+import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
 
 import { formatTMDBDate } from '@/src/utils/timeAgo';
 
@@ -35,10 +36,7 @@ export const FilmDossier = memo(function FilmDossier({ film, formatRuntime }: Fi
   return (
     <SectionErrorBoundary fallbackMessage="Dossier data unavailable.">
       <Animated.View style={s.section}>
-        <View style={s.sectionHeader}>
-          <Text style={s.sectionTitle}>FILM DOSSIER</Text>
-          <View style={s.sectionLine} />
-        </View>
+        <FilmSectionHeader label="FILM DOSSIER" />
         <View style={s.dossierCard}>
           <DossierRow label="GENRES" value={film.genres?.map((g: { id: number; name: string }) => g.name).join(', ')} />
           <DossierRow label="RELEASE" value={formatTMDBDate(film.release_date, 'long')} />
@@ -57,14 +55,14 @@ const s = StyleSheet.create({
   section: { paddingHorizontal: 20, marginBottom: 24, zIndex: 2 },
   sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
   sectionTitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(139,105,20,0.3)' },
+  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)' },
 
   dossierCard: {
-    backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 4, padding: 16,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
   },
-  dossierRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)' },
+  dossierRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
   dossierLabel: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
   dossierValue: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, textAlign: 'right', flex: 1, marginLeft: 20 },
 });

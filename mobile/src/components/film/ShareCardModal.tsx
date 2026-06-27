@@ -256,7 +256,7 @@ const s = StyleSheet.create({
   modalContent: {
     backgroundColor: colors.ink,
     borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 8,
     padding: 16,
     shadowColor: colors.sepia,
