@@ -1,0 +1,38 @@
+name: DB Security Integration Tests
+
+# Runs the REAL database security tests (RLS + triggers) against a throwaway
+# Postgres that GitHub spins up for free — no paid Supabase branching, no test
+# project needed. Unlike the Jest suite (mocked Supabase), this exercises the
+# actual security rules where the 2026-06-26 gaps were hiding.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  db-security:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run database security integration tests
+        env:
+          PGPASSWORD: postgres
+        run: |
+          psql -h localhost -U postgres -d postgres \
+            -v ON_ERROR_STOP=1 \
+            -f mobile/__tests__/integration/db_security.test.sql
