@@ -16,6 +16,9 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { useLocalSearchParams } from 'expo-router';
 
+import LogForm from '../LogForm';
+import { useLogFlow } from '@/src/hooks/useLogFlow';
+
 // ── Stub heavy/leaf children (not under test) ──────────────────────────────
 // The global expo-image mock exports `Image` as an object; make it a real
 // component here so LogForm's poster <Image> renders.
@@ -42,9 +45,6 @@ jest.mock('@/src/components/Decorative', () => ({
   },
   SectionDivider: () => null,
 }));
-
-import LogForm from '../LogForm';
-import { useLogFlow } from '@/src/hooks/useLogFlow';
 
 function Harness() {
   const flow = useLogFlow();

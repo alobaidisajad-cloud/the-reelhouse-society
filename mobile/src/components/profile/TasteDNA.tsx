@@ -6,10 +6,6 @@ import React, { memo, useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated, { FadeIn, FadeInRight, runOnJS } from 'react-native-reanimated';
 import TactileEngine from '@/src/utils/TactileEngine';
-
-// Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
-// TactileEngine.navigate would lose its `this` binding).
-function hapticLight() { TactileEngine.navigate(); }
 import * as Sharing from 'expo-sharing';
 import { Share2 } from 'lucide-react-native';
 import ViewShot from 'react-native-view-shot';
@@ -19,6 +15,10 @@ import { GLOBAL_TMDB_CACHE, INFLIGHT_TMDB_REQUESTS } from './CinematicInsights';
 import { FilmSchema } from '@/src/lib/schemas';
 import { TasteDNAExportCanvas } from './TasteDNAExportCanvas';
 import PressableScale from '../PressableScale';
+
+// Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
+// TactileEngine.navigate would lose its `this` binding).
+function hapticLight() { TactileEngine.navigate(); }
 
 interface TasteDNALog {
     filmId?: number;

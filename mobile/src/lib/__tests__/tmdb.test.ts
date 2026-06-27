@@ -8,9 +8,9 @@
  */
 // jest.setup.ts globally mocks this module (films store onRehydrateStorage
 // needs a lightweight stub); unmock it here to exercise the real implementation.
-jest.unmock('../tmdb');
-
 import { obscurityScore, formatRuntime, getYear, tmdb } from '../tmdb';
+
+jest.unmock('../tmdb');
 
 describe('obscurityScore', () => {
   it('returns 99 for zero or negative popularity', () => {

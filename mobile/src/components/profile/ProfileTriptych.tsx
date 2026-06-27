@@ -5,7 +5,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withRepeat, withTiming, wit
 import { LinearGradient } from 'expo-linear-gradient';
 import { Search, Plus, X } from 'lucide-react-native';
 import PressableScale from '@/src/components/PressableScale';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
+ 
 import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { tmdb } from '@/src/lib/tmdb';
