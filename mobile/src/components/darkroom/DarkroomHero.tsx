@@ -51,7 +51,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
           return (
             <>
               <Text style={s.heroEyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
-                {isLateNight ? "THE ARCHIVE IS HAUNTED" : "THE REELHOUSE SOCIETY"}
+                {isLateNight ? "✦ THE ARCHIVE IS HAUNTED ✦" : "✦ THE REELHOUSE SOCIETY ✦"}
               </Text>
               <Text style={s.heroTitle} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
                 {isLateNight ? "Late Night Projection" : "The Darkroom"}
@@ -61,9 +61,9 @@ export const DarkroomHero = React.memo(function DarkroomHero({
         })()}
 
         <View style={s.estRow}>
-          <LinearGradient colors={['transparent', 'rgba(139,105,20,0.35)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.estRule} />
+          <LinearGradient colors={['transparent', 'rgba(184,137,26,0.35)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.estRule} />
           <Text style={s.heroEst} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Est. 1924</Text>
-          <LinearGradient colors={['rgba(139,105,20,0.35)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.estRule} />
+          <LinearGradient colors={['rgba(184,137,26,0.35)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.estRule} />
         </View>
 
         <View style={s.searchWrap}>
@@ -113,7 +113,7 @@ const s = StyleSheet.create({
     marginBottom: spacing.xl,
     paddingHorizontal: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139,105,20,0.2)',
+    borderBottomColor: 'rgba(184,137,26,0.2)',
     position: 'relative',
     zIndex: 100,
     elevation: 100,
@@ -177,7 +177,7 @@ const s = StyleSheet.create({
     width: '100%',
     backgroundColor: 'rgba(10,8,5,0.95)',
     borderWidth: 1.5,
-    borderColor: 'rgba(139,105,20,0.2)',
+    borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 6,
     paddingVertical: 16,
     paddingLeft: 46,
@@ -206,7 +206,7 @@ const s = StyleSheet.create({
     right: 0,
     backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.5)',
+    borderColor: 'rgba(184,137,26,0.5)',
     borderStyle: 'solid',
     borderRadius: 6,
     overflow: 'hidden',

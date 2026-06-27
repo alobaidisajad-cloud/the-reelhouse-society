@@ -83,7 +83,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
     backgroundColor: 'rgba(10,8,5,0.8)',
-    borderColor: 'rgba(139,105,20,0.15)',
+    borderColor: 'rgba(184,137,26,0.15)',
     minWidth: 140,
     ...effects.shadowSurface,
   },

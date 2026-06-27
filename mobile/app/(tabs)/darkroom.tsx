@@ -403,7 +403,7 @@ const s = StyleSheet.create({
   emptyBtn: {
     backgroundColor: 'rgba(14,11,8,0.95)',
     borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.25)',
+    borderColor: 'rgba(184,137,26,0.25)',
     borderRadius: 3,
     paddingVertical: 12,
     paddingHorizontal: 28,

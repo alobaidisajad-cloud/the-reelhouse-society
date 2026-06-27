@@ -40,12 +40,12 @@ export const YEAR_MIN = 1888;
 export const YEAR_MAX = new Date().getFullYear() + 5;
 
 export const MOODS = [
-  { label: 'Emotional', sub: 'Heavy, profound stories.', icon: 'Heart', genre: 18, sort: 'vote_average.desc', color: '#4A1A3A', accent: '#C06080' },
-  { label: 'Terrifying', sub: 'Dark nightmares.', icon: 'Skull', genre: 27, sort: 'vote_average.desc', color: '#1A1A0A', accent: '#8B3A1A' },
-  { label: 'Awe-Inspiring', sub: 'Epic magical worlds.', icon: 'Sparkles', genre: 14, sort: 'vote_average.desc', color: '#0A1A2A', accent: '#3A7A8B' },
-  { label: 'Heartwarming', sub: 'Love & connection.', icon: 'Sun', genre: 10749, sort: 'release_date.asc', voteGte: 500, color: '#1C1208', accent: '#8B6914' },
-  { label: 'Thrilling', sub: 'High-octane cinema.', icon: 'Flame', genre: 28, sort: 'popularity.desc', color: '#2A0A0A', accent: '#8B1A1A' },
-  { label: 'Hilarious', sub: 'Pure joy & laughter.', icon: 'Laugh', genre: 35, sort: 'vote_average.desc', voteGte: 200, color: '#0A1A0A', accent: '#4A8B3A' },
+  { label: 'Emotional', sub: 'Heavy, profound stories', icon: 'Heart', genre: 18, sort: 'vote_average.desc', color: '#4A1A3A', accent: '#C06080' },
+  { label: 'Terrifying', sub: 'Dark nightmares', icon: 'Skull', genre: 27, sort: 'vote_average.desc', color: '#1A1A0A', accent: '#8B3A1A' },
+  { label: 'Awe-Inspiring', sub: 'Epic magical worlds', icon: 'Sparkles', genre: 14, sort: 'vote_average.desc', color: '#0A1A2A', accent: '#3A7A8B' },
+  { label: 'Heartwarming', sub: 'Love & connection', icon: 'Sun', genre: 10749, sort: 'release_date.asc', voteGte: 500, color: '#1C1208', accent: '#8B6914' },
+  { label: 'Thrilling', sub: 'High-octane cinema', icon: 'Flame', genre: 28, sort: 'popularity.desc', color: '#2A0A0A', accent: '#8B1A1A' },
+  { label: 'Hilarious', sub: 'Pure joy & laughter', icon: 'Laugh', genre: 35, sort: 'vote_average.desc', voteGte: 200, color: '#0A1A0A', accent: '#4A8B3A' },
 ];
 
 export const MOOD_ICONS: Record<string, typeof Heart> = { Heart, Skull, Sparkles, Sun, Flame, Laugh };

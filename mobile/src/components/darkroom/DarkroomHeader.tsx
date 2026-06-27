@@ -269,14 +269,14 @@ export const DarkroomHeader = React.memo(() => {
         </>
       )}
 
-      <LinearGradient colors={['transparent', 'rgba(139,105,20,0.25)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.sectionDividerLine} />
+      <LinearGradient colors={['transparent', 'rgba(184,137,26,0.25)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.sectionDividerLine} />
 
       <View style={s.sectionHeaderWrap}>
         <Text style={s.sectionLabel} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.7}>
           {isSearching ? `ARCHIVE SEARCH: "${query.toUpperCase()}"` : (mood ? `MOOD: ${mood.label.toUpperCase()}` : 'THE ARCHIVE')}
         </Text>
         <Text style={s.sectionTitle} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.7}>
-          {isSearching ? `${matchCount} Matches Found` : (mood ? mood.sub : 'Discover Titles')}
+          {isSearching ? `${matchCount} Matches Found` : (mood ? mood.sub : 'The Open Archive')}
         </Text>
       </View>
     </View>
@@ -318,13 +318,13 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
     backgroundColor: 'rgba(18,14,9,0.8)',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.2)',
+    borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 6,
     ...effects.shadowSurface,
   },
   filterToggleActive: {
     backgroundColor: 'rgba(10,8,5,0.95)',
-    borderColor: 'rgba(139,105,20,0.4)',
+    borderColor: 'rgba(184,137,26,0.4)',
   },
   filterToggleText: {
     fontFamily: fonts.mono,

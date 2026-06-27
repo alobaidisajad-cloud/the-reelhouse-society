@@ -33,7 +33,7 @@ export const DarkroomAtmo = React.memo(function DarkroomAtmo() {
   return (
     <Animated.View style={[StyleSheet.absoluteFillObject, style, { zIndex: 0 }]} pointerEvents="none">
       <LinearGradient
-        colors={['rgba(180,45,45,0.4)', 'rgba(139,105,20,0.1)', 'transparent']}
+        colors={['rgba(180,45,45,0.4)', 'rgba(184,137,26,0.1)', 'transparent']}
         locations={[0, 0.5, 1]}
         style={StyleSheet.absoluteFillObject}
       />
@@ -56,7 +56,7 @@ export const AnimatedPosterSkeleton = React.memo(function AnimatedPosterSkeleton
   
   const animStyle = useAnimatedStyle(() => ({ opacity: op.value }));
   return (
-    <Animated.View style={[s.posterWrap, animStyle, { backgroundColor: 'rgba(14,11,8,0.7)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.06)' }]} />
+    <Animated.View style={[s.posterWrap, animStyle, { backgroundColor: 'rgba(14,11,8,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.06)' }]} />
   );
 });
 
@@ -206,7 +206,7 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(139,105,20,0.05)',
+    borderBottomColor: 'rgba(184,137,26,0.05)',
   },
   suggestionImgWrap: {
     overflow: 'hidden',
@@ -248,7 +248,7 @@ const s = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.5)',
+    borderColor: 'rgba(184,137,26,0.5)',
     elevation: 25,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 20 },
@@ -285,7 +285,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
   },
   quickSaveIconActive: {
     backgroundColor: colors.sepia,
