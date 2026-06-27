@@ -1,58 +1,79 @@
 import Buster from '@/src/components/Buster';
 import { ActionSheet } from '@/src/components/lounge/ActionSheet';
+import { AtTheDoorPanel } from '@/src/components/lounge/AtTheDoorPanel';
+import { LoungeSettingsPanel } from '@/src/components/lounge/LoungeSettingsPanel';
+import { REACTION_META } from '@/src/components/lounge/reactions';
+import { MasterLogo } from '@/src/components/MasterLogo';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
+import { useOfflineAware } from '@/src/hooks/useOfflineAware';
 import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
-import { LoungeMessage, LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
+import { LoungeMessage, LoungeRoom, ReactionSummary, useLoungeStore } from '@/src/stores/lounge';
 import { colors, fonts } from '@/src/theme/theme';
-import { LoungeMember } from '@/src/types';
-import { isArchivistPlusTier } from '@/src/utils/tier';
-import { FlashList } from '@shopify/flash-list';
-import { BlurView } from 'expo-blur';
-import * as ExpoClipboard from 'expo-clipboard';
+import { LoungeMember, LoungeMemberStatus } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { safeOpenURL } from '@/src/utils/linking';
+import { FlashList } from '@shopify/flash-list';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import {
+    AlertTriangle,
     ArrowLeft,
-    Check,
-    Copy,
-    Crown,
+    Clock,
+    DoorOpen,
+    Hourglass,
     Lock,
-     
-    LogOut,
-    Reply,
+    MinusCircle,
     Send,
     Settings,
     Sparkles,
-    Trash2,
-    Users,
-    X
+    VolumeX,
+    WifiOff,
+    X,
 } from 'lucide-react-native';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
     ActivityIndicator,
-    Alert,
     AppState,
-    InteractionManager,
-    Modal,
     StyleSheet,
     Text,
     TextInput,
     View,
 } from 'react-native';
-import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, FadeOut, SlideInDown, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 
 // ════════════════════════════════════════════════════════════
-// SHARED CONTENT CARD — Film/Log share embed
+// LINKIFY — auto-detect URLs → safe, tappable sepia links
 // ════════════════════════════════════════════════════════════
- 
+const URL_RE = /(https?:\/\/[^\s]+)/g;
+function renderBody(content: string) {
+  const parts = content.split(URL_RE);
+  if (parts.length === 1) return content;
+  return parts.map((part, i) => {
+    if (i % 2 === 1) {
+      // Trim trailing sentence punctuation so it isn't swallowed into the URL.
+      const trimmed = part.replace(/[.,;:!?)\]]+$/, '');
+      const tail = part.slice(trimmed.length);
+      return (
+        <Text key={i}>
+          <Text style={s.link} onPress={() => safeOpenURL(trimmed)}>{trimmed}</Text>
+          {tail}
+        </Text>
+      );
+    }
+    return part;
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// SHARED CONTENT CARD — Film/Log share clipping
+// ════════════════════════════════════════════════════════════
 const SharedCard = React.memo(({ msg }: { msg: LoungeMessage }) => {
   if (!msg.film_title && !msg.film_id) return null;
   const typeLabel = msg.type === 'film_share' ? 'FILM' : msg.type.toUpperCase().replace('_SHARE', '');
@@ -71,345 +92,235 @@ const SharedCard = React.memo(({ msg }: { msg: LoungeMessage }) => {
     </View>
   );
 });
+SharedCard.displayName = 'SharedCard';
 
 // ════════════════════════════════════════════════════════════
-// MESSAGE BUBBLE
+// REACTION CHIPS — compact row beneath a dispatch
 // ════════════════════════════════════════════════════════════
- 
-const MessageBubble = React.memo(({ msg, isSelf, showAuthor, onLongPress }: {
-  msg: LoungeMessage; isSelf: boolean; showAuthor: boolean;
-  onLongPress: (msg: LoungeMessage) => void;
+const ReactionChips = React.memo(({ reactions, onToggle }: {
+  reactions: ReactionSummary[]; onToggle: (reaction: string) => void;
 }) => {
+  if (!reactions.length) return null;
   return (
-    <View style={[s.msgWrapper, isSelf ? s.msgSelf : s.msgOther, !showAuthor && s.msgCompact]}>
-      {showAuthor && !isSelf && (
-        <View style={s.msgAvatar}>
-          {msg.avatar_url
-            ? <Image source={{ uri: msg.avatar_url }} style={s.msgAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
-            : <Text style={s.msgAvatarLetter}>{msg.username?.[0]?.toUpperCase()}</Text>
-          }
+    <View style={s.reactionRow}>
+      {reactions.map(r => {
+        const meta = REACTION_META[r.reaction as keyof typeof REACTION_META];
+        const Icon = meta?.Icon;
+        const tint = meta?.tint ?? colors.fog;
+        return (
+          <PressableScale
+            key={r.reaction}
+            style={[s.reactionChip, r.mine && s.reactionChipMine]}
+            onPress={() => onToggle(r.reaction)}
+            haptic="selection"
+            accessibilityRole="button"
+            accessibilityLabel={`${meta?.label ?? r.reaction}, ${r.count}`}
+          >
+            {Icon && <Icon size={11} color={r.mine ? colors.flicker : tint} strokeWidth={2} />}
+            <Text style={[s.reactionChipCount, r.mine && s.reactionChipCountMine]}>{r.count}</Text>
+          </PressableScale>
+        );
+      })}
+    </View>
+  );
+});
+ReactionChips.displayName = 'ReactionChips';
+
+// ════════════════════════════════════════════════════════════
+// DISPATCH — one transcript entry (Editorial Salon, bubble-less)
+// ════════════════════════════════════════════════════════════
+const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, onReactToggle, onRetry }: {
+  msg: LoungeMessage; isSelf: boolean; showAuthor: boolean; showDate: boolean;
+  onLongPress: (msg: LoungeMessage) => void;
+  onReactToggle: (messageId: string, reaction: string) => void;
+  onRetry: (messageId: string) => void;
+}) => {
+  const isWithdrawn = !!msg.deleted_at;
+  const isSending = msg.status === 'sending';
+  const isFailed = msg.status === 'failed';
+
+  return (
+    <View>
+      {showDate && (
+        <View style={s.dateDivider}>
+          <View style={s.dateLine} />
+          <Text style={s.dateText}>{formatDay(msg.created_at)}</Text>
+          <View style={s.dateLine} />
         </View>
       )}
 
-      <View style={[s.msgContentCol, isSelf && s.msgContentColSelf]}>
+      <View style={[s.row, isSending && s.rowSending]}>
         {showAuthor && (
-          <View style={[s.msgHeader, isSelf && s.msgHeaderSelf]}>
-            <Text style={[s.msgAuthor, { flexShrink: 1 }]} numberOfLines={1}>{isSelf ? 'You' : msg.username}</Text>
-            <Text style={s.msgTime}>
+          <View style={s.authorRow}>
+            {!isSelf && (
+              <View style={s.authorAvatar}>
+                {msg.avatar_url
+                  ? <Image source={{ uri: msg.avatar_url }} style={s.authorAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
+                  : <Text style={s.authorAvatarLetter}>{msg.username?.[0]?.toUpperCase()}</Text>}
+              </View>
+            )}
+            <Text style={[s.authorName, isSelf && s.authorNameSelf]} numberOfLines={1}>
+              {isSelf ? 'You' : msg.username}
+            </Text>
+            <Text style={s.authorTime}>
               {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </Text>
           </View>
         )}
 
-        <PressableScale
-          onLongPress={() => onLongPress(msg)}
-          style={[s.msgBubble, isSelf ? s.msgBubbleSelf : s.msgBubbleOther]}
-          haptic="medium"
-        >
-          {Boolean(msg.reply_to_content) && (
-            <View style={s.replyQuote}>
-              <View style={s.replyQuoteHeader}>
-                <Reply size={9} color={colors.sepia} strokeWidth={2} />
-                <Text style={[s.replyQuoteAuthor, { flexShrink: 1 }]} numberOfLines={1}>{msg.reply_to_username || 'Unknown'}</Text>
-              </View>
-              <Text style={s.replyQuoteContent} numberOfLines={2}>{msg.reply_to_content}</Text>
+        <View style={[s.contentCol, isSelf && s.contentColSelf]}>
+          {isWithdrawn ? (
+            <View style={s.tombstone}>
+              <MinusCircle size={13} color={colors.fog} strokeWidth={1.5} />
+              <Text style={s.tombstoneText}>dispatch withdrawn</Text>
             </View>
+          ) : (
+            <PressableScale onLongPress={() => onLongPress(msg)} haptic="medium" disabled={isSending || isFailed}>
+              {Boolean(msg.reply_to_content) && (
+                <View style={s.replyQuote}>
+                  <Text style={s.replyQuoteAuthor} numberOfLines={1}>{msg.reply_to_username || 'Unknown'}</Text>
+                  <Text style={s.replyQuoteContent} numberOfLines={2}>{msg.reply_to_content}</Text>
+                </View>
+              )}
+              {Boolean(msg.content) && <Text style={s.bodyText}>{renderBody(msg.content)}</Text>}
+              {msg.type !== 'text' && <SharedCard msg={msg} />}
+            </PressableScale>
           )}
 
-          {Boolean(msg.content) && <Text style={s.msgText}>{msg.content}</Text>}
-          {msg.type !== 'text' && <SharedCard msg={msg} />}
-        </PressableScale>
+          {isSending && (
+            <View style={s.stateLine}>
+              <Clock size={11} color={colors.fog} strokeWidth={1.5} />
+              <Text style={s.stateLineText}>sending…</Text>
+            </View>
+          )}
+          {isFailed && (
+            <PressableScale style={s.stateLine} onPress={() => onRetry(msg.id)} haptic="medium" accessibilityRole="button" accessibilityLabel="Retry sending">
+              <AlertTriangle size={11} color={REACTION_META.panned.tint} strokeWidth={1.5} />
+              <Text style={[s.stateLineText, s.stateLineFail]}>Failed · tap to retry</Text>
+            </PressableScale>
+          )}
+
+          {!isWithdrawn && !!msg.reactions?.length && (
+            <ReactionChips reactions={msg.reactions} onToggle={(r) => onReactToggle(msg.id, r)} />
+          )}
+        </View>
       </View>
     </View>
   );
 });
+Dispatch.displayName = 'Dispatch';
 
-
-// ════════════════════════════════════════════════════════════
-// SETTINGS PANEL
-// ════════════════════════════════════════════════════════════
-interface LoungeSettingsPanelProps {
-  lounge: LoungeRoom;
-  members: LoungeMember[];
-  visible: boolean;
-  onClose: () => void;
-  isCreator: boolean;
-}
-
-function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: LoungeSettingsPanelProps) {
-  const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { leaveLounge, deleteLounge } = useLoungeStore();
-  const [copied, setCopied] = useState(false);
-
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
-
-  const handleCopyCode = async () => {
-    if (lounge.invite_code) {
-      ExpoClipboard.setStringAsync(lounge.invite_code);
-      TactileEngine.success();
-      setCopied(true);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      timeoutRef.current = setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleLeave = () => {
-    Alert.alert('Leave Lounge?', 'You will need a new invite to rejoin a private lounge.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Leave', style: 'destructive', onPress: async () => {
-        TactileEngine.destroy();
-        await leaveLounge(lounge.id);
-        onClose();
-        InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as any));
-      }},
-    ]);
-  };
-
-  const handleDelete = () => {
-    Alert.alert('Incinerate Lounge?', 'All messages and member history will be permanently destroyed.', [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Incinerate', style: 'destructive', onPress: async () => {
-        TactileEngine.warn();
-        await deleteLounge(lounge.id);
-        onClose();
-        InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as any));
-      }},
-    ]);
-  };
-
-  const renderMember = useCallback(({ item }: { item: LoungeMember }) => (
-    <View style={s.memberRow}>
-      <View style={s.memberAvatar}>
-        {item.avatar_url
-          ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
-          : <Users size={13} color={colors.fog} strokeWidth={1.5} />
-        }
-      </View>
-      <Text style={[s.memberName, { flexShrink: 1, marginRight: 8 }]} numberOfLines={1}>@{item.username?.toUpperCase()}</Text>
-      {item.user_id === lounge.creator_id && (
-        <View style={s.memberBadge}>
-          <Crown size={9} color={colors.sepia} strokeWidth={2} />
-          <Text style={s.memberBadgeText} numberOfLines={1}>FOUNDER</Text>
-        </View>
-      )}
-    </View>
-  ), [lounge.creator_id]);
-
-  if (!visible) return null;
-
-  return (
-    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
-      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
-        <PressableScale style={s.actionBackdrop} onPress={onClose}><View /></PressableScale>
-      </BlurView>
-      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.settingsSheet, { paddingBottom: Math.max(insets.bottom, 28) }]}>
-        <View style={s.actionHandle} />
-        <View style={s.settingsHeaderRow}>
-          <Text style={s.settingsTitle}>Lounge Settings</Text>
-          <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close Settings">
-            <X size={20} color={colors.fog} strokeWidth={1.5} />
-          </PressableScale>
-        </View>
-
-        <FlashList
-          data={members}
-          keyExtractor={item => item.user_id}
-          showsVerticalScrollIndicator={false}
-          /* estimatedItemSize for member rows */
-          estimatedItemSize={56}
-          ListHeaderComponent={
-            <View style={s.settingsListHeader}>
-              {lounge.is_private && lounge.invite_code && (
-                <View style={s.settingsSection}>
-                  <Text style={s.settingsLabel}>INVITE CODE</Text>
-                  <PressableScale style={s.inviteCodeBtn} onPress={handleCopyCode} accessibilityRole="button">
-                    <Text style={s.inviteCodeText}>{lounge.invite_code}</Text>
-                    {copied
-                      ? <Check size={16} color={colors.sepia} strokeWidth={2} />
-                      : <Copy size={16} color={colors.fog} strokeWidth={1.5} />
-                    }
-                  </PressableScale>
-                </View>
-              )}
-              <Text style={s.settingsLabel}>MEMBERS ({members?.length || 0})</Text>
-            </View>
-          }
-          renderItem={renderMember}
-          ListFooterComponent={
-            <View style={s.settingsFooter}>
-              {isCreator ? (
-                <PressableScale style={s.leaveBtn} onPress={handleDelete} accessibilityRole="button">
-                  <Trash2 size={14} color={colors.sepia} strokeWidth={1.5} />
-                  <Text style={s.leaveBtnText} numberOfLines={1}>INCINERATE LOUNGE</Text>
-                </PressableScale>
-              ) : (
-                <PressableScale style={s.leaveBtn} onPress={handleLeave} accessibilityRole="button">
-                  <LogOut size={14} color={colors.sepia} strokeWidth={1.5} />
-                  <Text style={s.leaveBtnText} numberOfLines={1}>STEP OUT OF LOUNGE</Text>
-                </PressableScale>
-              )}
-            </View>
-          }
-        />
-      </AnimatedView>
-    </Modal>
-  );
+function formatDay(iso: string): string {
+  const d = new Date(iso);
+  const today = new Date();
+  const yesterday = new Date(); yesterday.setDate(today.getDate() - 1);
+  const sameDay = (a: Date, b: Date) => a.toDateString() === b.toDateString();
+  if (sameDay(d, today)) return 'TODAY';
+  if (sameDay(d, yesterday)) return 'YESTERDAY';
+  return d.toLocaleDateString([], { month: 'long', day: 'numeric' }).toUpperCase();
 }
 
 // ════════════════════════════════════════════════════════════
-// MAIN CHAT ROOM
+// MAIN SALON SCREEN
 // ════════════════════════════════════════════════════════════
 export default function LoungeRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const user = useAuthStore(s => s.user);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const isArchivist = isArchivistPlusTier(user);
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { isOffline } = useOfflineAware();
 
   const keyboard = useAnimatedKeyboard();
-  const animatedContainerStyle = useAnimatedStyle(() => ({
-    paddingBottom: keyboard.height.value,
-  }));
+  const animatedContainerStyle = useAnimatedStyle(() => ({ paddingBottom: keyboard.height.value }));
 
   const {
     lounges, currentMessages, fetchMessages, sendMessage,
-    deleteMessage, subscribeToLounge, sending, markRead,
+    subscribeToLounge, sending, markRead,
+    withdrawMessage, retryMessage, toggleReaction,
+    requestMembership, joinPublicLounge, fetchMembers,
   } = useLoungeStore();
+
   const [input, setInput] = useState('');
   const [replyTo, setReplyTo] = useState<LoungeMessage | null>(null);
   const [actionSheetMsg, setActionSheetMsg] = useState<LoungeMessage | null>(null);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<LoungeMessage | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [doorOpen, setDoorOpen] = useState(false);
+  const [members, setMembers] = useState<LoungeMember[]>([]);
+  const [localLounge, setLocalLounge] = useState<(LoungeRoom & { is_member?: boolean }) | null>(null);
+  const [myStatus, setMyStatus] = useState<LoungeMemberStatus | 'none'>('none');
+  const [pending, setPending] = useState(false);
+  const [notFound, setNotFound] = useState(false);
 
   const blockStore = useBlockStore();
 
-  // Callback isolation: stabilize chat input handler
-  const handleInputChange = useCallback((text: string) => {
-    setInput(text);
-  }, []);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [members, setMembers] = useState<LoungeMember[]>([]);
-  const [localLounge, setLocalLounge] = useState<LoungeRoom & { is_member?: boolean } | null>(null);
-  const [joining, setJoining] = useState(false);
-  const [notFound, setNotFound] = useState(false);
+  const handleInputChange = useCallback((text: string) => setInput(text), []);
 
-  const flatListRef = useRef<any>(null);
+  // ── Membership + roster refresh (also drives host's "At the Door") ──
+  const refreshMembership = useCallback(async () => {
+    if (!id) return;
+    const roster = await fetchMembers(id);
+    setMembers(roster);
+    if (user) {
+      const mine = roster.find(m => m.user_id === user.id);
+      setMyStatus((mine?.status as LoungeMemberStatus) ?? 'none');
+    }
+  }, [id, user, fetchMembers]);
 
-  // Autonomous hydration & Membership Check
+  // ── Hydrate lounge metadata + membership ──
   useEffect(() => {
     if (!id) return;
-
     const loadLounge = async () => {
-      // 1. Fetch lounge data
-      const { data: loungeData, error } = await supabase
-        .from('lounges')
-        .select('*')
-        .eq('id', id)
-        .single();
-        
-      if (!loungeData || error) {
-        setNotFound(true);
-        return;
-      }
-
-      // 2. Fetch membership status
-      let isMember = false;
-      if (user) {
-        const { data: memberCheck } = await supabase
-          .from('lounge_members')
-          .select('id')
-          .eq('lounge_id', id)
-          .eq('user_id', user.id)
-          .single();
-        isMember = !!memberCheck;
-      }
-
-      setLocalLounge({ ...loungeData, is_member: isMember });
-
-      // Trigger global state sync if not present
+      const { data: loungeData, error } = await supabase.from('lounges').select('*').eq('id', id).single();
+      if (!loungeData || error) { setNotFound(true); return; }
+      setLocalLounge(loungeData);
       const store = useLoungeStore.getState();
-      const loungeExists = store.lounges.some(l => l.id === id);
-      if (!loungeExists && isMember) {
-        store.fetchLounges();
-      }
+      if (!store.lounges.some(l => l.id === id)) store.fetchLounges();
     };
-
     loadLounge();
-  }, [id, user]);
+    refreshMembership();
+  }, [id, refreshMembership]);
 
   const activeLounge = localLounge || lounges.find(l => l.id === id);
   const isCreator = activeLounge?.creator_id === user?.id;
-  const isMember = localLounge?.is_member === true;
+  const isApproved = myStatus === 'approved' || isCreator;
+  const isMuted = myStatus === 'muted';
+  const canRead = isApproved || isMuted || (activeLounge ? !activeLounge.is_private : false);
+  const canPost = isApproved && !isMuted;
+  const pendingMembers = useMemo(() => members.filter(m => m.status === 'pending'), [members]);
 
-  const handleLongPress = useCallback((msg: LoungeMessage) => {
-    setActionSheetMsg(msg);
-  }, []);
+  // What gate (if any) replaces the transcript.
+  const gate: 'chat' | 'preview' | 'request' | 'pending' | 'banned' = !activeLounge
+    ? 'chat'
+    : isApproved || isMuted ? 'chat'
+    : !activeLounge.is_private ? 'preview'
+    : myStatus === 'pending' || pending ? 'pending'
+    : myStatus === 'banned' ? 'banned'
+    : 'request';
 
+  const handleLongPress = useCallback((msg: LoungeMessage) => setActionSheetMsg(msg), []);
   const handleReport = useCallback((msg: LoungeMessage) => {
-    setSelectedMessage(msg);
-    setActionSheetMsg(null);
-    setReportSheetVisible(true);
+    setSelectedMessage(msg); setActionSheetMsg(null); setReportSheetVisible(true);
   }, []);
+  const handleBlock = useCallback((userId: string) => { setActionSheetMsg(null); blockStore.blockUser(userId); }, [blockStore]);
 
-  const handleBlock = useCallback((userId: string) => {
-    setActionSheetMsg(null);
-    blockStore.blockUser(userId);
-  }, [blockStore]);
-
-  // App state handling
+  // ── Re-fetch on foreground ──
   useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
     const sub = AppState.addEventListener('change', (state) => {
-      if (state === 'background') {
-        timeout = setTimeout(() => {
-          // Keep connection alive — re-fetch on return
-        }, 30000);
-      } else if (state === 'active') {
-        clearTimeout(timeout);
-        if (id) {
-          fetchMessages(id);
-          markRead(id);
-        }
-      }
+      if (state === 'active' && id) { fetchMessages(id); markRead(id); refreshMembership(); }
     });
     return () => sub.remove();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  // Subscribe & fetch
+  // ── Subscribe + initial fetch (realtime: messages, reactions, membership) ──
   useEffect(() => {
-    if (id) {
-      fetchMessages(id);
-      markRead(id); // Clear unread pulse
-      const unsub = subscribeToLounge(id);
-
-      supabase
-        .from('lounge_members')
-        .select('user_id, profiles(username, avatar_url)')
-        .eq('lounge_id', id)
-        .then(({ data }) => {
-          if (data) {
-            setMembers(data.map((m: any) => {
-              const profile = Array.isArray(m.profiles) ? m.profiles[0] : m.profiles;
-              return {
-                user_id: m.user_id,
-                username: profile?.username ?? 'user',
-                avatar_url: profile?.avatar_url,
-              };
-            }));
-          }
-        });
-
-      return () => { unsub(); markRead(id); };
-    }
+    if (!id) return;
+    fetchMessages(id);
+    markRead(id);
+    const unsub = subscribeToLounge(id, { onMembership: () => { refreshMembership(); } });
+    return () => { unsub(); markRead(id); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -425,143 +336,148 @@ export default function LoungeRoomScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [input, sending, id, replyTo]);
 
-  // currentMessages is chronological (oldest→newest) from the store and rendered
-  // directly in a top→bottom FlashList (newest at the bottom) — no manual reverse.
+  const handleRequest = useCallback(async () => {
+    if (!id) return;
+    setPending(true);
+    TactileEngine.mutate();
+    const result = await requestMembership(id);
+    if (result === 'error') setPending(false);
+    else refreshMembership();
+  }, [id, requestMembership, refreshMembership]);
 
+  const handleTakeSeat = useCallback(async () => {
+    if (!id) return;
+    TactileEngine.mutate();
+    const ok = await joinPublicLounge(id);
+    if (ok) { setMyStatus('approved'); refreshMembership(); }
+  }, [id, joinPublicLounge, refreshMembership]);
+
+  // ── Edge: not found ──
   if (notFound) {
     return (
-      <View style={s.emptyContainer}>
-        <View style={s.headerCrest}>
-          <X size={18} color={colors.sepia} strokeWidth={1.5} />
-        </View>
-        <Text style={s.emptyChatTitle}>Signal Lost</Text>
-        <Text style={s.emptyChatDesc}>This screening room has been incinerated or does not exist.</Text>
-        <PressableScale style={[s.previewBtn, { marginTop: 24, width: 'auto' }]} onPress={() => router.back()} haptic="medium">
-          <Text style={s.previewBtnText}>RETURN TO LOBBY</Text>
+      <View style={s.centered}>
+        <View style={s.crestSmall}><X size={18} color={colors.sepia} strokeWidth={1.5} /></View>
+        <Text style={s.edgeTitle}>Signal Lost</Text>
+        <Text style={s.edgeDesc}>This screening room has been incinerated or never existed.</Text>
+        <PressableScale style={s.edgeBtn} onPress={() => router.back()} haptic="medium">
+          <Text style={s.edgeBtnText}>RETURN TO THE LOBBY</Text>
         </PressableScale>
       </View>
     );
   }
 
+  // ── Edge: loading ──
   if (!activeLounge) {
     return (
-      <View style={s.emptyContainer}>
+      <View style={s.centered}>
         <ActivityIndicator size="small" color={colors.sepia} />
-        <Text style={s.emptyLoadText}>ESTABLISHING CONNECTION</Text>
+        <Text style={s.edgeLoad}>ESTABLISHING CONNECTION</Text>
       </View>
     );
   }
-
-  // Handle joining public lounge
-  const handleTakeSeat = async () => {
-    if (!id) return;
-    setJoining(true);
-    TactileEngine.mutate();
-    const success = await useLoungeStore.getState().joinLoungeById(id);
-    if (success) {
-      setLocalLounge(prev => prev ? { ...prev, is_member: true } : null);
-    }
-    setJoining(false);
-  };
 
   return (
     <Animated.View style={[s.container, animatedContainerStyle]}>
-      {/* Header */}
-      <View style={[s.roomHeader, { paddingTop: Math.max(insets.top + 10, 44) }]}>
+      {/* ── Marquee header ── */}
+      <View style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
         <PressableScale style={s.headerBtn} onPress={() => router.back()} haptic="selection" accessibilityRole="button" accessibilityLabel="Back">
           <ArrowLeft size={20} color={colors.parchment} strokeWidth={1.5} />
         </PressableScale>
+
         <View style={s.headerCenter}>
-          <Text style={s.roomTitle} numberOfLines={1}>{activeLounge.name}</Text>
-          <View style={s.roomMeta}>
-            <Users size={10} color={colors.fog} strokeWidth={1.5} />
-            <Text style={s.roomMetaText} numberOfLines={1}>
-              {members.length || activeLounge.member_count || 0} Members
+          <View style={s.headerCrest}><MasterLogo size={22} /></View>
+          <Text style={s.headerTitle} numberOfLines={1}>{activeLounge.name}</Text>
+          <View style={s.headerMeta}>
+            <Text style={s.headerMetaText} numberOfLines={1}>
+              {(members.filter(m => m.status !== 'pending').length || activeLounge.member_count || 0)} in the room
             </Text>
             {activeLounge.is_private && (
               <>
-                <View style={s.roomMetaDot} />
+                <View style={s.metaDot} />
                 <Lock size={9} color={colors.sepia} strokeWidth={1.5} />
-                <Text style={s.roomMetaPrivate}>PRIVATE</Text>
+                <Text style={s.metaPrivate}>PRIVATE</Text>
               </>
             )}
           </View>
         </View>
-        <PressableScale
-          style={s.headerBtn}
-          onPress={() => setSettingsOpen(true)}
-          haptic="selection"
-          accessibilityRole="button" accessibilityLabel="Lounge Settings"
-        >
-          <Settings size={18} color={colors.parchment} strokeWidth={1.5} />
-        </PressableScale>
+
+        <View style={s.headerRight}>
+          {isCreator && pendingMembers.length > 0 && (
+            <PressableScale style={s.doorBadge} onPress={() => setDoorOpen(true)} haptic="medium" accessibilityRole="button" accessibilityLabel={`${pendingMembers.length} at the door`}>
+              <DoorOpen size={12} color={colors.ink} strokeWidth={2} />
+              <Text style={s.doorBadgeText}>{pendingMembers.length}</Text>
+            </PressableScale>
+          )}
+          <PressableScale style={s.headerBtn} onPress={() => setSettingsOpen(true)} haptic="selection" accessibilityRole="button" accessibilityLabel="Lounge settings">
+            <Settings size={18} color={colors.parchment} strokeWidth={1.5} />
+          </PressableScale>
+        </View>
       </View>
 
-      {/* Messages */}
-      <FlashList
-        {...{
-          ref: flatListRef,
-          data: currentMessages,
-          keyExtractor: (item: any) => item.id,
-          contentContainerStyle: s.messagesList,
-          // FlashList v2 removed `inverted`. `currentMessages` is stored
-          // oldest→newest (newest last), so a normal top→bottom list already
-          // renders in the correct reading order. `maintainVisibleContentPosition`
-          // is the v2-native chat mechanism: it opens on the newest message
-          // (startRenderingFromBottom), keeps the view pinned to the bottom as new
-          // messages arrive (autoscrollToBottomThreshold), and preserves scroll
-          // position when older history is prepended via onStartReached.
-          keyboardShouldPersistTaps: "handled",
-          showsVerticalScrollIndicator: false,
-          maintainVisibleContentPosition: {
-            startRenderingFromBottom: true,
-            autoscrollToBottomThreshold: 0.2,
-          },
-          // Older history now lives at the TOP, so paginate on start-reached
-          // (scrolling up) — not end-reached, which loadMoreMessages would
-          // otherwise fire at the newest end.
-          onStartReached: () => {
-            if (id) useLoungeStore.getState().loadMoreMessages(id);
-          },
-          onStartReachedThreshold: 0.5,
-          renderItem: ({ item, index }: any) => {
+      {/* ── Body: transcript or gate ── */}
+      {canRead ? (
+        <FlashList
+          data={currentMessages}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={s.list}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          maintainVisibleContentPosition={{ startRenderingFromBottom: true, autoscrollToBottomThreshold: 0.2 }}
+          onStartReached={() => { if (id) useLoungeStore.getState().loadMoreMessages(id); }}
+          onStartReachedThreshold={0.5}
+          renderItem={({ item, index }) => {
             const isSelf = item.user_id === user?.id;
-            // In a top→bottom list the previous (older) message renders directly
-            // above. Show the author header at the start of a same-sender run or
-            // after a >5min gap from that previous message.
-            const prevMessage = currentMessages[index - 1];
-            const showAuthor = !prevMessage || prevMessage.user_id !== item.user_id ||
-              (new Date(item.created_at).getTime() - new Date(prevMessage.created_at).getTime() > 300000);
-
+            const prev = currentMessages[index - 1];
+            const gap = prev ? new Date(item.created_at).getTime() - new Date(prev.created_at).getTime() : Infinity;
+            const showAuthor = !prev || prev.user_id !== item.user_id || gap > 300000;
+            const showDate = !prev || new Date(item.created_at).toDateString() !== new Date(prev.created_at).toDateString();
             return (
-              <MessageBubble
+              <Dispatch
                 msg={item}
                 isSelf={isSelf}
                 showAuthor={showAuthor}
+                showDate={showDate}
                 onLongPress={handleLongPress}
+                onReactToggle={toggleReaction}
+                onRetry={retryMessage}
               />
             );
-          },
-          ListEmptyComponent: (
+          }}
+          ListEmptyComponent={
             <View style={s.emptyChat}>
               <Buster size={48} mood="peeking" />
-              <Text style={s.emptyChatTitle}>The Conversation Begins</Text>
-              <Text style={s.emptyChatDesc}>Be the first to break the silence.</Text>
+              <Text style={s.edgeTitle}>The Conversation Begins</Text>
+              <Text style={s.edgeDesc}>Be the first to break the silence.</Text>
             </View>
-          )
-        } as any}
-      />
+          }
+        />
+      ) : (
+        <GateView
+          gate={gate}
+          lounge={activeLounge}
+          memberCount={members.filter(m => m.status !== 'pending').length || activeLounge.member_count || 0}
+          onRequest={handleRequest}
+          pending={pending}
+        />
+      )}
 
-      {/* Input or Preview Banner */}
-      {isMember ? (
-        <View style={[s.inputWrapper, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+      {/* ── Offline banner ── */}
+      {isOffline && canRead && (
+        <View style={s.offlineBanner}>
+          <WifiOff size={14} color={colors.sepia} strokeWidth={1.5} />
+          <Text style={s.offlineText}>You&apos;re offline — dispatches will send when you reconnect.</Text>
+        </View>
+      )}
+
+      {/* ── Composer / preview / muted ── */}
+      {gate === 'chat' && canPost && (
+        <View style={[s.composer, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
           {replyTo && (
             <AnimatedView entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={s.replyBanner}>
-              <View style={s.replyBannerLeft}>
-                <Reply size={10} color={colors.sepia} strokeWidth={2} />
-                <Text style={[s.replyBannerAuthor, { flexShrink: 1 }]} numberOfLines={1}>{replyTo.username}</Text>
+              <View style={s.replyBannerCol}>
+                <Text style={s.replyBannerAuthor} numberOfLines={1}>Replying to {replyTo.username}</Text>
+                <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
               </View>
-              <Text style={s.replyBannerText} numberOfLines={1}>{replyTo.content || 'Shared content'}</Text>
               <PressableScale onPress={() => setReplyTo(null)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button">
                 <X size={14} color={colors.fog} strokeWidth={1.5} />
               </PressableScale>
@@ -569,8 +485,8 @@ export default function LoungeRoomScreen() {
           )}
           <View style={s.inputRow}>
             <TextInput
-              style={s.chatInput}
-              placeholder="Say something about cinema..."
+              style={s.input}
+              placeholder="Compose a dispatch…"
               placeholderTextColor={colors.ash}
               value={input}
               onChangeText={handleInputChange}
@@ -578,7 +494,7 @@ export default function LoungeRoomScreen() {
               maxLength={500}
               selectionColor={colors.sepia}
               keyboardAppearance="dark"
-              accessibilityLabel="Chat message input"
+              accessibilityLabel="Compose a dispatch"
             />
             <PressableScale
               style={[s.sendBtn, (!input.trim() || sending) && s.sendBtnDisabled]}
@@ -591,33 +507,35 @@ export default function LoungeRoomScreen() {
             </PressableScale>
           </View>
         </View>
-      ) : (
-        <AnimatedView entering={SlideInDown.duration(300)} style={[s.previewBanner, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
-          <Text style={s.previewBannerText}>You are previewing this salon.</Text>
-          <PressableScale
-            style={[s.previewBtn, joining && s.previewBtnDisabled]}
-            onPress={handleTakeSeat}
-            disabled={joining}
-            haptic="medium"
-            accessibilityRole="button"
-          >
-            {joining ? (
-              <ActivityIndicator size="small" color={colors.ink} />
-            ) : (
-              <Text style={s.previewBtnText}>TAKE A SEAT</Text>
-            )}
+      )}
+
+      {gate === 'chat' && isMuted && (
+        <View style={[s.mutedBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+          <VolumeX size={13} color={colors.fog} strokeWidth={1.5} />
+          <Text style={s.mutedText}>You&apos;ve been muted — you can read, but not post.</Text>
+        </View>
+      )}
+
+      {gate === 'preview' && (
+        <AnimatedView entering={SlideInDown.duration(300)} style={[s.previewBar, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+          <Text style={s.previewText}>You&apos;re previewing this salon.</Text>
+          <PressableScale style={s.previewBtn} onPress={handleTakeSeat} haptic="medium" accessibilityRole="button">
+            <Text style={s.previewBtnText}>TAKE A SEAT</Text>
           </PressableScale>
         </AnimatedView>
       )}
 
-      {/* Overlays */}
+      {/* ── Overlays ── */}
       <ActionSheet
         visible={!!actionSheetMsg}
         msg={actionSheetMsg}
         isSelf={actionSheetMsg?.user_id === user?.id}
+        canReact={canPost}
+        currentReactions={actionSheetMsg?.reactions}
         onClose={() => setActionSheetMsg(null)}
         onReply={setReplyTo}
-        onDelete={deleteMessage}
+        onReact={(reaction) => { if (actionSheetMsg) toggleReaction(actionSheetMsg.id, reaction); }}
+        onDelete={withdrawMessage}
         onReport={handleReport}
         onBlock={handleBlock}
       />
@@ -628,528 +546,225 @@ export default function LoungeRoomScreen() {
           contentId={selectedMessage.id}
           targetUserId={selectedMessage.user_id}
           targetUsername={selectedMessage.username || ''}
-          onDismiss={() => {
-            setReportSheetVisible(false);
-            setSelectedMessage(null);
-          }}
+          onDismiss={() => { setReportSheetVisible(false); setSelectedMessage(null); }}
         />
       )}
+      <AtTheDoorPanel
+        visible={doorOpen}
+        loungeId={activeLounge.id}
+        pending={pendingMembers}
+        onClose={() => setDoorOpen(false)}
+        onResolved={refreshMembership}
+      />
       <LoungeSettingsPanel
         lounge={activeLounge}
         members={members}
         visible={settingsOpen}
         onClose={() => setSettingsOpen(false)}
         isCreator={isCreator}
+        onMembersChanged={refreshMembership}
       />
     </Animated.View>
   );
 }
 
 // ════════════════════════════════════════════════════════════
-// STYLES — Zero inline, all Nitrate Noir
+// GATE VIEW — velvet rope (request), pending, banned
 // ════════════════════════════════════════════════════════════
+function GateView({ gate, lounge, memberCount, onRequest, pending }: {
+  gate: 'request' | 'pending' | 'banned' | 'chat' | 'preview';
+  lounge: LoungeRoom; memberCount: number; onRequest: () => void; pending: boolean;
+}) {
+  return (
+    <AnimatedView entering={FadeInDown.duration(400)} style={s.gate}>
+      <View style={s.gateCrest}><MasterLogo size={52} /></View>
+      <Text style={s.gateName}>{lounge.name}</Text>
+      <View style={s.gatePrivateRow}>
+        <Lock size={11} color={colors.sepia} strokeWidth={1.5} />
+        <Text style={s.gatePrivateLabel}>PRIVATE SALON</Text>
+      </View>
+      {!!lounge.description && <Text style={s.gateDesc}>{lounge.description}</Text>}
+      <Text style={s.gateMembers}>{memberCount} {memberCount === 1 ? 'member' : 'members'} behind the door</Text>
 
+      {gate === 'request' && (
+        <>
+          <Text style={s.gateCopy}>This room is by invitation of the host. Ask to be admitted and your request will be at the door.</Text>
+          <PressableScale style={s.gateBtn} onPress={onRequest} disabled={pending} haptic="medium" accessibilityRole="button">
+            {pending ? <ActivityIndicator size="small" color={colors.ink} /> : <Text style={s.gateBtnText}>REQUEST A SEAT</Text>}
+          </PressableScale>
+        </>
+      )}
+      {gate === 'pending' && (
+        <View style={s.gatePending}>
+          <Hourglass size={16} color={colors.sepia} strokeWidth={1.5} />
+          <Text style={s.gatePendingText}>Your request is with the host.</Text>
+          <Text style={s.gateCopy}>We&apos;ll let you in the moment you&apos;re admitted.</Text>
+        </View>
+      )}
+      {gate === 'banned' && (
+        <Text style={s.gateCopy}>You no longer have access to this salon.</Text>
+      )}
+    </AnimatedView>
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// STYLES — Editorial Salon
+// ════════════════════════════════════════════════════════════
 const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
-  emptyContainer: {
-    flex: 1,
-    backgroundColor: colors.ink,
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 12,
-  },
-  emptyLoadText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 9,
-    letterSpacing: 3,
-    color: colors.fog,
-  },
-  headerCrest: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(196,150,26,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(196,150,26,0.03)',
-    marginBottom: 8,
-  },
-  emptyChat: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 80,
-    gap: 10,
-  },
-  emptyChatTitle: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    color: colors.parchment,
-    marginBottom: 4,
-  },
-  emptyChatDesc: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.fog,
-    textAlign: 'center',
-    paddingHorizontal: 32,
-  },
 
-  // ── Room Header ──
-  roomHeader: {
-    paddingTop: 0,
-    paddingBottom: 14,
-    paddingHorizontal: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(11,10,8,0.97)',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.ash,
+  // ── Edge states ──
+  centered: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 32 },
+  edgeLoad: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 3, color: colors.fog },
+  crestSmall: {
+    width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(184,137,26,0.35)', alignItems: 'center', justifyContent: 'center',
+    backgroundColor: 'rgba(184,137,26,0.03)', marginBottom: 8,
+  },
+  edgeTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, textAlign: 'center' },
+  edgeDesc: { fontFamily: fonts.serif, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 21 },
+  edgeBtn: { marginTop: 20, backgroundColor: colors.sepia, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4 },
+  edgeBtnText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 2, color: colors.ink },
+
+  // ── Header (marquee chrome) ──
+  header: {
+    paddingBottom: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center',
+    backgroundColor: 'rgba(11,10,8,0.97)', borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
   },
   headerBtn: { padding: 8 },
   headerCenter: { flex: 1, alignItems: 'center' },
-  roomTitle: {
-    fontFamily: fonts.sub,
-    fontSize: 16,
-    color: colors.parchment,
-    marginBottom: 3,
+  headerCrest: { marginBottom: 5, opacity: 0.95 },
+  headerTitle: { fontFamily: fonts.sub, fontSize: 16, color: colors.parchment, letterSpacing: 0.3 },
+  headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
+  headerMetaText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5, color: colors.fog },
+  metaDot: { width: 2, height: 2, borderRadius: 1, backgroundColor: colors.fog, marginHorizontal: 3 },
+  metaPrivate: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1, color: colors.sepia },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  doorBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.sepia,
+    paddingHorizontal: 9, paddingVertical: 5, borderRadius: 12,
   },
-  roomMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  roomMetaText: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
-    letterSpacing: 0.5,
-    color: colors.fog,
-  },
-  roomMetaDot: {
-    width: 2,
-    height: 2,
-    borderRadius: 1,
-    backgroundColor: colors.fog,
-    marginHorizontal: 4,
-  },
-  roomMetaPrivate: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 8,
-    letterSpacing: 1,
-    color: colors.sepia,
-  },
+  doorBadgeText: { fontFamily: fonts.uiBold, fontSize: 11, color: colors.ink },
 
-  // ── Messages ──
-  messagesList: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 24,
-    gap: 4,
-  },
-  msgWrapper: { marginBottom: 2 },
-  msgSelf: { alignItems: 'flex-end' },
-  msgOther: { alignItems: 'flex-start' },
-  msgCompact: { marginTop: -2 },
-  msgAvatar: {
-    position: 'absolute',
-    left: -4,
-    top: 4,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    overflow: 'hidden',
-    backgroundColor: colors.soot,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
-  },
-  msgAvatarImg: { width: '100%', height: '100%' },
-  msgAvatarLetter: {
-    fontFamily: fonts.display,
-    color: colors.fog,
-    fontSize: 13,
-  },
-  msgContentCol: { maxWidth: '82%', paddingLeft: 32 },
-  msgContentColSelf: { alignItems: 'flex-end', paddingLeft: 0 },
-  msgHeader: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 8,
-    marginBottom: 4,
-  },
-  msgHeaderSelf: { justifyContent: 'flex-end' },
-  msgAuthor: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
-    letterSpacing: 0.5,
-    color: colors.bone,
-  },
-  msgTime: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
-    color: colors.fog,
-    opacity: 0.5,
-  },
+  // ── Transcript ──
+  list: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 24 },
+  dateDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 18 },
+  dateLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.ash },
+  dateText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 2.5, color: colors.fog },
 
-  msgBubble: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 14,
+  row: { marginTop: 10 },
+  rowSending: { opacity: 0.55 },
+  authorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 5 },
+  authorAvatar: {
+    width: 24, height: 24, borderRadius: 12, overflow: 'hidden', backgroundColor: colors.soot,
+    alignItems: 'center', justifyContent: 'center', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
-  msgBubbleSelf: {
-    backgroundColor: 'rgba(196,150,26,0.08)',
-    borderBottomRightRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(196,150,26,0.25)',
-  },
-  msgBubbleOther: {
-    backgroundColor: colors.soot,
-    borderBottomLeftRadius: 4,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
-  },
-  msgText: {
-    fontFamily: fonts.body,
-    fontSize: 14,
-    color: colors.parchment,
-    lineHeight: 22,
-  },
+  authorAvatarImg: { width: '100%', height: '100%' },
+  authorAvatarLetter: { fontFamily: fonts.display, color: colors.fog, fontSize: 11 },
+  authorName: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone, letterSpacing: 0.3, flexShrink: 1 },
+  authorNameSelf: { color: colors.sepia },
+  authorTime: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, opacity: 0.6 },
 
-  // ── Reply Quote ──
-  replyQuote: {
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    padding: 8,
-    borderRadius: 4,
-    marginBottom: 8,
-    borderLeftWidth: 2,
-    borderLeftColor: colors.sepia,
-  },
-  replyQuoteHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 3,
-  },
-  replyQuoteAuthor: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 9,
-    letterSpacing: 0.5,
-    color: colors.sepia,
-  },
-  replyQuoteContent: {
-    fontFamily: fonts.bodyItalic,
-    fontSize: 12,
-    color: colors.fog,
-    lineHeight: 17,
-  },
+  contentCol: { paddingLeft: 32 },
+  contentColSelf: { paddingLeft: 13, marginLeft: 11, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.45)' },
 
-  // ── Shared Film Card ──
+  bodyText: { fontFamily: fonts.serif, fontSize: 15.5, color: colors.parchment, lineHeight: 24 },
+  link: { color: colors.flicker, textDecorationLine: 'underline' },
+
+  tombstone: { flexDirection: 'row', alignItems: 'center', gap: 7 },
+  tombstoneText: { fontFamily: fonts.serifItalic, fontSize: 13.5, color: colors.fog },
+
+  stateLine: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 5 },
+  stateLineText: { fontFamily: fonts.ui, fontSize: 11, color: colors.fog },
+  stateLineFail: { color: REACTION_META.panned.tint },
+
+  // ── Reply pull-quote ──
+  replyQuote: { borderLeftWidth: 2, borderLeftColor: colors.sepia, paddingLeft: 10, marginBottom: 7 },
+  replyQuoteAuthor: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 0.5, color: colors.sepia, marginBottom: 2 },
+  replyQuoteContent: { fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.fog, lineHeight: 17 },
+
+  // ── Reactions ──
+  reactionRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 8 },
+  reactionChip: {
+    flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 9, paddingVertical: 3,
+    borderRadius: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash, backgroundColor: colors.soot,
+  },
+  reactionChipMine: { borderColor: 'rgba(184,137,26,0.55)', backgroundColor: 'rgba(184,137,26,0.12)' },
+  reactionChipCount: { fontFamily: fonts.uiMedium, fontSize: 11, color: colors.bone },
+  reactionChipCountMine: { color: colors.flicker },
+
+  // ── Shared clipping ──
   sharedCard: {
-    flexDirection: 'row',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderRadius: 4,
-    overflow: 'hidden',
-    marginTop: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+    flexDirection: 'row', backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 4, overflow: 'hidden',
+    marginTop: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
   sharedPoster: { width: 48, height: 72 },
-  sharedInfo: {
-    padding: 10,
-    flex: 1,
-    justifyContent: 'center',
-  },
-  sharedTypeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 4,
-  },
-  sharedTypeText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 8,
-    letterSpacing: 1.5,
-    color: colors.sepia,
-  },
-  sharedTitle: {
-    fontFamily: fonts.sub,
-    fontSize: 13,
-    color: colors.bone,
-    lineHeight: 17,
-  },
+  sharedInfo: { padding: 10, flex: 1, justifyContent: 'center' },
+  sharedTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
+  sharedTypeText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
+  sharedTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, lineHeight: 17 },
 
-  // ── Input ──
-  inputWrapper: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    backgroundColor: colors.ink,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.ash,
+  emptyChat: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 10 },
+
+  // ── Offline banner ──
+  offlineBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 9,
+    backgroundColor: 'rgba(22,15,8,0.96)', borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
+  },
+  offlineText: { flex: 1, fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.bone },
+
+  // ── Composer ──
+  composer: {
+    paddingVertical: 10, paddingHorizontal: 16, backgroundColor: colors.ink,
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash,
   },
   replyBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.soot,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 4,
-    marginBottom: 8,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
-    gap: 8,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: colors.soot, paddingVertical: 8, paddingHorizontal: 12,
+    borderRadius: 4, marginBottom: 8, borderLeftWidth: 2, borderLeftColor: colors.sepia, gap: 10,
   },
-  replyBannerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  replyBannerAuthor: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
-    color: colors.sepia,
-    letterSpacing: 0.5,
-  },
-  replyBannerText: {
-    flex: 1,
-    fontFamily: fonts.body,
-    fontSize: 12,
-    color: colors.fog,
-  },
-  inputRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 8,
-  },
-  chatInput: {
-    flex: 1,
-    minHeight: 40,
-    maxHeight: 120,
-    backgroundColor: colors.soot,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 12,
-    color: colors.bone,
-    fontFamily: fonts.body,
-    fontSize: 14,
-    lineHeight: 18,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
+  replyBannerCol: { flex: 1 },
+  replyBannerAuthor: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 0.5, color: colors.sepia, marginBottom: 2 },
+  replyBannerText: { fontFamily: fonts.serif, fontSize: 12.5, color: colors.fog },
+  inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
+  input: {
+    flex: 1, minHeight: 42, maxHeight: 120, backgroundColor: colors.soot, borderRadius: 21,
+    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 12, color: colors.parchment,
+    fontFamily: fonts.serif, fontSize: 15, lineHeight: 20, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
   sendBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.sepia,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: colors.sepia,
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
+    width: 42, height: 42, borderRadius: 21, backgroundColor: colors.sepia, alignItems: 'center', justifyContent: 'center',
+    shadowColor: colors.sepia, shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 2 },
   },
-  sendBtnDisabled: {
-    backgroundColor: colors.ash,
-    shadowOpacity: 0,
-  },
+  sendBtnDisabled: { backgroundColor: colors.ash, shadowOpacity: 0 },
 
-  // ── Preview Banner ──
-  previewBanner: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    backgroundColor: 'rgba(11,10,8,0.97)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.ash,
-    alignItems: 'center',
-    gap: 12,
+  // ── Muted bar ──
+  mutedBar: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingTop: 14, paddingHorizontal: 16,
+    backgroundColor: colors.ink, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash,
   },
-  previewBannerText: {
-    fontFamily: fonts.ui,
-    fontSize: 11,
-    color: colors.fog,
-    letterSpacing: 0.5,
-  },
-  previewBtn: {
-    backgroundColor: colors.sepia,
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 4,
-    width: '100%',
-    alignItems: 'center',
-  },
-  previewBtnDisabled: {
-    opacity: 0.5,
-  },
-  previewBtnText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 11,
-    letterSpacing: 2,
-    color: colors.ink,
-  },
+  mutedText: { fontFamily: fonts.serifItalic, fontSize: 13, color: colors.fog },
 
-  // ── Action Sheet ──
-  actionBackdrop: { flex: 1 },
-  actionSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: colors.ink,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 24,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: 'rgba(196,150,26,0.15)',
+  // ── Preview bar ──
+  previewBar: {
+    paddingHorizontal: 16, paddingTop: 16, backgroundColor: 'rgba(11,10,8,0.97)',
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash, alignItems: 'center', gap: 12,
   },
-  actionHandle: {
-    width: 40,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-    alignSelf: 'center',
-    marginBottom: 20,
-  },
-  actionBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    gap: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.soot,
-  },
-  actionBtnLast: { borderBottomWidth: 0 },
-  actionBtnText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 12,
-    letterSpacing: 2,
-    color: colors.parchment,
-  },
-  actionBtnDanger: { color: colors.bloodReel },
+  previewText: { fontFamily: fonts.serifItalic, fontSize: 13, color: colors.fog },
+  previewBtn: { backgroundColor: colors.sepia, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4, width: '100%', alignItems: 'center' },
+  previewBtnText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 2, color: colors.ink },
 
-  // ── Settings Sheet ──
-  settingsSheet: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: '85%',
-    backgroundColor: colors.ink,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    padding: 24,
-    paddingBottom: 28,
-    borderWidth: 1,
-    borderBottomWidth: 0,
-    borderColor: 'rgba(196,150,26,0.15)',
-  },
-  settingsHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 24,
-  },
-  settingsTitle: {
-    fontFamily: fonts.display,
-    fontSize: 22,
-    color: colors.parchment,
-  },
-  settingsListHeader: { gap: 20, marginBottom: 16 },
-  settingsSection: { gap: 8 },
-  settingsLabel: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 9,
-    letterSpacing: 2,
-    color: colors.fog,
-  },
-  inviteCodeBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 14,
-    backgroundColor: 'rgba(196,150,26,0.06)',
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.3)',
-    borderStyle: 'dashed',
-    gap: 12,
-  },
-  inviteCodeText: {
-    fontFamily: fonts.uiBold,
-    fontSize: 18,
-    letterSpacing: 6,
-    color: colors.parchment,
-  },
-
-  // ── Members ──
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.soot,
-  },
-  memberAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.soot,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.ash,
-  },
-  memberAvatarImg: { width: '100%', height: '100%' },
-  memberName: {
-    flex: 1,
-    fontFamily: fonts.uiMedium,
-    fontSize: 12,
-    letterSpacing: 1,
-    color: colors.bone,
-  },
-  memberBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 2,
-    backgroundColor: 'rgba(196,150,26,0.08)',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(196,150,26,0.2)',
-  },
-  memberBadgeText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 8,
-    letterSpacing: 1.5,
-    color: colors.sepia,
-  },
-  settingsFooter: {
-    marginTop: 32,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.ash,
-    paddingTop: 20,
-  },
-  leaveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 14,
-    gap: 10,
-  },
-  leaveBtnText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: colors.sepia,
-  },
+  // ── Gate (velvet rope) ──
+  gate: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36, gap: 12 },
+  gateCrest: { marginBottom: 6, opacity: 0.95 },
+  gateName: { fontFamily: fonts.display, fontSize: 26, color: colors.parchment, textAlign: 'center', lineHeight: 32 },
+  gatePrivateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  gatePrivateLabel: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
+  gateDesc: { fontFamily: fonts.serif, fontSize: 15, color: colors.bone, textAlign: 'center', lineHeight: 23 },
+  gateMembers: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 0.5, color: colors.fog, marginTop: 2 },
+  gateCopy: { fontFamily: fonts.serifItalic, fontSize: 13.5, color: colors.fog, textAlign: 'center', lineHeight: 21, marginTop: 4 },
+  gateBtn: { marginTop: 14, backgroundColor: colors.sepia, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 4, minWidth: 200, alignItems: 'center' },
+  gateBtnText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 2.5, color: colors.ink },
+  gatePending: { alignItems: 'center', gap: 8, marginTop: 14 },
+  gatePendingText: { fontFamily: fonts.sub, fontSize: 15, color: colors.parchment, letterSpacing: 0.3 },
 });
-
-
-MessageBubble.displayName = 'MessageBubble';
-
-SharedCard.displayName = 'SharedCard';
