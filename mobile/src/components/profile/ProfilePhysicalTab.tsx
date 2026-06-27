@@ -102,7 +102,7 @@ export default React.memo(function ProfilePhysicalTab({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const pulseStyle = useAnimatedStyle(() => ({
-    borderColor: `rgba(139,105,20,${0.2 + breatheAnim.value * 0.5})`,
+    borderColor: `rgba(184,137,26,${0.2 + breatheAnim.value * 0.5})`,
     backgroundColor: `rgba(10,8,6,${0.9 + (breatheAnim.value * 0.1)})`,
   }));
 
@@ -253,18 +253,18 @@ const s = StyleSheet.create({
   filterHeaderWrap: { marginBottom: 16 },
   filterScrollMargin: { marginBottom: 12 },
   filterChipRowTight: { gap: 8, flexDirection: 'row', alignItems: 'center' },
-  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', backgroundColor: 'transparent' },
-  filterChipActive: { backgroundColor: 'rgba(139,105,20,0.1)', borderColor: 'rgba(139,105,20,0.4)' },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: 'transparent' },
+  filterChipActive: { backgroundColor: 'rgba(184,137,26,0.1)', borderColor: 'rgba(184,137,26,0.4)' },
   filterChipText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
   filterChipTextActive: { color: colors.sepia },
-  emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', backgroundColor: 'rgba(8,6,4,0.98)' },
+  emptyState: { alignItems: 'center', paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', backgroundColor: 'rgba(8,6,4,0.98)' },
   emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, borderWidth: 2, borderRadius: 4, marginTop: 12, overflow: 'hidden' },
   vaultPattern: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(255,255,255,0.02)', opacity: 0.5 },
   emptyLockIcon: { marginBottom: 16, opacity: 0.8 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
   emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 24, textAlign: 'center', letterSpacing: 1 },
   emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, fontStyle: 'italic', textAlign: 'center', lineHeight: 16 },
-  ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(139,105,20,0.6)', backgroundColor: 'rgba(139,105,20,0.1)', borderRadius: 2 },
+  ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.6)', backgroundColor: 'rgba(184,137,26,0.1)', borderRadius: 2 },
   ctaBtnTextSelf: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 4, color: colors.sepia },
   monthHeaderWrap: { paddingTop: 16, paddingBottom: 12 },
   monthHeader: { fontFamily: 'Courier', fontSize: 12, letterSpacing: 6, color: colors.sepia, opacity: 0.6, paddingHorizontal: 4 },
@@ -274,7 +274,7 @@ const s = StyleSheet.create({
   posterPlaceholder: { backgroundColor: 'rgba(18,14,9,0.7)', justifyContent: 'center', alignItems: 'center' },
   formatBadge: { position: 'absolute', bottom: 4, right: 4, backgroundColor: 'rgba(5,4,3,0.95)', paddingHorizontal: 4, paddingVertical: 2, borderRadius: 3, borderWidth: 1 },
   formatBadgeText: { fontFamily: fonts.uiBold, fontSize: 7, letterSpacing: 1 },
-  loadMoreBtn: { width: '100%', paddingVertical: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)' },
+  loadMoreBtn: { width: '100%', paddingVertical: 16, alignItems: 'center', justifyContent: 'center', marginTop: 16, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)' },
   loadMoreText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia },
 });
 

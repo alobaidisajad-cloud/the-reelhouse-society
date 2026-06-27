@@ -30,7 +30,7 @@ const s = StyleSheet.create({
   statDivider: { 
     width: 1.5, 
     height: 32, 
-    backgroundColor: 'rgba(139,105,20,0.15)' 
+    backgroundColor: 'rgba(184,137,26,0.15)' 
   },
   sectionLabelWrap: { 
     alignItems: 'center', 
@@ -40,16 +40,16 @@ const s = StyleSheet.create({
     marginBottom: 12 
   },
   sectionLabelText: {
-    fontFamily: fonts.ui, 
-    fontSize: 8, 
-    letterSpacing: 3.5, 
+    fontFamily: fonts.sub,
+    fontSize: 9.5,
+    letterSpacing: 2,
     color: colors.sepia,
-    textAlign: 'center', 
+    textAlign: 'center',
     ...effects.textGlowSepia,
   },
   goldDivider: { 
     height: 1, 
-    backgroundColor: 'rgba(139,105,20,0.2)', 
+    backgroundColor: 'rgba(184,137,26,0.2)', 
     marginBottom: 14 
   },
 });

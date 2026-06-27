@@ -26,7 +26,7 @@ const s = StyleSheet.create({
     height: '100%', 
     borderRadius: 4, 
     borderWidth: StyleSheet.hairlineWidth, 
-    borderColor: 'rgba(139,105,20,0.2)' 
+    borderColor: 'rgba(184,137,26,0.2)' 
   },
   posterPlaceholder: { 
     backgroundColor: '#050402', 
@@ -76,7 +76,7 @@ const s = StyleSheet.create({
     right: 4, 
     backgroundColor: 'rgba(10,7,3,0.85)', 
     borderWidth: 1, 
-    borderColor: 'rgba(139,105,20,0.35)', 
+    borderColor: 'rgba(184,137,26,0.35)', 
     borderRadius: 2, 
     paddingHorizontal: 4, 
     paddingVertical: 2 

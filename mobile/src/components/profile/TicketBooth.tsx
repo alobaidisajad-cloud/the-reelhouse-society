@@ -60,7 +60,7 @@ const s = StyleSheet.create({
         backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.sepia,
         borderRadius: 4, overflow: 'hidden',
     },
-    perfRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 4, backgroundColor: 'rgba(139,105,20,0.05)' },
+    perfRow: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 4, backgroundColor: 'rgba(184,137,26,0.05)' },
     perfDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.ink },
     ticketBody: { padding: 20, alignItems: 'center' },
     eyebrow: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4, color: colors.sepia, opacity: 0.6, marginBottom: 8 },

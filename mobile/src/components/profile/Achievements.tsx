@@ -165,7 +165,7 @@ const s = StyleSheet.create({
   container: {
     backgroundColor: 'rgba(8,6,4,0.98)',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.2)',
+    borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 4,
     padding: 20,
     marginTop: 16,
@@ -177,9 +177,9 @@ const s = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    fontFamily: fonts.uiBold,
-    fontSize: 10,
-    letterSpacing: 3,
+    fontFamily: fonts.sub,
+    fontSize: 11,
+    letterSpacing: 2,
     color: colors.parchment,
   },
   countText: {

@@ -33,7 +33,7 @@ function StatDial({ count, color }: { count: number; color: string }) {
                 {/* Background track */}
                 <Circle
                     cx={size / 2} cy={size / 2} r={radius}
-                    fill="none" stroke="rgba(139,105,20,0.15)" strokeWidth={strokeWidth}
+                    fill="none" stroke="rgba(184,137,26,0.15)" strokeWidth={strokeWidth}
                 />
                 {/* Progress arc */}
                 <Circle
@@ -124,11 +124,11 @@ const s = StyleSheet.create({
     dialWrap: { alignItems: 'center' },
     dialCard: {
         width: '100%', alignItems: 'center', padding: 32,
-        backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 4,
+        backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
     },
     rankLabel: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 3, color: colors.fog, marginBottom: 8 },
     rankValue: { fontFamily: fonts.display, fontSize: 28, marginBottom: 20 },
-    progressTrack: { width: '100%', height: 4, backgroundColor: 'rgba(139,105,20,0.15)', borderRadius: 2, overflow: 'hidden' },
+    progressTrack: { width: '100%', height: 4, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 2, overflow: 'hidden' },
     progressFill: { height: '100%', borderRadius: 2 },
 
     certCard: {
@@ -146,7 +146,7 @@ const s = StyleSheet.create({
     exportWrap: { alignItems: 'center', marginTop: 16 },
     exportBtn: {
         paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1,
-        borderColor: 'rgba(139,105,20,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,7,3,0.5)',
+        borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,7,3,0.5)',
     },
     exportText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 3, color: colors.fog },
 });

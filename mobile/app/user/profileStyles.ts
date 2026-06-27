@@ -18,13 +18,13 @@ export const s = StyleSheet.create({
     paddingTop: 56, paddingHorizontal: 16, paddingBottom: 12,
     flexDirection: 'row', alignItems: 'center', gap: 10,
     backgroundColor: 'rgba(8,6,4,0.98)',
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.15)',
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)',
   },
 
   // ── Atmospheric Header ──
   headerWrap: {
     position: 'relative', overflow: 'hidden',
-    borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.15)',
+    borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)',
   },
   headerDarkBase: {
     ...StyleSheet.absoluteFillObject, zIndex: 0,
@@ -36,18 +36,18 @@ export const s = StyleSheet.create({
   },
   projectorSpotlight: {
     position: 'absolute', top: -40, left: '10%', right: '10%', height: 300,
-    backgroundColor: 'rgba(139,105,20,0.12)',
+    backgroundColor: 'rgba(184,137,26,0.12)',
     borderRadius: 200, zIndex: 1, opacity: 0.7,
   },
   spotlightAuteur: { backgroundColor: 'rgba(180,45,45,0.15)', height: 400 },
   spotlightArchivist: { backgroundColor: 'rgba(196,150,26,0.15)', height: 350 },
   filmGrainOverlay: {
     ...StyleSheet.absoluteFillObject, zIndex: 2, opacity: 0.03,
-    backgroundColor: 'rgba(139,105,20,0.05)',
+    backgroundColor: 'rgba(184,137,26,0.05)',
   },
   headerGoldEdge: {
     position: 'absolute', bottom: 0, left: '5%', right: '5%', height: 1.5,
-    backgroundColor: 'rgba(139,105,20,0.3)', zIndex: 3,
+    backgroundColor: 'rgba(184,137,26,0.3)', zIndex: 3,
   },
   headerContent: {
     position: 'relative', zIndex: 4,
@@ -78,7 +78,7 @@ export const s = StyleSheet.create({
   levelBadge: {
     position: 'absolute', bottom: -8, alignSelf: 'center',
     backgroundColor: '#050402', paddingHorizontal: 14, paddingVertical: 4,
-    borderWidth: 1.5, borderRadius: 4, zIndex: 5, borderColor: 'rgba(139,105,20,0.5)',
+    borderWidth: 1.5, borderRadius: 4, zIndex: 5, borderColor: 'rgba(184,137,26,0.5)',
     ...effects.shadowSurface,
   },
   levelBadgeText: { fontFamily: fonts.mono, fontSize: 9, letterSpacing: 3, fontWeight: '700' as const },
@@ -116,32 +116,32 @@ export const s = StyleSheet.create({
   socialLinkChip: {
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
     paddingHorizontal: 10, paddingVertical: 5,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 3,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,
   },
   socialLinkText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
 
   // ── Buttons ──
   editBtn: {
-    backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)',
+    backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 4, paddingVertical: 12, paddingHorizontal: 24, ...effects.shadowSurface,
   },
   editBtnText: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 3, color: colors.sepia, fontWeight: '700' as const },
   settingsBtn: {
-    backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)',
+    backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 4, paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'center' as const, alignItems: 'center' as const, ...effects.shadowSurface,
   },
   followBtn: { 
-    marginTop: 14, backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', 
+    marginTop: 14, backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', 
     borderRadius: 4, paddingVertical: 14, paddingHorizontal: 32, ...effects.shadowSurface,
   },
-  followingBtn: { backgroundColor: 'rgba(5,3,2,0.95)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.2)' },
+  followingBtn: { backgroundColor: 'rgba(5,3,2,0.95)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.2)' },
   followBtnText: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 3, color: '#F2ECD8', textAlign: 'center' as const, fontWeight: '700' as const, ...effects.textGlowSepia },
   followingBtnText: { color: colors.fog, textShadowRadius: 0 },
-  ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,8,5,0.8)' },
+  ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,8,5,0.8)' },
   ghostBtnText: { fontFamily: fonts.mono, fontWeight: '700' as const, fontSize: 10, letterSpacing: 3, color: '#F2ECD8' },
-  primaryBtn: { backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowSurface },
+  primaryBtn: { backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowSurface },
   primaryBtnText: { fontFamily: fonts.mono, fontWeight: '700' as const, fontSize: 10, letterSpacing: 3, color: '#F2ECD8', ...effects.textGlowSepia },
-  ctaBtn: { borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.4)', backgroundColor: 'rgba(14,11,8,0.9)', paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface },
+  ctaBtn: { borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(14,11,8,0.9)', paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface },
   ctaBtnText: { fontFamily: fonts.mono, fontWeight: '700' as const, fontSize: 10, letterSpacing: 3, color: '#F2ECD8', ...effects.textGlowSepia },
 
   // ── Stats ──
@@ -149,14 +149,14 @@ export const s = StyleSheet.create({
     flexDirection: 'row' as const, width: '100%' as const, marginTop: 24, 
     justifyContent: 'center' as const, alignItems: 'center' as const,
     backgroundColor: 'rgba(10,8,5,0.85)',
-    borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.15)',
+    borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.15)',
     borderRadius: 6,
     ...effects.shadowSurface,
   },
   statCard: { flex: 1, paddingVertical: 16, paddingHorizontal: 4, alignItems: 'center' as const },
   statValue: { fontFamily: fonts.mono, fontSize: 18, color: '#F2ECD8', lineHeight: 22, ...effects.textGlowSepia, fontWeight: '700' as const },
   statLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginTop: 4, opacity: 0.8 },
-  statDivider: { width: 1.5, height: 32, backgroundColor: 'rgba(139,105,20,0.15)' },
+  statDivider: { width: 1.5, height: 32, backgroundColor: 'rgba(184,137,26,0.15)' },
 
   // ── Streak ──
   streakBadge: {
@@ -173,10 +173,10 @@ export const s = StyleSheet.create({
   },
 
   // ── Gold Divider ──
-  goldDivider: { height: 1, backgroundColor: 'rgba(139,105,20,0.2)', marginBottom: 14 },
+  goldDivider: { height: 1, backgroundColor: 'rgba(184,137,26,0.2)', marginBottom: 14 },
 
   // ── Recently Watched poster overlays ──
-  posterImg: { width: '100%' as const, height: '100%' as const, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.2)' },
+  posterImg: { width: '100%' as const, height: '100%' as const, borderRadius: 4, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)' },
   posterBottomGrad: {
     position: 'absolute' as const, bottom: 0, left: 0, right: 0,
     padding: 4, flexDirection: 'row' as const, justifyContent: 'space-between' as const, alignItems: 'flex-end' as const,
@@ -199,11 +199,11 @@ export const s = StyleSheet.create({
   collectionCard: {
     width: '31%' as unknown as number, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8,
     paddingVertical: 20, paddingHorizontal: 6,
-    backgroundColor: 'rgba(10,8,5,0.85)', borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 6,
+    backgroundColor: 'rgba(10,8,5,0.85)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 6,
     ...effects.shadowSurface,
   },
   collectionIconCircle: {
-    width: 42, height: 42, borderRadius: 21, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.25)',
+    width: 42, height: 42, borderRadius: 21, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.25)',
     backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center' as const, justifyContent: 'center' as const,
     ...effects.shadowSurface,
   },
@@ -212,7 +212,7 @@ export const s = StyleSheet.create({
   collectionCardCount: { fontFamily: fonts.display, fontSize: 22, color: colors.sepia, ...effects.textGlowSepia },
   collectionCardWide: {
     flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const,
-    paddingVertical: 16, borderWidth: 1.5, borderColor: 'rgba(139,105,20,0.2)',
+    paddingVertical: 16, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 6, backgroundColor: 'rgba(15,10,5,0.85)',
     ...effects.shadowSurface,
   },
@@ -222,12 +222,12 @@ export const s = StyleSheet.create({
   grid3: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8 },
   monthHeader: {
     fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.sepia, marginBottom: 12,
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.15)', paddingBottom: 8,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)', paddingBottom: 8,
   },
 
   // ── Badges ──
-  statusBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: 'rgba(10,7,3,0.85)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.35)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
-  halfLifeBadge: { position: 'absolute' as const, bottom: 4, left: 4, backgroundColor: 'rgba(10,7,3,0.9)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
+  statusBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: 'rgba(10,7,3,0.85)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.35)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
+  halfLifeBadge: { position: 'absolute' as const, bottom: 4, left: 4, backgroundColor: 'rgba(10,7,3,0.9)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, paddingHorizontal: 4, paddingVertical: 2 },
   formatBadge: { position: 'absolute' as const, top: 4, right: 4, backgroundColor: 'rgba(10,5,0,0.95)', borderWidth: 1, borderRadius: 2, paddingHorizontal: 5, paddingVertical: 2 },
 
   // ── Filters & Search ──
@@ -235,20 +235,20 @@ export const s = StyleSheet.create({
   filterChipActive: { borderColor: colors.sepia, backgroundColor: 'rgba(196,150,26,0.1)' },
   filterChipText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
   filterChipTextActive: { color: colors.sepia },
-  searchWrap: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: 'rgba(22,18,12,0.6)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', borderRadius: 2, paddingHorizontal: 10 },
+  searchWrap: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: 'rgba(22,18,12,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', borderRadius: 2, paddingHorizontal: 10 },
   searchIcon: { fontSize: 14, color: colors.fog, opacity: 0.5, marginRight: 6 },
   searchInput: { flex: 1, fontFamily: fonts.sub, fontSize: 11, color: colors.parchment, paddingVertical: 10 },
   searchClear: { padding: 4 },
 
   // ── Empty State ──
-  emptyState: { alignItems: 'center' as const, paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2, backgroundColor: 'rgba(14,11,8,0.7)' },
+  emptyState: { alignItems: 'center' as const, paddingVertical: 48, paddingHorizontal: 32, borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, backgroundColor: 'rgba(14,11,8,0.7)' },
   emptyIcon: { fontSize: 40, color: colors.sepia, marginBottom: 16, opacity: 0.6 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 15, color: colors.parchment, marginBottom: 8 },
   emptyDesc: { fontFamily: fonts.body, fontSize: 10, color: colors.fog, textAlign: 'center' as const, lineHeight: 16, fontStyle: 'italic' as const },
 
   // ── Stacks ──
   stacksGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 10 },
-  stackCard: { borderRadius: 2, overflow: 'hidden' as const, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.2)', backgroundColor: colors.soot },
+  stackCard: { borderRadius: 2, overflow: 'hidden' as const, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)', backgroundColor: colors.soot },
   stackPosterWrap: { width: '100%' as const, height: 80, position: 'relative' as const, overflow: 'hidden' as const },
   stackPosterPanel: { position: 'absolute' as const, top: 0, height: '100%' as const },
   stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.55)' },
@@ -258,12 +258,12 @@ export const s = StyleSheet.create({
   stackDesc: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, fontStyle: 'italic' as const, lineHeight: 13, marginTop: 4 },
 
   // ── Projector Tab ──
-  card: { backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 2, padding: 16, gap: 10 },
+  card: { backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, padding: 16, gap: 10 },
   favouriteRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 10 },
 
   // ── Account Section ──
   accountRow: {
-    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.15)',
+    paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)',
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8,
   },
   accountRowText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.bone },
@@ -361,8 +361,8 @@ export const s = StyleSheet.create({
   contentArea: { backgroundColor: colors.ink },
   collectionSection: { paddingHorizontal: 16, marginTop: 8, paddingBottom: 24 },
   collectionCardDisabled: { opacity: 0.3 },
-  collectionCardHighlight: { borderColor: 'rgba(139,105,20,0.25)' },
-  collectionIconHighlight: { backgroundColor: 'rgba(139,105,20,0.1)' },
+  collectionCardHighlight: { borderColor: 'rgba(184,137,26,0.25)' },
+  collectionIconHighlight: { backgroundColor: 'rgba(184,137,26,0.1)' },
   collectionHighlightText: { color: colors.sepia },
 
   // ── Calendar CTA ──
@@ -384,7 +384,7 @@ export const s = StyleSheet.create({
   },
   founderLine: {
     flex: 1, height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(139,105,20,0.25)',
+    backgroundColor: 'rgba(184,137,26,0.25)',
   },
   founderText: {
     fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
@@ -404,7 +404,7 @@ export const s = StyleSheet.create({
   },
   sealLine: {
     flex: 1, height: StyleSheet.hairlineWidth,
-    backgroundColor: 'rgba(139,105,20,0.2)',
+    backgroundColor: 'rgba(184,137,26,0.2)',
   },
   sealCenter: {
     flexDirection: 'row', alignItems: 'center', gap: 6,

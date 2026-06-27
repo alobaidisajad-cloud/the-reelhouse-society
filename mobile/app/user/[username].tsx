@@ -208,6 +208,13 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const isAuteurPlus = isAuteurPlusTier(targetUser);
   const isPrivate = targetUser?.is_social_private && !isSelf && !isFollowing;
 
+  // Tier echo — the member's tier color resonates through the hero (founder
+  // mark + stats panel). Cinephile = house brass (understated); Archivist =
+  // champagne; Auteur = ruby. The avatar ring/badge stay the primary signal.
+  const tierLine = isAuteurPlus ? 'rgba(180,45,45,0.45)' : isArchivistPlus ? 'rgba(196,150,26,0.5)' : 'rgba(184,137,26,0.3)';
+  const tierText = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? '#C4961A' : 'rgba(184,137,26,0.7)';
+  const tierStatsBorder = isAuteurPlus ? 'rgba(180,45,45,0.5)' : isArchivistPlus ? 'rgba(196,150,26,0.6)' : 'rgba(184,137,26,0.3)';
+
   const {
     displayLogs,
     displayWatchlist,
@@ -730,9 +737,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
             {/* ── Society Founder's Mark ── */}
             <View style={s.founderMark}>
-              <View style={s.founderLine} />
-              <Text style={s.founderText}>EST. 1924</Text>
-              <View style={s.founderLine} />
+              <View style={[s.founderLine, { backgroundColor: tierLine }]} />
+              <Text style={[s.founderText, { color: tierText }]}>EST. 1924</Text>
+              <View style={[s.founderLine, { backgroundColor: tierLine }]} />
             </View>
 
             {/* ── Member Since ── */}
@@ -791,7 +798,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
             {/* ── Stats Row ── */}
             {(!targetUser.preferences?.hide_stats || isSelf) && (
-              <View style={s.statsGrid}>
+              <View style={[s.statsGrid, { borderColor: tierStatsBorder }]}>
                 <StatCard label="FILMS" value={totalFilms} />
                 <StatCard label="FOLLOWERS" value={targetUser.followers_count || 0} onPress={isPrivate ? undefined : navToFollowers} />
                 <StatCard label="FOLLOWING" value={targetUser.following_count || 0} onPress={isPrivate ? undefined : navToFollowing} />

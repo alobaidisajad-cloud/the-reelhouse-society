@@ -130,7 +130,7 @@ const s = StyleSheet.create({
         backgroundColor: 'rgba(10, 8, 6, 0.7)',
         padding: 60,
         borderWidth: 2,
-        borderColor: 'rgba(139,105,20,0.3)',
+        borderColor: 'rgba(184,137,26,0.3)',
         borderRadius: 8,
     },
     title: {
@@ -168,7 +168,7 @@ const s = StyleSheet.create({
     barTrack: {
         flex: 1,
         height: 20,
-        backgroundColor: 'rgba(139,105,20,0.15)',
+        backgroundColor: 'rgba(184,137,26,0.15)',
         borderRadius: 10,
         overflow: 'hidden',
     },

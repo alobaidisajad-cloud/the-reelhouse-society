@@ -53,7 +53,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 24, paddingVertical: 10,
     borderWidth: 1, borderColor: colors.sepia, borderRadius: 2,
-    backgroundColor: 'rgba(139,105,20,0.1)',
+    backgroundColor: 'rgba(184,137,26,0.1)',
   },
   ctaBtnText: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 2, color: colors.sepia },
 });

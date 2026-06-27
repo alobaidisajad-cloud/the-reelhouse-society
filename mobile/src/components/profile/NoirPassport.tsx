@@ -226,17 +226,17 @@ export const NoirPassport = memo(function NoirPassport({ logs, analytics }: { lo
 const s = StyleSheet.create({
     container: { paddingVertical: 16, paddingHorizontal: 16 },
     passport: {
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 4,
+        borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4,
         padding: 24, position: 'relative', overflow: 'hidden',
     },
     // Corner brackets
     cornerBracket: { position: 'absolute', width: 16, height: 16 },
-    topLeft: { top: 12, left: 12, borderTopWidth: 1, borderLeftWidth: 1, borderTopColor: 'rgba(139,105,20,0.4)', borderLeftColor: 'rgba(139,105,20,0.4)' },
-    topRight: { top: 12, right: 12, borderTopWidth: 1, borderRightWidth: 1, borderTopColor: 'rgba(139,105,20,0.4)', borderRightColor: 'rgba(139,105,20,0.4)' },
-    bottomLeft: { bottom: 12, left: 12, borderBottomWidth: 1, borderLeftWidth: 1, borderBottomColor: 'rgba(139,105,20,0.4)', borderLeftColor: 'rgba(139,105,20,0.4)' },
-    bottomRight: { bottom: 12, right: 12, borderBottomWidth: 1, borderRightWidth: 1, borderBottomColor: 'rgba(139,105,20,0.4)', borderRightColor: 'rgba(139,105,20,0.4)' },
+    topLeft: { top: 12, left: 12, borderTopWidth: 1, borderLeftWidth: 1, borderTopColor: 'rgba(184,137,26,0.4)', borderLeftColor: 'rgba(184,137,26,0.4)' },
+    topRight: { top: 12, right: 12, borderTopWidth: 1, borderRightWidth: 1, borderTopColor: 'rgba(184,137,26,0.4)', borderRightColor: 'rgba(184,137,26,0.4)' },
+    bottomLeft: { bottom: 12, left: 12, borderBottomWidth: 1, borderLeftWidth: 1, borderBottomColor: 'rgba(184,137,26,0.4)', borderLeftColor: 'rgba(184,137,26,0.4)' },
+    bottomRight: { bottom: 12, right: 12, borderBottomWidth: 1, borderRightWidth: 1, borderBottomColor: 'rgba(184,137,26,0.4)', borderRightColor: 'rgba(184,137,26,0.4)' },
     // Header
-    header: { alignItems: 'center', marginBottom: 24, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.2)', paddingBottom: 20 },
+    header: { alignItems: 'center', marginBottom: 24, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.2)', paddingBottom: 20 },
     societyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.sepia, marginBottom: 8, opacity: 0.8 },
     title: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 32, marginBottom: 10 },
     counter: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.fog },
@@ -244,6 +244,6 @@ const s = StyleSheet.create({
     stampsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingVertical: 8 },
     stampWrap: { alignItems: 'center', justifyContent: 'center' },
     // Footer
-    footer: { alignItems: 'center', marginTop: 24, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,105,20,0.2)' },
+    footer: { alignItems: 'center', marginTop: 24, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.2)' },
     footerText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.fog, opacity: 0.5, textAlign: 'center' },
 });

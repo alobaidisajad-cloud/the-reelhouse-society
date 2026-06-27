@@ -101,8 +101,8 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
   }, [logs]);
 
   const getColor = (count: number) => {
-    if (count === 0) return 'rgba(139,105,20,0.05)';
-    if (count === 1) return 'rgba(139,105,20,0.3)';
+    if (count === 0) return 'rgba(184,137,26,0.05)';
+    if (count === 1) return 'rgba(184,137,26,0.3)';
     if (count === 2) return 'rgba(196,150,26,0.6)';
     if (count === 3) return 'rgba(242,232,160,0.8)';
     return colors.flicker; // 4+
@@ -175,12 +175,12 @@ const s = StyleSheet.create({
   container: {
     marginVertical: 16,
     backgroundColor: 'rgba(10, 7, 3, 0.4)',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
     borderRadius: 8,
     paddingVertical: 16,
   },
   header: { paddingHorizontal: 16, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  title: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog },
+  title: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.fog },
   subtitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1.5, color: colors.sepia },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 8 },
   gridWrapper: { position: 'relative' },

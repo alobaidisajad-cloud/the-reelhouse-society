@@ -348,28 +348,28 @@ const s = StyleSheet.create({
     metaNote: { textAlign: 'center', fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.6, marginBottom: 4 },
     card: {
         padding: 20, backgroundColor: 'rgba(8,6,4,0.98)',
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 4,
+        borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
     },
-    sectionTitle: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
+    sectionTitle: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
     emptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
     // Person rows
     personRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 12 },
     rankCircle: {
         width: 22, height: 22, borderRadius: 11,
-        backgroundColor: 'rgba(139,105,20,0.15)',
+        backgroundColor: 'rgba(184,137,26,0.15)',
         alignItems: 'center', justifyContent: 'center',
     },
     rankText: { fontFamily: fonts.uiBold, fontSize: 9, color: colors.fog },
     avatar: {
         width: 36, height: 36, borderRadius: 18, overflow: 'hidden',
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', backgroundColor: '#050402',
+        borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: '#050402',
         alignItems: 'center', justifyContent: 'center',
     },
     avatarImg: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
     avatarFallback: { fontFamily: fonts.display, fontSize: 14, color: colors.ash },
     personInfo: { flex: 1 },
     personName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, marginBottom: 4 },
-    barTrack: { height: 4, backgroundColor: 'rgba(139,105,20,0.15)', borderRadius: 2, overflow: 'hidden' },
+    barTrack: { height: 4, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 2, overflow: 'hidden' },
     barFill: { height: '100%', backgroundColor: colors.sepia, borderRadius: 2 },
     countText: { fontFamily: fonts.display, fontSize: 16, color: colors.fog, minWidth: 24, textAlign: 'right' },
     // Genre rows

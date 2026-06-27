@@ -195,7 +195,7 @@ const s = StyleSheet.create({
     },
     card: {
         width: '100%', maxWidth: 400, padding: 32,
-        backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
+        backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
         borderTopWidth: 2, borderTopColor: colors.sepia, borderRadius: 8,
         position: 'relative', overflow: 'hidden',
     },

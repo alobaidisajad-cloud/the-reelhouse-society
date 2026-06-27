@@ -101,9 +101,9 @@ export function FilmRecommendations({ logs }: FilmRecommendationsProps) {
 
 const s = StyleSheet.create({
     container: { marginVertical: 16 },
-    title: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 12, paddingHorizontal: 16 },
+    title: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia, marginBottom: 12, paddingHorizontal: 16 },
     filmCard: { width: 100 },
-    poster: { width: 100, height: 150, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', marginBottom: 6 },
+    poster: { width: 100, height: 150, borderRadius: 4, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', marginBottom: 6 },
     filmTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.bone, lineHeight: 14 },
     listContent: { gap: 10, paddingLeft: 16 },
 });

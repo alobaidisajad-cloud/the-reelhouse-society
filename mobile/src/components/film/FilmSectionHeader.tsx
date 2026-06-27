@@ -43,6 +43,6 @@ const s = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 4,
   },
-  label: { fontFamily: fonts.uiBold, fontSize: 10.5, letterSpacing: 3, color: colors.sepia },
+  label: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia },
   rule: { flex: 1, height: 1, marginLeft: 12 },
 });

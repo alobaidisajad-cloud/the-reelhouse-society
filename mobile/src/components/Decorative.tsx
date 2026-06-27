@@ -160,10 +160,12 @@ const s = StyleSheet.create({
     paddingHorizontal: 8,
   },
   dividerLabel: {
-    fontFamily: fonts.ui,
-    fontWeight: '700',
+    // App-wide section-label voice: typewriter (Special Elite) — a typed 1924
+    // archive label. Tuned letter-spacing so the typewriter face reads elegant,
+    // not sparse, at this size.
+    fontFamily: fonts.sub,
     fontSize: 11,
-    letterSpacing: 10,
+    letterSpacing: 7,
     color: '#E4DFCC',
     textTransform: 'uppercase',
     ...effects.textGlowSepia,

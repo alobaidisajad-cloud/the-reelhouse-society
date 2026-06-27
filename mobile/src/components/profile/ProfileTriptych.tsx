@@ -57,13 +57,13 @@ function TierSlotGlow({ tier, children }: { tier: 'archivist' | 'auteur'; childr
 
     // Web: box-shadow values
     const baseShadow = isArch
-        ? { shadowColor: 'rgba(139,105,20,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, elevation: 6 }
+        ? { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, elevation: 6 }
         : { shadowColor: 'rgba(125,31,31,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, elevation: 6 };
 
     // Web glyph: ✦ (archivist) or ★ (auteur)
     const glyph = isArch ? '✦' : '★';
     const glyphColor = isArch ? 'rgba(218,165,32,0.85)' : 'rgba(180,45,45,0.85)';
-    const glyphShadow = isArch ? 'rgba(139,105,20,0.6)' : 'rgba(125,31,31,0.6)';
+    const glyphShadow = isArch ? 'rgba(184,137,26,0.6)' : 'rgba(125,31,31,0.6)';
 
     // Shimmer line colors
     const shimmerColors: [string, string, string, string, string] = isArch
@@ -396,13 +396,13 @@ const s = StyleSheet.create({
     },
     slotEmpty: {
         borderWidth: 1,
-        borderColor: 'rgba(139,105,20,0.3)',
+        borderColor: 'rgba(184,137,26,0.3)',
         borderStyle: 'dashed',
         backgroundColor: 'transparent'
     },
     slotFilled: {
         borderWidth: 1,
-        borderColor: 'rgba(139,105,20,0.5)',
+        borderColor: 'rgba(184,137,26,0.5)',
         backgroundColor: colors.ink,
         // Web: boxShadow: '0 10px 30px rgba(0,0,0,0.5), inset 0 1px 0 rgba(242,232,160,0.1)'
         shadowColor: '#000',
@@ -440,12 +440,12 @@ const s = StyleSheet.create({
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         borderWidth: 1,
-        borderColor: 'rgba(139,105,20,0.2)',
+        borderColor: 'rgba(184,137,26,0.2)',
     },
     modalHeader: {
         padding: 24,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(139,105,20,0.1)',
+        borderBottomColor: 'rgba(184,137,26,0.1)',
     },
     modalEyebrow: {
         fontFamily: fonts.ui,
@@ -460,7 +460,7 @@ const s = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'rgba(10,5,0,0.5)',
         borderWidth: 1,
-        borderColor: 'rgba(139,105,20,0.15)',
+        borderColor: 'rgba(184,137,26,0.15)',
         borderRadius: 8,
         paddingHorizontal: 16,
     },
@@ -484,7 +484,7 @@ const s = StyleSheet.create({
         padding: 12,
         backgroundColor: 'rgba(20,15,10,0.5)',
         borderWidth: 1,
-        borderColor: 'rgba(139,105,20,0.1)',
+        borderColor: 'rgba(184,137,26,0.1)',
         borderRadius: 8,
         marginBottom: 8,
     },
