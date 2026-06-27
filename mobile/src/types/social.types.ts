@@ -21,10 +21,16 @@ export interface Notification {
     timestamp: string
 }
 
+export type LoungeMemberStatus = 'approved' | 'pending' | 'muted' | 'banned'
+
 export interface LoungeMember {
     user_id: string
     username: string
     avatar_url?: string
+    /** Membership standing. Absent on legacy rows → treated as 'approved'. */
+    status?: LoungeMemberStatus
+    /** When the request/membership row was created — used to order "At the Door". */
+    created_at?: string
 }
 
 /**
