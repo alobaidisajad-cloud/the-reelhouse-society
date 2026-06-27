@@ -1,250 +1,222 @@
-import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, Alert, Modal, StyleSheet } from 'react-native';
-import { BlurView } from 'expo-blur';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import PressableScale from '@/src/components/PressableScale';
+import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
+import { colors, fonts } from '@/src/theme/theme';
+import { LoungeMember } from '@/src/types/social.types';
 import TactileEngine from '@/src/utils/TactileEngine';
-import * as ExpoClipboard from 'expo-clipboard';
+import { FlashList } from '@shopify/flash-list';
+import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { Copy, Crown, LogOut, Trash2, X, Users } from 'lucide-react-native';
-import { FlashList } from '@shopify/flash-list';
-import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
-import { LoungeMember } from '@/src/types';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
-import PressableScale from '@/src/components/PressableScale';
-import { s } from './LoungeStyles';
+import { Ban, Crown, DoorClosed, LogOut, MoreHorizontal, Trash2, Users, Volume2, VolumeX, X } from 'lucide-react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, InteractionManager, Modal, StyleSheet, Text, View } from 'react-native';
+import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  withSpring, 
-  Easing, 
-  runOnJS 
-} from 'react-native-reanimated';
+const AnimatedView = Animated.createAnimatedComponent(View);
+const BLOOD = '#A8503F';
 
 export interface LoungeSettingsPanelProps {
-  lounge: LoungeRoom | null;
+  lounge: LoungeRoom;
   members: LoungeMember[];
   visible: boolean;
   onClose: () => void;
   isCreator: boolean;
+  onMembersChanged?: () => void;
 }
 
-export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator }: LoungeSettingsPanelProps) {
-  const insets = useSafeAreaInsets();
+export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreator, onMembersChanged }: LoungeSettingsPanelProps) {
   const router = useRouter();
-  const { leaveLounge, deleteLounge } = useLoungeStore();
-  
-  const [isRendered, setIsRendered] = useState(false);
-  const translateY = useSharedValue(800);
-  const opacity = useSharedValue(0);
+  const insets = useSafeAreaInsets();
+  const { leaveLounge, deleteLounge, setMemberStatus, removeMember } = useLoungeStore();
+  const [expanded, setExpanded] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (visible) {
-      setIsRendered(true);
-      translateY.value = 800;
-      opacity.value = withTiming(1, { duration: 300 });
-      translateY.value = withTiming(0, { duration: 350, easing: Easing.out(Easing.cubic) });
-    } else {
-      if (isRendered) {
-        opacity.value = withTiming(0, { duration: 250 });
-        translateY.value = withTiming(800, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
-          runOnJS(setIsRendered)(false);
-        });
-      }
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  // Only approved/muted/banned are "members"; pending live in the At-the-Door panel.
+  const roster = members.filter(m => m.status !== 'pending');
 
-  const handleClose = useCallback(() => {
-    onClose();
-  }, [onClose]);
+  const handleLeave = () => {
+    Alert.alert('Step out of this salon?', 'You can rejoin a public salon any time; a private one needs the host to re-admit you.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Step out', style: 'destructive', onPress: async () => {
+        TactileEngine.destroy();
+        await leaveLounge(lounge.id);
+        onClose();
+        InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as never));
+      }},
+    ]);
+  };
 
-  const pan = Gesture.Pan()
-    .onChange((e) => {
-      if (e.translationY > 0) translateY.value = e.translationY;
-    })
-    .onEnd((e) => {
-      if (e.translationY > 100 || e.velocityY > 500) {
-        opacity.value = withTiming(0, { duration: 250 });
-        translateY.value = withTiming(800, { duration: 250, easing: Easing.out(Easing.cubic) }, () => {
-          runOnJS(handleClose)();
-        });
-      } else {
-        translateY.value = withTiming(0, { duration: 250, easing: Easing.out(Easing.cubic) });
-      }
-    });
+  const handleDelete = () => {
+    Alert.alert('Incinerate this salon?', 'All dispatches and member history will be permanently destroyed.', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Incinerate', style: 'destructive', onPress: async () => {
+        TactileEngine.warn();
+        await deleteLounge(lounge.id);
+        onClose();
+        InteractionManager.runAfterInteractions(() => router.replace('/(tabs)/lounge' as never));
+      }},
+    ]);
+  };
 
-  const animatedSheetStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: translateY.value }],
-  }));
-
-  const animatedBgStyle = useAnimatedStyle(() => ({
-    opacity: opacity.value,
-  }));
-
-  const handleCopyCode = useCallback(async () => {
-    if (!lounge?.invite_code) return;
-    await ExpoClipboard.setStringAsync(lounge.invite_code);
-    TactileEngine.success();
-  }, [lounge?.invite_code]);
-
-  const onLeave = useCallback(() => {
-    if (!lounge) return;
-    Alert.alert(
-      'Leave Lounge',
-      'Are you sure you want to leave this cinematic space?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Leave', 
-          style: 'destructive', 
-          onPress: async () => {
-            TactileEngine.mutate();
-            handleClose();
-            await leaveLounge(lounge.id);
-            (router.replace as any)('/(tabs)/lounge');
-          } 
-        }
-      ]
-    );
-  }, [lounge, leaveLounge, handleClose, router]);
-
-  const onDelete = useCallback(() => {
-    if (!lounge) return;
-    Alert.alert(
-      'Destroy Lounge',
-      'This will permanently obliterate this space and all its history. Proceed?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Destroy', 
-          style: 'destructive', 
-          onPress: async () => {
-            TactileEngine.destroy();
-            handleClose();
-            const success = await deleteLounge(lounge.id);
-            if (success) {
-              (router.replace as any)('/(tabs)/lounge');
-            }
-          } 
-        }
-      ]
-    );
-  }, [lounge, deleteLounge, handleClose, router]);
+  const confirmAction = useCallback((title: string, message: string, label: string, run: () => Promise<unknown>) => {
+    Alert.alert(title, message, [
+      { text: 'Cancel', style: 'cancel' },
+      { text: label, style: 'destructive', onPress: async () => { TactileEngine.warn(); await run(); onMembersChanged?.(); } },
+    ]);
+  }, [onMembersChanged]);
 
   const renderMember = useCallback(({ item }: { item: LoungeMember }) => {
-    const isOwner = item.user_id === lounge?.creator_id;
+    const isFounder = item.user_id === lounge.creator_id;
+    const isOpen = expanded === item.user_id;
+    const muted = item.status === 'muted';
+    const banned = item.status === 'banned';
+    const uname = item.username?.toUpperCase();
     return (
-      <View style={s.memberRow}>
-        <View style={s.memberAvatar}>
-          {item.avatar_url ? (
-            <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} cachePolicy="memory-disk" />
-          ) : (
-            <Text style={[s.memberAvatarLetter, { color: colors.fog }]}>{item.username?.[0]?.toUpperCase() || '?'}</Text>
-          )}
-        </View>
-        <Text style={s.memberName} numberOfLines={1}>{item.username}</Text>
-        {isOwner && (
-          <View style={s.memberBadge}>
-            <Crown size={10} color={colors.sepia} strokeWidth={2} />
-            <Text style={s.memberBadgeText}>OWNER</Text>
+      <View style={s.memberBlock}>
+        <View style={s.memberRow}>
+          <View style={s.memberAvatar}>
+            {item.avatar_url
+              ? <Image source={{ uri: item.avatar_url }} style={s.memberAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
+              : <Users size={13} color={colors.fog} strokeWidth={1.5} />}
           </View>
+          <Text style={s.memberName} numberOfLines={1}>@{uname}</Text>
+          {muted && <View style={s.statusTag}><VolumeX size={9} color={colors.fog} strokeWidth={2} /><Text style={s.statusTagText}>MUTED</Text></View>}
+          {banned && <View style={s.statusTag}><Ban size={9} color={BLOOD} strokeWidth={2} /><Text style={[s.statusTagText, { color: BLOOD }]}>BANNED</Text></View>}
+          {isFounder ? (
+            <View style={s.founderBadge}>
+              <Crown size={9} color={colors.sepia} strokeWidth={2} />
+              <Text style={s.founderText}>FOUNDER</Text>
+            </View>
+          ) : isCreator ? (
+            <PressableScale onPress={() => setExpanded(isOpen ? null : item.user_id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Member actions">
+              <MoreHorizontal size={18} color={colors.fog} strokeWidth={1.5} />
+            </PressableScale>
+          ) : null}
+        </View>
+
+        {isCreator && !isFounder && isOpen && (
+          <AnimatedView entering={SlideInDown.duration(160)} style={s.actionRow}>
+            <PressableScale
+              style={s.memberAction}
+              haptic="selection"
+              onPress={() => muted
+                ? confirmAction('Unmute member?', `@${uname} will be able to post again.`, 'Unmute', () => setMemberStatus(lounge.id, item.user_id, 'approved'))
+                : confirmAction('Mute member?', `@${uname} stays in the salon and can read, but can't post or react.`, 'Mute', () => setMemberStatus(lounge.id, item.user_id, 'muted'))}
+            >
+              {muted ? <Volume2 size={12} color={colors.fog} strokeWidth={1.5} /> : <VolumeX size={12} color={colors.fog} strokeWidth={1.5} />}
+              <Text style={s.memberActionText}>{muted ? 'UNMUTE' : 'MUTE'}</Text>
+            </PressableScale>
+
+            <PressableScale
+              style={s.memberAction}
+              haptic="selection"
+              onPress={() => confirmAction('Remove member?', `@${uname} will leave the salon. They can return later.`, 'Remove', () => removeMember(lounge.id, item.user_id))}
+            >
+              <DoorClosed size={12} color={BLOOD} strokeWidth={1.5} />
+              <Text style={[s.memberActionText, { color: BLOOD }]}>REMOVE</Text>
+            </PressableScale>
+
+            <PressableScale
+              style={[s.memberAction, s.memberActionBan]}
+              haptic="selection"
+              onPress={() => banned
+                ? confirmAction('Lift the ban?', `@${uname} will be able to return.`, 'Unban', () => setMemberStatus(lounge.id, item.user_id, 'approved'))
+                : confirmAction('Ban member?', `@${uname} will be removed and blocked from returning until you unban them.`, 'Ban', () => setMemberStatus(lounge.id, item.user_id, 'banned'))}
+            >
+              <Ban size={12} color={BLOOD} strokeWidth={1.5} />
+              <Text style={[s.memberActionText, { color: BLOOD }]}>{banned ? 'UNBAN' : 'BAN'}</Text>
+            </PressableScale>
+          </AnimatedView>
         )}
       </View>
     );
-  }, [lounge?.creator_id]);
+  }, [lounge.creator_id, lounge.id, isCreator, expanded, setMemberStatus, removeMember, confirmAction]);
 
-  if (!isRendered || !lounge) return null;
+  if (!visible) return null;
 
   return (
-    <Modal visible={isRendered} transparent animationType="none" onRequestClose={handleClose} hardwareAccelerated>
-      <GestureHandlerRootView style={StyleSheet.absoluteFill}>
-        <Animated.View style={[StyleSheet.absoluteFill, animatedBgStyle]}>
-          <BlurView intensity={60} tint="dark" style={StyleSheet.absoluteFill}>
-            <PressableScale style={s.actionBackdrop} onPress={handleClose} accessibilityRole="button">
-              <View style={StyleSheet.absoluteFill} />
-            </PressableScale>
-          </BlurView>
-        </Animated.View>
+    <Modal transparent visible animationType="fade" onRequestClose={onClose}>
+      <BlurView intensity={50} tint="dark" style={StyleSheet.absoluteFill}>
+        <PressableScale style={s.backdrop} onPress={onClose} accessibilityRole="button"><View /></PressableScale>
+      </BlurView>
+      <AnimatedView entering={SlideInDown.springify()} exiting={SlideOutDown} style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 28) }]}>
+        <View style={s.handle} />
+        <View style={s.headerRow}>
+          <View style={{ flex: 1, marginRight: 12 }}>
+            <Text style={s.title} numberOfLines={1}>{lounge.name}</Text>
+            {!!lounge.description && <Text style={s.subtitle} numberOfLines={2}>{lounge.description}</Text>}
+          </View>
+          <PressableScale onPress={onClose} hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Close">
+            <X size={20} color={colors.fog} strokeWidth={1.5} />
+          </PressableScale>
+        </View>
 
-          <Animated.View 
-            style={[
-              s.settingsSheet, 
-              animatedSheetStyle, 
-              { paddingBottom: Math.max(insets.bottom + 28, 48) }
-            ]}
-          >
-            <GestureDetector gesture={pan}>
-              <View style={{ backgroundColor: 'transparent' }}>
-                <View style={s.actionHandle} />
-
-                <View style={s.settingsHeaderRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={s.settingsTitle} numberOfLines={1}>{lounge.name}</Text>
-                {lounge.description ? (
-                  <Text style={[s.settingsLabel, { marginTop: 4 }]} numberOfLines={2}>{lounge.description}</Text>
-                ) : null}
-              </View>
-              <PressableScale style={s.headerBtn} onPress={handleClose} haptic="light">
-                <X size={24} color={colors.parchment} strokeWidth={1.5} />
-              </PressableScale>
-            </View>
-
-            <View style={s.settingsListHeader}>
-              {lounge.is_private && lounge.invite_code && (
-                <View style={s.settingsSection}>
-                  <Text style={s.settingsLabel}>INVITE CODE</Text>
-                  <PressableScale style={s.inviteCodeBtn} onPress={handleCopyCode} haptic="medium">
-                    <Text style={s.inviteCodeText}>{lounge.invite_code}</Text>
-                    <Copy size={16} color={colors.sepia} strokeWidth={1.5} />
-                  </PressableScale>
-                </View>
-              )}
-
-              <View style={s.settingsSection}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={s.settingsLabel}>MEMBERS</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    <Users size={12} color={colors.fog} strokeWidth={1.5} />
-                    <Text style={[s.settingsLabel, { color: colors.parchment }]}>{members.length}</Text>
-                  </View>
-                </View>
-              </View>
-            </View>
-              </View>
-            </GestureDetector>
-
-            <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.03)' }}>
-              <FlashList
-                data={members}
-                renderItem={renderMember}
-                estimatedItemSize={56}
-                keyExtractor={item => item.user_id}
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingHorizontal: 16 }}
-              />
-            </View>
-
-            <View style={s.settingsFooter}>
+        <FlashList
+          data={roster}
+          keyExtractor={item => item.user_id}
+          showsVerticalScrollIndicator={false}
+          estimatedItemSize={56}
+          ListHeaderComponent={<Text style={s.label}>MEMBERS ({roster.length})</Text>}
+          renderItem={renderMember}
+          ListFooterComponent={
+            <View style={s.footer}>
               {isCreator ? (
-                <PressableScale style={s.leaveBtn} onPress={onDelete} haptic="medium">
-                  <Trash2 size={16} color={colors.bloodReel} strokeWidth={1.5} />
-                  <Text style={[s.leaveBtnText, { color: colors.bloodReel }]}>DESTROY LOUNGE</Text>
+                <PressableScale style={s.leaveBtn} onPress={handleDelete} accessibilityRole="button">
+                  <Trash2 size={14} color={colors.sepia} strokeWidth={1.5} />
+                  <Text style={s.leaveText}>INCINERATE SALON</Text>
                 </PressableScale>
               ) : (
-                <PressableScale style={s.leaveBtn} onPress={onLeave} haptic="medium">
-                  <LogOut size={16} color={colors.bloodReel} strokeWidth={1.5} />
-                  <Text style={[s.leaveBtnText, { color: colors.bloodReel }]}>LEAVE LOUNGE</Text>
+                <PressableScale style={s.leaveBtn} onPress={handleLeave} accessibilityRole="button">
+                  <LogOut size={14} color={colors.sepia} strokeWidth={1.5} />
+                  <Text style={s.leaveText}>STEP OUT OF SALON</Text>
                 </PressableScale>
               )}
             </View>
-          </Animated.View>
-      </GestureHandlerRootView>
+          }
+        />
+      </AnimatedView>
     </Modal>
   );
 }
+
+const s = StyleSheet.create({
+  backdrop: { flex: 1 },
+  sheet: {
+    position: 'absolute', bottom: 0, left: 0, right: 0, height: '85%', backgroundColor: colors.ink,
+    borderTopLeftRadius: 16, borderTopRightRadius: 16, padding: 24, paddingBottom: 28,
+    borderWidth: 1, borderBottomWidth: 0, borderColor: 'rgba(184,137,26,0.15)',
+  },
+  handle: { width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.08)', alignSelf: 'center', marginBottom: 20 },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
+  title: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment },
+  subtitle: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, marginTop: 4, lineHeight: 18 },
+  label: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 12 },
+
+  memberBlock: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
+  memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 10 },
+  memberAvatar: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: colors.soot, alignItems: 'center', justifyContent: 'center',
+    overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
+  },
+  memberAvatarImg: { width: '100%', height: '100%' },
+  memberName: { flex: 1, fontFamily: fonts.uiMedium, fontSize: 12, letterSpacing: 1, color: colors.bone },
+  statusTag: { flexDirection: 'row', alignItems: 'center', gap: 3 },
+  statusTagText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1, color: colors.fog },
+  founderBadge: {
+    flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2,
+    backgroundColor: 'rgba(184,137,26,0.08)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)',
+  },
+  founderText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
+
+  actionRow: { flexDirection: 'row', gap: 8, paddingBottom: 12, paddingLeft: 42 },
+  memberAction: {
+    flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
+    borderRadius: 7, paddingVertical: 7, paddingHorizontal: 11,
+  },
+  memberActionBan: { borderColor: 'rgba(168,80,63,0.4)' },
+  memberActionText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1, color: colors.fog },
+
+  footer: { marginTop: 28, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash, paddingTop: 20 },
+  leaveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, gap: 10 },
+  leaveText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2, color: colors.sepia },
+});

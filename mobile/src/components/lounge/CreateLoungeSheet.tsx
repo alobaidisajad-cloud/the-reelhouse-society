@@ -162,7 +162,7 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
                 </Text>
               </View>
               <Text style={s.toggleDesc}>
-                {isPrivate ? 'Invite-only via code' : 'Anyone with Archivist+ can join'}
+                {isPrivate ? 'By request — you admit members at the door' : 'Anyone with Archivist+ can take a seat'}
               </Text>
             </View>
             <Switch

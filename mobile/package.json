@@ -19,6 +19,7 @@
     "@expo-google-fonts/inter": "^0.4.2",
     "@expo-google-fonts/rye": "^0.4.1",
     "@expo-google-fonts/special-elite": "^0.4.1",
+    "@expo-google-fonts/spectral": "^0.4.1",
     "@expo/vector-icons": "^15.0.3",
     "@hookform/resolvers": "^5.4.0",
     "@react-native-community/netinfo": "11.4.1",

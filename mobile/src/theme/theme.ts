@@ -43,6 +43,9 @@ export const fonts = {
   body: 'CourierPrime_400Regular',  // Monospace — body text, reviews
   bodyBold: 'CourierPrime_700Bold',
   bodyItalic: 'CourierPrime_400Regular_Italic',
+  serif: 'Spectral_400Regular',         // Humanist screen serif — long-read transcript (the Lounge)
+  serifMedium: 'Spectral_500Medium',
+  serifItalic: 'Spectral_400Regular_Italic',
   ui: 'Inter_400Regular',           // Clean sans — UI elements
   uiMedium: 'Inter_500Medium',
   uiBold: 'Inter_700Bold',

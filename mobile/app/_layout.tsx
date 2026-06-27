@@ -22,6 +22,7 @@ import { colors } from '@/src/theme/theme';
 import { CourierPrime_400Regular, CourierPrime_400Regular_Italic, CourierPrime_700Bold } from '@expo-google-fonts/courier-prime';
 import { Inter_400Regular, Inter_500Medium, Inter_700Bold } from '@expo-google-fonts/inter';
 import { Rye_400Regular, useFonts } from '@expo-google-fonts/rye';
+import { Spectral_400Regular, Spectral_400Regular_Italic, Spectral_500Medium } from '@expo-google-fonts/spectral';
 import { SpecialElite_400Regular } from '@expo-google-fonts/special-elite';
 import * as Linking from 'expo-linking';
 import * as SplashScreen from 'expo-splash-screen';
@@ -55,6 +56,9 @@ export default function RootLayout() {
     CourierPrime_400Regular,
     CourierPrime_700Bold,
     CourierPrime_400Regular_Italic,
+    Spectral_400Regular,
+    Spectral_400Regular_Italic,
+    Spectral_500Medium,
     Inter_400Regular,
     Inter_500Medium,
     Inter_700Bold,
