@@ -1,0 +1,30 @@
+{
+  "_note": "The set of database RPCs and edge functions this app depends on. Auto-verified by __tests__/backendContract.test.ts on every CI run: if the app adds/removes a backend dependency, that test fails and this file must be updated CONSCIOUSLY. When you update it, make sure any NEW entry actually EXISTS and is DEPLOYED on the live DB (run: node scripts/check-backend-live.mjs). This is the guard against the repo<->production drift found on 2026-06-26. Reconciled with live on 2026-06-26.",
+  "rpcs": [
+    "bulk_dismiss_reports",
+    "create_lounge_with_member",
+    "delete_list_cascade",
+    "get_community_feed_auth_cursor",
+    "get_featured_critique",
+    "get_filtered_stacks_auth_cursor",
+    "get_following_feed_auth_cursor",
+    "get_priority_reports",
+    "get_profile_counts",
+    "get_public_profile_analytics",
+    "get_user_analytics",
+    "get_user_blocks",
+    "increment_dossier_views",
+    "register_push_token",
+    "request_account_deletion",
+    "resolve_moderation_report_v2",
+    "submit_report",
+    "toggle_dossier_certify",
+    "update_my_preferences"
+  ],
+  "edgeFunctions": [
+    "fetch-rss",
+    "sign-in-with-username",
+    "sync-entitlement",
+    "tmdb-proxy"
+  ]
+}
