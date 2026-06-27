@@ -1,8 +1,10 @@
 {
   "_note": "The set of database RPCs and edge functions this app depends on. Auto-verified by __tests__/backendContract.test.ts on every CI run: if the app adds/removes a backend dependency, that test fails and this file must be updated CONSCIOUSLY. When you update it, make sure any NEW entry actually EXISTS and is DEPLOYED on the live DB (run: node scripts/check-backend-live.mjs). This is the guard against the repo<->production drift found on 2026-06-26. Reconciled with live on 2026-06-26.",
   "rpcs": [
+    "approve_lounge_member",
     "bulk_dismiss_reports",
-    "create_lounge_with_member",
+    "create_lounge",
+    "decline_lounge_member",
     "delete_list_cascade",
     "get_community_feed_auth_cursor",
     "get_featured_critique",
@@ -14,12 +16,17 @@
     "get_user_analytics",
     "get_user_blocks",
     "increment_dossier_views",
+    "join_public_lounge",
     "register_push_token",
+    "remove_lounge_member",
     "request_account_deletion",
+    "request_lounge_membership",
     "resolve_moderation_report_v2",
+    "set_lounge_member_status",
     "submit_report",
     "toggle_dossier_certify",
-    "update_my_preferences"
+    "update_my_preferences",
+    "withdraw_lounge_message"
   ],
   "edgeFunctions": [
     "fetch-rss",

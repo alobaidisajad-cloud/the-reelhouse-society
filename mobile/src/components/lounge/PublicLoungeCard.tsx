@@ -53,7 +53,7 @@ export const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeR
           {lounge.is_private && (
             <View style={s.publicPrivateBadge}>
               <Lock size={10} color={colors.sepia} strokeWidth={1.5} />
-              <Text style={s.publicPrivateText}>APPROVAL REQUIRED</Text>
+              <Text style={s.publicPrivateText}>BY REQUEST</Text>
             </View>
           )}
           <Text style={s.publicDesc} numberOfLines={3}>
@@ -68,7 +68,7 @@ export const PublicLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeR
             <View style={s.publicEnterTag}>
               {!lounge.is_private && <Animated.View style={[s.liveIndicator, pulseStyle]} />}
               <Text style={[s.publicEnterText, { flexShrink: 1 }]} numberOfLines={1}>
-                {lounge.is_private ? '[ REQUEST INTELLIGENCE ]' : '[ GRANT ACCESS ]'}
+                {lounge.is_private ? '[ REQUEST TO JOIN ]' : '[ TAKE A SEAT ]'}
               </Text>
               {lounge.is_private 
                 ? <Lock size={12} color={colors.sepia} strokeWidth={2} />

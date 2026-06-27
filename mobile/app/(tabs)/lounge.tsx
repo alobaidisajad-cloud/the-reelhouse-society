@@ -8,7 +8,8 @@ import Animated, {
   FadeInDown, FadeIn, FadeInUp,
   useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing, cancelAnimation, useAnimatedProps, useAnimatedScrollHandler,
 } from 'react-native-reanimated';
-import { Search, Plus, Globe, X, Eye } from 'lucide-react-native';
+import { Search, Plus, Globe, X } from 'lucide-react-native';
+import { MasterLogo } from '@/src/components/MasterLogo';
 import { useFocusEffect } from 'expo-router';
 import { globalScrollY } from '@/src/lib/scrollBridge';
 import { useLoungeStore, LoungeRoom } from '@/src/stores/lounge';
@@ -48,8 +49,6 @@ export default function LoungeScreen() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreate, setShowCreate] = useState(false);
-  const [inviteCode, setInviteCode] = useState('');
-  const [joining, setJoining] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const isArchivist = isArchivistPlusTier(user);
@@ -114,14 +113,6 @@ export default function LoungeScreen() {
     await fetchLounges();
     setRefreshing(false);
   }, [fetchLounges]);
-
-  const handleJoinByCode = async () => {
-    if (!inviteCode.trim()) return;
-    setJoining(true);
-    const success = await useLoungeStore.getState().joinLounge(inviteCode.trim());
-    setJoining(false);
-    if (success) setInviteCode('');
-  };
 
   // Memoized filtering — prevents O(n) recomputation on unrelated re-renders
   const { myLounges, browsableLounges } = useMemo(() => {
@@ -200,7 +191,7 @@ export default function LoungeScreen() {
         {/* Crest and title lockup */}
         <View style={s.headerCrestRow}>
           <View style={s.headerCrest}>
-            <Eye size={18} color={colors.sepia} strokeWidth={1} />
+            <MasterLogo size={30} />
           </View>
         </View>
 
@@ -219,7 +210,7 @@ export default function LoungeScreen() {
           <AnimatedSearchIcon size={14} animatedProps={animatedSearchProps} style={animatedSearchStyle} strokeWidth={1.5} />
           <TextInput
             style={s.searchInput}
-            placeholder="[ ENTER SURVEILLANCE PARAMETERS ]"
+            placeholder="[ SEARCH THE SALONS ]"
             placeholderTextColor={colors.fog}
             value={searchQuery}
             onChangeText={handleSearchQueryChange}
@@ -243,33 +234,8 @@ export default function LoungeScreen() {
             haptic="medium"
           >
             <Plus size={13} color={colors.ink} strokeWidth={2.5} />
-            <Text style={s.btnPrimaryText}>[ ESTABLISH ]</Text>
+            <Text style={s.btnPrimaryText}>[ ESTABLISH A SALON ]</Text>
           </PressableScale>
-          <View style={s.inviteWrap}>
-            <TextInput
-              style={s.inviteInput}
-              placeholder="CODE"
-              placeholderTextColor={colors.fog}
-              maxLength={8}
-              autoCapitalize="characters"
-              value={inviteCode}
-              onChangeText={(t) => setInviteCode(t.toUpperCase())}
-              selectionColor={colors.sepia}
-              keyboardAppearance="dark"
-              accessibilityLabel="Invite code"
-            />
-            <PressableScale
-              style={[s.btnJoin, (!inviteCode.trim() || joining) && s.btnJoinDisabled]}
-              onPress={handleJoinByCode}
-              disabled={!inviteCode.trim() || joining}
-              haptic="medium"
-            >
-              {joining
-                ? <ActivityIndicator size="small" color={colors.parchment} />
-                : <Text style={s.btnJoinText} numberOfLines={1}>[ INFILTRATE ]</Text>
-              }
-            </PressableScale>
-          </View>
         </View>
       </Animated.View>
 
