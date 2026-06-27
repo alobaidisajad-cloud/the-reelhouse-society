@@ -59,7 +59,7 @@ export const SectionDivider = memo(function SectionDivider({ label }: { label?: 
   return (
     <View style={s.dividerWrap}>
       <LinearGradient 
-        colors={['transparent', 'rgba(196,150,26,0.6)']} 
+        colors={['transparent', 'rgba(184,137,26,0.6)']} 
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
         style={s.dividerLine} 
       />
@@ -69,7 +69,7 @@ export const SectionDivider = memo(function SectionDivider({ label }: { label?: 
         </View>
       )}
       <LinearGradient 
-        colors={['rgba(196,150,26,0.6)', 'transparent']} 
+        colors={['rgba(184,137,26,0.6)', 'transparent']} 
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
         style={s.dividerLine} 
       />

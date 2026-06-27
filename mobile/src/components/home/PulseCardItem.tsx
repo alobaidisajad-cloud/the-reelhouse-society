@@ -80,7 +80,7 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
   const isArchivist = isArchivistPlusTier(act.userRole) && !isAuteurPlusTier(act.userRole);
   const isAuteur = isAuteurPlusTier(act.userRole);
   const isPremium = isArchivist || isAuteur || act.pullQuote;
-  const accentColor = isAuteur ? 'rgba(180,45,45,0.7)' : isArchivist ? 'rgba(196,150,26,0.7)' : 'rgba(139,105,20,0.3)';
+  const accentColor = isAuteur ? 'rgba(180,45,45,0.7)' : isArchivist ? 'rgba(184,137,26,0.7)' : 'rgba(184,137,26,0.3)';
   const reviewStripped = (act.text ?? '').replace(/<(p|div|br)[^>]*>/gi, ' ').replace(/<[^>]+>/g, '').trim();
   const truncReview = reviewStripped.length > 100 ? reviewStripped.slice(0, 100) + '…' : reviewStripped;
   const cleanForDropCap = reviewStripped.replace(/^[^a-zA-Z0-9]+/g, '');
@@ -203,12 +203,12 @@ const s = StyleSheet.create({
   pulseCardContentPressable: { },
   pulseCard: {
     backgroundColor: colors.surface,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.5)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)',
     borderRadius: 4, overflow: 'hidden', minHeight: 260,
     shadowColor: '#000', shadowOffset: { width: 0, height: 20 }, shadowOpacity: 0.8, shadowRadius: 30,
     ...Platform.select({ android: { elevation: 0 } })
   },
-  pulsePremium: { borderColor: 'rgba(139,105,20,0.3)', backgroundColor: 'rgba(10,8,4,1)' },
+  pulsePremium: { borderColor: 'rgba(184,137,26,0.3)', backgroundColor: 'rgba(10,8,4,1)' },
   pulseFeaturedMuseum: {
     borderColor: 'rgba(218,165,32,0.6)', borderWidth: 1.5,
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 15,
@@ -217,7 +217,7 @@ const s = StyleSheet.create({
   pulseCardAuteur: { backgroundColor: 'rgba(12,5,5,1)', borderColor: 'rgba(125,31,31,0.25)' },
   pulseCardHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.15)',
+    padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)',
   },
   pulseUserRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   pulseAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.ash, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
@@ -227,7 +227,7 @@ const s = StyleSheet.create({
   pulseCardContent: { flexDirection: 'row', gap: 16, padding: 16, paddingBottom: 24 },
   pulsePosterWrap: {
     width: 60, height: 90, borderRadius: 4, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', ...effects.shadowPrimary,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)', ...effects.shadowPrimary,
   },
   pulsePoster: { width: '100%', height: '100%' },
   pulseContentFlex: { flex: 1 },
@@ -242,17 +242,17 @@ const s = StyleSheet.create({
   dropCapRow: { flexDirection: 'row', alignItems: 'flex-start' },
   dropCapLetter: { fontFamily: fonts.display, fontSize: 36, color: colors.sepia, lineHeight: 36, marginRight: 8, marginTop: -4, includeFontPadding: false, ...effects.textShadowDeep },
   dropCapBody: { flex: 1, paddingTop: 2 },
-  pulseReadMoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,105,20,0.15)' },
-  pulseReadMoreRule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(139,105,20,0.1)' },
+  pulseReadMoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.15)' },
+  pulseReadMoreRule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(184,137,26,0.1)' },
   pulseReadMoreText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.6, includeFontPadding: false },
-  editorialBanner: { width: '100%', height: 90, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.2)' },
+  editorialBanner: { width: '100%', height: 90, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.2)' },
   editorialBannerImg: { width: '100%', height: '100%', opacity: 0.6 },
-  editorialBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(18,14,9,0.7)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(196,150,26,0.3)' },
+  editorialBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(18,14,9,0.7)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
   editorialBadgeText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4, color: 'rgba(218,165,32,0.9)', includeFontPadding: false },
-  premiumBanner: { width: '100%', height: 60, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.15)' },
+  premiumBanner: { width: '100%', height: 60, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
   premiumBannerImg: { width: '100%', height: '150%', top: '-25%', opacity: 0.45 },
-  badgeArchivist: { backgroundColor: 'rgba(196,150,26,0.1)', borderWidth: 1, borderColor: 'rgba(196,150,26,0.3)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
-  badgeAuteur: { backgroundColor: '#DAA520', borderWidth: 1, borderColor: 'rgba(139,105,20,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
+  badgeArchivist: { backgroundColor: 'rgba(184,137,26,0.1)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
+  badgeAuteur: { backgroundColor: '#DAA520', borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
   badgeText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
   abandonedBadge: {
     marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6,

@@ -172,7 +172,7 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
         <View style={s.pulseHeaderRow}>
           <LinearGradient colors={pulseGradient} style={[s.sectionAccentBar, isAuteur && { shadowColor: pulseAccent }]} />
           <View>
-            <Text style={s.sectionTitle}>The Pulse</Text>
+            <Text style={s.sectionTitle} accessibilityRole="header">The Pulse</Text>
             <Text style={s.sectionLoreSub}>Dispatches from your fellow members</Text>
           </View>
         </View>
@@ -191,8 +191,8 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
       <View style={s.pulseHeaderRow}>
         <LinearGradient colors={pulseGradient} style={[s.sectionAccentBar, isAuteur && { shadowColor: pulseAccent }]} />
         <View>
-          <Text style={s.sectionTitle}>The Pulse</Text>
-          <Text style={s.sectionLoreSub}>Live logs from the Society.</Text>
+          <Text style={s.sectionTitle} accessibilityRole="header">The Pulse</Text>
+          <Text style={s.sectionLoreSub}>Live logs from the Society</Text>
         </View>
       </View>
 
@@ -229,8 +229,8 @@ const s = StyleSheet.create({
   sectionLoreSub: { fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, opacity: 0.5, letterSpacing: 0.3 },
   pulseEmpty: {
     marginHorizontal: 20, backgroundColor: 'rgba(18,14,9,0.85)', borderLeftWidth: 3,
-    borderLeftColor: 'rgba(139,105,20,0.3)', borderRadius: 6, padding: 32, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.1)',
+    borderLeftColor: 'rgba(184,137,26,0.3)', borderRadius: 6, padding: 32, alignItems: 'center',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)',
   },
   pulseEmptyTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, opacity: 0.8, marginBottom: 8 },
   pulseEmptySub: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, opacity: 0.5, fontStyle: 'italic', textAlign: 'center', lineHeight: 20 },

@@ -48,7 +48,7 @@ const FilmCard = memo(function FilmCard({ film, onPress }: { film: TMDBFilm; onP
   );
 }, (prev, next) => prev.film.id === next.film.id);
 
-export const FilmStripRow = memo(function FilmStripRow({ title, label, films }: { title: string; label: string; films: TMDBFilm[] }) {
+export const FilmStripRow = memo(function FilmStripRow({ title, label, films, lore }: { title: string; label: string; films: TMDBFilm[]; lore?: string }) {
   const router = useRouter();
   const handlePress = useCallback((filmId: number) => {
     TactileEngine.selection();
@@ -71,9 +71,10 @@ export const FilmStripRow = memo(function FilmStripRow({ title, label, films }: 
     <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.filmStripSection}>
       <SectionDivider label={label} />
       <View style={s.stripHeader}>
-        <View style={s.stripTitleRow}>
-          <View style={s.sectionBeacon} />
-          <Text style={s.stripTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{title}</Text>
+        <LinearGradient colors={[colors.sepia, colors.flicker]} style={s.sectionAccentBar} />
+        <View style={s.stripTitleCol}>
+          <Text style={s.sectionTitle} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{title}</Text>
+          {!!lore && <Text style={s.sectionLoreSub} numberOfLines={1}>{lore}</Text>}
         </View>
       </View>
 
@@ -103,27 +104,32 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   stripHeader: {
-    paddingHorizontal: 16,
-    marginBottom: 14,
-  },
-  stripTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 14,
+    paddingHorizontal: 16,
+    marginBottom: 16,
   },
-  sectionBeacon: {
+  sectionAccentBar: {
     width: 3,
-    height: 16,
-    backgroundColor: colors.sepia,
-    borderRadius: 1.5,
-    opacity: 0.6,
+    height: 32,
+    borderRadius: 2,
   },
-  stripTitle: {
-    fontFamily: fonts.sub,
-    fontSize: 16,
-    color: colors.parchment,
-    letterSpacing: 0.5,
+  stripTitleCol: {
     flex: 1,
+  },
+  sectionTitle: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    color: colors.parchment,
+    marginBottom: 2,
+  },
+  sectionLoreSub: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 10,
+    color: colors.fog,
+    opacity: 0.5,
+    letterSpacing: 0.3,
   },
   flashListStripWrap: {
   },
@@ -136,14 +142,14 @@ const s = StyleSheet.create({
     borderRadius: 4,
     overflow: 'hidden',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.12)',
+    borderColor: 'rgba(184,137,26,0.12)',
     backgroundColor: colors.ink,
   },
   posterEmpty: {
     justifyContent: 'center',
     alignItems: 'center',
     borderStyle: 'dashed',
-    borderColor: 'rgba(139,105,20,0.2)',
+    borderColor: 'rgba(184,137,26,0.2)',
   },
   posterImg: {
     width: '100%',

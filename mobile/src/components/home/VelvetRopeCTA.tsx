@@ -28,7 +28,7 @@ export const ShimmerRule = memo(() => {
        transform: [{ translateX: interpolate(shimmer.value, [-1, 1], [-100, 300]) }]
     }));
     return (
-       <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1.5, backgroundColor: 'rgba(139,105,20,0.1)', overflow: 'hidden' }}>
+       <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 1.5, backgroundColor: 'rgba(184,137,26,0.1)', overflow: 'hidden' }}>
           <Animated.View style={[{ width: 60, height: '100%' }, shimmerStyle]}>
              <LinearGradient colors={['transparent', 'rgba(218,165,32,0.8)', 'transparent']} start={{x:0,y:0}} end={{x:1,y:0}} style={StyleSheet.absoluteFillObject} />
           </Animated.View>

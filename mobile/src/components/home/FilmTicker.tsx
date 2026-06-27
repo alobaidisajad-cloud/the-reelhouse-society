@@ -81,7 +81,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(139,105,20,0.12)',
+    borderColor: 'rgba(184,137,26,0.12)',
   },
   tickerTrack: {
     flexDirection: 'row',

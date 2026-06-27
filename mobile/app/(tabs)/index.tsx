@@ -285,12 +285,12 @@ export default function LobbyScreen() {
             cachePolicy="memory-disk"
           />
           <LinearGradient
-            colors={['rgba(10,7,3,0.1)', 'rgba(10,7,3,0.7)', colors.ink]}
+            colors={['rgba(10,7,3,0.28)', 'rgba(10,7,3,0.7)', colors.ink]}
             locations={[0, 0.65, 1]}
             style={StyleSheet.absoluteFillObject}
           />
           <LinearGradient
-            colors={['rgba(196,150,26,0.05)', 'transparent', 'transparent']}
+            colors={['rgba(184,137,26,0.05)', 'transparent', 'transparent']}
             locations={[0, 0.4, 1]}
             style={StyleSheet.absoluteFillObject}
           />
@@ -333,13 +333,13 @@ export default function LobbyScreen() {
           <MarqueeBoard film={heroFilm} />
         </View>
 
-        <FilmStripRow title="On The Marquee" label="NOW SHOWING" films={trending} />
+        <FilmStripRow title="On The Marquee" label="NOW SHOWING" films={trending} lore="What the world is screening this week" />
         
         <SocialPulseSection refreshTrigger={refreshTrigger} />
         
         <FeaturedCritique refreshTrigger={refreshTrigger} />
         
-        <FilmStripRow title="The Canon" label="ESSENTIAL ARCHIVES" films={topRated} />
+        <FilmStripRow title="The Canon" label="ESSENTIAL ARCHIVES" films={topRated} lore="The films that built the medium" />
 
         <View style={s.lobbyFooter}>
           <View style={s.lobbyFooterRule} />
@@ -409,11 +409,15 @@ const s = StyleSheet.create({
   
   // ── Hero Section (Engraved Cinematic) ──
   heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 40, marginTop: 10 },
-  heroEyebrow: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.6, marginBottom: 6, fontWeight: '700' },
-  heroWelcome: { 
-    fontFamily: fonts.display, fontSize: 34, color: '#F2ECD8', 
-    ...effects.textGlowSepia, textShadowRadius: 25, textShadowColor: 'rgba(196,150,26, 0.4)',
-    letterSpacing: 2
+  heroEyebrow: {
+    fontFamily: fonts.mono, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.6, marginBottom: 6, fontWeight: '700',
+    // Sits over the feature backdrop — soft dark shadow keeps it legible on a bright still.
+    textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6,
+  },
+  heroWelcome: {
+    fontFamily: fonts.display, fontSize: 34, color: '#F2ECD8', letterSpacing: 2,
+    // Dark shadow (not a sepia glow) so "The Lobby" reads over any feature backdrop.
+    textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 12,
   },
   heroRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 18, opacity: 0.8 },
   heroRuleGradient: { width: 80, height: StyleSheet.hairlineWidth },

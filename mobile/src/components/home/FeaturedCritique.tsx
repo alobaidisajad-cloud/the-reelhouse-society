@@ -81,7 +81,7 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
       <View style={s.critiqueHeaderRow}>
         <LinearGradient colors={[colors.sepia, colors.flicker]} style={s.sectionAccentBar} />
         <View>
-          <Text style={s.sectionTitle}>Featured Critique</Text>
+          <Text style={s.sectionTitle} accessibilityRole="header">Featured Critique</Text>
           <Text style={s.sectionLoreSub}>Handpicked by the Editorial Tribunal</Text>
         </View>
       </View>
@@ -109,7 +109,7 @@ const s = StyleSheet.create({
   critiqueCardWrap: { marginHorizontal: 0 },
   critiqueSubmitBtn: {
     backgroundColor: 'rgba(18,14,9,0.95)', marginTop: 12, borderRadius: 6,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     alignItems: 'center', paddingVertical: 14, paddingHorizontal: 8,
     overflow: 'hidden', ...effects.shadowSurface,
   },
