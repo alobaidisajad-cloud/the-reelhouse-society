@@ -20,6 +20,9 @@ These notes record what was verified against the **live** database, so the dated
   ✅ applied.
 - **COMP-SPOILER-1 feed RPCs** (`20260626_06`) — added `is_spoiler` to the two feed cursor
   RPCs (DROP+CREATE, verified against live bodies). ✅ applied — feed now veils spoilers.
+- **Interactions privacy RLS** (`20260626_10`) — the follow graph was world-readable
+  (`Interactions viewable by everyone` = USING(true)); replaced with a can_view_user_data
+  based SELECT policy. ✅ applied + verified.
 - **`create_lounge_with_member`** (`20260626_09`) — was MISSING live → lounge creation broken.
   Restored the hardened 4-param version (creator = auth.uid()). ✅ applied.
 - **Edge functions** — `tmdb-proxy` deployed under its correct slug (was only live as
