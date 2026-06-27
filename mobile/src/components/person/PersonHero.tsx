@@ -125,7 +125,7 @@ export const PersonHero = memo(function PersonHero({
           <Image source={{ uri: heroBackdrop }} style={s.heroBg} contentFit="cover" cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={300} />
         ) : (
           <LinearGradient
-            colors={['rgba(139,105,20,0.12)', 'rgba(10,7,3,0.95)']}
+            colors={['rgba(184,137,26,0.12)', 'rgba(10,7,3,0.95)']}
             style={s.heroBg}
           />
         )}

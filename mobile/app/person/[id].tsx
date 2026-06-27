@@ -390,7 +390,7 @@ export default function PersonDetailScreen() {
         {/* ── Closing society bar ── */}
         <View style={s.closingBar}>
           <LinearGradient
-            colors={['transparent', 'rgba(139,105,20,0.2)', 'transparent']}
+            colors={['transparent', 'rgba(184,137,26,0.2)', 'transparent']}
             start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
             style={s.closingLine}
           />

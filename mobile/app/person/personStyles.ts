@@ -39,7 +39,7 @@ export const s = StyleSheet.create({
   floatingBack: {
     position: 'absolute', top: 54, left: 16, zIndex: 100,
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(10,7,3,0.65)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    backgroundColor: 'rgba(10,7,3,0.65)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     alignItems: 'center', justifyContent: 'center',
   },
 
@@ -56,14 +56,14 @@ export const s = StyleSheet.create({
   portraitWrap: { marginBottom: 10, position: 'relative' },
   portraitGlow: {
     position: 'absolute', top: -10, left: -10, right: -10, bottom: -10,
-    backgroundColor: 'rgba(139,105,20,0.15)',
+    backgroundColor: 'rgba(184,137,26,0.15)',
     borderRadius: 8, shadowColor: colors.sepia,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.6, shadowRadius: 20, elevation: 15,
   },
   portraitCard: {
     width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
   },
   portrait: { width: '100%', height: '100%' } as import('react-native').ImageStyle,
   portraitPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
@@ -79,7 +79,7 @@ export const s = StyleSheet.create({
   deptBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 12, paddingVertical: 5, borderRadius: 2,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     marginBottom: 10,
   },
   deptLabel: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 3.5, color: colors.sepia },
@@ -105,13 +105,13 @@ export const s = StyleSheet.create({
   statChip: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   statText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.bone },
   knownForText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
-  knownForTitle: { color: colors.bone, textDecorationLine: 'underline', textDecorationColor: 'rgba(139,105,20,0.3)' } as import('react-native').TextStyle,
+  knownForTitle: { color: colors.bone, textDecorationLine: 'underline', textDecorationColor: 'rgba(184,137,26,0.3)' } as import('react-native').TextStyle,
 
   // ── Share to Lounge ──
   loungeBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 12,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2,
     backgroundColor: 'rgba(14,11,8,0.9)',
     marginBottom: 14,
   },
@@ -122,8 +122,8 @@ export const s = StyleSheet.create({
   auteurHunt: {
     width: '100%', maxWidth: 300,
     paddingHorizontal: 16, paddingVertical: 12,
-    backgroundColor: 'rgba(196,150,26,0.06)', borderRadius: 4,
-    borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)',
+    backgroundColor: 'rgba(184,137,26,0.06)', borderRadius: 4,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
     marginBottom: 8,
   },
   auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 } as import('react-native').ViewStyle,
@@ -142,8 +142,8 @@ export const s = StyleSheet.create({
     marginHorizontal: 20, marginBottom: 24, marginTop: 8,
     padding: 20,
     backgroundColor: 'rgba(25,20,15,0.6)',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
-    borderLeftWidth: 3, borderLeftColor: 'rgba(139,105,20,0.4)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
+    borderLeftWidth: 3, borderLeftColor: 'rgba(184,137,26,0.4)',
     borderRadius: 4, borderTopLeftRadius: 0,
     position: 'relative', overflow: 'hidden',
   },
@@ -154,7 +154,7 @@ export const s = StyleSheet.create({
   bioFadeMask: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
   toggleTicketBtn: {
     marginTop: 16, paddingVertical: 12, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     backgroundColor: 'rgba(14,11,8,0.9)', borderRadius: 2,
   },
   toggleTicketText: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 3, color: colors.sepia },
@@ -177,7 +177,7 @@ export const s = StyleSheet.create({
   // ── Empty State ──
   emptyState: {
     padding: 32, marginHorizontal: 20, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 4, backgroundColor: 'rgba(18,14,9,0.4)',
   },
   emptyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8 },
@@ -185,7 +185,7 @@ export const s = StyleSheet.create({
   emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
 
   // ── Back Button ──
-  backBtnBottom: { marginTop: 24, paddingVertical: 14, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2 },
+  backBtnBottom: { marginTop: 24, paddingVertical: 14, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2 },
   backBtnBottomText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.bone },
   backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
 
@@ -218,7 +218,7 @@ export const st = StyleSheet.create({
   // ── Grid Poster Cards ──
   gridCard: { width: '100%', marginBottom: 8 },
   gridPoster: {
-    borderRadius: 2, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
+    borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
     width: '100%', aspectRatio: 2 / 3,
   },
   gridPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
@@ -238,7 +238,7 @@ export const st = StyleSheet.create({
   defCard: { width: 140 },
   defPosterWrap: {
     width: 140, height: 210, borderRadius: 4, overflow: 'hidden',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
     position: 'relative',
   },
   defPoster: { width: '100%', height: '100%' } as import('react-native').ImageStyle,

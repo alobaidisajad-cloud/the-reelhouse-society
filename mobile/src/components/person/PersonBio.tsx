@@ -23,7 +23,7 @@ export const PersonBio = memo(function PersonBio({
   return (
     <View style={s.bioSection}>
       <LinearGradient
-        colors={['rgba(139,105,20,0.4)', 'transparent']}
+        colors={['rgba(184,137,26,0.4)', 'transparent']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
         style={s.bioTopLine}
       />

@@ -82,7 +82,7 @@ export const FilmographyHeader = memo(function FilmographyHeader() {
     <View style={s.section}>
       {/* Gold gradient separator */}
       <LinearGradient
-        colors={['transparent', 'rgba(139,105,20,0.35)', 'transparent']}
+        colors={['transparent', 'rgba(184,137,26,0.35)', 'transparent']}
         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
         style={s.goldSep}
       />
