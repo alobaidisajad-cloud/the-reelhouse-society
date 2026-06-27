@@ -11,10 +11,6 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
-
-// Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
-// TactileEngine.navigate would lose its `this` binding).
-function hapticLight() { TactileEngine.navigate(); }
 import { useRouter } from 'expo-router';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
@@ -25,6 +21,10 @@ import type { TMDBFilm } from './types';
 
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
+
+// Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
+// TactileEngine.navigate would lose its `this` binding).
+function hapticLight() { TactileEngine.navigate(); }
 
 // ── MARQUEE BULB ──
 const MarqueeBulb = memo(function MarqueeBulb({ index }: { index: number }) {
@@ -113,7 +113,7 @@ const TungstenIgnition = memo(function TungstenIgnition() {
     <View style={s.marqueeBoard}>
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', minHeight: 140 }}>
          <Text style={[s.marqueeEyebrow, { opacity: 0.5 }]}>WARMING UP THE ARC LAMP...</Text>
-         <Animated.View style={[{ width: '80%', height: 2, backgroundColor: '#FFD700', marginTop: 16, ...effects.glowSepia }, animStyle]} />
+         <Animated.View style={[{ width: '80%', height: 2, backgroundColor: '#E7C173', marginTop: 16, ...effects.glowSepia }, animStyle]} />
       </View>
     </View>
   );
@@ -176,6 +176,8 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
     <PressableScale
       style={s.marqueeShell}
       onPress={() => { TactileEngine.mutate(); (router.push as any)(`/film/${film.id}` as any); }}
+      accessibilityRole="button"
+      accessibilityLabel={`The weekly feature: ${film.title ?? 'Reelhouse'}`}
     >
       <MarqueeBulbRow count={8} />
 
@@ -197,7 +199,7 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
           style={StyleSheet.absoluteFillObject}
         />
         <LinearGradient
-          colors={['rgba(196,150,26,0.12)', 'transparent']}
+          colors={['rgba(184,137,26,0.12)', 'transparent']}
           locations={[0, 1]}
           style={s.marqueeSpotlight}
         />
@@ -212,7 +214,12 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
             </Text>
           </View>
 
-          <View style={s.marqueeRule} />
+          <LinearGradient
+            colors={['transparent', colors.sepia, 'transparent']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={s.marqueeRule}
+          />
 
           <View style={s.marqueeMetaRow}>
             {film.release_date && (
@@ -237,7 +244,7 @@ const s = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.18)',
+    borderColor: 'rgba(184,137,26,0.18)',
     overflow: 'hidden',
     backgroundColor: 'rgba(14,11,8,0.9)',
   },
@@ -271,16 +278,22 @@ const s = StyleSheet.create({
     color: colors.sepia,
     textAlign: 'center',
     marginBottom: 2,
-    ...effects.textGlowSepia,
+    // Soft dark shadow keeps the label readable over a bright poster.
+    textShadowColor: 'rgba(0,0,0,0.7)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   marqueeLoreSub: {
     fontFamily: fonts.body,
     fontSize: 10,
     color: colors.fog,
     textAlign: 'center',
-    opacity: 0.7,
+    opacity: 0.72,
     marginBottom: 10,
     fontStyle: 'italic',
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
   },
   marqueeTitleWrap: {
     alignItems: 'center',
@@ -292,13 +305,18 @@ const s = StyleSheet.create({
     color: colors.parchment,
     textAlign: 'center',
     lineHeight: 34,
-    ...effects.textGlowSepia,
+    // Soft dark shadow (not a sepia glow) so the title stays legible over ANY
+    // poster — bright or dark — regardless of the feature film.
+    textShadowColor: 'rgba(0,0,0,0.78)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 8,
   },
   marqueeRule: {
     height: 1,
-    backgroundColor: colors.sepia,
-    marginVertical: 10,
-    opacity: 0.3,
+    width: 92,
+    alignSelf: 'center',
+    marginVertical: 11,
+    opacity: 0.7,
   },
   marqueeMetaRow: {
     flexDirection: 'row',
@@ -309,7 +327,7 @@ const s = StyleSheet.create({
   },
   marqueeYearPill: {
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 3,
     paddingHorizontal: 8,
     paddingVertical: 2,
@@ -338,7 +356,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(14,11,8,0.95)',
     borderTopWidth: StyleSheet.hairlineWidth,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(139,105,20,0.1)',
+    borderColor: 'rgba(184,137,26,0.1)',
   },
   marqueeBulb: {
     width: 8,
@@ -352,11 +370,13 @@ const s = StyleSheet.create({
     width: 5,
     height: 5,
     borderRadius: 2.5,
-    backgroundColor: '#FFD700',
-    shadowColor: '#FFD700',
+    // Warm tungsten: a near-white-hot core with an amber glow halo (shadow),
+    // replacing the canary #FFD700 — truer to the aged-tungsten palette.
+    backgroundColor: '#FCEBB8',
+    shadowColor: '#DCA63A',
     shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.8,
-    shadowRadius: 4,
+    shadowOpacity: 0.85,
+    shadowRadius: 5,
     elevation: 4,
   },
 });
