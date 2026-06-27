@@ -28,6 +28,10 @@ export interface LoungeRoom {
   last_message?: string;
   last_message_at?: string;
   is_member?: boolean;
+  /** The current user's standing in this lounge (drives the "Awaiting" tag). */
+  membership_status?: 'approved' | 'pending' | 'muted' | 'banned';
+  /** For lounges you host: how many requests are at the door. */
+  pending_count?: number;
 }
 
 /**
@@ -250,12 +254,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       // Fetch lounges where user is a member
       const { data: memberRows } = await supabase
         .from('lounge_members')
-        .select('lounge_id, last_read_at')
+        .select('lounge_id, last_read_at, status')
         .eq('user_id', user.id)
         .limit(100);
 
       const memberships = memberRows ?? [];
       const myLoungeIds = memberships.map(r => r.lounge_id);
+      const statusMap = new Map(memberships.map(r => [r.lounge_id, (r as { status?: string }).status]));
 
       // Fetch from three sources to guarantee visibility:
       // 1) Public lounges (browsable by anyone)
@@ -346,6 +351,19 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         }
       }
 
+      // How many requests are at the door, per lounge you host (RLS lets the
+      // creator see pending rows). Powers the landing card "at the door" badge.
+      const pendingCounts: Record<string, number> = {};
+      const ownedIds = (myCreatedRes.data ?? []).map(l => l.id);
+      if (ownedIds.length > 0) {
+        const { data: pendingRows } = await supabase
+          .from('lounge_members')
+          .select('lounge_id')
+          .in('lounge_id', ownedIds)
+          .eq('status', 'pending');
+        if (pendingRows) for (const r of pendingRows) pendingCounts[r.lounge_id] = (pendingCounts[r.lounge_id] || 0) + 1;
+      }
+
       // Sort by recent activity
       const loungesList = Array.from(allLoungesMap.values());
       loungesList.sort((a, b) => {
@@ -366,6 +384,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         member_count: l.member_count ?? 0,
         unread_count: ownedOrJoinedIds.has(l.id) ? (unreadCounts[l.id] || 0) : undefined,
         last_message_at: lastMessageTimestamps[l.id],
+        membership_status: statusMap.get(l.id) as LoungeRoom['membership_status'],
+        pending_count: pendingCounts[l.id] || 0,
       }));
 
       set({ lounges: enriched, loading: false });

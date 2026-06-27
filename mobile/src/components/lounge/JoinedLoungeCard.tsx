@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { nav } from '@/src/utils/typedRouter';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Users, Lock, Film as FilmIcon } from 'lucide-react-native';
+import { Users, Lock, Film as FilmIcon, DoorOpen, Hourglass } from 'lucide-react-native';
 import { LoungeRoom } from '@/src/stores/lounge';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
@@ -27,6 +27,8 @@ export const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeR
     ? tmdb.backdrop(lounge.cover_image, 'w500')
     : null;
   const hasUnread = Boolean(lounge.unread_count && lounge.unread_count > 0);
+  const isAwaiting = lounge.membership_status === 'pending';
+  const atDoor = lounge.pending_count || 0;
 
   return (
     <View>
@@ -54,7 +56,21 @@ export const JoinedLoungeCard = React.memo(({ lounge, index }: { lounge: LoungeR
             style={s.joinedGradient}
           />
 
-          {hasUnread && <Animated.View style={[s.unreadDot, pulseStyle]} />}
+          {hasUnread && !isAwaiting && <Animated.View style={[s.unreadDot, pulseStyle]} />}
+
+          {atDoor > 0 && (
+            <View style={s.doorBadge}>
+              <DoorOpen size={9} color={colors.ink} strokeWidth={2} />
+              <Text style={s.doorBadgeText}>{atDoor}</Text>
+            </View>
+          )}
+
+          {isAwaiting && (
+            <View style={s.awaitingBadge}>
+              <Hourglass size={8} color={colors.sepia} strokeWidth={2} />
+              <Text style={s.awaitingText}>AWAITING</Text>
+            </View>
+          )}
 
           <View style={s.joinedNameOverlay}>
             <Text style={s.joinedNameText} numberOfLines={2}>{lounge.name}</Text>
@@ -122,6 +138,45 @@ const s = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.ink,
     zIndex: 10,
+  },
+  doorBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: colors.sepia,
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 10,
+    zIndex: 10,
+  },
+  doorBadgeText: {
+    fontFamily: fonts.uiBold,
+    fontSize: 10,
+    color: colors.ink,
+  },
+  awaitingBadge: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(11,10,8,0.85)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(184,137,26,0.5)',
+    paddingHorizontal: 7,
+    paddingVertical: 3,
+    borderRadius: 10,
+    zIndex: 10,
+  },
+  awaitingText: {
+    fontFamily: fonts.uiMedium,
+    fontSize: 7.5,
+    letterSpacing: 1,
+    color: colors.sepia,
   },
   joinedNameOverlay: {
     position: 'absolute',
