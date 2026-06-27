@@ -253,7 +253,7 @@ const s = StyleSheet.create({
   premiumBannerImg: { width: '100%', height: '150%', top: '-25%', opacity: 0.45 },
   badgeArchivist: { backgroundColor: 'rgba(184,137,26,0.1)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
   badgeAuteur: { backgroundColor: '#DAA520', borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
-  badgeText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
+  badgeText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   abandonedBadge: {
     marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
     backgroundColor: 'rgba(125,31,31,0.1)', paddingHorizontal: 6, paddingVertical: 4,

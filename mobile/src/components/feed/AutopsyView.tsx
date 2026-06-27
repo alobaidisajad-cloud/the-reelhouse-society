@@ -68,7 +68,7 @@ export const AutopsyView = React.memo(function AutopsyView({ isAutopsied, autops
 const s = StyleSheet.create({
   autopsySectionWrap: {
     borderTopWidth: 1,
-    borderTopColor: 'rgba(139,105,20,0.15)',
+    borderTopColor: 'rgba(184,137,26,0.15)',
     backgroundColor: 'rgba(20,15,5,0.4)',
   },
   autopsyToggleBtn: {

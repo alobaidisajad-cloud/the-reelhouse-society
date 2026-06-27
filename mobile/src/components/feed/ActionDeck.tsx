@@ -191,7 +191,7 @@ const s = StyleSheet.create({
   actionDeck: {
     flexDirection: 'row',
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(139,105,20,0.1)',
+    borderColor: 'rgba(184,137,26,0.1)',
     backgroundColor: '#050403', // Deep soot
     borderRadius: 2,
     overflow: 'hidden',

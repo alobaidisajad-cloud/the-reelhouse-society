@@ -84,7 +84,7 @@ const s = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
   },
   avatarText: {
     includeFontPadding: false,
@@ -106,10 +106,10 @@ const s = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
     fontFamily: fonts.ui,
-    fontSize: 6, // 10/10 D-01: membership badge — matches live card sizing
+    fontSize: 8, // legible tier crest, unified app-wide (auto-shrinks via adjustsFontSizeToFit)
     letterSpacing: 1,
     color: colors.sepia,
-    backgroundColor: 'rgba(139,105,20,0.15)',
+    backgroundColor: 'rgba(184,137,26,0.15)',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 2,
@@ -118,7 +118,7 @@ const s = StyleSheet.create({
     includeFontPadding: false,
     textAlignVertical: 'center',
     fontFamily: fonts.ui,
-    fontSize: 6.5, // 10/10 D-01: membership badge — matches live card sizing
+    fontSize: 8, // legible tier crest, unified app-wide (auto-shrinks via adjustsFontSizeToFit)
     letterSpacing: 1,
     color: colors.ink,
     backgroundColor: '#DAA520',

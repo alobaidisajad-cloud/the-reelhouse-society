@@ -30,8 +30,8 @@ const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.
       />
       {(isPremium || isAuteur) && (
         <>
-          <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.08)' : 'rgba(139,105,20,0.08)', 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
-          <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.04)' : 'rgba(139,105,20,0.04)', 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.08)' : 'rgba(184,137,26,0.08)', 'transparent']} start={{x: 0, y: 0}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={[isAuteur ? 'rgba(125,31,31,0.04)' : 'rgba(184,137,26,0.04)', 'transparent']} start={{x: 1, y: 1}} end={{x: 0.5, y: 0.5}} style={StyleSheet.absoluteFillObject} />
         </>
       )}
       {children}
@@ -66,7 +66,7 @@ const ActivityEditorialHeader = React.memo(({ item, isPremium, isAuteur, backdro
         )}
       </View>
       <LinearGradient 
-         colors={['transparent', 'rgba(196,150,26,0.3)', 'transparent']} 
+         colors={['transparent', 'rgba(184,137,26,0.3)', 'transparent']} 
          start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
          style={s.editorialHeaderAccent} 
       />
@@ -222,7 +222,7 @@ const s = StyleSheet.create({
     marginBottom: 24,
     borderRadius: 4, 
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.5)',
+    borderColor: 'rgba(184,137,26,0.5)',
     overflow: 'hidden',
     position: 'relative',
     elevation: 25,
@@ -232,7 +232,7 @@ const s = StyleSheet.create({
     shadowRadius: 30,
   },
   cardPremium: {
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
     backgroundColor: 'rgba(10,8,4,1)',
   },
   cardAuteur: {
@@ -272,7 +272,7 @@ const s = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 2,
     borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.2)',
+    borderColor: 'rgba(184,137,26,0.2)',
   },
   editorialBadgeText: {
     fontFamily: fonts.ui,
@@ -304,7 +304,7 @@ const s = StyleSheet.create({
     lineHeight: 32,
     marginBottom: 4,
     textAlign: 'center',
-    textShadowColor: 'rgba(196,150,26, 0.4)',
+    textShadowColor: 'rgba(184,137,26, 0.4)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 15,
   },

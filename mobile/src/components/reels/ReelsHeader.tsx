@@ -102,10 +102,10 @@ const st = StyleSheet.create({
   tabsContainer: { 
     flexDirection: 'row', marginHorizontal: 16, marginTop: 12, marginBottom: 24, 
     backgroundColor: 'rgba(18,14,9,0.5)', borderRadius: 4, borderWidth: 1, 
-    borderColor: 'rgba(139,105,20,0.15)', height: 46, position: 'relative' 
+    borderColor: 'rgba(184,137,26,0.15)', height: 46, position: 'relative' 
   },
   tabsActiveBg: { 
-    width: '50%', backgroundColor: 'rgba(18,14,9,0.95)', borderColor: 'rgba(139,105,20,0.4)', 
+    width: '50%', backgroundColor: 'rgba(18,14,9,0.95)', borderColor: 'rgba(184,137,26,0.4)', 
     borderWidth: 1, borderRadius: 4, ...effects.shadowSurface, elevation: 5 
   },
   tabButton: { flex: 1, justifyContent: 'center', alignItems: 'center' },
@@ -115,7 +115,7 @@ const st = StyleSheet.create({
   headerEyebrow: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.6, marginBottom: 8, fontWeight: '700' },
   headerTitle: { 
     fontFamily: fonts.display, fontSize: 36, color: '#F2ECD8', marginBottom: 4,
-    ...effects.textGlowSepia, textShadowRadius: 25, textShadowColor: 'rgba(196,150,26, 0.4)', letterSpacing: 2
+    ...effects.textGlowSepia, textShadowRadius: 25, textShadowColor: 'rgba(184,137,26, 0.4)', letterSpacing: 2
   },
   headerEstRow: {
     flexDirection: 'row', alignItems: 'center', gap: 14, marginTop: 10, marginBottom: 4,

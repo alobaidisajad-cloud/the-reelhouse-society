@@ -58,7 +58,7 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
   return (
     <Animated.View style={[st.beamAbsolute, style]} pointerEvents="none">
       <LinearGradient
-        colors={['rgba(218,165,32,0.12)', 'rgba(196,150,26,0.04)', 'transparent']}
+        colors={['rgba(218,165,32,0.12)', 'rgba(184,137,26,0.04)', 'transparent']}
         locations={[0, 0.4, 0.9]}
         style={[st.beamGradient, { width: width * 1.5, height, borderTopLeftRadius: width, borderTopRightRadius: width }]}
       />
@@ -246,7 +246,7 @@ export const TungstenSpooling = memo(function TungstenSpooling() {
 const st = StyleSheet.create({
   filterChip: {
     paddingVertical: 6, paddingHorizontal: 12, borderRadius: 12,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
     backgroundColor: 'rgba(18,14,9,0.5)',
   },
   filterChipText: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 4, color: colors.fog, opacity: 0.6, fontWeight: '700' },
@@ -277,7 +277,7 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(5,3,2,0.8)',
     paddingHorizontal: 6, paddingVertical: 3,
     borderRadius: 2,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.1)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)',
     zIndex: 10,
   },
   stackCardRefText: {
@@ -303,7 +303,7 @@ const st = StyleSheet.create({
     fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: '#f2e8a0', opacity: 0.9 
   },
   stackCardMetaDivider: {
-    flex: 1, height: 1, backgroundColor: 'rgba(139,105,20,0.3)',
+    flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)',
     marginLeft: 4,
   },
   stackCardTitle: {
@@ -331,7 +331,7 @@ const st = StyleSheet.create({
   },
   filterChipInner: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 4,
+    borderRadius: 12,
     overflow: 'hidden',
   },
   sheenWrap: {
@@ -355,7 +355,7 @@ const st = StyleSheet.create({
   spoolingIconWrap: {
     padding: 30,
     borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 100,
     borderStyle: 'dashed',
   },

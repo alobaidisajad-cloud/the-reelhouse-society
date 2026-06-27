@@ -348,7 +348,7 @@ export default function ReelScreen() {
       >
         <BrassSheen />
         <LinearGradient
-          colors={['transparent', 'rgba(139,105,20,0.06)', 'transparent']}
+          colors={['transparent', 'rgba(184,137,26,0.06)', 'transparent']}
           start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
           style={st.createStackGlow}
         />
@@ -483,7 +483,7 @@ const st = StyleSheet.create({
 
   searchWrap: {
     flexDirection: 'row', alignItems: 'center', marginHorizontal: 16, marginBottom: 12,
-    backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.12)',
+    backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.12)',
     borderRadius: 4, paddingHorizontal: 12, height: 40,
   },
   searchIcon: { fontSize: 9, color: colors.sepia, opacity: 0.55, marginRight: 10 },
@@ -497,7 +497,7 @@ const st = StyleSheet.create({
   createStackBtn: {
     marginHorizontal: 16, marginBottom: 16,
     backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.2)', borderStyle: 'dashed', borderRadius: 2,
+    borderColor: 'rgba(184,137,26,0.2)', borderStyle: 'dashed', borderRadius: 2,
     paddingVertical: 16, alignItems: 'center',
     overflow: 'hidden',
   },
@@ -512,7 +512,7 @@ const st = StyleSheet.create({
   emptySub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.5, fontStyle: 'italic', textAlign: 'center', lineHeight: 18, marginBottom: 24 },
   emptyBtn: {
     backgroundColor: 'rgba(14,11,8,0.9)', borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.3)', borderRadius: 2, borderStyle: 'dashed',
+    borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',
     paddingVertical: 12, paddingHorizontal: 28,
   },
   emptyBtnText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 3, color: colors.sepia },
