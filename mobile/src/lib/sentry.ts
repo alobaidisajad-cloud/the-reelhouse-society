@@ -36,6 +36,18 @@ export function initSentry() {
     enabled: !IS_DEV,
     // Attach user context automatically
     sendDefaultPii: false,
+    // Drop known-benign breadcrumbs so crash trails stay signal-dense.
+    beforeBreadcrumb(breadcrumb) {
+      // RevenueCat logs an ERROR-level console line when no App Store products are
+      // attached to an offering. That's a dashboard/config state the app already
+      // handles gracefully (getOfferings() → []), so it's pure noise in a crash
+      // trail. Filtered from Sentry only — the device console still shows it.
+      const msg = typeof breadcrumb.message === 'string' ? breadcrumb.message : '';
+      if (breadcrumb.category === 'console' && msg.includes('RevenueCat') && /offering/i.test(msg)) {
+        return null;
+      }
+      return breadcrumb;
+    },
     // Filter noisy errors
     beforeSend(event) {
       // Don't report network timeouts (they're expected on poor connections)

@@ -6,7 +6,7 @@ import { Heart, MessageSquare, Edit3, MessageCircle, ChevronDown } from 'lucide-
 import { colors } from '@/src/theme/theme';
 import AutopsyGauge from '@/src/components/AutopsyGauge';
 import PressableScale from '@/src/components/PressableScale';
-import { s } from '@/app/log/_logDetailStyles';
+import { s } from '@/src/components/log/logDetailStyles';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 

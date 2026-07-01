@@ -1,5 +1,5 @@
  
-import { s } from '@/app/log/_logDetailStyles';
+import { s } from '@/src/components/log/logDetailStyles';
 import { SectionDivider } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { colors } from '@/src/theme/theme';

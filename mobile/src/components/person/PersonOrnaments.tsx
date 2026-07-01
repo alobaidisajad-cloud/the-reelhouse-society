@@ -12,7 +12,7 @@ import Animated, {
   cancelAnimation, withRepeat, useReducedMotion
 } from 'react-native-reanimated';
 import { colors } from '@/src/theme/theme';
-import { st } from '@/app/person/_personStyles';
+import { st } from '@/src/components/person/personStyles';
 
 import type { StyleProp, ViewStyle } from 'react-native';
 

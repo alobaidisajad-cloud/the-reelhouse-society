@@ -57,3 +57,6 @@ const s = StyleSheet.create({
   },
   ctaBtnText: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 2, color: colors.sepia },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

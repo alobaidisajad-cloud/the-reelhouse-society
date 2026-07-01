@@ -12,7 +12,7 @@ import { nav } from '@/src/utils/typedRouter';
 import PressableScale from '@/src/components/PressableScale';
 import { SectionDivider } from '@/src/components/Decorative';
 import { Film as FilmIcon } from 'lucide-react-native';
-import { s, st, GRID_COL_STYLES } from '@/app/person/_personStyles';
+import { s, st, GRID_COL_STYLES } from '@/src/components/person/personStyles';
 
 const PERF_COUNT = 40;
 

@@ -1,8 +1,11 @@
-const { getDefaultConfig } = require('expo/metro-config');
+// Sentry's Metro wrapper injects Debug IDs and emits the source maps that
+// `@sentry/react-native` uploads on EAS builds — required for deminified
+// (file:line) stack traces. It delegates to Expo's getDefaultConfig internally.
+const { getSentryExpoConfig } = require('@sentry/react-native/metro');
 const path = require('path');
 
 /** @type {import('expo/metro-config').MetroConfig} */
-const config = getDefaultConfig(__dirname);
+const config = getSentryExpoConfig(__dirname);
 
 // Add support for processing .mjs files, heavily used by module libraries like lucide-react-native
 config.resolver.sourceExts.push('mjs');

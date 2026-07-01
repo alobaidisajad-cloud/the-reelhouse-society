@@ -29,8 +29,8 @@ import { JoinedLoungeCard } from '@/src/components/lounge/JoinedLoungeCard';
 import { PublicLoungeCard } from '@/src/components/lounge/PublicLoungeCard';
 import { EmptyMyLounges } from '@/src/components/lounge/EmptyMyLounges';
 
-// ── Styles ──
-import { s } from './_loungeStyles';
+// ── Styles ── (must live outside app/ so Expo Router never treats it as a route)
+import { s } from '@/src/components/lounge/loungeTabStyles';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 
 // Module-scoped: prevents remount on every render cycle
@@ -313,3 +313,6 @@ export default function LoungeScreen() {
     </FrozenTab>
   );
 }
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

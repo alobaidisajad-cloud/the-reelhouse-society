@@ -8,6 +8,7 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "lint": "expo lint",
+    "check:routes": "node ./scripts/check-app-routes.js",
     "test:e2e": "maestro test .maestro/",
     "test": "jest",
     "docs:generate": "typedoc",

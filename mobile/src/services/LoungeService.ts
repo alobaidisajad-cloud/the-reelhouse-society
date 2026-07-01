@@ -86,7 +86,7 @@ export const LoungeService = {
   async getLoungeMembers(loungeId: string) {
     const { data, error } = await supabase
       .from('lounge_members')
-      .select('user_id, profiles(username, avatar_url)')
+      .select('user_id, profiles!lounge_members_user_id_fkey(username, avatar_url)')
       .eq('lounge_id', loungeId);
 
     if (error) throw error;

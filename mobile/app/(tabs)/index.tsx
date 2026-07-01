@@ -437,3 +437,6 @@ const s = StyleSheet.create({
   lobbyFooterSub: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, opacity: 0.45, fontStyle: 'italic', marginBottom: 10 },
   lobbyFooterWhisper: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.3, fontStyle: 'italic', marginBottom: 18, letterSpacing: 1 },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

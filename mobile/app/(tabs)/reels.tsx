@@ -529,3 +529,6 @@ const st = StyleSheet.create({
   },
   gateCtaText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

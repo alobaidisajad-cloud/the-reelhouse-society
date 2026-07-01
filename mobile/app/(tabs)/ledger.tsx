@@ -416,3 +416,6 @@ const s = StyleSheet.create({
   ctaText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 2, color: colors.ink, fontWeight: '700' },
   emptyText: { fontFamily: fonts.body, color: colors.fog, fontSize: 13, fontStyle: 'italic', textAlign: 'center', marginTop: 40 },
 });
+
+// Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx
+export { RouteErrorBoundary as ErrorBoundary } from '@/src/components/RouteErrorBoundary';

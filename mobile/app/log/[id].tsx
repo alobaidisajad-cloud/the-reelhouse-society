@@ -14,7 +14,7 @@ import { Platform, RefreshControl, Share, StyleSheet, Text, TextInput, useWindow
 import Animated, { Easing, SlideInUp, useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
  
-import { s } from '@/app/log/_logDetailStyles';
+import { s } from '@/src/components/log/logDetailStyles';
 import LogShareCard from '@/src/components/film/LogShareCard';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import LogActionDeck from '@/src/components/log/LogActionDeck';

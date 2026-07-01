@@ -4,7 +4,7 @@ import { View, Text } from 'react-native';
 import { Sparkles, Lock } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
 import { extractDropCap, stripHTML } from '@/src/utils/text';
-import { s } from '@/app/log/_logDetailStyles';
+import { s } from '@/src/components/log/logDetailStyles';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 
 interface LogReviewBodyProps {

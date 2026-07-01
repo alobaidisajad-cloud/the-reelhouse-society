@@ -900,7 +900,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('lounge_members')
-        .select('user_id, status, created_at, profiles(username, avatar_url)')
+        .select('user_id, status, created_at, profiles!lounge_members_user_id_fkey(username, avatar_url)')
         .eq('lounge_id', loungeId);
       if (error || !data) return [];
       return data.map((m: Record<string, unknown>) => {

@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHTML } from '@/src/utils/text';
-import { s } from '@/app/log/_logDetailStyles';
+import { s } from '@/src/components/log/logDetailStyles';
 
 interface ViewingHistoryEntry {
   date?: string;
