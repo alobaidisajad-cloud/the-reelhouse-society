@@ -67,13 +67,32 @@ export default function DossierReaderScreen() {
                     setDossier(localDossier as DossierDetail);
                 }
 
-                // In a real scenario we'd query dispatch_dossiers
-                const { data, error } = await supabase
-                    .from('dispatch_dossiers')
-                    .select('id, title, excerpt, full_content, author_username, user_id, created_at, views, certify_count')
-                    .eq('id', id)
-                    .single();
-                
+                // Parallelized reads — dossier, comments, and certification are
+                // independent (they only need `id`/`user.id`), so fire them
+                // concurrently instead of as a sequential waterfall.
+                const [dossierRes, commRes, certRes] = await Promise.all([
+                    supabase
+                        .from('dispatch_dossiers')
+                        .select('id, title, excerpt, full_content, author_username, user_id, created_at, views, certify_count')
+                        .eq('id', id)
+                        .single(),
+                    supabase
+                        .from('dossier_comments')
+                        .select('id, user_id, username, body, created_at')
+                        .eq('dossier_id', id)
+                        .order('created_at', { ascending: true }),
+                    user
+                        ? supabase
+                            .from('dossier_certifications')
+                            .select('id')
+                            .eq('user_id', user.id)
+                            .eq('dossier_id', id)
+                            .maybeSingle()
+                        : Promise.resolve({ data: null, error: null }),
+                ]);
+
+                const { data, error } = dossierRes;
+
                 if (error) {
                     if (localDossier) {
                         const errLower = (error.message || '').toLowerCase();
@@ -104,13 +123,9 @@ export default function DossierReaderScreen() {
                     });
                 }
 
-                // Fetch Comments
-                const { data: commData } = await supabase
-                    .from('dossier_comments')
-                    .select('id, user_id, username, body, created_at')
-                    .eq('dossier_id', id)
-                    .order('created_at', { ascending: true });
-                
+                // Comments (fetched in parallel above)
+                const commData = commRes.data;
+
                 // Offline Queue Stitching
                 const queue = getOfflineQueue();
                 const pendingAdds = queue.filter(q => q.type === 'add_dossier_comment' && q.payload.dossier_id === id);
@@ -129,15 +144,9 @@ export default function DossierReaderScreen() {
                 
                 setComments(finalComments);
                 
-                // Check if certified
+                // Certification (fetched in parallel above)
                 if (user) {
-                    const { data: cert } = await supabase
-                        .from('dossier_certifications')
-                        .select('id')
-                        .eq('user_id', user.id)
-                        .eq('dossier_id', id)
-                        .maybeSingle();
-                    setCertified(!!cert);
+                    setCertified(!!certRes.data);
                 }
             } catch (err: unknown) {
                 if (__DEV__) console.warn('[Dossier] Fetch error:', err);
