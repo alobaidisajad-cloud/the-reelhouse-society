@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.reelhouse.society",
-      "buildNumber": "14",
+      "buildNumber": "29",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "The ReelHouse requires access to your archives to set your Society portrait.",
         "ITSAppUsesNonExemptEncryption": false
@@ -57,11 +57,11 @@
           "project": "reelhouse-mobile"
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     },
     "extra": {
       "router": {},
@@ -69,6 +69,12 @@
         "projectId": "9527b5a1-c663-4262-883c-7b85e6aa748d"
       }
     },
-    "owner": "thereehouse.society"
+    "owner": "thereehouse.society",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9527b5a1-c663-4262-883c-7b85e6aa748d"
+    }
   }
 }

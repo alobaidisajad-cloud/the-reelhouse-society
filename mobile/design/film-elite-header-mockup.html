@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Film page — elite dossier header</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Courier+Prime:ital@0;1&family=Inter:wght@400;600;700&display=swap');
+  :root{--ink:#0A0906;--sepia:#B8891A;--flicker:#F0E8B0;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:21px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 22px;font-style:italic}
+  .colw{max-width:400px;margin:0 auto;padding:0 16px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin:26px 0 12px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+  .note{color:var(--fog);font-size:11px;line-height:1.55;font-style:italic;margin:13px 4px 0;text-align:center}
+  .panel{background:rgba(13,10,7,.5);border:1px solid rgba(184,137,26,.12);border-radius:8px;padding:18px}
+  .body{font-family:'Courier Prime';font-size:12px;color:var(--bone);opacity:.7;line-height:1.7;margin:0}
+  .rows{border:1px solid rgba(184,137,26,.2);border-radius:3px;padding:10px 14px;margin-top:6px}
+  .row{display:flex;justify-content:space-between;padding:5px 0;font-size:11px}
+  .row b{color:var(--fog);font-weight:600;letter-spacing:1px}.row span{color:var(--bone)}
+
+  /* today's two styles */
+  .divCenter{display:flex;align-items:center;gap:10px;margin:16px 0 12px}
+  .divCenter i{flex:1;height:1px}
+  .divCenter .l{background:linear-gradient(90deg,transparent,rgba(184,137,26,.6))}
+  .divCenter .r{background:linear-gradient(90deg,rgba(184,137,26,.6),transparent)}
+  .divCenter span{font-weight:700;font-size:11px;letter-spacing:10px;color:#E4DFCC;text-shadow:0 0 10px rgba(184,137,26,.4)}
+  .plainLeft{display:flex;align-items:center;gap:12px;margin:16px 0 12px}
+  .plainLeft span{font-weight:700;font-size:10px;letter-spacing:3px;color:var(--sepia)}
+  .plainLeft i{flex:1;height:1px;background:rgba(184,137,26,.3)}
+
+  /* the elite dossier header */
+  .eliteHdr{display:flex;align-items:center;margin:18px 0 13px}
+  .eliteBar{width:2.5px;height:12px;border-radius:1px;background:linear-gradient(180deg,var(--sepia),var(--flicker));
+            box-shadow:0 0 5px rgba(184,137,26,.5);margin-right:10px;flex-shrink:0}
+  .eliteLabel{font-weight:700;font-size:10.5px;letter-spacing:3px;color:var(--sepia);white-space:nowrap}
+  .eliteRule{flex:1;height:1px;margin-left:12px;background:linear-gradient(90deg,rgba(184,137,26,.5),transparent)}
+</style>
+</head>
+<body>
+  <h1>Film page — the elite dossier header</h1>
+  <p class="sub">left-aligned &amp; scannable, but crafted to feel premium</p>
+
+  <div class="colw">
+
+    <div class="tag before">Before · two styles, one plain</div>
+    <div class="panel">
+      <div class="divCenter"><i class="l"></i><span>SYNOPSIS</span><i class="r"></i></div>
+      <p class="body">A weary detective returns to the rain-soaked city he swore he'd never see again…</p>
+      <div class="plainLeft"><span>FILM DOSSIER</span><i></i></div>
+      <div class="rows"><div class="row"><b>RUNTIME</b><span>2h 18m</span></div><div class="row"><b>STATUS</b><span>Released</span></div></div>
+    </div>
+    <p class="note">Centered "SYNOPSIS" clashes with the flat left "FILM DOSSIER" line — and the flat line feels plain.</p>
+
+    <div class="tag after">After · one elite header everywhere</div>
+    <div class="panel">
+      <div class="eliteHdr"><div class="eliteBar"></div><span class="eliteLabel">SYNOPSIS</span><div class="eliteRule"></div></div>
+      <p class="body">A weary detective returns to the rain-soaked city he swore he'd never see again…</p>
+      <div class="eliteHdr"><div class="eliteBar"></div><span class="eliteLabel">FILM DOSSIER</span><div class="eliteRule"></div></div>
+      <div class="rows"><div class="row"><b>RUNTIME</b><span>2h 18m</span></div><div class="row"><b>STATUS</b><span>Released</span></div></div>
+      <div class="eliteHdr"><div class="eliteBar"></div><span class="eliteLabel">THE PLAYERS</span><div class="eliteRule"></div></div>
+      <p class="body">Florence Vane · Marcus Holloway · Dietrich Vane …</p>
+      <div class="eliteHdr"><div class="eliteBar"></div><span class="eliteLabel">SOCIETY CRITIQUES</span><div class="eliteRule"></div></div>
+      <p class="body" style="font-style:italic">"The projection box awaits…"</p>
+    </div>
+    <p class="note">A slim brass index-bar (sepia→flicker) + crisp label + a rule that fades to nothing. Consistent down the whole page, scannable, and unmistakably premium — never "messy/centered".</p>
+
+  </div>
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Marquee — refined</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Spectral:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#0A0906; --soot:#0D0C08; --ash:#2A2118;
+    --sepia:#B8891A; --flicker:#F0E8B0; --parchment:#E8DFD0; --bone:#C2B492; --fog:#9E9488;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 70px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:22px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 8px;font-family:'Spectral';font-style:italic}
+  .col{max-width:408px;margin:0 auto;padding:0 14px}
+  .cap{color:var(--sepia);font-size:10px;letter-spacing:3px;text-transform:uppercase;font-family:'Inter';font-weight:600;margin:30px 0 12px;display:flex;align-items:center;gap:9px}
+  .cap::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(184,137,26,.3),transparent)}
+  .reels{display:flex;gap:4px;justify-content:center}
+  .reel{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--sepia);position:relative;opacity:.3}
+  .reel.on{opacity:1;background:rgba(184,137,26,0.16)}
+  .reel::after{content:'';position:absolute;inset:38% 38%;border-radius:50%;background:var(--sepia)}
+  .note{color:var(--fog);font-size:11px;line-height:1.5;font-family:'Spectral';font-style:italic;margin:10px 4px 0;text-align:center}
+
+  /* ───────── the marquee — thin dark sign, two warm bulb strips ───────── */
+  .sign{border-radius:6px;overflow:hidden;background:var(--ink);
+        border:1px solid rgba(184,137,26,0.18);
+        box-shadow:0 12px 34px rgba(0,0,0,.6)}
+
+  /* refined bulb strip — warm tungsten, soft, breathing gently */
+  .strip{display:flex;justify-content:space-around;align-items:center;height:15px;padding:0 14px;
+         background:linear-gradient(180deg,#0c0a07,#080705)}
+  .strip.top{border-bottom:1px solid rgba(184,137,26,.12)}
+  .strip.bot{border-top:1px solid rgba(184,137,26,.12)}
+  .bulb{width:5px;height:5px;border-radius:50%;
+        background:radial-gradient(circle at 50% 38%,#FFF1C9,#E7C173 50%,#6e5413);
+        box-shadow:0 0 6px 1px rgba(231,193,115,.55);animation:breathe 3s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.45}50%{opacity:1}}
+
+  /* the board — blurred poster, scrim, vignette; calm + readable */
+  .board{position:relative;min-height:176px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:22px 22px}
+  .ambient{position:absolute;inset:0;filter:blur(22px) saturate(1.1);transform:scale(1.18);opacity:.7}
+  .scrim{position:absolute;inset:0;background:
+     radial-gradient(ellipse at 50% 28%, rgba(184,137,26,.10), transparent 55%),
+     linear-gradient(180deg, rgba(8,6,4,.55), rgba(7,6,5,.82))}
+  .vignette{position:absolute;inset:0;box-shadow:inset 0 0 64px 10px rgba(7,6,5,.75);pointer-events:none}
+  .grain{position:absolute;inset:0;opacity:.05;pointer-events:none;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  .content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .eyebrow{font-family:'Inter';font-weight:600;font-size:9px;letter-spacing:3.5px;color:var(--sepia);text-shadow:0 0 10px rgba(184,137,26,.4)}
+  .decree{font-family:'Spectral';font-style:italic;font-size:10.5px;color:var(--bone);opacity:.6;margin-top:4px;margin-bottom:12px}
+  .title{font-family:'Rye';font-size:29px;line-height:1.04;color:var(--parchment);letter-spacing:.5px;
+    text-shadow:0 2px 9px #000, 0 0 16px rgba(184,137,26,.18);
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .title.long{font-size:22px}
+  .rule{height:1px;width:62px;background:var(--sepia);opacity:.4;margin:13px 0 11px}
+  .meta{display:flex;align-items:center;gap:11px;justify-content:center}
+  .yearPill{border:1px solid rgba(184,137,26,.35);border-radius:3px;padding:2px 8px;font-family:'Inter';font-size:10px;letter-spacing:2px;color:var(--sepia)}
+  .count{font-family:'Inter';font-size:8px;letter-spacing:2.5px;color:var(--fog);opacity:.75;margin-top:11px}
+
+  .reelCrest{width:30px;height:30px;border-radius:50%;border:2px solid var(--sepia);position:relative;opacity:.6;margin-bottom:14px}
+  .reelCrest::after{content:'';position:absolute;inset:40% 40%;border-radius:50%;background:var(--sepia)}
+
+  /* loading */
+  .loading{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;gap:15px}
+  .loadlabel{font-family:'Inter';font-weight:600;font-size:9px;letter-spacing:3px;color:var(--sepia);opacity:.55}
+  .filament{width:200px;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#E7C173,transparent);box-shadow:0 0 13px 2px rgba(231,193,115,.5);animation:flick 2.4s infinite}
+  @keyframes flick{0%,100%{opacity:.18}10%{opacity:.85}14%{opacity:.25}30%{opacity:.95}55%{opacity:.4}}
+
+  .pg1{background:linear-gradient(155deg,#6a4a8a,#3a2d52 45%,#201829)}
+  .pg2{background:linear-gradient(155deg,#7a3346,#43202c 50%,#180d13)}
+
+  .bulbs5{}
+</style>
+</head>
+<body>
+  <h1>The Marquee</h1>
+  <p class="sub">refined — restraint, warm light, the film</p>
+
+  <div class="col">
+
+    <div class="cap">The Weekly Feature</div>
+    <div class="sign">
+      <div class="strip top"><span class="bulb"></span><span class="bulb" style="animation-delay:.25s"></span><span class="bulb" style="animation-delay:.5s"></span><span class="bulb" style="animation-delay:.75s"></span><span class="bulb" style="animation-delay:1s"></span><span class="bulb" style="animation-delay:1.25s"></span><span class="bulb" style="animation-delay:1.5s"></span><span class="bulb" style="animation-delay:1.75s"></span><span class="bulb" style="animation-delay:2s"></span></div>
+      <div class="board">
+        <div class="ambient pg1"></div><div class="scrim"></div><div class="vignette"></div>
+        <div class="content">
+          <div class="eyebrow">✦ THE WEEKLY FEATURE ✦</div>
+          <div class="decree">As decreed by the Programming Committee</div>
+          <div class="title">THE SHEEP DETECTIVES</div>
+          <div class="rule"></div>
+          <div class="meta">
+            <span class="yearPill">2026</span>
+            <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span></span>
+          </div>
+          <div class="count">300+ GLOBAL RATINGS</div>
+        </div>
+        <div class="grain"></div>
+      </div>
+      <div class="strip bot"><span class="bulb" style="animation-delay:2s"></span><span class="bulb" style="animation-delay:1.75s"></span><span class="bulb" style="animation-delay:1.5s"></span><span class="bulb" style="animation-delay:1.25s"></span><span class="bulb" style="animation-delay:1s"></span><span class="bulb" style="animation-delay:.75s"></span><span class="bulb" style="animation-delay:.5s"></span><span class="bulb" style="animation-delay:.25s"></span><span class="bulb"></span></div>
+    </div>
+    <p class="note">The poster glows as the backdrop; a scrim keeps the title crisp over any image. Two warm bulb strips — softly breathing, not blinking.</p>
+
+    <div class="cap">A long title</div>
+    <div class="sign">
+      <div class="strip top"><span class="bulb"></span><span class="bulb" style="animation-delay:.25s"></span><span class="bulb" style="animation-delay:.5s"></span><span class="bulb" style="animation-delay:.75s"></span><span class="bulb" style="animation-delay:1s"></span><span class="bulb" style="animation-delay:1.25s"></span><span class="bulb" style="animation-delay:1.5s"></span><span class="bulb" style="animation-delay:1.75s"></span><span class="bulb" style="animation-delay:2s"></span></div>
+      <div class="board">
+        <div class="ambient pg2"></div><div class="scrim"></div><div class="vignette"></div>
+        <div class="content">
+          <div class="eyebrow">✦ THE WEEKLY FEATURE ✦</div>
+          <div class="decree">As decreed by the Programming Committee</div>
+          <div class="title long">THE ASSASSINATION OF JESSE JAMES BY THE COWARD ROBERT FORD</div>
+          <div class="rule"></div>
+          <div class="meta">
+            <span class="yearPill">2007</span>
+            <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span></span>
+          </div>
+          <div class="count">1,200+ GLOBAL RATINGS</div>
+        </div>
+        <div class="grain"></div>
+      </div>
+      <div class="strip bot"><span class="bulb" style="animation-delay:2s"></span><span class="bulb" style="animation-delay:1.75s"></span><span class="bulb" style="animation-delay:1.5s"></span><span class="bulb" style="animation-delay:1.25s"></span><span class="bulb" style="animation-delay:1s"></span><span class="bulb" style="animation-delay:.75s"></span><span class="bulb" style="animation-delay:.5s"></span><span class="bulb" style="animation-delay:.25s"></span><span class="bulb"></span></div>
+    </div>
+
+    <div class="cap">No poster · no year</div>
+    <div class="sign">
+      <div class="strip top"><span class="bulb"></span><span class="bulb" style="animation-delay:.25s"></span><span class="bulb" style="animation-delay:.5s"></span><span class="bulb" style="animation-delay:.75s"></span><span class="bulb" style="animation-delay:1s"></span><span class="bulb" style="animation-delay:1.25s"></span><span class="bulb" style="animation-delay:1.5s"></span><span class="bulb" style="animation-delay:1.75s"></span><span class="bulb" style="animation-delay:2s"></span></div>
+      <div class="board" style="background:linear-gradient(160deg,#110d08,#090806)">
+        <div class="vignette"></div>
+        <div class="content">
+          <div class="eyebrow">✦ THE WEEKLY FEATURE ✦</div>
+          <div class="decree">As decreed by the Programming Committee</div>
+          <div class="reelCrest"></div>
+          <div class="title">UNTITLED ARCHIVE No. 7</div>
+          <div class="rule"></div>
+          <div class="meta">
+            <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span><span class="reel"></span></span>
+          </div>
+          <div class="count">AWAITING RATINGS</div>
+        </div>
+      </div>
+      <div class="strip bot"><span class="bulb" style="animation-delay:2s"></span><span class="bulb" style="animation-delay:1.75s"></span><span class="bulb" style="animation-delay:1.5s"></span><span class="bulb" style="animation-delay:1.25s"></span><span class="bulb" style="animation-delay:1s"></span><span class="bulb" style="animation-delay:.75s"></span><span class="bulb" style="animation-delay:.5s"></span><span class="bulb" style="animation-delay:.25s"></span><span class="bulb"></span></div>
+    </div>
+    <p class="note">No poster → a quiet reel crest; the year simply drops out. Calm, never broken.</p>
+
+    <div class="cap">Loading</div>
+    <div class="sign">
+      <div class="strip top"><span class="bulb"></span><span class="bulb" style="animation-delay:.25s"></span><span class="bulb" style="animation-delay:.5s"></span><span class="bulb" style="animation-delay:.75s"></span><span class="bulb" style="animation-delay:1s"></span><span class="bulb" style="animation-delay:1.25s"></span><span class="bulb" style="animation-delay:1.5s"></span><span class="bulb" style="animation-delay:1.75s"></span><span class="bulb" style="animation-delay:2s"></span></div>
+      <div class="board" style="background:linear-gradient(160deg,#110d08,#090806)">
+        <div class="vignette"></div>
+        <div class="loading">
+          <span class="loadlabel">WARMING UP THE ARC LAMP</span>
+          <div class="filament"></div>
+        </div>
+      </div>
+      <div class="strip bot"><span class="bulb" style="animation-delay:2s"></span><span class="bulb" style="animation-delay:1.75s"></span><span class="bulb" style="animation-delay:1.5s"></span><span class="bulb" style="animation-delay:1.25s"></span><span class="bulb" style="animation-delay:1s"></span><span class="bulb" style="animation-delay:.75s"></span><span class="bulb" style="animation-delay:.5s"></span><span class="bulb" style="animation-delay:.25s"></span><span class="bulb"></span></div>
+    </div>
+
+    <p class="note" style="margin-top:24px;opacity:.85;font-style:normal;font-family:'Inter';font-size:11px">
+      Same marquee soul — bulbs &amp; the lit board — just refined: warmer softer light, a readability scrim, tighter type, more air. No brass bars, no medallion, no clutter.
+    </p>
+
+  </div>
+</body>
+</html>

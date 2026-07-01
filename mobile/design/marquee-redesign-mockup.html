@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Marquee — redesign</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Spectral:ital,wght@0,400;0,500;1,400&family=Courier+Prime:ital@0;1&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#0A0906; --soot:#0D0C08; --surface:#14120D; --ash:#2A2118;
+    --sepia:#B8891A; --flicker:#F0E8B0; --parchment:#E8DFD0; --bone:#C2B492; --fog:#9E9488;
+    --brass:#DAA520;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:24px;color:var(--parchment);margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 28px;font-family:'Spectral';font-style:italic}
+  .col{max-width:404px;margin:0 auto;padding:0 12px}
+  .cap{color:var(--sepia);font-size:10px;letter-spacing:2.5px;text-transform:uppercase;font-family:'Inter';font-weight:600;margin:26px 0 10px;display:flex;align-items:center;gap:9px}
+  .cap::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,rgba(184,137,26,0.35),transparent)}
+  .note{color:var(--fog);font-size:11.5px;line-height:1.5;font-family:'Spectral';margin:8px 2px 0}
+
+  /* ─────────── SHARED MARQUEE FRAME ─────────── */
+  .marquee{position:relative;border:1px solid rgba(184,137,26,0.20);border-radius:7px;overflow:hidden;
+           background:var(--ink);box-shadow:0 10px 34px rgba(0,0,0,0.6), 0 0 0 1px rgba(0,0,0,0.4);}
+
+  /* The lit crown — fewer, softer, warmer bulbs than the old canary fence */
+  .crown{display:flex;justify-content:space-around;align-items:center;height:18px;padding:0 12px;
+         background:linear-gradient(180deg,#100d09,#0b0a07);border-bottom:1px solid rgba(184,137,26,0.14);position:relative;z-index:3}
+  .bulb{width:6px;height:6px;border-radius:50%;
+        background:radial-gradient(circle at 50% 40%, #FFE9A8 0%, var(--brass) 45%, #6b5310 100%);
+        box-shadow:0 0 6px 1px rgba(218,165,32,0.55);}
+  .bulb:nth-child(2n){opacity:.78;box-shadow:0 0 5px 1px rgba(218,165,32,0.4)}
+  .bulb:nth-child(3n){opacity:.9}
+
+  /* Ambient blurred poster wash + scrims (guaranteed legibility) */
+  .board{position:relative;min-height:188px;overflow:hidden}
+  .ambient{position:absolute;inset:0;filter:blur(18px) saturate(1.1);transform:scale(1.15);opacity:.85}
+  .scrim{position:absolute;inset:0}
+  .vignette{position:absolute;inset:0;box-shadow:inset 0 0 70px 12px rgba(7,6,5,0.8);pointer-events:none}
+  .grain{position:absolute;inset:0;opacity:.05;pointer-events:none;
+         background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* ─────────── DIRECTION A — THE POSTER CASE ─────────── */
+  .case{position:relative;z-index:2;display:flex;gap:16px;padding:18px 18px 20px;align-items:stretch}
+  .frame{position:relative;width:96px;flex-shrink:0;aspect-ratio:2/3;border-radius:3px;overflow:hidden;
+         border:1.5px solid rgba(218,165,32,0.5);box-shadow:0 8px 20px rgba(0,0,0,0.6), 0 0 0 4px rgba(10,9,6,0.6);}
+  .frame .poster{position:absolute;inset:0;display:flex;align-items:flex-end;padding:8px}
+  .frame .pTitle{font-family:'Rye';font-size:11px;line-height:1.05;color:rgba(255,255,255,0.92);text-shadow:0 1px 4px rgba(0,0,0,0.8)}
+  .frameEmpty{display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,rgba(184,137,26,0.10),rgba(11,10,8,0.95))}
+  .reelGlyph{width:34px;height:34px;border-radius:50%;border:2px solid var(--sepia);position:relative;opacity:.7}
+  .reelGlyph::before{content:'';position:absolute;inset:42% 42%;border-radius:50%;background:var(--sepia)}
+
+  .text{flex:1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+  .eyebrow{font-family:'Inter';font-weight:600;font-size:9px;letter-spacing:3px;color:var(--sepia);text-shadow:0 0 10px rgba(184,137,26,0.4)}
+  .decree{font-family:'Spectral';font-style:italic;font-size:11px;color:var(--bone);opacity:.72;margin-top:4px;margin-bottom:9px}
+  .title{font-family:'Rye';font-weight:400;color:var(--parchment);font-size:26px;line-height:1.06;
+         text-shadow:0 2px 10px rgba(0,0,0,0.7), 0 0 14px rgba(184,137,26,0.18);
+         display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .title.long{font-size:21px}
+  .rule{height:1px;background:linear-gradient(90deg,var(--sepia),rgba(184,137,26,0.05));opacity:.5;margin:11px 0 10px;max-width:160px}
+  .meta{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .yearPill{border:1px solid rgba(184,137,26,0.35);border-radius:3px;padding:2px 8px;font-family:'Inter';font-size:10px;letter-spacing:2px;color:var(--sepia)}
+  .reels{display:flex;gap:4px}
+  .reel{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--sepia);position:relative;opacity:.35}
+  .reel.on{opacity:1;background:rgba(184,137,26,0.18)}
+  .reel::after{content:'';position:absolute;inset:38% 38%;border-radius:50%;background:var(--sepia)}
+  .count{font-family:'Inter';font-size:9px;letter-spacing:2px;color:var(--fog);opacity:.8;margin-top:9px}
+
+  /* ─────────── DIRECTION B — REFINED HERO ─────────── */
+  .hero{position:relative;z-index:2;padding:20px 22px 22px;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .hero .eyebrow{display:block}
+  .hero .heroFrame{width:74px;aspect-ratio:2/3;border-radius:3px;margin:12px 0 12px;overflow:hidden;
+                   border:1.5px solid rgba(218,165,32,0.5);box-shadow:0 8px 20px rgba(0,0,0,0.6)}
+  .hero .title{-webkit-line-clamp:2;text-align:center}
+  .hero .rule{margin:12px auto 11px}
+  .hero .meta{justify-content:center}
+  .hero .count{text-align:center}
+
+  /* Loading (refined arc-lamp) */
+  .loading{position:relative;z-index:2;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  .loadlabel{font-family:'Inter';font-weight:600;font-size:9px;letter-spacing:3px;color:var(--sepia);opacity:.55}
+  .filament{width:78%;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,var(--brass),transparent);box-shadow:0 0 14px 2px rgba(218,165,32,0.5);animation:flick 2.2s infinite}
+  @keyframes flick{0%,100%{opacity:.2}10%{opacity:.85}14%{opacity:.25}30%{opacity:.9}55%{opacity:.4}}
+
+  /* poster gradient fills (simulated posters) */
+  .pg1{background:linear-gradient(150deg,#6a4a8a 0%,#3a2d52 40%,#241b33 100%)}
+  .pg2{background:linear-gradient(150deg,#7a3346 0%,#43202c 50%,#1c0f16 100%)}
+  .pg3{background:linear-gradient(150deg,#2d4a52 0%,#1d3138 55%,#0e1a1c 100%)}
+</style>
+</head>
+<body>
+  <h1>The Marquee</h1>
+  <p class="sub">refined — the first thing you see in the Lobby</p>
+
+  <div class="col">
+
+    <!-- ════════ DIRECTION A — THE POSTER CASE (recommended) ════════ -->
+    <div class="cap">Direction A · The Poster Case</div>
+
+    <div class="marquee">
+      <div class="crown"><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span></div>
+      <div class="board">
+        <div class="ambient pg1"></div>
+        <div class="scrim" style="background:linear-gradient(90deg,rgba(7,6,5,0.92) 0%,rgba(7,6,5,0.55) 45%,rgba(7,6,5,0.3) 100%)"></div>
+        <div class="scrim" style="background:linear-gradient(0deg,rgba(7,6,5,0.85),transparent 60%)"></div>
+        <div class="vignette"></div>
+        <div class="case">
+          <div class="frame"><div class="poster pg1"><span class="pTitle">THE&nbsp;SHEEP<br>DETECTIVES</span></div></div>
+          <div class="text">
+            <span class="eyebrow">✦ THE WEEKLY FEATURE</span>
+            <span class="decree">As decreed by the Programming Committee</span>
+            <div class="title">THE SHEEP DETECTIVES</div>
+            <div class="rule"></div>
+            <div class="meta">
+              <span class="yearPill">2026</span>
+              <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span></span>
+            </div>
+            <span class="count">300+ GLOBAL RATINGS</span>
+          </div>
+        </div>
+        <div class="grain"></div>
+      </div>
+    </div>
+    <p class="note">The real poster becomes a framed object floating over its own blurred glow (depth). Text is left-aligned editorial, sitting on a guaranteed-dark scrim so the title is legible over <em>any</em> poster.</p>
+
+    <!-- Reliability: very long title -->
+    <div class="cap">A · reliability — a very long title</div>
+    <div class="marquee">
+      <div class="crown"><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span></div>
+      <div class="board">
+        <div class="ambient pg2"></div>
+        <div class="scrim" style="background:linear-gradient(90deg,rgba(7,6,5,0.92) 0%,rgba(7,6,5,0.55) 45%,rgba(7,6,5,0.3) 100%)"></div>
+        <div class="scrim" style="background:linear-gradient(0deg,rgba(7,6,5,0.85),transparent 60%)"></div>
+        <div class="vignette"></div>
+        <div class="case">
+          <div class="frame"><div class="poster pg2"><span class="pTitle">THE ASSASSINATION…</span></div></div>
+          <div class="text">
+            <span class="eyebrow">✦ THE WEEKLY FEATURE</span>
+            <span class="decree">As decreed by the Programming Committee</span>
+            <div class="title long">THE ASSASSINATION OF JESSE JAMES BY THE COWARD ROBERT FORD</div>
+            <div class="rule"></div>
+            <div class="meta">
+              <span class="yearPill">2007</span>
+              <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span></span>
+            </div>
+            <span class="count">1,200+ GLOBAL RATINGS</span>
+          </div>
+        </div>
+        <div class="grain"></div>
+      </div>
+    </div>
+    <p class="note">Long titles clamp to 3 lines and step down a size — never overflow, never collide with the poster.</p>
+
+    <!-- Reliability: no poster -->
+    <div class="cap">A · reliability — no poster on file</div>
+    <div class="marquee">
+      <div class="crown"><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span></div>
+      <div class="board" style="background:linear-gradient(160deg,#13100b,#0a0906)">
+        <div class="vignette"></div>
+        <div class="case">
+          <div class="frame frameEmpty"><div class="reelGlyph"></div></div>
+          <div class="text">
+            <span class="eyebrow">✦ THE WEEKLY FEATURE</span>
+            <span class="decree">As decreed by the Programming Committee</span>
+            <div class="title">UNTITLED ARCHIVE No. 7</div>
+            <div class="rule"></div>
+            <div class="meta">
+              <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span><span class="reel"></span></span>
+            </div>
+            <span class="count">AWAITING RATINGS</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="note">No poster → a brass reel crest fills the frame; missing year simply drops out. The layout never breaks.</p>
+
+    <!-- Loading -->
+    <div class="cap">A · loading — the arc lamp warms up</div>
+    <div class="marquee">
+      <div class="crown"><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span></div>
+      <div class="board" style="background:linear-gradient(160deg,#13100b,#0a0906)">
+        <div class="vignette"></div>
+        <div class="loading">
+          <span class="loadlabel">WARMING UP THE ARC LAMP</span>
+          <div class="filament"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ DIRECTION B — REFINED HERO (alternative) ════════ -->
+    <div class="cap">Direction B · Refined Hero (alternative)</div>
+    <div class="marquee">
+      <div class="crown"><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span><span class="bulb"></span></div>
+      <div class="board">
+        <div class="ambient pg3"></div>
+        <div class="scrim" style="background:linear-gradient(0deg,rgba(7,6,5,0.9) 0%,rgba(7,6,5,0.45) 50%,rgba(7,6,5,0.65) 100%)"></div>
+        <div class="vignette"></div>
+        <div class="hero">
+          <span class="eyebrow">✦ THE WEEKLY FEATURE ✦</span>
+          <div class="heroFrame pg3"></div>
+          <div class="title">THE SHEEP DETECTIVES</div>
+          <div class="rule"></div>
+          <div class="meta">
+            <span class="yearPill">2026</span>
+            <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span></span>
+          </div>
+          <span class="count">300+ GLOBAL RATINGS</span>
+        </div>
+        <div class="grain"></div>
+      </div>
+    </div>
+    <p class="note">Keeps the centered, full-bleed hero silhouette you have now — but adds the crisp framed poster, the legibility scrim, the softer warm crown, and a tightened type hierarchy.</p>
+
+    <p class="note" style="margin-top:24px;opacity:.8">Both keep: the tap-through to the film, Ken&nbsp;Burns drift on the ambient poster, film grain, reduced-motion fallback, and the brass/parchment soul. The big upgrades: a softer warm <em>tungsten</em> crown (not canary bulbs), the real poster as a framed object, and a scrim that makes the title readable on every poster.</p>
+
+  </div>
+</body>
+</html>

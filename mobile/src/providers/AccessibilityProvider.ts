@@ -26,27 +26,33 @@ import { scaledTextProps } from '@/src/constants/textScaling';
 // smoke test in AccessibilityProvider.test.ts asserts the wrapper actually
 // injects scaledTextProps. If RN drops `.render`, the fallback below silently
 // no-ops the font cap, so the test is the early-warning signal.
-const origTextRender = (Text as any).render;
-if (origTextRender) {
-  // RN 0.81+ uses forwardRef, so we patch render
-  (Text as any).render = function (props: TextProps, ref: React.Ref<Text>) {
-    return origTextRender.call(this, { ...scaledTextProps, ...props }, ref);
-  };
-} else {
-  // Fallback: defaultProps approach for older RN internals
-  const existingDefaults = (Text as any).defaultProps || {};
-  (Text as any).defaultProps = { ...existingDefaults, ...scaledTextProps };
-}
+try {
+  const origTextRender = (Text as any).render;
+  if (origTextRender) {
+    // RN 0.81+ uses forwardRef, so we patch render
+    (Text as any).render = function (props: TextProps, ref: React.Ref<Text>) {
+      return origTextRender.call(this, { ...scaledTextProps, ...props }, ref);
+    };
+  } else {
+    // Fallback: defaultProps approach for older RN internals
+    const existingDefaults = (Text as any).defaultProps || {};
+    (Text as any).defaultProps = { ...existingDefaults, ...scaledTextProps };
+  }
 
-// ── Apply global TextInput defaults ──
-const origInputRender = (TextInput as any).render;
-if (origInputRender) {
-  (TextInput as any).render = function (props: TextInputProps, ref: React.Ref<TextInput>) {
-    return origInputRender.call(this, { ...scaledTextProps, ...props }, ref);
-  };
-} else {
-  const existingDefaults = (TextInput as any).defaultProps || {};
-  (TextInput as any).defaultProps = { ...existingDefaults, ...scaledTextProps };
+  // ── Apply global TextInput defaults ──
+  const origInputRender = (TextInput as any).render;
+  if (origInputRender) {
+    (TextInput as any).render = function (props: TextInputProps, ref: React.Ref<TextInput>) {
+      return origInputRender.call(this, { ...scaledTextProps, ...props }, ref);
+    };
+  } else {
+    const existingDefaults = (TextInput as any).defaultProps || {};
+    (TextInput as any).defaultProps = { ...existingDefaults, ...scaledTextProps };
+  }
+} catch (e) {
+  if (__DEV__) {
+    console.warn('[AccessibilityProvider] Failed to patch Text/TextInput for scaling', e);
+  }
 }
 
 /**

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Darkroom — masthead eyebrow ✦</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+  :root{--ink:#0A0906;--sepia:#B8891A;--parchment:#E8DFD0;--fog:#9E9488;--safelight:#B42D2D;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:21px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 22px;font-style:italic}
+  .colw{max-width:400px;margin:0 auto;padding:0 16px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-family:'Inter';font-weight:600;margin:26px 0 12px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+  .note{color:var(--fog);font-size:11px;line-height:1.5;font-style:italic;margin:11px 4px 0;text-align:center}
+
+  /* darkroom hero with red safelight wash */
+  .hero{position:relative;border:1px solid rgba(184,137,26,0.2);border-bottom-color:rgba(184,137,26,0.2);
+        border-radius:6px;overflow:hidden;padding:30px 18px;text-align:center;background:#0a0703}
+  .safelight{position:absolute;inset:0;pointer-events:none;
+     background:linear-gradient(180deg, rgba(180,45,45,0.30), rgba(184,137,26,0.08) 50%, transparent);opacity:.9}
+  .inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center}
+  .eyebrow{font-family:'Courier Prime';font-weight:700;font-size:11px;letter-spacing:11px;color:var(--sepia);opacity:.62;margin-bottom:10px;white-space:nowrap}
+  .eyebrow .star{color:var(--sepia);opacity:.7;letter-spacing:0}
+  .title{font-family:'Rye';font-size:32px;letter-spacing:2px;color:#F2ECD8;line-height:1.1;
+     text-shadow:0 0 20px rgba(180,45,45,0.6)}  /* red safelight glow — unchanged */
+  .estRow{display:flex;align-items:center;gap:12px;margin-top:14px;width:80%}
+  .estRule{flex:1;height:1px}
+  .estRule.l{background:linear-gradient(90deg,transparent,rgba(184,137,26,0.35))}
+  .estRule.r{background:linear-gradient(90deg,rgba(184,137,26,0.35),transparent)}
+  .est{font-family:'Inter';font-size:7px;letter-spacing:5px;color:var(--fog);opacity:.6;white-space:nowrap}
+</style>
+</head>
+<body>
+  <h1>Darkroom masthead — eyebrow ✦</h1>
+  <p class="sub">the red safelight glow on the title stays exactly as-is</p>
+
+  <div class="colw">
+
+    <!-- BEFORE -->
+    <div class="tag before">Before · today (no flourish)</div>
+    <div class="hero">
+      <div class="safelight"></div>
+      <div class="inner">
+        <div class="eyebrow">THE REELHOUSE SOCIETY</div>
+        <div class="title">The Darkroom</div>
+        <div class="estRow"><span class="estRule l"></span><span class="est">EST. 1924</span><span class="estRule r"></span></div>
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="tag after">After · with ✦ (matches The Reel masthead)</div>
+    <div class="hero">
+      <div class="safelight"></div>
+      <div class="inner">
+        <div class="eyebrow"><span class="star">✦</span>&nbsp; THE REELHOUSE SOCIETY &nbsp;<span class="star">✦</span></div>
+        <div class="title">The Darkroom</div>
+        <div class="estRow"><span class="estRule l"></span><span class="est">EST. 1924</span><span class="estRule r"></span></div>
+      </div>
+    </div>
+    <p class="note">The ✦ brackets give it the same framed masthead as The Reel — a touch more ceremonial, more "elite".</p>
+
+    <!-- NIGHT VARIANT -->
+    <div class="tag after">After · the 2–6am variant, with ✦</div>
+    <div class="hero">
+      <div class="safelight" style="background:linear-gradient(180deg, rgba(180,45,45,0.42), rgba(184,137,26,0.06) 50%, transparent)"></div>
+      <div class="inner">
+        <div class="eyebrow"><span class="star">✦</span>&nbsp; THE ARCHIVE IS HAUNTED &nbsp;<span class="star">✦</span></div>
+        <div class="title" style="text-shadow:0 0 26px rgba(180,45,45,0.8)">Late Night Projection</div>
+        <div class="estRow"><span class="estRule l"></span><span class="est">EST. 1924</span><span class="estRule r"></span></div>
+      </div>
+    </div>
+    <p class="note">The ✦ reads fine on the spooky late-night variant too — if anything it adds to the ritual.</p>
+
+  </div>
+</body>
+</html>

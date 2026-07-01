@@ -28,9 +28,10 @@ const RealtimeNotifSchema = z.object({
   from_username: z.string().nullish().transform(v => v ?? undefined),
   film_id: z.number().nullish().transform(v => v ?? undefined),
   poster_path: z.string().nullish().transform(v => v ?? undefined),
-  read: z.boolean().default(false),
+  // DB column is `is_read` — transform to `read` for JS interface compat
+  is_read: z.boolean().default(false),
   created_at: z.string().default(() => new Date().toISOString()),
-});
+}).transform(({ is_read, ...rest }) => ({ ...rest, read: is_read }));
 
 export interface AppNotification {
     id: string;
@@ -90,7 +91,7 @@ export const useNotificationStore = create<NotificationState>()(
             const PAGE_SIZE = 30;
             const { data, error } = await supabase
                 .from('notifications')
-                .select('id, user_id, type, from_username, message, read, created_at, film_id, poster_path')
+                .select('id, user_id, type, from_username, message, is_read, created_at')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .limit(PAGE_SIZE);
@@ -145,7 +146,7 @@ export const useNotificationStore = create<NotificationState>()(
             const [cursorDate, cursorId] = _cursor.split('|');
             let query = supabase
                 .from('notifications')
-                .select('id, user_id, type, from_username, message, read, created_at, film_id, poster_path')
+                .select('id, user_id, type, from_username, message, is_read, created_at')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .order('id', { ascending: false })
@@ -217,7 +218,7 @@ export const useNotificationStore = create<NotificationState>()(
         
         try {
             // Background DB sync
-            const { error } = await supabase.from('notifications').update({ read: true }).eq('id', id);
+            const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', id);
             if (error) throw error;
         } catch (e) {
             logger.warn(`[markRead] Failed for ${id}:`, e);
@@ -239,7 +240,7 @@ export const useNotificationStore = create<NotificationState>()(
         }));
 
         try {
-            const { error } = await supabase.from('notifications').update({ read: true }).eq('user_id', user.id).eq('read', false);
+            const { error } = await supabase.from('notifications').update({ is_read: true }).eq('user_id', user.id).eq('is_read', false);
             if (error) throw error;
         } catch (e) {
             logger.warn(`[markAllRead] Failed:`, e);
@@ -292,7 +293,7 @@ export const useNotificationStore = create<NotificationState>()(
         try {
             const { error } = await supabase
                 .from('notifications')
-                .update({ read: true })
+                .update({ is_read: true })
                 .in('id', ids);
             if (error) throw error;
         } catch (e) {

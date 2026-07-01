@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Profile — unified title typography (structures preserved)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Courier+Prime&family=Inter:wght@400;600;700&display=swap');
+  :root{--ink:#0A0906;--ash:#2A2118;--sepia:#B8891A;--flicker:#F0E8B0;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;--champagne:#C4961A;--rubyLit:#B42D2D;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:20px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 20px;font-family:'Courier Prime'}
+  .colw{max-width:420px;margin:0 auto;padding:0 14px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin:24px 0 12px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+  .note{color:var(--fog);font-size:11px;line-height:1.55;font-style:italic;margin:13px 4px 0;text-align:center}
+  .card{background:rgba(8,6,4,.6);border:1px solid rgba(184,137,26,.18);border-radius:6px;padding:14px 16px;margin-bottom:12px}
+  .ph{height:30px;border-radius:4px;background:linear-gradient(100deg,rgba(184,137,26,.05),rgba(184,137,26,.01));margin-top:8px}
+  .eyebrow{font-family:'Courier Prime';font-size:8px;letter-spacing:3px;color:var(--sepia);opacity:.7;margin-bottom:3px}
+  .sub2{font-size:9px;color:var(--fog);opacity:.7;margin-top:2px;font-style:italic;font-family:'Courier Prime'}
+  .rowH{display:flex;align-items:center;justify-content:space-between}
+  .count{font-family:'Inter';font-weight:600;font-size:8px;letter-spacing:1px;color:var(--fog)}
+  .share{width:22px;height:22px;border-radius:11px;border:1px solid rgba(184,137,26,.3);display:flex;align-items:center;justify-content:center;color:var(--fog);font-size:11px}
+
+  /* BEFORE — fragmented title typography */
+  .tA{font-family:'Inter';font-weight:700;font-size:14px;letter-spacing:.5px;color:var(--parchment)}      /* CinemaDNA s.title */
+  .tB{font-family:'Rye';font-size:16px;color:var(--parchment)}                                            /* TasteDNA s.title */
+  .tC{font-family:'Courier Prime';font-size:12px;letter-spacing:4px;color:var(--bone);text-transform:uppercase} /* Achievements s.title */
+  .tD{font-family:'Inter';font-weight:600;font-size:11px;letter-spacing:2px;color:var(--sepia)}           /* Calendar s.title */
+
+  /* AFTER — one unified title typography (same font/size/spacing/brass) */
+  .tU{font-family:'Inter';font-weight:700;font-size:11px;letter-spacing:3px;color:var(--sepia);text-transform:uppercase;text-shadow:0 0 10px rgba(184,137,26,.35)}
+</style>
+</head>
+<body>
+  <h1>Profile titles — one family, structures intact</h1>
+  <p class="sub">cohesion without breaking a single card</p>
+
+  <div class="colw">
+
+    <!-- BEFORE -->
+    <div class="tag before">Before · every title a different font/size</div>
+    <div class="card"><div class="eyebrow">CINEMATIC FINGERPRINT</div><div class="tA">CINEMA DNA</div><div class="ph"></div></div>
+    <div class="card"><div class="rowH"><div><div class="tB">TASTE DNA</div><div class="sub2">Your cinematic fingerprint</div></div><div class="share">⤴</div></div><div class="ph"></div></div>
+    <div class="card"><div class="rowH"><div class="tC">SOCIETY HONORS</div><div class="count">3/12 EARNED</div></div><div class="ph"></div></div>
+    <div class="card"><div class="tD">CINEMATIC RHYTHM</div><div class="sub2">412 FILMS THIS YEAR</div><div class="ph"></div></div>
+    <p class="note">Bold sans, Rye serif, spaced mono, small sepia — four different title treatments. Each fine alone; together, mismatched.</p>
+
+    <!-- AFTER -->
+    <div class="tag after">After · one title typography — eyebrows, subtitles, share &amp; count all stay</div>
+    <div class="card"><div class="eyebrow">CINEMATIC FINGERPRINT</div><div class="tU">CINEMA DNA</div><div class="ph"></div></div>
+    <div class="card"><div class="rowH"><div><div class="tU">TASTE DNA</div><div class="sub2">Your cinematic fingerprint</div></div><div class="share">⤴</div></div><div class="ph"></div></div>
+    <div class="card"><div class="rowH"><div class="tU">SOCIETY HONORS</div><div class="count">3/12 EARNED</div></div><div class="ph"></div></div>
+    <div class="card"><div class="tU">CINEMATIC RHYTHM</div><div class="sub2">412 FILMS THIS YEAR</div><div class="ph"></div></div>
+    <p class="note">Same font, size, letter-spacing &amp; brass glow on every title → they read as one curated dossier. The share button, the count, the eyebrow, the subtitles are untouched. Zero layout risk. Tier color stays in the hero + favorites triptych, where it shines — not smeared across every header.</p>
+
+  </div>
+</body>
+</html>

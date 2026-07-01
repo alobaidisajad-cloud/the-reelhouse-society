@@ -33,7 +33,10 @@ import { initSentry } from '@/src/lib/sentry';
 import '@/src/providers/AccessibilityProvider';
 import Animated, {
     Easing,
-    ZoomOut,
+    useSharedValue,
+    withTiming,
+    useAnimatedStyle,
+    runOnJS,
 } from 'react-native-reanimated';
 
 // Font scaling lock removed temporarily to prevent React Native Hermes segfault.
@@ -48,7 +51,8 @@ export default function RootLayout() {
   const { restoreSession } = useAuthStore();
   const [appReady, setAppReady] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
-  const [isSplashProxyVisible, setSplashProxyVisible] = useState(true);
+  const splashOpacity = useSharedValue(1);
+  const [isSplashProxyMounted, setSplashProxyMounted] = useState(true);
 
   const [fontsLoaded] = useFonts({
     Rye_400Regular,
@@ -162,10 +166,20 @@ export default function RootLayout() {
 
   const onLayoutReady = useCallback(async () => {
     if (appReady && fontsLoaded) {
-      await SplashScreen.hideAsync();
-      setTimeout(() => setSplashProxyVisible(false), 50);
+      try {
+        await SplashScreen.hideAsync();
+      } catch (e) {
+        // Silently ignore if already hidden
+      }
+      splashOpacity.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }, (finished) => {
+        if (finished) runOnJS(setSplashProxyMounted)(false);
+      });
     }
   }, [appReady, fontsLoaded]);
+
+  const splashAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: splashOpacity.value,
+  }));
 
   if (!appReady || !fontsLoaded) return null;
 
@@ -192,18 +206,18 @@ export default function RootLayout() {
             <Stack.Screen name="user/[username]" options={{ animation: 'none' }} />
             <Stack.Screen name="settings" options={{ animation: 'none' }} />
             <Stack.Screen name="log/[id]" options={{ animation: 'none' }} />
-            <Stack.Screen name="search-modal" options={{ presentation: 'modal', animation: 'fade', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="log-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="notifications-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="list-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="vault-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="login" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="social-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(modals)/search-modal" options={{ presentation: 'modal', animation: 'fade', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(modals)/log-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(modals)/notifications-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(modals)/list-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(modals)/vault-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(modals)/login" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(modals)/social-modal" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
             <Stack.Screen name="reset-password" options={{ animation: 'none' }} />
             <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
-            <Stack.Screen name="membership" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="oracle" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="tribunal" options={{ animation: 'none' }} />
+            <Stack.Screen name="(modals)/membership" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(modals)/oracle" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
+            <Stack.Screen name="(admin)/tribunal" options={{ animation: 'none' }} />
             <Stack.Screen name="year-in-cinema" options={{ animation: 'none' }} />
             <Stack.Screen name="stacks/[id]" options={{ animation: 'none' }} />
             <Stack.Screen name="film-reviews/[id]" options={{ animation: 'none' }} />
@@ -219,10 +233,9 @@ export default function RootLayout() {
       <ToastOverlay />
       <OfflineBanner />
       
-      {isSplashProxyVisible && (
+      {isSplashProxyMounted && (
         <Animated.View 
-           exiting={ZoomOut.duration(600).easing(Easing.out(Easing.cubic))} 
-           style={[StyleSheet.absoluteFill, { backgroundColor: colors.ink, zIndex: 9999 }]} 
+           style={[StyleSheet.absoluteFill, { backgroundColor: colors.ink, zIndex: 9999 }, splashAnimatedStyle]} 
            pointerEvents="none"
         />
       )}

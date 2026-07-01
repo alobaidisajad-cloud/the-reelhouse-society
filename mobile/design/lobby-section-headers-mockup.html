@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lobby — section header unification</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital@0;1&family=Inter:wght@400;500;600&display=swap');
+  :root{--ink:#0A0906;--sepia:#B8891A;--flicker:#F0E8B0;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;--ash:#2A2118;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:22px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 8px;font-family:'Courier Prime';font-style:italic}
+  .colw{max-width:404px;margin:0 auto;padding:0 16px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-family:'Inter';font-weight:600;margin:30px 0 14px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+
+  /* shared section divider (tapered label) */
+  .divider{display:flex;align-items:center;gap:12px;margin:0 0 16px}
+  .divider i{flex:1;height:1px}
+  .divider .l{background:linear-gradient(90deg,transparent,rgba(184,137,26,.6))}
+  .divider .r{background:linear-gradient(90deg,rgba(184,137,26,.6),transparent)}
+  .divider span{font-family:'Inter';font-weight:600;font-size:8px;letter-spacing:3px;color:var(--sepia);opacity:.8}
+
+  /* GRAND editorial header (Pulse / Critique) */
+  .grand{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+  .grand .bar{width:3px;height:32px;border-radius:2px;background:linear-gradient(180deg,var(--sepia),var(--flicker))}
+  .grand .ttl{font-family:'Rye';font-size:22px;color:var(--parchment);line-height:1.1}
+  .grand .lore{font-family:'Courier Prime';font-style:italic;font-size:10px;color:var(--fog);opacity:.55;margin-top:3px}
+
+  /* SMALL strip header (today's film carousels) */
+  .small{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+  .small .beacon{width:3px;height:16px;border-radius:1.5px;background:var(--sepia);opacity:.6}
+  .small .ttl{font-family:'Special Elite';font-size:16px;color:var(--parchment);letter-spacing:.5px}
+
+  /* faux poster strip */
+  .strip{display:flex;gap:10px;overflow:hidden}
+  .poster{width:74px;height:111px;border-radius:4px;border:1px solid rgba(184,137,26,.14);flex-shrink:0;
+    background:linear-gradient(160deg,#3a2d52,#201829)}
+  .poster:nth-child(2){background:linear-gradient(160deg,#43202c,#180d13)}
+  .poster:nth-child(3){background:linear-gradient(160deg,#1d3138,#0e1a1c)}
+  .poster:nth-child(4){background:linear-gradient(160deg,#4a3a1a,#1a1308)}
+
+  .block{padding:18px 0;border-bottom:1px solid rgba(184,137,26,.08)}
+  .note{color:var(--fog);font-size:11px;line-height:1.55;font-family:'Courier Prime';font-style:italic;margin:14px 2px 0;text-align:center}
+  .panel{background:rgba(13,10,7,.6);border:1px solid rgba(184,137,26,.12);border-radius:8px;padding:16px 16px 8px;margin-top:6px}
+</style>
+</head>
+<body>
+  <h1>Lobby — one header language</h1>
+  <p class="sub">making the whole scroll feel like one publication</p>
+
+  <div class="colw">
+
+    <!-- BEFORE -->
+    <div class="tag before">Before · two systems on one screen</div>
+    <div class="panel">
+      <div class="block">
+        <div class="divider"><i class="l"></i><span>THE TELEGRAPH</span><i class="r"></i></div>
+        <div class="grand"><div class="bar"></div><div><div class="ttl">The Pulse</div><div class="lore">Live logs from the Society.</div></div></div>
+      </div>
+      <div class="block">
+        <div class="divider"><i class="l"></i><span>NOW SHOWING</span><i class="r"></i></div>
+        <div class="small"><div class="beacon"></div><div class="ttl">On The Marquee</div></div>
+        <div class="strip"><div class="poster"></div><div class="poster"></div><div class="poster"></div><div class="poster"></div></div>
+      </div>
+    </div>
+    <p class="note">“The Pulse” gets a grand Rye header with a sub-line; the film rows get a smaller Special&nbsp;Elite header with none. Two voices.</p>
+
+    <!-- AFTER -->
+    <div class="tag after">After · one editorial system</div>
+    <div class="panel">
+      <div class="block">
+        <div class="divider"><i class="l"></i><span>THE TELEGRAPH</span><i class="r"></i></div>
+        <div class="grand"><div class="bar"></div><div><div class="ttl">The Pulse</div><div class="lore">Live logs from the Society.</div></div></div>
+      </div>
+      <div class="block">
+        <div class="divider"><i class="l"></i><span>NOW SHOWING</span><i class="r"></i></div>
+        <div class="grand"><div class="bar"></div><div><div class="ttl">On The Marquee</div><div class="lore">What the world is watching this week.</div></div></div>
+        <div class="strip"><div class="poster"></div><div class="poster"></div><div class="poster"></div><div class="poster"></div></div>
+      </div>
+      <div class="block" style="border-bottom:0">
+        <div class="divider"><i class="l"></i><span>ESSENTIAL ARCHIVES</span><i class="r"></i></div>
+        <div class="grand"><div class="bar"></div><div><div class="ttl">The Canon</div><div class="lore">Essential viewing from the archive.</div></div></div>
+        <div class="strip"><div class="poster"></div><div class="poster"></div><div class="poster"></div><div class="poster"></div></div>
+      </div>
+    </div>
+    <p class="note">Every content section now shares the same gradient bar + Rye title + italic sub. The film rows gain editorial weight and the scroll reads as one art-directed magazine.</p>
+
+  </div>
+</body>
+</html>

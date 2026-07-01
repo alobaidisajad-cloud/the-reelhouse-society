@@ -15,8 +15,8 @@ const ExpoSecureStoreAdapter = {
 // Row Level Security (RLS) policies on every table. The anon key only grants
 // access to operations explicitly permitted by RLS. Auth tokens are stored in
 // expo-secure-store (see ExpoSecureStoreAdapter above), NOT in MMKV or AsyncStorage.
-const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
-const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co';
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || 'dummy';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {

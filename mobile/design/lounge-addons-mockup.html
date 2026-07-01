@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Lounge — new add-ons</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Spectral:ital,wght@0,400;0,500;1,400&family=Inter:wght@400;500&display=swap');
+  @import url('https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css');
+  body{margin:0;background:#161310;min-height:100vh;padding:34px 16px;font-family:'Inter',sans-serif}
+  h1{color:#E8DFD0;font-family:'Rye';font-weight:400;text-align:center;font-size:26px;margin:0 0 28px}
+  .gallery{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start;max-width:1200px;margin:0 auto}
+  .item{display:flex;flex-direction:column;gap:11px;width:328px}
+  .cap{color:#C2B492;font-size:12px;letter-spacing:1.5px;text-transform:uppercase}
+  .panel{background:#0A0906;border:1px solid #2A2118;border-radius:18px;overflow:hidden}
+  .panel *{box-sizing:border-box}
+  .ti{vertical-align:middle}
+  .lbl{font-family:'Inter';letter-spacing:1.2px;text-transform:uppercase}
+  .name{font-family:'Inter';font-size:11px;letter-spacing:.5px}
+  .body{font-family:'Spectral',serif;font-size:14.5px;line-height:1.55;color:#E8DFD0}
+  .time{font-family:'Inter';font-size:10px;color:#6b655f}
+  .av{width:26px;height:26px;border-radius:50%;background:#14120D;border:1px solid rgba(184,137,26,0.3);display:flex;align-items:center;justify-content:center;color:#9E9488;font-family:'Rye';font-size:12px;flex-shrink:0}
+  .chip{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:14px;border:1px solid #3a2d12;font-size:11px;color:#C2B492}
+  .chip.on{background:rgba(184,137,26,0.12);border-color:rgba(184,137,26,0.5);color:#F0E8B0}
+</style>
+</head>
+<body>
+<h1>The Lounge — new add-ons</h1>
+<div class="gallery">
+
+  <div class="item"><div class="cap">1 · Reactions — on a dispatch</div>
+    <div class="panel" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">
+        <div class="av">M</div><span class="name" style="color:#C2B492">mara_v</span><span class="time">9:14</span>
+      </div>
+      <p class="body" style="margin:0 0 0 35px">Tarkovsky on a rainy Sunday is the closest thing I have to church.</p>
+      <div style="display:flex;gap:7px;margin:10px 0 0 35px">
+        <span class="chip on"><i class="ti ti-star"></i> 3</span>
+        <span class="chip"><i class="ti ti-flame"></i> 2</span>
+        <span class="chip"><i class="ti ti-thumb-down" style="color:#a8503f"></i> 1</span>
+        <span class="chip" style="color:#6b655f"><i class="ti ti-plus"></i></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="item"><div class="cap">1b · Reaction picker (long-press)</div>
+    <div class="panel" style="padding:18px 18px 8px">
+      <div style="width:36px;height:4px;border-radius:2px;background:#2A2118;margin:0 auto 16px"></div>
+      <div style="display:flex;justify-content:space-between;padding:6px 2px 16px;border-bottom:1px solid #1c160e">
+        <div style="text-align:center"><i class="ti ti-star" style="font-size:22px;color:#B8891A"></i><div style="font-size:8px;color:#7d776f;margin-top:5px;letter-spacing:.5px">BRAVO</div></div>
+        <div style="text-align:center"><i class="ti ti-heart" style="font-size:22px;color:#B8891A"></i><div style="font-size:8px;color:#7d776f;margin-top:5px;letter-spacing:.5px">ADORED</div></div>
+        <div style="text-align:center"><i class="ti ti-flame" style="font-size:22px;color:#B8891A"></i><div style="font-size:8px;color:#7d776f;margin-top:5px;letter-spacing:.5px">RIVETING</div></div>
+        <div style="text-align:center"><i class="ti ti-quote" style="font-size:22px;color:#B8891A"></i><div style="font-size:8px;color:#7d776f;margin-top:5px;letter-spacing:.5px">QUOTED</div></div>
+        <div style="text-align:center"><i class="ti ti-thumb-down" style="font-size:22px;color:#a8503f"></i><div style="font-size:8px;color:#7d776f;margin-top:5px;letter-spacing:.5px">PANNED</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 2px;border-bottom:1px solid #14120D"><i class="ti ti-arrow-back-up" style="font-size:18px;color:#C2B492"></i><span class="lbl" style="font-size:12px;color:#E8DFD0">Reply</span></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 2px;border-bottom:1px solid #14120D"><i class="ti ti-copy" style="font-size:18px;color:#C2B492"></i><span class="lbl" style="font-size:12px;color:#E8DFD0">Copy</span></div>
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 2px"><i class="ti ti-flag" style="font-size:18px;color:#7d3a30"></i><span class="lbl" style="font-size:12px;color:#a8503f">Report</span></div>
+    </div>
+  </div>
+
+  <div class="item"><div class="cap">2 · Message lifecycle states</div>
+    <div class="panel" style="padding:16px">
+      <div style="border-left:2px solid #2a2012;padding-left:13px;margin-bottom:16px;opacity:.55">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span class="name lbl" style="font-size:10px;color:#9a7418">You</span><span class="time" style="display:flex;align-items:center;gap:3px"><i class="ti ti-clock" style="font-size:11px"></i> sending…</span></div>
+        <p class="body" style="margin:0;color:#F4ECDB">Booking the projector for Friday.</p>
+      </div>
+      <div style="border-left:2px solid #5a1909;padding-left:13px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span class="name lbl" style="font-size:10px;color:#9a7418">You</span></div>
+        <p class="body" style="margin:0;color:#F4ECDB">Wong Kar-wai marathon, who's in?</p>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:5px;color:#a8503f"><i class="ti ti-alert-triangle" style="font-size:12px"></i><span style="font-size:11px">Failed · tap to retry</span></div>
+      </div>
+      <div style="padding-left:13px;border-left:2px solid #1c160e">
+        <div style="display:flex;align-items:center;gap:6px;color:#6b655f"><i class="ti ti-circle-minus" style="font-size:13px"></i><span style="font-family:'Spectral',serif;font-style:italic;font-size:13px">dispatch withdrawn</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="item"><div class="cap">3 · Host controls — member list</div>
+    <div class="panel" style="padding:16px">
+      <div class="lbl" style="font-size:9px;color:#7d776f;margin-bottom:6px">Members · 12</div>
+      <div style="display:flex;align-items:center;gap:11px;padding:11px 0;border-bottom:1px solid #14120D">
+        <div class="av">S</div><span class="name" style="color:#E8DFD0;flex:1">sajad</span>
+        <span class="chip on" style="font-size:8.5px;letter-spacing:1px"><i class="ti ti-crown" style="font-size:10px"></i> FOUNDER</span>
+      </div>
+      <div style="padding:11px 0 4px;border-bottom:1px solid #14120D">
+        <div style="display:flex;align-items:center;gap:11px"><div class="av">J</div><span class="name" style="color:#E8DFD0;flex:1">jules_noir</span><i class="ti ti-dots" style="font-size:18px;color:#9E9488"></i></div>
+        <div style="display:flex;gap:8px;margin:10px 0 0 37px">
+          <span style="border:1px solid #2A2118;border-radius:7px;padding:6px 11px;font-size:9px;color:#9E9488" class="lbl"><i class="ti ti-volume-off" style="font-size:11px"></i> Mute</span>
+          <span style="border:1px solid #2A2118;border-radius:7px;padding:6px 11px;font-size:9px;color:#a8503f" class="lbl"><i class="ti ti-door-exit" style="font-size:11px"></i> Remove</span>
+          <span style="border:1px solid #3a1410;border-radius:7px;padding:6px 11px;font-size:9px;color:#a8503f" class="lbl"><i class="ti ti-ban" style="font-size:11px"></i> Ban</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:11px;padding:11px 0"><div class="av">A</div><span class="name" style="color:#E8DFD0;flex:1">ava_reels</span><i class="ti ti-dots" style="font-size:18px;color:#9E9488"></i></div>
+    </div>
+  </div>
+
+  <div class="item"><div class="cap">4 · Links & edge states</div>
+    <div class="panel" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px"><div class="av">A</div><span class="name" style="color:#C2B492">ava_reels</span><span class="time">10:02</span></div>
+      <p class="body" style="margin:0 0 16px 35px">Full ranking is here → <span style="color:#E9C45A;text-decoration:underline;text-decoration-color:#5a4413">thereelhousesociety.com/ava/noir-canon</span></p>
+      <div style="display:flex;align-items:center;gap:8px;background:#160f08;border:1px solid #2a2012;border-radius:9px;padding:10px 13px">
+        <i class="ti ti-wifi-off" style="font-size:15px;color:#9a7418"></i>
+        <span style="font-family:'Spectral',serif;font-style:italic;font-size:12.5px;color:#C2B492">You're offline — dispatches will send when you reconnect.</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

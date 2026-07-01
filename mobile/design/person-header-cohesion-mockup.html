@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Person page — dossier header cohesion</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Courier+Prime:ital@0;1&family=Inter:wght@400;600;700&display=swap');
+  :root{--ink:#0A0906;--sepia:#B8891A;--flicker:#F0E8B0;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:21px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 22px;font-style:italic}
+  .colw{max-width:400px;margin:0 auto;padding:0 16px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin:26px 0 12px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+  .note{color:var(--fog);font-size:11px;line-height:1.55;font-style:italic;margin:13px 4px 0;text-align:center}
+  .panel{background:rgba(13,10,7,.5);border:1px solid rgba(184,137,26,.12);border-radius:8px;padding:18px}
+  .cards{display:flex;gap:8px;margin-top:4px}
+  .poster{flex:1;aspect-ratio:2/3;border-radius:3px;border:1px solid rgba(184,137,26,.25);
+    background:linear-gradient(160deg,#3a2d22,#181009)}
+  .bioLabel{font-family:'Courier Prime';font-weight:700;font-size:9px;letter-spacing:3px;color:var(--sepia);opacity:.85;margin:6px 0 4px}
+  .bioTop{height:1px;background:linear-gradient(90deg,rgba(184,137,26,.4),transparent);margin-bottom:8px}
+
+  /* centered SectionDivider (today) */
+  .divCenter{display:flex;align-items:center;gap:10px;margin:18px 0 12px}
+  .divCenter i{flex:1;height:1px}
+  .divCenter .l{background:linear-gradient(90deg,transparent,rgba(184,137,26,.6))}
+  .divCenter .r{background:linear-gradient(90deg,rgba(184,137,26,.6),transparent)}
+  .divCenter span{font-weight:700;font-size:11px;letter-spacing:10px;color:#E4DFCC;text-shadow:0 0 10px rgba(184,137,26,.4)}
+
+  /* the elite dossier header (matches the film page) */
+  .eliteHdr{display:flex;align-items:center;margin:18px 0 13px}
+  .eliteBar{width:2.5px;height:12px;border-radius:1.5px;background:linear-gradient(180deg,var(--sepia),var(--flicker));box-shadow:0 0 5px rgba(184,137,26,.5);margin-right:10px;flex-shrink:0}
+  .eliteLabel{font-weight:700;font-size:10.5px;letter-spacing:3px;color:var(--sepia);white-space:nowrap}
+  .eliteRule{flex:1;height:1px;margin-left:12px;background:linear-gradient(90deg,rgba(184,137,26,.5),transparent)}
+</style>
+</head>
+<body>
+  <h1>Person page — matching the film dossier</h1>
+  <p class="sub">two sibling detail pages, one header language</p>
+
+  <div class="colw">
+
+    <div class="tag before">Before · person uses centered dividers (≠ film page)</div>
+    <div class="panel">
+      <div class="bioTop"></div>
+      <div class="bioLabel">CLASSIFIED DOSSIER — BIOGRAPHY</div>
+      <p style="font-family:'Courier Prime';font-size:11.5px;color:var(--bone);opacity:.7;line-height:1.7;margin:0">Born in the shadow of the studio system, she became cinema's most quietly devastating presence…</p>
+      <div class="divCenter"><i class="l"></i><span>DEFINING WORKS</span><i class="r"></i></div>
+      <div class="cards"><div class="poster"></div><div class="poster"></div><div class="poster"></div></div>
+      <div class="divCenter"><i class="l"></i><span>COMPLETE FILMOGRAPHY</span><i class="r"></i></div>
+      <div class="cards"><div class="poster"></div><div class="poster"></div><div class="poster"></div></div>
+    </div>
+    <p class="note">Centered tapered dividers — fine on their own, but they don't match the film page's brass-bar headers.</p>
+
+    <div class="tag after">After · the brass dossier header (matches the film page)</div>
+    <div class="panel">
+      <div class="bioTop"></div>
+      <div class="bioLabel">CLASSIFIED DOSSIER — BIOGRAPHY</div>
+      <p style="font-family:'Courier Prime';font-size:11.5px;color:var(--bone);opacity:.7;line-height:1.7;margin:0">Born in the shadow of the studio system, she became cinema's most quietly devastating presence…</p>
+      <div class="eliteHdr"><div class="eliteBar"></div><span class="eliteLabel">DEFINING WORKS</span><div class="eliteRule"></div></div>
+      <div class="cards"><div class="poster"></div><div class="poster"></div><div class="poster"></div></div>
+      <div class="eliteHdr"><div class="eliteBar"></div><span class="eliteLabel">COMPLETE FILMOGRAPHY</span><div class="eliteRule"></div></div>
+      <div class="cards"><div class="poster"></div><div class="poster"></div><div class="poster"></div></div>
+    </div>
+    <p class="note">Now the person dossier and the film dossier share the exact same section header — siblings, one system. The "CLASSIFIED DOSSIER — BIOGRAPHY" signature label stays untouched.</p>
+
+  </div>
+</body>
+</html>

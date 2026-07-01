@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Profile — tier color echo (final)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Courier+Prime&family=Inter:wght@400;600;700&display=swap');
+  :root{
+    --ink:#0A0906;--ash:#2A2118;--sepia:#B8891A;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;
+    --champagne:#C4961A;--ruby:#8B1A1A;--rubyLit:#B42D2D;--pink:#FFB3B3;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:21px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 18px;font-family:'Courier Prime'}
+  .colw{max-width:420px;margin:0 auto;padding:0 14px}
+  .tierTag{font-size:9px;letter-spacing:2px;text-transform:uppercase;font-weight:700;margin:24px 0 8px;text-align:center}
+  .note{color:var(--fog);font-size:11px;line-height:1.55;font-style:italic;margin:14px 4px 0;text-align:center}
+
+  .hero{background:rgba(13,10,7,.55);border:1px solid rgba(184,137,26,.12);border-radius:12px;padding:20px 16px;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .avatarWrap{width:84px;height:84px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+  .avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(160deg,#2a2018,#0d0a07)}
+  .ringCine{border:2px solid var(--ash)}
+  .ringArch{border:3px solid var(--champagne);box-shadow:0 0 12px rgba(196,150,26,.5)}
+  .ringAut{border:3px solid var(--ruby);box-shadow:0 0 14px rgba(180,45,45,.55)}
+  .nameRow{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:2px}
+  .name{font-family:'Rye';font-size:19px;color:var(--parchment);letter-spacing:.5px}
+  .badgeArch{display:inline-flex;align-items:center;gap:4px;font-family:'Courier Prime';font-weight:700;font-size:8px;letter-spacing:2px;color:#F2ECD8;background:rgba(196,150,26,.18);border:1px solid var(--champagne);padding:2px 7px;border-radius:3px}
+  .badgeAut{display:inline-flex;align-items:center;gap:4px;font-family:'Courier Prime';font-weight:700;font-size:8px;letter-spacing:2px;color:var(--pink);background:rgba(139,26,26,.25);border:1px solid var(--ruby);padding:2px 7px;border-radius:3px}
+
+  /* founder mark — echo target 1 */
+  .founder{display:flex;align-items:center;gap:10px;margin:10px 0 14px;width:78%}
+  .founder span{font-family:'Inter';font-weight:600;font-size:7.5px;letter-spacing:5px}
+  .founder i{flex:1;height:1px;display:block}
+  .eSepia span{color:rgba(184,137,26,.7)} .eSepia i{background:rgba(184,137,26,.45)}
+  .eChampagne span{color:var(--champagne)} .eChampagne i{background:rgba(196,150,26,.7);box-shadow:0 0 6px rgba(196,150,26,.5)}
+  .eRuby span{color:var(--rubyLit)} .eRuby i{background:rgba(180,45,45,.75);box-shadow:0 0 6px rgba(180,45,45,.5)}
+
+  /* stats PANEL — echo target 2 (the real design: one bordered panel) */
+  .stats{display:flex;width:100%;background:rgba(10,8,5,.85);border-width:1.5px;border-style:solid;border-radius:4px;overflow:hidden}
+  .statsSepia{border-color:rgba(184,137,26,.3)}
+  .statsChampagne{border-color:rgba(196,150,26,.6);box-shadow:0 0 10px rgba(196,150,26,.12)}
+  .statsRuby{border-color:rgba(180,45,45,.55);box-shadow:0 0 10px rgba(180,45,45,.12)}
+  .stat{flex:1;padding:13px 4px;text-align:center;position:relative}
+  .stat+.stat::before{content:'';position:absolute;left:0;top:22%;bottom:22%;width:1.5px}
+  .divSepia+.divSepia::before{background:rgba(184,137,26,.18)}
+  .divChampagne+.divChampagne::before{background:rgba(196,150,26,.3)}
+  .divRuby+.divRuby::before{background:rgba(180,45,45,.3)}
+  .statN{font-family:'Courier Prime';font-weight:700;font-size:17px;color:#F2ECD8}
+  .statL{font-family:'Inter';font-weight:600;font-size:7px;letter-spacing:1.5px;color:var(--fog);margin-top:3px}
+</style>
+</head>
+<body>
+  <h1>The tier echo — final</h1>
+  <p class="sub">tier color → founder mark + stats panel frame</p>
+
+  <div class="colw">
+
+    <div class="tierTag" style="color:var(--sepia)">Cinephile · house brass (understated)</div>
+    <div class="hero">
+      <div class="avatarWrap ringCine"><div class="avatar"></div></div>
+      <div class="nameRow"><span class="name">FIRST REEL</span></div>
+      <div class="founder eSepia"><i></i><span>EST. 1924</span><i></i></div>
+      <div class="stats statsSepia">
+        <div class="stat divSepia"><div class="statN">37</div><div class="statL">FILMS</div></div>
+        <div class="stat divSepia"><div class="statN">12</div><div class="statL">FOLLOWERS</div></div>
+        <div class="stat divSepia"><div class="statN">9</div><div class="statL">FOLLOWING</div></div>
+        <div class="stat divSepia"><div class="statN">20</div><div class="statL">WATCHLIST</div></div>
+      </div>
+    </div>
+
+    <div class="tierTag" style="color:var(--champagne)">Archivist · champagne gold</div>
+    <div class="hero">
+      <div class="avatarWrap ringArch"><div class="avatar"></div></div>
+      <div class="nameRow"><span class="name">THE NIGHT ARCHIVIST</span><span class="badgeArch">▤ ARCHIVIST</span></div>
+      <div class="founder eChampagne"><i></i><span>EST. 1924</span><i></i></div>
+      <div class="stats statsChampagne">
+        <div class="stat divChampagne"><div class="statN">412</div><div class="statL">FILMS</div></div>
+        <div class="stat divChampagne"><div class="statN">88</div><div class="statL">FOLLOWERS</div></div>
+        <div class="stat divChampagne"><div class="statN">61</div><div class="statL">FOLLOWING</div></div>
+        <div class="stat divChampagne"><div class="statN">53</div><div class="statL">WATCHLIST</div></div>
+      </div>
+    </div>
+
+    <div class="tierTag" style="color:var(--rubyLit)">Auteur · ruby</div>
+    <div class="hero">
+      <div class="avatarWrap ringAut"><div class="avatar"></div></div>
+      <div class="nameRow"><span class="name">THE LAST AUTEUR</span><span class="badgeAut">★ AUTEUR</span></div>
+      <div class="founder eRuby"><i></i><span>EST. 1924</span><i></i></div>
+      <div class="stats statsRuby">
+        <div class="stat divRuby"><div class="statN">1,204</div><div class="statL">FILMS</div></div>
+        <div class="stat divRuby"><div class="statN">512</div><div class="statL">FOLLOWERS</div></div>
+        <div class="stat divRuby"><div class="statN">133</div><div class="statL">FOLLOWING</div></div>
+        <div class="stat divRuby"><div class="statN">96</div><div class="statL">WATCHLIST</div></div>
+      </div>
+    </div>
+
+    <p class="note">The founder-mark rule/text and the stats-panel frame (+ its dividers) now carry the tier color. Cinephile = house brass (so the entry tier stays restrained and the progression reads); Archivist = champagne; Auteur = ruby. Ring, badge &amp; backdrop remain the primary signal — the hero just resonates with the tier now.</p>
+
+  </div>
+</body>
+</html>

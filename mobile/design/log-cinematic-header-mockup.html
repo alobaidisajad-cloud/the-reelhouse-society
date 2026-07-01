@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Log form — cinematic header</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime&family=Inter:wght@400;600;700&display=swap');
+  :root{--ink:#0A0906;--ash:#2A2118;--sepia:#B8891A;--flicker:#F0E8B0;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;--bloodLit:#B42D2D;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:28px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:20px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 18px;font-family:'Courier Prime'}
+  .colw{max-width:392px;margin:0 auto;padding:0 14px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin:22px 0 10px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+  .note{color:var(--fog);font-size:11px;line-height:1.5;font-style:italic;margin:11px 4px 0;text-align:center}
+
+  .sheet{border:1px solid rgba(184,137,26,.18);border-radius:14px;overflow:hidden;background:var(--ink)}
+  .modalHdr{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px}
+  .handle{position:absolute;left:50%;transform:translateX(-50%);top:7px;width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.1)}
+  .mTitle{font-family:'Special Elite';font-size:15px;color:var(--parchment)}
+  .close{font-family:'Inter';font-weight:600;font-size:8px;letter-spacing:1.5px;color:var(--fog)}
+
+  /* BEFORE — small poster row */
+  .oldHeader{display:flex;gap:14px;padding:6px 16px 16px}
+  .oldPoster{width:60px;height:90px;border-radius:4px;background:linear-gradient(155deg,#2d4a52,#0e1a1c);border:1px solid rgba(184,137,26,.4);flex-shrink:0}
+  .oldTitle{font-family:'Rye';font-size:20px;color:var(--parchment);line-height:1.1}
+  .oldYear{font-family:'Inter';font-size:10px;letter-spacing:2px;color:var(--fog);margin-top:6px}
+
+  /* AFTER — cinematic film hero */
+  .hero{position:relative;height:168px;overflow:hidden}
+  .heroBg{position:absolute;inset:0;background:linear-gradient(120deg,#16242a,#2d4a52 45%,#7a6a3a 80%,#140d08);filter:blur(2px)}
+  .heroSepia{position:absolute;inset:0;background:rgba(60,40,10,0.35)}
+  .heroGrad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(11,10,8,.15),rgba(11,10,8,.6) 55%,var(--ink))}
+  .heroRow{position:absolute;left:16px;right:16px;bottom:14px;display:flex;gap:14px;align-items:flex-end;z-index:2}
+  .heroPoster{width:74px;height:111px;border-radius:3px;flex-shrink:0;background:linear-gradient(155deg,#2d4a52,#0e1a1c);
+     border:1.5px solid rgba(218,165,32,.55);box-shadow:0 10px 24px rgba(0,0,0,.7)}
+  .heroInfo{flex:1;min-width:0;padding-bottom:4px}
+  .eyebrow{font-family:'Inter';font-weight:600;font-size:8px;letter-spacing:4px;color:var(--sepia);text-shadow:0 1px 4px #000;margin-bottom:5px}
+  .heroTitle{font-family:'Rye';font-size:23px;color:#F2ECD8;line-height:1.04;text-shadow:0 2px 10px #000}
+  .heroMeta{font-family:'Inter';font-size:9px;letter-spacing:2px;color:var(--bone);margin-top:6px;text-shadow:0 1px 3px #000}
+
+  /* form body (shared) */
+  .body{padding:14px 16px 18px}
+  .sec{margin-bottom:14px}
+  .leftElite{font-family:'Special Elite';font-size:10px;letter-spacing:2px;color:var(--sepia);margin-bottom:6px;display:block}
+  .btnRow{display:flex;gap:8px}
+  .btn{flex:1;text-align:center;border:1px solid var(--ash);border-radius:6px;padding:9px 0;font-size:9px;letter-spacing:1px;color:var(--fog);font-weight:600}
+  .btn.on{background:var(--sepia);color:var(--ink);border-color:var(--sepia)}
+  .field{border:1px solid var(--ash);border-radius:4px;padding:10px;color:var(--fog);font-size:12px;font-family:'Courier Prime';background:rgba(10,7,3,.6)}
+  .reels{font-size:20px;color:var(--sepia);letter-spacing:3px}
+</style>
+</head>
+<body>
+  <h1>Log form — a cinematic ritual</h1>
+  <p class="sub">the film you're logging finally takes the stage</p>
+
+  <div class="colw">
+
+    <!-- BEFORE -->
+    <div class="tag before">Before · small poster row, utilitarian</div>
+    <div class="sheet">
+      <div class="modalHdr"><div class="handle"></div><div class="mTitle">Blade Runner 2049</div><div class="close">✕ CLOSE</div></div>
+      <div class="oldHeader">
+        <div class="oldPoster"></div>
+        <div><div class="oldTitle">Blade Runner 2049</div><div class="oldYear">2017</div></div>
+      </div>
+      <div class="body" style="padding-top:0">
+        <div class="sec"><span class="leftElite">STATUS</span><div class="btnRow"><div class="btn on">WATCHED</div><div class="btn">REWATCHED</div><div class="btn">ABANDONED</div></div></div>
+        <div class="sec"><span class="leftElite">YOUR RATING</span><div class="reels">★★★★½</div></div>
+      </div>
+    </div>
+
+    <!-- AFTER -->
+    <div class="tag after">After · cinematic film hero + clean form</div>
+    <div class="sheet">
+      <div class="hero">
+        <div class="heroBg"></div><div class="heroSepia"></div><div class="heroGrad"></div>
+        <div class="handle"></div>
+        <div style="position:absolute;top:12px;right:16px;z-index:3" class="close">✕ CLOSE</div>
+        <div class="heroRow">
+          <div class="heroPoster"></div>
+          <div class="heroInfo">
+            <div class="eyebrow">✦ NOW FILING A RECORD</div>
+            <div class="heroTitle">Blade Runner 2049</div>
+            <div class="heroMeta">2017 · 2h 44m · USA</div>
+          </div>
+        </div>
+      </div>
+      <div class="body">
+        <div class="sec"><span class="leftElite">STATUS</span><div class="btnRow"><div class="btn on">WATCHED</div><div class="btn">REWATCHED</div><div class="btn">ABANDONED</div></div></div>
+        <div class="sec"><span class="leftElite">YOUR RATING</span><div class="reels">★★★★½</div></div>
+        <div class="sec"><span class="leftElite">REVIEW (OPTIONAL)</span><div class="field">Write your thoughts as if typing on a manuscript…</div></div>
+      </div>
+    </div>
+    <p class="note">The film's backdrop (blurred + sepia, fading to ink) crowns the form with the crisp poster &amp; Rye title — the same hero language as the film page. Logging becomes a cinematic ritual. Below, the form stays clean, left-labelled, and effortless. Fields, autopsy, flow — all untouched.</p>
+
+  </div>
+</body>
+</html>

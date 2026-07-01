@@ -15,7 +15,7 @@
 import React, { memo, useEffect, useState } from 'react';
 import { View, StyleSheet, AppState, AccessibilityInfo, useWindowDimensions } from 'react-native';
 import { Canvas, Rect, RuntimeShader, Skia } from '@shopify/react-native-skia';
-import { useSharedValue, withRepeat, withTiming, Easing, cancelAnimation } from 'react-native-reanimated';
+import { useSharedValue, withRepeat, withTiming, Easing, cancelAnimation, useDerivedValue } from 'react-native-reanimated';
 
 // ── Mathematical Film Grain Shader ──
 // Extremely cheap GPU shader generating white noise based on screen position and time.
@@ -41,6 +41,11 @@ export default memo(function FilmGrainOverlay() {
   const overlaySize = Math.max(width, height) + 100;
   const time = useSharedValue(0);
   const [reduceMotion, setReduceMotion] = useState(false);
+
+  // Safely unwrap the Reanimated SharedValue for Skia's C++ Engine
+  const uniforms = useDerivedValue(() => {
+    return { time: time.value };
+  });
 
   // ── Reduced Motion Respect ──
   // If the user has enabled "Reduce Motion" in their device settings,
@@ -94,7 +99,7 @@ export default memo(function FilmGrainOverlay() {
     <View style={styles.container} pointerEvents="none">
       <Canvas style={styles.texture}>
         <Rect x={0} y={0} width={overlaySize} height={overlaySize}>
-          <RuntimeShader source={source} uniforms={{ time } as any} />
+          <RuntimeShader source={source} uniforms={uniforms} />
         </Rect>
       </Canvas>
     </View>

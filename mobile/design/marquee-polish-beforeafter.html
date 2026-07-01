@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Marquee — before / after polish (final)</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Spectral:ital,wght@0,400&family=Courier+Prime:ital@1&family=Inter:wght@400;500;600&display=swap');
+  :root{--ink:#0A0906;--sepia:#B8891A;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:28px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:21px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 22px;font-family:'Spectral';font-style:italic}
+  .colw{max-width:400px;margin:0 auto;padding:0 14px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-family:'Inter';font-weight:600;margin:24px 0 10px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+
+  .shell{border-radius:4px;overflow:hidden;border:1px solid rgba(139,105,20,0.18);background:rgba(14,11,8,0.9)}
+  .shell.fix{border-color:rgba(184,137,26,0.18)}
+  .row{display:flex;justify-content:space-around;align-items:center;padding:4px 8px;background:rgba(14,11,8,0.95);
+       border-top:1px solid rgba(139,105,20,.1);border-bottom:1px solid rgba(139,105,20,.1)}
+  .row.fix{border-color:rgba(184,137,26,.1)}
+  .b{width:8px;height:8px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(218,165,32,.08)}
+  .b i{width:5px;height:5px;border-radius:50%}
+  .b.canary i{background:#FFD700;box-shadow:0 0 4px 1px rgba(255,215,0,.8)}
+  /* perfected tungsten — white-hot core, amber halo */
+  .b.tung i{background:radial-gradient(circle at 50% 38%,#FCEBB8 0%,#E7C173 55%,#9a7016 100%);box-shadow:0 0 6px 1.5px rgba(220,166,58,.7)}
+
+  .board{position:relative;min-height:172px;overflow:hidden;display:flex;flex-direction:column;justify-content:center;padding:18px 20px}
+  /* deliberately BRIGHT poster so the legibility difference shows */
+  .bg{position:absolute;inset:0;background:linear-gradient(150deg,#caa9d8,#b88f6a 55%,#6a4a3a);filter:blur(13px);transform:scale(1.1)}
+  .grad{position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,11,8,.3) 0%,rgba(14,11,8,.7) 45%,rgba(14,11,8,.95) 100%)}
+  .spot{position:absolute;top:0;left:20%;right:20%;height:60%;border-bottom-left-radius:200px;border-bottom-right-radius:200px}
+  .spot.before{background:linear-gradient(180deg,rgba(196,150,26,.12),transparent)}
+  .spot.after{background:linear-gradient(180deg,rgba(184,137,26,.12),transparent)}
+
+  .content{position:relative;z-index:2;text-align:center;display:flex;flex-direction:column;align-items:center}
+  .eyebrow{font-family:'Inter';font-size:9px;letter-spacing:3px;color:var(--sepia);margin-bottom:2px}
+  .eyebrow.glow{text-shadow:0 0 10px rgba(196,150,26,.4)}
+  .eyebrow.shadow{text-shadow:0 1px 5px rgba(0,0,0,.7)}
+  .loresub{font-family:'Courier Prime';font-style:italic;font-size:10px;color:var(--fog);opacity:.72;margin-bottom:10px}
+  .loresub.shadow{text-shadow:0 1px 4px rgba(0,0,0,.6)}
+  .title{font-family:'Rye';font-size:28px;line-height:1.05;color:var(--parchment);text-align:center}
+  .title.glow{text-shadow:0 0 10px rgba(196,150,26,.4)}
+  .title.shadow{text-shadow:0 1px 8px rgba(0,0,0,.78)}
+  /* before rule — flat full line */
+  .rule{height:1px;background:var(--sepia);opacity:.3;margin:11px 0;width:100%}
+  /* after rule — tapered gradient, centered */
+  .ruleT{height:1px;width:92px;margin:12px 0 11px;opacity:.7;background:linear-gradient(90deg,transparent,var(--sepia),transparent)}
+  .meta{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:4px}
+  .yearPill{border:1px solid rgba(139,105,20,.3);border-radius:3px;padding:2px 8px;font-family:'Inter';font-size:10px;letter-spacing:2px;color:var(--sepia)}
+  .yearPill.fix{border-color:rgba(184,137,26,.4)}
+  .reels{display:flex;gap:4px}
+  .reel{width:12px;height:12px;border-radius:50%;border:1.5px solid var(--sepia);position:relative;opacity:.32}
+  .reel.on{opacity:1;background:rgba(184,137,26,.16)}
+  .reel::after{content:'';position:absolute;inset:38% 38%;border-radius:50%;background:var(--sepia)}
+  .count{font-family:'Inter';font-size:8px;letter-spacing:2.5px;color:var(--fog);opacity:.7;margin-top:4px}
+  .legend{font-family:'Spectral';font-style:italic;color:var(--fog);font-size:11px;text-align:center;margin-top:9px;line-height:1.55}
+</style>
+</head>
+<body>
+  <h1>The Marquee — final polish</h1>
+  <p class="sub">same design · six small refinements (on a bright poster, on purpose)</p>
+
+  <div class="colw">
+
+    <div class="tag before">Before · today</div>
+    <div class="shell">
+      <div class="row"><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span></div>
+      <div class="board">
+        <div class="bg"></div><div class="grad"></div><div class="spot before"></div>
+        <div class="content">
+          <div class="eyebrow glow">✦ THE WEEKLY FEATURE ✦</div>
+          <div class="loresub">As decreed by the Programming Committee</div>
+          <div class="title glow">THE SHEEP DETECTIVES</div>
+          <div class="rule"></div>
+          <div class="meta"><span class="yearPill">2026</span><span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span></span></div>
+          <div class="count">300+ GLOBAL RATINGS</div>
+        </div>
+      </div>
+      <div class="row"><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span><span class="b canary"><i></i></span></div>
+    </div>
+    <p class="legend">Canary bulbs · glow-only text (softens on bright posters) · flat rule · old sepia hue.</p>
+
+    <div class="tag after">After · refined</div>
+    <div class="shell fix">
+      <div class="row fix"><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span></div>
+      <div class="board">
+        <div class="bg"></div><div class="grad"></div><div class="spot after"></div>
+        <div class="content">
+          <div class="eyebrow shadow">✦ THE WEEKLY FEATURE ✦</div>
+          <div class="loresub shadow">As decreed by the Programming Committee</div>
+          <div class="title shadow">THE SHEEP DETECTIVES</div>
+          <div class="ruleT"></div>
+          <div class="meta"><span class="yearPill fix">2026</span><span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span></span></div>
+          <div class="count">300+ GLOBAL RATINGS</div>
+        </div>
+      </div>
+      <div class="row fix"><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span><span class="b tung"><i></i></span></div>
+    </div>
+    <p class="legend">Warm tungsten bulbs (white-hot core, amber halo) · all text dark-shadowed &amp; crisp on any poster · tapered gradient rule · corrected sepia hue · + a11y label (not visible).</p>
+
+  </div>
+</body>
+</html>

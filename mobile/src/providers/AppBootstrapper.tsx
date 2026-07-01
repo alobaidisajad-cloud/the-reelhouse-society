@@ -34,6 +34,29 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
       hasBooted.current = true;
 
       try {
+        // ── Environment Invariants ──
+        const missing: string[] = [];
+        if (!process.env.EXPO_PUBLIC_SUPABASE_URL || process.env.EXPO_PUBLIC_SUPABASE_URL.trim() === '') {
+          missing.push('EXPO_PUBLIC_SUPABASE_URL');
+        }
+        if (!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY.trim() === '') {
+          missing.push('EXPO_PUBLIC_SUPABASE_ANON_KEY');
+        }
+        if (missing.length > 0 && !process.env.JEST_WORKER_ID) {
+          const message = [
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+            '  [FATAL] Missing required environment variables:',
+            ...missing.map((key) => `    ✗ ${key}`),
+            '',
+            '  Create a .env file in the project root with:',
+            ...missing.map((key) => `    ${key}=<your-value>`),
+            '',
+            '  See .env.example for reference.',
+            '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+          ].join('\\n');
+          throw new Error(message);
+        }
+
         // ── Sentry User Context ──
         setSentryUser({ 
           id: currentUser.id, 

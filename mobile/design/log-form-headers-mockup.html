@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Log form — clean form labels</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime&family=Inter:wght@400;600;700&display=swap');
+  :root{--ink:#0A0906;--ash:#2A2118;--soot:#0D0C08;--sepia:#B8891A;--flicker:#F0E8B0;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;--blood:#6B1A0A;--bloodLit:#B42D2D;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:30px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:20px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 22px;font-family:'Courier Prime'}
+  .colw{max-width:400px;margin:0 auto;padding:0 16px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-weight:600;margin:24px 0 12px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+  .note{color:var(--fog);font-size:11px;line-height:1.55;font-style:italic;margin:13px 4px 0;text-align:center}
+  .panel{background:rgba(13,10,7,.5);border:1px solid rgba(184,137,26,.12);border-radius:10px;padding:18px}
+  .sec{margin-bottom:16px}
+  .btnRow{display:flex;gap:8px;margin-top:4px}
+  .btn{flex:1;text-align:center;border:1px solid var(--ash);border-radius:6px;padding:9px 0;font-size:9px;letter-spacing:1px;color:var(--fog);font-weight:600}
+  .btn.on{background:var(--sepia);color:var(--ink);border-color:var(--sepia)}
+  .field{border:1px solid var(--ash);border-radius:4px;padding:10px;color:var(--fog);font-size:12px;font-family:'Courier Prime';margin-top:4px;background:rgba(10,7,3,.6)}
+
+  /* BEFORE labels */
+  .divCenter{display:flex;align-items:center;gap:10px;margin:6px 0 8px}
+  .divCenter i{flex:1;height:1px}
+  .divCenter .l{background:linear-gradient(90deg,transparent,rgba(184,137,26,.6))}
+  .divCenter .r{background:linear-gradient(90deg,rgba(184,137,26,.6),transparent)}
+  .divCenter span{font-family:'Special Elite';font-size:11px;letter-spacing:7px;color:#E4DFCC}
+  .leftInter{font-family:'Inter';font-weight:600;font-size:9px;letter-spacing:2px;color:var(--sepia);margin-bottom:4px;display:block}
+
+  /* AFTER label — one left Special Elite form label */
+  .leftElite{font-family:'Special Elite';font-size:10px;letter-spacing:2px;color:var(--sepia);margin-bottom:6px;display:block}
+
+  /* premium cards (stay Rye) */
+  .pcard{border:1px solid var(--sepia);border-radius:6px;padding:12px;margin-top:8px;background:rgba(184,137,26,.05)}
+  .editTitle{font-family:'Rye';font-size:14px;color:var(--sepia)}
+  .autopsyCard{border:1px solid rgba(180,45,45,.4);border-radius:6px;padding:12px;margin-top:10px;background:rgba(107,26,10,.06)}
+  .autopsyTitle{font-family:'Rye';font-size:13px;color:var(--bloodLit)}
+</style>
+</head>
+<body>
+  <h1>Log form — one clean label voice</h1>
+  <p class="sub">a form should scan effortlessly</p>
+
+  <div class="colw">
+
+    <!-- BEFORE -->
+    <div class="tag before">Before · centered dividers + left Inter labels (mixed)</div>
+    <div class="panel">
+      <div class="sec"><div class="divCenter"><i class="l"></i><span>STATUS</span><i class="r"></i></div>
+        <div class="btnRow"><div class="btn on">WATCHED</div><div class="btn">REWATCHED</div><div class="btn">ABANDONED</div></div></div>
+      <div class="sec"><span class="leftInter">YOUR RATING</span><div class="field">★★★★½</div></div>
+      <div class="sec"><div class="divCenter"><i class="l"></i><span>REVIEW (OPTIONAL)</span><i class="r"></i></div>
+        <div class="field">Write your thoughts…</div></div>
+      <div class="sec"><span class="leftInter">DATE WATCHED</span><div class="field">Friday, October 4, 2024</div></div>
+    </div>
+    <p class="note">Some labels float centered with tapered rules, others sit left in a different font — the form feels uneven and harder to scan.</p>
+
+    <!-- AFTER -->
+    <div class="tag after">After · one left, typed form label (Special Elite)</div>
+    <div class="panel">
+      <div class="sec"><span class="leftElite">STATUS</span>
+        <div class="btnRow"><div class="btn on">WATCHED</div><div class="btn">REWATCHED</div><div class="btn">ABANDONED</div></div></div>
+      <div class="sec"><span class="leftElite">YOUR RATING</span><div class="field">★★★★½</div></div>
+      <div class="sec"><span class="leftElite">REVIEW (OPTIONAL)</span><div class="field">Write your thoughts…</div></div>
+      <div class="sec"><span class="leftElite">DATE WATCHED</span><div class="field">Friday, October 4, 2024</div></div>
+
+      <div class="autopsyCard"><div class="autopsyTitle">The Autopsy</div></div>
+      <div class="pcard"><div class="editTitle">Editorial Desk</div></div>
+    </div>
+    <p class="note">Every field section now uses the same left typed label — clean, professional, effortless to scan top-to-bottom. The premium showcase cards (The Autopsy — forensic red preserved; Editorial Desk) keep their grand Rye titles.</p>
+
+  </div>
+</body>
+</html>

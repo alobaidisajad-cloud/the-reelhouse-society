@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Marquee Nameplate — final</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Spectral:ital,wght@0,400;1,400&family=Cinzel:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+
+  :root{
+    --ink:#0A0906; --soot:#0D0C08; --ash:#2A2118;
+    --sepia:#B8891A; --flicker:#F0E8B0; --parchment:#E8DFD0; --bone:#C2B492; --fog:#9E9488; --brass:#DAA520;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:#060504;font-family:'Inter',sans-serif;padding:30px 0 70px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:23px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 6px;font-family:'Spectral';font-style:italic}
+  .col{max-width:410px;margin:0 auto;padding:0 13px}
+  .cap{color:var(--sepia);font-size:10px;letter-spacing:3px;text-transform:uppercase;font-family:'Cinzel';font-weight:700;margin:30px 0 13px;text-align:center}
+  .reels{display:flex;gap:4px}
+  .reel{width:13px;height:13px;border-radius:50%;border:1.5px solid var(--sepia);position:relative;opacity:.3}
+  .reel.on{opacity:1;background:rgba(184,137,26,0.16)}
+  .reel::after{content:'';position:absolute;inset:38% 38%;border-radius:50%;background:var(--sepia)}
+
+  /* ════════ THE NAMEPLATE — antiqued brass lit frame ════════ */
+  .sign{position:relative;border-radius:13px;padding:15px;
+    background:
+      linear-gradient(145deg,#2c2009 0%,#6b5012 32%,#d8b04c 49%,#5e4810 64%,#241a07 100%);
+    box-shadow:0 20px 48px rgba(0,0,0,.78), inset 0 1px 1px rgba(255,240,200,.45), inset 0 -3px 6px rgba(0,0,0,.55);}
+
+  /* perimeter tungsten bulbs — warm, soft, gently breathing in sequence */
+  .lights span{position:absolute;width:6px;height:6px;border-radius:50%;
+    background:radial-gradient(circle at 50% 38%,#FFF3CE 0%,#F0CE78 45%,#7a5c14 100%);
+    box-shadow:0 0 8px 2px rgba(240,206,120,.7), 0 0 2px rgba(255,255,255,.6);
+    animation:breathe 2.6s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.5;transform:scale(.9)}50%{opacity:1;transform:scale(1.1)}}
+  .lights .t{top:4.5px}.lights .b{bottom:4.5px}.lights .l{left:4.5px}.lights .r{right:4.5px}
+
+  /* the dark interior board (clean, readable) */
+  .board{position:relative;border-radius:5px;overflow:hidden;
+    background:linear-gradient(180deg,#100c08,#080705);
+    box-shadow:inset 0 0 0 1px rgba(218,165,32,.4), inset 0 2px 14px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,240,200,.06)}
+
+  /* crowning cinema seal + cornice */
+  .cornice{position:relative;text-align:center;padding:14px 12px 11px;border-bottom:1px solid rgba(218,165,32,.22);
+    background:linear-gradient(180deg,rgba(20,15,8,.9),rgba(8,6,4,.4))}
+  .seal{width:30px;height:30px;border-radius:50%;margin:0 auto 8px;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 50% 35%,#e9cd84,#8a6614 70%,#4a3608);
+    box-shadow:0 0 12px 2px rgba(218,165,32,.4), inset 0 1px 1px rgba(255,245,210,.6), inset 0 -2px 3px rgba(0,0,0,.5);
+    border:1px solid rgba(255,240,200,.3)}
+  .seal span{font-size:13px;color:#1a1206;line-height:1}
+  .eyebrow{font-family:'Cinzel';font-weight:700;font-size:9.5px;letter-spacing:4.5px;color:var(--flicker);text-shadow:0 0 10px rgba(218,165,32,.55)}
+  .decree{font-family:'Spectral';font-style:italic;font-size:10.5px;color:var(--bone);opacity:.62;margin-top:4px}
+
+  /* the feature — poster as framed art + lit title (clean, high-contrast) */
+  .feature{position:relative;display:flex;gap:16px;align-items:center;padding:18px 18px}
+  .ambient{position:absolute;inset:0;filter:blur(26px) saturate(1.15);transform:scale(1.25);opacity:.30}
+  .featScrim{position:absolute;inset:0;background:radial-gradient(ellipse at 30% 50%,rgba(8,6,4,.35),rgba(6,5,4,.86))}
+  .poster{position:relative;z-index:2;width:86px;aspect-ratio:2/3;border-radius:2px;overflow:hidden;flex-shrink:0;
+    border:1px solid rgba(255,240,200,.45);
+    box-shadow:0 0 20px 3px rgba(218,165,32,.25), 0 10px 22px rgba(0,0,0,.75), inset 0 0 0 1px rgba(0,0,0,.4)}
+  .posterT{position:absolute;inset:0;display:flex;align-items:flex-end;padding:7px;font-family:'Rye';font-size:10px;color:#fff;text-shadow:0 1px 5px #000}
+  .posterEmpty{display:flex;align-items:center;justify-content:center;background:linear-gradient(160deg,rgba(184,137,26,.12),rgba(10,9,6,.96))}
+  .reelCrest{width:30px;height:30px;border-radius:50%;border:2px solid var(--sepia);position:relative;opacity:.7}
+  .reelCrest::after{content:'';position:absolute;inset:40% 40%;border-radius:50%;background:var(--sepia)}
+
+  .ftext{position:relative;z-index:2;flex:1;min-width:0}
+  .title{font-family:'Rye';font-size:27px;line-height:1.04;color:var(--parchment);letter-spacing:.5px;
+    text-shadow:0 0 16px rgba(248,240,192,.4), 0 2px 8px #000;
+    display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+  .title.long{font-size:21px}
+  .rule{height:1px;background:linear-gradient(90deg,var(--sepia),rgba(184,137,26,.05));opacity:.55;margin:11px 0 10px;max-width:140px}
+  .meta{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .yearPill{border:1px solid rgba(218,165,32,.4);border-radius:3px;padding:2px 9px;font-family:'Inter';font-size:10px;letter-spacing:2px;color:var(--sepia)}
+
+  /* the attraction strip (showtimes band) — ties the sign together, no floating text */
+  .attraction{position:relative;z-index:2;border-top:1px solid rgba(218,165,32,.22);
+    background:linear-gradient(180deg,rgba(8,6,4,.5),rgba(18,13,7,.85));
+    text-align:center;padding:9px 12px}
+  .attractionText{font-family:'Inter';font-weight:600;font-size:8.5px;letter-spacing:3px;color:var(--bone);opacity:.9}
+  .attractionText b{color:var(--flicker);font-weight:600}
+
+  .grain{position:absolute;inset:0;opacity:.05;pointer-events:none;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+  /* loading filament */
+  .loading{position:relative;z-index:2;min-height:150px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+  .loadlabel{font-family:'Cinzel';font-weight:700;font-size:9px;letter-spacing:3px;color:var(--sepia);opacity:.6}
+  .filament{width:74%;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#F0CE78,transparent);box-shadow:0 0 14px 2px rgba(240,206,120,.55);animation:flick 2.4s infinite}
+  @keyframes flick{0%,100%{opacity:.18}10%{opacity:.85}14%{opacity:.25}30%{opacity:.95}55%{opacity:.4}}
+
+  .pg1{background:linear-gradient(155deg,#6a4a8a,#3a2d52 45%,#201829)}
+  .pg2{background:linear-gradient(155deg,#7a3346,#43202c 50%,#180d13)}
+  .note{color:var(--fog);font-size:11px;line-height:1.5;font-family:'Spectral';font-style:italic;margin:10px 4px 0;text-align:center}
+
+  /* bulb sets via shared markup */
+</style>
+</head>
+<body>
+  <h1>The Marquee Nameplate</h1>
+  <p class="sub">soul in the brass · serenity on the board</p>
+
+  <div class="col">
+
+    <div class="cap">The Weekly Feature</div>
+    <div class="sign">
+      <div class="lights">
+        <span class="t" style="left:9%"></span><span class="t" style="left:27%;animation-delay:.2s"></span><span class="t" style="left:45%;animation-delay:.4s"></span><span class="t" style="left:63%;animation-delay:.6s"></span><span class="t" style="left:81%;animation-delay:.8s"></span>
+        <span class="r" style="top:24%;animation-delay:1s"></span><span class="r" style="top:50%;animation-delay:1.2s"></span><span class="r" style="top:76%;animation-delay:1.4s"></span>
+        <span class="b" style="left:81%;animation-delay:1.6s"></span><span class="b" style="left:63%;animation-delay:1.8s"></span><span class="b" style="left:45%;animation-delay:2s"></span><span class="b" style="left:27%;animation-delay:2.2s"></span><span class="b" style="left:9%;animation-delay:2.4s"></span>
+        <span class="l" style="top:76%;animation-delay:1.4s"></span><span class="l" style="top:50%;animation-delay:1.2s"></span><span class="l" style="top:24%;animation-delay:1s"></span>
+      </div>
+      <div class="board">
+        <div class="cornice">
+          <div class="seal"><span>✦</span></div>
+          <div class="eyebrow">THE WEEKLY FEATURE</div>
+          <div class="decree">As decreed by the Programming Committee</div>
+        </div>
+        <div class="feature">
+          <div class="ambient pg1"></div><div class="featScrim"></div>
+          <div class="poster pg1"><div class="posterT">THE&nbsp;SHEEP<br>DETECTIVES</div></div>
+          <div class="ftext">
+            <div class="title">THE SHEEP DETECTIVES</div>
+            <div class="rule"></div>
+            <div class="meta">
+              <span class="yearPill">2026</span>
+              <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span></span>
+            </div>
+          </div>
+          <div class="grain"></div>
+        </div>
+        <div class="attraction"><span class="attractionText">NOW SHOWING&nbsp;&nbsp;·&nbsp;&nbsp;<b>300+ GLOBAL RATINGS</b></span></div>
+      </div>
+    </div>
+    <p class="note">The rich antiqued-brass frame, breathing bulbs &amp; brass seal carry the soul; the board interior stays clean and high-contrast so the film always reads.</p>
+
+    <div class="cap">Reliability · a long title</div>
+    <div class="sign">
+      <div class="lights">
+        <span class="t" style="left:9%"></span><span class="t" style="left:27%;animation-delay:.2s"></span><span class="t" style="left:45%;animation-delay:.4s"></span><span class="t" style="left:63%;animation-delay:.6s"></span><span class="t" style="left:81%;animation-delay:.8s"></span>
+        <span class="r" style="top:24%;animation-delay:1s"></span><span class="r" style="top:50%;animation-delay:1.2s"></span><span class="r" style="top:76%;animation-delay:1.4s"></span>
+        <span class="b" style="left:81%;animation-delay:1.6s"></span><span class="b" style="left:63%;animation-delay:1.8s"></span><span class="b" style="left:45%;animation-delay:2s"></span><span class="b" style="left:27%;animation-delay:2.2s"></span><span class="b" style="left:9%;animation-delay:2.4s"></span>
+        <span class="l" style="top:76%;animation-delay:1.4s"></span><span class="l" style="top:50%;animation-delay:1.2s"></span><span class="l" style="top:24%;animation-delay:1s"></span>
+      </div>
+      <div class="board">
+        <div class="cornice">
+          <div class="seal"><span>✦</span></div>
+          <div class="eyebrow">THE WEEKLY FEATURE</div>
+          <div class="decree">As decreed by the Programming Committee</div>
+        </div>
+        <div class="feature">
+          <div class="ambient pg2"></div><div class="featScrim"></div>
+          <div class="poster pg2"><div class="posterT">JESSE&nbsp;JAMES</div></div>
+          <div class="ftext">
+            <div class="title long">THE ASSASSINATION OF JESSE JAMES BY THE COWARD ROBERT FORD</div>
+            <div class="rule"></div>
+            <div class="meta">
+              <span class="yearPill">2007</span>
+              <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span></span>
+            </div>
+          </div>
+          <div class="grain"></div>
+        </div>
+        <div class="attraction"><span class="attractionText">NOW SHOWING&nbsp;&nbsp;·&nbsp;&nbsp;<b>1,200+ GLOBAL RATINGS</b></span></div>
+      </div>
+    </div>
+
+    <div class="cap">Reliability · no poster on file</div>
+    <div class="sign">
+      <div class="lights">
+        <span class="t" style="left:9%"></span><span class="t" style="left:27%;animation-delay:.2s"></span><span class="t" style="left:45%;animation-delay:.4s"></span><span class="t" style="left:63%;animation-delay:.6s"></span><span class="t" style="left:81%;animation-delay:.8s"></span>
+        <span class="r" style="top:24%;animation-delay:1s"></span><span class="r" style="top:50%;animation-delay:1.2s"></span><span class="r" style="top:76%;animation-delay:1.4s"></span>
+        <span class="b" style="left:81%;animation-delay:1.6s"></span><span class="b" style="left:63%;animation-delay:1.8s"></span><span class="b" style="left:45%;animation-delay:2s"></span><span class="b" style="left:27%;animation-delay:2.2s"></span><span class="b" style="left:9%;animation-delay:2.4s"></span>
+        <span class="l" style="top:76%;animation-delay:1.4s"></span><span class="l" style="top:50%;animation-delay:1.2s"></span><span class="l" style="top:24%;animation-delay:1s"></span>
+      </div>
+      <div class="board">
+        <div class="cornice">
+          <div class="seal"><span>✦</span></div>
+          <div class="eyebrow">THE WEEKLY FEATURE</div>
+          <div class="decree">As decreed by the Programming Committee</div>
+        </div>
+        <div class="feature">
+          <div class="featScrim"></div>
+          <div class="poster posterEmpty"><div class="reelCrest"></div></div>
+          <div class="ftext">
+            <div class="title">UNTITLED ARCHIVE No. 7</div>
+            <div class="rule"></div>
+            <div class="meta">
+              <span class="reels"><span class="reel on"></span><span class="reel on"></span><span class="reel on"></span><span class="reel"></span><span class="reel"></span></span>
+            </div>
+          </div>
+        </div>
+        <div class="attraction"><span class="attractionText"><b>AWAITING RATINGS</b></span></div>
+      </div>
+    </div>
+    <p class="note">No poster → a brass reel crest; missing year drops out; the count band swaps to “Awaiting Ratings.” Nothing ever breaks or empties.</p>
+
+    <div class="cap">Loading · the arc lamp</div>
+    <div class="sign">
+      <div class="lights">
+        <span class="t" style="left:9%"></span><span class="t" style="left:27%;animation-delay:.2s"></span><span class="t" style="left:45%;animation-delay:.4s"></span><span class="t" style="left:63%;animation-delay:.6s"></span><span class="t" style="left:81%;animation-delay:.8s"></span>
+        <span class="r" style="top:24%;animation-delay:1s"></span><span class="r" style="top:50%;animation-delay:1.2s"></span><span class="r" style="top:76%;animation-delay:1.4s"></span>
+        <span class="b" style="left:81%;animation-delay:1.6s"></span><span class="b" style="left:63%;animation-delay:1.8s"></span><span class="b" style="left:45%;animation-delay:2s"></span><span class="b" style="left:27%;animation-delay:2.2s"></span><span class="b" style="left:9%;animation-delay:2.4s"></span>
+        <span class="l" style="top:76%;animation-delay:1.4s"></span><span class="l" style="top:50%;animation-delay:1.2s"></span><span class="l" style="top:24%;animation-delay:1s"></span>
+      </div>
+      <div class="board">
+        <div class="cornice">
+          <div class="seal"><span>✦</span></div>
+          <div class="eyebrow">THE WEEKLY FEATURE</div>
+        </div>
+        <div class="loading">
+          <span class="loadlabel">WARMING UP THE ARC LAMP</span>
+          <div class="filament"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

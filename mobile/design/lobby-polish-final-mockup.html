@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Lobby — final polish</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Rye&family=Special+Elite&family=Courier+Prime:ital@0;1&family=Inter:wght@400;500;600;700&display=swap');
+  :root{--ink:#0A0906;--sepia:#B8891A;--flicker:#F0E8B0;--parchment:#E8DFD0;--bone:#C2B492;--fog:#9E9488;}
+  *{box-sizing:border-box}
+  body{margin:0;background:#070605;font-family:'Inter',sans-serif;padding:28px 0 60px;color:var(--parchment)}
+  h1{font-family:'Rye';font-weight:400;text-align:center;font-size:21px;margin:0 0 4px}
+  .sub{text-align:center;color:var(--fog);font-size:12px;margin:0 0 8px;font-family:'Courier Prime';font-style:italic}
+  .colw{max-width:404px;margin:0 auto;padding:0 16px}
+  .tag{font-size:10px;letter-spacing:3px;text-transform:uppercase;font-family:'Inter';font-weight:600;margin:30px 0 12px;text-align:center}
+  .tag.before{color:#9a6b6b}.tag.after{color:var(--sepia)}
+  .note{color:var(--fog);font-size:11px;line-height:1.5;font-family:'Courier Prime';font-style:italic;margin:10px 2px 0;text-align:center}
+
+  /* hero over a bright feature backdrop */
+  .hero{position:relative;height:150px;border-radius:6px;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center}
+  .bd{position:absolute;inset:0;background:linear-gradient(150deg,#d8c08a,#c79a6a 50%,#7a5a48)} /* bright backdrop */
+  .bdgrad{position:absolute;inset:0}
+  .bdgrad.weak{background:linear-gradient(180deg,rgba(10,7,3,.1),rgba(10,7,3,.55))}
+  .bdgrad.strong{background:linear-gradient(180deg,rgba(10,7,3,.28),rgba(10,7,3,.62))}
+  .heroEye{position:relative;z-index:2;font-family:'Courier Prime';font-weight:700;font-size:11px;letter-spacing:10px;color:var(--sepia);opacity:.85;margin-bottom:8px}
+  .heroTtl{position:relative;z-index:2;font-family:'Rye';font-size:32px;color:#F2ECD8;letter-spacing:1px}
+  .heroEye.glow{text-shadow:0 0 10px rgba(184,137,26,.4)}
+  .heroTtl.glow{text-shadow:0 0 22px rgba(184,137,26,.4)}
+  .heroEye.shadow{text-shadow:0 1px 5px rgba(0,0,0,.7)}
+  .heroTtl.shadow{text-shadow:0 1px 10px rgba(0,0,0,.8),0 0 16px rgba(184,137,26,.18)}
+
+  /* unified section header */
+  .divider{display:flex;align-items:center;gap:12px;margin:0 0 16px}
+  .divider i{flex:1;height:1px}
+  .divider .l{background:linear-gradient(90deg,transparent,rgba(184,137,26,.6))}
+  .divider .r{background:linear-gradient(90deg,rgba(184,137,26,.6),transparent)}
+  .divider span{font-family:'Inter';font-weight:700;font-size:9px;letter-spacing:6px;color:#E4DFCC;opacity:.85;text-shadow:0 0 10px rgba(184,137,26,.4)}
+  .grand{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+  .grand .bar{width:3px;height:34px;border-radius:2px;background:linear-gradient(180deg,var(--sepia),var(--flicker))}
+  .grand .ttl{font-family:'Rye';font-size:22px;color:var(--parchment);line-height:1.1}
+  .grand .lore{font-family:'Courier Prime';font-style:italic;font-size:10px;color:var(--fog);opacity:.6;margin-top:3px}
+  .block{padding:16px 0}
+  .panel{background:rgba(13,10,7,.6);border:1px solid rgba(184,137,26,.12);border-radius:8px;padding:8px 16px}
+</style>
+</head>
+<body>
+  <h1>Lobby — final polish</h1>
+  <p class="sub">legibility where text meets image · cohesive headers · clean copy</p>
+
+  <div class="colw">
+
+    <!-- HERO LEGIBILITY -->
+    <div class="tag before">Hero title · before (glow only, over a bright backdrop)</div>
+    <div class="hero">
+      <div class="bd"></div><div class="bdgrad weak"></div>
+      <div class="heroEye glow">NOW ENTERING</div>
+      <div class="heroTtl glow">The Lobby</div>
+    </div>
+    <p class="note">On a bright feature backdrop the glow gives no contrast — the title fights the image.</p>
+
+    <div class="tag after">Hero title · after (soft dark shadow + deeper top scrim)</div>
+    <div class="hero">
+      <div class="bd"></div><div class="bdgrad strong"></div>
+      <div class="heroEye shadow">NOW ENTERING</div>
+      <div class="heroTtl shadow">The Lobby</div>
+    </div>
+    <p class="note">Crisp over anything — the same fix as the marquee, applied only where text overlaps imagery.</p>
+
+    <!-- UNIFIED HEADERS + FINAL COPY -->
+    <div class="tag after">The four sections · one header language, final copy</div>
+    <div class="panel">
+      <div class="block">
+        <div class="divider"><i class="l"></i><span>NOW SHOWING</span><i class="r"></i></div>
+        <div class="grand"><div class="bar"></div><div><div class="ttl">On The Marquee</div><div class="lore">What the world is screening this week</div></div></div>
+      </div>
+      <div class="block">
+        <div class="divider"><i class="l"></i><span>THE TELEGRAPH</span><i class="r"></i></div>
+        <div class="grand"><div class="bar"></div><div><div class="ttl">The Pulse</div><div class="lore">Live logs from the Society</div></div></div>
+      </div>
+      <div class="block">
+        <div class="divider"><i class="l"></i><span>THE LEAD STORY</span><i class="r"></i></div>
+        <div class="grand"><div class="bar"></div><div><div class="ttl">Featured Critique</div><div class="lore">Handpicked by the Editorial Tribunal</div></div></div>
+      </div>
+      <div class="block">
+        <div class="divider"><i class="l"></i><span>ESSENTIAL ARCHIVES</span><i class="r"></i></div>
+        <div class="grand"><div class="bar"></div><div><div class="ttl">The Canon</div><div class="lore">The films that built the medium</div></div></div>
+      </div>
+    </div>
+    <p class="note">Same kicker + Rye title + italic deck on every section. Decks are society-voiced, period-free, and none echoes its kicker (note “The Canon” no longer repeats “essential archive”).</p>
+
+  </div>
+</body>
+</html>
