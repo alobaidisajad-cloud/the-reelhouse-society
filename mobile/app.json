@@ -11,7 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.reelhouse.society",
-      "buildNumber": "30",
+      "buildNumber": "31",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "The ReelHouse requires access to your archives to set your Society portrait.",
         "ITSAppUsesNonExemptEncryption": false
