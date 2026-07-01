@@ -7,7 +7,6 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 // View removed — was unused
 import ErrorBoundary from '@/src/components/ErrorBoundary';
-import FilmGrainOverlay from '@/src/components/FilmGrainOverlay';
 import Preloader from '@/src/components/Preloader';
 import { ToastOverlay } from '@/src/components/ToastOverlay';
 import AppBootstrapper from '@/src/providers/AppBootstrapper';
@@ -51,8 +50,6 @@ export default function RootLayout() {
   const { restoreSession } = useAuthStore();
   const [appReady, setAppReady] = useState(false);
   const [showPreloader, setShowPreloader] = useState(true);
-  const splashOpacity = useSharedValue(1);
-  const [isSplashProxyMounted, setSplashProxyMounted] = useState(true);
 
   const [fontsLoaded] = useFonts({
     Rye_400Regular,
@@ -171,15 +168,8 @@ export default function RootLayout() {
       } catch (e) {
         // Silently ignore if already hidden
       }
-      splashOpacity.value = withTiming(0, { duration: 600, easing: Easing.out(Easing.cubic) }, (finished) => {
-        if (finished) runOnJS(setSplashProxyMounted)(false);
-      });
     }
   }, [appReady, fontsLoaded]);
-
-  const splashAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: splashOpacity.value,
-  }));
 
   if (!appReady || !fontsLoaded) return null;
 
@@ -229,16 +219,8 @@ export default function RootLayout() {
       </PersistQueryClientProvider>
 
       {showPreloader && <Preloader onComplete={() => setShowPreloader(false)} />}
-      <FilmGrainOverlay />
       <ToastOverlay />
       <OfflineBanner />
-      
-      {isSplashProxyMounted && (
-        <Animated.View 
-           style={[StyleSheet.absoluteFill, { backgroundColor: colors.ink, zIndex: 9999 }, splashAnimatedStyle]} 
-           pointerEvents="none"
-        />
-      )}
         <StatusBar style="light" />
         </GestureHandlerRootView>
       </SafeAreaProvider>

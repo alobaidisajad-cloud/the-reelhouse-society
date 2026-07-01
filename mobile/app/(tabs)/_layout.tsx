@@ -192,8 +192,6 @@ export default function TabLayout() {
         tabBarShowLabel: false,
         tabBarActiveTintColor: colors.sepia,
         tabBarInactiveTintColor: colors.fog,
-        animation: 'fade',
-        lazy: true,
       }}
     >
       <Tabs.Screen
