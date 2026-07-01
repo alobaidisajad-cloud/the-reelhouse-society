@@ -18,7 +18,24 @@ module.exports = defineConfig([
         ignoreRestSiblings: true,
         varsIgnorePattern: '^_',
       }],
+      // flash-list's exported `AnimatedFlashList` is built on React Native's
+      // Animated. Feeding it a Reanimated `useAnimatedScrollHandler` worklet
+      // crashes RecyclerView with "undefined is not a function" on the New
+      // Architecture (Sentry REACT-NATIVE-6, build 31/34). Use CinematicFlashList
+      // — or Reanimated's own Animated.createAnimatedComponent(FlashList) — instead.
+      'no-restricted-imports': ['error', {
+        paths: [{
+          name: '@shopify/flash-list',
+          importNames: ['AnimatedFlashList'],
+          message: "Don't use flash-list's AnimatedFlashList (RN-Animated based) with Reanimated worklets — it crashes RecyclerView on the New Architecture. Use CinematicFlashList (src/components/layout) instead.",
+        }],
+      }],
     },
+  },
+  {
+    // CinematicFlashList is the sanctioned Reanimated wrapper around FlashList.
+    files: ['src/components/layout/CinematicFlashList.tsx'],
+    rules: { 'no-restricted-imports': 'off' },
   },
   {
     files: ['scripts/**/*.js', 'test-utils/**/*.js'],
