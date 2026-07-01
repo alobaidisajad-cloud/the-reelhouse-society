@@ -168,25 +168,6 @@ export default function LobbyScreen() {
 
   const heroFilm = trending[0] ?? null;
 
-  // ── (Removed custom haptic to let the OS RefreshControl sync cleanly) ──
-
-  const pullAnimStyle = useAnimatedStyle(() => {
-     let rotVal = interpolate(scrollY.value, [0, -120], [0, 360], Extrapolation.CLAMP);
-     if (refreshing) { rotVal = rotVal + 30; }
-     
-     const scale = interpolate(scrollY.value, [0, -80], [0.3, 1], Extrapolation.CLAMP);
-     const opacity = refreshing ? 1 : interpolate(scrollY.value, [-30, -70], [0, 1], Extrapolation.CLAMP);
-     
-     return {
-        opacity,
-        transform: [
-          { translateY: 100 },
-          { scale },
-          { rotateZ: `${rotVal}deg` }
-        ]
-     };
-  });
-
   // ── Unauthenticated: The Velvet Room Welcome ──
   if (!isAuthenticated) {
     return (
@@ -268,13 +249,6 @@ export default function LobbyScreen() {
     <View style={s.container}>
       <LinearGradient colors={[colors.ink, 'rgba(10,7,3,0.98)', colors.soot]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
 
-      {/* Mechanical Diegetic Spooler (Hidden behind the scroll view, revealed via pull-to-refresh) */}
-      <Animated.View style={[StyleSheet.absoluteFillObject, { alignItems: 'center', zIndex: 0 }, pullAnimStyle]} pointerEvents="none">
-         <View style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 2, borderColor: colors.sepia, borderStyle: 'dashed', alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: colors.sepia, ...effects.glowSepia }} />
-         </View>
-      </Animated.View>
-
       {/* Parallax Hero Backdrop */}
       {heroFilm?.backdrop_path && (
         <Animated.View style={[s.heroBackdropWrap, { height: windowHeight * 0.65 }, backdropAnimatedStyle]}>
@@ -310,10 +284,10 @@ export default function LobbyScreen() {
           <RefreshControl 
             refreshing={refreshing} 
             onRefresh={handleRefresh} 
-            tintColor="transparent"
-            colors={['transparent']}
-            progressBackgroundColor="transparent"
-            progressViewOffset={topPad} 
+            tintColor={colors.sepia}
+            colors={[colors.sepia]}
+            progressBackgroundColor={colors.ink}
+            progressViewOffset={topPad}
           />
         }
       >
