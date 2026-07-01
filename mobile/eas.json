@@ -30,6 +30,13 @@
         "EXPO_PUBLIC_REVENUECAT_IOS_KEY": "appl_aUCBfrJsZyFoozeOyrCTJtNTogw"
       },
       "channel": "production"
+    },
+    "internal": {
+      "extends": "production",
+      "distribution": "internal",
+      "ios": {
+        "simulator": false
+      }
     }
   },
   "submit": {
