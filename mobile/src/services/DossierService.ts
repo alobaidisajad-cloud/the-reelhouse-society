@@ -1,15 +1,8 @@
 import { supabase } from '@/src/lib/supabase';
 import {
-    DispatchLogSchema,
     DossierCommentSchema,
-    DossierDetailSchema,
-    DossierFeedItemSchema,
-    type DispatchLog,
     type DossierComment,
-    type DossierDetail,
-    type DossierFeedItem,
 } from '@/src/schemas/dossier.schema';
-import { withAbortSignal } from '@/src/utils/withAbortSignal';
 import { z } from 'zod';
 
 const CommentPayloadSchema = z.object({
@@ -19,54 +12,6 @@ const CommentPayloadSchema = z.object({
 });
 
 export const DossierService = {
-  /** Zod-validated read path. AbortSignal support. */
-  async getFeed(signal?: AbortSignal): Promise<DossierFeedItem[]> {
-    let query = supabase
-      .from('dispatch_dossiers')
-      .select('id, title, subtitle, cover_url, author_id, published_at, read_time, is_featured, profiles!inner(username, avatar_url, role)')
-      .eq('published', true)
-      .order('is_featured', { ascending: false })
-      .order('published_at', { ascending: false });
-
-    query = withAbortSignal(query, signal);
-    const { data, error } = await query;
-      
-    if (error) throw error;
-    if (!data) return [];
-    // Direct Zod parse replaces `as unknown as` cast — schemas handle coercion.
-    return z.array(DossierFeedItemSchema).parse(data);
-  },
-
-  /** Zod-validated read path */
-  async getDispatchLogs(): Promise<DispatchLog[]> {
-    const { data, error } = await supabase
-      .from('logs')
-      .select('id, film_title, review, created_at, profiles!logs_user_id_fkey(username, avatar_url)')
-      .order('created_at', { ascending: false })
-      .limit(20);
-      
-    if (error) throw error;
-    if (!data) return [];
-    // Direct Zod parse replaces `as unknown as` cast.
-    return z.array(DispatchLogSchema).parse(data);
-  },
-
-  /** Zod-validated read path. AbortSignal support. */
-  async getDossierDetails(dossierId: string, signal?: AbortSignal): Promise<DossierDetail> {
-    let query = supabase
-      .from('dispatch_dossiers')
-      .select('*, profiles!inner(username, avatar_url, role)')
-      .eq('id', dossierId)
-      .maybeSingle();
-
-    query = withAbortSignal(query, signal);
-    const { data, error } = await query;
-      
-    if (error) throw error;
-    if (!data) throw new Error('Dossier not found');
-    return DossierDetailSchema.parse(data);
-  },
-
   /** Zod-validated read path */
   async getComments(dossierId: string): Promise<DossierComment[]> {
     const { data, error } = await supabase
