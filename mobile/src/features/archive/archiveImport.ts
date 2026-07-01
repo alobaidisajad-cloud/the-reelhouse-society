@@ -11,8 +11,7 @@
  */
 import JSZip from 'jszip';
 import * as Crypto from 'expo-crypto';
-import * as FileSystem from 'expo-file-system';
-import { readAsStringAsync, EncodingType } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { supabase } from '@/src/lib/supabase';
 import { tmdb } from '@/src/lib/tmdb';
 import { useAuthStore } from '@/src/stores/auth';
@@ -1044,13 +1043,13 @@ export async function importArchiveZip(
 
   if (isJSON) {
     // Raw JSON file — ReelHouse export
-    const rawText = await readAsStringAsync(uri, { encoding: EncodingType.UTF8 });
+    const rawText = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.UTF8 });
     const parsed = JSON.parse(rawText) as ReelHouseArchive;
     return importArchiveJSON(parsed, user.id, onProgress);
   }
 
   // ── ZIP archive ──
-  const rawBase64 = await readAsStringAsync(uri, { encoding: EncodingType.Base64 });
+  const rawBase64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
   const zip = await JSZip.loadAsync(rawBase64, { base64: true });
 
   // FEAT-2: zip-bomb defense — bound entry count and total uncompressed size

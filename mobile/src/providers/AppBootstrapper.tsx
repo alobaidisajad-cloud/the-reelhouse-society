@@ -68,7 +68,6 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         // ── RevenueCat — IAP Entitlements ──
         try {
           await initRevenueCat(currentUser.id);
-          identifyRevenueCatUser(currentUser.id);
           addBreadcrumb('RevenueCat initialized', 'boot');
         } catch (rcErr) {
           logger.warn('[Bootstrapper] RevenueCat init failed, continuing boot:', rcErr);
@@ -252,7 +251,14 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
                 }
               }
             })
-            .catch((e) => logger.warn('[Bootstrapper] OTA check failed:', e)); // S-02 FIX
+            .catch((e) => {
+              const msg = e instanceof Error ? e.message : String(e);
+              if (msg.includes('network') || msg.includes('offline') || msg.includes('timeout')) {
+                logger.info('[Bootstrapper] OTA check skipped (no network)');
+              } else {
+                logger.warn('[Bootstrapper] OTA check failed:', e);
+              }
+            });
         }
       }
     });

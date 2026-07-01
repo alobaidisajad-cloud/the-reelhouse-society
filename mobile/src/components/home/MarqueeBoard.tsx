@@ -98,14 +98,8 @@ const TungstenIgnition = memo(function TungstenIgnition() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   
-  useAnimatedReaction(
-    () => flicker.value > 0.5,
-    (isHigh, wasHigh) => {
-      if (isHigh && !wasHigh) {
-        runOnJS(hapticLight)();
-      }
-    }
-  );
+  // Removed useAnimatedReaction for haptics here to prevent infinite haptic spam
+  // if the film data fails to load or if the native UI layer crashes.
 
   const animStyle = useAnimatedStyle(() => ({ opacity: flicker.value }));
 

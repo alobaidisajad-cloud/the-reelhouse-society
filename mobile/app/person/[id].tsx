@@ -45,7 +45,7 @@ import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NetInfo from '@react-native-community/netinfo';
 
-import { s } from '@/app/person/personStyles';
+import { s } from '@/app/person/_personStyles';
 import { ShimmerBlock } from '@/src/components/person/PersonOrnaments';
 import { PersonHero, formatDossierDate, calcCareerSpan } from '@/src/components/person/PersonHero';
 import { PersonBio } from '@/src/components/person/PersonBio';

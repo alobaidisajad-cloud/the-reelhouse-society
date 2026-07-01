@@ -115,4 +115,4 @@ const s = StyleSheet.create({
   },
   critiqueSubmitText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 3, color: colors.sepia },
 });
-
+

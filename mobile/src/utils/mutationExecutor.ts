@@ -282,7 +282,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         if (result.data) {
             const listId = (result.data as { id: string }).id;
             if (Array.isArray(films) && films.length > 0) {
-                const items = (films as Record<string, unknown>[]).map((f) => ({ list_id: listId, film_id: f.film_id, film_title: f.film_title, poster_path: f.poster_path, position: f.position }));
+                const items = (films as Record<string, unknown>[]).map((f) => ({ list_id: listId, film_id: f.film_id, film_title: f.film_title, poster_path: f.poster_path, rank_position: f.rank_position }));
                 // Upsert merge strategy replaces destructive delete-all-reinsert.
                 throwIfError(await supabase.from('list_items').upsert(items, { onConflict: 'list_id,film_id' }));
             }
@@ -344,8 +344,8 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
     },
 
     add_film_to_list: async (p: any) => {
-        const { list_id, film_id, film_title, poster_path, position } = p;
-        throwIfError(await supabase.from('list_items').upsert([{ list_id, film_id, film_title, poster_path, position }], { onConflict: 'list_id,film_id' }));
+        const { list_id, film_id, film_title, poster_path, rank_position } = p;
+        throwIfError(await supabase.from('list_items').upsert([{ list_id, film_id, film_title, poster_path, rank_position }], { onConflict: 'list_id,film_id' }));
         return {};
     },
 
@@ -358,7 +358,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
                 film_id: f.film_id ?? f.id, 
                 film_title: f.film_title ?? f.title ?? 'Unknown',
                 poster_path: f.poster_path ?? f.poster ?? null, 
-                position: f.position
+                rank_position: f.rank_position
             }));
             throwIfError(await supabase.from('list_items').upsert(rows, { onConflict: 'list_id,film_id' }));
         }
@@ -371,7 +371,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         if (Array.isArray(items) && items.length > 0) {
             const rows = (items as Record<string, unknown>[]).map((f) => ({
                 list_id, film_id: f.film_id, film_title: f.film_title,
-                poster_path: f.poster_path, position: f.position,
+                poster_path: f.poster_path, rank_position: f.rank_position,
             }));
             throwIfError(await supabase.from('list_items').upsert(rows, { onConflict: 'list_id,film_id' }));
         }
@@ -395,7 +395,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
                     film_id: f.film_id ?? f.id, 
                     film_title: f.film_title ?? f.title ?? 'Unknown',
                     poster_path: f.poster_path ?? f.poster ?? null, 
-                    position: f.position ?? idx,
+                    rank_position: f.rank_position ?? idx,
                 }));
                 throwIfError(await supabase.from('list_items').upsert(rows, { onConflict: 'list_id,film_id' }));
                 // Prune removed items
@@ -433,7 +433,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         if (Array.isArray(items) && items.length > 0) {
             const rows = (items as Record<string, unknown>[]).map((f) => ({
                 list_id, film_id: f.film_id, film_title: f.film_title,
-                poster_path: f.poster_path, position: f.position,
+                poster_path: f.poster_path, rank_position: f.rank_position,
             }));
             throwIfError(await supabase.from('list_items').upsert(rows, { onConflict: 'list_id,film_id' }));
         }

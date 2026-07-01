@@ -6,7 +6,7 @@ import { Film as FilmIcon, Star, Archive, X } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
-import { s } from '@/app/log/logDetailStyles';
+import { s } from '@/app/log/_logDetailStyles';
 
 interface LogHeroProps {
   log: {

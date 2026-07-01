@@ -30,7 +30,7 @@ import { PublicLoungeCard } from '@/src/components/lounge/PublicLoungeCard';
 import { EmptyMyLounges } from '@/src/components/lounge/EmptyMyLounges';
 
 // ── Styles ──
-import { s } from './loungeStyles';
+import { s } from './_loungeStyles';
 import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 
 // Module-scoped: prevents remount on every render cycle

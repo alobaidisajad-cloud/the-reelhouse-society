@@ -14,7 +14,7 @@ import PressableScale from '@/src/components/PressableScale';
 import { SectionDivider } from '@/src/components/Decorative';
 import { Film as FilmIcon, Star } from 'lucide-react-native';
 import { ObscurityBadge } from '@/src/components/person/PersonOrnaments';
-import { s, st } from '@/app/person/personStyles';
+import { s, st } from '@/app/person/_personStyles';
 
 // ── Interfaces ──────────────────────────────────────────────
 interface PersonCredit {

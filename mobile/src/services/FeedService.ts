@@ -371,7 +371,7 @@ export const FeedService = {
     // Fetch items and endorsements in parallel
     const [itemsResp, endorseResp] = await Promise.all([
       listIds.length > 0
-        ? supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).order('position', { ascending: true }).order('created_at', { ascending: true }).limit(600)
+        ? supabase.from('list_items').select('list_id, film_id, film_title, poster_path').in('list_id', listIds).order('rank_position', { ascending: true }).order('created_at', { ascending: true }).limit(600)
         : Promise.resolve({ data: [] as any[], error: null }),
       listIds.length > 0
         ? supabase.from('interactions').select('target_list_id').in('target_list_id', listIds).eq('type', 'endorse_list').limit(3000)

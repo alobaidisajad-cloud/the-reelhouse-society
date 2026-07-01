@@ -15,7 +15,7 @@ import {
 } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import * as DocumentPicker from 'expo-document-picker';
-import { documentDirectory, writeAsStringAsync, readAsStringAsync, EncodingType, deleteAsync, getInfoAsync } from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 
 import { useFilmStore , useWatchlistStore, useArchiveStore, useListStore } from '@/src/stores/films';
@@ -83,9 +83,10 @@ export default function DataVault() {
       const isJson = file.name?.toLowerCase().endsWith('.json') || file.mimeType === 'application/json';
       if (isJson) {
         await new Promise(resolve => setTimeout(resolve, 50)); // Yield to UI thread
-        const info = await getInfoAsync(file.uri);
+        const info = await FileSystem.getInfoAsync(file.uri);
         if (info.exists && info.size > 25 * 1024 * 1024) throw new Error('File too large (max 25MB).');
-        const rawText = await readAsStringAsync(file.uri, { encoding: EncodingType.UTF8 });
+
+        const rawText = await FileSystem.readAsStringAsync(file.uri, { encoding: FileSystem.EncodingType.UTF8 });
         let parsed;
         try { parsed = JSON.parse(rawText); } catch { throw new Error('Invalid JSON format.'); }
         const user = useAuthStore.getState().user;
@@ -120,7 +121,7 @@ export default function DataVault() {
         setImportProgress(null);
       }
       if (fileUri) {
-        try { await deleteAsync(fileUri, { idempotent: true }); } catch (e) {}
+          try { await FileSystem.deleteAsync(fileUri, { idempotent: true }); } catch (e) {}
       }
     }
   };
@@ -184,9 +185,10 @@ export default function DataVault() {
 
       const safeUsername = (user?.username ?? 'archive').replace(/[^a-zA-Z0-9_-]/g, '');
       const date = new Date().toISOString().slice(0, 10);
-      const baseDir = documentDirectory ?? 'file:///';
+      const baseDir = FileSystem.documentDirectory ?? 'file:///';
       filePath = `${baseDir}reelhouse_${safeUsername}_${date}.csv`;
-      await writeAsStringAsync(filePath, csv, { encoding: EncodingType.UTF8 });
+
+      await FileSystem.writeAsStringAsync(filePath, csv, { encoding: FileSystem.EncodingType.UTF8 });
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
@@ -207,7 +209,7 @@ export default function DataVault() {
       TactileEngine.error();
     } finally {
       if (isMounted.current) setExporting(false);
-      if (filePath) { try { await deleteAsync(filePath, { idempotent: true }); } catch (e) {} }
+      if (filePath) { try { await FileSystem.deleteAsync(filePath, { idempotent: true }); } catch (e) {} }
     }
   };
 
@@ -251,9 +253,10 @@ export default function DataVault() {
 
       const safeUsername = (user?.username ?? 'archive').replace(/[^a-zA-Z0-9_-]/g, '');
       const date = new Date().toISOString().slice(0, 10);
-      const baseDir = documentDirectory ?? 'file:///';
+      const baseDir = FileSystem.documentDirectory ?? 'file:///';
       filePath = `${baseDir}reelhouse_${safeUsername}_${date}.json`;
-      await writeAsStringAsync(filePath, jsonStr, { encoding: EncodingType.UTF8 });
+
+      await FileSystem.writeAsStringAsync(filePath, jsonStr, { encoding: FileSystem.EncodingType.UTF8 });
 
       const canShare = await Sharing.isAvailableAsync();
       if (canShare) {
@@ -272,7 +275,7 @@ export default function DataVault() {
       TactileEngine.error();
     } finally {
       if (isMounted.current) setExporting(false);
-      if (filePath) { try { await deleteAsync(filePath, { idempotent: true }); } catch (e) {} }
+      if (filePath) { try { await FileSystem.deleteAsync(filePath, { idempotent: true }); } catch (e) {} }
     }
   };
 

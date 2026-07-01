@@ -57,18 +57,18 @@ const PUBLIC_PROFILE_COLUMNS = 'id, username, avatar_url, display_name, bio, rol
 
 
 const WatchlistRowSchema = z.object({
-  film_id: z.number(),
+  film_id: z.coerce.number(),
   film_title: z.string(),
   poster_path: z.string().nullable().optional(),
-  year: z.number().nullable().optional(),
+  year: z.coerce.number().nullable().optional(),
 });
 
 const VaultRowSchema = z.object({
-  id: z.union([z.string(), z.number()]),
-  film_id: z.number(),
+  id: z.union([z.string(), z.coerce.number()]),
+  film_id: z.coerce.number(),
   film_title: z.string(),
   poster_path: z.string().nullable().optional(),
-  year: z.number().nullable().optional(),
+  year: z.coerce.number().nullable().optional(),
   formats: z.array(z.string()).nullable().optional(),
   notes: z.string().nullable().optional(),
   condition: z.string().nullable().optional(),
@@ -86,11 +86,11 @@ const ListRowSchema = z.object({
 
 const AnalyticsRowSchema = z.object({
   id: z.coerce.string(),
-  film_id: z.number(),
+  film_id: z.coerce.number(),
   film_title: z.string(),
   poster_path: z.string().nullable().optional(),
-  year: z.number().nullable().optional(),
-  rating: z.number().nullable().optional(),
+  year: z.coerce.number().nullable().optional(),
+  rating: z.coerce.number().nullable().optional(),
   status: z.string().nullable().optional(),
   watched_date: z.string().nullable().optional(),
   created_at: z.string(),
@@ -102,7 +102,7 @@ const AnalyticsRowSchema = z.object({
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const ListItemRowSchema = z.object({
   list_id: z.string(),
-  film_id: z.number(),
+  film_id: z.coerce.number(),
   film_title: z.string(),
   poster_path: z.string().nullable().optional(),
 });
@@ -365,7 +365,7 @@ export const ProfileDataService = {
       logger.warn('[ProfileDataService] fetchOtherUserWatchlist error:', error.message);
       throw error;
     }
-    const schema = WatchlistRowSchema.extend({ id: z.union([z.string(), z.number()]), created_at: z.string() });
+    const schema = WatchlistRowSchema.extend({ id: z.union([z.string(), z.coerce.number()]), created_at: z.string() });
     const rawRows = data ?? [];
     const hasMore = rawRows.length === fetchLimit;
     const paginatedRaw = hasMore ? rawRows.slice(0, limit) : rawRows;
@@ -446,7 +446,7 @@ export const ProfileDataService = {
       .eq('is_private', false)
       .order('created_at', { ascending: false })
       .order('id', { ascending: false })
-      .order('position', { foreignTable: 'list_items', ascending: true })
+      .order('rank_position', { foreignTable: 'list_items', ascending: true })
       .limit(fetchLimit)
       .limit(4, { foreignTable: 'list_items' });
 

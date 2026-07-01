@@ -91,7 +91,7 @@ export const useNotificationStore = create<NotificationState>()(
             const PAGE_SIZE = 30;
             const { data, error } = await supabase
                 .from('notifications')
-                .select('id, user_id, type, from_username, message, is_read, created_at')
+                .select('id, user_id, type, from_username, message, is_read, created_at, film_id, poster_path')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .limit(PAGE_SIZE);
@@ -146,7 +146,7 @@ export const useNotificationStore = create<NotificationState>()(
             const [cursorDate, cursorId] = _cursor.split('|');
             let query = supabase
                 .from('notifications')
-                .select('id, user_id, type, from_username, message, is_read, created_at')
+                .select('id, user_id, type, from_username, message, is_read, created_at, film_id, poster_path')
                 .eq('user_id', user.id)
                 .order('created_at', { ascending: false })
                 .order('id', { ascending: false })

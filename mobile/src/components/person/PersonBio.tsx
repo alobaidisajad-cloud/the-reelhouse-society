@@ -5,7 +5,7 @@ import { memo } from 'react';
 import { View, Text } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import PressableScale from '@/src/components/PressableScale';
-import { s } from '@/app/person/personStyles';
+import { s } from '@/app/person/_personStyles';
 
 interface PersonBioProps {
   biography: string;

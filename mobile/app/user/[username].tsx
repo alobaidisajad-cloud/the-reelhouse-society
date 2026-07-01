@@ -43,7 +43,7 @@ import { TasteDNA } from '@/src/components/profile/TasteDNA';
 import { TasteMatch } from '@/src/components/profile/TasteMatch';
 import { WatchlistRoulette } from '@/src/components/profile/WatchlistRoulette';
 import { useProfileComputed } from './profileComputed';
-import { s } from './profileStyles';
+import { s } from './_profileStyles';
  
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import PressableScale from '@/src/components/PressableScale';

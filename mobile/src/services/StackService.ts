@@ -15,9 +15,7 @@ const StackDetailSchema = z.object({
   id: z.string(),
   title: z.string(),
   description: z.string().nullable().optional(),
-  cover_film_poster: z.string().nullable().optional(),
   user_id: z.string(),
-  is_public: z.boolean().nullable().optional(),
   is_private: z.boolean().nullable().optional(),
   is_ranked: z.boolean().nullable().optional(),
   created_at: z.string(),
@@ -49,13 +47,13 @@ export const StackService = {
   async getStackFullPayload(stackId: string) {
     const [listRes, itemsRes, endorseRes] = await Promise.all([
       supabase.from('lists')
-        .select('id, title, description, cover_film_poster, user_id, is_public, is_private, is_ranked, created_at, profiles(username)')
+        .select('id, title, description, user_id, is_private, is_ranked, created_at, profiles(username)')
         .eq('id', stackId)
         .maybeSingle(),
       supabase.from('list_items')
         .select('film_id, film_title, poster_path')
         .eq('list_id', stackId)
-        .order('position', { ascending: true })
+        .order('rank_position', { ascending: true })
         .order('created_at', { ascending: true }),
       supabase.from('interactions')
         .select('user_id', { count: 'exact', head: true })

@@ -5,8 +5,16 @@ import * as SecureStore from 'expo-secure-store';
 import { logger } from '../utils/logger';
 
 const ExpoSecureStoreAdapter = {
-  getItem: (key: string) => SecureStore.getItemAsync(key),
-  setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+  getItem: async (key: string) => {
+    try {
+      return await SecureStore.getItemAsync(key);
+    } catch (e) {
+      logger.error('Failed to get item from SecureStore (device might be locked)', e);
+      return null;
+    }
+  },
+  setItem: (key: string, value: string) => 
+    SecureStore.setItemAsync(key, value, { keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK }),
   removeItem: (key: string) => SecureStore.deleteItemAsync(key),
 };
 

@@ -52,11 +52,11 @@ const LogDetailProfileSchema = z.object({
 const LogDetailSchema = z.object({
   id: z.string(),
   user_id: z.string(),
-  film_id: z.number(),
+  film_id: z.coerce.number(),
   film_title: z.string().nullable().optional(),
   poster_path: z.string().nullable().optional(),
-  year: z.number().nullable().optional(),
-  rating: z.number().nullable().optional(),
+  year: z.coerce.number().nullable().optional(),
+  rating: z.coerce.number().nullable().optional(),
   review: z.string().nullable().optional(),
   status: z.string().nullable().optional(),
   watched_date: z.string().nullable().optional(),
@@ -168,20 +168,37 @@ export const LogService = {
     return logData;
   },
 
-  /** AbortSignal support for screen unmount cancellation. */
   async getLogComments(logId: string, signal?: AbortSignal) {
     let query = supabase
       .from('log_comments')
-      .select('id, log_id, user_id, body, created_at, profiles(username, avatar_url, display_name)')
+      .select('id, log_id, user_id, body, created_at')
       .eq('log_id', logId)
       .order('created_at', { ascending: true });
 
     query = withAbortSignal(query, signal);
-    const { data, error } = await query;
+    const { data: comments, error } = await query;
 
     if (error) throw error;
+    if (!comments || comments.length === 0) return [];
+
+    // DataLoader pattern: Fetch profiles manually to bypass missing DB Foreign Key
+    const userIds = [...new Set(comments.map(c => c.user_id))];
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, username, avatar_url, display_name')
+      .in('id', userIds);
+
+    const profileMap = (profiles || []).reduce((acc, profile) => {
+      acc[profile.id] = { username: profile.username, avatar_url: profile.avatar_url, display_name: profile.display_name };
+      return acc;
+    }, {} as Record<string, any>);
+
+    const data = comments.map(c => ({
+      ...c,
+      profiles: profileMap[c.user_id] || { username: 'unknown', avatar_url: null, display_name: null }
+    }));
+
     // Validate each comment row
-    if (!data) return [];
     const { valid } = validateWithTelemetry({
       schema: LogCommentSchema,
       context: 'LogService.getLogComments',
@@ -193,19 +210,30 @@ export const LogService = {
   async addLogComment(payload: unknown) {
     const safePayload = LogCommentPayloadSchema.parse(payload);
     // COMP-1: sanitize at the service boundary so the ONLINE path matches the
-    // offline mutationExecutor (`sanitizeInput(body, 'logComment')`) — one choke point.
+    // offline mutationExecutor (`sanitizeInput(body, 'logComment')`) - one choke point.
     const sanitized = { ...safePayload, body: sanitizeInput(safePayload.body, 'logComment') };
 
-    const { data, error } = await supabase
+    const { data: commentData, error } = await supabase
       .from('log_comments')
       .upsert(sanitized, { onConflict: 'id' })
-      // Explicit columns replace select('*') — prevents payload bloat
-      .select('id, log_id, user_id, body, created_at, profiles(username, avatar_url, display_name)')
+      // Explicit columns replace select('*') - prevents payload bloat
+      .select('id, log_id, user_id, body, created_at')
       .maybeSingle();
 
     if (error) throw error;
-    if (!data) throw new Error('Failed to add comment');
-    return data;
+    if (!commentData) throw new Error('Failed to add comment');
+
+    // DataLoader pattern: Fetch profile manually to bypass missing DB Foreign Key
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('username, avatar_url, display_name')
+      .eq('id', commentData.user_id)
+      .maybeSingle();
+
+    return {
+      ...commentData,
+      profiles: profile || { username: 'unknown', avatar_url: null, display_name: null }
+    };
   },
 
   /** Defense-in-depth user ownership guard on comment deletion. */

@@ -104,8 +104,24 @@ serve(async (req) => {
         const url = new URL(req.url)
         
         // Extract the path after /tmdb-proxy
-        const pathPart = url.pathname.replace('/functions/v1/tmdb-proxy', '')
+        let pathPart = url.pathname;
+        if (pathPart.startsWith('/functions/v1/tmdb-proxy')) {
+            pathPart = pathPart.replace('/functions/v1/tmdb-proxy', '');
+        } else if (pathPart.startsWith('/tmdb-proxy')) {
+            pathPart = pathPart.replace('/tmdb-proxy', '');
+        }
         
+        if (req.method === 'POST' && (!pathPart || pathPart === '/')) {
+            try {
+                const body = await req.clone().json();
+                if (body && body.path) {
+                    pathPart = body.path;
+                }
+            } catch (e) {
+                // ignore
+            }
+        }
+
         // If there is no path, return a 400
         if (!pathPart || pathPart === '/') {
             return new Response(JSON.stringify({ error: 'Missing TMDB endpoint path' }), {
@@ -158,7 +174,7 @@ serve(async (req) => {
 
         // Make the request to TMDB
         const response = await fetch(tmdbUrl.toString(), {
-            method: req.method,
+            method: 'GET',
             headers: { 'Accept': 'application/json' }
         })
 
@@ -168,7 +184,12 @@ serve(async (req) => {
         // Return the TMDB response back to the client
         return new Response(JSON.stringify(data), {
             status: response.status,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json', 'X-Cache': 'MISS' }
+            headers: { 
+                ...corsHeaders, 
+                'Content-Type': 'application/json', 
+                'X-Cache': 'MISS',
+                'X-Debug-Url': tmdbUrl.toString() 
+            }
         })
 
     } catch (err: unknown) {

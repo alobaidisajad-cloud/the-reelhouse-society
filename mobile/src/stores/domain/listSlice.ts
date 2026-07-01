@@ -45,12 +45,12 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             .from('lists')
             .select(`
                 id, user_id, title, description, is_ranked, is_private, created_at,
-                list_items ( id, film_id, film_title, poster_path, position )
+                list_items ( id, film_id, film_title, poster_path, rank_position )
             `)
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .order('id', { ascending: false })
-            .order('position', { foreignTable: 'list_items', ascending: true })
+            .order('rank_position', { foreignTable: 'list_items', ascending: true })
             .limit(PAGE_SIZE);
 
         // Cursor-based keyset pagination
@@ -173,7 +173,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                 enqueueMutation({ type: 'create_list', payload: {
                     id: listId, user_id: user.id, title: list.title ?? 'Untitled', description: list.description ?? '',
                     is_private: list.isPrivate ?? false, is_ranked: list.isRanked ?? false,
-                    films: inputFilms.map((f, idx) => ({ film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster_path ?? f.poster ?? null, position: idx })),
+                    films: inputFilms.map((f, idx) => ({ film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster_path ?? f.poster ?? null, rank_position: idx })),
                 } });
                 const filmEntries = inputFilms.map(f => ({ id: f.id, title: f.title ?? 'Unknown', poster: f.poster_path ?? f.poster ?? null }));
                 set((state) => ({ lists: [{ id: listId, title: list.title ?? 'Untitled', description: list.description ?? '', isRanked: list.isRanked ?? false, isPrivate: list.isPrivate ?? false, films: filmEntries, createdAt: new Date().toISOString(), userId: user.id }, ...state.lists] }));
@@ -373,16 +373,19 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             const { error } = await supabase.from('list_items').insert([{
                 list_id: listId, film_id: film.id, film_title: newFilm.title,
                 poster_path: newFilm.poster,
-                position, // Required for ranked lists — maintains sort order
+                rank_position: position, // Required for ranked lists - maintains sort order
             }]);
             if (error) throw error;
             queryClient.invalidateQueries({ queryKey: ['stack', listId] });
         } catch (e: unknown) {
             if (isNetworkError(e)) {
                 // Queue for offline sync
-                enqueueMutation({ type: 'add_film_to_list', payload: {
-                    list_id: listId, film_id: film.id, film_title: newFilm.title, poster_path: newFilm.poster, position: currentList.films.length,
-                } });
+                enqueueMutation({ 
+                    type: 'add_film_to_list', 
+                    payload: {
+                        list_id: listId, film_id: film.id, film_title: newFilm.title, poster_path: newFilm.poster, rank_position: currentList.films.length,
+                    } 
+                });
                 queryClient.invalidateQueries({ queryKey: ['stack', listId] });
                 reelToast('Film added offline. Will sync when connected.');
                 return;
@@ -407,7 +410,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
         // Remove film and recompute positions
         const newFilms = currentList.films.filter((f) => f.id !== filmId);
         // Only compute positions for trailing films that mathematically shifted.
-        const trailing_films = newFilms.slice(filmToRemoveIndex).map((f, idx) => ({ id: f.id, title: f.title, poster: f.poster, position: filmToRemoveIndex + idx }));
+        const trailing_films = newFilms.slice(filmToRemoveIndex).map((f, idx) => ({ id: f.id, title: f.title, poster: f.poster, rank_position: filmToRemoveIndex + idx }));
 
         set((state) => ({
             lists: state.lists.map((l) => l.id === listId ? { ...l, films: newFilms } : l),
@@ -420,7 +423,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
             // Sync trailing films online to fix Position-Shift paradox
             if (trailing_films.length > 0) {
                 const rows = trailing_films.map(f => ({
-                    list_id: listId, film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster ?? null, position: f.position
+                    list_id: listId, film_id: f.id, film_title: f.title ?? 'Unknown', poster_path: f.poster ?? null, rank_position: f.rank_position
                 }));
                 const { error: upsertError } = await supabase.from('list_items').upsert(rows, { onConflict: 'list_id,film_id' });
                 if (upsertError) {

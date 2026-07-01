@@ -1,12 +1,13 @@
 import { mmkvPersister, queryClient } from '@/src/lib/queryClient';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { Stack } from 'expo-router';
+import { Stack, ErrorBoundary as RouterErrorBoundary } from 'expo-router';
+export { RouterErrorBoundary as ErrorBoundary };
 import { StatusBar } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 // View removed — was unused
-import ErrorBoundary from '@/src/components/ErrorBoundary';
+import GlobalErrorBoundary from '@/src/components/ErrorBoundary';
 import Preloader from '@/src/components/Preloader';
 import { ToastOverlay } from '@/src/components/ToastOverlay';
 import AppBootstrapper from '@/src/providers/AppBootstrapper';
@@ -174,7 +175,7 @@ export default function RootLayout() {
   if (!appReady || !fontsLoaded) return null;
 
   return (
-    <ErrorBoundary>
+    <GlobalErrorBoundary>
       <SafeAreaProvider>
         <GestureHandlerRootView style={styles.root} onLayout={onLayoutReady}>
           <PersistQueryClientProvider
@@ -207,7 +208,7 @@ export default function RootLayout() {
             <Stack.Screen name="auth-callback" options={{ animation: 'none' }} />
             <Stack.Screen name="(modals)/membership" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
             <Stack.Screen name="(modals)/oracle" options={{ presentation: 'modal', animation: 'slide_from_bottom', gestureEnabled: true, gestureDirection: 'vertical' }} />
-            <Stack.Screen name="(admin)/tribunal" options={{ animation: 'none' }} />
+            <Stack.Screen name="(admin)" options={{ headerShown: false, animation: 'none' }} />
             <Stack.Screen name="year-in-cinema" options={{ animation: 'none' }} />
             <Stack.Screen name="stacks/[id]" options={{ animation: 'none' }} />
             <Stack.Screen name="film-reviews/[id]" options={{ animation: 'none' }} />
@@ -224,7 +225,7 @@ export default function RootLayout() {
         <StatusBar style="light" />
         </GestureHandlerRootView>
       </SafeAreaProvider>
-    </ErrorBoundary>
+    </GlobalErrorBoundary>
   );
 }
 

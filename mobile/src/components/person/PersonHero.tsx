@@ -12,7 +12,7 @@ import {
   Film as FilmIcon, MessageCircle,
   MapPin, Calendar, Skull, Clock,
 } from 'lucide-react-native';
-import { s } from '@/app/person/personStyles';
+import { s } from '@/app/person/_personStyles';
 import { FilmStripPerforations } from '@/src/components/person/PersonFilmography';
 
 import type { DimensionValue } from 'react-native';
