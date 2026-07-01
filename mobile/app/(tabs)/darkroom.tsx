@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { FlashList } from '@shopify/flash-list';
-import Animated, { FadeInDown, useSharedValue, withTiming, useAnimatedScrollHandler, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
+import Animated, { FadeInDown, useSharedValue, withTiming, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
 import { useFocusEffect } from 'expo-router';
@@ -20,13 +19,7 @@ import FrozenTab from '@/src/components/layout/FrozenTab';
 
 import { DarkroomHeader } from '@/src/components/darkroom/DarkroomHeader';
 import { FilmGridCard, AnimatedPosterSkeleton } from '@/src/components/darkroom/DarkroomCards';
-
-// FlashList wrapped with REANIMATED's Animated so `useAnimatedScrollHandler`
-// worklets attach correctly. The library's exported `AnimatedFlashList` is built
-// on React Native's Animated and throws "undefined is not a function" inside
-// RecyclerView when fed a Reanimated worklet on the New Architecture (Sentry
-// build 31/34). This mirrors CinematicFlashList's internal construction.
-const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
+import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 
 // === MAIN SCREEN ===
 export default function DarkRoomScreen() {
@@ -57,6 +50,9 @@ export default function DarkRoomScreen() {
   );
 
   const localScrollY = useSharedValue(0);
+  const scrollHeight = useSharedValue(0);
+  const viewHeight = useSharedValue(0);
+  const isScrolling = useSharedValue(false);
   const skeletonOpacity = useSharedValue(0.4);
 
   useEffect(() => {
@@ -81,14 +77,6 @@ export default function DarkRoomScreen() {
     () => ({ ...s.listContent, paddingTop: insets.top + 90 }),
     [insets.top]
   );
-
-  // Stable UI-thread scroll handler
-  const handleScroll = useAnimatedScrollHandler({
-    onScroll: (e) => {
-      localScrollY.value = e.contentOffset.y;
-      globalScrollY.value = e.contentOffset.y;
-    },
-  });
 
   // Cache key based on current discovery params
   const cacheKey = useMemo(() => {
@@ -329,7 +317,7 @@ export default function DarkRoomScreen() {
   return (
     <FrozenTab>
       <View style={s.container}>
-        <AnimatedFlashList
+        <CinematicFlashList
           data={displayData}
           keyExtractor={(item: any) => `${item.media_type || 'movie'}-${item.id}`}
           estimatedItemSize={190}
@@ -349,8 +337,9 @@ export default function DarkRoomScreen() {
             }
           }}
           onEndReachedThreshold={0.5}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
+          externalScrollY={globalScrollY}
+          scrollMetrics={{ scrollY: localScrollY, scrollHeight, viewHeight, isScrolling }}
+          bottomInset={insets.bottom}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
         />
