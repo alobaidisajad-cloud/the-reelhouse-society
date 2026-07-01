@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, DeviceEventEmitter, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, DeviceEventEmitter } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { useAnimatedStyle, SharedValue, useAnimatedRef, measure, interpolate, Extrapolation } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
@@ -17,7 +16,6 @@ import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import type { FeedItem } from '@/src/schemas/feed.schema';
 
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
-const AnimatedView = Animated.createAnimatedComponent(View);
 export type { FeedItem };
 
 const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {
@@ -122,41 +120,13 @@ const ActivityContentBody = React.memo(({ item, isAuteur, isPremium, timeAgo, ha
 });
 ActivityContentBody.displayName = 'ActivityContentBody';
 
-export const ActivityCard = React.memo(function ActivityCard({ item, index, parentScrollY }: { item: FeedItem; index: number; parentScrollY?: SharedValue<number> }) {
+export const ActivityCard = React.memo(function ActivityCard({ item, index }: { item: FeedItem; index: number }) {
   const router = useRouter();
   const isArchivist = isArchivistPlusTier(item.role);
   const isAuteur = isAuteurPlusTier(item.role);
   const isPremium = isArchivist || isAuteur || !!item.editorial_header || !!item.pull_quote;
-  
+
   const backdropUri = item.editorial_header ? `${TMDB_IMG_W500}${item.editorial_header}` : item.poster_path ? `${TMDB_IMG_W500}${item.poster_path}` : null;
-  
-  const { height: windowHeight } = useWindowDimensions();
-  const animatedRef = useAnimatedRef<View>();
-
-  const parallaxStyle = useAnimatedStyle(() => {
-    if (!parentScrollY) return {};
-    
-    // Access value to force Reanimated babel plugin to track reactivity
-     
-    const _scroll = parentScrollY.value;
-    
-    const measurement = measure(animatedRef);
-    if (!measurement) return {};
-
-    const cardCenterScreenY = measurement.pageY + (measurement.height / 2);
-    const distance = cardCenterScreenY - (windowHeight / 2);
-    
-    const rotateX = interpolate(distance, [-windowHeight, 0, windowHeight], [15, 0, -15], Extrapolation.CLAMP);
-    const scale = interpolate(Math.abs(distance), [0, windowHeight], [1, 0.95], Extrapolation.CLAMP);
-    
-    return {
-      transform: [
-        { perspective: 1200 },
-        { rotateX: `${rotateX}deg` },
-        { scale }
-      ]
-    };
-  });
 
   const timeAgo = useMemo(() => getTimeAgo(item.created_at), [item.created_at]);
 
@@ -175,7 +145,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
 
   return (
     <View style={{ zIndex: index }}>
-      <AnimatedView ref={animatedRef} style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur, parallaxStyle]}>
+      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]}>
         <ActivityCardShell isPremium={isPremium} isAuteur={isAuteur}>
           <ActivityEditorialHeader item={item} isPremium={isPremium} isAuteur={isAuteur} backdropUri={backdropUri} />
           
@@ -195,7 +165,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, pare
           {/* autopsy is unknown JSONB on the wire; AutopsyView guards shape at runtime. */}
           <AutopsyView isAutopsied={item.is_autopsied ?? undefined} autopsy={(item.autopsy ?? undefined) as Record<string, number> | undefined} />
         </ActivityCardShell>
-      </AnimatedView>
+      </View>
     </View>
   );
 });

@@ -46,8 +46,8 @@ export function ReelsFeedList({
   extraData,
 }: ReelsFeedListProps) {
   const renderLogItem = useCallback(({ item, index }: { item: FeedItem; index: number }) => (
-    <ActivityCard item={item} index={index} parentScrollY={overallLogsScrollY} />
-  ), [overallLogsScrollY]);
+    <ActivityCard item={item} index={index} />
+  ), []);
 
   const viewabilityConfig = useRef({
     minimumViewTime: 800,
