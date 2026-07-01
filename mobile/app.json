@@ -54,7 +54,7 @@
         {
           "url": "https://sentry.io/",
           "organization": "the-reelhouse-society",
-          "project": "reelhouse-mobile"
+          "project": "react-native"
         }
       ],
       "expo-secure-store",
