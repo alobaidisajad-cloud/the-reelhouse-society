@@ -19,9 +19,9 @@ CREATE INDEX IF NOT EXISTS idx_dossier_comments_dossier_created
 CREATE INDEX IF NOT EXISTS idx_dossier_certifications_user_dossier
   ON public.dossier_certifications (user_id, dossier_id);
 
--- Dispatch feed: published dossiers, featured first, newest first (DossierService.getFeed).
+-- Dispatch feed: published dossiers, newest first (src/stores/content.ts loadDossiers).
 CREATE INDEX IF NOT EXISTS idx_dispatch_dossiers_feed
-  ON public.dispatch_dossiers (published, is_featured, published_at DESC);
+  ON public.dispatch_dossiers (is_published, created_at DESC);
 
 -- Dispatch "recent logs" strip: newest logs (DossierService.getDispatchLogs).
 CREATE INDEX IF NOT EXISTS idx_logs_created_at
