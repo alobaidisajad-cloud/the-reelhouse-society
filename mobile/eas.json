@@ -21,6 +21,7 @@
       }
     },
     "production": {
+      "autoIncrement": true,
       "env": {
         "EXPO_PUBLIC_SENTRY_DSN": "https://8d558f1ffdfbe2c8cd29a195d120ad3b@o4511019614208000.ingest.us.sentry.io/4511645947002880",
         "EXPO_PUBLIC_SUPABASE_URL": "https://wihyqkpoymwcvbprslyz.supabase.co",
