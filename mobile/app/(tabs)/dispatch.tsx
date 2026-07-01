@@ -177,7 +177,7 @@ export default function DispatchScreen() {
         {/* Double rule top */}
         <View style={st.mastheadRuleTop} />
 
-        <Text style={st.mastheadTitle} accessibilityRole="header" numberOfLines={2}>THE{'\n'}DISPATCH</Text>
+        <Text style={st.mastheadTitle} accessibilityRole="header" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.7}>THE{'\n'}DISPATCH</Text>
 
         {/* Double rule bottom */}
         <View style={st.mastheadRuleBottom} />
