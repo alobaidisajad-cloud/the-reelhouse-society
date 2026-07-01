@@ -860,16 +860,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         {!isPrivate && (
         <View style={s.contentArea}>
 
-          {/* ── Society Seal ── */}
-          <View style={s.societySealWrap}>
-            <View style={s.sealLine} />
-            <View style={s.sealCenter}>
-              <FilmIcon size={14} color={colors.sepia} strokeWidth={1} />
-              <Text style={s.sealText}>THE REELHOUSE SOCIETY</Text>
-            </View>
-            <View style={s.sealLine} />
-          </View>
-
           <SectionDivider label="COLLECTION" />
 
           {/* ── Collection Grid ── */}

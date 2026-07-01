@@ -387,15 +387,6 @@ export default function PersonDetailScreen() {
           </View>
         )}
 
-        {/* ── Closing society bar ── */}
-        <View style={s.closingBar}>
-          <LinearGradient
-            colors={['transparent', 'rgba(184,137,26,0.2)', 'transparent']}
-            start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
-            style={s.closingLine}
-          />
-          <Text style={s.closingText}>THE REELHOUSE SOCIETY</Text>
-        </View>
         </View>}
       />
     </View>

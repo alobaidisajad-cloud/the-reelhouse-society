@@ -11,7 +11,7 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { FileText, Pen, Radio, Sparkles } from 'lucide-react-native';
+import { FileText, Pen, Radio } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Buster from '@/src/components/Buster';
@@ -174,12 +174,6 @@ export default function DispatchScreen() {
     <View style={st.documentHeader}>
       {/* ── MASTHEAD ── */}
       <Animated.View entering={FadeIn.duration(800)} style={st.masthead}>
-        <View style={st.mastheadPublisherRow}>
-          <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
-          <Text style={st.mastheadPublisher}>THE REELHOUSE SOCIETY</Text>
-          <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
-        </View>
-
         {/* Double rule top */}
         <View style={st.mastheadRuleTop} />
 

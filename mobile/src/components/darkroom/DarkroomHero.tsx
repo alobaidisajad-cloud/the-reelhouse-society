@@ -50,9 +50,6 @@ export const DarkroomHero = React.memo(function DarkroomHero({
           const isLateNight = h >= 2 && h < 6;
           return (
             <>
-              <Text style={s.heroEyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
-                {isLateNight ? "✦ THE ARCHIVE IS HAUNTED ✦" : "✦ THE REELHOUSE SOCIETY ✦"}
-              </Text>
               <Text style={s.heroTitle} accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6}>
                 {isLateNight ? "Late Night Projection" : "The Darkroom"}
               </Text>

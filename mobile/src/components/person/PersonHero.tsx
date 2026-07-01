@@ -159,11 +159,6 @@ export const PersonHero = memo(function PersonHero({
           </View>
         </View>
 
-        {/* Society watermark */}
-        <View>
-          <Text style={s.societyMark}>THE REELHOUSE SOCIETY · EST. 1924</Text>
-        </View>
-
         {/* Department badge */}
         {person.known_for_department && (
           <View style={s.deptBadge}>

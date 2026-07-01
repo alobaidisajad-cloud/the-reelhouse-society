@@ -464,7 +464,6 @@ export function SettingsScreen() {
             <View style={st.endMarkRow}>
               <View style={st.endMarkLine} /><Sparkles size={8} color={colors.sepia} strokeWidth={1.5} /><View style={st.endMarkLine} />
             </View>
-            <Text style={st.heritageMark}>EST. 1924 · THE REELHOUSE SOCIETY</Text>
             <Text style={st.heritageCopyright}>© 1924–{new Date().getFullYear()} The ReelHouse Society. All dossiers are classified.</Text>
           </AnimatedView>
         </ScrollView>

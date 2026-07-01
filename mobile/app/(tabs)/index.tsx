@@ -345,7 +345,6 @@ export default function LobbyScreen() {
           <View style={s.lobbyFooterRule} />
           <Image source={require('../../assets/images/reelhouse-logo.png')} style={s.lobbyFooterLogo} contentFit="contain" />
           <View style={s.lobbyFooterBusterWrap}><Buster size={26} mood="sleeping" /></View>
-          <Text style={s.lobbyFooterText}>THE REELHOUSE SOCIETY</Text>
           <Text style={s.lobbyFooterSub}>Est. 1924 · The Society is watching.</Text>
           <Text style={s.lobbyFooterWhisper}>The projection booth never closes.</Text>
           <View style={s.lobbyFooterRule} />

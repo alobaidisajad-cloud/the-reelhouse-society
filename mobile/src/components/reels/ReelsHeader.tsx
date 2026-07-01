@@ -66,7 +66,6 @@ export const SharedReelHeader = memo(function SharedReelHeader({
     <>
       {/* Section Header */}
       <View style={st.sectionHeaderWrap}>
-        <Text style={st.headerEyebrow}>✦ THE REELHOUSE SOCIETY ✦</Text>
         <Text style={st.headerTitle} accessibilityRole="header">The Reel</Text>
 
         {/* Decorative Est. 1924 rule */}
