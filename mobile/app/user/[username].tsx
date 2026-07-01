@@ -680,7 +680,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           )}
 
           {/* Projector spotlight — dynamic per tier */}
-          <View style={[s.projectorSpotlight, isAuteurPlus && s.spotlightAuteur, (!isAuteurPlus && isArchivistPlus) && s.spotlightArchivist]} />
+          <View style={[s.projectorSpotlight, (!isAuteurPlus && isArchivistPlus) && s.spotlightArchivist]} />
 
           {/* Film grain texture overlay */}
           <View style={s.filmGrainOverlay} />
@@ -693,7 +693,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
             {/* ── Avatar with Tier-Specific Enclosure ── */}
             <View style={s.avatarWrap}>
-              <View style={{ width: 104, height: 104, alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 116, height: 116, alignItems: 'center', justifyContent: 'center' }}>
+                {isAuteurPlus && <View style={s.avatarHaloAuteur} pointerEvents="none" />}
                 <AnimatedView style={[
                   StyleSheet.absoluteFillObject,
                   s.avatarRing, 

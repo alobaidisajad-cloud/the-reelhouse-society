@@ -73,6 +73,17 @@ export const s = StyleSheet.create({
     borderWidth: 2, borderColor: colors.soot,
   },
   avatar: { width: 108, height: 108, borderRadius: 54 },
+  // Auteur-only: a tight, contained ruby halo behind the avatar — replaces the
+  // big header haze. iOS shadow only, soft and restrained (not the old red cloud).
+  avatarHaloAuteur: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 58,
+    backgroundColor: '#8B1A1A',
+    shadowColor: '#B42D2D',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.42,
+    shadowRadius: 15,
+  },
 
   // ── Level Badge ──
   levelBadge: {
