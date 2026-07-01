@@ -145,7 +145,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index }: { 
 
   return (
     <View style={{ zIndex: index }}>
-      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]}>
+      <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS>
         <ActivityCardShell isPremium={isPremium} isAuteur={isAuteur}>
           <ActivityEditorialHeader item={item} isPremium={isPremium} isAuteur={isAuteur} backdropUri={backdropUri} />
           

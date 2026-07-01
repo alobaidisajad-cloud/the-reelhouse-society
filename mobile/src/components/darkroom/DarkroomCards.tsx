@@ -120,7 +120,7 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
         <View style={[s.posterImg, !posterUri && s.posterPlaceholder]}>
           {posterUri ? (
             <>
-              <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
+              <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
               {/* Soft tactical tungsten edge mapping */}
               <LinearGradient 
                 colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(10,5,3,0.9)']} 
@@ -182,7 +182,7 @@ export const DarkroomSuggestionRow = React.memo(({ item, onPress }: { item: Disc
     >
       {imgUri ? (
         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm]}>
-          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
+          <Image source={{ uri: imgUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
         </View>
       ) : (
         <View style={[s.suggestionImgWrap, isPerson ? s.suggestionImgWrapPerson : s.suggestionImgWrapFilm, s.suggestionImgPlaceholder]} />
