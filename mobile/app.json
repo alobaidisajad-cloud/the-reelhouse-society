@@ -53,7 +53,7 @@
         "@sentry/react-native",
         {
           "url": "https://sentry.io/",
-          "organization": "reelhouse-society",
+          "organization": "the-reelhouse-society",
           "project": "reelhouse-mobile"
         }
       ],
