@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { FlashList, AnimatedFlashList } from '@shopify/flash-list';
+import { FlashList } from '@shopify/flash-list';
 import Animated, { FadeInDown, useSharedValue, withTiming, useAnimatedScrollHandler, withRepeat, Easing, cancelAnimation } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNetInfo } from '@react-native-community/netinfo';
@@ -21,6 +20,13 @@ import FrozenTab from '@/src/components/layout/FrozenTab';
 
 import { DarkroomHeader } from '@/src/components/darkroom/DarkroomHeader';
 import { FilmGridCard, AnimatedPosterSkeleton } from '@/src/components/darkroom/DarkroomCards';
+
+// FlashList wrapped with REANIMATED's Animated so `useAnimatedScrollHandler`
+// worklets attach correctly. The library's exported `AnimatedFlashList` is built
+// on React Native's Animated and throws "undefined is not a function" inside
+// RecyclerView when fed a Reanimated worklet on the New Architecture (Sentry
+// build 31/34). This mirrors CinematicFlashList's internal construction.
+const AnimatedFlashList = Animated.createAnimatedComponent(FlashList) as any;
 
 // === MAIN SCREEN ===
 export default function DarkRoomScreen() {
