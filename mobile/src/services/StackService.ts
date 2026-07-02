@@ -166,6 +166,7 @@ export const StackService = {
       if (listInfo && listInfo.user_id !== safePayload.user_id) {
         await supabase.from('notifications').insert({
           user_id: listInfo.user_id,
+          from_user_id: safePayload.user_id,
           type: 'comment',
           message: `Someone commented on your stack "${listInfo.title}"`,
           metadata: { list_id: safePayload.list_id, user_id: safePayload.user_id },
