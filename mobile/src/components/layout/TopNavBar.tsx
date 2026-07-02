@@ -73,7 +73,8 @@ const NavIconButton = memo(function NavIconButton({
 //  CENTER: MasterLogo
 //  RIGHT:  Search  |  Notifications Bell
 // ════════════════════════════════════════════════════════════════
-const TOP_NAV_BORDER_COLORS = ['rgba(196, 150, 26, 0)', 'rgba(196, 150, 26, 0.18)', 'rgba(196, 150, 26, 0)'] as const;
+// CONST-1: channels match base sepia (#B8891A = rgb(184,137,26))
+const TOP_NAV_BORDER_COLORS = ['rgba(184, 137, 26, 0)', 'rgba(184, 137, 26, 0.18)', 'rgba(184, 137, 26, 0)'] as const;
 
 export const TopNavBar = memo(function TopNavBar() {
   const insets = useSafeAreaInsets();
@@ -225,8 +226,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 255, 255, 0.06)',
   },
   iconButtonAccent: {
-    backgroundColor: 'rgba(196, 150, 26, 0.12)',
-    borderColor: 'rgba(196, 150, 26, 0.25)',
+    backgroundColor: 'rgba(184, 137, 26, 0.12)',
+    borderColor: colors.sepiaBorder,
   },
 
   // ── Premium gradient bottom line ──

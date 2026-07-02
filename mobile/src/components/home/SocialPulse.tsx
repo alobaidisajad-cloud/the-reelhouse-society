@@ -31,7 +31,7 @@ const MemoizedBox16 = memo(() => <View style={{ width: 16 }} />);
 export { PulseCardItem };
 
 // ── ANIMATED PULSE WRAPPER (Cover-Flow Physics) ──
-const AnimatedPulseWrapper = memo(function AnimatedPulseWrapper({ item, index, scrollX, itemSize, cardWidth }: { item: PulseActivity; index: number; scrollX: SharedValue<number>; itemSize: number; cardWidth: number }) {
+const AnimatedPulseWrapper = memo(function AnimatedPulseWrapper({ item, index, scrollX, itemSize, cardWidth, onMute }: { item: PulseActivity; index: number; scrollX: SharedValue<number>; itemSize: number; cardWidth: number; onMute?: (id: string) => void }) {
   const style = useAnimatedStyle(() => {
     const inputRange = [
       (index - 1) * itemSize,
@@ -54,7 +54,7 @@ const AnimatedPulseWrapper = memo(function AnimatedPulseWrapper({ item, index, s
 
   return (
     <Animated.View style={style}>
-      <PulseCardItem act={item} cardWidth={cardWidth} />
+      <PulseCardItem act={item} cardWidth={cardWidth} onMute={onMute} />
     </Animated.View>
   );
 });
@@ -109,20 +109,31 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
   const user = useAuthStore(s => s.user);
 
   const isAuteur = isAuteurPlusTier(user);
-  const pulseAccent = isAuteur ? colors.bloodReel : colors.sepia;
-  const pulseGradient = isAuteur ? [colors.bloodReel, 'rgba(125,31,31,0.6)'] as const : [colors.sepia, colors.flicker] as const;
+  const pulseAccent = isAuteur ? colors.crimson : colors.sepia;
+  const pulseGradient = isAuteur ? [colors.crimson, colors.bloodReel] as const : [colors.sepia, colors.flicker] as const;
 
   const scrollX = useSharedValue(0);
   const onScrollPulse = useAnimatedScrollHandler((event) => {
     scrollX.value = event.contentOffset.x;
   });
 
+  // Report-and-mute hides the card IMMEDIATELY (the query's 5-min staleTime
+  // must never leave a reported log staring back at the member).
+  const [mutedIds, setMutedIds] = useState<Set<string>>(() => new Set());
+  const handleMute = useCallback((id: string) => {
+    setMutedIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
+  }, []);
+
   const { data: activities = [] } = useQuery({
     queryKey: ['socialPulse', refreshTrigger],
     queryFn: async () => {
         const { data, error } = await supabase
           .from('logs')
-          .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, is_spoiler, created_at, user_id, profiles!logs_user_id_fkey(username, role)')
+          .select('id, film_id, film_title, poster_path, rating, review, status, abandoned_reason, watched_with, pull_quote, drop_cap, editorial_header, is_autopsied, autopsy, is_spoiler, created_at, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
           .neq('review', '')
           .not('review', 'is', null)
           .order('created_at', { ascending: false })
@@ -140,6 +151,7 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
           user_id: log.user_id,
           user: (Array.isArray(log.profiles) ? log.profiles[0]?.username : log.profiles?.username) ?? 'cinephile',
           userRole: (Array.isArray(log.profiles) ? log.profiles[0]?.role : log.profiles?.role) ?? 'cinephile',
+          userAvatar: (Array.isArray(log.profiles) ? log.profiles[0]?.avatar_url : log.profiles?.avatar_url) ?? null,
           film: { id: log.film_id, title: log.film_title, poster_path: log.poster_path },
           rating: log.rating,
           text: log.review,
@@ -162,21 +174,25 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
   });
 
   const renderItem = useCallback(({ item, index }: { item: PulseActivity, index: number }) => (
-    <AnimatedPulseWrapper item={item} index={index} scrollX={scrollX} itemSize={PULSE_ITEM_SIZE} cardWidth={width * 0.82} />
-  ), [scrollX, PULSE_ITEM_SIZE, width]);
+    <AnimatedPulseWrapper item={item} index={index} scrollX={scrollX} itemSize={PULSE_ITEM_SIZE} cardWidth={width * 0.82} onMute={handleMute} />
+  ), [scrollX, PULSE_ITEM_SIZE, width, handleMute]);
 
-  if (activities.length === 0) {
+  const visibleActivities = mutedIds.size === 0
+    ? activities
+    : activities.filter(a => !mutedIds.has(a.id));
+
+  if (visibleActivities.length === 0) {
     return (
       <Animated.View entering={FadeInDown.duration(600)} style={s.pulseSection}>
-        <SectionDivider label="LIVE FROM THE FOYER" />
+        <SectionDivider label="THE TELEGRAPH" />
         <View style={s.pulseHeaderRow}>
           <LinearGradient colors={pulseGradient} style={[s.sectionAccentBar, isAuteur && { shadowColor: pulseAccent }]} />
           <View>
             <Text style={s.sectionTitle} accessibilityRole="header">The Pulse</Text>
-            <Text style={s.sectionLoreSub}>Dispatches from your fellow members</Text>
+            <Text style={s.sectionLoreSub}>Live logs from the Society</Text>
           </View>
         </View>
-        <View style={[s.pulseEmpty, isAuteur && { borderTopColor: 'rgba(180,45,45,0.08)', borderBottomColor: 'rgba(180,45,45,0.05)', backgroundColor: 'rgba(125,31,31,0.02)' }]}>
+        <View style={[s.pulseEmpty, isAuteur && { borderColor: colors.crimsonFaint, backgroundColor: 'rgba(125,31,31,0.02)' }]}>
           <GhostEmptyState />
           <Text style={s.pulseEmptyTitle}>The screening room is dark.</Text>
           <Text style={s.pulseEmptySub}>When a member logs their first film, it will appear here.</Text>
@@ -199,7 +215,7 @@ function SocialPulseSectionInner({ refreshTrigger = 0 }: { refreshTrigger?: numb
       <View style={s.flashListPulseWrap}>
         <AnimatedFlashList
             horizontal
-            data={activities}
+            data={visibleActivities}
             keyExtractor={pulseKeyExtractor as any}
             renderItem={renderItem as any}
             showsHorizontalScrollIndicator={false}
@@ -222,7 +238,8 @@ export const SocialPulseSection = memo(SocialPulseSectionInner);
 
 // ── Styles ──
 const s = StyleSheet.create({
-  pulseSection: { marginTop: 16, marginBottom: 36 },
+  // Rhythm: 16 + the next divider's 20 = the page-wide 36px section gap.
+  pulseSection: { marginBottom: 16 },
   pulseHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 20, marginBottom: 16 },
   sectionAccentBar: { width: 3, height: 32, borderRadius: 2 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 2 },

@@ -24,9 +24,10 @@ import QuickActionsFAB from '@/src/components/QuickActionsFAB';
 import Buster from '@/src/components/Buster';
 import PressableScale from '@/src/components/PressableScale';
 import { globalScrollY } from '@/src/lib/scrollBridge';
-import { FilmGrain, Vignette } from '@/src/components/CinematicOverlays';
+import { Vignette } from '@/src/components/CinematicOverlays';
 import FrozenTab from '@/src/components/layout/FrozenTab';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
+import { SocietySeal } from '@/src/components/auth/SocietySeal';
 
 // Extracted Architectural Components
 import type { TMDBFilm } from '@/src/components/home/types';
@@ -40,6 +41,16 @@ import { VelvetRopeCTA, BrassSheen } from '@/src/components/home/VelvetRopeCTA';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
 const TMDB_IMG_W780 = 'https://image.tmdb.org/t/p/w780';
+
+// ── The house knows the hour — the programme whisper under the hero rule ──
+// One Date read per render; a still string, never a shout.
+function getProgrammeWhisper(): string {
+  const h = new Date().getHours();
+  if (h >= 5 && h < 12) return 'the morning screening begins';
+  if (h >= 12 && h < 17) return 'the matinée is in session';
+  if (h >= 17 && h < 22) return "tonight's programme is underway";
+  return 'the midnight reel is spinning';
+}
 
 // ════════════════════════════════════════════════════════════════
 //  MAIN SCREEN: THE LOBBY
@@ -181,15 +192,19 @@ export default function LobbyScreen() {
         
         {/* Dynamic Scene Atmospherics */}
         <ProjectorBeam scrollY={scrollY} />
-        <FilmGrain />
         <Vignette />
-        
+
         {/* 0-Overlap Strict Layout Constraints */}
         <View style={s.welcomeRootFlex}>
-          
+
           {/* Top Half: Cinematic Typography */}
           <View style={s.welcomeTopHalf}>
             <Animated.View entering={FadeInDown.duration(1200)} style={s.welcomeHeader}>
+              {/* The Society's mark ignites at the front door — clamped so
+                  small screens never crowd (title/tagline shrink-to-fit). */}
+              <View style={s.welcomeSealWrap}>
+                <SocietySeal size={Math.min(104, Math.round(windowHeight * 0.15))} />
+              </View>
               <Text style={s.welcomeEyebrow}>WELCOME TO</Text>
               <Text style={s.welcomeTitle} accessibilityRole="header" adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.5}>
                 {'THE\nREELHOUSE\nSOCIETY'}
@@ -301,18 +316,24 @@ export default function LobbyScreen() {
             <Text style={s.heroRuleDot}>✦</Text>
             <LinearGradient colors={[colors.sepia, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.heroRuleGradient} />
           </View>
+          {/* The programme whisper — single reserved line, cannot wrap or shift */}
+          <Text style={s.heroWhisper} numberOfLines={1}>{getProgrammeWhisper()}</Text>
         </Animated.View>
 
         <View style={s.marqueeWrap}>
           <MarqueeBoard film={heroFilm} />
         </View>
 
-        <FilmStripRow title="On The Marquee" label="NOW SHOWING" films={trending} lore="What the world is screening this week" />
-        
-        <SocialPulseSection refreshTrigger={refreshTrigger} />
-        
+        {/* The marquee presents film #1 — the strip carries the rest of the
+            programme (2–10) so the feature never appears twice in a row. */}
+        <FilmStripRow title="Now Showing" label="THE PROGRAMME" films={trending.slice(1)} lore="What the world is screening this week" />
+
+        {/* Newspaper order: the Lead Story before the wire — and horizontal
+            rails now alternate with static content down the whole page. */}
         <FeaturedCritique refreshTrigger={refreshTrigger} />
-        
+
+        <SocialPulseSection refreshTrigger={refreshTrigger} />
+
         <FilmStripRow title="The Canon" label="ESSENTIAL ARCHIVES" films={topRated} lore="The films that built the medium" />
 
         <View style={s.lobbyFooter}>
@@ -324,10 +345,6 @@ export default function LobbyScreen() {
           <View style={s.lobbyFooterRule} />
         </View>
       </CinematicScrollView>
-
-      {/* Global Atmospherics over everything EXCEPT UI elements that need hard touches */}
-      {/* We use pointerEvents="none" so buttons remain clickable */}
-      <FilmGrain />
 
       <QuickActionsFAB />
     </View>
@@ -348,21 +365,22 @@ const s = StyleSheet.create({
   welcomeBottomHalf: { flex: 0.45, justifyContent: 'center', alignItems: 'center' },
   
   welcomeHeader: { alignItems: 'center' },
-  welcomeEyebrow: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 8, color: colors.sepia, marginBottom: 12, opacity: 0.7 },
+  welcomeSealWrap: { alignItems: 'center', marginBottom: 14 },
+  welcomeEyebrow: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 7, color: colors.sepia, marginBottom: 12, opacity: 0.75 },
   welcomeTitle: {
     fontFamily: fonts.display, fontSize: 38, color: colors.parchment,
     textAlign: 'center', lineHeight: 46, ...effects.textGlowSepia, textShadowRadius: 20,
   },
   welcomeEstRow: { flexDirection: 'row', alignItems: 'center', gap: 16, marginTop: 16, marginBottom: 8 },
   welcomeEstLine: { width: 36, height: 1, backgroundColor: colors.sepia, opacity: 0.4 },
-  welcomeEstText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 6, color: colors.sepia, opacity: 0.6 },
+  welcomeEstText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 5, color: colors.sepia, opacity: 0.65 },
   welcomeTagline: {
     fontFamily: fonts.sub, fontSize: 12, color: colors.bone, textAlign: 'center',
     lineHeight: 22, fontStyle: 'italic', opacity: 0.8, marginTop: 16, letterSpacing: 0.3,
   },
   societyRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 24, opacity: 0.4, paddingHorizontal: 4 },
   societyRuleLine: { flex: 1, height: 1 },
-  societyRuleText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 5, color: colors.sepia },
+  societyRuleText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4, color: colors.sepia },
   
   welcomeCtaContainer: { width: '100%', maxWidth: 360, alignItems: 'center', gap: 24 },
   
@@ -377,11 +395,12 @@ const s = StyleSheet.create({
     paddingVertical: 18, alignItems: 'center', justifyContent: 'center',
     borderWidth: 1, borderColor: '#1F180E',
   },
-  ctaPrimaryNoirText: { fontFamily: fonts.uiBold, fontSize: 13, letterSpacing: 5, color: colors.flicker },
+  ctaPrimaryNoirText: { fontFamily: fonts.sub, fontSize: 13, letterSpacing: 4, color: colors.flicker },
   ctaGlowLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 2, opacity: 0.8 },
   
   // ── Hero Section (Engraved Cinematic) ──
-  heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 40, marginTop: 10 },
+  // Rhythm: every section-to-section gap on the page resolves to 36px.
+  heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 36, marginTop: 10 },
   heroEyebrow: {
     fontFamily: fonts.mono, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.6, marginBottom: 6, fontWeight: '700',
     // Sits over the feature backdrop — soft dark shadow keeps it legible on a bright still.
@@ -395,6 +414,20 @@ const s = StyleSheet.create({
   heroRuleRow: { flexDirection: 'row', alignItems: 'center', gap: 18, marginTop: 18, opacity: 0.8 },
   heroRuleGradient: { width: 80, height: StyleSheet.hairlineWidth },
   heroRuleDot: { fontSize: 12, color: colors.sepia, opacity: 0.7 },
+  heroWhisper: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 10,
+    lineHeight: 15,
+    color: colors.fog,
+    opacity: 0.65,
+    letterSpacing: 0.5,
+    marginTop: 10,
+    textAlign: 'center',
+    // Sits over the feature backdrop — same legibility shadow as the hero.
+    textShadowColor: 'rgba(0,0,0,0.6)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 4,
+  },
 
   heroBackdropWrap: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: 0 },
   heroBackdrop: { width: '100%', height: '100%', opacity: 1 },

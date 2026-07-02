@@ -12,7 +12,6 @@ import TactileEngine from '@/src/utils/TactileEngine';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import { MoreHorizontal } from 'lucide-react-native';
-import { FilmGrain } from '@/src/components/CinematicOverlays';
 import PressableScale from '@/src/components/PressableScale';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 import Buster from '@/src/components/Buster';
@@ -125,7 +124,18 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
         <View style={s.pulseCardHeader}>
           <PressableScale style={s.pulseUserRow} onPress={() => { nav.push(`/user/${act.user}`); }} haptic="light" accessibilityLabel={`View profile of @${act.user}`}>
             <View style={[s.pulseAvatar, { borderColor: accentColor }]}>
-              <Buster size={14} mood={act.rating >= 4 ? 'smiling' : 'neutral'} />
+              {act.userAvatar ? (
+                <Image
+                  source={{ uri: act.userAvatar }}
+                  style={s.pulseAvatarImg}
+                  contentFit="cover"
+                  cachePolicy="memory-disk"
+                  placeholder={{ blurhash: SEPIA_HASH }}
+                  transition={150}
+                />
+              ) : (
+                <Buster size={14} mood={act.rating >= 4 ? 'smiling' : 'neutral'} />
+              )}
             </View>
             <View style={[s.pulseUserTextWrap, { flexShrink: 1 }]}>
               <Text style={s.pulseUsername} numberOfLines={1}>@{act.user}</Text>
@@ -192,7 +202,6 @@ export const PulseCardItem = memo(function PulseCardItem({ act, isFeatured = fal
             </View>
           </View>
         </PressableScale>
-        <FilmGrain />
       </View>
     </View>
   );
@@ -214,16 +223,17 @@ const s = StyleSheet.create({
     shadowColor: colors.sepia, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.6, shadowRadius: 15,
     ...Platform.select({ android: { elevation: 0 } })
   },
-  pulseCardAuteur: { backgroundColor: 'rgba(12,5,5,1)', borderColor: 'rgba(125,31,31,0.25)' },
+  pulseCardAuteur: { backgroundColor: 'rgba(12,5,5,1)', borderColor: colors.crimsonBorder },
   pulseCardHeader: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
     padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)',
   },
   pulseUserRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  pulseAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.ash, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+  pulseAvatar: { width: 30, height: 30, borderRadius: 15, backgroundColor: colors.ash, borderWidth: 1, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  pulseAvatarImg: { width: '100%', height: '100%' },
   pulseUserTextWrap: { flex: 1, justifyContent: 'center' },
-  pulseUsername: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 1.5, color: colors.parchment, includeFontPadding: false },
-  pulseTime: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog, marginTop: 2, includeFontPadding: false },
+  pulseUsername: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.parchment, includeFontPadding: false },
+  pulseTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, marginTop: 2, includeFontPadding: false },
   pulseCardContent: { flexDirection: 'row', gap: 16, padding: 16, paddingBottom: 24 },
   pulsePosterWrap: {
     width: 60, height: 90, borderRadius: 4, overflow: 'hidden',
@@ -234,9 +244,9 @@ const s = StyleSheet.create({
   pulseFilmTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment, marginBottom: 6, letterSpacing: 0.5, includeFontPadding: false },
   pulseRatingWrap: { marginBottom: 8 },
   pulseReview: { fontFamily: fonts.body, fontSize: 11, color: colors.bone, fontStyle: 'italic', opacity: 0.9, paddingBottom: 6, includeFontPadding: false },
-  pulseWatchedWith: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 8, includeFontPadding: false },
+  pulseWatchedWith: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 8, includeFontPadding: false },
   pulseWatchedWithName: { color: colors.bone, includeFontPadding: false },
-  pulseAutopsyTag: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: 'rgba(180,45,45,0.9)', marginTop: 4, marginBottom: 8, includeFontPadding: false },
+  pulseAutopsyTag: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimson, marginTop: 4, marginBottom: 8, includeFontPadding: false },
   pullQuoteWrap: { paddingLeft: 10, borderLeftWidth: StyleSheet.hairlineWidth, borderLeftColor: colors.sepia, marginBottom: 6 },
   pullQuoteText: { fontFamily: fonts.display, fontSize: 14, fontStyle: 'italic', color: colors.sepia, paddingBottom: 6, includeFontPadding: false, lineHeight: 20 },
   dropCapRow: { flexDirection: 'row', alignItems: 'flex-start' },
@@ -244,20 +254,21 @@ const s = StyleSheet.create({
   dropCapBody: { flex: 1, paddingTop: 2 },
   pulseReadMoreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6, paddingTop: 6, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.15)' },
   pulseReadMoreRule: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: 'rgba(184,137,26,0.1)' },
-  pulseReadMoreText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.6, includeFontPadding: false },
+  pulseReadMoreText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.6, includeFontPadding: false },
   editorialBanner: { width: '100%', height: 90, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.2)' },
   editorialBannerImg: { width: '100%', height: '100%', opacity: 0.6 },
   editorialBadge: { position: 'absolute', top: 12, right: 12, backgroundColor: 'rgba(18,14,9,0.7)', paddingHorizontal: 8, paddingVertical: 6, borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)' },
-  editorialBadgeText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4, color: 'rgba(218,165,32,0.9)', includeFontPadding: false },
+  editorialBadgeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: 'rgba(218,165,32,0.9)', includeFontPadding: false },
   premiumBanner: { width: '100%', height: 60, overflow: 'hidden', borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
   premiumBannerImg: { width: '100%', height: '150%', top: '-25%', opacity: 0.45 },
   badgeArchivist: { backgroundColor: 'rgba(184,137,26,0.1)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
   badgeAuteur: { backgroundColor: '#DAA520', borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
-  badgeText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  badgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
   abandonedBadge: {
     marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 6,
-    backgroundColor: 'rgba(125,31,31,0.1)', paddingHorizontal: 6, paddingVertical: 4,
-    borderRadius: 4, borderWidth: 1, borderColor: 'rgba(125,31,31,0.3)', alignSelf: 'flex-start',
+    backgroundColor: colors.crimsonFaint, paddingHorizontal: 6, paddingVertical: 4,
+    borderRadius: 4, borderWidth: 1, borderColor: colors.crimsonBorder, alignSelf: 'flex-start',
   },
-  abandonedText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.bloodReel, includeFontPadding: false },
+  // Crimson (not bloodReel) — the deep stamp red was near-invisible on soot.
+  abandonedText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.crimson, includeFontPadding: false },
 });

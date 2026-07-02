@@ -1,15 +1,9 @@
 /**
  * FeaturedCritique — The lead story/featured log section on the Lobby.
  */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { memo, useEffect } from 'react';
+import { memo, useState, useCallback } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  FadeInDown, useSharedValue, useAnimatedStyle, withRepeat, withTiming,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Easing, interpolate, cancelAnimation
-} from 'react-native-reanimated';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
@@ -27,6 +21,9 @@ import { ShimmerRule } from './VelvetRopeCTA';
 // ── FEATURED CRITIQUE ──
 function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number }) {
   const router = useRouter();
+  // Report-and-mute folds the Lead Story away immediately.
+  const [mutedId, setMutedId] = useState<string | null>(null);
+  const handleMute = useCallback((id: string) => setMutedId(id), []);
   const { data: featured } = useQuery({
     queryKey: ['featuredCritique', refreshTrigger],
     queryFn: async () => {
@@ -49,16 +46,18 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
     staleTime: 5 * 60 * 1000,
   });
 
-  if (!featured) return null;
+  if (!featured || featured.id === mutedId) return null;
 
   const username = (Array.isArray(featured.profiles) ? featured.profiles[0]?.username : featured.profiles?.username) ?? 'SOCIETY';
   const role = (Array.isArray(featured.profiles) ? featured.profiles[0]?.role : featured.profiles?.role) ?? 'cinephile';
+  const avatarUrl = (Array.isArray(featured.profiles) ? featured.profiles[0]?.avatar_url : featured.profiles?.avatar_url) ?? null;
 
   const pulseItem: PulseActivity = {
       id: featured.id,
       user_id: featured.user_id,
       user: username,
       userRole: role,
+      userAvatar: avatarUrl,
       film: { id: featured.film_id, title: featured.film_title, poster_path: featured.poster_path },
       rating: featured.rating,
       text: featured.review,
@@ -87,7 +86,7 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
       </View>
 
       <View style={s.critiqueCardWrap}>
-         <PulseCardItem act={pulseItem} isFeatured={true} />
+         <PulseCardItem act={pulseItem} isFeatured={true} onMute={handleMute} />
       </View>
 
       <PressableScale style={s.critiqueSubmitBtn} onPress={() => { TactileEngine.destroy(); (router.push as any)('/log-modal' as any); }}>
@@ -101,7 +100,8 @@ function FeaturedCritiqueInner({ refreshTrigger = 0 }: { refreshTrigger?: number
 export const FeaturedCritique = memo(FeaturedCritiqueInner);
 
 const s = StyleSheet.create({
-  critiqueSection: { paddingHorizontal: 20, marginTop: 16, marginBottom: 32 },
+  // Rhythm: 16 + the next divider's 20 = the page-wide 36px section gap.
+  critiqueSection: { paddingHorizontal: 20, marginBottom: 16 },
   critiqueHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 16 },
   sectionAccentBar: { width: 3, height: 32, borderRadius: 2 },
   sectionTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 2 },
@@ -113,6 +113,6 @@ const s = StyleSheet.create({
     alignItems: 'center', paddingVertical: 14, paddingHorizontal: 8,
     overflow: 'hidden', ...effects.shadowSurface,
   },
-  critiqueSubmitText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 3, color: colors.sepia },
+  critiqueSubmitText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.sepia },
 });
 

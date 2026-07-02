@@ -27,6 +27,12 @@ export const colors = {
   sepiaBorderStrong: 'rgba(184, 137, 26, 0.5)',
   sepiaBorderBold: 'rgba(184, 137, 26, 0.8)',
   bloodFaint: 'rgba(107, 26, 10, 0.3)',
+  // Auteur crimson — the single bright red for dark surfaces. Replaces the
+  // drifted rgb(125,31,31) / rgb(180,45,45) duo so every red in the app is
+  // either bloodReel (deep stamp) or crimson (legible accent).
+  crimson: '#B42D2D',
+  crimsonBorder: 'rgba(180, 45, 45, 0.3)',
+  crimsonFaint: 'rgba(180, 45, 45, 0.1)',
   parchmentBright: '#F8F2E4',
   surface: '#14120D',
   // Text-selection highlight — brand sepia at low alpha so selected text stays legible

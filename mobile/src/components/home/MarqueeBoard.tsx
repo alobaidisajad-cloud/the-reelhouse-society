@@ -1,84 +1,189 @@
 /**
  * MarqueeBoard — The hero marquee centerpiece of the Lobby.
- * Includes animated bulbs, tungsten loading state, Ken Burns backdrop, and weekly feature display.
+ * ────────────────────────────────────────────────────────────────────
+ * Built as a BRASS CABINET — one constructed object, the way a real 1924
+ * picture-palace canopy was built:
+ *
+ *   · Double brass molding (outer frame + cabinet gap + inner molding)
+ *   · Four corner studs bolted to the outer frame
+ *   · Bulb fascias mounted BETWEEN the moldings, top and bottom
+ *   · A keystone chip set centered among the top bulbs
+ *   · THE USHER'S CHASE — a single warm peak of light glides along the
+ *     top fascia and returns along the bottom, like current in a circuit.
+ *
+ * Perf: ONE focus-gated chase clock replaces the previous 16 independent
+ * infinite bulb loops. Every bulb derives its glow from the same shared
+ * value on the UI thread. Reduce-motion → steady warm glow, no motion.
+ *
+ * Construction note: the OUTER frame must NOT clip (the corner studs sit
+ * on its corners); the INNER molding carries overflow:'hidden' to clip
+ * the Ken Burns poster inside the rounded cabinet.
  */
-import { memo, useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Platform } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, {
-  useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming, withDelay,
-  Easing, interpolate, Extrapolation, cancelAnimation, useAnimatedReaction, runOnJS, useReducedMotion
+  useSharedValue, useAnimatedStyle, withRepeat, withSequence, withTiming,
+  Easing, cancelAnimation, useReducedMotion, type SharedValue,
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
-import { FilmGrain } from '@/src/components/CinematicOverlays';
 import { supabase } from '@/src/lib/supabase';
 import type { TMDBFilm } from './types';
 
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 const AnimatedExpoImage = Animated.createAnimatedComponent(Image);
 
-// Stable JS-thread wrapper so runOnJS gets a plain function reference (a bare
-// TactileEngine.navigate would lose its `this` binding).
-function hapticLight() { TactileEngine.navigate(); }
+// One stately lap of the canopy circuit (~5.2s — an usher's pace, not Vegas)
+const CHASE_LAP_MS = 5200;
 
-// ── MARQUEE BULB ──
-const MarqueeBulb = memo(function MarqueeBulb({ index }: { index: number }) {
-  const glow = useSharedValue(0.6);
-  const reducedMotion = useReducedMotion();
-  
-  useEffect(() => {
-    if (reducedMotion) {
-      glow.value = 1;
-      return;
+// ── CHASE BULB — brass socket + tungsten core, glow derived from the clock ──
+const ChaseBulb = memo(function ChaseBulb({
+  phase,
+  offset,
+  steady,
+}: {
+  phase: SharedValue<number>;
+  offset: number;
+  steady: boolean;
+}) {
+  const coreStyle = useAnimatedStyle(() => {
+    if (steady) {
+      return { opacity: 0.85, transform: [{ scale: 1 }] };
     }
-    const duration = 2500 + ((index * 750) % 2000); 
-    const minGlow = 0.5 + ((index * 0.1) % 0.3);
-    
-    glow.value = withDelay(
-      index * 300,
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration, easing: Easing.inOut(Easing.ease) }),
-          withTiming(minGlow, { duration: duration * 1.2, easing: Easing.inOut(Easing.ease) })
-        ),
-        -1, true
-      )
-    );
-    return () => cancelAnimation(glow);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index]);
-
-  const style = useAnimatedStyle(() => ({
-    opacity: glow.value,
-    transform: [{ scale: interpolate(glow.value, [0.5, 1], [0.9, 1.15], Extrapolation.CLAMP) }],
-  }));
+    // Circular distance from the travelling peak (wraps at the lap seam)
+    let d = Math.abs(phase.value - offset);
+    if (d > 0.5) d = 1 - d;
+    // Warm falloff ≈ 1.2 bulb-widths wide
+    const glow = Math.max(0, 1 - d * 6);
+    return {
+      opacity: 0.3 + glow * 0.7,
+      transform: [{ scale: 1 + glow * 0.15 }],
+    };
+  });
 
   return (
-    <Animated.View style={[s.marqueeBulb, style]}>
-      <View style={s.marqueeBulbInner} />
-    </Animated.View>
-  );
-});
-
-export const MarqueeBulbRow = memo(function MarqueeBulbRow({ count = 12 }: { count?: number }) {
-  const bulbs = useMemo(() => Array.from({ length: count }), [count]);
-  return (
-    <View style={s.marqueeBulbRow}>
-      {bulbs.map((_, i) => <MarqueeBulb key={i} index={i} />)}
+    <View style={s.bulbSocket}>
+      <Animated.View style={[s.bulbCore, coreStyle]} />
     </View>
   );
 });
 
-// ── TUNGSTEN IGNITION (Loading State) ──
+// ── CHASE FASCIA — bulbs mounted on the cabinet molding ──
+// Top row runs L→R with the keystone chip set among the bulbs;
+// bottom row runs R→L so the light circles the frame like a circuit.
+const ChaseFascia = memo(function ChaseFascia({
+  phase,
+  steady,
+  reverse = false,
+  keystone = false,
+}: {
+  phase: SharedValue<number>;
+  steady: boolean;
+  reverse?: boolean;
+  keystone?: boolean;
+}) {
+  const count = keystone ? 6 : 7;
+  const bulbs = Array.from({ length: count }, (_, i) => {
+    const offset = reverse ? (count - 1 - i) / count : i / count;
+    return <ChaseBulb key={i} phase={phase} offset={offset} steady={steady} />;
+  });
+
+  if (keystone) {
+    // 3 bulbs · keystone · 3 bulbs — the canopy's centered nameplate
+    bulbs.splice(3, 0,
+      <View key="keystone" style={s.keystone}>
+        <Text style={s.keystoneMark} allowFontScaling={false}>✦</Text>
+      </View>
+    );
+  }
+
+  return (
+    <View
+      style={[s.fascia, keystone ? s.fasciaTop : s.fasciaBottom]}
+      accessibilityElementsHidden={true}
+      importantForAccessibility="no-hide-descendants"
+    >
+      {bulbs}
+    </View>
+  );
+});
+
+// ── BRASS CABINET — frame, studs, moldings, fascias; hosts any board ──
+function MarqueeCabinet({
+  children,
+  onPress,
+  accessibilityLabel,
+}: {
+  children: React.ReactNode;
+  onPress?: () => void;
+  accessibilityLabel?: string;
+}) {
+  const isFocused = useIsFocused();
+  const reducedMotion = useReducedMotion();
+  const phase = useSharedValue(0);
+
+  useEffect(() => {
+    // The single chase clock — parks completely when the tab loses focus.
+    if (isFocused && !reducedMotion) {
+      phase.value = 0;
+      phase.value = withRepeat(
+        withTiming(1, { duration: CHASE_LAP_MS, easing: Easing.linear }),
+        -1,
+        false
+      );
+    } else {
+      cancelAnimation(phase);
+      phase.value = 0;
+    }
+    return () => cancelAnimation(phase);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFocused, reducedMotion]);
+
+  const steady = !!reducedMotion;
+
+  const inner = (
+    <>
+      {/* Corner studs — bolted to the outer frame (non-clipping layer) */}
+      <View style={[s.stud, s.studTL]} pointerEvents="none" />
+      <View style={[s.stud, s.studTR]} pointerEvents="none" />
+      <View style={[s.stud, s.studBL]} pointerEvents="none" />
+      <View style={[s.stud, s.studBR]} pointerEvents="none" />
+
+      {/* Inner molding — clips the Ken Burns poster inside the cabinet */}
+      <View style={s.cabinetInner}>
+        <ChaseFascia phase={phase} steady={steady} keystone />
+        {children}
+        <ChaseFascia phase={phase} steady={steady} reverse />
+      </View>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <PressableScale
+        style={s.cabinetOuter}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={accessibilityLabel}
+      >
+        {inner}
+      </PressableScale>
+    );
+  }
+  return <View style={s.cabinetOuter}>{inner}</View>;
+}
+
+// ── TUNGSTEN IGNITION (Loading State) — inherits the same cabinet ──
 const TungstenIgnition = memo(function TungstenIgnition() {
   const flicker = useSharedValue(0.1);
   const reducedMotion = useReducedMotion();
-  
+
   useEffect(() => {
     if (reducedMotion) {
       flicker.value = 0.8;
@@ -97,9 +202,6 @@ const TungstenIgnition = memo(function TungstenIgnition() {
     return () => cancelAnimation(flicker);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-  
-  // Removed useAnimatedReaction for haptics here to prevent infinite haptic spam
-  // if the film data fails to load or if the native UI layer crashes.
 
   const animStyle = useAnimatedStyle(() => ({ opacity: flicker.value }));
 
@@ -152,29 +254,23 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
   const globalCount = film?.vote_count ?? 0;
   const reviewText = localCount > 0
     ? `${localCount} SOCIETY REVIEW${localCount === 1 ? '' : 'S'}`
-    : globalCount > 0 
+    : globalCount > 0
       ? (globalCount > 100 ? `${Math.floor(globalCount / 100) * 100}+ GLOBAL RATINGS` : `${globalCount} GLOBAL RATINGS`)
       : 'AWAITING RATINGS';
 
   if (!film) return (
-    <View style={s.marqueeShell}>
-      <MarqueeBulbRow count={8} />
+    <MarqueeCabinet>
       <TungstenIgnition />
-      <MarqueeBulbRow count={8} />
-    </View>
+    </MarqueeCabinet>
   );
 
   const posterBg = film.poster_path ? `${TMDB_IMG_W500}${film.poster_path}` : null;
 
   return (
-    <PressableScale
-      style={s.marqueeShell}
+    <MarqueeCabinet
       onPress={() => { TactileEngine.mutate(); (router.push as any)(`/film/${film.id}` as any); }}
-      accessibilityRole="button"
       accessibilityLabel={`The weekly feature: ${film.title ?? 'Reelhouse'}`}
     >
-      <MarqueeBulbRow count={8} />
-
       <View style={s.marqueeBoard}>
         {posterBg && (
           <AnimatedExpoImage
@@ -225,23 +321,97 @@ export const MarqueeBoard = memo(function MarqueeBoard({ film }: { film: TMDBFil
           </View>
           <Text style={s.marqueeReviewCount}>{reviewText}</Text>
         </View>
-        <FilmGrain />
       </View>
-
-      <MarqueeBulbRow count={8} />
-    </PressableScale>
+    </MarqueeCabinet>
   );
 });
 
 const s = StyleSheet.create({
-  marqueeShell: {
+  // ── The Brass Cabinet ──
+  cabinetOuter: {
     marginHorizontal: 16,
-    borderRadius: 4,
+    borderRadius: 7,
     borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.18)',
+    borderColor: 'rgba(184,137,26,0.45)',
+    padding: 3,
+    backgroundColor: '#0B0906',
+    ...effects.shadowPrimary,
+    // NO overflow:hidden here — the corner studs live on this layer.
+  },
+  cabinetInner: {
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(184,137,26,0.16)',
     overflow: 'hidden',
     backgroundColor: 'rgba(14,11,8,0.9)',
   },
+  stud: {
+    position: 'absolute',
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: colors.sepia,
+    zIndex: 2,
+  },
+  studTL: { top: -2.5, left: -2.5 },
+  studTR: { top: -2.5, right: -2.5 },
+  studBL: { bottom: -2.5, left: -2.5 },
+  studBR: { bottom: -2.5, right: -2.5 },
+
+  // ── Bulb fascias (mounted between the moldings) ──
+  fascia: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 13,
+    backgroundColor: '#0C0A07',
+  },
+  fasciaTop: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: 'rgba(184,137,26,0.2)',
+  },
+  fasciaBottom: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(184,137,26,0.2)',
+  },
+  bulbSocket: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'rgba(184,137,26,0.4)',
+    backgroundColor: '#0B0906',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  bulbCore: {
+    width: 4.5,
+    height: 4.5,
+    borderRadius: 2.25,
+    // Warm tungsten core with an amber halo — deliberately hotter than brass.
+    backgroundColor: '#FCEBB8',
+    shadowColor: '#DCA63A',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.85,
+    shadowRadius: 4,
+  },
+  keystone: {
+    borderWidth: 1,
+    borderColor: 'rgba(184,137,26,0.35)',
+    borderRadius: 3,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+    backgroundColor: colors.ink,
+  },
+  keystoneMark: {
+    fontFamily: fonts.sub,
+    fontSize: 8,
+    color: colors.sepia,
+    includeFontPadding: false,
+  },
+
+  // ── The board inside the cabinet ──
   marqueeBoard: {
     minHeight: 180,
     overflow: 'hidden',
@@ -266,7 +436,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
   },
   marqueeEyebrow: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 3,
     color: colors.sepia,
@@ -327,50 +497,18 @@ const s = StyleSheet.create({
     paddingVertical: 2,
   },
   marqueeYearText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 2,
     color: colors.sepia,
   },
   marqueeReviewCount: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 2.5,
     color: colors.fog,
     textAlign: 'center',
     marginTop: 4,
     opacity: 0.7,
-  },
-  marqueeBulbRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    backgroundColor: 'rgba(14,11,8,0.95)',
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(184,137,26,0.1)',
-  },
-  marqueeBulb: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(218,165,32,0.08)',
-  },
-  marqueeBulbInner: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    // Warm tungsten: a near-white-hot core with an amber glow halo (shadow),
-    // replacing the canary #FFD700 — truer to the aged-tungsten palette.
-    backgroundColor: '#FCEBB8',
-    shadowColor: '#DCA63A',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.85,
-    shadowRadius: 5,
-    elevation: 4,
   },
 });

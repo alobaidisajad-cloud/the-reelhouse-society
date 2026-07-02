@@ -12,6 +12,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts } from '@/src/theme/theme';
 import type { TMDBFilm } from './types';
 
+// Wire-dispatch line: "NOSFERATU · 1922" — title with its release year.
+function tickerLine(f: TMDBFilm): string {
+  const title = (f.title ?? f.name ?? '').toUpperCase();
+  const year = f.release_date?.slice(0, 4);
+  return year ? `${title} · ${year}` : title;
+}
+
 export const FilmTicker = memo(function FilmTicker({ films }: { films: TMDBFilm[] }) {
   const translateX = useSharedValue(0);
   const opacity = useSharedValue(0);
@@ -51,7 +58,7 @@ export const FilmTicker = memo(function FilmTicker({ films }: { films: TMDBFilm[
           {films.map((f, i) => (
             <View key={`tick-1-${f.id}-${i}`} style={s.tickerItem}>
               <Text style={s.tickerTitle}>
-                {(f.title ?? f.name ?? '').toUpperCase()}
+                {tickerLine(f)}
               </Text>
               <Text style={s.tickerDot}>✦</Text>
             </View>
@@ -61,7 +68,7 @@ export const FilmTicker = memo(function FilmTicker({ films }: { films: TMDBFilm[
           {films.map((f, i) => (
             <View key={`tick-2-${f.id}-${i}`} style={s.tickerItem}>
               <Text style={s.tickerTitle}>
-                {(f.title ?? f.name ?? '').toUpperCase()}
+                {tickerLine(f)}
               </Text>
               <Text style={s.tickerDot}>✦</Text>
             </View>
@@ -92,9 +99,10 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
   },
   tickerTitle: {
-    fontFamily: fonts.ui,
+    // Typewriter — the ticker is a wire dispatch, and now it sounds like one.
+    fontFamily: fonts.sub,
     fontSize: 9,
-    letterSpacing: 3,
+    letterSpacing: 2.5,
     color: colors.fog,
   },
   tickerDot: {

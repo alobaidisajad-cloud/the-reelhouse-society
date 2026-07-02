@@ -42,6 +42,8 @@ export interface PulseActivity {
   user_id?: string;
   user: string;
   userRole: string;
+  /** Member's portrait; Buster remains the fallback when absent. */
+  userAvatar?: string | null;
   film: { id: number; title: string; poster_path: string | null };
   rating: number;
   text: string;

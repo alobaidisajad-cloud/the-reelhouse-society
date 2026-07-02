@@ -77,7 +77,7 @@ const s = StyleSheet.create({
   },
   title: {
     includeFontPadding: false,
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 11,
     letterSpacing: 2.5,
     color: colors.sepia,

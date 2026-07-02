@@ -71,8 +71,9 @@ export default function QuickActionsFAB() {
                     style={[s.sheet, { paddingBottom: Math.max(insets.bottom, 24) }]}
                 >
                     <View style={s.knob} />
-                    
-                    <Text style={s.sheetTitle}>QUICK ACTIONS</Text>
+
+                    <Text style={s.sheetTitle}>✦ THE CONCIERGE ✦</Text>
+                    <Text style={s.sheetLore}>At your service, day or night.</Text>
 
                     <PressableScale style={s.actionRow} onPress={() => handleAction('/log-modal')} accessibilityRole="button" accessibilityLabel="Log a film">
                         <View style={[s.actionIconWrap, s.actionIconLog]}>
@@ -151,7 +152,10 @@ const s = StyleSheet.create({
         alignSelf: 'center', marginBottom: 20,
     },
     sheetTitle: {
-        fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.fog, marginBottom: 20
+        fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.sepia, marginBottom: 4, textAlign: 'center',
+    },
+    sheetLore: {
+        fontFamily: fonts.bodyItalic, fontSize: 10, color: colors.fog, opacity: 0.6, marginBottom: 16, textAlign: 'center',
     },
     actionRow: {
         flexDirection: 'row', alignItems: 'center', paddingVertical: 16,
@@ -160,7 +164,7 @@ const s = StyleSheet.create({
     actionIconWrap: {
         width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 16,
     },
-    actionIconLog: { backgroundColor: 'rgba(196,150,26,0.1)' },
+    actionIconLog: { backgroundColor: colors.sepiaFaint },
     actionIconList: { backgroundColor: 'rgba(232,223,200,0.1)' },
     actionIconOracle: { backgroundColor: 'rgba(107,26,10,0.15)' },
     actionRowLast: { borderBottomWidth: 0 },

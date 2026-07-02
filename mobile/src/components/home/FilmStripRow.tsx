@@ -101,7 +101,8 @@ export const FilmStripRow = memo(function FilmStripRow({ title, label, films, lo
 
 const s = StyleSheet.create({
   filmStripSection: {
-    marginBottom: 6,
+    // Rhythm: 16 + the next divider's 20 = the page-wide 36px section gap.
+    marginBottom: 16,
   },
   stripHeader: {
     flexDirection: 'row',

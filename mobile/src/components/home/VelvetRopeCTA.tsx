@@ -76,7 +76,7 @@ export const BrassSheen = memo(() => {
 
 const s = StyleSheet.create({
   ctaSecondaryNoir: { paddingVertical: 12, paddingHorizontal: 24 },
-  ctaSecondaryNoirText: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 3, color: colors.bone, opacity: 0.6 },
+  ctaSecondaryNoirText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 3, color: colors.bone, opacity: 0.65 },
 });
 
 
