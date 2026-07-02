@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Pressable, StyleSheet, ActivityIndicator, Modal, TextInput, Platform } from 'react-native';
+import { KeyRound, X } from 'lucide-react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import { SocietyEyebrow, HaloIcon, RegistrationBrackets } from './AuthChrome';
 
 interface Props {
   visible: boolean;
@@ -20,6 +22,8 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
   const animatedOverlayStyle = useAnimatedStyle(() => ({
     paddingBottom: Platform.OS === 'ios' ? keyboard.height.value + 24 : 24,
   }));
+  // Ledger line warms to brass while the field is active
+  const [emailFocused, setEmailFocused] = useState(false);
 
   return (
     <Modal
@@ -34,22 +38,24 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
           onPress={onClose}
         />
         <View style={s.modalContent}>
+          {/* Archival registration marks in the card corners */}
+          <RegistrationBrackets />
+
           {/* Close */}
           <PressableScale
             style={s.modalCloseBtn}
             onPress={onClose}
             hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
             haptic="light"
+            accessibilityLabel="Close recovery"
           >
-            <Text style={s.modalCloseText}>✕</Text>
+            <X size={16} color={colors.bone} strokeWidth={2} />
           </PressableScale>
 
-          {/* Header */}
+          {/* Header — the lost key, unframed in candlelight */}
           <View style={s.modalHeader}>
-            <View style={s.modalIconWrap}>
-              <Text style={s.modalIcon}>🔒</Text>
-            </View>
-            <Text style={s.modalEyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>CREDENTIAL RECOVERY</Text>
+            <HaloIcon icon={KeyRound} iconSize={24} haloSize={104} style={s.iconWrap} />
+            <SocietyEyebrow label="CREDENTIAL RECOVERY" style={s.eyebrowWrap} />
             <Text style={s.modalTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
               {forgotSent ? 'Check Your Inbox' : 'Reset Password'}
             </Text>
@@ -74,7 +80,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                 hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
                 pressedScale={0.97}
               >
-                <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>BACK TO SIGN IN</Text>
+                <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦  BACK TO SIGN IN</Text>
               </PressableScale>
             </View>
           ) : (
@@ -83,14 +89,17 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                 {/* eslint-disable-next-line react/no-unescaped-entities */}
                 Enter the email associated with your account and we'll send you a classified reset link.
               </Text>
-              <View style={s.inputWrap}>
+              <View style={s.fieldGroup}>
+                <Text style={[s.inputLabel, emailFocused && s.inputLabelFocused]}>EMAIL ADDRESS</Text>
                 <TextInput
                   testID="recovery-email-input"
-                  style={s.input}
+                  style={[s.input, emailFocused && s.inputFocused]}
                   placeholder="your@email.com"
                   placeholderTextColor={colors.fog}
                   value={forgotEmail}
                   onChangeText={onEmailChange}
+                  onFocus={() => setEmailFocused(true)}
+                  onBlur={() => setEmailFocused(false)}
                   autoCapitalize="none"
                   keyboardType="email-address"
                   selectionColor={colors.sepia}
@@ -118,7 +127,7 @@ export function PasswordRecoveryModal({ visible, forgotSent, forgotEmail, forgot
                     <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SENDING...</Text>
                   </View>
                 ) : (
-                  <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>SEND RESET LINK</Text>
+                  <Text style={s.modalSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦  SEND RESET LINK</Text>
                 )}
               </PressableScale>
             </View>
@@ -139,7 +148,7 @@ const s = StyleSheet.create({
   modalContent: {
     backgroundColor: colors.ink,
     borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.3)',
+    borderColor: colors.sepiaBorder,
     borderRadius: 4,
     padding: 28,
     ...effects.glowSepia,
@@ -154,35 +163,15 @@ const s = StyleSheet.create({
     zIndex: 10,
     padding: 8,
   },
-  modalCloseText: {
-    color: colors.fog,
-    fontSize: 16,
-    fontFamily: fonts.ui,
-  },
   modalHeader: {
     alignItems: 'center',
     marginBottom: 24,
   },
-  modalIconWrap: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: 'rgba(196,150,26,0.08)',
-    borderWidth: 1,
-    borderColor: colors.sepiaBorder,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
+  iconWrap: {
+    marginBottom: 14,
   },
-  modalIcon: {
-    fontSize: 22,
-  },
-  modalEyebrow: {
-    fontFamily: fonts.ui,
-    fontSize: 8,
-    letterSpacing: 4,
-    color: colors.sepia,
-    marginBottom: 8,
+  eyebrowWrap: {
+    marginBottom: 10,
   },
   modalTitle: {
     fontFamily: fonts.display,
@@ -200,7 +189,7 @@ const s = StyleSheet.create({
     marginBottom: 8,
   },
   modalSubText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 1,
     color: colors.fog,
@@ -215,28 +204,40 @@ const s = StyleSheet.create({
     ...effects.glowSepia,
   },
   modalSubmitText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
+    fontFamily: fonts.sub,
+    fontSize: 11,
     letterSpacing: 2,
     color: colors.ink,
-    fontWeight: '700',
   },
   forgotEmailHighlight: {
     color: colors.parchment,
     fontFamily: fonts.bodyBold,
   },
-  inputWrap: {
-    position: 'relative',
+  fieldGroup: {
+    gap: 8,
+  },
+  inputLabel: {
+    fontFamily: fonts.sub,
+    fontSize: 10,
+    letterSpacing: 2.5,
+    color: colors.fog,
+    textTransform: 'uppercase',
+  },
+  inputLabelFocused: {
+    color: colors.sepia,
   },
   input: {
     backgroundColor: 'transparent',
     borderBottomWidth: 2,
-    borderColor: '#3A2E1C',
+    borderColor: colors.sepiaBorder,
     paddingVertical: 12,
     paddingHorizontal: 4,
     fontSize: 16,
     fontFamily: fonts.mono,
     color: colors.parchment,
+  },
+  inputFocused: {
+    borderColor: colors.sepiaBorderStrong,
   },
   submitDisabled: {
     opacity: 0.5,

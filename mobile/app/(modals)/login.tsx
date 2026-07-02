@@ -1,18 +1,16 @@
-import { useRef, useEffect, useCallback } from 'react';
+import { useRef, useEffect, useCallback, useState } from 'react';
 import {
   View, Text, TextInput,
-  ScrollView, StyleSheet
+  ScrollView
 } from 'react-native';
 import { X, Sparkles, Check } from 'lucide-react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
-import { Image } from 'expo-image';
 import Animated, {
   FadeInDown, FadeInUp, FadeIn, LinearTransition,
   useSharedValue, useAnimatedStyle, withTiming, withRepeat,
   Easing, interpolate, ReduceMotion,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { nav } from '@/src/utils/typedRouter';
 import { useIsFocused } from '@react-navigation/native';
@@ -21,8 +19,10 @@ import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { pickAny } from '@/src/lore/fragments';
 import { useAuthFlow } from '@/src/hooks/useAuthFlow';
-import { loginStyles as s, perfStyles } from '@/src/theme/authStyles';
+import { loginStyles as s } from '@/src/theme/authStyles';
 
+import { AuthBackdrop, SocietyEyebrow, RegistrationBrackets, Est1924 } from '@/src/components/auth/AuthChrome';
+import { SocietySeal } from '@/src/components/auth/SocietySeal';
 import { PasswordStrengthMeter } from '@/src/components/auth/PasswordStrengthMeter';
 import { EmailConfirmationScreen } from '@/src/components/auth/EmailConfirmationScreen';
 import { PasswordRecoveryModal } from '@/src/components/auth/PasswordRecoveryModal';
@@ -33,22 +33,6 @@ const AnimatedText = Animated.createAnimatedComponent(Text);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
 
 WebBrowser.maybeCompleteAuthSession();
-
-// ── Decorative film-strip perforations ──
-function FilmPerforations({ side }: { side: 'left' | 'right' }) {
-  const holes = Array.from({ length: 18 });
-  return (
-    <View
-      style={[perfStyles.strip, side === 'left' ? perfStyles.left : perfStyles.right]}
-      accessibilityElementsHidden={true}
-      importantForAccessibility="no-hide-descendants"
-    >
-      {holes.map((_, i) => (
-        <View key={i} style={perfStyles.hole} />
-      ))}
-    </View>
-  );
-}
 
 // ── Subtle animated pulse for the gold accent line ──
 function PulsingRule() {
@@ -146,14 +130,22 @@ export default function LoginScreen() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isFocused]);
   const titleGlowStyle = useAnimatedStyle(() => ({
-    textShadowColor: `rgba(196, 150, 26, ${interpolate(titleGlow.value, [0, 1], [0.15, 0.55])})`,
+    // CONST-1: channels match base sepia (#B8891A = rgb(184,137,26))
+    textShadowColor: `rgba(184, 137, 26, ${interpolate(titleGlow.value, [0, 1], [0.15, 0.55])})`,
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: interpolate(titleGlow.value, [0, 1], [4, 18]),
   }));
 
+  // ── Field focus — the ledger line under the active field warms to brass ──
+  const [focusedField, setFocusedField] = useState<'email' | 'username' | 'password' | null>(null);
+
   // IMP #1: Haptic feedback on input focus
-  const onInputFocus = useCallback(() => {
+  const onInputFocus = useCallback((field: 'email' | 'username' | 'password') => {
     TactileEngine.selection();
+    setFocusedField(field);
+  }, []);
+  const onInputBlur = useCallback(() => {
+    setFocusedField(null);
   }, []);
 
   // ── EMAIL CONFIRMATION SCREEN ──
@@ -175,13 +167,7 @@ export default function LoginScreen() {
     <View style={[s.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       <ToastOverlay />
       {/* ── Background & Atmospherics ── */}
-      <LinearGradient
-        colors={[colors.ink, '#0B0907', colors.soot]}
-        locations={[0, 0.5, 1]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <FilmPerforations side="left" />
-      <FilmPerforations side="right" />
+      <AuthBackdrop />
 
       {/* ── Pinned Header / Close (0-Overlap) ── */}
       <BlurView intensity={80} tint="dark" style={[s.fixedHeader, { paddingTop: insets.top, height: 56 + insets.top }]}>
@@ -211,20 +197,15 @@ export default function LoginScreen() {
         >
           {/* ── Titles ── */}
           <AnimatedView entering={FadeInDown.duration(900).reduceMotion(ReduceMotion.Never)} style={s.header}>
-          {/* Decorative stamp — official logo */}
-          <View style={s.stampContainer}>
-            <View style={s.stampBorder}>
-              <Image
-                source={require('../../assets/images/reelhouse-logo.png')}
-                style={s.stampLogo}
-                contentFit="contain"
-              />
-            </View>
+          {/* The Society's mark — unframed, ignited by candlelight */}
+          <View style={s.sealWrap}>
+            <SocietySeal size={92} />
           </View>
 
-          <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
-            {isLogin ? 'IDENTIFY YOURSELF' : 'REQUEST MEMBERSHIP'}
-          </Text>
+          <SocietyEyebrow
+            label={isLogin ? 'IDENTIFY YOURSELF' : 'REQUEST MEMBERSHIP'}
+            style={s.eyebrowWrap}
+          />
 
           <AnimatedText style={[s.title, titleGlowStyle]}>
             {isLogin ? 'Enter\nThe House' : 'Join\nThe Society'}
@@ -248,19 +229,24 @@ export default function LoginScreen() {
         <AnimatedView layout={LinearTransition.springify().mass(0.5).damping(14)} entering={FadeInDown.duration(700).delay(250).reduceMotion(ReduceMotion.Never)} style={s.formCard}>
           {/* Subtle top border glow */}
           <View style={s.formCardGlow} />
+          {/* Archival registration marks in the card corners */}
+          <RegistrationBrackets />
 
           {/* Email / Username */}
           <View style={s.fieldGroup}>
-            <Text style={s.inputLabel}>{isLogin ? 'EMAIL OR USERNAME' : 'EMAIL ADDRESS'}</Text>
+            <Text style={[s.inputLabel, focusedField === 'email' && s.inputLabelFocused]}>
+              {isLogin ? 'EMAIL OR USERNAME' : 'EMAIL ADDRESS'}
+            </Text>
             <View style={s.inputWrap}>
               <TextInput
                 testID="email-input"
-                style={[s.input, submitting && s.inputDisabled]}
+                style={[s.input, focusedField === 'email' && s.inputFocused, submitting && s.inputDisabled]}
                 placeholder={isLogin ? 'patron@cinema.org' : 'your@email.com'}
                 placeholderTextColor={colors.fog}
                 value={emailOrUsername}
                 onChangeText={(val) => setEmailOrUsername(val.trim().replace(/\s/g, ''))}
-                onFocus={onInputFocus}
+                onFocus={() => onInputFocus('email')}
+                onBlur={onInputBlur}
                 editable={!submitting}
                 autoCapitalize="none"
                 autoCorrect={false}
@@ -285,12 +271,12 @@ export default function LoginScreen() {
           {/* Username (signup only) */}
           {!isLogin && (
             <AnimatedView entering={FadeInDown.duration(400)} style={s.fieldGroup}>
-              <Text style={s.inputLabel}>USERNAME / HANDLE</Text>
+              <Text style={[s.inputLabel, focusedField === 'username' && s.inputLabelFocused]}>USERNAME / HANDLE</Text>
               <View style={s.inputWrap}>
                 <Text style={s.inputPrefix}>@</Text>
                 <TextInput
                   ref={usernameRef}
-                  style={[s.input, { paddingLeft: 30, paddingRight: usernameStatus !== 'idle' ? 40 : 16 }, submitting && s.inputDisabled]}
+                  style={[s.input, { paddingLeft: 30, paddingRight: usernameStatus !== 'idle' ? 40 : 16 }, focusedField === 'username' && s.inputFocused, submitting && s.inputDisabled]}
                   placeholder="your_handle"
                   placeholderTextColor={colors.fog}
                   value={username}
@@ -299,7 +285,8 @@ export default function LoginScreen() {
                     setUsername(filtered);
                     checkUsernameAvailability(filtered);
                   }}
-                  onFocus={onInputFocus}
+                  onFocus={() => onInputFocus('username')}
+                  onBlur={onInputBlur}
                   editable={!submitting}
                   autoCapitalize="none"
                   selectionColor={colors.sepia}
@@ -315,7 +302,7 @@ export default function LoginScreen() {
                 {usernameStatus !== 'idle' && (
                   <View style={s.usernameStatusWrap}>
                     {usernameStatus === 'checking' && <AnimatedSparkles size={14} color={colors.fog} style={checkingSpinStyle} />}
-                    {usernameStatus === 'available' && <Check size={14} color={'#4caf50'} strokeWidth={2.5} />}
+                    {usernameStatus === 'available' && <Check size={14} color={colors.validation} strokeWidth={2.5} />}
                     {usernameStatus === 'taken' && <X size={14} color={colors.bloodReel} strokeWidth={2.5} />}
                   </View>
                 )}
@@ -331,17 +318,18 @@ export default function LoginScreen() {
 
           {/* Password */}
           <View style={s.fieldGroup}>
-            <Text style={s.inputLabel}>PASSWORD</Text>
+            <Text style={[s.inputLabel, focusedField === 'password' && s.inputLabelFocused]}>PASSWORD</Text>
             <View style={s.inputWrap}>
               <TextInput
                 testID="password-input"
                 ref={passwordRef}
-                style={[s.input, { paddingRight: 60 }, submitting && s.inputDisabled]}
+                style={[s.input, { paddingRight: 60 }, focusedField === 'password' && s.inputFocused, submitting && s.inputDisabled]}
                 placeholder="••••••••"
                 placeholderTextColor={colors.fog}
                 value={password}
                 onChangeText={setPassword}
-                onFocus={onInputFocus}
+                onFocus={() => onInputFocus('password')}
+                onBlur={onInputBlur}
                 editable={!submitting}
                 secureTextEntry={!showPassword}
                 selectionColor={colors.sepia}
@@ -422,8 +410,9 @@ export default function LoginScreen() {
           </PressableScale>
         </AnimatedView>
 
-        {/* Footer legal note */}
+        {/* Footer — founding mark + legal note */}
         <AnimatedView entering={FadeIn.duration(500).delay(700).reduceMotion(ReduceMotion.Never)} style={s.footerNote}>
+          <Est1924 style={s.estMark} />
           <Text style={s.footerText}>
             {/* eslint-disable-next-line react/no-unescaped-entities */}
             By continuing, you agree to The ReelHouse Society's{'\n'}Terms of Service & Privacy Policy

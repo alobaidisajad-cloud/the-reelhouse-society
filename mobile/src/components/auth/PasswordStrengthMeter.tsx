@@ -23,8 +23,9 @@ export const PW_CHECK_LABELS: [PwCheckKey, string][] = [
 ];
 
 export function getStrengthInfo(passed: number) {
+  // Brand tarnish ladder: blood → rust → brass → archive-approved green
   const labels = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'];
-  const clrs   = ['', colors.bloodReel, '#c4a000', '#c4a000', colors.sepia, '#4caf50'];
+  const clrs   = ['', colors.bloodReel, colors.rust, colors.rust, colors.sepia, colors.validation];
   return { label: labels[passed], color: clrs[passed] };
 }
 
@@ -52,10 +53,10 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
       <View style={s.checksGrid}>
         {PW_CHECK_LABELS.map(([key, label]) => (
           <View key={key} style={s.checkRow}>
-            <Text style={[s.checkIcon, { color: pwChecks[key] ? '#4caf50' : colors.fog }]}>
+            <Text style={[s.checkIcon, { color: pwChecks[key] ? colors.validation : colors.fog }]}>
               {pwChecks[key] ? '✓' : '○'}
             </Text>
-            <Text style={[s.checkLabel, { color: pwChecks[key] ? '#4caf50' : colors.fog }]}>
+            <Text style={[s.checkLabel, { color: pwChecks[key] ? colors.validation : colors.fog }]}>
               {label}
             </Text>
           </View>
@@ -69,7 +70,7 @@ const s = StyleSheet.create({
   strengthWrap: { gap: 10 },
   strengthBarRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   strengthSegment: { flex: 1, height: 3, borderRadius: 2 },
-  strengthLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, marginLeft: 8, minWidth: 80 },
+  strengthLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, marginLeft: 8, minWidth: 80 },
   checksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '48%' as import('react-native').DimensionValue },
   checkIcon: { fontFamily: fonts.ui, fontSize: 11 },

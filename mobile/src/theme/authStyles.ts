@@ -41,31 +41,12 @@ export const loginStyles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 32,
   },
-  stampContainer: {
-    marginBottom: 16,
-  },
-  stampBorder: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 1.5,
-    borderColor: 'rgba(196,150,26,0.3)',
+  sealWrap: {
+    marginBottom: 18,
     alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.soot,
   },
-  stampLogo: {
-    width: 28,
-    height: 35,
-    tintColor: colors.sepia,
-  },
-  eyebrow: {
-    fontFamily: fonts.sub,
-    fontSize: 9,
-    letterSpacing: 5,
-    color: colors.sepia,
-    marginBottom: 12,
-    textTransform: 'uppercase',
+  eyebrowWrap: {
+    marginBottom: 14,
   },
   title: {
     fontFamily: fonts.display,
@@ -122,11 +103,14 @@ export const loginStyles = StyleSheet.create({
     gap: 8,
   },
   inputLabel: {
-    fontFamily: fonts.ui,
-    fontSize: 9,
+    fontFamily: fonts.sub,
+    fontSize: 10,
     letterSpacing: 2.5,
     color: colors.fog,
     textTransform: 'uppercase',
+  },
+  inputLabelFocused: {
+    color: colors.sepia,
   },
   inputWrap: {
     position: 'relative',
@@ -151,11 +135,14 @@ export const loginStyles = StyleSheet.create({
     fontFamily: fonts.mono,
     color: colors.parchment,
   },
+  inputFocused: {
+    borderColor: colors.sepiaBorderStrong,
+  },
   inputDisabled: {
     opacity: 0.5,
   },
   fieldHint: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 9,
     color: colors.sepia,
     letterSpacing: 0.5,
@@ -170,16 +157,6 @@ export const loginStyles = StyleSheet.create({
     bottom: 0,
     justifyContent: 'center',
   },
-  usernameAvailable: {
-    fontSize: 16,
-    color: colors.validation,
-    fontFamily: fonts.uiBold,
-  },
-  usernameTaken: {
-    fontSize: 16,
-    color: colors.bloodReel,
-    fontFamily: fonts.uiBold,
-  },
 
   // ── Password ──
   showBtn: {
@@ -190,7 +167,7 @@ export const loginStyles = StyleSheet.create({
     justifyContent: 'center',
   },
   showText: {
-    fontFamily: fonts.uiMedium,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 1.5,
     color: colors.sepia,
@@ -202,7 +179,7 @@ export const loginStyles = StyleSheet.create({
     marginTop: -8,
   },
   forgotText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     color: colors.fog,
     fontSize: 10,
     letterSpacing: 0.5,
@@ -224,11 +201,11 @@ export const loginStyles = StyleSheet.create({
     shadowOpacity: 0,
   },
   submitText: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 11,
-    letterSpacing: 2.5,
+    // Typewriter CTA — reads like a stamped clearance on the admission slip
+    fontFamily: fonts.sub,
+    fontSize: 12,
+    letterSpacing: 2,
     color: colors.ink,
-    fontWeight: '700',
   },
   submitLoading: {
     flexDirection: 'row',
@@ -259,6 +236,9 @@ export const loginStyles = StyleSheet.create({
     marginTop: 20,
     paddingHorizontal: 16,
   },
+  estMark: {
+    marginBottom: 10,
+  },
   footerText: {
     fontFamily: fonts.ui,
     fontSize: 8,
@@ -270,16 +250,5 @@ export const loginStyles = StyleSheet.create({
   },
 });
 
-export const perfStyles = StyleSheet.create({
-  strip: {
-    position: 'absolute', top: 0, bottom: 0, width: 18,
-    justifyContent: 'space-evenly', alignItems: 'center',
-    opacity: 0.08,
-  },
-  left: { left: 0 },
-  right: { right: 0 },
-  hole: {
-    width: 8, height: 8, borderRadius: 1.5,
-    backgroundColor: colors.parchment,
-  },
-});
+// Film-strip perforation styles now live with the shared auth chrome:
+// see src/components/auth/AuthChrome.tsx (AuthBackdrop).
