@@ -169,7 +169,7 @@ const s = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   filterSectionTitle: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2,
     color: colors.sepia,
@@ -197,9 +197,9 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
     color: colors.parchment,
-    fontFamily: fonts.ui,
+    fontFamily: fonts.body,
     fontSize: 13,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
     textAlign: 'center',
   },
   yearRangeDash: {

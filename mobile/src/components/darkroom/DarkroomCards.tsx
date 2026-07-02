@@ -120,7 +120,9 @@ export const FilmGridCard = React.memo(function FilmGridCard({ item }: { item: D
         <View style={[s.posterImg, !posterUri && s.posterPlaceholder]}>
           {posterUri ? (
             <>
-              <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={50} contentFit="cover" />
+              {/* THE DEVELOP — each print surfaces from its sepia ghost like
+                  paper in the tray. Native GPU crossfade: zero JS cost. */}
+              <Image source={{ uri: posterUri }} style={StyleSheet.absoluteFillObject} cachePolicy="memory-disk" recyclingKey={`${item.media_type || 'movie'}-${item.id}`} placeholder={{ blurhash: SEPIA_HASH }} transition={300} contentFit="cover" />
               {/* Soft tactical tungsten edge mapping */}
               <LinearGradient 
                 colors={['rgba(255,255,255,0.08)', 'transparent', 'rgba(10,5,3,0.9)']} 
@@ -237,7 +239,7 @@ const s = StyleSheet.create({
   },
   suggestionSubTitle: {
     color: colors.fog,
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 1,
   },
@@ -307,7 +309,7 @@ const s = StyleSheet.create({
   loggedText: {
     color: colors.ink,
     fontSize: 10,
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
   },
   personName: {
     position: 'absolute',
@@ -315,8 +317,9 @@ const s = StyleSheet.create({
     width: '100%',
     backgroundColor: 'rgba(10,8,5,0.85)',
     color: colors.parchment,
-    fontFamily: fonts.ui,
-    fontSize: 10,
+    fontFamily: fonts.sub,
+    fontSize: 9,
+    letterSpacing: 0.5,
     textAlign: 'center',
     paddingVertical: 6,
   },

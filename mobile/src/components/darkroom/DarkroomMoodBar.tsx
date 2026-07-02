@@ -63,7 +63,7 @@ const s = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionEyebrow: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 3,
     color: colors.sepia,
@@ -88,12 +88,11 @@ const s = StyleSheet.create({
     ...effects.shadowSurface,
   },
   moodLabel: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.sub,
     fontSize: 10,
-    letterSpacing: 3,
+    letterSpacing: 2,
     color: colors.bone,
     textTransform: 'uppercase',
-    fontWeight: '700',
   },
   moodLabelActive: {
     color: '#F2ECD8',
@@ -108,6 +107,6 @@ const s = StyleSheet.create({
   },
   moodSubActive: {
     opacity: 0.9,
-    color: '#f2e8a0'
+    color: colors.flicker,
   },
 });

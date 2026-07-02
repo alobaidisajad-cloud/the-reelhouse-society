@@ -59,7 +59,7 @@ export const DarkroomHero = React.memo(function DarkroomHero({
 
         <View style={s.estRow}>
           <LinearGradient colors={['transparent', 'rgba(184,137,26,0.35)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.estRule} />
-          <Text style={s.heroEst} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>Est. 1924</Text>
+          <Text style={s.heroEst} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>EST. 1924</Text>
           <LinearGradient colors={['rgba(184,137,26,0.35)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.estRule} />
         </View>
 
@@ -119,15 +119,6 @@ const s = StyleSheet.create({
     alignItems: 'center',
     zIndex: 1,
   },
-  heroEyebrow: {
-    fontFamily: fonts.mono,
-    fontSize: 11,
-    letterSpacing: 12,
-    color: colors.sepia,
-    marginBottom: spacing.sm,
-    opacity: 0.6,
-    fontWeight: '700',
-  },
   heroTitle: {
     fontFamily: fonts.display,
     fontSize: 34,
@@ -151,11 +142,11 @@ const s = StyleSheet.create({
     height: 1,
   },
   heroEst: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 7,
-    letterSpacing: 5,
+    letterSpacing: 4,
     color: colors.fog,
-    opacity: 0.6,
+    opacity: 0.65,
   },
   searchWrap: {
     width: '100%',
@@ -171,6 +162,8 @@ const s = StyleSheet.create({
     zIndex: 1,
   },
   searchInput: {
+    // Courier ledger hand, not bold terminal mono — typing should feel
+    // like filling an archival form, same as every input in the app.
     width: '100%',
     backgroundColor: 'rgba(10,8,5,0.95)',
     borderWidth: 1.5,
@@ -180,10 +173,9 @@ const s = StyleSheet.create({
     paddingLeft: 46,
     paddingRight: 40,
     color: '#F2ECD8',
-    fontFamily: fonts.mono,
-    fontSize: 12,
-    letterSpacing: 2,
-    fontWeight: '700',
+    fontFamily: fonts.body,
+    fontSize: 13,
+    letterSpacing: 0.5,
     ...effects.shadowSurface,
   },
   searchInputActive: {

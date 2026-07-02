@@ -242,7 +242,7 @@ export default function DarkRoomScreen() {
       return (
         <View style={s.footerLoading}>
            <Animated.Text entering={FadeInDown} style={s.paginationRetrieving}>
-             [ ACCESSING ARCHIVES... ]
+             [ DEVELOPING THE NEXT BATCH... ]
            </Animated.Text>
         </View>
       );
@@ -280,13 +280,15 @@ export default function DarkRoomScreen() {
         <View style={{ alignItems: 'center' }}>
           <Buster size={56} mood="crying" />
         </View>
+        {/* "The Vault" belongs to the profile's physical-media room —
+            this tray speaks in the Darkroom's own chemistry. */}
         <Text style={s.emptyTitle}>
-          {isSearching ? 'The vault is sealed.' : 'No films surfaced.'}
+          {isSearching ? 'The negatives hold no match.' : 'Nothing surfaced in the tray.'}
         </Text>
         <Text style={s.emptySub}>
           {isSearching
             ? 'No films match that search. Try a different title.'
-            : 'Adjust your filters to uncover something from the archive.'}
+            : 'Adjust your filters to develop something new.'}
         </Text>
         <PressableScale
           style={s.emptyBtn}
@@ -364,9 +366,9 @@ const s = StyleSheet.create({
     height: 100,
   },
   paginationRetrieving: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.sub,
     fontSize: 9,
-    letterSpacing: 4,
+    letterSpacing: 3,
     color: colors.sepia,
     opacity: 0.6,
   },
@@ -406,9 +408,9 @@ const s = StyleSheet.create({
     ...effects.shadowPrimary,
   },
   emptyBtnText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 9,
-    letterSpacing: 3,
+    letterSpacing: 2.5,
     color: colors.sepia,
   },
   skeletonGrid: {

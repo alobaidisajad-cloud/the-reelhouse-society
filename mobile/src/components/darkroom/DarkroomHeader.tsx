@@ -33,7 +33,9 @@ export const Chip = React.memo(function Chip({ active, onPress, children, color 
         }
       ]}
     >
-      <Text style={[s.chipText, { color: active ? colors.ink : colors.bone, ...(active ? effects.textGlowSepia : {}) }]}>
+      {/* No glow on the active chip — sepia glow around ink text on a sepia
+          ground was invisible mud. A crisp stamp reads better. */}
+      <Text style={[s.chipText, { color: active ? colors.ink : colors.bone }]}>
         {children}
       </Text>
     </PressableScale>
@@ -271,12 +273,14 @@ export const DarkroomHeader = React.memo(() => {
 
       <LinearGradient colors={['transparent', 'rgba(184,137,26,0.25)', 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.sectionDividerLine} />
 
+      {/* THE NEGATIVES — undeveloped stock. ("The Archive" belongs to the
+          profile's watched-films room; two rooms must never share a name.) */}
       <View style={s.sectionHeaderWrap}>
         <Text style={s.sectionLabel} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.7}>
-          {isSearching ? `ARCHIVE SEARCH: "${query.toUpperCase()}"` : (mood ? `MOOD: ${mood.label.toUpperCase()}` : 'THE ARCHIVE')}
+          {isSearching ? `DEVELOPING: "${query.toUpperCase()}"` : (mood ? `MOOD: ${mood.label.toUpperCase()}` : 'THE NEGATIVES')}
         </Text>
         <Text style={s.sectionTitle} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.7}>
-          {isSearching ? `${matchCount} Matches Found` : (mood ? mood.sub : 'The Open Archive')}
+          {isSearching ? `${matchCount} Matches Found` : (mood ? mood.sub : 'Awaiting Development')}
         </Text>
       </View>
     </View>
@@ -298,11 +302,10 @@ const s = StyleSheet.create({
     ...effects.shadowSurface,
   },
   chipText: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.sub,
     fontSize: 10,
-    letterSpacing: 2,
+    letterSpacing: 1.5,
     textTransform: 'uppercase',
-    fontWeight: '700'
   },
   filterHeader: {
     flexDirection: 'row',
@@ -327,11 +330,10 @@ const s = StyleSheet.create({
     borderColor: 'rgba(184,137,26,0.4)',
   },
   filterToggleText: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.sub,
     fontSize: 10,
-    letterSpacing: 3,
+    letterSpacing: 2.5,
     color: colors.fog,
-    fontWeight: '700',
   },
   filterToggleTextActive: {
     color: '#F2ECD8',
@@ -346,13 +348,13 @@ const s = StyleSheet.create({
   filterBadgeText: {
     color: colors.ink,
     fontSize: 9,
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
   },
   clearFiltersText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 10,
     color: colors.sepia,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   sectionDividerLine: {
     height: 1,
@@ -365,9 +367,9 @@ const s = StyleSheet.create({
     marginTop: spacing.sm,
   },
   sectionLabel: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 10,
-    letterSpacing: 4,
+    letterSpacing: 3,
     color: colors.sepia,
     marginBottom: spacing.sm,
   },
