@@ -26,7 +26,7 @@ export function LoungeGate() {
           <Text style={s.gateEst}>EST. 1924</Text>
           <OrnamentalRule />
 
-          <Text style={[s.gateSub, { fontFamily: fonts.mono, letterSpacing: 4 }]}>[ CLEARANCE REQUIRED ]</Text>
+          <Text style={s.gateSub}>[ CLEARANCE REQUIRED ]</Text>
 
           <Text style={s.gateDesc}>
             Beyond this door lies The Lounge — intimate cinema
@@ -41,11 +41,16 @@ export function LoungeGate() {
             style={s.gateCta}
             onPress={() => nav.push('/membership')}
             haptic="medium"
-            accessibilityRole="button" accessibilityLabel="Become an Archivist to access The Lounge"
+            accessibilityRole="button" accessibilityLabel="Ascend the ranks — opens membership"
           >
             <Sparkles size={11} color={colors.ink} strokeWidth={2} />
-            <Text style={s.gateCtaText} numberOfLines={1}>BECOME AN ARCHIVIST</Text>
+            <Text style={s.gateCtaText} numberOfLines={1}>✦ ASCEND THE RANKS</Text>
           </PressableScale>
+
+          {/* Tier-neutral — the whole ladder, no rank pushed over another */}
+          <Text style={s.gateKeyLine} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+            THE ARCHIVIST &amp; AUTEUR RANKS HOLD THE KEY
+          </Text>
 
           <Text style={s.gateFootnote}>
             PRIVATE SCREENING ROOMS / PUBLIC SALONS / CINEMA DISCOURSE
@@ -76,10 +81,10 @@ const s = StyleSheet.create({
     height: 72,
     borderRadius: 36,
     borderWidth: 1,
-    borderColor: 'rgba(196,150,26,0.35)',
+    borderColor: 'rgba(184,137,26,0.35)',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(196,150,26,0.03)',
+    backgroundColor: 'rgba(184,137,26,0.03)',
   },
   gateTitle: {
     fontFamily: fonts.display,
@@ -88,15 +93,15 @@ const s = StyleSheet.create({
     marginBottom: 6,
   },
   gateEst: {
-    fontFamily: fonts.uiMedium,
+    fontFamily: fonts.sub,
     fontSize: 8,
-    letterSpacing: 6,
+    letterSpacing: 5,
     color: colors.sepia,
     marginBottom: 4,
     opacity: 0.7,
   },
   gateSub: {
-    fontFamily: fonts.uiMedium,
+    fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 3,
     color: colors.sepia,
@@ -122,15 +127,25 @@ const s = StyleSheet.create({
     marginBottom: 28,
   },
   gateCtaText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2.5,
     color: colors.ink,
   },
-  gateFootnote: {
-    fontFamily: fonts.uiMedium,
+  gateKeyLine: {
+    fontFamily: fonts.sub,
     fontSize: 7,
-    letterSpacing: 3,
+    letterSpacing: 2.5,
+    color: colors.sepia,
+    opacity: 0.6,
+    textAlign: 'center',
+    marginTop: -18,
+    marginBottom: 24,
+  },
+  gateFootnote: {
+    fontFamily: fonts.sub,
+    fontSize: 7,
+    letterSpacing: 2.5,
     color: colors.fog,
     opacity: 0.4,
     textAlign: 'center',

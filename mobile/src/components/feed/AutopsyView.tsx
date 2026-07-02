@@ -1,89 +1,144 @@
-import React, { useState } from 'react';
+/**
+ * The Autopsy — filed on the BACK of the archive index card.
+ * ──────────────────────────────────────────────────────────
+ * AutopsyStrip  — the front-side trigger row: red dot, THE AUTOPSY,
+ *                 CONFIDENTIAL stamp, TURN OVER ⟳. Tapping it flips
+ *                 the card (owned by ActivityCard).
+ * AutopsyBack   — the card's reverse: dashed crimson file border,
+ *                 2×3 craft grid (fits any front height), and the
+ *                 ✦ RETURN TO THE RECORD row.
+ *
+ * The old vertical drawer is dead — it shoved the feed down ~250px
+ * mid-scroll. The back is painted on the same card: height never moves.
+ */
+import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Animated, { FadeInUp, LinearTransition } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
 import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
-const AnimatedView = Animated.createAnimatedComponent(View);
-
-interface AutopsyViewProps {
-  isAutopsied?: boolean;
-  autopsy?: Record<string, number>;
+export interface AutopsyStats {
+  [key: string]: number;
 }
 
-export const AutopsyView = React.memo(function AutopsyView({ isAutopsied, autopsy }: AutopsyViewProps) {
-  const [autopsyOpen, setAutopsyOpen] = useState(false);
+/** Normalize the JSONB payload into the six canonical craft axes, clamped 0–10. */
+export function getAutopsyStats(autopsy?: Record<string, number>) {
+  if (!autopsy) return [];
+  const clamp = (v: unknown) => {
+    const n = parseFloat(String(v ?? 0));
+    if (isNaN(n)) return 0;
+    return Math.min(10, Math.max(0, n));
+  };
+  return [
+    { key: 'story', label: 'STORY', value: clamp(autopsy.story !== undefined ? autopsy.story : autopsy.screenplay) },
+    { key: 'script', label: 'SCRIPT', value: clamp(autopsy.script !== undefined ? autopsy.script : autopsy.screenplay) },
+    { key: 'acting', label: 'ACTING', value: clamp(autopsy.acting ?? autopsy.direction) },
+    { key: 'cinematography', label: 'CINEMATOGRAPHY', value: clamp(autopsy.cinematography) },
+    { key: 'editing', label: 'EDITING', value: clamp(autopsy.editing !== undefined ? autopsy.editing : autopsy.pacing) },
+    { key: 'sound', label: 'SOUND', value: clamp(autopsy.sound) },
+  ];
+}
 
-  if (!isAutopsied || !autopsy || Object.keys(autopsy).length === 0) return null;
+/** Front-side strip: the invitation to turn the card over. */
+export const AutopsyStrip = React.memo(function AutopsyStrip({ onTurnOver }: { onTurnOver: () => void }) {
+  return (
+    <PressableScale
+      onPress={onTurnOver}
+      style={s.stripBtn}
+      haptic="selection"
+      pressedScale={0.98}
+      accessibilityRole="button"
+      accessibilityLabel="Turn the card over to read the confidential autopsy"
+    >
+      <View style={s.stripContent}>
+        <View style={s.stripDot} />
+        <Text style={s.stripTitle}>THE AUTOPSY</Text>
+        <Text style={s.stripConfidential}>CONFIDENTIAL</Text>
+      </View>
+      <Text style={s.stripTurn}>TURN OVER ⟳</Text>
+    </PressableScale>
+  );
+});
+
+/** The back of the card: six craft bars on one baseline plane. */
+export const AutopsyBack = React.memo(function AutopsyBack({
+  autopsy,
+  username,
+  onReturn,
+}: {
+  autopsy?: Record<string, number>;
+  username: string;
+  onReturn: () => void;
+}) {
+  const stats = getAutopsyStats(autopsy);
 
   return (
-    <View style={s.autopsySectionWrap}>
-       <PressableScale 
-          onPress={() => { setAutopsyOpen(!autopsyOpen); }} 
-          style={s.autopsyToggleBtn}
-          haptic="selection"
-          pressedScale={0.97}
-        >
-          <View style={s.autopsyToggleContent}>
-            <View style={s.autopsyDot} />
-            <Text style={s.autopsyTitle}>THE AUTOPSY</Text>
-            <Text style={s.autopsyConfidential}>CONFIDENTIAL</Text>
-          </View>
-          <Text style={[s.autopsyChevron, autopsyOpen && s.autopsyChevronOpen]}>▼</Text>
-       </PressableScale>
+    <View style={s.backRoot}>
+      {/* Confidential file border */}
+      <View style={s.backFileBorder} pointerEvents="none" />
 
-       {autopsyOpen && (
-         <AnimatedView entering={FadeInUp.duration(300)} layout={LinearTransition.springify()} style={s.autopsyCard}>
-           <View style={s.autopsyInner}>
-             {[
-                { key: 'story', label: 'STORY', value: autopsy?.story !== undefined ? autopsy.story : autopsy?.screenplay ?? 0 },
-                { key: 'script', label: 'SCRIPT / DIALOGUE', value: autopsy?.script !== undefined ? autopsy.script : autopsy?.screenplay ?? 0 },
-                { key: 'acting', label: 'ACTING & CHARACTER', value: autopsy?.acting ?? autopsy?.direction ?? 0 },
-                { key: 'cinematography', label: 'CINEMATOGRAPHY', value: autopsy?.cinematography ?? 0 },
-                { key: 'editing', label: 'EDITING & PACING', value: autopsy?.editing !== undefined ? autopsy.editing : autopsy?.pacing ?? 0 },
-                { key: 'sound', label: 'SOUND DESIGN & SCORE', value: autopsy?.sound ?? 0 },
-             ].map(stat => (
-               <View key={stat.key} style={s.autopsyBarWrap}>
-                 <View style={s.autopsyBarHeader}>
-                   <Text style={s.autopsyLabel}>{stat.label}</Text>
-                   <Text style={s.autopsyValue}>{stat.value === 10 ? '10.0' : parseFloat(String(stat.value)).toFixed(1)}</Text>
-                 </View>
-                  <View style={s.autopsyTrack}>
-                    <View style={s.sprocketStrip} />
-                    <LinearGradient colors={[colors.sepia, '#5a430d']} style={[s.autopsyFill, { width: `${(stat.value / 10) * 100}%` }]} start={{x:0, y:0}} end={{x:0, y:1}}>
-                      <View style={s.cutMarker} />
-                    </LinearGradient>
-                  </View>
-               </View>
-             ))}
-           </View>
-         </AnimatedView>
-       )}
+      <View style={s.backBody}>
+        <View style={s.backHeader}>
+          <View style={s.stripDot} />
+          <Text style={s.backTitle}>THE AUTOPSY</Text>
+          <Text style={s.stripConfidential}>CONFIDENTIAL</Text>
+        </View>
+        <Text style={s.backFiledBy} numberOfLines={1} ellipsizeMode="tail">
+          Craft examination · filed by @{username.toUpperCase()}
+        </Text>
+
+        <View style={s.grid}>
+          {stats.map(stat => (
+            <View key={stat.key} style={s.cell}>
+              <View style={s.cellHeader}>
+                <Text style={s.cellLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{stat.label}</Text>
+                <Text style={s.cellValue}>{stat.value === 10 ? '10.0' : stat.value.toFixed(1)}</Text>
+              </View>
+              <View style={s.track}>
+                <View style={s.sprocketStrip} />
+                <LinearGradient colors={[colors.sepia, '#5a430d']} style={[s.fill, { width: `${(stat.value / 10) * 100}%` }]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }}>
+                  <View style={s.cutMarker} />
+                </LinearGradient>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <PressableScale
+        onPress={onReturn}
+        style={s.returnBtn}
+        haptic="selection"
+        pressedScale={0.98}
+        accessibilityRole="button"
+        accessibilityLabel="Return to the log"
+      >
+        <Text style={s.returnText}>✦ RETURN TO THE RECORD</Text>
+      </PressableScale>
     </View>
   );
 });
 
 const s = StyleSheet.create({
-  autopsySectionWrap: {
+  // ── Front strip ──
+  stripBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 11,
+    paddingHorizontal: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(184,137,26,0.15)',
     backgroundColor: 'rgba(20,15,5,0.4)',
   },
-  autopsyToggleBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    paddingHorizontal: 24,
-  },
-  autopsyToggleContent: {
+  stripContent: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+    flexShrink: 1,
   },
-  autopsyDot: {
+  stripDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
@@ -93,14 +148,15 @@ const s = StyleSheet.create({
     shadowOpacity: 0.8,
     shadowRadius: 4,
   },
-  autopsyTitle: {
+  stripTitle: {
     fontFamily: fonts.display,
     fontSize: 10,
     letterSpacing: 3,
     color: colors.bone,
+    includeFontPadding: false,
   },
-  autopsyConfidential: {
-    fontFamily: fonts.ui,
+  stripConfidential: {
+    fontFamily: fonts.sub,
     fontSize: 6,
     letterSpacing: 2,
     color: colors.bone,
@@ -109,65 +165,101 @@ const s = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 2,
     borderWidth: 1,
-    borderColor: 'rgba(255,0,0,0.5)',
+    borderColor: 'rgba(228,60,60,0.5)',
     transform: [{ rotate: '-2deg' }],
+    includeFontPadding: false,
   },
-  autopsyChevron: {
-    color: colors.fog,
-    fontSize: 10,
-    transform: [{ rotate: '0deg' }],
+  stripTurn: {
+    fontFamily: fonts.sub,
+    fontSize: 7,
+    letterSpacing: 2,
+    color: colors.sepia,
+    opacity: 0.7,
+    includeFontPadding: false,
+    flexShrink: 0,
+    marginLeft: 8,
   },
-  autopsyChevronOpen: {
-    transform: [{ rotate: '180deg' }],
+
+  // ── The back of the card ──
+  backRoot: {
+    flex: 1,
+    backgroundColor: '#0B0806',
   },
-  autopsyCard: {
-    paddingHorizontal: 24,
-    paddingBottom: 24,
-  },
-  autopsyInner: {
-    backgroundColor: 'rgba(5,2,2,0.9)',
+  backFileBorder: {
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    right: 10,
+    bottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(180,45,45,0.35)',
-    borderRadius: 4,
-    padding: 16,
-    elevation: 3,
-    shadowColor: colors.bloodReel,
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
+    borderStyle: 'dashed',
+    borderColor: colors.crimsonBorder,
+    borderRadius: 3,
   },
-  autopsyBarWrap: {
-    marginBottom: 12,
+  backBody: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 22,
   },
-  autopsyBarHeader: {
+  backHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 4,
+  },
+  backTitle: {
+    fontFamily: fonts.display,
+    fontSize: 12,
+    letterSpacing: 2,
+    color: colors.parchment,
+    includeFontPadding: false,
+  },
+  backFiledBy: {
+    fontFamily: fonts.bodyItalic,
+    fontSize: 9,
+    color: colors.fog,
+    opacity: 0.7,
+    marginBottom: 14,
+    includeFontPadding: false,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    rowGap: 12,
+  },
+  cell: {
+    width: '47%',
+  },
+  cellHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  autopsyLabel: {
-    fontFamily: fonts.ui,
-    fontSize: 8,
-    letterSpacing: 2,
+  cellLabel: {
+    fontFamily: fonts.sub,
+    fontSize: 7,
+    letterSpacing: 1.5,
     color: colors.fog,
+    includeFontPadding: false,
+    flexShrink: 1,
   },
-  autopsyValue: {
+  cellValue: {
     fontFamily: fonts.display,
-    fontSize: 12,
+    fontSize: 11,
     color: colors.parchment,
+    includeFontPadding: false,
+    marginLeft: 6,
   },
-  autopsyTrack: {
-    height: 12,
+  track: {
+    height: 10,
     backgroundColor: 'rgba(2,1,1,1)',
     borderRadius: 2,
     borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(255,255,255,0.1)',
     overflow: 'hidden',
     position: 'relative',
-    shadowColor: '#000',
-    shadowOpacity: 1,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2, // Inner shadow simulation
   },
   sprocketStrip: {
     ...StyleSheet.absoluteFillObject,
@@ -180,7 +272,7 @@ const s = StyleSheet.create({
     opacity: 0.15,
     zIndex: 1,
   },
-  autopsyFill: {
+  fill: {
     height: '100%',
     position: 'relative',
   },
@@ -196,5 +288,18 @@ const s = StyleSheet.create({
     shadowOpacity: 1,
     shadowRadius: 4,
     borderRadius: 2,
+  },
+  returnBtn: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(184,137,26,0.15)',
+  },
+  returnText: {
+    fontFamily: fonts.sub,
+    fontSize: 8,
+    letterSpacing: 2.5,
+    color: colors.sepia,
+    includeFontPadding: false,
   },
 });

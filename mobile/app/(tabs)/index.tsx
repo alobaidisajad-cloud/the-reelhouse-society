@@ -148,7 +148,8 @@ export default function LobbyScreen() {
   });
 
   const NAV_HEIGHT = 44 + 12;
-  const topPad = insets.top + NAV_HEIGHT + 12;
+  // Mirror the TopNavBar's Math.max(insets.top, 20) floor — see reels.tsx.
+  const topPad = Math.max(insets.top, 20) + NAV_HEIGHT + 12;
 
   useEffect(() => {
     if (isAuthenticated) {

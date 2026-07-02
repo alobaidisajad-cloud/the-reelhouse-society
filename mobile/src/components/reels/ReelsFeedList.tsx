@@ -1,10 +1,10 @@
 import React, { useCallback, useRef, useEffect } from 'react';
-import { RefreshControl, InteractionManager, ActivityIndicator, View } from 'react-native';
+import { RefreshControl, InteractionManager, ActivityIndicator, View, Text, StyleSheet } from 'react-native';
 import { FlashList, FlashListRef } from '@shopify/flash-list';
 import { ActivityCard, FeedItem } from '@/src/components/feed/ActivityCard';
 import Animated, { useAnimatedScrollHandler, runOnJS, type SharedValue, useSharedValue } from 'react-native-reanimated';
 import { globalScrollY } from '@/src/lib/scrollBridge';
-import { colors } from '@/src/theme/theme';
+import { colors, fonts } from '@/src/theme/theme';
 import { tmdb } from '@/src/lib/tmdb';
 import { CinematicScrollbar } from '@/src/components/layout/CinematicScrollbar';
 
@@ -114,7 +114,7 @@ export function ReelsFeedList({
         // Maximum JS-thread throughput by directly referencing guaranteed id
         keyExtractor={(item: any) => String(item.id)}
         extraData={extraData}
-        estimatedItemSize={280}
+        estimatedItemSize={230}
         renderItem={renderLogItem}
         contentContainerStyle={contentContainerStyle}
         showsVerticalScrollIndicator={false}
@@ -141,9 +141,30 @@ export function ReelsFeedList({
         onViewableItemsChanged={onViewableItemsChanged}
         onEndReached={onEndReached}
         onEndReachedThreshold={0.5}
-        ListFooterComponent={isFetchingNextPage ? <ActivityIndicator color={colors.sepia} style={{ marginVertical: 20 }} /> : null}
+        ListFooterComponent={isFetchingNextPage ? (
+          <View style={fs.footer}>
+            <ActivityIndicator color={colors.sepia} />
+            <Text style={fs.footerText}>SPOOLING THE NEXT REEL…</Text>
+          </View>
+        ) : null}
       />
       <CinematicScrollbar scrollY={overallLogsScrollY} scrollHeight={scrollHeight} viewHeight={viewHeight} isScrolling={isScrolling} topInset={topPad} bottomInset={bottomInset} />
     </View>
   );
 }
+
+const fs = StyleSheet.create({
+  footer: {
+    alignItems: 'center',
+    gap: 8,
+    marginVertical: 20,
+  },
+  footerText: {
+    fontFamily: fonts.sub,
+    fontSize: 7,
+    letterSpacing: 3,
+    color: colors.fog,
+    opacity: 0.6,
+    includeFontPadding: false,
+  },
+});

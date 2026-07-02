@@ -4,7 +4,6 @@ import {
   TextInput, Keyboard
 } from 'react-native';
 
-import { Image } from 'expo-image';
 import Animated, {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   FadeInDown, useSharedValue, useAnimatedScrollHandler, useAnimatedStyle, withTiming, useDerivedValue, Easing
@@ -28,6 +27,7 @@ import FrozenTab from '@/src/components/layout/FrozenTab';
 
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { globalScrollY } from '@/src/lib/scrollBridge';
+import { SocietySeal } from '@/src/components/auth/SocietySeal';
 
 // Extracted Modules
 import { 
@@ -112,7 +112,10 @@ export default function ReelScreen() {
   const router = useRouter();
 
   const NAV_HEIGHT = 44 + 12;
-  const topPad = insets.top + NAV_HEIGHT + 8;
+  // Mirror the TopNavBar's own Math.max(insets.top, 20) floor — on zero-inset
+  // devices the nav is 74px tall while a bare insets.top offset would be 64px,
+  // tucking the masthead under the blur. The two formulas must never disagree.
+  const topPad = Math.max(insets.top, 20) + NAV_HEIGHT + 8;
 
   useEffect(() => { globalScrollY.value = 0; }, []);
 
@@ -287,16 +290,18 @@ export default function ReelScreen() {
 
 
 
+  const stackCount = filteredStacks.length;
+
   const logsHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} logCount={logCount} userRole={resolvedRole} onTabSwitch={switchSection} />
+      <SharedReelHeader section={section} variant="logs" logCount={logCount} stackCount={stackCount} userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.filterRow}>
         <FilterChip label="MAIN REEL" active={feedFilter === 'all'} onPress={() => switchFeedFilter('all')} />
         <FilterChip label="FOLLOWING" active={feedFilter === 'following'} onPress={() => switchFeedFilter('following')} />
       </View>
-      <SectionDivider label="LOGS" />
+      <SectionDivider label="THE LIVING RECORD" />
     </>
-  ), [section, feedFilter, logCount, resolvedRole, switchSection, switchFeedFilter]);
+  ), [section, feedFilter, logCount, stackCount, resolvedRole, switchSection, switchFeedFilter]);
 
   const logsEmpty = useMemo(() => {
     if (feedLoading) return <TungstenSpooling />;
@@ -326,7 +331,7 @@ export default function ReelScreen() {
 
   const stackHeader = useMemo(() => (
     <>
-      <SharedReelHeader section={section} logCount={logCount} userRole={resolvedRole} onTabSwitch={switchSection} />
+      <SharedReelHeader section={section} variant="stacks" logCount={logCount} stackCount={stackCount} userRole={resolvedRole} onTabSwitch={switchSection} />
       <View style={st.searchWrap}>
         <Animated.Text style={st.searchIcon}>✦</Animated.Text>
         <AutonomousSearchBar 
@@ -356,7 +361,7 @@ export default function ReelScreen() {
       </PressableScale>
     </>
    
-  ), [section, logCount, resolvedRole, stackSearch, stackFilter, filteredStacks.length, switchSection, switchStackFilter, router, handleStackSearchChange, handleClearSearch]);
+  ), [section, logCount, stackCount, resolvedRole, stackSearch, stackFilter, filteredStacks.length, switchSection, switchStackFilter, router, handleStackSearchChange, handleClearSearch]);
 
   const logsExtraData = useMemo(() => [feedFilter, section, logCount, resolvedRole, feedLoading], [feedFilter, section, logCount, resolvedRole, feedLoading]);
   const stacksExtraData = useMemo(() => [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading], [stackSearch, stackFilter, section, logCount, resolvedRole, filteredStacks.length, stacksLoading]);
@@ -402,12 +407,16 @@ export default function ReelScreen() {
       <FrozenTab>
       <View style={st.gateContainer}>
         <LinearGradient colors={[colors.ink, colors.soot]} style={StyleSheet.absoluteFillObject} />
-        <Image source={require('../../assets/images/reelhouse-logo.png')} style={st.gateLogo} contentFit="contain" />
+        {/* The Society's mark ignites at this door too — same ceremony as the
+            welcome screen and login. */}
+        <View style={st.gateSealWrap}>
+          <SocietySeal size={96} />
+        </View>
         <Text style={st.gateTitle}>Admit One Required</Text>
         <Text style={st.gateSub}>Join the Society to access The Reel.</Text>
         <PressableScale style={st.gateCta} onPress={() => { TactileEngine.destroy(); (router.push as any)('/login' as any); }}>
           <BrassSheen />
-          <Text style={st.gateCtaText}>REQUEST MEMBERSHIP</Text>
+          <Text style={st.gateCtaText}>✦ REQUEST MEMBERSHIP</Text>
         </PressableScale>
       </View>
       </FrozenTab>
@@ -455,7 +464,7 @@ export default function ReelScreen() {
           activeTabSV={activeTabSV}
           ListHeaderComponent={stackHeader}
           ListEmptyComponent={stackEmpty}
-          contentContainerStyle={{ ...st.listContent, paddingTop: topPad, paddingBottom: 100, paddingHorizontal: 10 }}
+          contentContainerStyle={{ ...st.listContent, paddingTop: topPad, paddingHorizontal: 10 }}
           listRef={stacksFlatListRef}
           onEndReached={onLoadMoreStacks}
           isFetchingNextPage={isFetchingNextStacks}
@@ -478,7 +487,7 @@ const st = StyleSheet.create({
     flexDirection: 'row', paddingHorizontal: 16, gap: 12,
     marginBottom: 20, alignItems: 'center',
   },
-  resultCount: { fontFamily: fonts.mono, fontSize: 9, letterSpacing: 2, color: colors.fog, opacity: 0.5, fontWeight: '700' },
+  resultCount: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, opacity: 0.5 },
   filterSpacer: { flex: 1 },
 
   searchWrap: {
@@ -504,7 +513,7 @@ const st = StyleSheet.create({
   createStackGlow: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
   },
-  createStackText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 4, color: colors.parchment, opacity: 0.9 },
+  createStackText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.parchment, opacity: 0.9 },
 
 
   emptyWrap: { alignItems: 'center', paddingTop: 48, paddingHorizontal: 32 },
@@ -515,19 +524,19 @@ const st = StyleSheet.create({
     borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2, borderStyle: 'dashed',
     paddingVertical: 12, paddingHorizontal: 28,
   },
-  emptyBtnText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 3, color: colors.sepia },
+  emptyBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
 
-  gateContainer: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center' },
-  gateLogo: { width: 48, height: 48, opacity: 0.3, marginBottom: 20 },
-  gateTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8 },
-  gateSub: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic', marginBottom: 24 },
+  gateContainer: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
+  gateSealWrap: { marginBottom: 18 },
+  gateTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
+  gateSub: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.fog, fontStyle: 'italic', marginBottom: 24, textAlign: 'center' },
   gateCta: {
     backgroundColor: 'rgba(18,14,9,0.9)', borderRadius: 3, overflow: 'hidden',
     paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1,
-    borderColor: 'rgba(218,165,32,0.5)',
+    borderColor: colors.sepiaBorderStrong,
     ...effects.glowSepia,
   },
-  gateCtaText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
+  gateCtaText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
 });
 
 // Expo Router per-route crash net — see src/components/RouteErrorBoundary.tsx

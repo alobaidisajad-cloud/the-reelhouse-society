@@ -1,10 +1,10 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
 import Animated from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 
-import { colors, SEPIA_HASH } from '@/src/theme/theme';
+import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 
 const TMDB_IMG_W185 = 'https://image.tmdb.org/t/p/w185';
@@ -42,8 +42,8 @@ export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, pos
         />
       )}
 
-      {/* Main poster */}
-      {posterUri && (
+      {/* Main poster — or the Society's mark when the archive holds no still */}
+      {posterUri ? (
         <AnimatedExpoImage
           {...{
             sharedTransitionTag: `poster-${itemId}-${filmId}`,
@@ -55,6 +55,10 @@ export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, pos
             transition: 100,
           } as Record<string, unknown>}
         />
+      ) : (
+        <View style={s.posterEmpty}>
+          <Text style={s.posterEmptyMark}>✦</Text>
+        </View>
       )}
 
       {/* Tactile lighting overlay */}
@@ -71,20 +75,35 @@ export const PosterFrame = React.memo(function PosterFrame({ itemId, filmId, pos
 
 const s = StyleSheet.create({
   wrap: {
-    width: 140,
-    height: 210,
-    borderWidth: 1.5,
+    // Index-card scale: the poster is the photo stapled to the file,
+    // not the shrine centerpiece.
+    width: 74,
+    height: 111,
+    borderWidth: 1,
     borderColor: 'rgba(218,165,32,0.4)',
-    borderRadius: 4,
+    borderRadius: 3,
     backgroundColor: colors.soot,
     position: 'relative',
     overflow: 'hidden',
     zIndex: 5,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.8,
-    shadowRadius: 40,
-    elevation: 25,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.7,
+    shadowRadius: 20,
+    elevation: 12,
+  },
+  posterEmpty: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderStyle: 'dashed',
+  },
+  posterEmptyMark: {
+    fontFamily: fonts.display,
+    fontSize: 18,
+    color: colors.sepia,
+    opacity: 0.35,
+    includeFontPadding: false,
   },
   poster: {
     width: '100%',

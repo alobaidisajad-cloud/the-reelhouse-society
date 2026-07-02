@@ -5,6 +5,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Image } from 'expo-image';
+import { useIsFocused } from '@react-navigation/native';
 import { colors, fonts, effects, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import Buster from '@/src/components/Buster';
@@ -70,16 +71,20 @@ export const ProjectorBeam = memo(function ProjectorBeam({ scrollY }: { scrollY:
 //  TUNGSTEN FILAMENT FILTER CHIP
 // ══════════════════════════════════════════════════════════════
 export const FilterChip = memo(function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const isFocused = useIsFocused();
   const pulse = useSharedValue(0);
   useEffect(() => {
-    if (active) {
+    // Focus-gated: chips on the hidden tab (both lists stay mounted for the
+    // crossfade) and on blurred screens burn zero UI-thread cycles.
+    if (active && isFocused) {
       pulse.value = withRepeat(withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) }), -1, true);
     } else {
-      pulse.value = 0;
+      cancelAnimation(pulse);
+      pulse.value = active ? 0.75 : 0;
     }
     return () => cancelAnimation(pulse);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, isFocused]);
 
   const activeStyle = useAnimatedStyle(() => {
     if (!active) return { opacity: 0 };
@@ -249,13 +254,14 @@ const st = StyleSheet.create({
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
     backgroundColor: 'rgba(18,14,9,0.5)',
   },
-  filterChipText: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 4, color: colors.fog, opacity: 0.6, fontWeight: '700' },
+  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, opacity: 0.6 },
   filterChipTextActive: { color: colors.sepia, opacity: 1 },
 
   stackCard: {
+    // App-standard 1px brass dossier frame (was a heavy 2px umber slab).
     flex: 1, backgroundColor: '#050402',
-    borderWidth: 2, borderColor: '#3A2E1C',
-    borderRadius: 6, overflow: 'hidden',
+    borderWidth: 1, borderColor: colors.sepiaBorder,
+    borderRadius: 5, overflow: 'hidden',
     height: 220,
     marginBottom: 14,
     position: 'relative',
@@ -281,9 +287,9 @@ const st = StyleSheet.create({
     zIndex: 10,
   },
   stackCardRefText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 7,
-    letterSpacing: 2.5,
+    letterSpacing: 2,
     color: colors.parchment,
     opacity: 0.8,
   },
@@ -296,11 +302,11 @@ const st = StyleSheet.create({
   stackCardMetaRow: { 
     flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 8 
   },
-  stackCardBadgeText: { 
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.sepia 
+  stackCardBadgeText: {
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia
   },
-  stackCertifyText: { 
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: '#f2e8a0', opacity: 0.9 
+  stackCertifyText: {
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.flicker, opacity: 0.9
   },
   stackCardMetaDivider: {
     flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)',
@@ -315,8 +321,8 @@ const st = StyleSheet.create({
     width: 6, height: 6, borderRadius: 3, backgroundColor: colors.sepia,
     opacity: 0.8,
   },
-  stackCardCuratorName: { 
-    fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 2, color: colors.fog 
+  stackCardCuratorName: {
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog
   },
   beamAbsolute: {
     ...StyleSheet.absoluteFillObject,
@@ -361,9 +367,9 @@ const st = StyleSheet.create({
   },
   spoolingText: {
     marginTop: 24,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.sub,
     fontSize: 10,
-    letterSpacing: 8,
+    letterSpacing: 6,
     color: colors.sepia,
     ...effects.textGlowSepia,
   },

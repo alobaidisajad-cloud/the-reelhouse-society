@@ -3,8 +3,9 @@
  */
 import { FlashList } from '@shopify/flash-list';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, StyleSheet, Text, TextInput, View } from 'react-native';
- 
+import { ActivityIndicator, Modal, Platform, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+
 import PressableScale from '@/src/components/PressableScale';
 import { useAuthStore } from '@/src/stores/auth';
 import { LoungeRoom, useLoungeStore } from '@/src/stores/lounge';
@@ -136,18 +137,25 @@ export default function ShareToLoungeModal({
     }, []);
 
     const renderLoungeItem = useCallback(({ item, extraData: selectedId }: { item: LoungeRoom, extraData: any }) => (
-        <LoungeItem 
-            item={item} 
-            isSelected={selectedId === item.id} 
-            onSelect={handleSelectLounge} 
+        <LoungeItem
+            item={item}
+            isSelected={selectedId === item.id}
+            onSelect={handleSelectLounge}
         />
     ), [handleSelectLounge]);
+
+    // Keyboard-aware sheet — the message input and SHARE button rise with the
+    // keyboard instead of hiding beneath it (same fix as PasswordRecoveryModal).
+    const keyboard = useAnimatedKeyboard();
+    const animatedSheetStyle = useAnimatedStyle(() => ({
+        paddingBottom: Platform.OS === 'ios' ? keyboard.height.value : 0,
+    }));
 
     if (!shouldRender) return null;
 
     return (
         <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-            <View style={s.overlay} accessibilityViewIsModal={true}>
+            <Animated.View style={[s.overlay, animatedSheetStyle]} accessibilityViewIsModal={true}>
                 <View style={s.card}>
                     <View style={s.header}>
                         <Text style={s.title}>Share to Lounge</Text>
@@ -190,7 +198,7 @@ export default function ShareToLoungeModal({
                                 maxLength={500}
                                 keyboardAppearance="dark"
                                 accessibilityLabel="Share message"
-                                selectionColor={'rgba(218,165,32,0.3)'}
+                                selectionColor={colors.selection}
                             />
 
                             <PressableScale
@@ -205,7 +213,7 @@ export default function ShareToLoungeModal({
                         </>
                     )}
                 </View>
-            </View>
+            </Animated.View>
         </Modal>
     );
 }
@@ -219,10 +227,10 @@ const s = StyleSheet.create({
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
     title: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment },
     closeText: { fontSize: 18, color: colors.fog },
-    filmLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
-    selectLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 8 },
+    filmLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
+    selectLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 8 },
     loungeItem: { paddingVertical: 12, paddingHorizontal: 12, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, marginBottom: 6 },
-    loungeActive: { borderColor: colors.sepia, backgroundColor: 'rgba(139,105,20,0.1)' },
+    loungeActive: { borderColor: colors.sepia, backgroundColor: colors.sepiaFaint },
     loungeName: { fontFamily: fonts.sub, fontSize: 14, color: colors.bone },
     loungeNameActive: { color: colors.sepia },
     loungeList: { maxHeight: 160 },
@@ -236,5 +244,5 @@ const s = StyleSheet.create({
     },
     sendBtn: { backgroundColor: colors.sepia, paddingVertical: 14, alignItems: 'center', borderRadius: 4, marginTop: 16 },
     sendBtnDisabled: { opacity: 0.4 },
-    sendText: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 2, color: colors.ink },
+    sendText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.ink },
 });

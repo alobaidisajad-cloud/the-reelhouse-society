@@ -2,14 +2,14 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useRouter } from 'expo-router';
-import { Heart, MessageSquare, Edit3, Bookmark, MessageCircle } from 'lucide-react-native';
+import { Heart, MessageSquare, Edit3, Bookmark, MessageCircle, KeyRound } from 'lucide-react-native';
 import { useWatchlistStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { colors, fonts } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withSequence } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSequence, Easing } from 'react-native-reanimated';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 
 interface ActionDeckProps {
@@ -76,9 +76,10 @@ export const ActionDeck = React.memo(function ActionDeck({
     toggleEndorse(itemId).catch((e) => {
       if (__DEV__) console.warn('Certify failed:', e);
     });
+    // Stamp-press pulse — pure timing curves, no spring, no wobble.
     heartScale.value = withSequence(
-      withSpring(1.5, { damping: 12, stiffness: 400 }),
-      withSpring(1, { damping: 14, stiffness: 300 })
+      withTiming(1.22, { duration: 110, easing: Easing.out(Easing.quad) }),
+      withTiming(1, { duration: 150, easing: Easing.bezier(0.33, 0, 0.15, 1) })
     );
   }, [itemId, toggleEndorse, heartScale, router.push]);
 
@@ -122,8 +123,8 @@ export const ActionDeck = React.memo(function ActionDeck({
         reelToast.success('Saved to watchlist ✦');
       }
       bookmarkScale.value = withSequence(
-        withSpring(1.4, { damping: 12, stiffness: 400 }),
-        withSpring(1, { damping: 14, stiffness: 300 })
+        withTiming(1.18, { duration: 110, easing: Easing.out(Easing.quad) }),
+        withTiming(1, { duration: 150, easing: Easing.bezier(0.33, 0, 0.15, 1) })
       );
     }
   }, [isOwner, filmSaved, addToWatchlist, removeFromWatchlist, router, filmId, itemId, filmTitle, posterPath, year, bookmarkScale]);
@@ -134,8 +135,10 @@ export const ActionDeck = React.memo(function ActionDeck({
         return;
     }
     if (!isLoungeEligible) {
-      TactileEngine.warn();
-      reelToast.error('Archivist or Auteur tier required to share to The Lounge.');
+      // The velvet rope, not a dead end — the brass key opens the LoungeGate
+      // (CLEARANCE REQUIRED → ASCEND THE RANKS → membership).
+      TactileEngine.navigate();
+      (router.push as any)('/lounge' as any);
       return;
     }
     TactileEngine.mutate();
@@ -147,7 +150,7 @@ export const ActionDeck = React.memo(function ActionDeck({
       <View style={s.actionDeck}>
         <PressableScale style={s.actionBtn} onPress={handleCertify} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: endorsed }} accessibilityLabel={endorsed ? 'Remove certification from this critique' : 'Certify this critique'}>
           <Animated.View style={animatedHeartStyle}>
-            <Heart size={16} strokeWidth={2} color={endorsed ? colors.bloodReel : colors.fog} fill={endorsed ? colors.bloodReel : 'transparent'} />
+            <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
           </Animated.View>
           <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]}>{endorsed ? 'CERTIFIED' : 'CERT'}</Text>
         </PressableScale>
@@ -160,17 +163,23 @@ export const ActionDeck = React.memo(function ActionDeck({
         <PressableScale style={s.actionBtn} onPress={handleSaveOrEdit} pressedScale={0.92} accessibilityRole="button" accessibilityState={{ selected: !isOwner && filmSaved }} accessibilityLabel={isOwner ? 'Edit this log' : filmSaved ? 'Remove film from your watchlist' : 'Save film to your watchlist'}>
           <Animated.View style={animatedBookmarkStyle}>
             {isOwner ? (
-              <Edit3 size={16} strokeWidth={2} color={colors.fog} />
+              <Edit3 size={15} strokeWidth={2} color={colors.fog} />
             ) : (
-              <Bookmark size={16} strokeWidth={2} color={filmSaved ? colors.bloodReel : colors.fog} fill={filmSaved ? colors.bloodReel : 'transparent'} />
+              <Bookmark size={15} strokeWidth={2} color={filmSaved ? colors.sepia : colors.fog} fill={filmSaved ? colors.sepia : 'transparent'} />
             )}
           </Animated.View>
-          <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelCertified]}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
+          <Text style={[s.actionLabel, !isOwner && filmSaved && s.actionLabelSaved]}>{isOwner ? 'EDIT' : filmSaved ? 'SAVED' : 'SAVE'}</Text>
         </PressableScale>
 
-        <PressableScale style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityState={{ disabled: !isLoungeEligible }} accessibilityLabel={isLoungeEligible ? 'Share to a lounge' : 'Lounge sharing locked'}>
-          <MessageCircle size={16} strokeWidth={2} color={isLoungeEligible ? colors.fog : colors.ash} />
-          <Text style={[s.actionLabel, !isLoungeEligible && s.actionIconLocked]}>LOUNGE</Text>
+        {/* Eligible members share to a salon; cinephiles hold the brass key —
+            an invitation marked private, never a dead switch. */}
+        <PressableScale style={s.actionBtn} onPress={handleLounge} accessibilityRole="button" accessibilityLabel={isLoungeEligible ? 'Share to a lounge' : 'The Lounge — clearance required. Opens membership details.'}>
+          {isLoungeEligible ? (
+            <MessageCircle size={15} strokeWidth={2} color={colors.fog} />
+          ) : (
+            <KeyRound size={15} strokeWidth={2} color={colors.sepia} style={s.keyDim} />
+          )}
+          <Text style={[s.actionLabel, !isLoungeEligible && s.actionLabelKey]}>LOUNGE</Text>
         </PressableScale>
       </View>
 
@@ -189,35 +198,45 @@ export const ActionDeck = React.memo(function ActionDeck({
 
 const s = StyleSheet.create({
   actionDeck: {
+    // Flush stamp bar — a seam across the full card width, not a floating box.
     flexDirection: 'row',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(184,137,26,0.1)',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: 'rgba(184,137,26,0.12)',
     backgroundColor: '#050403', // Deep soot
-    borderRadius: 2,
     overflow: 'hidden',
     zIndex: 1,
-    padding: 1,
+    paddingTop: 1,
     gap: StyleSheet.hairlineWidth,
   },
   actionBtn: {
     flex: 1,
-    paddingVertical: 18,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 5,
     backgroundColor: colors.ink,
     borderRadius: 1,
   },
   actionLabel: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 2,
     color: colors.fog,
+    includeFontPadding: false,
   },
+  // Crimson passion for certification; brass for the archival act of saving —
+  // both finally legible (bloodReel was ~1.4:1 on ink).
   actionLabelCertified: {
-    color: colors.bloodReel,
+    color: colors.crimson,
   },
-  actionIconLocked: {
-    opacity: 0.3,
+  actionLabelSaved: {
+    color: colors.sepia,
+  },
+  keyDim: {
+    opacity: 0.75,
+  },
+  actionLabelKey: {
+    color: colors.sepia,
+    opacity: 0.75,
   },
 });

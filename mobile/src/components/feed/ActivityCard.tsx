@@ -1,13 +1,35 @@
-import React, { useCallback, useMemo } from 'react';
-import { View, Text, StyleSheet, DeviceEventEmitter } from 'react-native';
+/**
+ * ActivityCard — the archive index card of The Living Record.
+ * ───────────────────────────────────────────────────────────
+ * Reading order, the archivist's order:
+ *   who filed it (ledger row, tier-ruled)
+ *   → what film (poster left · title/year/verdict right)
+ *   → the prose (full card width)
+ *   → the stamp bar (CERT / CRITIQUE / SAVE / LOUNGE)
+ *   → THE AUTOPSY strip, when one is filed.
+ *
+ * THE CONFIDENTIAL BACK: autopsied cards TURN OVER — a 420ms weighted
+ * flip (pure timing curve, mathematically incapable of bounce) reveals
+ * the craft examination on the card's reverse. The back is absolute-
+ * filled over the front, so card height NEVER changes: the feed never
+ * moves. The back mounts lazily on first flip; flip state resets when
+ * FlashList recycles the row onto a different log. Reduce-motion users
+ * get a plain crossfade.
+ */
+import React, { useCallback, useMemo, useState, useEffect } from 'react';
+import { View, Text, StyleSheet, DeviceEventEmitter, AccessibilityInfo } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import Animated, {
+  useSharedValue, useAnimatedStyle, withTiming, Easing, interpolate,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import { ActionDeck } from './ActionDeck';
-import { AutopsyView } from './AutopsyView';
-import { ReviewContent } from './ReviewContent';
+import { AutopsyStrip, AutopsyBack } from './AutopsyView';
+import { ReviewContent, VerdictBlock } from './ReviewContent';
 import { UserAttributionRow } from './UserAttributionRow';
 import { PosterFrame } from './PosterFrame';
 import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
@@ -18,13 +40,19 @@ import type { FeedItem } from '@/src/schemas/feed.schema';
 const TMDB_IMG_W500 = 'https://image.tmdb.org/t/p/w500';
 export type { FeedItem };
 
+// The flip law: heavy card stock — acceleration off the fingertip,
+// a firm damped landing. A timing curve cannot overshoot.
+const FLIP_MS = 420;
+const FLIP_EASING = Easing.bezier(0.33, 0, 0.15, 1);
+const CROSSFADE_MS = 250;
+
 const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.ReactNode, isPremium: boolean, isAuteur: boolean }) => {
   return (
     <>
-      <LinearGradient 
-        colors={isAuteur ? ['rgba(40,18,18,0.7)', 'rgba(14,5,5,0.95)'] : ['rgba(15, 12, 10, 0.95)', 'rgba(5, 4, 3, 0.98)']} 
-        locations={[0, 1]} 
-        style={StyleSheet.absoluteFillObject} 
+      <LinearGradient
+        colors={isAuteur ? ['rgba(40,18,18,0.7)', 'rgba(14,5,5,0.95)'] : ['rgba(15, 12, 10, 0.95)', 'rgba(5, 4, 3, 0.98)']}
+        locations={[0, 1]}
+        style={StyleSheet.absoluteFillObject}
       />
       {(isPremium || isAuteur) && (
         <>
@@ -37,98 +65,101 @@ const ActivityCardShell = ({ children, isPremium, isAuteur }: { children: React.
   );
 };
 
-interface EditorialHeaderProps {
-  item: Pick<FeedItem, 'editorial_header' | 'poster_path'>;
-  isPremium: boolean;
-  isAuteur: boolean;
-  backdropUri: string | null;
-}
-
-const ActivityEditorialHeader = React.memo(({ item, isPremium, isAuteur, backdropUri }: EditorialHeaderProps) => {
-  if (!(item.editorial_header || (isPremium && item.poster_path))) return null;
+/**
+ * True editorial banner only — the tribunal's pick wears the crown.
+ * (The old automatic blurred-poster billboard on every premium log is
+ * retired: tiers speak through washes, glow, crest, and the ledger rule.)
+ */
+const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: string }) => {
   return (
     <View style={s.editorialHeaderContainer}>
       <View style={s.editorialHeaderImageWrap}>
         <Image
-          source={{ uri: backdropUri as string }} 
-          style={[StyleSheet.absoluteFillObject, s.editorialHeaderImageStyle, !item.editorial_header && s.editorialHeaderImageFallback]}
-          blurRadius={!item.editorial_header ? 15 : 0}
+          source={{ uri: backdropUri }}
+          style={StyleSheet.absoluteFillObject}
           cachePolicy="memory-disk"
           placeholder={{ blurhash: SEPIA_HASH }}
           contentFit="cover"
           transition={200}
         />
         <LinearGradient colors={['rgba(11,10,8,0.3)', 'rgba(11,10,8,0.95)']} style={StyleSheet.absoluteFillObject} />
-        {item.editorial_header && (
-           <View style={s.editorialBadge}><Text style={s.editorialBadgeText}>✦ EDITORIAL</Text></View>
-        )}
+        <View style={s.editorialBadge}><Text style={s.editorialBadgeText}>✦ EDITORIAL</Text></View>
       </View>
-      <LinearGradient 
-         colors={['transparent', 'rgba(184,137,26,0.3)', 'transparent']} 
-         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} 
-         style={s.editorialHeaderAccent} 
+      <LinearGradient
+         colors={['transparent', 'rgba(184,137,26,0.3)', 'transparent']}
+         start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
+         style={s.editorialHeaderAccent}
       />
     </View>
   );
 });
 ActivityEditorialHeader.displayName = 'ActivityEditorialHeader';
 
-
-
-interface ContentBodyProps {
-  item: FeedItem;
-  isAuteur: boolean;
-  isPremium: boolean;
-  timeAgo: string;
-  handleUserPress: () => void;
-  handleFilmPress: () => void;
-  handleLogPress: () => void;
-}
-
-const ActivityContentBody = React.memo(({ item, isAuteur, isPremium, timeAgo, handleUserPress, handleFilmPress, handleLogPress }: ContentBodyProps) => {
-  return (
-    <View style={s.cardInfo}>
-      <UserAttributionRow
-        username={item.username}
-        avatarUrl={item.avatar_url}
-        role={item.role}
-        timeAgo={timeAgo}
-        onUserPress={handleUserPress}
-      />
-
-      <View style={s.titleRow}>
-        <PressableScale onPress={handleFilmPress} hitSlop={st.hitSlop} haptic="selection" pressedScale={0.96} style={st.flexShrink}>
-          <Text style={s.cardTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.85}>{item.film_title}</Text>
-        </PressableScale>
-        {item.year && <Text style={s.cardYear}>{item.year}</Text>}
-      </View>
-
-      <ReviewContent item={item} isPremium={isPremium} isAuteur={isAuteur} onPress={handleLogPress} />
-
-      <View style={st.actionDeckWrap}>
-        <ActionDeck
-          itemId={item.id}
-          filmId={item.film_id}
-          filmTitle={item.film_title}
-          posterPath={item.poster_path ?? null}
-          year={item.year ?? undefined}
-          ownerUsername={item.username}
-        />
-      </View>
-    </View>
-  );
-});
-ActivityContentBody.displayName = 'ActivityContentBody';
-
 export const ActivityCard = React.memo(function ActivityCard({ item, index }: { item: FeedItem; index: number }) {
   const router = useRouter();
+  const reducedMotion = useReducedMotion();
   const isArchivist = isArchivistPlusTier(item.role);
   const isAuteur = isAuteurPlusTier(item.role);
   const isPremium = isArchivist || isAuteur || !!item.editorial_header || !!item.pull_quote;
 
-  const backdropUri = item.editorial_header ? `${TMDB_IMG_W500}${item.editorial_header}` : item.poster_path ? `${TMDB_IMG_W500}${item.poster_path}` : null;
+  const autopsyStats = (item.autopsy ?? undefined) as Record<string, number> | undefined;
+  const hasAutopsy = !!item.is_autopsied && !!autopsyStats && Object.keys(autopsyStats).length > 0;
+
+  const editorialUri = item.editorial_header ? `${TMDB_IMG_W500}${item.editorial_header}` : null;
 
   const timeAgo = useMemo(() => getTimeAgo(item.created_at), [item.created_at]);
+
+  // ── The confidential back ──
+  const [flipped, setFlipped] = useState(false);
+  const [backMounted, setBackMounted] = useState(false);
+  const flip = useSharedValue(0);
+
+  // FlashList recycling: a flipped card must never leak onto another log.
+  useEffect(() => {
+    setFlipped(false);
+    setBackMounted(false);
+    flip.value = 0;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id]);
+
+  const turnOver = useCallback(() => {
+    setBackMounted(true);
+    setFlipped(true);
+    flip.value = withTiming(1, { duration: reducedMotion ? CROSSFADE_MS : FLIP_MS, easing: FLIP_EASING });
+    AccessibilityInfo.announceForAccessibility('Autopsy revealed');
+  }, [flip, reducedMotion]);
+
+  const turnBack = useCallback(() => {
+    setFlipped(false);
+    flip.value = withTiming(0, { duration: reducedMotion ? CROSSFADE_MS : FLIP_MS, easing: FLIP_EASING });
+    AccessibilityInfo.announceForAccessibility('Returned to the log');
+  }, [flip, reducedMotion]);
+
+  const frontStyle = useAnimatedStyle(() => {
+    if (reducedMotion) {
+      return { opacity: 1 - flip.value, transform: [] };
+    }
+    return {
+      opacity: 1,
+      transform: [
+        { perspective: 1000 },
+        { rotateY: `${interpolate(flip.value, [0, 1], [0, 180])}deg` },
+      ],
+    };
+  });
+
+  const backStyle = useAnimatedStyle(() => {
+    if (reducedMotion) {
+      return { opacity: flip.value, transform: [] };
+    }
+    return {
+      opacity: 1,
+      transform: [
+        { perspective: 1000 },
+        { rotateY: `${interpolate(flip.value, [0, 1], [180, 360])}deg` },
+      ],
+    };
+  });
 
   const handleFilmPress = useCallback(() => {
     DeviceEventEmitter.emit('reelhouse:projection-mark');
@@ -146,25 +177,71 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index }: { 
   return (
     <View style={{ zIndex: index }}>
       <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS>
-        <ActivityCardShell isPremium={isPremium} isAuteur={isAuteur}>
-          <ActivityEditorialHeader item={item} isPremium={isPremium} isAuteur={isAuteur} backdropUri={backdropUri} />
-          
-          <View style={s.cardBody}>
-            <PosterFrame itemId={item.id} filmId={item.film_id} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />
-            <ActivityContentBody 
-              item={item} 
-              isAuteur={isAuteur} 
-              isPremium={isPremium} 
-              timeAgo={timeAgo} 
-              handleUserPress={handleUserPress} 
-              handleFilmPress={handleFilmPress} 
-              handleLogPress={handleLogPress} 
-            />
-          </View>
+        {/* ── FRONT of the card ── */}
+        <Animated.View
+          style={frontStyle}
+          pointerEvents={flipped ? 'none' : 'auto'}
+          accessibilityElementsHidden={flipped}
+          importantForAccessibility={flipped ? 'no-hide-descendants' : 'auto'}
+        >
+          <ActivityCardShell isPremium={isPremium} isAuteur={isAuteur}>
+            {editorialUri && <ActivityEditorialHeader backdropUri={editorialUri} />}
 
-          {/* autopsy is unknown JSONB on the wire; AutopsyView guards shape at runtime. */}
-          <AutopsyView isAutopsied={item.is_autopsied ?? undefined} autopsy={(item.autopsy ?? undefined) as Record<string, number> | undefined} />
-        </ActivityCardShell>
+            {/* The ledger — who filed it */}
+            <View style={s.ledgerWrap}>
+              <UserAttributionRow
+                username={item.username}
+                avatarUrl={item.avatar_url}
+                role={item.role}
+                timeAgo={timeAgo}
+                onUserPress={handleUserPress}
+              />
+            </View>
+
+            {/* The film row — poster stapled left, identity right */}
+            <View style={s.filmRow}>
+              <PosterFrame itemId={item.id} filmId={item.film_id} posterPath={item.poster_path} isPremium={isPremium} isAuteur={isAuteur} onPress={handleFilmPress} />
+              <View style={s.filmMeta}>
+                <PressableScale onPress={handleFilmPress} hitSlop={st.hitSlop} haptic="selection" pressedScale={0.96}>
+                  <Text style={s.cardTitle} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>{item.film_title}</Text>
+                </PressableScale>
+                {item.year != null && <Text style={s.cardYear}>{item.year}</Text>}
+                <VerdictBlock item={item} />
+              </View>
+            </View>
+
+            {/* The critique — full card width, proper line length */}
+            <View style={s.proseWrap}>
+              <ReviewContent item={item} isPremium={isPremium} isAuteur={isAuteur} onPress={handleLogPress} />
+            </View>
+
+            {/* The stamp bar */}
+            <View style={st.actionDeckWrap}>
+              <ActionDeck
+                itemId={item.id}
+                filmId={item.film_id}
+                filmTitle={item.film_title}
+                posterPath={item.poster_path ?? null}
+                year={item.year ?? undefined}
+                ownerUsername={item.username}
+              />
+            </View>
+
+            {hasAutopsy && <AutopsyStrip onTurnOver={turnOver} />}
+          </ActivityCardShell>
+        </Animated.View>
+
+        {/* ── BACK of the card (lazy — pays nothing until first flip) ── */}
+        {backMounted && hasAutopsy && (
+          <Animated.View
+            style={[StyleSheet.absoluteFillObject, s.backFace, backStyle]}
+            pointerEvents={flipped ? 'auto' : 'none'}
+            accessibilityElementsHidden={!flipped}
+            importantForAccessibility={flipped ? 'auto' : 'no-hide-descendants'}
+          >
+            <AutopsyBack autopsy={autopsyStats} username={item.username} onReturn={turnBack} />
+          </Animated.View>
+        )}
       </View>
     </View>
   );
@@ -188,27 +265,35 @@ function getTimeAgo(dateStr: string): string {
 const s = StyleSheet.create({
   card: {
     backgroundColor: 'rgba(8,6,4,0.98)',
-    marginHorizontal: 12,
-    marginBottom: 24,
-    borderRadius: 4, 
+    // One rail: 16px, aligned with the header, tabs, and chips above.
+    marginHorizontal: 16,
+    marginBottom: 20,
+    borderRadius: 4,
     borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.5)',
+    borderColor: 'rgba(184,137,26,0.4)',
     overflow: 'hidden',
     position: 'relative',
-    elevation: 25,
+    elevation: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 20 },
-    shadowOpacity: 0.8,
-    shadowRadius: 30,
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.7,
+    shadowRadius: 20,
   },
   cardPremium: {
     borderColor: 'rgba(184,137,26,0.3)',
     backgroundColor: 'rgba(10,8,4,1)',
   },
   cardAuteur: {
-    borderColor: 'rgba(125,31,31,0.25)',
+    borderColor: colors.crimsonBorder,
     backgroundColor: 'rgba(12,5,5,1)',
   },
+  backFace: {
+    backgroundColor: '#0B0806',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+
+  // ── Editorial (the crown — true editorial only) ──
   editorialHeaderContainer: {
     width: '100%',
     height: 100,
@@ -219,13 +304,6 @@ const s = StyleSheet.create({
     height: '100%',
     overflow: 'hidden',
   },
-  editorialHeaderImageFallback: {
-    transform: [{ scale: 1.3 }],
-    opacity: 0.35,
-  },
-  editorialHeaderImageStyle: {
-    resizeMode: 'cover',
-  },
   editorialHeaderAccent: {
     position: 'absolute',
     bottom: 0,
@@ -235,61 +313,66 @@ const s = StyleSheet.create({
   },
   editorialBadge: {
     position: 'absolute',
-    top: 24,
-    left: 24,
-    backgroundColor: 'rgba(11,10,8,0.5)',
-    paddingHorizontal: 14,
-    paddingVertical: 6,
+    top: 12,
+    left: 12,
+    backgroundColor: 'rgba(11,10,8,0.6)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 2,
     borderWidth: 1,
-    borderColor: 'rgba(184,137,26,0.2)',
+    borderColor: 'rgba(184,137,26,0.25)',
   },
   editorialBadgeText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 7,
-    letterSpacing: 2.2,
-    color: 'rgba(218,165,32,0.85)',
+    letterSpacing: 2.5,
+    color: 'rgba(218,165,32,0.9)',
+    includeFontPadding: false,
   },
-  cardBody: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    padding: 28,
-    paddingTop: 40,
-    gap: 32,
+
+  // ── Index card zones ──
+  ledgerWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
     zIndex: 1,
   },
-  cardInfo: {
-    width: '100%',
-    justifyContent: 'flex-start',
+  filmRow: {
+    flexDirection: 'row',
+    gap: 14,
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    zIndex: 1,
   },
-  titleRow: {
-    alignItems: 'center',
-    marginBottom: 10,
-    marginTop: 4,
+  filmMeta: {
+    flex: 1,
+    paddingTop: 2,
+  },
+  proseWrap: {
+    paddingHorizontal: 16,
+    zIndex: 1,
   },
   cardTitle: {
     fontFamily: fonts.display,
-    fontSize: 28,
+    fontSize: 19,
     color: '#F2ECD8',
-    lineHeight: 32,
-    marginBottom: 4,
-    textAlign: 'center',
-    textShadowColor: 'rgba(184,137,26, 0.4)',
+    lineHeight: 24,
+    textShadowColor: 'rgba(184,137,26, 0.35)',
     textShadowOffset: { width: 0, height: 0 },
-    textShadowRadius: 15,
+    textShadowRadius: 12,
+    includeFontPadding: false,
   },
   cardYear: {
-    fontFamily: fonts.ui,
-    fontSize: 10,
-    letterSpacing: 4,
+    fontFamily: fonts.sub,
+    fontSize: 9,
+    letterSpacing: 3,
     color: colors.fog,
-    marginTop: 6,
+    marginTop: 5,
+    marginBottom: 6,
+    includeFontPadding: false,
   },
 });
 
 const st = StyleSheet.create({
   hitSlop: { top: 15, bottom: 15, left: 15, right: 15 },
-  flexShrink: { flexShrink: 1 },
-  actionDeckWrap: { marginTop: 24, width: '100%' },
+  actionDeckWrap: { marginTop: 14, width: '100%', zIndex: 1 },
 });
-
