@@ -29,6 +29,8 @@ interface TasteDNALog {
 interface TasteDNAProps {
     logs: TasteDNALog[];
     username?: string;
+    /** Padded member serial — stamped on the shared export artifact. */
+    memberNo?: string | null;
 }
 
 const GENRE_MAP: Record<number, string> = {
@@ -39,7 +41,7 @@ const GENRE_MAP: Record<number, string> = {
     53: 'Thriller', 10752: 'War', 37: 'Western',
 };
 
-export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps) {
+export const TasteDNA = memo(function TasteDNA({ logs, username, memberNo }: TasteDNAProps) {
     const [computedGenres, setComputedGenres] = useState<[string, number][]>([]);
     const [totalResolvedFilms, setTotalResolvedFilms] = useState(0);
     const [isSharing, setIsSharing] = useState(false);
@@ -204,7 +206,7 @@ export const TasteDNA = memo(function TasteDNA({ logs, username }: TasteDNAProps
             </View>
 
             {/* Offscreen High-Fidelity Canvas for Lumière Export */}
-            <TasteDNAExportCanvas ref={viewShotRef} genres={computedGenres} username={username} />
+            <TasteDNAExportCanvas ref={viewShotRef} genres={computedGenres} username={username} memberNo={memberNo} />
         </Animated.View>
     );
 });
@@ -221,10 +223,10 @@ const s = StyleSheet.create({
     subtitle: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, fontStyle: 'italic', marginBottom: 16 },
     dnaStrip: { gap: 10 },
     row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    genreLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog, minWidth: 70 },
+    genreLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, minWidth: 70 },
     barTrack: { flex: 1, height: 6, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 3, overflow: 'hidden' },
     barFill: { height: '100%', borderRadius: 3 },
-    pctLabel: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, minWidth: 28, textAlign: 'right' },
+    pctLabel: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, minWidth: 28, textAlign: 'right' },
     helixDecor: { position: 'absolute', bottom: 6, left: 0, right: 0, height: 4, flexDirection: 'row' },
     helixDot: { position: 'absolute', width: 3, height: 3, borderRadius: 1.5, backgroundColor: colors.sepia },
 });

@@ -183,7 +183,7 @@ const s = StyleSheet.create({
     color: colors.parchment,
   },
   countText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 2,
     color: colors.sepia,
@@ -204,8 +204,8 @@ const s = StyleSheet.create({
     borderRadius: 3,
   },
   badgeUnlocked: {
-    backgroundColor: 'rgba(196,150,26,0.06)',
-    borderColor: 'rgba(196,150,26,0.2)',
+    backgroundColor: 'rgba(184,137,26,0.06)',
+    borderColor: 'rgba(184,137,26,0.2)',
   },
   badgeLocked: {
     backgroundColor: 'transparent',
@@ -218,7 +218,7 @@ const s = StyleSheet.create({
   },
   glyphUnlocked: {
     color: colors.sepia,
-    textShadowColor: 'rgba(196,150,26,0.4)',
+    textShadowColor: 'rgba(184,137,26,0.4)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 8,
   },
@@ -227,7 +227,7 @@ const s = StyleSheet.create({
     opacity: 0.5,
   },
   badgeTitle: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 1.5,
     textAlign: 'center',

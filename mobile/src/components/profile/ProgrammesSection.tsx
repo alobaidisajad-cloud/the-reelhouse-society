@@ -326,7 +326,7 @@ const s = StyleSheet.create({
         paddingVertical: 16, borderWidth: 1, borderStyle: 'dashed',
         borderColor: colors.sepia, alignItems: 'center', borderRadius: 4,
     },
-    createBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.sepia },
+    createBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
     // Locked state
     lockedCard: {
         padding: 32, alignItems: 'center', borderWidth: 1, borderColor: colors.sepia,
@@ -343,7 +343,7 @@ const s = StyleSheet.create({
         padding: 20, backgroundColor: colors.ink, borderWidth: 1,
         borderColor: colors.sepia, borderRadius: 4,
     },
-    formTitle: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, textAlign: 'center', marginBottom: 16 },
+    formTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, textAlign: 'center', marginBottom: 16 },
     input: {
         backgroundColor: 'rgba(255,255,255,0.03)', borderWidth: 1, borderColor: colors.ash,
         color: colors.bone, fontFamily: fonts.body, fontSize: 13,
@@ -352,7 +352,7 @@ const s = StyleSheet.create({
     // Film selectors
     filmSelectRow: { flexDirection: 'row', gap: 12, marginBottom: 12 },
     filmSelectBox: { flex: 1 },
-    filmSelectLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog, marginBottom: 6 },
+    filmSelectLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, marginBottom: 6 },
     filmSelectTrigger: {
         paddingVertical: 12, borderWidth: 1, borderColor: colors.ash,
         borderRadius: 4, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.03)',
@@ -375,13 +375,13 @@ const s = StyleSheet.create({
     pickerItem: { paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
     pickerItemText: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone },
     pickerCancel: { marginTop: 8, alignItems: 'center', paddingVertical: 8 },
-    pickerCancelText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 2, color: colors.fog },
+    pickerCancelText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog },
     // Actions
     formActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 12, marginTop: 8 },
     cancelBtn: { paddingVertical: 10, paddingHorizontal: 16 },
-    cancelBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, color: colors.fog },
+    cancelBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
     publishBtn: { paddingVertical: 10, paddingHorizontal: 20, backgroundColor: colors.sepia, borderRadius: 4 },
-    publishBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, color: colors.ink },
+    publishBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.ink },
     // Programme cards
     progCard: {
         flexDirection: 'row', gap: 16, padding: 20,
@@ -399,7 +399,7 @@ const s = StyleSheet.create({
     },
     progPosterImg: { width: '100%', height: '100%', borderRadius: 4 },
     progInfo: { flex: 1 },
-    progEyebrow: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.sepia, marginBottom: 6 },
+    progEyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, marginBottom: 6 },
     progTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, lineHeight: 24, marginBottom: 8 },
     progFilmsRow: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginBottom: 8 },
     progFilmName: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone },

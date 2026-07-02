@@ -73,10 +73,10 @@ const styles = StyleSheet.create({
         zIndex: 100,
     },
     title: {
-        fontFamily: fonts.mono,
-        fontSize: 16,
+        fontFamily: fonts.sub,
+        fontSize: 15,
         color: colors.parchment,
-        letterSpacing: 4,
+        letterSpacing: 3,
         marginBottom: 8,
     },
     subtitle: {
@@ -99,8 +99,8 @@ const styles = StyleSheet.create({
         borderRadius: 4,
     },
     btnText: {
-        fontFamily: fonts.uiMedium,
-        fontSize: 12,
+        fontFamily: fonts.sub,
+        fontSize: 11,
         color: colors.sepia,
         letterSpacing: 2,
     }

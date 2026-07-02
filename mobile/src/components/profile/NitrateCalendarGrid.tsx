@@ -103,8 +103,8 @@ export default function NitrateCalendarGrid({ logs, isSelf }: Props) {
   const getColor = (count: number) => {
     if (count === 0) return 'rgba(184,137,26,0.05)';
     if (count === 1) return 'rgba(184,137,26,0.3)';
-    if (count === 2) return 'rgba(196,150,26,0.6)';
-    if (count === 3) return 'rgba(242,232,160,0.8)';
+    if (count === 2) return 'rgba(184,137,26,0.6)';
+    if (count === 3) return 'rgba(240,232,176,0.8)';
     return colors.flicker; // 4+
   };
 
@@ -181,13 +181,13 @@ const s = StyleSheet.create({
   },
   header: { paddingHorizontal: 16, marginBottom: 12, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
   title: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.fog },
-  subtitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1.5, color: colors.sepia },
+  subtitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.sepia },
   scrollContent: { paddingHorizontal: 16, paddingBottom: 8 },
   gridWrapper: { position: 'relative' },
   legend: { flexDirection: 'row', alignItems: 'center', marginTop: 12, alignSelf: 'flex-end', gap: 4 },
-  legendText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginHorizontal: 4 },
+  legendText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginHorizontal: 4 },
   legendBox: { width: 8, height: 8, borderRadius: 1.5 },
   ctaContainer: { marginTop: 16, alignItems: 'center' },
   ctaBtn: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(242,232,160,0.05)', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(242,232,160,0.2)' },
-  ctaText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.flicker },
+  ctaText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.flicker },
 });

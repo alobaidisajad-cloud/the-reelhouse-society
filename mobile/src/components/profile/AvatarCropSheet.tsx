@@ -133,7 +133,7 @@ const s = StyleSheet.create({
     borderWidth: 1, borderColor: colors.ash,
   },
   iconWrap: { width: 50, height: 50, borderRadius: 25, backgroundColor: 'rgba(184,137,26,0.1)', justifyContent: 'center', alignItems: 'center', marginBottom: 12 },
-  actionText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1.5, color: colors.bone },
+  actionText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.bone },
   uploading: { alignItems: 'center', paddingVertical: 40 },
   uploadText: { fontFamily: fonts.sub, fontSize: 14, color: colors.sepia, marginTop: 16, fontStyle: 'italic' },
 });

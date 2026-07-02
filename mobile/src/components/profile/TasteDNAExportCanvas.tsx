@@ -1,12 +1,14 @@
 import React, { forwardRef } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import ViewShot from 'react-native-view-shot';
+import Svg, { Defs, RadialGradient as SvgRadialGradient, Stop, Rect } from 'react-native-svg';
 import { colors, fonts } from '@/src/theme/theme';
-import SkiaFilmGrain from '../FilmGrain';
 
 interface TasteDNAExportCanvasProps {
     genres: [string, number][];
     username?: string;
+    /** Padded member serial (e.g. "0412") — stamped on the shared artifact. */
+    memberNo?: string | null;
 }
 
 
@@ -17,7 +19,7 @@ const CARD_HEIGHT = 1350;
 
 // eslint-disable-next-line react/display-name
 export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasProps>(
-    ({ genres, username = 'CINEPHILE' }, ref) => {
+    ({ genres, username = 'CINEPHILE', memberNo }, ref) => {
         if (!genres || genres.length === 0) return null;
 
         const maxCount = genres[0][1];
@@ -28,11 +30,19 @@ export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasPro
                 <ViewShot ref={ref} options={{ format: 'png', quality: 1.0 }} style={s.canvas}>
                     {/* Background */}
                     <View style={s.background}>
-                        {/* We use Skia FilmGrain to give it real physical texture */}
-                        <SkiaFilmGrain intensity={0.12} pointerEvents="none" />
-                        
-                        {/* Vignette */}
-                        <View style={s.vignette} />
+                        {/* True radial vignette — the old 100px border-hack baked
+                            visible corner artifacts into every shared PNG. */}
+                        <View style={StyleSheet.absoluteFillObject} pointerEvents="none">
+                            <Svg width="100%" height="100%">
+                                <Defs>
+                                    <SvgRadialGradient id="exportVignette" cx="50%" cy="50%" rx="72%" ry="60%">
+                                        <Stop offset="55%" stopColor="#000" stopOpacity="0" />
+                                        <Stop offset="100%" stopColor="#000" stopOpacity="0.55" />
+                                    </SvgRadialGradient>
+                                </Defs>
+                                <Rect x="0" y="0" width="100%" height="100%" fill="url(#exportVignette)" />
+                            </Svg>
+                        </View>
 
                         {/* Content Wrap */}
                         <View style={s.content}>
@@ -61,10 +71,13 @@ export const TasteDNAExportCanvas = forwardRef<ViewShot, TasteDNAExportCanvasPro
                                 </View>
                             </View>
 
-                            {/* Footer Watermark */}
+                            {/* Footer Watermark — the REAL serial, not a random
+                                counterfeit that changed on every render. */}
                             <View style={s.footer}>
                                 <Text style={s.watermark}>DOCUMENT CLASSIFIED</Text>
-                                <Text style={s.watermarkId}>ID: RH-{Math.floor(Math.random() * 90000) + 10000}</Text>
+                                <Text style={s.watermarkId}>
+                                    {memberNo ? `MEMBER Nº ${memberNo}` : 'THE REELHOUSE SOCIETY'}
+                                </Text>
                             </View>
                         </View>
                     </View>
@@ -91,12 +104,6 @@ const s = StyleSheet.create({
         flex: 1,
         position: 'relative',
     },
-    vignette: {
-        ...StyleSheet.absoluteFillObject,
-        borderWidth: 100,
-        borderColor: 'rgba(0,0,0,0.6)',
-        borderRadius: CARD_WIDTH,
-    },
     content: {
         flex: 1,
         padding: 80,
@@ -108,7 +115,7 @@ const s = StyleSheet.create({
         gap: 20,
     },
     societyLabel: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 24,
         letterSpacing: 8,
         color: colors.parchment,
@@ -121,7 +128,7 @@ const s = StyleSheet.create({
         opacity: 0.5,
     },
     dossierTitle: {
-        fontFamily: fonts.mono,
+        fontFamily: fonts.sub,
         fontSize: 28,
         letterSpacing: 4,
         color: colors.fog,
@@ -134,9 +141,10 @@ const s = StyleSheet.create({
         borderRadius: 8,
     },
     title: {
-        fontFamily: fonts.ui,
-        fontSize: 48,
-        letterSpacing: 12,
+        // The poster headline of the most-shared artifact — Rye, not Inter.
+        fontFamily: fonts.display,
+        fontSize: 52,
+        letterSpacing: 6,
         color: colors.sepia,
         marginBottom: 10,
         textAlign: 'center',
@@ -159,7 +167,7 @@ const s = StyleSheet.create({
         gap: 30,
     },
     genreLabel: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 28,
         letterSpacing: 2,
         color: colors.fog,
@@ -183,13 +191,13 @@ const s = StyleSheet.create({
         opacity: 0.4,
     },
     watermark: {
-        fontFamily: fonts.mono,
+        fontFamily: fonts.sub,
         fontSize: 20,
         letterSpacing: 4,
         color: colors.parchment,
     },
     watermarkId: {
-        fontFamily: fonts.mono,
+        fontFamily: fonts.sub,
         fontSize: 20,
         letterSpacing: 2,
         color: colors.sepia,

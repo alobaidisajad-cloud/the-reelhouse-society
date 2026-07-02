@@ -5,6 +5,7 @@ import { X } from 'lucide-react-native';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Image } from 'expo-image';
 import Buster from '@/src/components/Buster';
 import { RadarChart } from '@/src/components/profile/RadarChart';
 import { colors, fonts } from '@/src/theme/theme';
@@ -21,6 +22,8 @@ interface DNALog {
 
 interface DNAUser {
     username?: string;
+    member_no?: number | null;
+    avatar_url?: string | null;
 }
 
 export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics, onClose }: { logs: DNALog[]; user: DNAUser; analytics?: ProfileAnalyticsPayload | null; onClose: () => void }) {
@@ -99,8 +102,13 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
                 <View style={s.grainOverlay} />
                 
                 <View style={s.header}>
+                    {/* The member's real portrait on their own file; Buster is the fallback */}
                     <View style={s.avatarWrap}>
-                        <Buster size={24} mood="smiling" />
+                        {user?.avatar_url ? (
+                            <Image source={{ uri: user.avatar_url }} style={s.avatarImg} contentFit="cover" cachePolicy="memory-disk" />
+                        ) : (
+                            <Buster size={24} mood="smiling" />
+                        )}
                     </View>
                     <View style={s.userInfoWrap}>
                         <Text style={s.username} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>@{user?.username ?? 'cinephile'}</Text>
@@ -164,7 +172,14 @@ export const CinemaDNACard = memo(function CinemaDNACard({ logs, user, analytics
 
                 <View style={s.footer}>
                     <Text style={s.logo}>REELHOUSE</Text>
-                    <Text style={s.footerSub}>CASE №{String(totalCount).padStart(4, '0')}</Text>
+                    {/* The real serial — the member's number on their own artifact.
+                        Falls back to the film-count case number until the
+                        member_no migration data reaches this client. */}
+                    <Text style={s.footerSub}>
+                        {user?.member_no
+                            ? `MEMBER Nº ${String(user.member_no).padStart(4, '0')}`
+                            : `CASE №${String(totalCount).padStart(4, '0')}`}
+                    </Text>
                 </View>
             </View>
         </Animated.View>
@@ -194,31 +209,32 @@ const s = StyleSheet.create({
         zIndex: -1,
     },
     header: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 10 },
-    avatarWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#050402', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia },
-    username: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.parchment },
-    subtext: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia, marginTop: 2 },
+    avatarWrap: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#050402', alignItems: 'center', justifyContent: 'center', borderWidth: 1, borderColor: colors.sepia, overflow: 'hidden' },
+    avatarImg: { width: '100%', height: '100%' },
+    username: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.parchment },
+    subtext: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, marginTop: 2 },
     userInfoWrap: { flex: 1, paddingRight: 10 },
     titleWrap: { alignItems: 'center', marginBottom: 16 },
-    eyebrow: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.sepia, marginBottom: 8 },
+    eyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8 },
     title: { fontFamily: fonts.display, fontSize: 32, color: colors.parchment },
     archetypeWrap: { alignItems: 'center', padding: 10, backgroundColor: 'rgba(184,137,26,0.1)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', marginBottom: 16 },
     archetypeLabel: { fontFamily: fonts.sub, fontSize: 16, color: colors.parchment },
-    archetypeSub: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.sepia, marginTop: 4 },
+    archetypeSub: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, marginTop: 4 },
     radarWrap: { alignItems: 'center', marginBottom: 16 },
     statsGrid: { flexDirection: 'row', gap: 12, marginBottom: 16 },
     statBox: { flex: 1, alignItems: 'center', padding: 8, borderWidth: 1, borderColor: 'rgba(255,255,255,0.04)' },
     statVal: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment },
-    statLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 4 },
+    statLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fog, marginTop: 4 },
     decadesWrap: { marginBottom: 'auto' },
-    sectionEyebrow: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.sepia, marginBottom: 8 },
+    sectionEyebrow: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, marginBottom: 8 },
     decadesRow: { flexDirection: 'row', gap: 8 },
     decadeBox: { flex: 1, padding: 8, backgroundColor: 'rgba(184,137,26,0.06)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', alignItems: 'center' },
     decadeLabel: { fontFamily: fonts.sub, fontSize: 14, color: colors.parchment },
-    decadePct: { fontFamily: fonts.ui, fontSize: 10, color: colors.sepia },
+    decadePct: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia },
     obscurityWrap: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.15)', paddingVertical: 10, marginBottom: 10 },
-    obscurityLabel: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.fog },
+    obscurityLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog },
     obscurityVal: { fontFamily: fonts.display, fontSize: 24, color: colors.sepia },
     footer: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.15)', paddingTop: 16 },
     logo: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia },
-    footerSub: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, letterSpacing: 1, textAlign: 'right' }
+    footerSub: { fontFamily: fonts.sub, fontSize: 8, color: colors.sepia, letterSpacing: 1.5, textAlign: 'right' }
 });

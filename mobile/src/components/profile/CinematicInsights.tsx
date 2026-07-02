@@ -345,7 +345,7 @@ export function CinematicInsights({ logs }: { logs: InsightLog[] }) {
 
 const s = StyleSheet.create({
     container: { gap: 16 },
-    metaNote: { textAlign: 'center', fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.6, marginBottom: 4 },
+    metaNote: { textAlign: 'center', fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.6, marginBottom: 4 },
     card: {
         padding: 20, backgroundColor: 'rgba(8,6,4,0.98)',
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
@@ -359,7 +359,7 @@ const s = StyleSheet.create({
         backgroundColor: 'rgba(184,137,26,0.15)',
         alignItems: 'center', justifyContent: 'center',
     },
-    rankText: { fontFamily: fonts.uiBold, fontSize: 9, color: colors.fog },
+    rankText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog },
     avatar: {
         width: 36, height: 36, borderRadius: 18, overflow: 'hidden',
         borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: '#050402',
@@ -377,6 +377,6 @@ const s = StyleSheet.create({
     genreHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 4, gap: 8 },
     genreName: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, flex: 1 },
     genreCountWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 4 },
-    pctText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.ash },
+    pctText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, opacity: 0.6 },
     loaderMargin: { marginVertical: 16 },
 });

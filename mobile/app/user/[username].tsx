@@ -639,7 +639,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     {/* Taste DNA */}
                     <View>
                       <SectionLabel text="TASTE FINGERPRINT" />
-                      <TasteDNA logs={(analyticsLogs.length > 0 ? analyticsLogs : displayLogs) as any} username={targetUser?.username || username} />
+                      <TasteDNA logs={(analyticsLogs.length > 0 ? analyticsLogs : displayLogs) as any} username={targetUser?.username || username} memberNo={memberNo} />
                     </View>
 
                     {/* Cinematic Insights */}

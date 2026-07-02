@@ -61,7 +61,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
                         cx={center}
                         cy={center}
                         r={radius * level}
-                        stroke="rgba(196,150,26,0.15)"
+                        stroke="rgba(184,137,26,0.15)"
                         strokeWidth="1"
                         fill="none"
                     />
@@ -77,7 +77,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
                             y1={center}
                             x2={x}
                             y2={y}
-                            stroke="rgba(196,150,26,0.1)"
+                            stroke="rgba(184,137,26,0.1)"
                             strokeWidth="1"
                         />
                     );
@@ -86,7 +86,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
                 {/* Data Polygon */}
                 <Polygon
                     points={points}
-                    fill="rgba(196,150,26,0.25)"
+                    fill="rgba(184,137,26,0.25)"
                     stroke={colors.sepia}
                     strokeWidth="1.5"
                 />
@@ -115,7 +115,7 @@ export function RadarChart({ autopsy, size = 120 }: { autopsy: Record<string, nu
                             y={y}
                             fill={colors.fog}
                             fontSize="8"
-                            fontFamily={fonts.ui}
+                            fontFamily={fonts.sub}
                             textAnchor="middle"
                             alignmentBaseline="middle"
                         >
@@ -134,10 +134,10 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: StyleSheet.hairlineWidth,
-        borderColor: 'rgba(196,150,26,0.2)'
+        borderColor: 'rgba(184,137,26,0.2)'
     },
     fallbackText: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 8,
         color: colors.fog,
         letterSpacing: 1

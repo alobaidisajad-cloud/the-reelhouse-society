@@ -211,13 +211,13 @@ const s = StyleSheet.create({
         paddingVertical: 12, paddingHorizontal: 32,
         backgroundColor: colors.sepia, borderRadius: 4,
     },
-    spinBtnText: { fontFamily: fonts.uiBold, fontSize: 12, letterSpacing: 1, color: colors.ink },
+    spinBtnText: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 1, color: colors.ink },
     // Picking state
-    scanningText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, opacity: 0.65, marginBottom: 16 },
+    scanningText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, opacity: 0.65, marginBottom: 16 },
     flickerWrap: { width: 140, height: 210, borderRadius: 4, overflow: 'hidden' },
     poster: { width: '100%', height: '100%' },
     // Result state
-    oracleSpoken: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
+    oracleSpoken: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 16 },
     resultPosterWrap: {
         width: 140, height: 210, borderRadius: 4, overflow: 'hidden',
         shadowColor: '#000', shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.6, shadowRadius: 20,
@@ -226,7 +226,7 @@ const s = StyleSheet.create({
     resultTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginTop: 12, textAlign: 'center' },
     resultReason: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog, fontStyle: 'italic', marginTop: 8, textAlign: 'center' },
     rerollBtn: { marginTop: 20, paddingVertical: 8, paddingHorizontal: 16 },
-    rerollText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.fog },
+    rerollText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
     // Close
     closeBtn: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
     closeBtnText: { fontFamily: fonts.ui, fontSize: 18, color: colors.fog },

@@ -110,7 +110,7 @@ const s = StyleSheet.create({
     textShadowRadius: 16,
   },
   label: {
-    fontFamily: fonts.uiMedium,
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 2,
     marginBottom: 8,
