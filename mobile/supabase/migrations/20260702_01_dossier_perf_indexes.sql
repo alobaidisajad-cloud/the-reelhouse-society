@@ -23,6 +23,6 @@ CREATE INDEX IF NOT EXISTS idx_dossier_certifications_user_dossier
 CREATE INDEX IF NOT EXISTS idx_dispatch_dossiers_feed
   ON public.dispatch_dossiers (is_published, created_at DESC);
 
--- Dispatch "recent logs" strip: newest logs (DossierService.getDispatchLogs).
+-- Newest-first log ordering used by the community/following feed cursor RPCs.
 CREATE INDEX IF NOT EXISTS idx_logs_created_at
   ON public.logs (created_at DESC);
