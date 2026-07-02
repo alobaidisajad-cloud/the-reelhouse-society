@@ -66,7 +66,7 @@ export default function ProfileLedgerTab({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const pulseStyle = useAnimatedStyle(() => ({
-    borderColor: `rgba(196,150,26,${0.2 + breatheAnim.value})`,
+    borderColor: `rgba(184,137,26,${0.2 + breatheAnim.value})`,
     backgroundColor: `rgba(15,12,8,${0.8 + (breatheAnim.value * 0.2)})`,
   }));
 
@@ -153,10 +153,10 @@ export default function ProfileLedgerTab({
               {hl && (
                 <View style={[s.halfLifeBadge, { pointerEvents: 'none' }]}>
                   <View style={s.halfLifeContent}>
-                    {hl.trajectory === 'ASCENDING' ? <TrendingUp size={7} color="#22c55e" strokeWidth={2} /> 
-                      : hl.trajectory === 'DECAYING' ? <TrendingDown size={7} color="#ef4444" strokeWidth={2} /> 
+                    {hl.trajectory === 'ASCENDING' ? <TrendingUp size={7} color={colors.validation} strokeWidth={2} />
+                      : hl.trajectory === 'DECAYING' ? <TrendingDown size={7} color={colors.crimson} strokeWidth={2} />
                       : <Minus size={7} color={colors.sepia} strokeWidth={2} />}
-                    <Text style={[s.halfLifeText, { color: hl.trajectory === 'ASCENDING' ? '#22c55e' : hl.trajectory === 'DECAYING' ? '#ef4444' : colors.sepia }]}>
+                    <Text style={[s.halfLifeText, { color: hl.trajectory === 'ASCENDING' ? colors.validation : hl.trajectory === 'DECAYING' ? colors.crimson : colors.sepia }]}>
                       x{hl.count}
                     </Text>
                   </View>
@@ -220,7 +220,7 @@ export default function ProfileLedgerTab({
     if (logs.length === 0 && !ledgerSearch && isSelf) {
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
-          <PenTool size={32} color="#C4921E" strokeWidth={1} style={s.emptyLockIcon} />
+          <PenTool size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
           <Text style={s.emptyTitleSelf}>A Blank Ledger</Text>
           <PressableScale style={s.ctaBtn} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
             <Text style={s.ctaBtnText}>DRAFT A CRITIQUE</Text>
@@ -267,24 +267,24 @@ const s = StyleSheet.create({
   filterGroupCol: { gap: 16, marginBottom: 24 },
   searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, paddingHorizontal: 16, height: 44 },
   searchIconStyle: { opacity: 0.6 },
-  searchInput: { flex: 1, fontFamily: fonts.ui, fontSize: 13, color: colors.parchment, paddingHorizontal: 12, height: '100%' },
+  searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.parchment, paddingHorizontal: 12, height: '100%' },
   searchClear: { padding: 4, opacity: 0.8 },
   filterChipRowTight: { gap: 8, flexDirection: 'row', alignItems: 'center' },
   filterChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: 'transparent' },
   filterChipActive: { backgroundColor: 'rgba(184,137,26,0.1)', borderColor: 'rgba(184,137,26,0.4)' },
-  filterChipText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
+  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
   filterChipTextActive: { color: colors.sepia },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, marginTop: 12 },
   emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, borderWidth: 1, borderRadius: 4, marginTop: 12 },
   emptyLockIcon: { marginBottom: 16, opacity: 0.8 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
-  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: '#C4921E', marginBottom: 24, textAlign: 'center' },
+  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 24, textAlign: 'center' },
   emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
-  ctaBtn: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(196,150,26,0.4)', borderRadius: 2, backgroundColor: 'rgba(196,150,26,0.05)' },
-  ctaBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: '#C4921E' },
-  monthHeader: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 4, color: colors.sepia, opacity: 0.8, marginBottom: 16, marginTop: 24 },
+  ctaBtn: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 2, backgroundColor: colors.sepiaFaint },
+  ctaBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
+  monthHeader: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, opacity: 0.8, marginBottom: 16, marginTop: 24 },
   grid4: { flexDirection: 'row', gap: 8, marginBottom: 12 },
   halfLifeBadge: { position: 'absolute', top: -4, right: -4, zIndex: 10, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)', borderRadius: 2, padding: 2 },
   halfLifeContent: { flexDirection: 'row', alignItems: 'center', gap: 2, paddingHorizontal: 2 },
-  halfLifeText: { fontFamily: fonts.uiBold, fontSize: 8 },
+  halfLifeText: { fontFamily: fonts.sub, fontSize: 8 },
 });

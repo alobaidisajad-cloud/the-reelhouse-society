@@ -61,7 +61,7 @@ export default function ProfileWatchlistTab({
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const pulseStyle = useAnimatedStyle(() => ({
-    borderColor: `rgba(240,240,240,${0.1 + breatheAnim.value})`,
+    borderColor: `rgba(184,137,26,${0.1 + breatheAnim.value})`,
   }));
 
   // Nitrate Noir Breathing Ember Protocol for Search
@@ -193,7 +193,7 @@ export default function ProfileWatchlistTab({
     if (watchlist.length === 0 && isSelf) {
       return (
         <Animated.View style={[s.emptyStateSelf, pulseStyle]}>
-          <Bookmark size={32} color={colors.parchment} strokeWidth={1.5} style={s.emptyLockIcon} />
+          <Bookmark size={32} color={colors.sepia} strokeWidth={1.5} style={s.emptyLockIcon} />
           <Text style={s.emptyTitleSelf}>An Empty Queue</Text>
           <PressableScale style={s.ctaBtnSelf} onPress={() => (router.push as any)('/search-modal' as never)} haptic>
             <Text style={s.ctaBtnTextSelf}>CURATE FUTURE VIEWINGS</Text>
@@ -245,26 +245,26 @@ const s = StyleSheet.create({
   container: { flex: 1 },
   listContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 100 },
   emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, marginTop: 12 },
-  emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(0,0,0,0.95)', borderWidth: 1, borderRadius: 0, marginTop: 12 },
+  emptyStateSelf: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderRadius: 4, marginTop: 12 },
   emptyLockIcon: { marginBottom: 16, opacity: 0.8 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, marginBottom: 8, textAlign: 'center' },
-  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: '#FFFFFF', marginBottom: 24, textAlign: 'center', letterSpacing: 1 },
+  emptyTitleSelf: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 24, textAlign: 'center', letterSpacing: 1 },
   emptyDesc: { fontFamily: fonts.bodyItalic, fontSize: 12, color: colors.bone, opacity: 0.6, textAlign: 'center', lineHeight: 20 },
-  ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(255,255,255,0.8)', backgroundColor: 'rgba(255,255,255,0.05)' },
-  ctaBtnTextSelf: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 4, color: '#FFFFFF' },
+  ctaBtnSelf: { paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 2, backgroundColor: colors.sepiaFaint },
+  ctaBtnTextSelf: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
   ctaBtn: { backgroundColor: 'rgba(8,6,4,0.95)', borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, alignItems: 'center', marginBottom: 24 },
   ctaBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  ctaBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },
+  ctaBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia },
   watchlistControlRow: { gap: 12, marginBottom: 24 },
   searchWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.7)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 2, paddingHorizontal: 16, height: 44 },
   searchWrapFlex: { flex: 1 },
   searchIconStyle: { opacity: 0.6 },
-  searchInput: { flex: 1, fontFamily: fonts.ui, fontSize: 13, color: colors.parchment, paddingHorizontal: 12, height: '100%' },
+  searchInput: { flex: 1, fontFamily: fonts.body, fontSize: 13, color: colors.parchment, paddingHorizontal: 12, height: '100%' },
   searchClear: { padding: 4, opacity: 0.8 },
   sortRow: { flexDirection: 'row', gap: 8 },
   filterChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', backgroundColor: 'transparent' },
   filterChipActive: { backgroundColor: 'rgba(184,137,26,0.1)', borderColor: 'rgba(184,137,26,0.4)' },
-  filterChipText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
+  filterChipText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
   filterChipTextActive: { color: colors.sepia },
   searchNoResults: { fontFamily: fonts.bodyItalic, fontSize: 14, color: colors.fog, textAlign: 'center', marginTop: 40 },
   grid3: { flexDirection: 'row', gap: 12, marginBottom: 12 },
