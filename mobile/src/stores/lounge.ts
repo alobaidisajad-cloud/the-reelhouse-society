@@ -97,8 +97,6 @@ export interface LoungeState {
   sendMessage: (loungeId: string, content: string, type?: string, meta?: LoungeMessageMeta) => Promise<boolean>;
   deleteMessage: (messageId: string) => Promise<void>;
   createLounge: (name: string, description: string, isPrivate: boolean) => Promise<string | null>;
-  joinLounge: (inviteCode: string) => Promise<boolean>;
-  joinLoungeById: (loungeId: string) => Promise<boolean>;
   /** Public lounge: instant join via the SECURITY DEFINER RPC. */
   joinPublicLounge: (loungeId: string) => Promise<boolean>;
   /** Private lounge: ask the host to admit you. Returns the resulting standing. */
@@ -756,107 +754,6 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
       logger.error('[LoungeStore.createLounge] Unhandled error:', e);
       reelToast.error('Could not create lounge. Check your connection and try again.');
       return null;
-    }
-  },
-
-  joinLounge: async (inviteCode) => {
-    const user = useAuthStore.getState().user;
-    if (!user) return false;
-    
-    try {
-      // Resolve by exact invite code. RLS already hides private lounges from
-      // non-members, so a direct lookup can't enumerate private-lounge metadata
-      // (the broad enumeration policy the repo worried about isn't present on
-      // this DB — verified WAVE 0). invite_code is stored uppercase.
-      const { data: lounge, error: fetchError } = await supabase
-        .from('lounges')
-        .select('*')
-        .eq('invite_code', inviteCode.toUpperCase())
-        .maybeSingle();
-
-      if (fetchError) throw fetchError;
-      
-      if (!lounge) {
-        reelToast.error('Invalid invite code.');
-        return false;
-      }
-      
-      const { error } = await supabase.from('lounge_members').insert([{
-        lounge_id: lounge.id,
-        user_id: user.id,
-      }]);
-      
-      const isDuplicate = error?.code === '23505';
-      if (error && !isDuplicate) {
-        logger.error('[LoungeStore.joinLounge] Insert failed:', error);
-        reelToast.error('Could not join lounge. Please check your connection.');
-        return false;
-      }
-      
-      set(s => ({
-        lounges: s.lounges.some(l => l.id === lounge.id)
-          ? s.lounges.map(l => l.id === lounge.id ? { 
-              ...l, 
-              is_member: true, 
-              member_count: isDuplicate ? l.member_count : (l.member_count || 0) + 1 
-            } : l)
-          : [...s.lounges, {
-              id: lounge.id,
-              name: lounge.name,
-              description: lounge.description || '',
-              is_private: lounge.is_private,
-              invite_code: lounge.invite_code,
-              creator_id: lounge.creator_id,
-              created_at: lounge.created_at,
-              member_count: isDuplicate ? (lounge.member_count || 0) : (lounge.member_count || 0) + 1,
-              unread_count: 0,
-              is_member: true,
-            }]
-      }));
-
-      await get().fetchLounges();
-      queryClient.invalidateQueries({ queryKey: ['lounge_membership', lounge.id] });
-      queryClient.invalidateQueries({ queryKey: ['lounge_members', lounge.id] });
-      return true;
-    } catch (e) {
-      logger.error('[LoungeStore.joinLounge] Unhandled error:', e);
-      reelToast.error('Could not join lounge. Check your connection and try again.');
-      return false;
-    }
-  },
-
-  joinLoungeById: async (loungeId) => {
-    const user = useAuthStore.getState().user;
-    if (!user) return false;
-    
-    try {
-      const { error } = await supabase.from('lounge_members').insert([{
-        lounge_id: loungeId,
-        user_id: user.id,
-      }]);
-      
-      const isDuplicate = error?.code === '23505';
-      if (error && !isDuplicate) {
-        reelToast.error('Failed to take a seat.');
-        return false;
-      }
-      
-      set(s => ({
-        lounges: s.lounges.map(l => l.id === loungeId ? { 
-          ...l, 
-          is_member: true, 
-          member_count: isDuplicate ? l.member_count : (l.member_count || 0) + 1 
-        } : l)
-      }));
-
-      await get().fetchLounges();
-      queryClient.invalidateQueries({ queryKey: ['lounge_membership', loungeId] });
-      queryClient.invalidateQueries({ queryKey: ['lounge_members', loungeId] });
-      return true;
-    } catch (e) {
-      logger.error('[LoungeStore.joinLoungeById] Unhandled error:', e);
-      reelToast.error('Could not join lounge. Check your connection and try again.');
-      return false;
     }
   },
 
