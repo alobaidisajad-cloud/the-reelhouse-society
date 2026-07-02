@@ -26,10 +26,11 @@ const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
 function TierSlotGlow({ tier, children }: { tier: 'archivist' | 'auteur'; children: React.ReactNode }) {
     const isArch = tier === 'archivist';
     const borderOpacity = useSharedValue(0.30);
-    const shadowRadius = useSharedValue(15);
 
     useEffect(() => {
-        // Web: archivistCardBreathe / auteurCardBreathe — 4s ease-in-out infinite
+        // Web: archivistCardBreathe / auteurCardBreathe — 4s ease-in-out.
+        // Border-opacity only: animating shadowRadius forced expensive layer
+        // re-blurs each frame; the breathing border alone carries the effect.
         borderOpacity.value = withRepeat(
             withSequence(
                 withTiming(0.55, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
@@ -37,28 +38,20 @@ function TierSlotGlow({ tier, children }: { tier: 'archivist' | 'auteur'; childr
             ),
             30, false,
         );
-        shadowRadius.value = withRepeat(
-            withSequence(
-                withTiming(30, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-                withTiming(15, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
-            ),
-            30, false,
-        );
-        return () => { cancelAnimation(borderOpacity); cancelAnimation(shadowRadius); };
+        return () => { cancelAnimation(borderOpacity); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const animStyle = useAnimatedStyle(() => ({
         borderColor: isArch
             ? `rgba(196,150,26,${borderOpacity.value.toFixed(2)})`
-            : `rgba(125,31,31,${borderOpacity.value.toFixed(2)})`,
-        shadowRadius: shadowRadius.value,
+            : `rgba(180,45,45,${borderOpacity.value.toFixed(2)})`,
     }));
 
-    // Web: box-shadow values
+    // Web: box-shadow values (static radius — the border does the breathing)
     const baseShadow = isArch
-        ? { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, elevation: 6 }
-        : { shadowColor: 'rgba(125,31,31,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, elevation: 6 };
+        ? { shadowColor: 'rgba(184,137,26,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 }
+        : { shadowColor: 'rgba(180,45,45,1)', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 20, elevation: 6 };
 
     // Web glyph: ✦ (archivist) or ★ (auteur)
     const glyph = isArch ? '✦' : '★';
@@ -448,7 +441,7 @@ const s = StyleSheet.create({
         borderBottomColor: 'rgba(184,137,26,0.1)',
     },
     modalEyebrow: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 10,
         letterSpacing: 3,
         color: colors.sepia,

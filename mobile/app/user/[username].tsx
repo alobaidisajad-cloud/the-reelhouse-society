@@ -10,7 +10,8 @@ import {
     View,
     useWindowDimensions
 } from 'react-native';
-import AnimatedRN, { Easing, FadeIn, cancelAnimation, useAnimatedReaction, useAnimatedStyle, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import AnimatedRN, { Easing, Extrapolation, FadeIn, cancelAnimation, interpolate, useAnimatedReaction, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
+import Svg, { Defs, Ellipse, RadialGradient as SvgRadialGradient, Stop } from 'react-native-svg';
  
 import { useFilmStore } from '@/src/stores/films';
  
@@ -51,17 +52,14 @@ import ProfileListsTab from '@/src/components/profile/ProfileListsTab';
 import ProfilePhysicalTab from '@/src/components/profile/ProfilePhysicalTab';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
 import {
-     
     Archive,
-     
     ArrowLeft,
     CalendarDays,
     ChevronLeft,
     Crown, Dna,
     Film as FilmIcon,
-    Flame,
     Globe,
-    Lock,
+    KeyRound,
     MoreVertical,
     Settings,
     Sparkles,
@@ -117,11 +115,55 @@ interface ProfileUser {
 // MAIN PROFILE SCREEN
 // ════════════════════════════════════════════════════════════
 
+// The six rooms of the member's private wing — one voice, every door named.
 const TAB_TITLES: Record<string, string> = {
-  archive: 'The Archive', ledger: 'The Ledger', watchlist: 'Watchlist',
-  lists: 'The Stacks', physical: 'Physical Archive', passport: 'Passport',
-  projector: 'Global Analytics', calendar: "The AUTEUR's Calendar",
+  archive: 'The Archive', ledger: 'The Ledger', watchlist: 'The Watchlist',
+  lists: 'The Stacks', physical: 'The Vault', passport: 'The Cinematic Passport',
+  projector: 'The Projector Room', calendar: 'The Viewing Calendar',
 };
+
+// ── The projector's pool of light — a true radial, tier-tinted ──
+// (Replaces the old rounded-rectangle "spotlight"; static SVG, painted once.)
+function SpotlightPool({ tint, opacity }: { tint: string; opacity: number }) {
+  return (
+    <View style={spotStyles.wrap} pointerEvents="none">
+      <Svg width="100%" height="100%">
+        <Defs>
+          <SvgRadialGradient id="plateSpot" cx="50%" cy="22%" rx="58%" ry="62%">
+            <Stop offset="0%" stopColor={tint} stopOpacity={String(opacity)} />
+            <Stop offset="100%" stopColor={tint} stopOpacity="0" />
+          </SvgRadialGradient>
+        </Defs>
+        <Ellipse cx="50%" cy="28%" rx="62%" ry="58%" fill="url(#plateSpot)" />
+      </Svg>
+    </View>
+  );
+}
+const spotStyles = StyleSheet.create({
+  wrap: { position: 'absolute', top: -30, left: 0, right: 0, height: 340, zIndex: 1 },
+});
+
+// ── The velvet rope — locked rooms invite, they never dead-end ──
+function VelvetGate({ title, line, isSelf, onAscend }: { title: string; line: string; isSelf: boolean; onAscend: () => void }) {
+  return (
+    <View style={s.emptyState}>
+      <KeyRound size={26} color={colors.sepia} strokeWidth={1.5} style={s.emptyLockIcon} />
+      <Text style={s.emptyTitle}>{title}</Text>
+      <Text style={s.emptyDesc}>{line}</Text>
+      {isSelf && (
+        <PressableScale
+          style={s.ascendBtn}
+          onPress={onAscend}
+          haptic="medium"
+          accessibilityRole="button"
+          accessibilityLabel="Ascend the ranks — opens membership"
+        >
+          <Text style={s.ascendBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ ASCEND THE RANKS</Text>
+        </PressableScale>
+      )}
+    </View>
+  );
+}
 
 export default function UserProfileScreen({ usernameOverride, isRootTab = false }: { usernameOverride?: string, isRootTab?: boolean } = {}) {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -170,6 +212,9 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
 
   const POSTER_COL_4 = (windowWidth - 32 - 18) / 4;
   const POSTER_COL_3 = (windowWidth - 32 - 16) / 3;
+  // Deterministic pixel width (16px rails ×2, 10px gaps ×2) — the old
+  // '31%'-of-a-widthless-wrapper collapsed the whole grid to zero.
+  const COLLECTION_CARD_W = (windowWidth - 32 - 20) / 3;
 
   // Breathing avatar animation — purely on native thread (capped to save battery)
   const breatheAnim = useSharedValue(0.4);
@@ -180,6 +225,34 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const pulseStyle = useAnimatedStyle(() => ({ opacity: breatheAnim.value }));
+
+  // ── THE DEVELOPING PLATE ──────────────────────────────────────
+  // The dossier photo develops in the Society's darkroom: one-shot,
+  // three beats — atmosphere breathes up, the portrait develops from a
+  // faint ghost, the member Nº stamps down last. Pure timing curve
+  // (no bounce, per the motion law); reduce-motion → quick plain fade;
+  // re-runs only when a different member's dossier is opened.
+  const reducedMotion = useReducedMotion();
+  const plate = useSharedValue(0);
+  useEffect(() => {
+    plate.value = 0;
+    plate.value = withTiming(1, {
+      duration: reducedMotion ? 250 : 900,
+      easing: Easing.bezier(0.33, 0, 0.15, 1),
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetUser?.id, reducedMotion]);
+
+  const atmosphereDevelop = useAnimatedStyle(() => ({
+    opacity: interpolate(plate.value, [0, 0.55], [0, 1], Extrapolation.CLAMP),
+  }));
+  const portraitDevelop = useAnimatedStyle(() => ({
+    opacity: interpolate(plate.value, [0.15, 0.75], [0.25, 1], Extrapolation.CLAMP),
+  }));
+  const stampDevelop = useAnimatedStyle(() => {
+    const p = interpolate(plate.value, [0.6, 1], [0, 1], Extrapolation.CLAMP);
+    return { opacity: p, transform: [{ scale: 1.12 - 0.12 * p }] };
+  });
 
 
   const { refreshing, onRefresh, dnaCardOpen, setDnaCardOpen, rouletteOpen, setRouletteOpen, followLoading, toggleFollow } = ctrl;
@@ -214,6 +287,23 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   const tierLine = isAuteurPlus ? 'rgba(180,45,45,0.45)' : isArchivistPlus ? 'rgba(196,150,26,0.5)' : 'rgba(184,137,26,0.3)';
   const tierText = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? '#C4961A' : 'rgba(184,137,26,0.7)';
   const tierStatsBorder = isAuteurPlus ? 'rgba(180,45,45,0.5)' : isArchivistPlus ? 'rgba(196,150,26,0.6)' : 'rgba(184,137,26,0.3)';
+  const tierSpot = isAuteurPlus ? '#B42D2D' : isArchivistPlus ? '#C4961A' : '#B8891A';
+  const tierSpotOpacity = isAuteurPlus ? 0.2 : isArchivistPlus ? 0.26 : 0.18;
+
+  // MEMBER Nº — the real serial, padded to four while small, growing
+  // naturally after; hidden gracefully until the migration has run.
+  const memberNo = (targetUser as any)?.member_no
+    ? String((targetUser as any).member_no).padStart(4, '0')
+    : null;
+
+  // The portrait initial — no member ever faces a dead black circle.
+  const avatarInitial = (targetUser?.persona || (targetUser as any)?.display_name || targetUser?.username || '?')
+    .charAt(0).toUpperCase();
+
+  // Favorites presence — guards the FAVORITE FILMS label so it never
+  // floats orphaned over a triptych that rendered null for visitors.
+  const hasFavorites = Array.isArray(targetUser?.preferences?.favorites)
+    && (targetUser!.preferences!.favorites as unknown[]).filter(Boolean).length > 0;
 
   const {
     displayLogs,
@@ -224,7 +314,6 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
     statsLevel,
     statsColor,
     statsProgress,
-    streak,
     archiveFiltered,
     ledgerFiltered,
     halfLifeMap,
@@ -493,13 +582,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 />
               ) : (
                 <View style={s.tabContentPad}>
-                  <View style={s.emptyState}>
-                    <Lock size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-                    <Text style={s.emptyTitle}>Archivist+ Feature</Text>
-                    <Text style={s.emptyDesc}>
-                      {isSelf ? "Upgrade to Archivist or Auteur to unlock the physical archive." : "This member hasn't unlocked the physical archive yet."}
-                    </Text>
-                  </View>
+                  <VelvetGate
+                    title="The Vault"
+                    line={isSelf ? 'Physical media tracking awaits the Archivist rank.' : "This member's vault has not been opened."}
+                    isSelf={isSelf}
+                    onAscend={navToMembership}
+                  />
                 </View>
               )
             )}
@@ -513,13 +601,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 <View style={s.tabContentPad}><NoirPassport {...{user: targetUser, logs: analyticsLogs.length > 0 ? analyticsLogs : displayLogs, analytics: serverAnalytics} as any} /></View>
               ) : (
                 <View style={s.tabContentPad}>
-                  <View style={s.emptyState}>
-                    <Lock size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-                    <Text style={s.emptyTitle}>Auteur+ Feature</Text>
-                    <Text style={s.emptyDesc}>
-                      {isSelf ? "Upgrade to Auteur to unlock the cinematic passport." : "This member hasn't unlocked the cinematic passport yet."}
-                    </Text>
-                  </View>
+                  <VelvetGate
+                    title="The Cinematic Passport"
+                    line={isSelf ? 'Stamps of a lifetime await the Auteur rank.' : "This member's passport has not been issued."}
+                    isSelf={isSelf}
+                    onAscend={navToMembership}
+                  />
                 </View>
               )
             )}
@@ -607,13 +694,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                 </View>
               ) : (
                 <View style={s.tabContentPad}>
-                  <View style={s.emptyState}>
-                    <Lock size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-                    <Text style={s.emptyTitle}>Auteur+ Feature</Text>
-                    <Text style={s.emptyDesc}>
-                      {isSelf ? "Upgrade to Auteur to unlock the global analytics projector room." : "This member hasn't unlocked the global analytics projector room yet."}
-                    </Text>
-                  </View>
+                  <VelvetGate
+                    title="The Projector Room"
+                    line={isSelf ? 'Lifetime analytics await the Auteur rank.' : "This member's projector room is dark."}
+                    isSelf={isSelf}
+                    onAscend={navToMembership}
+                  />
                 </View>
               )
             )}
@@ -627,13 +713,12 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                     <NitrateCalendarGrid {...{logs: calendarData.length > 0 ? calendarData : (analyticsLogs.length > 0 ? analyticsLogs : displayLogs), isSelf} as any} />
                   </View>
                 ) : (
-                  <View style={s.emptyState}>
-                    <Lock size={32} color={colors.sepia} strokeWidth={1} style={s.emptyLockIcon} />
-                    <Text style={s.emptyTitle}>Archivist+ Feature</Text>
-                    <Text style={s.emptyDesc}>
-                      {isSelf ? "Upgrade to Archivist or Auteur to unlock the viewing calendar." : "This member hasn't unlocked the viewing calendar yet."}
-                    </Text>
-                  </View>
+                  <VelvetGate
+                    title="The Viewing Calendar"
+                    line={isSelf ? 'The nightly attendance record awaits the Archivist rank.' : "This member's calendar is not on display."}
+                    isSelf={isSelf}
+                    onAscend={navToMembership}
+                  />
                 )}
               </View>
             )}
@@ -663,24 +748,26 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
         externalScrollY={scrollY} bottomInset={Math.max(insets.bottom + 60, 60)} scrollEventThrottle={16}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.sepia} colors={[colors.sepia]} progressBackgroundColor={colors.ink} />}>
 
-        {/* ═══ ATMOSPHERIC HEADER ═══ */}
+        {/* ═══ THE MEMBERSHIP PLATE — atmosphere ends at the stats grid ═══ */}
         <View style={s.headerWrap}>
-          {/* Tier-specific backdrop rendering */}
-          {isAuteurPlus ? (
-            <ProfileBackdrop {...{user: targetUser, logs: displayLogs} as any} />
-          ) : isArchivistPlus ? (
-            <View style={s.headerArchivistBase}>
-               <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(10,8,5,0.95)', colors.ink]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
-               <AnimatedView style={[StyleSheet.absoluteFillObject, pulseStyle]} pointerEvents="none">
-                 <LinearGradient colors={['rgba(196,150,26,0.1)', 'transparent']} style={StyleSheet.absoluteFillObject} />
-               </AnimatedView>
-            </View>
-          ) : (
-            <View style={s.headerDarkBase} />
-          )}
+          {/* Tier atmosphere — breathes up as the plate develops */}
+          <AnimatedView style={[StyleSheet.absoluteFillObject, atmosphereDevelop]} pointerEvents="none">
+            {isAuteurPlus ? (
+              <ProfileBackdrop {...{user: targetUser, logs: displayLogs} as any} />
+            ) : isArchivistPlus ? (
+              <View style={s.headerArchivistBase}>
+                 <LinearGradient colors={['rgba(196,150,26,0.15)', 'rgba(10,8,5,0.95)', colors.ink]} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
+                 <AnimatedView style={[StyleSheet.absoluteFillObject, pulseStyle]} pointerEvents="none">
+                   <LinearGradient colors={['rgba(196,150,26,0.1)', 'transparent']} style={StyleSheet.absoluteFillObject} />
+                 </AnimatedView>
+              </View>
+            ) : (
+              <View style={s.headerDarkBase} />
+            )}
 
-          {/* Projector spotlight — dynamic per tier */}
-          <View style={[s.projectorSpotlight, (!isAuteurPlus && isArchivistPlus) && s.spotlightArchivist]} />
+            {/* The projector's pool of light — true radial, tier-tinted */}
+            <SpotlightPool tint={tierSpot} opacity={tierSpotOpacity} />
+          </AnimatedView>
 
           {/* Film grain texture overlay */}
           <View style={s.filmGrainOverlay} />
@@ -691,22 +778,24 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {/* ── Header Content ── */}
           <View style={s.headerContent}>
 
-            {/* ── Avatar with Tier-Specific Enclosure ── */}
+            {/* ── Avatar with Tier-Specific Enclosure — the portrait develops ── */}
             <View style={s.avatarWrap}>
-              <View style={{ width: 116, height: 116, alignItems: 'center', justifyContent: 'center' }}>
+              <AnimatedView style={[{ width: 116, height: 116, alignItems: 'center', justifyContent: 'center' }, portraitDevelop]}>
                 {isAuteurPlus && <View style={s.avatarHaloAuteur} pointerEvents="none" />}
                 <AnimatedView style={[
                   StyleSheet.absoluteFillObject,
-                  s.avatarRing, 
+                  s.avatarRing,
                   isAuteurPlus ? s.avatarRingAuteur : isArchivistPlus ? s.avatarRingArchivist : s.avatarRingCinephile,
                   pulseStyle
                 ]} />
                 {targetUser.avatar_url ? (
                   <Image source={{ uri: targetUser.avatar_url }} style={s.avatar} cachePolicy="memory-disk" />
                 ) : (
-                  <View style={[s.avatar, { backgroundColor: colors.ink }]} />
+                  <View style={[s.avatar, s.avatarPlaceholder]}>
+                    <Text style={s.avatarInitial}>{avatarInitial}</Text>
+                  </View>
                 )}
-              </View>
+              </AnimatedView>
 
               {/* Level badge */}
               <View style={[s.levelBadge, { borderColor: statsColor }]}>
@@ -736,12 +825,14 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               )}
             </View>
 
-            {/* ── Society Founder's Mark ── */}
-            <View style={s.founderMark}>
+            {/* ── The Member Plate — real serial, stamps down last ── */}
+            <AnimatedView style={[s.founderMark, stampDevelop]}>
               <View style={[s.founderLine, { backgroundColor: tierLine }]} />
-              <Text style={[s.founderText, { color: tierText }]}>EST. 1924</Text>
+              <Text style={[s.founderText, { color: tierText }]} numberOfLines={1}>
+                {memberNo ? `MEMBER Nº ${memberNo} · EST. 1924` : 'EST. 1924'}
+              </Text>
               <View style={[s.founderLine, { backgroundColor: tierLine }]} />
-            </View>
+            </AnimatedView>
 
             {/* ── Member Since ── */}
             {targetUser.created_at && (
@@ -781,7 +872,7 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               <View style={s.profileActionRow}>
                 <PressableScale style={[s.followBtn, (isFollowing || isRequested) && s.followingBtn, followLoading && { opacity: 0.5 }]} onPress={toggleFollow} disabled={followLoading || isRequested} pressedScale={0.92} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityRole="button" accessibilityLabel={isFollowing ? "Unfollow user" : "Follow user"}>
                   <AnimatedRN.Text entering={FadeIn.duration(300)} style={[s.followBtnText, (isFollowing || isRequested) && s.followingBtnText]} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>
-                    {followLoading ? '...' : isFollowing ? 'SYNDICATED' : isRequested ? 'REQUESTED' : targetUser.is_social_private ? '+ REQUEST' : '+ FOLLOW'}
+                    {followLoading ? '...' : isFollowing ? 'FOLLOWING' : isRequested ? 'REQUESTED' : targetUser.is_social_private ? '+ REQUEST' : '+ FOLLOW'}
                   </AnimatedRN.Text>
                 </PressableScale>
                 <PressableScale
@@ -807,75 +898,76 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               </View>
             )}
 
-            {isPrivate ? (
-              <View style={{ alignItems: 'center', paddingTop: 60, paddingBottom: 60, backgroundColor: 'transparent' }}>
-                <Lock size={48} color={colors.sepia} strokeWidth={1} style={{ marginBottom: 16, opacity: 0.8 }} />
-                <Text style={s.notFoundTitle}>Private Account</Text>
-                <Text style={[s.privateBody, { textAlign: 'center', maxWidth: 280, marginTop: 8 }]}>
-                  Follow to see their logs, lists, and watchlists.
-                </Text>
-              </View>
-            ) : (
-              <>
-                {/* ── Streak ── */}
-                {streak > 1 && (
-                  <View style={s.streakBadge}>
-                    <Flame size={10} color={colors.sepia} strokeWidth={1.5} />
-                    <Text style={s.streakText}>{streak}-DAY STREAK</Text>
-                  </View>
-                )}
-
-                {/* ── Favorite Films Triptych ── */}
-                <View style={s.triptychWrap}>
-                  <SectionLabel text="FAVORITE FILMS" />
-                  <ProfileTriptych 
-                    user={{ 
-                      id: targetUser.id, 
-                      preferences: targetUser.preferences ? { favorites: targetUser.preferences.favorites as import('@/src/components/profile/ProfileTriptych').TriptychFilm[] } : null 
-                    }} 
-                    isOwnProfile={isSelf} 
-                    userRole={tier} 
-                  />
-                </View>
-
-                {/* ── Recently Watched ── */}
-                {recentLogs.length > 0 && (
-                  <View style={s.triptychWrapRecent}>
-                    <GoldDivider />
-                    <SectionLabel text="RECENTLY WATCHED" />
-                    <View style={s.recentRow}>
-                      {recentLogs.map((log: ProfileLog) => (
-                        <View key={log.id} style={s.recentItem}>
-                          {renderPosterCard(log, 0, true, true)}
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                )}
-              </>
-            )}
           </View>
         </View>
 
-        {/* ═══ OPAQUE CONTENT AREA ═══ */}
-        {!isPrivate && (
+        {/* ═══ SOLID GROUND — the plate ends above; the rooms begin here ═══ */}
+        {isPrivate ? (
+          /* ── THE SEALED DOSSIER ── */
+          <View style={s.sealedWrap}>
+            <View style={s.sealedCard}>
+              <Text style={s.sealedTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦ THIS DOSSIER IS SEALED ✦</Text>
+              <Text style={s.sealedBody}>
+                The member keeps their records private.{'\n'}Follow to request the key.
+              </Text>
+            </View>
+          </View>
+        ) : (
         <View style={s.contentArea}>
 
-          <SectionDivider label="COLLECTION" />
+          {/* ── Favorite Films — slot glows on solid ink ── */}
+          {(hasFavorites || isSelf) && (
+            <View style={s.plateSections}>
+              <View style={s.triptychWrap}>
+                <SectionLabel text="FAVORITE FILMS" />
+                <ProfileTriptych
+                  user={{
+                    id: targetUser.id,
+                    preferences: targetUser.preferences ? { favorites: targetUser.preferences.favorites as import('@/src/components/profile/ProfileTriptych').TriptychFilm[] } : null
+                  }}
+                  isOwnProfile={isSelf}
+                  userRole={tier}
+                />
+              </View>
+            </View>
+          )}
 
-          {/* ── Collection Grid ── */}
+          {/* ── Recently Watched ── */}
+          {recentLogs.length > 0 && (
+            <View style={s.plateSections}>
+              <View style={s.triptychWrapRecent}>
+                <GoldDivider />
+                <SectionLabel text="RECENTLY WATCHED" />
+                <View style={s.recentRow}>
+                  {recentLogs.map((log: ProfileLog) => (
+                    <View key={log.id} style={s.recentItem}>
+                      {renderPosterCard(log, 0, true, true)}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            </View>
+          )}
+
+          <SectionDivider label="THE COLLECTION" />
+
+          {/* ── Collection Grid — six rooms, pixel-computed, uncollapsible ── */}
           <View style={s.collectionSection}>
-            <SectionLabel text="THE COLLECTION" />
             <View style={s.collectionGrid}>
-              {COLLECTION_CARDS.map((item: any, idx: number) => (
-                <View key={item.id}>
+              {COLLECTION_CARDS.map((item: any) => (
                 <PressableScale
+                  key={item.id}
                   testID={`collection-card-${item.id}`}
-                  style={[s.collectionCard, item.disabled && s.collectionCardDisabled, item.highlight && s.collectionCardHighlight]}
-                  disabled={item.disabled}
+                  style={[s.collectionCard, { width: COLLECTION_CARD_W }, item.highlight && s.collectionCardHighlight]}
                   onPress={() => (router.push as any)({ pathname: `/user/${username}`, params: { tab: item.id } } as any)}
                   haptic
                 >
+                  {/* Locked rooms wear the brass key — informed taps only */}
+                  {item.locked && (
+                    <View style={s.roomKey} pointerEvents="none">
+                      <KeyRound size={9} color={colors.sepia} strokeWidth={2} style={s.roomKeyDim} />
+                    </View>
+                  )}
                   {/* Icon circle */}
                   <View style={[s.collectionIconCircle, item.highlight && s.collectionIconHighlight]}>
                     <item.Icon size={16} strokeWidth={1.5} color={item.highlight ? colors.sepia : colors.bone} />
@@ -884,26 +976,24 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
                   <Text style={[s.collectionCardLabel, item.highlight && s.collectionHighlightText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.label}</Text>
                   {/* Description */}
                   <Text style={s.collectionCardDesc} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.desc}</Text>
-                  {/* Count */}
+                  {/* Count — the Projector shows its ★, never a lying zero */}
                   <Text style={[s.collectionCardCount, item.highlight && s.collectionHighlightText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{item.count}</Text>
                 </PressableScale>
-                </View>
               ))}
             </View>
           </View>
 
-          {/* Calendar card for Archivist+ */}
+          {/* The Viewing Calendar — Archivist+ door */}
           <View style={s.calendarCtaWrap}>
             <PressableScale
               style={s.collectionCardWide}
               onPress={navToCalendar}
               haptic
             >
-              {!isArchivistPlus && <Lock size={12} color={colors.fog} strokeWidth={1.5} style={s.lockIconMr} />}
+              {!isArchivistPlus && <KeyRound size={11} color={colors.sepia} strokeWidth={2} style={[s.lockIconMr, s.roomKeyDim]} />}
               {isArchivistPlus && <CalendarDays size={12} color={colors.sepia} strokeWidth={1.5} style={s.lockIconMr} />}
-              { }
               <Text style={[s.calendarCtaText, isArchivistPlus && s.collectionHighlightText]}>
-                {isSelf ? "THE AUTEUR'S CALENDAR" : "VIEWING CALENDAR"}
+                THE VIEWING CALENDAR
               </Text>
             </PressableScale>
           </View>

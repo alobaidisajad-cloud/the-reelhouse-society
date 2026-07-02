@@ -34,13 +34,6 @@ export const s = StyleSheet.create({
     ...StyleSheet.absoluteFillObject, zIndex: 0,
     backgroundColor: colors.ink,
   },
-  projectorSpotlight: {
-    position: 'absolute', top: -40, left: '10%', right: '10%', height: 300,
-    backgroundColor: 'rgba(184,137,26,0.12)',
-    borderRadius: 200, zIndex: 1, opacity: 0.7,
-  },
-  spotlightAuteur: { backgroundColor: 'rgba(180,45,45,0.15)', height: 400 },
-  spotlightArchivist: { backgroundColor: 'rgba(196,150,26,0.15)', height: 350 },
   filmGrainOverlay: {
     ...StyleSheet.absoluteFillObject, zIndex: 2, opacity: 0.03,
     backgroundColor: 'rgba(184,137,26,0.05)',
@@ -92,7 +85,7 @@ export const s = StyleSheet.create({
     borderWidth: 1.5, borderRadius: 4, zIndex: 5, borderColor: 'rgba(184,137,26,0.5)',
     ...effects.shadowSurface,
   },
-  levelBadgeText: { fontFamily: fonts.mono, fontSize: 9, letterSpacing: 3, fontWeight: '700' as const },
+  levelBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2 },
 
   // ── Display Name ──
   displayName: {
@@ -107,14 +100,14 @@ export const s = StyleSheet.create({
     borderRadius: 4, borderWidth: 1.5, borderColor: '#8B1A1A',
     ...effects.shadowPrimary, shadowColor: '#8B1A1A',
   },
-  auteurBadgeText: { fontFamily: fonts.mono, fontWeight: '700' as const, fontSize: 9, letterSpacing: 3, color: '#FFB3B3', ...effects.textGlowSepia, textShadowColor: '#8B1A1A' },
+  auteurBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: '#E8B4B4', ...effects.textGlowSepia, textShadowColor: '#8B1A1A' },
   archivistBadge: {
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4,
     backgroundColor: 'rgba(20,15,10,0.95)', borderWidth: 1.5, borderColor: '#C4961A',
     paddingHorizontal: 10, paddingVertical: 4, borderRadius: 4,
     ...effects.shadowSurface, shadowColor: '#C4961A',
   },
-  archivistBadgeText: { fontFamily: fonts.mono, fontWeight: '700' as const, fontSize: 9, letterSpacing: 3, color: '#F2ECD8' },
+  archivistBadgeText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: '#F2ECD8' },
 
   // ── Bio ──
   bio: {
@@ -129,14 +122,14 @@ export const s = StyleSheet.create({
     paddingHorizontal: 10, paddingVertical: 5,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 3,
   },
-  socialLinkText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
+  socialLinkText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
 
   // ── Buttons ──
   editBtn: {
     backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 4, paddingVertical: 12, paddingHorizontal: 24, ...effects.shadowSurface,
   },
-  editBtnText: { fontFamily: fonts.mono, fontSize: 10, letterSpacing: 3, color: colors.sepia, fontWeight: '700' as const },
+  editBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
   settingsBtn: {
     backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)',
     borderRadius: 4, paddingVertical: 12, paddingHorizontal: 16, justifyContent: 'center' as const, alignItems: 'center' as const, ...effects.shadowSurface,
@@ -146,14 +139,14 @@ export const s = StyleSheet.create({
     borderRadius: 4, paddingVertical: 14, paddingHorizontal: 32, ...effects.shadowSurface,
   },
   followingBtn: { backgroundColor: 'rgba(5,3,2,0.95)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.2)' },
-  followBtnText: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 3, color: '#F2ECD8', textAlign: 'center' as const, fontWeight: '700' as const, ...effects.textGlowSepia },
+  followBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: '#F2ECD8', textAlign: 'center' as const, ...effects.textGlowSepia },
   followingBtnText: { color: colors.fog, textShadowRadius: 0 },
   ghostBtn: { paddingVertical: 14, paddingHorizontal: 28, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,8,5,0.8)' },
-  ghostBtnText: { fontFamily: fonts.mono, fontWeight: '700' as const, fontSize: 10, letterSpacing: 3, color: '#F2ECD8' },
+  ghostBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: '#F2ECD8' },
   primaryBtn: { backgroundColor: 'rgba(18,14,9,0.9)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 4, ...effects.shadowSurface },
-  primaryBtnText: { fontFamily: fonts.mono, fontWeight: '700' as const, fontSize: 10, letterSpacing: 3, color: '#F2ECD8', ...effects.textGlowSepia },
+  primaryBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: '#F2ECD8', ...effects.textGlowSepia },
   ctaBtn: { borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(14,11,8,0.9)', paddingVertical: 14, alignItems: 'center' as const, borderRadius: 4, marginBottom: 16, ...effects.shadowSurface },
-  ctaBtnText: { fontFamily: fonts.mono, fontWeight: '700' as const, fontSize: 10, letterSpacing: 3, color: '#F2ECD8', ...effects.textGlowSepia },
+  ctaBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: '#F2ECD8', ...effects.textGlowSepia },
 
   // ── Stats ──
   statsGrid: { 
@@ -165,21 +158,26 @@ export const s = StyleSheet.create({
     ...effects.shadowSurface,
   },
   statCard: { flex: 1, paddingVertical: 16, paddingHorizontal: 4, alignItems: 'center' as const },
-  statValue: { fontFamily: fonts.mono, fontSize: 18, color: '#F2ECD8', lineHeight: 22, ...effects.textGlowSepia, fontWeight: '700' as const },
-  statLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog, marginTop: 4, opacity: 0.8 },
+  statValue: { fontFamily: fonts.display, fontSize: 18, color: '#F2ECD8', lineHeight: 22, ...effects.textGlowSepia },
+  statLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fog, marginTop: 4, opacity: 0.8 },
   statDivider: { width: 1.5, height: 32, backgroundColor: 'rgba(184,137,26,0.15)' },
 
-  // ── Streak ──
-  streakBadge: {
-    flexDirection: 'row' as const, alignItems: 'center' as const, gap: 5,
-    marginTop: 12, backgroundColor: 'rgba(196,150,26,0.08)', borderWidth: 1, borderColor: 'rgba(196,150,26,0.2)',
-    borderRadius: 2, paddingHorizontal: 12, paddingVertical: 5, alignSelf: 'center' as const,
+  // ── The Sealed Dossier (private accounts) ──
+  sealedWrap: { paddingHorizontal: 24, paddingVertical: 48, backgroundColor: colors.ink },
+  sealedCard: {
+    borderWidth: 1, borderStyle: 'dashed' as const, borderColor: 'rgba(184,137,26,0.35)',
+    borderRadius: 4, backgroundColor: colors.sepiaFaint,
+    paddingVertical: 28, paddingHorizontal: 20, alignItems: 'center' as const,
   },
-  streakText: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
+  sealedTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 10 },
+  sealedBody: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.bone, opacity: 0.85, textAlign: 'center' as const, lineHeight: 19 },
+
+  // ── Plate sections (favorites/recent on solid ground) ──
+  plateSections: { paddingHorizontal: 16 },
 
   // ── Section Label ──
   sectionLabelText: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3.5, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia,
     textAlign: 'center' as const, ...effects.textGlowSepia,
   },
 
@@ -207,19 +205,25 @@ export const s = StyleSheet.create({
 
   // ── Collection Grid ──
   collectionGrid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 10, justifyContent: 'center' as const },
+  // Width is computed in pixels at the call site — the '31%'-of-a-widthless-
+  // wrapper collapse is dead. minHeight keeps all six rooms in perfect rows.
   collectionCard: {
-    width: '31%' as unknown as number, alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8,
-    paddingVertical: 20, paddingHorizontal: 6,
+    alignItems: 'center' as const, justifyContent: 'center' as const, gap: 8,
+    minHeight: 122, paddingVertical: 18, paddingHorizontal: 6,
     backgroundColor: 'rgba(10,8,5,0.85)', borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 6,
     ...effects.shadowSurface,
   },
+  roomKey: { position: 'absolute' as const, top: 8, right: 9, zIndex: 2 },
+  roomKeyDim: { opacity: 0.75 },
+  ascendBtn: { marginTop: 18, backgroundColor: colors.sepia, borderRadius: 2, paddingVertical: 11, paddingHorizontal: 24 },
+  ascendBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.ink },
   collectionIconCircle: {
     width: 42, height: 42, borderRadius: 21, borderWidth: 1.5, borderColor: 'rgba(184,137,26,0.25)',
     backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center' as const, justifyContent: 'center' as const,
     ...effects.shadowSurface,
   },
-  collectionCardLabel: { fontFamily: fonts.mono, fontSize: 12, color: '#F2ECD8', textAlign: 'center' as const, letterSpacing: 1, fontWeight: '700' as const },
-  collectionCardDesc: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog, fontStyle: 'italic' as const },
+  collectionCardLabel: { fontFamily: fonts.sub, fontSize: 10, color: '#F2ECD8', textAlign: 'center' as const, letterSpacing: 1.5 },
+  collectionCardDesc: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fog },
   collectionCardCount: { fontFamily: fonts.display, fontSize: 22, color: colors.sepia, ...effects.textGlowSepia },
   collectionCardWide: {
     flexDirection: 'row' as const, alignItems: 'center' as const, justifyContent: 'center' as const,
@@ -232,7 +236,7 @@ export const s = StyleSheet.create({
   grid4: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 6 },
   grid3: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: 8 },
   monthHeader: {
-    fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.sepia, marginBottom: 12,
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia, marginBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)', paddingBottom: 8,
   },
 
@@ -243,8 +247,8 @@ export const s = StyleSheet.create({
 
   // ── Filters & Search ──
   filterChip: { paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: colors.ash, borderRadius: 2, backgroundColor: 'transparent' },
-  filterChipActive: { borderColor: colors.sepia, backgroundColor: 'rgba(196,150,26,0.1)' },
-  filterChipText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
+  filterChipActive: { borderColor: colors.sepia, backgroundColor: colors.sepiaFaint },
+  filterChipText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog },
   filterChipTextActive: { color: colors.sepia },
   searchWrap: { flexDirection: 'row' as const, alignItems: 'center' as const, backgroundColor: 'rgba(22,18,12,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)', borderRadius: 2, paddingHorizontal: 10 },
   searchIcon: { fontSize: 14, color: colors.fog, opacity: 0.5, marginRight: 6 },
@@ -264,7 +268,7 @@ export const s = StyleSheet.create({
   stackPosterPanel: { position: 'absolute' as const, top: 0, height: '100%' as const },
   stackOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.55)' },
   stackContent: { padding: 12 },
-  stackBadge: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, backgroundColor: 'rgba(196,150,26,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 1, alignSelf: 'flex-start' as const, overflow: 'hidden' as const, marginBottom: 4 },
+  stackBadge: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.sepia, backgroundColor: colors.sepiaFaint, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 1, alignSelf: 'flex-start' as const, overflow: 'hidden' as const, marginBottom: 4 },
   stackTitle: { fontFamily: fonts.display, fontSize: 11, color: colors.parchment, letterSpacing: 0.5, lineHeight: 14 },
   stackDesc: { fontFamily: fonts.body, fontSize: 9, color: colors.fog, fontStyle: 'italic' as const, lineHeight: 13, marginTop: 4 },
 
@@ -277,13 +281,13 @@ export const s = StyleSheet.create({
     paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.15)',
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8,
   },
-  accountRowText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.bone },
+  accountRowText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.bone },
 
   // ── Early Return States ──
   centeredFull: { justifyContent: 'center' as const, alignItems: 'center' as const },
   centeredPadded: { justifyContent: 'center' as const, alignItems: 'center' as const, padding: 40 },
   loadingRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 6 },
-  loadingText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.sepia },
+  loadingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia },
   notFoundIcon: { marginBottom: 16, opacity: 0.4 },
   notFoundTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, marginBottom: 8 },
   notFoundBody: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic' as const, textAlign: 'center' as const, marginBottom: 24 },
@@ -295,7 +299,7 @@ export const s = StyleSheet.create({
 
   // ── Tab Header ──
   tabHeaderTextWrap: { flex: 1 },
-  tabHeaderUsername: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5, color: colors.fog },
+  tabHeaderUsername: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5, color: colors.fog },
   tabHeaderTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment, lineHeight: 22 },
   tabScrollContent: { paddingBottom: 80, paddingTop: 8 },
   tabContentPad: { paddingHorizontal: 16 },
@@ -330,7 +334,7 @@ export const s = StyleSheet.create({
   // ── Projector Tab ──
   projectorGap: { gap: 32 },
   projectorHeader: { alignItems: 'center' as const, paddingHorizontal: 16, paddingTop: 8 },
-  projectorSuper: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2.5, color: colors.sepia, marginBottom: 6 },
+  projectorSuper: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia, marginBottom: 6 },
   projectorTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, lineHeight: 28, textAlign: 'center' as const },
   projectorSub: { fontFamily: fonts.body, fontSize: 11, color: colors.fog, fontStyle: 'italic' as const, marginTop: 6 },
   projectorSectionsWrap: { paddingHorizontal: 16, gap: 32 },
@@ -378,7 +382,7 @@ export const s = StyleSheet.create({
 
   // ── Calendar CTA ──
   calendarCtaWrap: { paddingHorizontal: 16, marginBottom: 24 },
-  calendarCtaText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 2, color: colors.fog },
+  calendarCtaText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog },
   lockIconMr: { marginRight: 6 },
 
   // ── Account ──
@@ -398,13 +402,13 @@ export const s = StyleSheet.create({
     backgroundColor: 'rgba(184,137,26,0.25)',
   },
   founderText: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
-    color: 'rgba(196,150,26,0.55)', textAlign: 'center' as const,
+    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5,
+    color: 'rgba(184,137,26,0.7)', textAlign: 'center' as const,
   },
 
   // ── Member Since ──
   memberSince: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2.5,
+    fontFamily: fonts.sub, fontSize: 6.5, letterSpacing: 2,
     color: colors.fog, opacity: 0.6, marginBottom: 4,
   },
 
@@ -421,7 +425,7 @@ export const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 6,
   },
   sealText: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3,
-    color: 'rgba(196,150,26,0.45)',
+    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3,
+    color: 'rgba(184,137,26,0.45)',
   },
 });

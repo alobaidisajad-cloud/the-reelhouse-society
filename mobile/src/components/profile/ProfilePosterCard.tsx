@@ -52,22 +52,22 @@ const s = StyleSheet.create({
     flexDirection: 'row', 
     gap: 2 
   },
-  posterTimeAgo: { 
-    fontFamily: fonts.ui, 
-    fontSize: 7, 
-    letterSpacing: 1, 
-    color: colors.fog 
+  posterTimeAgo: {
+    fontFamily: fonts.sub,
+    fontSize: 7,
+    letterSpacing: 1,
+    color: colors.fog,
   },
   auteurGlow: {
-    borderWidth: 1, 
-    borderColor: 'rgba(107,26,10,0.8)', 
-    borderRadius: 2, 
+    borderWidth: 1,
+    borderColor: 'rgba(139,26,26,0.6)', // ruby family — bloodReel was invisible
+    borderRadius: 2,
     borderStyle: 'solid',
   },
   archivistGlow: {
-    borderWidth: 1, 
-    borderColor: 'rgba(196,150,26,0.5)', 
-    borderRadius: 2, 
+    borderWidth: 1,
+    borderColor: 'rgba(196,150,26,0.5)', // champagne — the Archivist metal
+    borderRadius: 2,
     borderStyle: 'solid',
   },
   statusBadge: { 

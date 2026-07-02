@@ -11,21 +11,21 @@ const s = StyleSheet.create({
     paddingHorizontal: 4, 
     alignItems: 'center' 
   },
-  statValue: { 
-    fontFamily: fonts.mono, 
-    fontSize: 18, 
-    color: '#F2ECD8', 
-    lineHeight: 22, 
-    ...effects.textGlowSepia, 
-    fontWeight: '700' 
+  statValue: {
+    // Rye numerals — engraved on the plate, not typed on a form
+    fontFamily: fonts.display,
+    fontSize: 18,
+    color: '#F2ECD8',
+    lineHeight: 22,
+    ...effects.textGlowSepia,
   },
-  statLabel: { 
-    fontFamily: fonts.ui, 
-    fontSize: 8, 
-    letterSpacing: 1.5, 
-    color: colors.fog, 
-    marginTop: 4, 
-    opacity: 0.8 
+  statLabel: {
+    fontFamily: fonts.sub,
+    fontSize: 7,
+    letterSpacing: 1.5,
+    color: colors.fog,
+    marginTop: 4,
+    opacity: 0.8,
   },
   statDivider: { 
     width: 1.5, 

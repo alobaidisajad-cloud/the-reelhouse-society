@@ -7,7 +7,7 @@ import { FORMAT_META } from '@/src/constants/formats';
 import { toProfileLog, toProfileWatchlistItem, toProfileVaultItem, toProfileList } from '@/src/utils/mappers';
 
 import {
-  Archive, BookOpen, Bookmark, LayoutList, Disc, LineChart,
+  Archive, BookOpen, Bookmark, LayoutList, Disc, Projector,
 } from 'lucide-react-native';
 
 // ════════════════════════════════════════════════════════════
@@ -95,7 +95,8 @@ export function useProfileComputed(params: UseProfileComputedParams) {
 
   // Stats level — matches web's cineStats computation exactly
   const statsLevel = hideStats ? 'CLASSIFIED' : (totalFilms > 50 ? 'THE ORACLE' : totalFilms > 20 ? 'MIDNIGHT DEVOTEE' : totalFilms > 5 ? 'THE REGULAR' : 'FIRST REEL');
-  const statsColor = hideStats ? colors.ash : (totalFilms > 50 ? colors.sepia : totalFilms > 20 ? colors.bloodReel : colors.flicker);
+  // crimson (not bloodReel) — the deep stamp red was near-invisible on ink
+  const statsColor = hideStats ? colors.ash : (totalFilms > 50 ? colors.sepia : totalFilms > 20 ? colors.crimson : colors.flicker);
   const statsProgress = hideStats ? 0 : (totalFilms % 20) * 5;
 
   // Daily streak
@@ -268,15 +269,18 @@ export function useProfileComputed(params: UseProfileComputedParams) {
     return [] as SocialLink[];
   }, [targetUser]);
 
-  // Collection Cards (use server-side counts for instant display, zero data transfer)
+  // Collection Cards — the six rooms of the member's private wing.
+  // `locked` reflects the DOSSIER OWNER's rank: locked rooms wear the brass
+  // key and open onto the velvet rope, never a dead end.
+  // The Projector is a room, not a count — it shows the ★ mark, never "0".
   const COLLECTION_CARDS = useMemo(() => [
-    { id: 'archive' as ProfileTab, label: 'Archive', desc: 'WATCHED', count: totalFilms, Icon: Archive, disabled: false, highlight: false },
-    { id: 'ledger' as ProfileTab, label: 'The Ledger', desc: 'DIARY', count: counts.ledger || displayLogs.filter(l => l.rating > 0 || (l.review && l.review.length > 0)).length, Icon: BookOpen, disabled: false, highlight: false },
-    { id: 'watchlist' as ProfileTab, label: 'Watchlist', desc: 'TO SEE', count: counts.watchlist || displayWatchlist.length, Icon: Bookmark, disabled: false, highlight: false },
-    { id: 'lists' as ProfileTab, label: 'Stacks', desc: 'LISTS', count: counts.lists || displayLists.length, Icon: LayoutList, disabled: false, highlight: false },
-    { id: 'physical' as ProfileTab, label: 'Physical Archive', desc: 'COLLECTION', count: isArchivistPlus ? (counts.vault || displayVault.length) : 0, Icon: Disc, disabled: false, highlight: false },
-    { id: 'projector' as ProfileTab, label: 'Analytics', desc: 'PROJECTOR', count: 0, Icon: LineChart, disabled: false, highlight: true },
-  ], [counts, displayLogs, displayWatchlist.length, displayLists.length, displayVault.length, isArchivistPlus, totalFilms]);
+    { id: 'archive' as ProfileTab, label: 'ARCHIVE', desc: 'WATCHED', count: String(totalFilms), Icon: Archive, disabled: false, highlight: false, locked: false },
+    { id: 'ledger' as ProfileTab, label: 'LEDGER', desc: 'DIARY', count: String(counts.ledger || displayLogs.filter(l => l.rating > 0 || (l.review && l.review.length > 0)).length), Icon: BookOpen, disabled: false, highlight: false, locked: false },
+    { id: 'watchlist' as ProfileTab, label: 'WATCHLIST', desc: 'TO SEE', count: String(counts.watchlist || displayWatchlist.length), Icon: Bookmark, disabled: false, highlight: false, locked: false },
+    { id: 'lists' as ProfileTab, label: 'STACKS', desc: 'LISTS', count: String(counts.lists || displayLists.length), Icon: LayoutList, disabled: false, highlight: false, locked: false },
+    { id: 'physical' as ProfileTab, label: 'VAULT', desc: 'PHYSICAL', count: isArchivistPlus ? String(counts.vault || displayVault.length) : '✦', Icon: Disc, disabled: false, highlight: false, locked: !isArchivistPlus },
+    { id: 'projector' as ProfileTab, label: 'PROJECTOR', desc: 'ANALYTICS', count: '★', Icon: Projector, disabled: false, highlight: true, locked: !isAuteurPlus },
+  ], [counts, displayLogs, displayWatchlist.length, displayLists.length, displayVault.length, isArchivistPlus, isAuteurPlus, totalFilms]);
 
   return {
     displayLogs, displayWatchlist, displayVault, displayLists,
