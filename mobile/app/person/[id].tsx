@@ -1,28 +1,19 @@
 /**
- * PersonDetailScreen — Actor / Director dossier page.
+ * PersonDetailScreen — THE ARTIST'S FILE.
+ * ─────────────────────────────────────────────────────────────
+ * The Society's dossier on an actor or director, and the member's
+ * own history with them.
  *
- * THE MOST BEAUTIFUL DOSSIER PAGE IN THE WORLD.
- *
- * Criterion-grade native implementation:
- *  • Full-bleed hero backdrop from their defining film
- *  • Film-strip perforation bar — ReelHouse signature
- *  • Rectangular portrait with sepia glow aura
- *  • Est. 1924 society watermark
- *  • Career span calculation ("32 YEARS IN CINEMA")
- *  • Career stats strip (credits + known-for)
- *  • Share to Lounge CTA (archivist+ only)
- *  • Auteur Hunt progress bar (directors only)
- *  • Classified Dossier biography with fade mask
- *  • Defining Works — hero cards with gradient overlay
- *  • MarqueeLights between sections
- *  • Gold gradient separator
- *  • Complete Filmography — 3-col poster grid with titles
- *  • ObscurityBadge per film card
- *  • Shimmer loading with Reanimated pulse
- *  • Death-date in red, birth-place subtle
- *  • 100% StyleSheet — zero inline styles
- *  • Zero cheap emoji — all Lucide vector icons
- *  • Zero performance regression — all animations native thread
+ *  · Hero backdrop from their defining film, perforation strip
+ *  · The title block in four beats: identity → record → action → progress
+ *  · The life line in archival type — the dagger wears crimson
+ *  · THE CANON — only the work of their own craft (a director's file
+ *    shows what they directed; documentaries where they appear as
+ *    "Self" never masquerade as performances). Empty cuts fall back
+ *    to the full record so the room is never blank.
+ *  · SCREENED brass ticks on every logged poster — the Hunt made visible
+ *  · THE AUTEUR HUNT — directing files only; its count IS the grid
+ *  · Velvet-rope lounge: archivists share, cinephiles see the brass key
  */
 import { useState, useMemo, useCallback } from 'react';
 import {
@@ -39,7 +30,6 @@ import { useArchiveStore } from '@/src/stores/films';
 import { useAuthStore } from '@/src/stores/auth';
 import { isArchivistPlusTier } from '@/src/utils/tier';
 import { colors } from '@/src/theme/theme';
-import { MarqueeLights } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
 import { ArrowLeft } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,7 +40,7 @@ import { ShimmerBlock } from '@/src/components/person/PersonOrnaments';
 import { PersonHero, formatDossierDate, calcCareerSpan } from '@/src/components/person/PersonHero';
 import { PersonBio } from '@/src/components/person/PersonBio';
 import { PersonDefining } from '@/src/components/person/PersonDefining';
-import { renderGridItem, FilmographyHeader } from '@/src/components/person/PersonFilmography';
+import { FilmPosterCard, FilmographyHeader, GridColumn } from '@/src/components/person/PersonFilmography';
 
 // ── Strict Interfaces ────────────────────────────────────────
 interface PersonDetail {
@@ -75,7 +65,36 @@ interface PersonCredit {
   popularity?: number;
   character?: string;
   job?: string;
+  /** All crew jobs this person held on the film — the merge preserves every hat. */
+  jobs?: string[];
+  /** True when they appear on screen (cast credit). */
+  acted?: boolean;
 }
+
+// ── The department map — each craft's jobs ───────────────────
+const DEPT_JOBS: Record<string, string[]> = {
+  Directing: ['Director'],
+  Writing: ['Writer', 'Screenplay', 'Story', 'Novel', 'Author', 'Adaptation', 'Screenstory'],
+  Production: ['Producer', 'Executive Producer', 'Co-Producer', 'Associate Producer'],
+  Camera: ['Director of Photography', 'Cinematography', 'Camera Operator'],
+  Editing: ['Editor', 'Film Editor'],
+  Sound: ['Original Music Composer', 'Composer', 'Music', 'Sound Designer'],
+};
+
+// The stats speak the craft, not a mushy "credits" count.
+const CRAFT_LABELS: Record<string, [string, string]> = {
+  Directing: ['FILM DIRECTED', 'FILMS DIRECTED'],
+  Acting: ['PERFORMANCE', 'PERFORMANCES'],
+  Writing: ['FILM WRITTEN', 'FILMS WRITTEN'],
+  Production: ['FILM PRODUCED', 'FILMS PRODUCED'],
+  Camera: ['FILM SHOT', 'FILMS SHOT'],
+  Editing: ['FILM CUT', 'FILMS CUT'],
+  Sound: ['FILM SCORED', 'FILMS SCORED'],
+};
+const CREDIT_LABELS: [string, string] = ['CREDIT', 'CREDITS'];
+
+// "Self" documentary appearances are part of the record, never performances.
+const SELF_RE = /^self\b/i;
 
 // ════════════════════════════════════════════════════════════
 //  MAIN PERSON DETAIL SCREEN
@@ -116,21 +135,31 @@ export default function PersonDetailScreen() {
 
       let credits: PersonCredit[] = [];
       if (creditData) {
-        const seen = new Map<number, PersonCredit>();
+        // The merge preserves EVERY hat a person wore on a film: a credit
+        // that arrives as Producer must not erase their Director job.
+        const seen = new Map<number, PersonCredit & { _jobSet: Set<string> }>();
         for (const cRaw of [...(creditData.cast || []), ...(creditData.crew || [])]) {
           const c = cRaw as any;
-          const existing = seen.get(c.id);
-          if (!existing) {
-            seen.set(c.id, { ...c } as any);
-          } else {
-            if (c.job === 'Director') existing.job = 'Director';
-            if (c.character) existing.character = c.character;
-            if ((c.popularity ?? 0) > (existing.popularity ?? 0)) {
-              existing.popularity = c.popularity;
-            }
+          let entry = seen.get(c.id);
+          if (!entry) {
+            entry = { ...c, _jobSet: new Set<string>(), acted: false };
+            seen.set(c.id, entry!);
+          }
+          const e = entry!;
+          if (c.job) e._jobSet.add(c.job);
+          if (c.job === 'Director') e.job = 'Director';
+          if (c.character !== undefined) {
+            e.character = c.character;
+            e.acted = true;
+          }
+          if ((c.popularity ?? 0) > (e.popularity ?? 0)) {
+            e.popularity = c.popularity;
           }
         }
-        credits = Array.from(seen.values());
+        credits = Array.from(seen.values()).map(({ _jobSet, ...rest }) => ({
+          ...rest,
+          jobs: Array.from(_jobSet),
+        }));
       }
       return {
         person: personData as unknown as PersonDetail,
@@ -163,16 +192,43 @@ export default function PersonDetailScreen() {
     setShowFullBio((prev) => !prev);
   }, []);
 
+  // The velvet rope, not a dead end: archivists open the share sheet;
+  // cinephiles are walked to the LoungeGate (✦ ASCEND THE RANKS).
   const handleLoungeShare = useCallback(() => {
+    if (!user) {
+      nav.push('/login');
+      return;
+    }
+    if (!isArchivist) {
+      nav.push('/lounge');
+      return;
+    }
     if (!person) return;
     nav.push('/(modals)/social-modal', {
       mode: 'share-person',
       personId: String(id),
       personName: person.name,
     });
-  }, [person, id]);
+  }, [user, isArchivist, person, id]);
 
-  // ── Derived data ──
+  // ── THE CANON — the department cut ──
+  const { canon, usedFallback } = useMemo(() => {
+    const dept = person?.known_for_department ?? '';
+    let cut: PersonCredit[] = [];
+    if (dept === 'Acting') {
+      cut = allCredits.filter((c) => c.acted && !SELF_RE.test(c.character ?? ''));
+    } else {
+      const jobs = DEPT_JOBS[dept];
+      if (jobs) {
+        cut = allCredits.filter((c) => c.jobs?.some((j) => jobs.includes(j)));
+      }
+    }
+    // The safety net: bad archive data must never seal the room.
+    if (cut.length === 0) return { canon: allCredits, usedFallback: true };
+    return { canon: cut, usedFallback: false };
+  }, [allCredits, person?.known_for_department]);
+
+  // ── Derived data (all drawn from the canon) ──
   const { definingWorks, definingFilm } = useMemo(() => {
     const popularWithPosters: PersonCredit[] = [];
     let bestBackdropFilm: PersonCredit | null = null;
@@ -180,14 +236,14 @@ export default function PersonDetailScreen() {
     let bestOverallFilm: PersonCredit | null = null;
     let highestOverallScore = -1;
 
-    for (const film of allCredits) {
+    for (const film of canon) {
       const legacyScore = (film.vote_count ?? 0) * 10 + (film.popularity ?? 0);
       const votes = film.vote_count ?? 0;
-      
+
       if (film.poster_path && votes > 5) {
         popularWithPosters.push(film);
       }
-      
+
       if (film.backdrop_path && legacyScore > highestBackdropScore) {
         highestBackdropScore = legacyScore;
         bestBackdropFilm = film;
@@ -198,58 +254,81 @@ export default function PersonDetailScreen() {
         bestOverallFilm = film;
       }
     }
-    
+
     popularWithPosters.sort((a, b) => {
       const scoreA = (a.vote_count ?? 0) * 10 + (a.popularity ?? 0);
       const scoreB = (b.vote_count ?? 0) * 10 + (b.popularity ?? 0);
       return scoreB - scoreA;
     });
-    
+
     return {
       definingWorks: popularWithPosters.slice(0, 4),
       definingFilm: bestBackdropFilm || bestOverallFilm
     };
-  }, [allCredits]);
+  }, [canon]);
 
   const heroBackdrop = definingFilm?.backdrop_path ? tmdb.backdrop(definingFilm.backdrop_path) : null;
-  const filmography = useMemo(() => {
-    return [...allCredits].sort((a, b) => {
+
+  const canonSorted = useMemo(() => {
+    return [...canon].sort((a, b) => {
       const dateA = a.release_date || '9999-99-99';
       const dateB = b.release_date || '9999-99-99';
       if (dateA > dateB) return -1;
       if (dateA < dateB) return 1;
       return (b.popularity || 0) - (a.popularity || 0);
     });
-  }, [allCredits]);
-  const remainingCredits = filmography; // Replaced truncated list with true historical archive
-  const totalFilms = allCredits.length;
-  const careerSpan = useMemo(() => calcCareerSpan(person, allCredits), [person, allCredits]);
+  }, [canon]);
 
-  const directedFilms = useMemo(() => {
+  const careerSpan = useMemo(() => calcCareerSpan(person, canon), [person, canon]);
+
+  const craftLabel = useMemo(() => {
+    const dept = person?.known_for_department ?? '';
+    const labels = usedFallback ? CREDIT_LABELS : (CRAFT_LABELS[dept] ?? CREDIT_LABELS);
+    return canon.length === 1 ? labels[0] : labels[1];
+  }, [person?.known_for_department, usedFallback, canon.length]);
+
+  // ── THE AUTEUR HUNT — directing files only; its count IS the grid ──
+  const isDirectingFile = person?.known_for_department === 'Directing' && !usedFallback;
+
+  const huntFilms = useMemo(() => {
+    if (!isDirectingFile) return [];
     const d = new Date();
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     const localToday = `${y}-${m}-${day}`;
 
-    return allCredits.filter((c) => {
-      if (c.job !== 'Director') return false;
+    return canon.filter((c) => {
       const isLogged = _loggedIndex[c.id] !== undefined;
       const isReleased = !!(c.release_date && c.release_date <= localToday);
       const hasVotes = (c.vote_count ?? 0) > 0;
       return isReleased || isLogged || hasVotes;
     });
-  }, [allCredits, _loggedIndex]);
+  }, [isDirectingFile, canon, _loggedIndex]);
+
   const seenCount = useMemo(() => {
-    if (directedFilms.length === 0) return 0;
-    return directedFilms.filter(f => {
+    if (huntFilms.length === 0) return 0;
+    return huntFilms.filter(f => {
       const log = _loggedIndex[f.id] as any;
       return log !== undefined && log.status !== 'abandoned';
     }).length;
-  }, [_loggedIndex, directedFilms]);
-  const auteurPct = directedFilms.length > 0 ? Math.round((seenCount / directedFilms.length) * 100) : 0;
-  const isAuteurMastery = directedFilms.length > 0 && seenCount === directedFilms.length;
+  }, [_loggedIndex, huntFilms]);
+
+  const auteurPct = huntFilms.length > 0 ? Math.round((seenCount / huntFilms.length) * 100) : 0;
+  const isAuteurMastery = huntFilms.length > 0 && seenCount === huntFilms.length;
   const auteurHuntDynStyle = useMemo(() => ({ width: `${auteurPct}%` as import('react-native').DimensionValue }), [auteurPct]);
+  const showHunt = isDirectingFile && huntFilms.length > 0;
+
+  // ── The grid — SCREENED ticks from the member's own log index ──
+  const renderGridItem = useCallback(({ item, index }: { item: PersonCredit; index: number }) => {
+    const log = _loggedIndex[item.id] as any;
+    const screened = log !== undefined && log.status !== 'abandoned';
+    return (
+      <GridColumn index={index}>
+        <FilmPosterCard film={item} screened={screened} />
+      </GridColumn>
+    );
+  }, [_loggedIndex]);
 
   // ── Error (Offline) ──
   if (error) return (
@@ -270,7 +349,7 @@ export default function PersonDetailScreen() {
     </View>
   );
 
-  // ── Loading ──
+  // ── Loading (mirrors the real anatomy exactly) ──
   if (loading) return (
     <View style={s.container}>
       <View style={[s.floatingBack, floatingBackDynStyle]}>
@@ -284,10 +363,10 @@ export default function PersonDetailScreen() {
       </View>
       <View style={s.shimmerContent}>
         <ShimmerBlock style={s.shimmerPortrait} />
-        <ShimmerBlock style={s.shimmerSocietyMark} />
         <ShimmerBlock style={s.shimmerDeptBadge} />
         <ShimmerBlock style={s.shimmerName} />
         <ShimmerBlock style={s.shimmerDateRow} />
+        <ShimmerBlock style={s.shimmerPlaceRow} />
         <View style={s.shimmerStatsRow}>
           <ShimmerBlock style={s.shimmerStat} />
           <ShimmerBlock style={s.shimmerStat} />
@@ -299,7 +378,7 @@ export default function PersonDetailScreen() {
   // ── Not found ──
   if (!person) return (
     <View style={[s.container, s.notFoundContainer]}>
-      <Text style={s.notFoundLabel}>ARCHIVE DEPT — FILE NOT FOUND</Text>
+      <Text style={s.notFoundLabel}>RECORDS DEPT — FILE NOT FOUND</Text>
       <Text style={s.notFoundTitle}>No Record On File</Text>
       <Text style={s.notFoundBody}>
         This person does not exist in the TMDB archive, or the reel was lost.
@@ -324,7 +403,7 @@ export default function PersonDetailScreen() {
 
       <CinematicFlashList
         bottomInset={insets.bottom}
-        data={remainingCredits}
+        data={canonSorted}
         numColumns={3}
         estimatedItemSize={200}
         contentContainerStyle={[s.scrollContent, scrollContentDynStyle]}
@@ -336,14 +415,15 @@ export default function PersonDetailScreen() {
             heroBackdrop={heroBackdrop ?? null}
             photoUri={photoUri ?? null}
             heroDynStyle={heroDynStyle}
-            totalFilms={totalFilms}
+            canonCount={canon.length}
+            craftLabel={craftLabel}
             careerSpan={careerSpan}
             definingFilm={definingFilm}
             isArchivist={!!isArchivist}
             handleLoungeShare={handleLoungeShare}
-            directedFilms={directedFilms}
+            showHunt={showHunt}
+            huntTotal={huntFilms.length}
             seenCount={seenCount}
-            auteurPct={auteurPct}
             isAuteurMastery={isAuteurMastery}
             auteurHuntDynStyle={auteurHuntDynStyle}
             formatDossierDate={formatDossierDate}
@@ -364,14 +444,9 @@ export default function PersonDetailScreen() {
             <PersonDefining definingWorks={definingWorks} />
           )}
 
-          {/* ── Marquee lights transition ── */}
-          {definingWorks.length > 0 && remainingCredits.length > 0 && (
-            <MarqueeLights count={16} />
-          )}
-
-          {/* ═══ COMPLETE FILMOGRAPHY ═══ */}
-          {remainingCredits.length > 0 && (
-            <FilmographyHeader />
+          {/* ═══ THE CANON ═══ */}
+          {canonSorted.length > 0 && (
+            <FilmographyHeader count={canonSorted.length} />
           )}
         </View>}
         renderItem={renderGridItem}
@@ -381,9 +456,9 @@ export default function PersonDetailScreen() {
         {/* ── Empty state ── */}
         {allCredits.length === 0 && !loading && (
           <View style={s.emptyState}>
-            <Text style={s.emptyLabel}>THE VAULT IS SEALED</Text>
+            <Text style={s.emptyLabel}>THE RECORD IS BLANK</Text>
             <Text style={s.emptyTitle}>No Known Works Found</Text>
-            <Text style={s.emptyBody}>The archive has no film records on file for this artist.</Text>
+            <Text style={s.emptyBody}>The Society has no film records on file for this artist.</Text>
           </View>
         )}
 

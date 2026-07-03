@@ -45,7 +45,7 @@ export const PersonBio = memo(function PersonBio({
           hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
           haptic="light"
         >
-          <Text style={s.toggleTicketText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{showFullBio ? '[ SEAL EXTRACT ]' : '[ READ EXTRACT ]'}</Text>
+          <Text style={s.toggleTicketText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{showFullBio ? '[ READ LESS ]' : '[ READ MORE ]'}</Text>
         </PressableScale>
       )}
     </View>

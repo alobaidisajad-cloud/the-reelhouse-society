@@ -1,6 +1,7 @@
 /**
- * PersonDefining — Defining works horizontal carousel with DefiningCard
- * and DefiningSeparator sub-components.
+ * PersonDefining — DEFINING WORKS, the curated shelf of the artist's file.
+ * Drawn from the canon (their own craft only). Ratings speak in reels,
+ * never stars — the Society has its own instruments.
  */
 import { useCallback, memo } from 'react';
 import { View, Text } from 'react-native';
@@ -11,8 +12,9 @@ import { colors, SEPIA_HASH } from '@/src/theme/theme';
 import { tmdb, obscurityScore } from '@/src/lib/tmdb';
 import { nav } from '@/src/utils/typedRouter';
 import PressableScale from '@/src/components/PressableScale';
-import { SectionDivider } from '@/src/components/Decorative';
-import { Film as FilmIcon, Star } from 'lucide-react-native';
+import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
+import { ReelRating } from '@/src/components/Decorative';
+import { Film as FilmIcon } from 'lucide-react-native';
 import { ObscurityBadge } from '@/src/components/person/PersonOrnaments';
 import { s, st } from '@/src/components/person/personStyles';
 
@@ -67,10 +69,7 @@ const DefiningCard = memo(function DefiningCard({ film }: { film: PersonCredit }
           <View style={st.defMetaRow}>
             <Text style={st.defYear}>{film.release_date ? film.release_date.slice(0, 4) : 'TBA'}</Text>
             {film.vote_average !== undefined && film.vote_average > 0 && (
-              <View style={st.defRatingRow}>
-                <Star size={7} color={colors.sepia} fill={colors.sepia} />
-                <Text style={st.defRatingText}>{film.vote_average.toFixed(1)}</Text>
-              </View>
+              <ReelRating rating={film.vote_average / 2} size={8} />
             )}
           </View>
         </LinearGradient>
@@ -98,8 +97,7 @@ export const PersonDefining = memo(function PersonDefining({
   return (
     <View style={s.sectionFlush}>
       <View style={s.sectionPadded}>
-        <SectionDivider label="DEFINING WORKS" />
-        <Text style={s.sectionSubtitle}>The Legacy</Text>
+        <FilmSectionHeader label="DEFINING WORKS" />
       </View>
       <View style={s.definingWorksWrap}>
         <FlashList

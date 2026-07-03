@@ -1,15 +1,23 @@
 /**
- * PersonDetailScreen styles — extracted from [id].tsx.
+ * PersonDetailScreen styles — THE ARTIST'S FILE.
+ *
+ * Layout laws:
+ *  · ONE RAIL — every card and section stands on the same 20px shoulders.
+ *  · FOUR BEATS — the hero column groups as identity → record → action →
+ *    progress, not seven equal gaps.
+ *  · Typewriter voice (fonts.sub) on every label; Rye keeps the name;
+ *    Courier keeps the biography prose.
  *
  * Two style-sheets:
  *  • `s`  — main screen styles (hero, dossier, bio, sections, etc.)
- *  • `st` — shared sub-component styles (shimmer, badges, grid cards, defining cards)
+ *  • `st` — shared sub-component styles (shimmer, badges, grid & defining cards)
  */
 import { StyleSheet } from 'react-native';
 import { colors, fonts, effects } from '@/src/theme/theme';
 
 const PORTRAIT_W = 130;
 const POSTER_GRID_GAP = 10;
+const RAIL = 20;
 
 // ════════════════════════════════════════════════════════════
 //  MAIN STYLES — NITRATE NOIR
@@ -18,20 +26,20 @@ export const s = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.ink },
   scrollContent: { paddingBottom: 100 },
 
-  // ── Shimmer ──
+  // ── Shimmer (mirrors the real anatomy exactly) ──
   shimmerBackdrop: { minHeight: 240, maxHeight: 300, backgroundColor: 'rgba(8,6,4,0.98)', position: 'relative' },
-  shimmerContent: { alignItems: 'center', marginTop: -75, paddingHorizontal: 20, zIndex: 2 },
-  shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, marginBottom: 10 },
-  shimmerSocietyMark: { width: 160, height: 8, borderRadius: 2, marginBottom: 12 },
+  shimmerContent: { alignItems: 'center', marginTop: -75, paddingHorizontal: RAIL, zIndex: 2 },
+  shimmerPortrait: { width: PORTRAIT_W, height: PORTRAIT_W * 1.5, borderRadius: 2, marginBottom: 12 },
   shimmerDeptBadge: { width: 90, height: 22, borderRadius: 2, marginBottom: 10 },
   shimmerName: { width: 220, height: 34, borderRadius: 2, marginBottom: 12 },
-  shimmerDateRow: { width: 180, height: 12, borderRadius: 2, marginBottom: 16 },
+  shimmerDateRow: { width: 190, height: 10, borderRadius: 2, marginBottom: 6 },
+  shimmerPlaceRow: { width: 150, height: 9, borderRadius: 2, marginBottom: 14 },
   shimmerStatsRow: { flexDirection: 'row', gap: 14, marginBottom: 14, justifyContent: 'center' },
-  shimmerStat: { width: 80, height: 12, borderRadius: 2 },
+  shimmerStat: { width: 90, height: 10, borderRadius: 2 },
 
-  // ── Not Found ──
+  // ── Not Found / Error ──
   notFoundContainer: { justifyContent: 'center', alignItems: 'center', padding: 32 },
-  notFoundLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4, color: colors.sepia, marginBottom: 8 },
+  notFoundLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
   notFoundTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 8, ...effects.textGlowSepia },
   notFoundBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 22 },
 
@@ -39,7 +47,7 @@ export const s = StyleSheet.create({
   floatingBack: {
     position: 'absolute', top: 54, left: 16, zIndex: 100,
     width: 36, height: 36, borderRadius: 18,
-    backgroundColor: 'rgba(10,7,3,0.65)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
+    backgroundColor: 'rgba(10,7,3,0.65)', borderWidth: 1, borderColor: colors.sepiaBorder,
     alignItems: 'center', justifyContent: 'center',
   },
 
@@ -49,11 +57,11 @@ export const s = StyleSheet.create({
   heroSepia: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.5)' },
   perfBar: { position: 'absolute', bottom: 4, left: 0, right: 0, zIndex: 2 },
 
-  // ── Dossier Section ──
-  dossierSection: { alignItems: 'center', marginTop: -75, paddingHorizontal: 20, zIndex: 2 },
+  // ── Dossier Section (the title block — four beats) ──
+  dossierSection: { alignItems: 'center', marginTop: -75, paddingHorizontal: RAIL, zIndex: 2 },
 
   // ── Portrait ──
-  portraitWrap: { marginBottom: 10, position: 'relative' },
+  portraitWrap: { marginBottom: 12, position: 'relative' },
   portraitGlow: {
     position: 'absolute', top: -10, left: -10, right: -10, bottom: -10,
     backgroundColor: 'rgba(184,137,26,0.15)',
@@ -69,77 +77,64 @@ export const s = StyleSheet.create({
   portraitPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
   portraitInitial: { fontFamily: fonts.display, fontSize: 40, color: colors.fog },
 
-  // ── Society Watermark ──
-  societyMark: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 4,
-    color: colors.sepia, opacity: 0.55, marginBottom: 12,
-  },
-
-  // ── Department Badge ──
+  // ── Beat 1: identity — badge · name · life line ──
   deptBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 5,
     paddingHorizontal: 12, paddingVertical: 5, borderRadius: 2,
-    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
+    borderWidth: 1, borderColor: colors.sepiaBorder,
     marginBottom: 10,
   },
-  deptLabel: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 3.5, color: colors.sepia },
-
-  // ── Name ──
+  deptLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3.5, color: colors.sepia, includeFontPadding: false },
   personName: {
     fontFamily: fonts.display, fontSize: 28, color: colors.parchment,
-    textAlign: 'center', lineHeight: 34, marginBottom: 12,
+    textAlign: 'center', lineHeight: 34, marginBottom: 10,
   },
+  // The life line — dates first, ground second; the dagger wears crimson.
+  lifeLine: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, textAlign: 'center', includeFontPadding: false },
+  lifeLineDeath: { color: colors.crimson },
+  lifeLinePlace: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.fog, opacity: 0.75, textAlign: 'center', marginTop: 4, includeFontPadding: false },
 
-  // ── Dates ──
-  dateRow: { alignItems: 'center', gap: 6, marginBottom: 16 },
-  dateItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  dateText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
-  dateTextDeath: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: 'rgba(200,80,80,0.7)' },
-  dateTextFaded: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog, opacity: 0.8 },
+  // ── Beat 2: the record — craft stats · known for ──
+  recordGroup: { alignItems: 'center', marginTop: 14, marginBottom: 14 },
+  statLine: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.bone, textAlign: 'center', includeFontPadding: false },
+  knownForLine: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, textAlign: 'center', marginTop: 5, includeFontPadding: false },
+  knownForTitle: { color: colors.sepia } as import('react-native').TextStyle,
 
-  // ── Stats Strip ──
-  statsStrip: {
-    flexDirection: 'row', gap: 14, flexWrap: 'wrap',
-    justifyContent: 'center', alignItems: 'center', marginBottom: 14,
-  },
-  statChip: { flexDirection: 'row', alignItems: 'center', gap: 5 },
-  statText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.bone },
-  knownForText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.fog },
-  knownForTitle: { color: colors.bone, textDecorationLine: 'underline', textDecorationColor: 'rgba(184,137,26,0.3)' } as import('react-native').TextStyle,
-
-  // ── Share to Lounge ──
+  // ── Beat 3: the action — lounge (every rank sees the door) ──
   loungeBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 6,
     paddingHorizontal: 16, paddingVertical: 12,
-    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2,
+    borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2,
     backgroundColor: 'rgba(14,11,8,0.9)',
     marginBottom: 14,
   },
-  loungeBtnText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
+  loungeBtnText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
 
-  // ── Auteur Hunt ──
-  auteurHuntWrap: { width: '100%', alignItems: 'center' },
+  // ── Beat 4: the progress — THE AUTEUR HUNT (full rail width) ──
   auteurHunt: {
-    width: '100%', maxWidth: 300,
+    width: '100%',
     paddingHorizontal: 16, paddingVertical: 12,
     backgroundColor: 'rgba(184,137,26,0.06)', borderRadius: 4,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
     marginBottom: 8,
   },
-  auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 6 } as import('react-native').ViewStyle,
-  auteurHuntTitle: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
-  auteurHuntCount: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1, color: colors.parchment },
-  auteurHuntTrack: { height: 4, backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 2, overflow: 'hidden' },
-  auteurHuntFill: { height: '100%', backgroundColor: colors.sepia, borderRadius: 2 } as import('react-native').ViewStyle,
+  auteurHuntHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 7 } as import('react-native').ViewStyle,
+  auteurHuntTitle: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
+  auteurHuntCount: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.parchment, includeFontPadding: false },
+  auteurHuntTrack: { height: 8, backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 2, overflow: 'hidden', position: 'relative' },
+  auteurHuntFill: { position: 'absolute', left: 0, top: 0, bottom: 0, backgroundColor: colors.sepia, borderRadius: 2 } as import('react-native').ViewStyle,
+  // Frame notches — the strip reads as film, not as a loading bar.
+  auteurHuntNotches: { ...StyleSheet.absoluteFillObject, flexDirection: 'row', justifyContent: 'space-evenly' } as import('react-native').ViewStyle,
+  auteurHuntNotch: { width: 1, height: '100%', backgroundColor: 'rgba(10,9,6,0.55)' } as import('react-native').ViewStyle,
   auteurHuntMastery: { shadowColor: colors.sepia, shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 10, elevation: 10 } as import('react-native').ViewStyle,
   auteurComplete: {
-    fontFamily: fonts.uiBold, fontSize: 7, letterSpacing: 2.5,
-    color: colors.flicker, marginTop: 6, textAlign: 'center',
+    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2.5,
+    color: colors.flicker, marginTop: 7, textAlign: 'center', includeFontPadding: false,
   },
 
   // ── Biography ──
   bioSection: {
-    marginHorizontal: 20, marginBottom: 24, marginTop: 8,
+    marginHorizontal: RAIL, marginBottom: 24, marginTop: 8,
     padding: 20,
     backgroundColor: 'rgba(25,20,15,0.6)',
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.15)',
@@ -148,51 +143,40 @@ export const s = StyleSheet.create({
     position: 'relative', overflow: 'hidden',
   },
   bioTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1 } as import('react-native').ViewStyle,
-  bioLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 12, opacity: 0.8 },
+  bioLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 12, opacity: 0.9, includeFontPadding: false },
   bioTextWrap: { position: 'relative' },
   bioText: { fontFamily: fonts.body, fontSize: 14, color: colors.bone, lineHeight: 24 },
   bioFadeMask: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 60 },
   toggleTicketBtn: {
     marginTop: 16, paddingVertical: 12, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
+    borderWidth: 1, borderColor: colors.sepiaBorder,
     backgroundColor: 'rgba(14,11,8,0.9)', borderRadius: 2,
   },
-  toggleTicketText: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 3, color: colors.sepia },
+  toggleTicketText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
 
-  // ── Sections ──
-  section: { marginTop: 8, marginBottom: 16, paddingHorizontal: 20 },
+  // ── Sections (one rail, one header grammar) ──
+  section: { marginTop: 8, marginBottom: 16, paddingHorizontal: RAIL },
   sectionFlush: { marginTop: 8, marginBottom: 16 },
-  sectionPadded: { paddingHorizontal: 20 },
-  sectionSubtitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, marginBottom: 16, paddingHorizontal: 0 },
+  sectionPadded: { paddingHorizontal: RAIL },
 
   // ── Defining List ──
   definingWorksWrap: { minHeight: 250 },
-  definingList: { paddingHorizontal: 20 },
-
-  // ── Gold Separator ──
-  goldSep: { height: 1, marginBottom: 20 },
-
-  // ── Filmography Grid ──
+  definingList: { paddingHorizontal: RAIL },
 
   // ── Empty State ──
   emptyState: {
-    padding: 32, marginHorizontal: 20, alignItems: 'center',
-    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
+    padding: 32, marginHorizontal: RAIL, alignItems: 'center',
+    borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 4, backgroundColor: 'rgba(18,14,9,0.4)',
   },
-  emptyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8 },
+  emptyLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, opacity: 0.7, marginBottom: 4 },
   emptyBody: { fontFamily: fonts.body, fontSize: 14, color: colors.fog, fontStyle: 'italic', textAlign: 'center' },
 
   // ── Back Button ──
-  backBtnBottom: { marginTop: 24, paddingVertical: 14, paddingHorizontal: 24, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 2 },
-  backBtnBottomText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.bone },
+  backBtnBottom: { marginTop: 24, paddingVertical: 14, paddingHorizontal: 24, borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },
+  backBtnBottomText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.bone, includeFontPadding: false },
   backBtnRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-
-  // ── Closing Bar ──
-  closingBar: { alignItems: 'center', marginTop: 32, marginBottom: 8, paddingHorizontal: 40 },
-  closingLine: { width: '100%', height: 1, marginBottom: 12 },
-  closingText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 5, color: colors.sepia, opacity: 0.4 },
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -203,8 +187,8 @@ export const st = StyleSheet.create({
 
   // ── Obscurity Badge ──
   obsBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 4, borderWidth: 1, borderRadius: 2 },
-  obsScore: { fontFamily: fonts.uiBold, fontSize: 10 },
-  obsLabel: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog },
+  obsScore: { fontFamily: fonts.sub, fontSize: 10, includeFontPadding: false },
+  obsLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
 
   // ── Film-strip Perforations ──
   perfRow: {
@@ -217,17 +201,25 @@ export const st = StyleSheet.create({
 
   // ── Grid Poster Cards ──
   gridCard: { width: '100%', marginBottom: 8 },
+  gridPosterWrap: { position: 'relative', width: '100%' },
   gridPoster: {
     borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
     width: '100%', aspectRatio: 2 / 3,
   },
   gridPosterPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
+  // The brass mark of a screened frame — the Hunt made visible.
+  screenedTick: {
+    position: 'absolute', top: 5, right: 5,
+    width: 16, height: 16, borderRadius: 2,
+    backgroundColor: 'rgba(10,9,6,0.85)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.6)',
+    alignItems: 'center', justifyContent: 'center',
+  },
   gridTitle: {
     fontFamily: fonts.sub, fontSize: 10, color: colors.bone,
-    marginTop: 5, width: '100%',
+    marginTop: 5, width: '100%', includeFontPadding: false,
   },
-  gridMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 3 },
-  gridYear: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1 },
+  gridYear: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 1, marginTop: 2, includeFontPadding: false },
 
   // ── Grid Column Spacing (pre-computed for FlashList hot path) ──
   gridColLeft: { flex: 1, paddingLeft: 20, paddingRight: 0, marginBottom: POSTER_GRID_GAP } as import('react-native').ViewStyle,
@@ -248,10 +240,8 @@ export const st = StyleSheet.create({
     paddingHorizontal: 8, paddingBottom: 8, paddingTop: 50,
   } as import('react-native').ViewStyle,
   defTitle: { fontFamily: fonts.sub, fontSize: 12, color: colors.parchment, lineHeight: 16 },
-  defMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 3 },
-  defYear: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog },
-  defRatingRow: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  defRatingText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.5, color: colors.fog },
+  defMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
+  defYear: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
   defBadgeWrap: { marginTop: 6 },
   defSeparator: { width: 12 },
 });
