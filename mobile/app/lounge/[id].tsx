@@ -144,7 +144,9 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
       {showDate && (
         <View style={s.dateDivider}>
           <View style={s.dateLine} />
+          <View style={s.dateSprocket} />
           <Text style={s.dateText}>{formatDay(msg.created_at)}</Text>
+          <View style={s.dateSprocket} />
           <View style={s.dateLine} />
         </View>
       )}
@@ -238,6 +240,7 @@ export default function LoungeRoomScreen() {
     subscribeToLounge, sending, markRead,
     withdrawMessage, retryMessage, toggleReaction,
     requestMembership, joinPublicLounge, fetchMembers,
+    presentCount, typingUsers, broadcastTyping,
   } = useLoungeStore();
 
   const [input, setInput] = useState('');
@@ -255,7 +258,11 @@ export default function LoungeRoomScreen() {
 
   const blockStore = useBlockStore();
 
-  const handleInputChange = useCallback((text: string) => setInput(text), []);
+  const handleInputChange = useCallback((text: string) => {
+    setInput(text);
+    // THE HOUSE PULSE — announce the typewriter (throttled in the store).
+    if (text.length > 0 && id) broadcastTyping(id);
+  }, [id, broadcastTyping]);
 
   // ── Membership + roster refresh (also drives host's "At the Door") ──
   const refreshMembership = useCallback(async () => {
@@ -389,8 +396,16 @@ export default function LoungeRoomScreen() {
           <Text style={s.headerTitle} numberOfLines={1}>{activeLounge.name}</Text>
           <View style={s.headerMeta}>
             <Text style={s.headerMetaText} numberOfLines={1}>
-              {(members.filter(m => m.status !== 'pending').length || activeLounge.member_count || 0)} in the room
+              {(members.filter(m => m.status !== 'pending').length || activeLounge.member_count || 0)} MEMBERS
             </Text>
+            {/* THE HOUSE PULSE — the ember glows only when the room truly breathes */}
+            {presentCount >= 2 && (
+              <>
+                <View style={s.metaDot} />
+                <View style={s.presenceEmber} />
+                <Text style={s.presenceText} numberOfLines={1}>{presentCount} HERE NOW</Text>
+              </>
+            )}
             {activeLounge.is_private && (
               <>
                 <View style={s.metaDot} />
@@ -472,6 +487,20 @@ export default function LoungeRoomScreen() {
       {/* ── Composer / preview / muted ── */}
       {gate === 'chat' && canPost && (
         <View style={[s.composer, { paddingBottom: Math.max(insets.bottom + 8, 12) }]}>
+          {/* THE HOUSE PULSE — the typewriter line. Reserved height: the
+              composer never shifts a pixel when a typist appears or goes quiet. */}
+          <View style={s.typingLine}>
+            {typingUsers.length > 0 && (
+              <AnimatedView entering={FadeIn.duration(250)} exiting={FadeOut.duration(200)} style={s.typingRow}>
+                <View style={s.typingDot} />
+                <Text style={s.typingText} numberOfLines={1}>
+                  {typingUsers.length === 1
+                    ? `AT THE TYPEWRITER — @${typingUsers[0].toUpperCase()}`
+                    : 'SEVERAL MEMBERS AT THE TYPEWRITER…'}
+                </Text>
+              </AnimatedView>
+            )}
+          </View>
           {replyTo && (
             <AnimatedView entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={s.replyBanner}>
               <View style={s.replyBannerCol}>
@@ -487,7 +516,7 @@ export default function LoungeRoomScreen() {
             <TextInput
               style={s.input}
               placeholder="Compose a dispatch…"
-              placeholderTextColor={colors.ash}
+              placeholderTextColor={colors.fog}
               value={input}
               onChangeText={handleInputChange}
               multiline
@@ -616,7 +645,7 @@ const s = StyleSheet.create({
 
   // ── Edge states ──
   centered: { flex: 1, backgroundColor: colors.ink, justifyContent: 'center', alignItems: 'center', gap: 12, paddingHorizontal: 32 },
-  edgeLoad: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 3, color: colors.fog },
+  edgeLoad: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.fog, includeFontPadding: false },
   crestSmall: {
     width: 44, height: 44, borderRadius: 22, borderWidth: StyleSheet.hairlineWidth,
     borderColor: 'rgba(184,137,26,0.35)', alignItems: 'center', justifyContent: 'center',
@@ -625,7 +654,7 @@ const s = StyleSheet.create({
   edgeTitle: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment, textAlign: 'center' },
   edgeDesc: { fontFamily: fonts.serif, fontSize: 14, color: colors.fog, textAlign: 'center', lineHeight: 21 },
   edgeBtn: { marginTop: 20, backgroundColor: colors.sepia, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4 },
-  edgeBtnText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 2, color: colors.ink },
+  edgeBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
 
   // ── Header (marquee chrome) ──
   header: {
@@ -637,9 +666,16 @@ const s = StyleSheet.create({
   headerCrest: { marginBottom: 5, opacity: 0.95 },
   headerTitle: { fontFamily: fonts.sub, fontSize: 16, color: colors.parchment, letterSpacing: 0.3 },
   headerMeta: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
-  headerMetaText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5, color: colors.fog },
+  headerMetaText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
   metaDot: { width: 2, height: 2, borderRadius: 1, backgroundColor: colors.fog, marginHorizontal: 3 },
-  metaPrivate: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1, color: colors.sepia },
+  metaPrivate: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
+  // THE HOUSE PULSE — a true brass ember, lit only when others are present.
+  presenceEmber: {
+    width: 5, height: 5, borderRadius: 3, backgroundColor: '#DCA63A',
+    shadowColor: '#DCA63A', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.8, shadowRadius: 4, elevation: 3,
+    marginRight: 1,
+  },
+  presenceText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: '#DCA63A', includeFontPadding: false },
   headerRight: { flexDirection: 'row', alignItems: 'center', gap: 2 },
   doorBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.sepia,
@@ -649,9 +685,11 @@ const s = StyleSheet.create({
 
   // ── Transcript ──
   list: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 24 },
-  dateDivider: { flexDirection: 'row', alignItems: 'center', gap: 12, marginVertical: 18 },
+  // The reel change — sprocket dots mark where one day's projection ends.
+  dateDivider: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 18 },
   dateLine: { flex: 1, height: StyleSheet.hairlineWidth, backgroundColor: colors.ash },
-  dateText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 2.5, color: colors.fog },
+  dateSprocket: { width: 3, height: 3, borderRadius: 1, backgroundColor: 'rgba(184,137,26,0.45)' },
+  dateText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.fog, includeFontPadding: false },
 
   row: { marginTop: 10 },
   rowSending: { opacity: 0.55 },
@@ -664,7 +702,7 @@ const s = StyleSheet.create({
   authorAvatarLetter: { fontFamily: fonts.display, color: colors.fog, fontSize: 11 },
   authorName: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone, letterSpacing: 0.3, flexShrink: 1 },
   authorNameSelf: { color: colors.sepia },
-  authorTime: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, opacity: 0.6 },
+  authorTime: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, opacity: 0.6, includeFontPadding: false },
 
   contentCol: { paddingLeft: 32 },
   contentColSelf: { paddingLeft: 13, marginLeft: 11, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.45)' },
@@ -676,12 +714,12 @@ const s = StyleSheet.create({
   tombstoneText: { fontFamily: fonts.serifItalic, fontSize: 13.5, color: colors.fog },
 
   stateLine: { flexDirection: 'row', alignItems: 'center', gap: 5, marginTop: 5 },
-  stateLineText: { fontFamily: fonts.ui, fontSize: 11, color: colors.fog },
+  stateLineText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, includeFontPadding: false },
   stateLineFail: { color: REACTION_META.panned.tint },
 
   // ── Reply pull-quote ──
   replyQuote: { borderLeftWidth: 2, borderLeftColor: colors.sepia, paddingLeft: 10, marginBottom: 7 },
-  replyQuoteAuthor: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 0.5, color: colors.sepia, marginBottom: 2 },
+  replyQuoteAuthor: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 0.5, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   replyQuoteContent: { fontFamily: fonts.serifItalic, fontSize: 12.5, color: colors.fog, lineHeight: 17 },
 
   // ── Reactions ──
@@ -702,7 +740,7 @@ const s = StyleSheet.create({
   sharedPoster: { width: 48, height: 72 },
   sharedInfo: { padding: 10, flex: 1, justifyContent: 'center' },
   sharedTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
-  sharedTypeText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
+  sharedTypeText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
   sharedTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, lineHeight: 17 },
 
   emptyChat: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 10 },
@@ -716,15 +754,20 @@ const s = StyleSheet.create({
 
   // ── Composer ──
   composer: {
-    paddingVertical: 10, paddingHorizontal: 16, backgroundColor: colors.ink,
+    paddingVertical: 8, paddingHorizontal: 16, backgroundColor: colors.ink,
     borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash,
   },
+  // THE HOUSE PULSE — reserved height so the composer never shifts.
+  typingLine: { height: 16, justifyContent: 'center', marginBottom: 2 },
+  typingRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  typingDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia, opacity: 0.8 },
+  typingText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, opacity: 0.85, includeFontPadding: false },
   replyBanner: {
     flexDirection: 'row', alignItems: 'center', backgroundColor: colors.soot, paddingVertical: 8, paddingHorizontal: 12,
     borderRadius: 4, marginBottom: 8, borderLeftWidth: 2, borderLeftColor: colors.sepia, gap: 10,
   },
   replyBannerCol: { flex: 1 },
-  replyBannerAuthor: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 0.5, color: colors.sepia, marginBottom: 2 },
+  replyBannerAuthor: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 0.5, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   replyBannerText: { fontFamily: fonts.serif, fontSize: 12.5, color: colors.fog },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8 },
   input: {
@@ -752,19 +795,19 @@ const s = StyleSheet.create({
   },
   previewText: { fontFamily: fonts.serifItalic, fontSize: 13, color: colors.fog },
   previewBtn: { backgroundColor: colors.sepia, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 4, width: '100%', alignItems: 'center' },
-  previewBtnText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 2, color: colors.ink },
+  previewBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
 
   // ── Gate (velvet rope) ──
   gate: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36, gap: 12 },
   gateCrest: { marginBottom: 6, opacity: 0.95 },
   gateName: { fontFamily: fonts.display, fontSize: 26, color: colors.parchment, textAlign: 'center', lineHeight: 32 },
   gatePrivateRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  gatePrivateLabel: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
+  gatePrivateLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
   gateDesc: { fontFamily: fonts.serif, fontSize: 15, color: colors.bone, textAlign: 'center', lineHeight: 23 },
-  gateMembers: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 0.5, color: colors.fog, marginTop: 2 },
+  gateMembers: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog, marginTop: 2, includeFontPadding: false },
   gateCopy: { fontFamily: fonts.serifItalic, fontSize: 13.5, color: colors.fog, textAlign: 'center', lineHeight: 21, marginTop: 4 },
   gateBtn: { marginTop: 14, backgroundColor: colors.sepia, paddingHorizontal: 32, paddingVertical: 14, borderRadius: 4, minWidth: 200, alignItems: 'center' },
-  gateBtnText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 2.5, color: colors.ink },
+  gateBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.ink, includeFontPadding: false },
   gatePending: { alignItems: 'center', gap: 8, marginTop: 14 },
   gatePendingText: { fontFamily: fonts.sub, fontSize: 15, color: colors.parchment, letterSpacing: 0.3 },
 });

@@ -1,4 +1,5 @@
 import * as Crypto from 'expo-crypto';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 import { create } from 'zustand';
 import { queryClient } from '../lib/queryClient';
 import { supabase } from '../lib/supabase';
@@ -90,6 +91,10 @@ export interface LoungeState {
   currentLoungeId: string | null;
   loading: boolean;
   sending: boolean;
+  /** THE HOUSE PULSE — members present on this salon's channel right now. */
+  presentCount: number;
+  /** Usernames currently at the typewriter (expire after 4s of silence). */
+  typingUsers: string[];
 
   fetchLounges: () => Promise<void>;
   fetchMessages: (loungeId: string) => Promise<void>;
@@ -114,6 +119,10 @@ export interface LoungeState {
   setMemberStatus: (loungeId: string, userId: string, status: 'approved' | 'muted' | 'banned') => Promise<boolean>;
   removeMember: (loungeId: string, userId: string) => Promise<boolean>;
 
+  // ── THE HOUSE PULSE ──
+  /** Throttled "at the typewriter" broadcast on the active salon channel. */
+  broadcastTyping: (loungeId: string) => void;
+
   // ── Reactions · lifecycle (Editorial Salon overhaul) ──
   toggleReaction: (messageId: string, reaction: string) => Promise<void>;
   withdrawMessage: (messageId: string) => Promise<void>;
@@ -133,6 +142,20 @@ const MESSAGE_DEDUP_CAP = 100;
 // ── Create lounge cooldown — prevents spam-creation ──
 let _lastCreateAt = 0;
 const CREATE_COOLDOWN = 30000; // 30s between lounge creations
+
+// ── THE HOUSE PULSE — typing broadcast throttle + expiry ──
+let _lastTypingBroadcastAt = 0;
+const TYPING_THROTTLE = 2000; // max one broadcast per 2s per member
+const TYPING_TTL = 4000;      // a typist goes quiet after 4s of silence
+const _typingTimers = new Map<string, ReturnType<typeof setTimeout>>();
+/** The active salon channel — lets broadcastTyping ride the same socket. */
+let _activeChannel: RealtimeChannel | null = null;
+
+function clearTypingState(set: (partial: Partial<LoungeState>) => void) {
+  for (const t of _typingTimers.values()) clearTimeout(t);
+  _typingTimers.clear();
+  set({ presentCount: 0, typingUsers: [] });
+}
 
 // ── Username cache for Realtime messages — prevents N+1 profile queries ──
 const _profileCache = new Map<string, { username: string; avatar_url?: string; ts: number }>();
@@ -241,6 +264,8 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   currentLoungeId: null,
   loading: false,
   sending: false,
+  presentCount: 0,
+  typingUsers: [],
   _pendingLeaveLoungeIds: new Set(),
   _lastMarkReadMap: {},
 
@@ -1051,8 +1076,13 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
   },
 
   subscribeToLounge: (loungeId: string, opts?: { onMembership?: () => void }) => {
+    const me = useAuthStore.getState().user;
     const channel = supabase
-      .channel(`lounge-${loungeId}`)
+      .channel(`lounge-${loungeId}`, {
+        // THE HOUSE PULSE rides the same socket as the transcript —
+        // presence keyed by member id; our own typing echoes are muted.
+        config: { presence: { key: me?.id ?? 'anon' }, broadcast: { self: false } },
+      })
       .on(
         'postgres_changes',
         {
@@ -1167,9 +1197,53 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
         { event: '*', schema: 'public', table: 'lounge_members', filter: `lounge_id=eq.${loungeId}` },
         () => { opts?.onMembership?.(); }
       )
-      .subscribe();
+      // ── THE HOUSE PULSE: who's in the room right now ──
+      .on('presence', { event: 'sync' }, () => {
+        set({ presentCount: Object.keys(channel.presenceState()).length });
+      })
+      // ── THE HOUSE PULSE: who's at the typewriter ──
+      .on('broadcast', { event: 'typing' }, (payload) => {
+        const p = payload?.payload as { user_id?: string; username?: string } | undefined;
+        if (!p?.user_id || !p?.username) return;
+        const self = useAuthStore.getState().user;
+        if (p.user_id === self?.id) return;
+        if (useBlockStore.getState().isHidden(p.user_id)) return;
+        const username = p.username;
+        // Reset this typist's silence timer.
+        const existing = _typingTimers.get(username);
+        if (existing) clearTimeout(existing);
+        _typingTimers.set(username, setTimeout(() => {
+          _typingTimers.delete(username);
+          set(s => ({ typingUsers: s.typingUsers.filter(u => u !== username) }));
+        }, TYPING_TTL));
+        set(s => s.typingUsers.includes(username) ? s : { typingUsers: [...s.typingUsers, username] });
+      })
+      .subscribe((status) => {
+        // Announce presence only once the channel is live.
+        if (status === 'SUBSCRIBED' && me) {
+          channel.track({ username: me.username });
+        }
+      });
 
-    return () => { supabase.removeChannel(channel); };
+    _activeChannel = channel;
+    return () => {
+      supabase.removeChannel(channel);
+      if (_activeChannel === channel) _activeChannel = null;
+      clearTypingState(set);
+    };
+  },
+
+  broadcastTyping: (loungeId: string) => {
+    const now = Date.now();
+    if (now - _lastTypingBroadcastAt < TYPING_THROTTLE) return;
+    const me = useAuthStore.getState().user;
+    if (!me || !_activeChannel || get().currentLoungeId !== loungeId) return;
+    _lastTypingBroadcastAt = now;
+    void _activeChannel.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: { user_id: me.id, username: me.username },
+    });
   },
 
   markRead: async (loungeId) => {
@@ -1197,8 +1271,12 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useLoungeStore.setState({ lounges: [], currentMessages: [], currentLoungeId: null, loading: false, sending: false, _pendingLeaveLoungeIds: new Set(), _lastMarkReadMap: {} });
+    useLoungeStore.setState({ lounges: [], currentMessages: [], currentLoungeId: null, loading: false, sending: false, presentCount: 0, typingUsers: [], _pendingLeaveLoungeIds: new Set(), _lastMarkReadMap: {} });
     _lastCreateAt = 0;
+    _lastTypingBroadcastAt = 0;
+    for (const t of _typingTimers.values()) clearTimeout(t);
+    _typingTimers.clear();
+    _activeChannel = null;
     // Purge profile cache to prevent cross-session PII leakage
     _profileCache.clear();
 });

@@ -50,8 +50,8 @@ const s = StyleSheet.create({
     height: 64,
     borderRadius: 32,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'rgba(196,150,26,0.2)',
-    backgroundColor: 'rgba(196,150,26,0.03)',
+    borderColor: 'rgba(184,137,26,0.2)',
+    backgroundColor: 'rgba(184,137,26,0.03)',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 18,
@@ -82,10 +82,10 @@ const s = StyleSheet.create({
     borderRadius: 2,
   },
   ctaBtnText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 2.5,
     color: colors.ink,
+    includeFontPadding: false,
   },
 });

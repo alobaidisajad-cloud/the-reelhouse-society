@@ -14,7 +14,7 @@ import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
-const BLOOD = '#A8503F';
+const BLOOD = colors.crimson;
 
 export interface LoungeSettingsPanelProps {
   lounge: LoungeRoom;
@@ -85,7 +85,7 @@ export function LoungeSettingsPanel({ lounge, members, visible, onClose, isCreat
           {isFounder ? (
             <View style={s.founderBadge}>
               <Crown size={9} color={colors.sepia} strokeWidth={2} />
-              <Text style={s.founderText}>FOUNDER</Text>
+              <Text style={s.founderText}>PROPRIETOR</Text>
             </View>
           ) : isCreator ? (
             <PressableScale onPress={() => setExpanded(isOpen ? null : item.user_id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Member actions">
@@ -190,7 +190,7 @@ const s = StyleSheet.create({
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
   title: { fontFamily: fonts.display, fontSize: 22, color: colors.parchment },
   subtitle: { fontFamily: fonts.serif, fontSize: 13, color: colors.fog, marginTop: 4, lineHeight: 18 },
-  label: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 12 },
+  label: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.sepia, opacity: 0.8, marginBottom: 12, includeFontPadding: false },
 
   memberBlock: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.soot },
   memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 10 },
@@ -199,24 +199,24 @@ const s = StyleSheet.create({
     overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
   memberAvatarImg: { width: '100%', height: '100%' },
-  memberName: { flex: 1, fontFamily: fonts.uiMedium, fontSize: 12, letterSpacing: 1, color: colors.bone },
+  memberName: { flex: 1, fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
   statusTag: { flexDirection: 'row', alignItems: 'center', gap: 3 },
-  statusTagText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1, color: colors.fog },
+  statusTagText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
   founderBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 2,
     backgroundColor: 'rgba(184,137,26,0.08)', borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)',
   },
-  founderText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1.5, color: colors.sepia },
+  founderText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
 
   actionRow: { flexDirection: 'row', gap: 8, paddingBottom: 12, paddingLeft: 42 },
   memberAction: {
     flexDirection: 'row', alignItems: 'center', gap: 6, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
     borderRadius: 7, paddingVertical: 7, paddingHorizontal: 11,
   },
-  memberActionBan: { borderColor: 'rgba(168,80,63,0.4)' },
-  memberActionText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1, color: colors.fog },
+  memberActionBan: { borderColor: colors.crimsonBorder },
+  memberActionText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1, color: colors.fog, includeFontPadding: false },
 
   footer: { marginTop: 28, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.ash, paddingTop: 20 },
   leaveBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', padding: 14, gap: 10 },
-  leaveText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2, color: colors.sepia },
+  leaveText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 2, color: colors.sepia, includeFontPadding: false },
 });

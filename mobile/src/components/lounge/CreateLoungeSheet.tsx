@@ -111,14 +111,14 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
               <View style={s.sheetHandle} />
 
               <View style={s.sheetHeaderWrap}>
-                <Text style={s.sheetEyebrow}>[ SUBMIT DESK LEDGER ]</Text>
-                <Text style={s.sheetTitle}>Establish Parameter</Text>
+                <Text style={s.sheetEyebrow}>✦ THE HOUSE LEDGER</Text>
+                <Text style={s.sheetTitle}>Establish a Salon</Text>
               </View>
             </View>
           </GestureDetector>
 
           <View style={s.field}>
-            <Text style={s.fieldLabel}>LOUNGE NAME</Text>
+            <Text style={s.fieldLabel}>SALON NAME</Text>
             <TextInput
               style={s.fieldInput}
               placeholder="e.g., The Noir Corner..."
@@ -176,18 +176,18 @@ export function CreateLoungeSheet({ visible, onClose }: { visible: boolean; onCl
 
           <View style={s.sheetActions}>
             <PressableScale style={s.sheetBtnGhost} onPress={onClose} disabled={creating} haptic="selection" accessibilityLabel="Cancel">
-              <Text style={s.sheetBtnGhostText} numberOfLines={1}>[ ABORT ]</Text>
+              <Text style={s.sheetBtnGhostText} numberOfLines={1}>[ CANCEL ]</Text>
             </PressableScale>
             <PressableScale
               style={[s.sheetBtnPrimary, (!name.trim() || creating) && s.sheetBtnDisabled]}
               onPress={handleCreate}
               disabled={!name.trim() || creating}
               haptic="medium"
-              accessibilityLabel="Create lounge"
+              accessibilityLabel="Establish salon"
             >
               {creating
                 ? <ActivityIndicator size="small" color={colors.ink} />
-                : <Text style={s.sheetBtnPrimaryText} numberOfLines={1}>[ INITIATE ]</Text>
+                : <Text style={s.sheetBtnPrimaryText} numberOfLines={1}>[ ESTABLISH ]</Text>
               }
             </PressableScale>
           </View>
@@ -210,9 +210,9 @@ const s = StyleSheet.create({
     borderTopLeftRadius: 4,
     borderTopRightRadius: 4,
     padding: 24,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderBottomWidth: 0,
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: colors.sepiaBorder,
     ...effects.shadowSurface,
     elevation: 20,
   },
@@ -220,18 +220,18 @@ const s = StyleSheet.create({
     width: 48,
     height: 4,
     borderRadius: 2,
-    backgroundColor: 'rgba(139,105,20,0.2)',
+    backgroundColor: 'rgba(184,137,26,0.2)',
     alignSelf: 'center',
     marginBottom: 24,
   },
   sheetHeaderWrap: { marginBottom: 28 },
   sheetEyebrow: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
+    fontFamily: fonts.sub,
     fontSize: 8,
-    letterSpacing: 4,
-    color: colors.fog,
+    letterSpacing: 3,
+    color: colors.sepia,
     marginBottom: 8,
+    includeFontPadding: false,
   },
   sheetTitle: {
     fontFamily: fonts.display,
@@ -241,22 +241,20 @@ const s = StyleSheet.create({
   },
   field: { marginBottom: 22 },
   fieldLabel: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 9,
-    letterSpacing: 3,
+    fontFamily: fonts.sub,
+    fontSize: 8,
+    letterSpacing: 2.5,
     color: colors.sepia,
     marginBottom: 8,
+    includeFontPadding: false,
   },
   fieldInput: {
     borderWidth: 1,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderColor: colors.sepiaBorder,
     backgroundColor: 'rgba(255,255,255,0.02)',
     paddingHorizontal: 16,
     paddingVertical: 16,
-    fontFamily: fonts.mono,
-    fontWeight: '700',
+    fontFamily: fonts.body,
     fontSize: 14,
     color: colors.parchment,
     borderRadius: 2,
@@ -266,12 +264,13 @@ const s = StyleSheet.create({
     textAlignVertical: 'top',
   },
   fieldCharCount: {
-    fontFamily: fonts.ui,
-    fontSize: 8,
+    fontFamily: fonts.sub,
+    fontSize: 7,
     color: colors.fog,
-    opacity: 0.3,
+    opacity: 0.35,
     textAlign: 'right',
     marginTop: 4,
+    includeFontPadding: false,
   },
   toggleRow: {
     flexDirection: 'row',
@@ -287,10 +286,11 @@ const s = StyleSheet.create({
     marginBottom: 4,
   },
   toggleLabel: {
-    fontFamily: fonts.uiMedium,
-    fontSize: 10,
-    letterSpacing: 1,
+    fontFamily: fonts.sub,
+    fontSize: 9,
+    letterSpacing: 1.5,
     color: colors.parchment,
+    includeFontPadding: false,
   },
   toggleDesc: {
     fontFamily: fonts.bodyItalic,
@@ -307,16 +307,15 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 2,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
-    borderColor: 'rgba(139,105,20,0.3)',
+    borderWidth: 1,
+    borderColor: colors.sepiaBorder,
   },
   sheetBtnGhostText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 10,
-    letterSpacing: 3,
+    fontFamily: fonts.sub,
+    fontSize: 9,
+    letterSpacing: 2.5,
     color: colors.parchment,
+    includeFontPadding: false,
   },
   sheetBtnPrimary: {
     flex: 1,
@@ -328,11 +327,11 @@ const s = StyleSheet.create({
     ...effects.shadowSurface,
   },
   sheetBtnPrimaryText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
-    fontSize: 10,
-    letterSpacing: 3,
+    fontFamily: fonts.sub,
+    fontSize: 9,
+    letterSpacing: 2.5,
     color: colors.ink,
+    includeFontPadding: false,
   },
   sheetBtnDisabled: { opacity: 0.35 },
 });

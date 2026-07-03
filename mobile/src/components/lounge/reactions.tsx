@@ -7,15 +7,15 @@ interface IconProps { size?: number; color?: string; strokeWidth?: number }
 
 /**
  * The curated, on-theme reaction set for the Lounge. Praise reads in sepia;
- * the single critique (Panned) reads in a muted terracotta so it's clearly a
- * dissent without being aggressive. No emoji, no slang — it matches the soul.
+ * the single critique (Panned) wears the house crimson — a clear dissent
+ * in the Society's own red. No emoji, no slang — it matches the soul.
  */
 export const REACTION_META: Record<LoungeReaction, { Icon: ComponentType<IconProps>; label: string; tint: string }> = {
   bravo: { Icon: Star, label: 'BRAVO', tint: colors.sepia },
   adored: { Icon: Heart, label: 'ADORED', tint: colors.sepia },
   riveting: { Icon: Flame, label: 'RIVETING', tint: colors.sepia },
   quoted: { Icon: Quote, label: 'QUOTED', tint: colors.sepia },
-  panned: { Icon: ThumbsDown, label: 'PANNED', tint: '#A8503F' },
+  panned: { Icon: ThumbsDown, label: 'PANNED', tint: colors.crimson },
 };
 
 export const REACTION_ORDER = LOUNGE_REACTIONS;

@@ -12,7 +12,7 @@ import Animated, { SlideInDown, SlideOutDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const AnimatedView = Animated.createAnimatedComponent(View);
-const BLOOD = '#A8503F';
+const BLOOD = colors.crimson;
 
 interface Props {
   visible: boolean;
@@ -121,9 +121,9 @@ const s = StyleSheet.create({
     overflow: 'hidden', borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
   avatarImg: { width: '100%', height: '100%' },
-  name: { flex: 1, fontFamily: fonts.uiMedium, fontSize: 12, letterSpacing: 1, color: colors.bone },
+  name: { flex: 1, fontFamily: fonts.sub, fontSize: 11, letterSpacing: 1, color: colors.bone, includeFontPadding: false },
   btn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, borderRadius: 8 },
-  declineBtn: { width: 38, height: 34, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(168,80,63,0.4)' },
+  declineBtn: { width: 38, height: 34, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.crimsonBorder },
   admitBtn: { backgroundColor: colors.sepia, paddingHorizontal: 14, height: 34 },
-  admitText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 1.5, color: colors.ink },
+  admitText: { fontFamily: fonts.sub, fontSize: 9.5, letterSpacing: 1.5, color: colors.ink, includeFontPadding: false },
 });

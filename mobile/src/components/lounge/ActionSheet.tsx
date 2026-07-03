@@ -141,7 +141,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
                 <Text style={s.actionBtnText}>REPORT MESSAGE</Text>
               </PressableScale>
               <PressableScale style={[s.actionBtn, s.actionBtnLast]} onPress={() => { onBlock?.(internalMsg.user_id); onClose(); }} accessibilityRole="button">
-                <Ban size={18} color={colors.bloodReel} strokeWidth={1.5} />
+                <Ban size={18} color={colors.crimson} strokeWidth={1.5} />
                 <Text style={[s.actionBtnText, s.actionBtnDanger]}>BLOCK @{internalMsg.username?.toUpperCase()}</Text>
               </PressableScale>
             </>
@@ -161,7 +161,7 @@ function ActionSheet({ visible, msg, isSelf, canReact, currentReactions, onClose
               }}
               accessibilityRole="button"
             >
-              <MinusCircle size={18} color={colors.bloodReel} strokeWidth={1.5} />
+              <MinusCircle size={18} color={colors.crimson} strokeWidth={1.5} />
               <Text style={[s.actionBtnText, s.actionBtnDanger]}>WITHDRAW DISPATCH</Text>
             </PressableScale>
           )}
@@ -188,7 +188,7 @@ const r = StyleSheet.create({
     borderWidth: StyleSheet.hairlineWidth, borderColor: 'transparent',
   },
   pickIconMine: { backgroundColor: 'rgba(184,137,26,0.12)', borderColor: 'rgba(184,137,26,0.5)' },
-  pickLabel: { fontFamily: fonts.uiMedium, fontSize: 7.5, letterSpacing: 0.5, color: colors.fog },
+  pickLabel: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 0.5, color: colors.fog, includeFontPadding: false },
 });
 
 export { ActionSheet };

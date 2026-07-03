@@ -1,12 +1,18 @@
+/**
+ * LoungeScreen — THE CORRIDOR.
+ * ─────────────────────────────────────────────
+ * The hallway of salon doors: your salons lit with honest seals,
+ * the directory of doors down the hall. Archivist+ territory —
+ * everyone else meets the LoungeGate's velvet rope.
+ */
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import {
   View, Text, ScrollView, TextInput,
   RefreshControl, ActivityIndicator, AppState,
 } from 'react-native';
 import Animated, {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  FadeInDown, FadeIn, FadeInUp,
-  useSharedValue, useAnimatedStyle, withTiming, withRepeat, Easing, cancelAnimation, useAnimatedProps, useAnimatedScrollHandler,
+  FadeIn,
+  useSharedValue, withTiming, useAnimatedProps, useAnimatedStyle, useAnimatedScrollHandler,
 } from 'react-native-reanimated';
 import { Search, Plus, Globe, X } from 'lucide-react-native';
 import { MasterLogo } from '@/src/components/MasterLogo';
@@ -18,11 +24,9 @@ import { isArchivistPlusTier } from '@/src/utils/tier';
 import { colors } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import FrozenTab from '@/src/components/layout/FrozenTab';
-// Import deleted since it's replaced by CinematicFlashList below
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // ── Extracted components ──
-import { PulseContext } from '@/src/components/lounge/PulseContext';
 import { LoungeGate } from '@/src/components/lounge/LoungeGate';
 import { CreateLoungeSheet } from '@/src/components/lounge/CreateLoungeSheet';
 import { JoinedLoungeCard } from '@/src/components/lounge/JoinedLoungeCard';
@@ -35,8 +39,6 @@ import { CinematicFlashList } from '@/src/components/layout/CinematicFlashList';
 
 // Module-scoped: prevents remount on every render cycle
 const AnimatedSearchIcon = Animated.createAnimatedComponent(Search);
-
-
 
 // ════════════════════════════════════════════════════════════
 // MAIN LOUNGE SCREEN
@@ -54,19 +56,15 @@ export default function LoungeScreen() {
   const isArchivist = isArchivistPlusTier(user);
   const isPollingRef = useRef(false);
 
-  // Nitrate Noir Search Activity State
+  // The search ember — glows brass while a query burns.
   const searchEmberOpacity = useSharedValue(0.5);
   useEffect(() => {
-    if (searchQuery.length > 0) {
-      searchEmberOpacity.value = withTiming(1, { duration: 300 });
-    } else {
-      searchEmberOpacity.value = withTiming(0.5, { duration: 300 });
-    }
+    searchEmberOpacity.value = withTiming(searchQuery.length > 0 ? 1 : 0.5, { duration: 300 });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery]);
 
   const animatedSearchProps = useAnimatedProps(() => ({
-    color: searchQuery.length > 0 ? colors.bloodReel : colors.fog,
+    color: searchQuery.length > 0 ? colors.sepia : colors.fog,
   }));
   const animatedSearchStyle = useAnimatedStyle(() => ({
     opacity: searchEmberOpacity.value,
@@ -127,10 +125,7 @@ export default function LoungeScreen() {
     };
   }, [lounges, searchQuery]);
 
-  // Single shared pulse animation for all cards
-  const sharedPulse = useSharedValue(0.4);
   const isScrolling = useSharedValue(false);
-
   const scrollY = useSharedValue(0);
   const scrollHeight = useSharedValue(0);
   const viewHeight = useSharedValue(0);
@@ -151,7 +146,7 @@ export default function LoungeScreen() {
     onBeginDrag: () => {
       isScrolling.value = true;
     },
-    onEndDrag: (event) => {
+    onEndDrag: () => {
       isScrolling.value = false;
     },
     onMomentumBegin: () => {
@@ -161,17 +156,6 @@ export default function LoungeScreen() {
       isScrolling.value = false;
     }
   });
-
-  useEffect(() => {
-    // Capped to 30 iterations (~42s) to prevent permanent UI-thread timer
-    sharedPulse.value = withRepeat(
-      withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.ease) }),
-      30,
-      true
-    );
-    return () => cancelAnimation(sharedPulse);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Memoized renderItem for FlashList
   const renderPublicCard = useCallback(({ item, index: i }: { item: LoungeRoom; index: number }) => (
@@ -184,57 +168,48 @@ export default function LoungeScreen() {
 
   return (
     <FrozenTab>
-    <PulseContext.Provider value={{ pulse: sharedPulse, isScrolling }}>
     <View style={s.container}>
-      {/* ── Cinematic Header ── */}
+      {/* ── Compact ceremonial header ── */}
       <Animated.View entering={FadeIn.duration(700)} style={[s.header, { paddingTop: Math.max(insets.top + 10, 44) }]}>
-        {/* Crest and title lockup */}
         <View style={s.headerCrestRow}>
           <View style={s.headerCrest}>
-            <MasterLogo size={30} />
+            <MasterLogo size={26} />
           </View>
         </View>
 
         <Text style={s.headerTitle}>The Lounge</Text>
-        <Text style={s.headerEst}>EST. 1924</Text>
-        <Text style={s.headerSubtitle}>Where cinema lives between the frames.</Text>
+        <Text style={s.headerMetaLine}>EST. 1924 · ARCHIVIST EXCLUSIVE</Text>
 
-        <View style={s.headerOrnRow}>
-          <View style={s.headerOrnLine} />
-          <Text style={s.headerExclusive}>ARCHIVIST EXCLUSIVE</Text>
-          <View style={s.headerOrnLine} />
-        </View>
-
-        {/* Search */}
-        <View style={s.searchWrap}>
-          <AnimatedSearchIcon size={14} animatedProps={animatedSearchProps} style={animatedSearchStyle} strokeWidth={1.5} />
-          <TextInput
-            style={s.searchInput}
-            placeholder="[ SEARCH THE SALONS ]"
-            placeholderTextColor={colors.fog}
-            value={searchQuery}
-            onChangeText={handleSearchQueryChange}
-            maxLength={120}
-            selectionColor={colors.sepia}
-            keyboardAppearance="dark"
-            accessibilityLabel="Search screening rooms"
-          />
-          {searchQuery.length > 0 && (
-            <PressableScale onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection">
-              <X size={14} color={colors.fog} strokeWidth={1.5} />
-            </PressableScale>
-          )}
-        </View>
-
-        {/* Actions */}
+        {/* Search + Establish — one working row */}
         <View style={s.actionsRow}>
+          <View style={s.searchWrap}>
+            <AnimatedSearchIcon size={14} animatedProps={animatedSearchProps} style={animatedSearchStyle} strokeWidth={1.5} />
+            <TextInput
+              style={s.searchInput}
+              placeholder="Search the salons…"
+              placeholderTextColor={colors.fog}
+              value={searchQuery}
+              onChangeText={handleSearchQueryChange}
+              maxLength={120}
+              selectionColor={colors.sepia}
+              keyboardAppearance="dark"
+              accessibilityLabel="Search salons"
+            />
+            {searchQuery.length > 0 && (
+              <PressableScale onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} haptic="selection">
+                <X size={14} color={colors.fog} strokeWidth={1.5} />
+              </PressableScale>
+            )}
+          </View>
           <PressableScale
             style={s.btnPrimary}
             onPress={() => setShowCreate(true)}
             haptic="medium"
+            accessibilityRole="button"
+            accessibilityLabel="Establish a salon"
           >
-            <Plus size={13} color={colors.ink} strokeWidth={2.5} />
-            <Text style={s.btnPrimaryText}>[ ESTABLISH A SALON ]</Text>
+            <Plus size={12} color={colors.ink} strokeWidth={2.5} />
+            <Text style={s.btnPrimaryText}>ESTABLISH</Text>
           </PressableScale>
         </View>
       </Animated.View>
@@ -243,7 +218,7 @@ export default function LoungeScreen() {
       <CinematicFlashList
         data={browsableLounges}
         keyExtractor={(item: any) => item.id}
-        estimatedItemSize={220}
+        estimatedItemSize={190}
         renderItem={renderPublicCard as any}
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
@@ -264,12 +239,12 @@ export default function LoungeScreen() {
               </View>
             )}
 
-            {/* My Screening Rooms */}
+            {/* Your salons */}
             {myLounges.length > 0 ? (
               <View style={s.section}>
                 <View style={s.sectionTitleRow}>
                   <View style={s.sectionTitleLine} />
-                  <Text style={s.sectionLabel}>YOUR SCREENING ROOMS</Text>
+                  <Text style={s.sectionLabel}>YOUR SALONS</Text>
                   <View style={s.sectionTitleLine} />
                 </View>
                 <ScrollView
@@ -286,8 +261,8 @@ export default function LoungeScreen() {
               !loading && !searchQuery && <EmptyMyLounges onEstablishPress={() => setShowCreate(true)} />
             )}
 
-            {/* Public Salons Header */}
-            <View style={[s.section, { paddingBottom: 0 }]}>
+            {/* Directory header */}
+            <View style={[s.section, { paddingBottom: 0, marginBottom: 0 }]}>
               <View style={s.sectionTitleRow}>
                 <View style={s.sectionTitleLine} />
                 <Text style={s.sectionLabel}>ALL SALONS</Text>
@@ -301,7 +276,7 @@ export default function LoungeScreen() {
           <View style={s.emptyPublic}>
             <Globe size={22} color={colors.fog} strokeWidth={1} />
             <Text style={s.emptyPublicText}>No open salons at this time.</Text>
-            <Text style={s.emptyPublicHint}>Be the first to open one.</Text>
+            <Text style={s.emptyPublicHint}>BE THE FIRST TO OPEN ONE</Text>
           </View>
         }
       />
@@ -309,7 +284,6 @@ export default function LoungeScreen() {
       {/* ── Create Sheet ── */}
       <CreateLoungeSheet visible={showCreate} onClose={() => setShowCreate(false)} />
       </View>
-      </PulseContext.Provider>
     </FrozenTab>
   );
 }
