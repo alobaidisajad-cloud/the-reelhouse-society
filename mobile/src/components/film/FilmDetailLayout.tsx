@@ -11,7 +11,6 @@ import { colors, fonts, SEPIA_HASH, metrics } from '@/src/theme/theme';
 import { tmdb, getYear, formatRuntime } from '@/src/lib/tmdb';
 import { formatDate } from '@/src/utils/timeAgo';
 import { stripHtml } from '@/src/utils/html';
-import { resolveTier } from '@/src/utils/tier';
 
 
 
@@ -74,7 +73,7 @@ const DirectorCard = memo(function DirectorCard({ director }: { director: { id: 
 export const FilmDetailLayout = memo(function FilmDetailLayout() {
   const {
     film, reviews, reviewsError, similarFilms, directors, cast, videos, trailer, score, providers, studios,
-    existingLog, isAuthenticated, isArchivist, currentUsername, user,
+    existingLog, isAuthenticated, isArchivist, user,
     validFilmId, loading, isError, isFocused,
     goBack, handleLog, handleRewatch, handleOpenTrailer,
     handleOpenShare, handleOpenLounge, handleReadFullLog, setTrailerModalVisible, setActiveTrailerKey
@@ -121,23 +120,6 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
   }, [bookmarkScale]);
 
 
-  const localReviewToPass = useMemo(() => {
-    if (!existingLog || !existingLog.review) return null;
-    return {
-      id: String(existingLog.id ?? 'local'),
-      username: currentUsername ?? 'you',
-      role: resolveTier(user),
-      rating: existingLog.rating ?? 0,
-      review: existingLog.review ?? '',
-      status: existingLog.status,
-      abandoned_reason: existingLog.abandonedReason ?? null,
-      created_at: existingLog.createdAt ?? existingLog.watchedDate ?? new Date().toISOString(),
-      user_id: user?.id ?? '',
-      isLocal: true,
-      pull_quote: existingLog.pullQuote ?? null,
-      drop_cap: existingLog.dropCap ?? false,
-    };
-  }, [existingLog, currentUsername, user]);
 
   if (loading && validFilmId) {
     return (
@@ -304,13 +286,13 @@ export const FilmDetailLayout = memo(function FilmDetailLayout() {
             {/* VIDEOS */}
             <FilmMediaCarousel videos={videos} onPlayVideo={handlePlayVideo} />
 
+            {/* SOCIETY CRITIQUES — community above commerce */}
+            <FilmReviews filmId={Number(film.id)} filmTitle={film.title} reviews={reviews} reviewsError={reviewsError} excludeUserId={user?.id ?? null} />
+
             {/* WATCH PROVIDERS */}
             <Animated.View style={s.section}>
               <WatchProviders providers={providers as any} />
             </Animated.View>
-
-            {/* REVIEWS */}
-            <FilmReviews filmId={Number(film.id)} filmTitle={film.title} reviews={reviews} reviewsError={reviewsError} localReview={localReviewToPass} />
 
             {/* DOSSIER */}
             <FilmDossier film={film} formatRuntime={formatRuntime} />
@@ -345,29 +327,25 @@ const s = StyleSheet.create({
   backdrop: { width: '100%', height: '100%' },
   sepiaTint: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(60,40,10,0.35)' },
   floatingBack: { position: 'absolute', top: 54, left: 16, zIndex: 100, width: 36, height: 36, borderRadius: 18, backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.sepiaBorder, shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8, alignItems: 'center', justifyContent: 'center' },
-  whisperNetwork: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 20, marginTop: -30, gap: 8 },
-  whisperDotWrapper: { width: 6, height: 6, justifyContent: 'center', alignItems: 'center' },
-  whisperDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia, zIndex: 2 },
-  whisperDotPulse: { position: 'absolute', width: 12, height: 12, borderRadius: 6, backgroundColor: colors.sepia },
-  whisperText: { fontFamily: fonts.uiBold, fontSize: 10, color: colors.fog, letterSpacing: 1.5, opacity: 0.8 },
   yourLogWrap: { marginHorizontal: 24, marginBottom: 20, padding: 16, backgroundColor: 'rgba(8,6,4,0.6)', borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2 },
   yourLogHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 },
   yourLogMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  yourLogMetaText: { fontFamily: fonts.uiMedium, fontSize: 10, color: colors.fog, letterSpacing: 0.5 },
+  yourLogMetaText: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 1, includeFontPadding: false },
   yourLogViewings: { flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: 'rgba(255,255,255,0.05)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
   yourLogReview: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.9 },
-  yourLogReadMore: { fontFamily: fonts.uiBold, fontSize: 10, color: colors.sepia, letterSpacing: 1, marginTop: 8 },
+  yourLogReadMore: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 1.5, marginTop: 8, includeFontPadding: false },
   section: { marginBottom: 30, paddingHorizontal: 24 },
   synopsisWrap: { backgroundColor: 'rgba(8,6,4,0.4)', padding: 16, borderWidth: 1, borderColor: 'rgba(215,205,190,0.05)', borderRadius: 2 },
-  synopsis: { fontFamily: fonts.ui, fontSize: 14, color: colors.bone, lineHeight: 24, letterSpacing: 0.2 },
+  // The house prose hand — Courier, like every review and dossier line.
+  synopsis: { fontFamily: fonts.body, fontSize: 13.5, color: colors.bone, lineHeight: 23, letterSpacing: 0.2 },
   directorCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.6)', padding: 12, borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', borderRadius: 2 },
   directorPhoto: { width: 44, height: 44, borderRadius: 22, marginRight: 14 },
   directorPhotoPlaceholder: { backgroundColor: 'rgba(184,137,26,0.1)', alignItems: 'center', justifyContent: 'center' },
-  directorPhotoInitial: { fontFamily: fonts.bodyBold, fontSize: 20, color: colors.sepia },
+  directorPhotoInitial: { fontFamily: fonts.display, fontSize: 18, color: colors.sepia },
   directorInfo: { flex: 1 },
-  directorLabel: { fontFamily: fonts.uiBold, fontSize: 10, color: colors.fog, letterSpacing: 1, marginBottom: 2 },
+  directorLabel: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 2, marginBottom: 3, includeFontPadding: false },
   directorName: { fontFamily: fonts.bodyBold, fontSize: 16, color: colors.bone, letterSpacing: -0.5 },
   backBtn: { backgroundColor: 'rgba(8,6,4,0.8)', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(215,205,190,0.1)', marginTop: 24 },
-  backBtnText: { fontFamily: fonts.uiBold, fontSize: 10, color: colors.bone, letterSpacing: 1 },
+  backBtnText: { fontFamily: fonts.sub, fontSize: 10, color: colors.bone, letterSpacing: 1.5, includeFontPadding: false },
   ctaIconRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
 });

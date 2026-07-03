@@ -1,3 +1,19 @@
+/**
+ * FilmReviews — SOCIETY CRITIQUES, the clippings on the film's dossier.
+ * ─────────────────────────────────────────────────────────────────────
+ * Compact excerpts of the Society's logs, filed under the film itself.
+ * The full index cards live in the archive (film-reviews) and on the
+ * Reel; here we show clippings — same ledger handwriting, smaller paper.
+ *
+ * Laws:
+ *   · the ledger row (portrait · handle · crest) is the Reel's own
+ *     UserAttributionRow — a log's byline is identical everywhere
+ *   · the member's own review lives in YOUR LOG above; it is filtered
+ *     out here so nothing on the page prints twice
+ *   · four clippings maximum inline; the archive door opens from five
+ *   · every clipping carries OPEN LOG → — the door is always visible,
+ *     even on a two-line review
+ */
 import React, { memo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -8,12 +24,14 @@ import PressableScale from '@/src/components/PressableScale';
 import { ReelRating } from '@/src/components/Decorative';
 import { SectionErrorBoundary } from '@/src/components/SectionErrorBoundary';
 import { FilmSectionHeader } from '@/src/components/film/FilmSectionHeader';
+import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { stripHtml } from '@/src/utils/html';
 import { extractDropCap } from '@/src/utils/text';
-import { getDisplayTier, isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
+import { timeAgo } from '@/src/utils/timeAgo';
+import { isAuteurPlusTier, isArchivistPlusTier } from '@/src/utils/tier';
 import SpoilerVeil from '@/src/components/SpoilerVeil';
 
-
+const INLINE_CLIPPINGS = 4;
 
 interface CommunityReview {
   id: string;
@@ -25,7 +43,7 @@ interface CommunityReview {
   user_id?: string | null;
   username?: string;
   role?: string;
-  isLocal?: boolean;
+  avatar_url?: string | null;
   pull_quote?: string | null;
   drop_cap?: boolean | null;
   is_spoiler?: boolean | null;
@@ -36,106 +54,128 @@ interface FilmReviewsProps {
   filmTitle: string;
   reviews: CommunityReview[];
   reviewsError?: any;
-  localReview?: CommunityReview | null;
+  /** The signed-in member's id — their review lives in YOUR LOG, not here. */
+  excludeUserId?: string | null;
 }
 
-export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, reviews, reviewsError, localReview }: FilmReviewsProps) {
+const ClippingCard = memo(function ClippingCard({ review }: { review: CommunityReview }) {
+  const nav = useRouter();
+  const strippedReview = stripHtml(review.review ?? '');
+  const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(strippedReview);
+
+  const isAuteur = isAuteurPlusTier(review.role);
+  const isArchivist = isArchivistPlusTier(review.role) && !isAuteur;
+
+  const handleOpenLog = React.useCallback(() => {
+    if (review.id) nav.push(`/log/${review.id}` as any);
+  }, [nav, review.id]);
+
+  const handleOpenProfile = React.useCallback(() => {
+    if (review.username) nav.push(`/user/${encodeURIComponent(review.username)}` as any);
+  }, [nav, review.username]);
+
+  return (
+    <View style={s.reviewCard}>
+      <Text style={s.reviewQuote}>&ldquo;</Text>
+
+      {/* The ledger row — the Reel's own handwriting */}
+      <UserAttributionRow
+        username={review.username ?? 'anonymous'}
+        avatarUrl={review.avatar_url}
+        role={review.role}
+        timeAgo={timeAgo(review.created_at)}
+        onUserPress={handleOpenProfile}
+      />
+
+      {/* The verdict line */}
+      <View style={s.verdictRow}>
+        {review.status === 'abandoned' ? (
+          <View style={s.abandonedBadge}>
+            <XCircle size={9} color={colors.crimson} strokeWidth={2} />
+            <Text style={s.abandonedText} numberOfLines={1}>
+              ABANDONED{review.abandoned_reason ? ` — ${review.abandoned_reason.toUpperCase()}` : ''}
+            </Text>
+          </View>
+        ) : review.rating > 0 ? (
+          <ReelRating rating={review.rating} size={12} />
+        ) : null}
+      </View>
+
+      <PressableScale onPress={handleOpenLog} pressedScale={0.99} accessibilityLabel={`Open the full log by ${review.username ?? 'anonymous'}`}>
+        {/* COMP-SPOILER-1: veil flagged critiques. */}
+        <SpoilerVeil isSpoiler={review.is_spoiler} revealKey={review.id}>
+          {review.pull_quote && (
+            <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isArchivist && s.pullQuoteWrapPremium]}>
+              <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur]}>
+                « {review.pull_quote} »
+              </Text>
+            </View>
+          )}
+          {strippedReview ? (
+            review.drop_cap ? (
+              <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
+                <Text style={s.dropCapLetter}>{dropCapFirst}</Text>
+                <Text style={[s.reviewText, { flex: 1, marginTop: 4 }]} numberOfLines={7} ellipsizeMode="tail">
+                  {dropCapRest}
+                </Text>
+              </View>
+            ) : (
+              <Text style={s.reviewText} numberOfLines={7} ellipsizeMode="tail">
+                {strippedReview}
+              </Text>
+            )
+          ) : null}
+          {/* The door is always visible — even a two-line review opens a room. */}
+          <View style={s.cardFooter}>
+            {strippedReview.length > 250 ? (
+              <Text style={s.readFullText}>READ FULL CRITIQUE →</Text>
+            ) : <View />}
+            <Text style={s.openLogText}>OPEN LOG →</Text>
+          </View>
+        </SpoilerVeil>
+      </PressableScale>
+    </View>
+  );
+});
+
+export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, reviews, reviewsError, excludeUserId }: FilmReviewsProps) {
   if (reviewsError) {
     throw reviewsError;
   }
-  
+
   const nav = useRouter();
 
-  const mergedReviews = React.useMemo(() => {
-    if (!localReview) return reviews;
-    const withoutLocal = reviews.filter(r => r.id !== localReview.id);
-    return [{ ...localReview, isLocal: true }, ...withoutLocal];
-  }, [reviews, localReview]);
+  // YOUR LOG owns the member's own critique — nothing prints twice.
+  const communityReviews = React.useMemo(() => {
+    if (!excludeUserId) return reviews;
+    return reviews.filter(r => r.user_id !== excludeUserId);
+  }, [reviews, excludeUserId]);
+
+  const clippings = communityReviews.slice(0, INLINE_CLIPPINGS);
+  const hasMore = communityReviews.length > INLINE_CLIPPINGS;
 
   return (
     <SectionErrorBoundary fallbackMessage="Community critiques could not be loaded.">
       <Animated.View style={s.section}>
         <FilmSectionHeader label="SOCIETY CRITIQUES" />
-        
-        {(() => {
-          if (mergedReviews.length === 0) return (
-            <View style={s.emptyReviewBox}>
-              <Text style={s.emptyReviewTitle}>The projection box awaits.</Text>
-              <Text style={s.emptyReviewBody}>No transmissions yet. Log this film to be the first voice in the archive.</Text>
-            </View>
-          );
-          
-          return mergedReviews.map((r, i) => {
-            const tierLabel = r.isLocal ? 'YOUR REVIEW' : getDisplayTier(r.role);
-            const strippedReview = stripHtml(r.review ?? '');
-            const { first: dropCapFirst, rest: dropCapRest } = extractDropCap(strippedReview);
-            
-            const isAuteur = isAuteurPlusTier(r.role);
-            const isArchivist = isArchivistPlusTier(r.role) && !isAuteur;
 
-            return (
-              <View key={r.id || i} style={[s.reviewCard, r.isLocal && s.reviewCardLocal]}>
-                <Text style={s.reviewQuote}>&ldquo;</Text>
-                <View style={s.reviewHeader}>
-                  <View style={s.reviewAuthorWrap}>
-                    <PressableScale onPress={() => !r.isLocal && r.username && nav.push(`/user/${encodeURIComponent(r.username)}`)} disabled={r.isLocal} pressedScale={0.97} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} accessibilityLabel={`View profile of ${r.username ?? 'anonymous'}`}>
-                      <Text style={s.reviewAuthor} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>@{r.username ?? 'anonymous'}</Text>
-                    </PressableScale>
-                    <Text style={s.reviewTier} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{tierLabel}</Text>
-                  </View>
-                  {r.status === 'abandoned' ? (
-                    <View style={s.abandonedBadge}>
-                      <XCircle size={8} color={colors.bloodReel} strokeWidth={2} />
-                      <Text style={s.abandonedText}>
-                        ABANDONED{r.abandoned_reason ? ` — ${r.abandoned_reason.toUpperCase()}` : ''}
-                      </Text>
-                    </View>
-                  ) : r.rating > 0 ? (
-                    <ReelRating rating={r.rating} size={12} />
-                  ) : null}
-                </View>
-                <PressableScale onPress={() => { if (r.id && !r.isLocal && r.id !== 'local') nav.push(`/log/${r.id}`); }} disabled={r.isLocal || r.id === 'local'} pressedScale={0.99} accessibilityLabel={`Read full review by ${r.username ?? 'anonymous'}`}>
-                  {/* COMP-SPOILER-1: veil flagged critiques; the author always sees their own. */}
-                  <SpoilerVeil isSpoiler={r.is_spoiler} bypass={r.isLocal} revealKey={r.id}>
-                    {r.pull_quote && (
-                      <View style={[s.pullQuoteWrap, isAuteur && s.pullQuoteWrapAuteur, isArchivist && s.pullQuoteWrapPremium]}>
-                        <Text style={[s.pullQuote, isAuteur && s.pullQuoteAuteur, isArchivist && s.pullQuotePremium]}>
-                          « {r.pull_quote} »
-                        </Text>
-                      </View>
-                    )}
-                    {strippedReview ? (
-                      r.drop_cap ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'flex-start' }}>
-                          <Text style={s.dropCapLetter}>{dropCapFirst}</Text>
-                          <Text style={[s.reviewText, { flex: 1, marginTop: 4 }]} numberOfLines={7} ellipsizeMode="tail">
-                            {dropCapRest}
-                          </Text>
-                        </View>
-                      ) : (
-                        <Text style={s.reviewText} numberOfLines={7} ellipsizeMode="tail">
-                          {strippedReview}
-                        </Text>
-                      )
-                    ) : null}
-                    {strippedReview.length > 250 && (
-                      <Text style={s.yourLogReadMore}>READ FULL CRITIQUE →</Text>
-                    )}
-                  </SpoilerVeil>
-                </PressableScale>
-              </View>
-            );
-          });
-        })()}
+        {clippings.length === 0 ? (
+          <View style={s.emptyReviewBox}>
+            <Text style={s.emptyReviewTitle}>The projection box awaits.</Text>
+            <Text style={s.emptyReviewBody}>No transmissions yet. Log this film to be the first voice in the archive.</Text>
+          </View>
+        ) : (
+          clippings.map((r) => <ClippingCard key={r.id} review={r} />)
+        )}
 
-        {reviews.length >= 10 && (
-          <PressableScale 
-            onPress={() => nav.push(`/film-reviews/${filmId}?title=${encodeURIComponent(filmTitle || 'Archive')}`)}
+        {hasMore && (
+          <PressableScale
+            onPress={() => nav.push(`/film-reviews/${filmId}?title=${encodeURIComponent(filmTitle || 'Archive')}` as any)}
             style={s.readAllBtn}
             pressedScale={0.97} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-            accessibilityLabel="Read all reviews"
+            accessibilityLabel="Read all logs"
           >
-            <Text style={s.readAllText}>READ ALL LOGS →</Text>
+            <Text style={s.readAllText}>READ ALL {communityReviews.length} LOGS →</Text>
           </PressableScale>
         )}
       </Animated.View>
@@ -145,40 +185,40 @@ export const FilmReviews = memo(function FilmReviews({ filmId, filmTitle, review
 
 const s = StyleSheet.create({
   section: { paddingHorizontal: 20, marginBottom: 24, zIndex: 2 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
-  sectionTitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)' },
 
   reviewCard: {
-    backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
+    backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 4, padding: 16, marginTop: 10,
     borderLeftWidth: 3, borderLeftColor: 'rgba(184,137,26,0.4)',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
     position: 'relative', overflow: 'hidden',
   },
-  reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   reviewQuote: {
-    position: 'absolute', top: -4, left: 10, fontSize: 60,
-    fontFamily: fonts.display, color: colors.sepia, opacity: 0.25,
+    position: 'absolute', bottom: -22, right: 10, fontSize: 60,
+    fontFamily: fonts.display, color: colors.sepia, opacity: 0.12,
   },
-  reviewAuthorWrap: { flexShrink: 1, paddingRight: 8 },
-  reviewAuthor: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.sepia },
-  reviewTier: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 0.8, color: colors.fog, marginTop: 2 },
+  verdictRow: {
+    flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center',
+    marginTop: 8, marginBottom: 6, minHeight: 14,
+  },
   reviewText: { fontFamily: fonts.bodyItalic, fontSize: 13, color: colors.bone, lineHeight: 20, opacity: 0.9 },
-  reviewCardLocal: { borderLeftColor: colors.sepia, borderLeftWidth: 2 },
-  
-  pullQuoteWrap: { marginTop: 6, marginBottom: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.4)', paddingVertical: 2 },
-  pullQuoteWrapAuteur: { borderLeftColor: colors.bloodReel, backgroundColor: 'rgba(125,31,31,0.05)', paddingVertical: 6, borderRadius: 2 },
-  pullQuoteWrapPremium: { borderLeftColor: colors.sepia, backgroundColor: 'rgba(184,137,26,0.05)', paddingVertical: 6, borderRadius: 2 },
+
+  pullQuoteWrap: { marginTop: 2, marginBottom: 8, paddingLeft: 12, borderLeftWidth: 2, borderLeftColor: 'rgba(184,137,26,0.4)', paddingVertical: 2 },
+  pullQuoteWrapAuteur: { borderLeftColor: colors.crimson, backgroundColor: colors.crimsonFaint, paddingVertical: 6, borderRadius: 2 },
+  pullQuoteWrapPremium: { borderLeftColor: colors.sepia, backgroundColor: colors.sepiaSubtle, paddingVertical: 6, borderRadius: 2 },
   pullQuote: { fontFamily: fonts.display, fontSize: 15, color: colors.sepia, lineHeight: 22 },
-  pullQuoteAuteur: { color: colors.bloodReel },
-  pullQuotePremium: { color: colors.sepia },
+  pullQuoteAuteur: { color: colors.crimson },
   dropCapLetter: { fontFamily: fonts.display, fontSize: 42, color: colors.sepia, marginRight: 6, marginTop: -4, lineHeight: 42 },
 
-  yourLogReadMore: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.sepia, marginTop: 4 },
+  cardFooter: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    marginTop: 8,
+  },
+  readFullText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.sepia, includeFontPadding: false },
+  openLogText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, opacity: 0.8, includeFontPadding: false },
 
   emptyReviewBox: {
-    padding: 24, borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
+    padding: 24, borderWidth: 1, borderColor: colors.sepiaBorder,
     borderRadius: 2, alignItems: 'center', backgroundColor: 'rgba(8,6,4,0.98)',
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 4,
   },
@@ -188,18 +228,20 @@ const s = StyleSheet.create({
   readAllBtn: {
     marginTop: 12, paddingVertical: 16, alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(8,6,4,0.98)', borderRadius: 2,
-    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
+    borderWidth: 1, borderColor: colors.sepiaBorder,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 10, elevation: 8,
   },
-  readAllText: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 3, color: colors.sepia },
+  readAllText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.sepia, includeFontPadding: false },
 
   abandonedBadge: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: 'rgba(125,31,31,0.1)',
+    backgroundColor: colors.crimsonFaint,
     paddingHorizontal: 6, paddingVertical: 2,
-    borderRadius: 2, borderWidth: 1, borderColor: 'rgba(125,31,31,0.3)',
+    borderRadius: 2, borderWidth: 1, borderColor: colors.crimsonBorder,
+    flexShrink: 1,
   },
   abandonedText: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.bloodReel,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.crimson,
+    includeFontPadding: false, flexShrink: 1,
   },
 });

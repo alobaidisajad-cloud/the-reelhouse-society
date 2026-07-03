@@ -87,5 +87,5 @@ const s = StyleSheet.create({
     castPhotoPlaceholder: { backgroundColor: 'rgba(8,6,4,0.98)', justifyContent: 'center', alignItems: 'center' },
     castPhotoPlaceholderText: { fontFamily: fonts.display, fontSize: 32, color: colors.fog },
     castName: { fontFamily: fonts.display, fontSize: 14, color: colors.parchment, marginBottom: 2 },
-    castRole: { fontFamily: fonts.ui, fontSize: 10, color: colors.sepia }
+    castRole: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 0.5 }
 });

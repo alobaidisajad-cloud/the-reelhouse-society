@@ -94,6 +94,7 @@ interface LogProfile {
   display_name?: string | null;
   avatar_url?: string | null;
   role?: string;
+  member_no?: number | null;
 }
 
 interface LogComment {
@@ -535,6 +536,7 @@ export default function LogDetailScreen() {
                username: profile?.username || 'unknown',
                role: profile?.role,
                status: log.status as "watched" | "rewatched" | "abandoned" | undefined,
+               memberNo: profile?.member_no,
             }} />
          </View>
       </View>

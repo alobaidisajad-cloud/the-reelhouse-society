@@ -107,10 +107,11 @@ const s = StyleSheet.create({
         gap: 6,
     },
     closeBtnText: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 10,
         letterSpacing: 1.5,
         color: colors.parchment,
+        includeFontPadding: false,
     },
     videoWrap: {
         width: '100%',
@@ -131,11 +132,12 @@ const s = StyleSheet.create({
         backgroundColor: 'transparent',
     },
     trailerLabel: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 8,
         letterSpacing: 3,
         color: colors.fog,
         marginTop: 12,
         textAlign: 'center',
+        includeFontPadding: false,
     },
 });

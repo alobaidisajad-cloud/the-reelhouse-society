@@ -16,7 +16,7 @@ import { withAbortSignal } from '../utils/withAbortSignal';
  * When adding new profile columns, update ONLY the constant that matches
  * the column's use case (auth bootstrap vs. profile display).
  */
-export const PROFILE_SELECT_COLUMNS = 'id, username, role, tier, is_founding, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at, is_banned' as const;
+export const PROFILE_SELECT_COLUMNS = 'id, username, role, tier, is_founding, bio, avatar_url, display_name, is_social_private, preferences, persona, created_at, is_banned, member_no' as const;
 
 /**
  * Service Layer: Profile & User Operations

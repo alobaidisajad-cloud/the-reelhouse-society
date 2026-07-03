@@ -95,7 +95,7 @@ const ActivityEditorialHeader = React.memo(({ backdropUri }: { backdropUri: stri
 });
 ActivityEditorialHeader.displayName = 'ActivityEditorialHeader';
 
-export const ActivityCard = React.memo(function ActivityCard({ item, index }: { item: FeedItem; index: number }) {
+export const ActivityCard = React.memo(function ActivityCard({ item, index, onFilmPress }: { item: FeedItem; index: number; onFilmPress?: () => void }) {
   const router = useRouter();
   const reducedMotion = useReducedMotion();
   const isArchivist = isArchivistPlusTier(item.role);
@@ -162,9 +162,12 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index }: { 
   });
 
   const handleFilmPress = useCallback(() => {
+    // Host screens already standing on the film (the archive page) override
+    // this so the poster never stacks a duplicate film page.
+    if (onFilmPress) return onFilmPress();
     DeviceEventEmitter.emit('reelhouse:projection-mark');
     (router.push as any)(`/film/${item.film_id}` as any);
-  }, [router, item.film_id]);
+  }, [router, item.film_id, onFilmPress]);
 
   const handleUserPress = useCallback(() => {
     (router.push as any)(`/user/${item.username}` as any);

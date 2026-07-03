@@ -101,6 +101,7 @@ export const FilmReviewSchema = z.object({
   user_id: z.string().nullable().optional(),
   username: z.string().default('unknown'),
   role: z.string().default('cinephile'),
+  avatar_url: z.string().nullable().optional(),
 });
 
 export type FilmReview = z.infer<typeof FilmReviewSchema>;

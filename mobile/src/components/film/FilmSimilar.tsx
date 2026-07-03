@@ -92,9 +92,6 @@ export const FilmSimilar = memo(function FilmSimilar({ similarFilms }: FilmSimil
 const s = StyleSheet.create({
   sectionFlush: { marginBottom: 24, zIndex: 2 },
   sectionPadded: { paddingHorizontal: 20 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
-  sectionTitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)' },
   horizontalList: { paddingHorizontal: 20 },
   
   similarListContainer: { height: 180 },

@@ -86,9 +86,6 @@ export const FilmMediaCarousel = memo(function FilmMediaCarousel({ videos, onPla
 const s = StyleSheet.create({
   sectionFlush: { marginBottom: 24, zIndex: 2 },
   sectionPadded: { paddingHorizontal: 20 },
-  sectionHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 14, gap: 12 },
-  sectionTitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 3, color: colors.sepia },
-  sectionLine: { flex: 1, height: 1, backgroundColor: 'rgba(184,137,26,0.3)' },
   horizontalList: { paddingHorizontal: 20 },
 });
 
@@ -99,6 +96,6 @@ const sub = StyleSheet.create({
   videoPlayOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 48, justifyContent: 'center', alignItems: 'center' },
   videoPlayCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(8,6,4,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)', justifyContent: 'center', alignItems: 'center' },
   videoLabelWrap: { marginTop: 8 },
-  videoType: { fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, marginBottom: 2 },
+  videoType: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia, marginBottom: 2, includeFontPadding: false },
   videoName: { fontFamily: fonts.body, fontSize: 11, color: colors.bone },
 });

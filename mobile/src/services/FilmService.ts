@@ -20,8 +20,8 @@ const FilmReviewRowSchema = z.object({
   is_spoiler: z.boolean().nullable().optional(),
   user_id: z.string().nullable().optional(),
   profiles: z.union([
-    z.object({ username: z.string(), role: z.string() }),
-    z.array(z.object({ username: z.string(), role: z.string() })),
+    z.object({ username: z.string(), role: z.string(), avatar_url: z.string().nullable().optional() }),
+    z.array(z.object({ username: z.string(), role: z.string(), avatar_url: z.string().nullable().optional() })),
   ]).nullable().optional(),
 });
 
@@ -58,7 +58,7 @@ export const FilmService = {
   async getFilmReviews(filmId: string, pageSize: number, cursor?: string, signal?: AbortSignal): Promise<FilmReviewsPage> {
     let query = supabase
       .from('logs')
-      .select('id, rating, review, status, abandoned_reason, created_at, pull_quote, drop_cap, is_spoiler, user_id, profiles!logs_user_id_fkey(username, role)')
+      .select('id, rating, review, status, abandoned_reason, created_at, pull_quote, drop_cap, is_spoiler, user_id, profiles!logs_user_id_fkey(username, role, avatar_url)')
       .eq('film_id', filmId)
       .not('review', 'is', null)
       .neq('review', '')
@@ -92,7 +92,7 @@ export const FilmService = {
         }
         const row = rowParsed.data;
         const profile = Array.isArray(row.profiles) ? row.profiles[0] : row.profiles;
-        const itemParsed = FilmReviewSchema.safeParse({ ...row, username: profile?.username, role: profile?.role });
+        const itemParsed = FilmReviewSchema.safeParse({ ...row, username: profile?.username, role: profile?.role, avatar_url: profile?.avatar_url ?? null });
         return itemParsed.success ? itemParsed.data : null;
       })
       .filter((x): x is NonNullable<typeof x> => x !== null);

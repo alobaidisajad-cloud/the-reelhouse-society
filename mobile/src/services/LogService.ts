@@ -105,7 +105,7 @@ export const LogService = {
 
     let query = supabase
       .from('logs')
-      .select(`${PUBLIC_LOG_COLUMNS}, profiles!logs_user_id_fkey(username, avatar_url, role, display_name)`)
+      .select(`${PUBLIC_LOG_COLUMNS}, profiles!logs_user_id_fkey(username, avatar_url, role, display_name, member_no)`)
       .eq('id', logId)
       .maybeSingle();
 

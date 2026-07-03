@@ -186,6 +186,7 @@ export default function FilmDetailScreen() {
           film={data.detail as any}
           log={existingLog as any}
           username={user?.username}
+          memberNo={user?.member_no}
         />
       )}
       {activeTrailerKey && (

@@ -170,7 +170,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center' 
   },
-  posterPlaceholderText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.ui, fontSize: 10, color: colors.fog, letterSpacing: 2 },
+  posterPlaceholderText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 10, color: colors.fog, letterSpacing: 2 },
   scanlines: {
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     borderRadius: 6, opacity: 0.04,
@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   loggedBadgeContent: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  loggedBadgeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 1.5, color: colors.ink }, // 10/10 D-01
+  loggedBadgeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.ink },
   infoBlock: { alignItems: 'center', paddingHorizontal: 8, width: '100%' },
   genreRow: { flexDirection: 'row', gap: 6, marginBottom: 12, flexWrap: 'wrap', justifyContent: 'center' },
   genreTag: {
@@ -193,7 +193,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.sepiaBorder, borderRadius: 2,
     backgroundColor: colors.surface,
   },
-  genreText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 2, color: colors.sepia },
+  genreText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.sepia },
   filmTitle: {
     includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.display, fontSize: 26, color: colors.parchment,
     textAlign: 'center', lineHeight: 32, marginBottom: 6,
@@ -204,7 +204,7 @@ const styles = StyleSheet.create({
   },
   metaStrip: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 },
   metaItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metaText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
+  metaText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.fog },
   metaDot: { fontSize: 8, color: colors.sepiaBorderStrong },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 10 },
   ratingText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.7 },
@@ -219,7 +219,7 @@ const sub = StyleSheet.create({
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 4, elevation: 4,
     marginBottom: 12, alignSelf: 'center',
   },
-  prestigeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.flicker },
+  prestigeText: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.flicker },
   obsBadge: { 
     flexDirection: 'row', alignItems: 'center', gap: 6, 
     paddingHorizontal: 10, paddingVertical: 4, 
@@ -227,6 +227,6 @@ const sub = StyleSheet.create({
     backgroundColor: colors.surface,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.5, shadowRadius: 3, elevation: 3, 
   },
-  obsScore: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.uiBold, fontSize: 14 },
-  obsLabel: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog },
+  obsScore: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 14 },
+  obsLabel: { includeFontPadding: false, textAlignVertical: 'center', fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog },
 });

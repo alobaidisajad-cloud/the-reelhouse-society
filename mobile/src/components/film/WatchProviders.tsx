@@ -152,20 +152,6 @@ const s = StyleSheet.create({
     marginVertical: 12,
     shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 10, elevation: 6,
   },
-  header: {
-    marginBottom: 16,
-  },
-  title: {
-    fontFamily: fonts.uiBold,
-    fontSize: 10,
-    letterSpacing: 2,
-    color: colors.bone,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
   emptyState: {
     padding: 24,
     alignItems: 'center',
@@ -191,11 +177,12 @@ const s = StyleSheet.create({
     marginBottom: 16,
   },
   sectionLabel: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 2,
     color: colors.fog,
     marginBottom: 10,
+    includeFontPadding: false,
   },
   grid: {
     flexDirection: 'row',
@@ -221,7 +208,7 @@ const s = StyleSheet.create({
     padding: 2,
   },
   logoFallbackText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 7,
     color: colors.fog,
     textAlign: 'center',
@@ -236,15 +223,17 @@ const s = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 7,
     letterSpacing: 1.5,
     color: colors.fog,
+    includeFontPadding: false,
   },
   footerLink: {
-    fontFamily: fonts.ui,
-    fontSize: 7,
+    fontFamily: fonts.sub,
+    fontSize: 8,
     letterSpacing: 1.5,
     color: colors.sepia,
+    includeFontPadding: false,
   },
 });

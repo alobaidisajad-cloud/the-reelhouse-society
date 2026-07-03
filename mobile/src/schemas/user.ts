@@ -66,6 +66,8 @@ export const UserSchema = z.object({
   following_count: z.number().optional(),
   is_social_private: z.boolean().optional(),
   created_at: z.string().optional(),
+  /** Real archive serial from the `member_no` DB sequence — null until migration data reaches this client. */
+  member_no: z.number().nullable().optional(),
   preferences: UserPreferencesSchema.optional(),
   is_banned: z.boolean().optional(),
   ban_reason: z.string().optional(),
