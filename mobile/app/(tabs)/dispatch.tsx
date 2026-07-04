@@ -28,7 +28,6 @@ import { isAuteurPlusTier } from '@/src/utils/tier';
 
 // Decomposed components
 import { ArticleReaderModal } from '@/src/components/dispatch/ArticleReaderModal';
-import { DailyFrame } from '@/src/components/dispatch/DailyFrame';
 import { DossierCard, WireItem } from '@/src/components/dispatch/DispatchCards';
 import { OrnamentalDivider, SectionHeader } from '@/src/components/dispatch/DispatchShared';
 import { NightlyTransmission } from '@/src/components/dispatch/NightlyTransmission';
@@ -198,16 +197,9 @@ export default function DispatchScreen() {
 
       <OrnamentalDivider />
 
-      {/* ── NIGHTLY TRANSMISSION ── */}
+      {/* ── THE FRONT PAGE (nightly transmission hero) ── */}
       <Animated.View entering={FadeInDown.duration(600).delay(200)}>
         <NightlyTransmission films={trending} />
-      </Animated.View>
-
-      <OrnamentalDivider />
-
-      {/* ── DAILY FRAME ── */}
-      <Animated.View entering={FadeInDown.duration(600).delay(300)}>
-        <DailyFrame films={trending} />
       </Animated.View>
 
       <OrnamentalDivider />
@@ -300,7 +292,7 @@ export default function DispatchScreen() {
 
       {/* Ambient warm glow at top */}
       <LinearGradient
-        colors={['rgba(139,105,20,0.06)', 'transparent']}
+        colors={['rgba(184,137,26,0.06)', 'transparent']}
         style={st.ambientGlow}
       />
 
@@ -329,12 +321,15 @@ export default function DispatchScreen() {
         renderItem={renderDossierItem as any}
         ListEmptyComponent={
           !loading ? (
-            <View style={st.emptyState}>
-              <FileText size={28} color={colors.sepia} strokeWidth={1} />
-              <Text style={st.emptyTitle}>The press room awaits its first dossier.</Text>
-              <Text style={st.emptySub}>
-                Auteur members can file original essays and cinematic critiques.
-              </Text>
+            /* Wrapped in the document frame so the gazette's side-rails never break. */
+            <View style={st.documentEmptyWrap}>
+              <View style={st.emptyState}>
+                <FileText size={28} color={colors.sepia} strokeWidth={1} />
+                <Text style={st.emptyTitle}>The press room awaits its first dossier.</Text>
+                <Text style={st.emptySub}>
+                  Auteur members can file original essays and cinematic critiques.
+                </Text>
+              </View>
             </View>
           ) : null
         }

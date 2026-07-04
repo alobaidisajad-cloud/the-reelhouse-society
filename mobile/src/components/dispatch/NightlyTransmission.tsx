@@ -43,17 +43,19 @@ export const NightlyTransmission = memo(function NightlyTransmission({ films }: 
   }, [film, day]);
 
   const scale = useSharedValue(1);
-  const blink = useSharedValue(0.2);
+  // Gentle-bound: a soft breath (0.55→1), not a harsh flicker — the live
+  // signal stays alive without ever feeling like an annoyance.
+  const blink = useSharedValue(0.55);
 
   useEffect(() => {
-    // 30-second continuous breathe
+    // 30-second continuous ken-burns breathe (a single transform).
     scale.value = withRepeat(
       withTiming(1.08, { duration: 30000, easing: Easing.inOut(Easing.sin) }),
       -1,
       true
     );
     blink.value = withRepeat(
-      withTiming(1, { duration: 800, easing: Easing.inOut(Easing.ease) }),
+      withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
       -1,
       true
     );

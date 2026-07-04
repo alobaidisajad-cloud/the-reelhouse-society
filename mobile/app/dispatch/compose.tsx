@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, ScrollView, Keyboard, InteractionManager, Alert, AppState, NativeSyntheticEvent, TextInputSelectionChangeEventData } from 'react-native';
 import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView';
 import { router, useLocalSearchParams, Stack } from 'expo-router';
 import { BlurView } from 'expo-blur';
@@ -12,12 +12,15 @@ import Animated, { useAnimatedStyle, useAnimatedKeyboard } from 'react-native-re
 
 import { useAuthStore } from '@/src/stores/auth';
 import { useDispatchStore } from '@/src/stores/content';
+import { storage } from '@/src/stores/mmkv-storage';
 import { isAuteurPlusTier } from '@/src/utils/tier';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { colors, fonts, spacing } from '@/src/theme/theme';
 import reelToast from '@/src/utils/reelToast';
 import PressableScale from '@/src/components/PressableScale';
 
+// A long essay must survive a background-kill. Drafts persist here, new-dossiers only.
+const DRAFT_KEY = 'reelhouse_dispatch_draft';
 
 export default function ComposeDossierScreen() {
     const { edit, initialTitle, initialContent } = useLocalSearchParams<{ edit?: string, initialTitle?: string, initialContent?: string }>();
@@ -35,7 +38,16 @@ export default function ComposeDossierScreen() {
     const [isPublishing, setIsPublishing] = useState(false);
     const [isPreview, setIsPreview] = useState(false);
 
+    // Live caret tracking — the toolbar wraps the selection AT the cursor.
+    const [selection, setSelection] = useState({ start: (initialContent || '').length, end: (initialContent || '').length });
+    // Drives the caret for exactly one render after a toolbar edit, then releases.
+    const [forcedSelection, setForcedSelection] = useState<{ start: number; end: number } | null>(null);
+
     const inputRef = useRef<TextInput>(null);
+
+    // Refs mirror state so the AppState flush reads the latest without re-subscribing.
+    const titleRef = useRef(title); titleRef.current = title;
+    const contentRef = useRef(content); contentRef.current = content;
 
     useEffect(() => {
         if (!canWrite) {
@@ -46,17 +58,76 @@ export default function ComposeDossierScreen() {
         }
     }, [canWrite]);
 
+    // ── Draft restore (new dossiers only; edit loads from the server) ──
+    useEffect(() => {
+        if (edit) return;
+        const raw = storage.getString(DRAFT_KEY);
+        if (raw) {
+            try {
+                const d = JSON.parse(raw);
+                if (d.title) setTitle(d.title);
+                if (d.content) {
+                    setContent(d.content);
+                    setSelection({ start: d.content.length, end: d.content.length });
+                }
+            } catch { /* corrupt draft — ignore */ }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // ── Draft auto-save (debounced) ──
+    const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    useEffect(() => {
+        if (edit) return;
+        if (saveTimer.current) clearTimeout(saveTimer.current);
+        saveTimer.current = setTimeout(() => {
+            if (title.trim() || content.trim()) {
+                storage.set(DRAFT_KEY, JSON.stringify({ title, content }));
+            } else {
+                storage.delete(DRAFT_KEY);
+            }
+        }, 1000);
+        return () => { if (saveTimer.current) clearTimeout(saveTimer.current); };
+    }, [title, content, edit]);
+
+    // ── Background flush — guarantees a long essay survives an immediate OS kill ──
+    useEffect(() => {
+        if (edit) return;
+        const sub = AppState.addEventListener('change', (state) => {
+            if (state !== 'active') {
+                const t = titleRef.current, c = contentRef.current;
+                if (t.trim() || c.trim()) {
+                    storage.set(DRAFT_KEY, JSON.stringify({ title: t, content: c }));
+                }
+            }
+        });
+        return () => sub.remove();
+    }, [edit]);
+
     const stats = useMemo(() => {
         const words = content.trim() ? content.trim().split(/\s+/).length : 0;
         const readMin = Math.max(1, Math.ceil(words / 200));
         return { words, readMin };
     }, [content]);
 
+    // Wrap the selection (or insert at the cursor) — never dumps at the document end.
     const insertFormatting = (before: string, after: string) => {
-        setContent(prev => `${prev}${before}${after}`);
-        // In a real advanced editor, we'd handle cursor position, but React Native TextInput selection handling is tricky.
-        // We just append for now to ensure stability.
+        const { start, end } = selection;
+        const selected = content.slice(start, end);
+        const next = content.slice(0, start) + before + selected + after + content.slice(end);
+        setContent(next);
+        // Selection present → caret after the wrap; empty → caret between the markers.
+        const caret = selected.length > 0
+            ? start + before.length + selected.length + after.length
+            : start + before.length;
+        setForcedSelection({ start: caret, end: caret });
         inputRef.current?.focus();
+    };
+
+    const handleSelectionChange = (e: NativeSyntheticEvent<TextInputSelectionChangeEventData>) => {
+        setSelection(e.nativeEvent.selection);
+        // Release programmatic control the render after a toolbar edit applied.
+        if (forcedSelection) setForcedSelection(null);
     };
 
     const handlePublish = async () => {
@@ -86,10 +157,11 @@ export default function ComposeDossierScreen() {
                     excerpt,
                     fullContent: content.trim(),
                 });
-                reelToast.success('Dossier published');
+                storage.delete(DRAFT_KEY);
+                reelToast.success('Dossier filed');
             }
             router.replace('/(tabs)/dispatch');
-         
+
         } catch (err) {
             reelToast.error('Transmission failed');
         } finally {
@@ -100,13 +172,16 @@ export default function ComposeDossierScreen() {
     return (
         <View style={styles.container}>
             <Stack.Screen options={{ headerShown: false, presentation: 'modal' }} />
-            
+
             <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
                 <PressableScale onPress={() => {
                     if (title.trim() || content.trim()) {
                         Alert.alert('Discard Draft?', 'Your unsaved dossier will be lost.', [
                             { text: 'Keep Writing', style: 'cancel' },
-                            { text: 'Discard', style: 'destructive', onPress: () => router.back() },
+                            { text: 'Discard', style: 'destructive', onPress: () => {
+                                if (!edit) storage.delete(DRAFT_KEY);
+                                router.back();
+                            } },
                         ]);
                     } else {
                         router.back();
@@ -115,7 +190,7 @@ export default function ComposeDossierScreen() {
                     <Text style={styles.cancelBtn} numberOfLines={1}>CANCEL</Text>
                 </PressableScale>
                 <Text style={styles.headerTitle} numberOfLines={1}>THE WRITING ROOM</Text>
-                <PressableScale 
+                <PressableScale
                     onPress={() => {
                         setIsPreview(!isPreview);
                     }}
@@ -150,7 +225,7 @@ export default function ComposeDossierScreen() {
                             onChangeText={setTitle}
                             maxLength={100}
                             cursorColor={colors.sepia}
-                            selectionColor="rgba(139,105,20,0.3)"
+                            selectionColor="rgba(184,137,26,0.3)"
                             keyboardAppearance="dark"
                             accessibilityLabel="Dossier headline"
                         />
@@ -161,10 +236,12 @@ export default function ComposeDossierScreen() {
                             placeholderTextColor={colors.ash}
                             value={content}
                             onChangeText={setContent}
+                            onSelectionChange={handleSelectionChange}
+                            selection={forcedSelection ?? undefined}
                             multiline
                             textAlignVertical="top"
                             cursorColor={colors.sepia}
-                            selectionColor="rgba(139,105,20,0.3)"
+                            selectionColor="rgba(184,137,26,0.3)"
                             keyboardAppearance="dark"
                             accessibilityLabel="Dossier content body"
                         />
@@ -198,13 +275,13 @@ export default function ComposeDossierScreen() {
                             <Text style={styles.statText} numberOfLines={1}>WORDS <Text style={styles.statVal}>{stats.words}</Text></Text>
                             <Text style={styles.statText} numberOfLines={1}>READ TIME <Text style={styles.statVal}>~{stats.readMin}m</Text></Text>
                         </View>
-                        <PressableScale 
+                        <PressableScale
                             style={[styles.publishBtn, (!title || !content || isPublishing) && styles.publishBtnDisabled]}
                             disabled={!title || !content || isPublishing}
                             onPress={handlePublish}
                             haptic="medium"
                         >
-                            <Text style={styles.publishBtnText} numberOfLines={1}>{isPublishing ? 'TRANSMITTING' : 'PUBLISH'}</Text>
+                            <Text style={styles.publishBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>{isPublishing ? 'FILING…' : (edit ? 'RE-FILE DOSSIER' : 'FILE THE DOSSIER')}</Text>
                         </PressableScale>
                     </BlurView>
                 </Animated.View>
@@ -225,38 +302,41 @@ const styles = StyleSheet.create({
         paddingBottom: 16,
         paddingHorizontal: 20,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(139,105,20,0.2)',
+        borderBottomColor: colors.sepiaBorder,
         backgroundColor: colors.ink,
     },
     cancelBtn: {
-        fontFamily: fonts.ui,
-        fontSize: 10,
+        fontFamily: fonts.sub,
+        fontSize: 9,
         color: colors.fog,
-        letterSpacing: 1,
+        letterSpacing: 1.5,
+        includeFontPadding: false,
     },
     headerTitle: {
-        fontFamily: fonts.uiBold,
-        fontSize: 10,
+        fontFamily: fonts.sub,
+        fontSize: 9,
         letterSpacing: 3,
         color: colors.sepia,
+        includeFontPadding: false,
     },
     previewBtn: {
-        fontFamily: fonts.uiBold,
-        fontSize: 10,
+        fontFamily: fonts.sub,
+        fontSize: 9,
         color: colors.parchment,
-        letterSpacing: 1,
+        letterSpacing: 1.5,
+        includeFontPadding: false,
     },
     workspace: {
         flex: 1,
     },
     titleInput: {
         fontFamily: fonts.sub,
-        fontSize: 32,
+        fontSize: 30,
         color: colors.parchment,
         padding: 24,
         paddingBottom: 12,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(139,105,20,0.1)',
+        borderBottomColor: 'rgba(184,137,26,0.1)',
     },
     contentInput: {
         fontFamily: fonts.body,
@@ -269,7 +349,7 @@ const styles = StyleSheet.create({
     },
     toolbar: {
         borderTopWidth: 1,
-        borderTopColor: 'rgba(139,105,20,0.2)',
+        borderTopColor: colors.sepiaBorder,
         backgroundColor: 'rgba(10,7,3,0.9)',
         paddingVertical: 8,
     },
@@ -279,7 +359,7 @@ const styles = StyleSheet.create({
     },
     toolBtn: {
         padding: 8,
-        backgroundColor: 'rgba(139,105,20,0.1)',
+        backgroundColor: 'rgba(184,137,26,0.1)',
         borderRadius: 4,
     },
     footer: {
@@ -290,17 +370,18 @@ const styles = StyleSheet.create({
         paddingTop: 16,
         paddingBottom: 40,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(139,105,20,0.2)',
+        borderTopColor: colors.sepiaBorder,
     },
     stats: {
         flex: 1,
     },
     statText: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 8,
         letterSpacing: 2,
         color: colors.fog,
         marginBottom: 4,
+        includeFontPadding: false,
     },
     statVal: {
         color: colors.sepia,
@@ -308,33 +389,36 @@ const styles = StyleSheet.create({
     publishBtn: {
         backgroundColor: colors.sepia,
         paddingVertical: 12,
-        paddingHorizontal: 24,
+        paddingHorizontal: 22,
         borderRadius: 4,
     },
     publishBtnDisabled: {
         backgroundColor: colors.ash,
     },
     publishBtnText: {
-        fontFamily: fonts.uiBold,
-        fontSize: 10,
+        fontFamily: fonts.sub,
+        fontSize: 9,
         letterSpacing: 2,
         color: colors.ink,
+        includeFontPadding: false,
     },
 
     // Preview
     previewEyebrow: {
-        fontFamily: fonts.ui,
-        fontSize: 10,
+        fontFamily: fonts.sub,
+        fontSize: 9,
         letterSpacing: 3,
         color: colors.sepia,
         marginBottom: 16,
         textAlign: 'center',
+        includeFontPadding: false,
     },
     previewTitle: {
-        fontFamily: fonts.sub,
-        fontSize: 32,
+        fontFamily: fonts.display,
+        fontSize: 30,
         color: colors.parchment,
         marginBottom: 32,
+        lineHeight: 36,
     },
     emptyPreview: {
         paddingVertical: 100,
@@ -371,7 +455,7 @@ const markdownStyles = {
         marginBottom: 10,
     },
     blockquote: {
-        backgroundColor: 'rgba(139,105,20,0.05)',
+        backgroundColor: 'rgba(184,137,26,0.05)',
         borderLeftWidth: 2,
         borderLeftColor: colors.sepia,
         paddingHorizontal: 16,
