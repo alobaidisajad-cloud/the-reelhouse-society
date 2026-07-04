@@ -1,4 +1,4 @@
- 
+
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Sparkles, Lock } from 'lucide-react-native';
@@ -49,28 +49,36 @@ export default function LogReviewBody({
            </View>
         </View>
       )}
-      
-      {review && (
-        <View style={s.reviewBodyWrap}>
-          {(() => {
-            const cleanReview = stripHTML(review);
-            if (!cleanReview) return null;
-            
-            const dropCapData = dropCap ? extractDropCap(cleanReview) : null;
-            
-            return (
-              <Text style={[s.review, dropCap && s.reviewDropCapReset]}>
-                {dropCap && dropCapData ? (
-                  <Text style={s.dropCapLetter}>{dropCapData.first}</Text>
-                ) : null}
-                <Text style={dropCap ? s.dropCapBodyLine : undefined}>
-                  {dropCap && dropCapData ? dropCapData.rest : cleanReview}
+
+      {review && (() => {
+        const cleanReview = stripHTML(review);
+        if (!cleanReview) return null;
+
+        // Set the essay as paragraphs — real rhythm at any length, drop cap on the first only.
+        const split = cleanReview.split(/\n{2,}/).map(p => p.trim()).filter(Boolean);
+        const paragraphs = split.length ? split : [cleanReview];
+        const dc = dropCap ? extractDropCap(paragraphs[0]) : null;
+
+        return (
+          <View style={s.reviewBodyWrap}>
+            {paragraphs.map((para, i) => {
+              const spaced = i < paragraphs.length - 1;
+              if (i === 0 && dc && dc.first) {
+                return (
+                  <Text key={i} style={[s.dropCapParagraph, spaced && s.reviewParagraphSpaced]}>
+                    <Text style={s.dropCapLetter}>{dc.first}</Text>{dc.rest}
+                  </Text>
+                );
+              }
+              return (
+                <Text key={i} style={[s.reviewParagraph, spaced && s.reviewParagraphSpaced]}>
+                  {para}
                 </Text>
-              </Text>
-            );
-          })()}
-        </View>
-      )}
+              );
+            })}
+          </View>
+        );
+      })()}
 
       </SpoilerVeil>
 

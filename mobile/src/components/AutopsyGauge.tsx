@@ -139,11 +139,12 @@ const s = StyleSheet.create({
         letterSpacing: 2,
     },
     confidential: {
-        fontFamily: fonts.body,
+        fontFamily: fonts.sub,
         fontSize: 9,
         letterSpacing: 3,
         color: colors.fog,
         textTransform: 'uppercase',
+        includeFontPadding: false,
     },
     gauges: {
         gap: 18,
@@ -160,10 +161,11 @@ const s = StyleSheet.create({
         marginBottom: 2,
     },
     gaugeLabel: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 10,
         letterSpacing: 2,
         color: colors.fog,
+        includeFontPadding: false,
     },
     gaugeValue: {
         fontFamily: fonts.display,

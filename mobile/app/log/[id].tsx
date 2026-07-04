@@ -32,7 +32,7 @@ import { colors } from '@/src/theme/theme';
 import { isNetworkError } from '@/src/utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
-import { getDisplayTier, isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
+import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
 import { ChevronLeft, Film as FilmIcon, MoreHorizontal, Share2, Sparkles } from 'lucide-react-native';
 import { captureRef } from 'react-native-view-shot';
 import { z } from 'zod';
@@ -101,6 +101,7 @@ interface LogComment {
   id: string;
   user_id: string;
   username: string;
+  avatar_url?: string | null;
   body: string;
   created_at: string;
 }
@@ -136,6 +137,7 @@ export default function LogDetailScreen() {
           created_at: c.created_at,
           user_id: c.user_id,
           username: (Array.isArray(c.profiles) ? (c.profiles[0] as any)?.username : (c.profiles as any)?.username) || 'anonymous',
+          avatar_url: (Array.isArray(c.profiles) ? (c.profiles[0] as any)?.avatar_url : (c.profiles as any)?.avatar_url) || null,
         }));
 
         const queue = getOfflineQueue();
@@ -149,6 +151,7 @@ export default function LogDetailScreen() {
                id: q.payload.id as string,
                user_id: q.payload.user_id as string,
                username: useAuthStore.getState().user?.username || 'anonymous',
+               avatar_url: useAuthStore.getState().user?.avatar_url || null,
                body: q.payload.body as string,
                created_at: new Date(q.timestamp).toISOString(),
            });
@@ -210,6 +213,7 @@ export default function LogDetailScreen() {
              id: q.payload.id as string,
              user_id: q.payload.user_id as string,
              username: useAuthStore.getState().user?.username || 'anonymous',
+             avatar_url: useAuthStore.getState().user?.avatar_url || null,
              body: q.payload.body as string,
              created_at: new Date(q.timestamp).toISOString(),
           }));
@@ -261,6 +265,8 @@ export default function LogDetailScreen() {
   const viewShotRef = useRef<View>(null);
   const critiqueInputRef = useRef<TextInput>(null);
   const scrollViewRef = useRef<any>(null);
+  // Absolute Y of the critiques section within the scroll content (padder height + in-card offset).
+  const critiquesSectionY = useRef(0);
 
   // Endorse
   const { hasEndorsed, toggleEndorse } = useInteractionStore();
@@ -298,6 +304,7 @@ export default function LogDetailScreen() {
       id: commentId,
       user_id: user?.id || '',
       username: user?.username || 'anonymous',
+      avatar_url: user?.avatar_url || null,
       body: commentBody,
       created_at: new Date().toISOString(),
     };
@@ -330,6 +337,7 @@ export default function LogDetailScreen() {
           id: data.id,
           user_id: data.user_id,
           username: (Array.isArray(data.profiles) ? (data.profiles[0] as any)?.username : (data.profiles as any)?.username) || 'anonymous',
+          avatar_url: (Array.isArray(data.profiles) ? (data.profiles[0] as any)?.avatar_url : (data.profiles as any)?.avatar_url) || null,
           body: data.body,
           created_at: data.created_at,
         };
@@ -465,7 +473,6 @@ export default function LogDetailScreen() {
 
   const isAuteur = isAuteurPlusTier(profile?.role);
   const isArchivist = isArchivistPlusTier(profile?.role);
-  const displayTier = getDisplayTier(profile?.role);
 
   const backdropPosterUri = effectivePosterPath ? tmdb.poster(effectivePosterPath, 'w780') : null;
   const isOwner = user?.id === log.user_id;
@@ -488,7 +495,7 @@ export default function LogDetailScreen() {
                 <View style={[StyleSheet.absoluteFillObject, s.textureOverlay]} />
                 
                 {log.editorial_header && (
-                  <View style={s.editorialBadge}>
+                  <View style={[s.editorialBadge, { top: Math.max(insets.top + 8, 56) + 44 }]}>
                     <Sparkles size={7} color={'rgba(218,165,32,0.85)'} strokeWidth={1.5} />
                     <Text style={s.editorialBadgeText}>EDITORIAL</Text>
                   </View>
@@ -498,27 +505,36 @@ export default function LogDetailScreen() {
       )}
 
       <View style={[s.header, { paddingTop: Math.max(insets.top + 8, 56) }]}>
-        <PressableScale style={s.backBtn} onPress={() => { router.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92}>
-          <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
-        </PressableScale>
-        <Text style={s.headerTitle} />
-        <PressableScale style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.92}>
-           <Share2 size={14} color={colors.sepia} strokeWidth={1.5} />
-           <Text style={s.shareBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(!isReadyToShare || sharing) ? '...' : 'SHARE'}</Text>
-        </PressableScale>
-        {!isOwner && (
-          <PressableScale
-            style={s.moreBtn}
-            onPress={() => setActionSheetVisible(true)}
-            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-            haptic="selection"
-            pressedScale={0.92}
-            accessibilityLabel="More options"
-            accessibilityHint="Report, block, or mute this member"
-          >
-            <MoreHorizontal size={16} color={colors.fog} strokeWidth={1.5} />
+        <View style={s.headerRow}>
+          <PressableScale style={s.backBtn} onPress={() => { router.back(); }} hitSlop={{top:20,bottom:20,left:20,right:20}} haptic="selection" pressedScale={0.92}>
+            <ChevronLeft size={22} color={colors.sepia} strokeWidth={1.5} />
           </PressableScale>
-        )}
+
+          {/* Absolutely centered — never shifts owner↔visitor */}
+          <View style={s.eyebrowWrap} pointerEvents="none">
+            <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>◈  FROM THE PERMANENT RECORD  ◈</Text>
+          </View>
+
+          <View style={s.headerRight}>
+            <PressableScale style={s.shareBtn} onPress={() => { handleShare(); }} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.92}>
+               <Share2 size={14} color={colors.sepia} strokeWidth={1.5} />
+               <Text style={s.shareBtnText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{(!isReadyToShare || sharing) ? '...' : 'SHARE'}</Text>
+            </PressableScale>
+            {!isOwner && (
+              <PressableScale
+                style={s.moreBtn}
+                onPress={() => setActionSheetVisible(true)}
+                hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                haptic="selection"
+                pressedScale={0.92}
+                accessibilityLabel="More options"
+                accessibilityHint="Report, block, or mute this member"
+              >
+                <MoreHorizontal size={16} color={colors.fog} strokeWidth={1.5} />
+              </PressableScale>
+            )}
+          </View>
+        </View>
       </View>
 
       {/* Hidden Share Card */}
@@ -564,7 +580,6 @@ export default function LogDetailScreen() {
             posterUri={posterUri}
             isAuteur={isAuteur}
             isArchivist={isArchivist}
-            displayTier={displayTier}
             timeAgo={timeAgo(log.created_at)}
             onPosterLoaded={() => setPosterLoaded(true)}
             onPressUser={() => { if (profile?.username) (router.push as any)(`/user/${profile.username}` as any); }}
@@ -598,11 +613,10 @@ export default function LogDetailScreen() {
             autopsyOpen={autopsyOpen}
             onToggleEndorse={() => { toggleEndorse(id); }}
             onToggleAutopsy={() => { setAutopsyOpen(!autopsyOpen); }}
-            onCritiquePress={() => { 
-               critiqueInputRef.current?.focus();
-               setTimeout(() => {
-                  scrollViewRef.current?.scrollToEnd({ animated: true });
-               }, 250);
+            onCritiquePress={() => {
+               // Scroll to the compose box at the top of the critiques section, then focus it.
+               scrollViewRef.current?.scrollTo({ y: Math.max(0, critiquesSectionY.current - 12), animated: true });
+               setTimeout(() => { critiqueInputRef.current?.focus(); }, 300);
             }}
             onEditPress={() => {
               if (log.film_id) {
@@ -626,6 +640,7 @@ export default function LogDetailScreen() {
           onPostComment={handlePostComment}
           onDeleteComment={handleDeleteComment}
           onPressUser={(username) => (router.push as any)(`/user/${username}` as any)}
+          onSectionLayout={(y) => { critiquesSectionY.current = 80 + y; }}
           onLongPressComment={(comment) => {
             setSelectedComment({ id: comment.id, user_id: comment.user_id, username: comment.username });
             setCommentActionSheetVisible(true);

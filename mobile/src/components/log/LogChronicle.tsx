@@ -3,7 +3,7 @@ import React from 'react';
 import { View, Text, ScrollView } from 'react-native';
 import { ReelRating } from '@/src/components/Decorative';
 import { stripHTML } from '@/src/utils/text';
-import { s } from '@/src/components/log/logDetailStyles';
+import { s, SPINE } from '@/src/components/log/logDetailStyles';
 
 interface ViewingHistoryEntry {
   date?: string;
@@ -113,7 +113,8 @@ export default function LogChronicle({
     })),
   ];
 
-  const cardWidth = windowWidth - 34; // 32 margin + 2 border
+  // Flush paging: the chronicle sits at one spine each side inside the card, minus its own hairline borders.
+  const cardWidth = windowWidth - SPINE * 2 - 2;
 
   return (
     <View style={s.chronicleWrap}>

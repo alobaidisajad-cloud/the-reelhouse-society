@@ -1,11 +1,12 @@
- 
+
 import React from 'react';
 import { View, Text } from 'react-native';
 import { Image } from 'expo-image';
-import { Film as FilmIcon, Star, Archive, X } from 'lucide-react-native';
+import { Film as FilmIcon, X } from 'lucide-react-native';
 import { colors } from '@/src/theme/theme';
 import { ReelRating } from '@/src/components/Decorative';
 import PressableScale from '@/src/components/PressableScale';
+import { UserAttributionRow } from '@/src/components/feed/UserAttributionRow';
 import { s } from '@/src/components/log/logDetailStyles';
 
 interface LogHeroProps {
@@ -26,11 +27,11 @@ interface LogHeroProps {
   profile: {
     username: string;
     role?: string;
+    avatar_url?: string | null;
   } | null;
   posterUri: string | null | undefined;
   isAuteur: boolean;
   isArchivist: boolean;
-  displayTier: string;
   timeAgo: string;
   onPosterLoaded: () => void;
   onPressUser: () => void;
@@ -43,7 +44,6 @@ export default function LogHero({
   posterUri,
   isAuteur,
   isArchivist,
-  displayTier,
   timeAgo,
   onPosterLoaded,
   onPressUser,
@@ -51,31 +51,19 @@ export default function LogHero({
 }: LogHeroProps) {
   return (
     <View style={s.logCenter}>
-      {/* TOP: User Info — Web: fontSize 0.75rem=12px, ls 0.15em=1.8px, color var(--sepia) */}
-      <View style={s.userRow}>
-        <View style={s.userRowLeft}>
-          <PressableScale style={{ flexShrink: 1 }} onPress={onPressUser} pressedScale={0.95} haptic="selection">
-            <Text style={s.userRefText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>@{(profile?.username || 'unknown').toUpperCase()}</Text>
-          </PressableScale>
-          {displayTier === 'ARCHIVIST' && (
-            <View style={s.archivistBadge}>
-              <Archive size={7} color={colors.sepia} strokeWidth={1.5} />
-              <Text style={s.archivistBadgeText}>ARCHIVIST</Text>
-            </View>
-          )}
-          {displayTier === 'AUTEUR' && (
-            <View style={s.auteurBadge}>
-              <Star size={7} color={colors.ink} fill={colors.ink} />
-              <Text style={s.auteurBadgeLabel}>AUTEUR</Text>
-            </View>
-          )}
-        </View>
-        <Text style={s.timestamp}>{timeAgo}</Text>
+      {/* The ledger byline — the app's own handwriting: avatar · handle · crest · rule */}
+      <View style={s.bylineFull}>
+        <UserAttributionRow
+          username={profile?.username || 'unknown'}
+          avatarUrl={profile?.avatar_url}
+          role={profile?.role}
+          timeAgo={timeAgo}
+          onUserPress={onPressUser}
+        />
       </View>
 
-      {/* CENTER: Poster Component — Web: 140x210, radial glow behind for premium */}
+      {/* CENTER: Poster plate — radial glow for premium ranks */}
       <View style={s.posterSection}>
-        {/* Premium radial glow behind poster */}
         {(isAuteur || isArchivist) && posterUri && (
           <View style={[s.posterGlow, isAuteur ? s.posterGlowAuteur : s.posterGlowArchivist]} />
         )}
@@ -90,7 +78,7 @@ export default function LogHero({
         </PressableScale>
       </View>
 
-      {/* BOTTOM: Title & Meta — Web: clamp(2rem,8vw,2.75rem), lineHeight 1.1, textShadow 0 4px 12px */}
+      {/* BOTTOM: Title & Meta */}
       <View style={s.titleSection}>
         <PressableScale onPress={onPressFilm} pressedScale={0.95} haptic="selection">
            <Text style={s.logFilmTitle} adjustsFontSizeToFit numberOfLines={3} minimumFontScale={0.8}>{log.film_title}</Text>
@@ -107,15 +95,14 @@ export default function LogHero({
       {log.status === 'abandoned' && (
         <View style={s.abandonedWrap}>
           <View style={s.abandonedBadge}>
-            <X size={12} color={colors.bloodReel} strokeWidth={2} />
-            <Text style={s.abandonedText}>
+            <X size={12} color={colors.crimson} strokeWidth={2} />
+            <Text style={s.abandonedText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                ABANDONED{log.abandoned_reason ? ` — ${log.abandoned_reason.toUpperCase()}` : ''}
             </Text>
           </View>
         </View>
       )}
 
-      
       {(log.watched_date || log.watched_with || log.physical_media) && (
          <View style={s.metaRow}>
             {log.watched_date && (
