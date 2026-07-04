@@ -12,7 +12,7 @@ import { ReelRating, SectionDivider } from '@/src/components/Decorative';
 import NitrateCalendar from '@/src/components/NitrateCalendar';
 import EditorialDesk from '@/src/components/log/EditorialDesk';
 import AuteurToolkit from '@/src/components/log/AuteurToolkit';
-import { X, Clock, Eye, History, Lock, Archive, ChevronDown, ChevronUp, Trash2, Check, ListOrdered } from 'lucide-react-native';
+import { X, Clock, Eye, History, Lock, Archive, ChevronDown, ChevronUp, Trash2, Check, ListOrdered, Feather } from 'lucide-react-native';
 import { PHYSICAL_OPTIONS, RATING_LABELS, ABANDONED_REASONS, getLocalDateString } from '@/src/hooks/useLogFlow';
 import { st } from './LogModalStyles';
 import type { useLogFlow } from '@/src/hooks/useLogFlow';
@@ -33,7 +33,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
         isPremium,
         film,
         status, rating, review, isSpoiler, abandonedReason, date, watchedWith, privateNotes, physicalMedia,
-        autopsy, altPoster, editorialHeader, dropCap, pullQuote, autopsyOpen, isAutopsied, moreOpen, calendarOpen, showDeleteConfirm, submitting,
+        autopsy, altPoster, editorialHeader, dropCap, pullQuote, autopsyOpen, isAutopsied, moreOpen, calendarOpen, showDeleteConfirm, submitting, sealed,
         // Typed field setters from useLogFlow — these replace the removed
         // `dispatch` compatibility shim (which silently dropped every field
         // except the 6 premium ones). Using the setters directly restores the
@@ -56,6 +56,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
 
     const yesterday = useMemo(() => getLocalDateString(-1), []);
     const todayStr = useMemo(() => getLocalDateString(0), []);
+    const deskName = (user?.username || 'you').toUpperCase();
 
     const handleUpgradePress = useCallback(() => (router.push as any)('/membership' as any), [router]);
 
@@ -66,7 +67,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
             {/* DELETE ZONE */}
             {isEditing && !showDeleteConfirm && (
                 <PressableScale style={st.deleteBtn} onPress={() => { setShowDeleteConfirm(true); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="light">
-                    <Trash2 size={14} color={colors.danger} />
+                    <Trash2 size={14} color={colors.crimson} />
                     <Text style={st.deleteBtnText}>DELETE THIS ENTIRE LOG</Text>
                 </PressableScale>
             )}
@@ -108,9 +109,7 @@ export default function LogForm({ flow, user }: LogFormProps) {
                     </View>
                     {previousLog.rating > 0 && (
                         <View style={st.prevTakeRatingRow}>
-                            <Text style={st.prevTakeStars}>
-                                {'★'.repeat(Math.floor(previousLog.rating))}{previousLog.rating % 1 >= 0.5 ? '½' : ''}{'☆'.repeat(5 - Math.ceil(previousLog.rating))}
-                            </Text>
+                            <ReelRating rating={previousLog.rating} size={13} />
                             <Text style={st.prevTakeRatingNum}>
                                 {previousLog.rating % 1 === 0 ? previousLog.rating : previousLog.rating.toFixed(1)}/5
                             </Text>
@@ -172,22 +171,71 @@ export default function LogForm({ flow, user }: LogFormProps) {
                         <ReelRating rating={rating} size={44} onChange={(v: number) => { setRating(v === rating ? 0 : v); if (Number.isInteger(v)) { TactileEngine.mutate(); } else { TactileEngine.navigate(); } }} />
                         <View style={st.ratingFooter}>
                             {rating > 0 ? <Text style={st.ratingLabel}>{RATING_LABELS[rating] || ''}</Text> : <View />}
-                            <Text style={st.ratingHint}>TAP LEFT HALF FOR ½ STARS</Text>
+                            <Text style={st.ratingHint}>TAP LEFT HALF FOR ½ REELS</Text>
                         </View>
                     </View>
                 </View>
             )}
 
-            {/* MORE DETAILS Toggle */}
+            {/* THE MANUSCRIPT — the review is the hero, always visible */}
+            <View style={st.sec}>
+                <View style={st.manuscriptFrame}>
+                    <View style={st.manuscriptHeader}>
+                        <Feather size={9} color={colors.sepia} strokeWidth={1.5} />
+                        <Text style={st.manuscriptHeaderText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>
+                            ✦ THE MANUSCRIPT — FROM THE DESK OF @{deskName}
+                        </Text>
+                    </View>
+                    <TextInput testID="review-input" style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
+                    <View style={st.reviewFooter}>
+                        <PressableScale style={st.spoilerRow} onPress={() => { setIsSpoiler(!isSpoiler); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
+                            <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
+                            <Text style={st.spoilerText}>CONTAINS SPOILERS</Text>
+                        </PressableScale>
+                        <Text style={[st.charCount, review.length > 1800 && st.charCountWarn]}>{review.length}/2000</Text>
+                    </View>
+                </View>
+            </View>
+
+            {/* Editorial Desk (Archivist+) — follows the manuscript, styles the review */}
+            {isPremium && review.length > 0 && (
+                <Animated.View entering={FadeInDown.duration(200)}>
+                    <EditorialDesk
+                        dropCap={dropCap}
+                        setDropCap={setDropCap}
+                        pullQuote={pullQuote}
+                        setPullQuote={setPullQuote}
+                        editorialHeader={editorialHeader}
+                        setEditorialHeader={setEditorialHeader}
+                        availableBackdrops={availableBackdrops}
+                    />
+                </Animated.View>
+            )}
+
+            {/* Auteur Toolkit — the deep craft autopsy */}
+            <AuteurToolkit
+                isAuteur={isAuteur}
+                autopsyOpen={autopsyOpen}
+                setAutopsyOpen={setAutopsyOpen}
+                isAutopsied={isAutopsied}
+                setIsAutopsied={setIsAutopsied}
+                autopsy={autopsy}
+                setAutopsy={setAutopsy}
+                availablePosters={availablePosters}
+                altPoster={altPoster}
+                setAltPoster={setAltPoster}
+                onUpgradePress={handleUpgradePress}
+            />
+
+            {/* LOGISTICS — the fine print, collapsed by default */}
             <PressableScale style={st.moreToggle} onPress={() => { setMoreOpen(!moreOpen); }} haptic="selection">
                 <View style={st.moreToggleInner}>
                     {moreOpen ? <ChevronUp size={14} color={colors.sepia} /> : <ChevronDown size={14} color={colors.sepia} />}
-                    <Text style={st.moreText}>{moreOpen ? 'COLLAPSE DETAILS' : 'MORE DETAILS'}</Text>
+                    <Text style={st.moreText}>{moreOpen ? 'COLLAPSE LOGISTICS' : 'THE LOGISTICS'}</Text>
                 </View>
                 {!moreOpen && <Text style={st.moreHint}>DATE · COMPANION · MEDIA · NOTES</Text>}
             </PressableScale>
 
-            {/* EXPANDED DETAILS */}
             {moreOpen && (
                 <Animated.View entering={FadeInDown.duration(200)}>
                     {/* Date Watched */}
@@ -239,47 +287,6 @@ export default function LogForm({ flow, user }: LogFormProps) {
                             );
                         })()}
                     </View>
-
-                    {/* Review Editor */}
-                    <View style={st.sec}>
-                        <SectionDivider label="REVIEW (OPTIONAL)" />
-                        <TextInput testID="review-input" style={st.reviewInput} placeholder="Write your thoughts as if typing on a manuscript..." placeholderTextColor={colors.fog} value={review} onChangeText={setReview} multiline maxLength={2000} textAlignVertical="top" selectionColor={'rgba(218,165,32,0.3)'} cursorColor={colors.sepia} disableFullscreenUI={true} keyboardAppearance="dark" accessibilityLabel="Write your film review" />
-                        <View style={st.reviewFooter}>
-                            <PressableScale style={st.spoilerRow} onPress={() => { setIsSpoiler(!isSpoiler); }} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
-                                <View style={[st.cbox, isSpoiler && st.cboxOn]}>{isSpoiler && <Check size={10} color={colors.ink} />}</View>
-                                <Text style={st.spoilerText}>CONTAINS SPOILERS</Text>
-                            </PressableScale>
-                            <Text style={[st.charCount, review.length > 1800 && st.charCountWarn]}>{review.length}/2000</Text>
-                        </View>
-                    </View>
-
-                    {/* Editorial Desk (Archivist+) */}
-                    {isPremium && review.length > 0 && (
-                        <EditorialDesk
-                            dropCap={dropCap}
-                            setDropCap={setDropCap}
-                            pullQuote={pullQuote}
-                            setPullQuote={setPullQuote}
-                            editorialHeader={editorialHeader}
-                            setEditorialHeader={setEditorialHeader}
-                            availableBackdrops={availableBackdrops}
-                        />
-                    )}
-
-                    {/* Auteur Toolkit */}
-                    <AuteurToolkit
-                        isAuteur={isAuteur}
-                        autopsyOpen={autopsyOpen}
-                        setAutopsyOpen={setAutopsyOpen}
-                        isAutopsied={isAutopsied}
-                        setIsAutopsied={setIsAutopsied}
-                        autopsy={autopsy}
-                        setAutopsy={setAutopsy}
-                        availablePosters={availablePosters}
-                        altPoster={altPoster}
-                        setAltPoster={setAltPoster}
-                        onUpgradePress={handleUpgradePress}
-                    />
 
                     {/* Physical Media */}
                     <View style={st.sec}>
@@ -344,17 +351,17 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 </View>
             )}
 
-            {/* SUBMIT */}
+            {/* SEAL THE RECORD */}
             <View style={st.submitRow}>
-                <PressableScale testID="submit-log-button" style={[st.submitBtn, submitting && st.submitBtnSubmitting]} onPress={() => { TactileEngine.mutate(); handleLog(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15}} pressedScale={0.97}>
-                    <Text style={st.submitText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{submitting ? 'SEALING RECORD…' : (isEditing ? 'EDIT CRITIQUE' : 'CERTIFY CRITIQUE')}</Text>
+                <PressableScale testID="submit-log-button" style={[st.submitBtn, submitting && st.submitBtnSubmitting, sealed && st.submitBtnSealed]} onPress={() => { TactileEngine.mutate(); handleLog(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15}} pressedScale={0.97}>
+                    <Text style={st.submitText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>{sealed ? '✦ RECORD SEALED' : submitting ? 'SEALING RECORD…' : (isEditing ? 'RESEAL THE RECORD' : 'SEAL THE RECORD')}</Text>
                 </PressableScale>
                 <PressableScale style={[st.cancelBtn, submitting && { opacity: 0.5 }]} onPress={() => { router.back(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="selection">
                     <Text style={st.cancelText}>CANCEL</Text>
                 </PressableScale>
                 {hasUnsavedChanges && (
                     <PressableScale style={[st.cancelBtn, { marginTop: 8 }, submitting && { opacity: 0.5 }]} onPress={() => { TactileEngine.warn(); discardDraft(); router.back(); }} disabled={submitting} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="heavy">
-                        <Text style={[st.cancelText, { color: colors.danger }]}>DISCARD DRAFT</Text>
+                        <Text style={[st.cancelText, { color: colors.crimson }]}>DISCARD DRAFT</Text>
                     </PressableScale>
                 )}
             </View>

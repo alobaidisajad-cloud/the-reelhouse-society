@@ -166,7 +166,7 @@ const s = StyleSheet.create({
     container: {
         backgroundColor: '#100D08',
         borderWidth: 1,
-        borderColor: 'rgba(196, 150, 26, 0.25)',
+        borderColor: 'rgba(184, 137, 26, 0.25)',
         borderRadius: 6,
         padding: 12,
     },
@@ -185,18 +185,19 @@ const s = StyleSheet.create({
         alignItems: 'center',
     },
     monthLabel: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 12,
         letterSpacing: 2,
         color: colors.parchment,
-        fontWeight: '600',
+        includeFontPadding: false,
     },
     yearLabel: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 8,
         letterSpacing: 3,
         color: colors.fog,
         marginTop: 2,
+        includeFontPadding: false,
     },
     weekRow: {
         flexDirection: 'row',
@@ -208,11 +209,12 @@ const s = StyleSheet.create({
         paddingVertical: 4,
     },
     weekLabel: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 8,
         letterSpacing: 1,
         color: colors.fog,
         opacity: 0.6,
+        includeFontPadding: false,
     },
     dayRow: {
         flexDirection: 'row',
@@ -230,16 +232,18 @@ const s = StyleSheet.create({
         color: colors.bone,
     },
     dayTextSelected: {
-        fontFamily: fonts.uiBold,
+        fontFamily: fonts.sub,
         fontSize: 12,
         color: colors.ink,
+        includeFontPadding: false,
     },
     dayTextFuture: {
         color: 'rgba(196,184,152,0.2)',
     },
     dayTextToday: {
         color: colors.flicker,
-        fontFamily: fonts.uiBold,
+        fontFamily: fonts.sub,
+        includeFontPadding: false,
     },
     daySelected: {
         // Glow handled by LinearGradient child
@@ -258,21 +262,22 @@ const s = StyleSheet.create({
     },
     dayToday: {
         borderWidth: 1,
-        borderColor: 'rgba(196, 150, 26, 0.35)',
+        borderColor: 'rgba(184, 137, 26, 0.35)',
         borderRadius: 999,
-        backgroundColor: 'rgba(196, 150, 26, 0.12)',
+        backgroundColor: 'rgba(184, 137, 26, 0.12)',
     },
     selectedDisplay: {
         marginTop: 10,
         alignItems: 'center',
         paddingTop: 8,
         borderTopWidth: 1,
-        borderTopColor: 'rgba(196, 150, 26, 0.15)',
+        borderTopColor: 'rgba(184, 137, 26, 0.15)',
     },
     selectedText: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 9,
         letterSpacing: 2,
         color: colors.sepia,
+        includeFontPadding: false,
     },
 });

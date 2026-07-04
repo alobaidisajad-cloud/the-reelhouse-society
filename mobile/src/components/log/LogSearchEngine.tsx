@@ -107,7 +107,7 @@ export default function LogSearchEngine({ onSelectFilm }: Props) {
         <Animated.View entering={FadeIn.duration(400).easing(Easing.out(Easing.cubic))} style={st.searchStep}>
             <View style={st.searchWrap}>
                 <Animated.View style={[st.searchIcon, animatedIconStyle]}>
-                    <Search size={16} color={searching ? colors.bloodReel : colors.fog} />
+                    <Search size={16} color={searching ? colors.sepia : colors.fog} />
                 </Animated.View>
                 <TextInput
                     style={st.searchInput}
@@ -166,11 +166,11 @@ const st = StyleSheet.create({
     searchStep: { flex: 1, paddingHorizontal: 20 },
     searchWrap: { marginTop: 12, position: 'relative' },
     searchIcon: { position: 'absolute', left: 12, top: 14, zIndex: 1 },
-    searchInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.sub, fontSize: 14, color: colors.parchment },
+    searchInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4, paddingLeft: 38, paddingRight: 12, paddingVertical: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
     searchingWrap: { alignItems: 'center', paddingVertical: 20 },
-    searchingText: { fontFamily: fonts.ui, fontSize: 10, color: colors.sepia, letterSpacing: 3 },
+    searchingText: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia, letterSpacing: 3, includeFontPadding: false },
     searchBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8 },
-    searchBadge: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5 },
+    searchBadge: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, includeFontPadding: false },
     searchBadgeSepia: { color: colors.sepia },
     searchBadgeFlicker: { color: colors.flicker },
     searchResults: { marginTop: 8 },
@@ -180,7 +180,7 @@ const st = StyleSheet.create({
     resultFlex: { flex: 1 },
     resultTitle: { fontFamily: fonts.sub, fontSize: 14, color: colors.parchment },
     resultMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 },
-    resultMeta: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1.5 },
+    resultMeta: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 1.5, includeFontPadding: false },
     noResultsWrap: { alignItems: 'center', paddingVertical: 40 },
     noResultsText: { fontFamily: fonts.sub, fontSize: 13, color: colors.fog },
 });

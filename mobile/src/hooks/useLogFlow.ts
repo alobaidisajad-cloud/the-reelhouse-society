@@ -159,10 +159,15 @@ export function useLogFlow() {
     const [pullQuote, setPullQuote] = useState('');
     const [autopsyOpen, setAutopsyOpen] = useState(false);
     const [isAutopsied, setIsAutopsied] = useState(false);
-    const [moreOpen, setMoreOpen] = useState(true);
+    // The LOGISTICS drawer starts closed so a fresh log's fast path is
+    // pick → status → rate → write → seal. Edit mode re-opens it below
+    // whenever there's already logistics content to reveal.
+    const [moreOpen, setMoreOpen] = useState(false);
     const [calendarOpen, setCalendarOpen] = useState(false);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
     const [submitting, setSubmitting] = useState(false);
+    // One-beat "RECORD SEALED" confirmation before the modal dismisses.
+    const [sealed, setSealed] = useState(false);
 
     // ── Premium image data ──
     const [availablePosters, setAvailablePosters] = useState<{ file_path: string }[]>([]);
@@ -203,6 +208,7 @@ export function useLogFlow() {
         setPullQuote('');
         setIsAutopsied(false);
         setAutopsyOpen(false);
+        setMoreOpen(false);
 
         if (!editLogId) return;
         const log = logs.find(l => l.id === editLogId);
@@ -227,6 +233,9 @@ export function useLogFlow() {
         setPullQuote(log.pullQuote ?? '');
         setIsAutopsied(log.isAutopsied ?? false);
         setAutopsyOpen(log.isAutopsied ?? false);
+        // Never hide populated data: open the LOGISTICS drawer when the log
+        // already carries a companion, private notes, or physical media.
+        setMoreOpen(!!(log.watchedWith || log.privateNotes || (log.physicalMedia && log.physicalMedia !== 'None')));
         setFilm({ id: log.filmId, title: log.title, poster_path: log.poster, release_date: log.year?.toString() });
         setStep(1);
     }, [editLogId, logs]);
@@ -315,12 +324,18 @@ export function useLogFlow() {
             else { await addLog(logData); }
             storage.delete(DRAFT_KEY);
             TactileEngine.success();
-            InteractionManager.runAfterInteractions(() => {
-                router.back();
-            });
-         
-        } catch (err: unknown) { reelToast.error('The record could not be sealed. Try again.'); }
-        setSubmitting(false);
+            // Hold on a single brass beat — "RECORD SEALED" — then dismiss.
+            setSealed(true);
+            setTimeout(() => {
+                InteractionManager.runAfterInteractions(() => {
+                    router.back();
+                });
+            }, 650);
+            return;
+        } catch (err: unknown) {
+            reelToast.error('The record could not be sealed. Try again.');
+            setSubmitting(false);
+        }
     };
 
     const handleDelete = async () => {
@@ -396,6 +411,7 @@ export function useLogFlow() {
         calendarOpen, setCalendarOpen,
         showDeleteConfirm, setShowDeleteConfirm,
         submitting,
+        sealed,
         availablePosters, availableBackdrops,
         isEditing,
         selectFilm,

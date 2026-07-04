@@ -104,7 +104,7 @@ const ListFilmItem = React.memo(({ item, index, drag, isActive, onRemove }: { it
                 )}
                 <Text style={s.filmTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>{item.title}</Text>
                 <PressableScale onPress={() => onRemove(item.id)} style={s.removeBtn} hitSlop={HITSLOP_15} haptic="light" accessibilityRole="button" accessibilityLabel={`Remove ${item.title}`}>
-                    <X size={14} color={colors.danger} />
+                    <X size={14} color={colors.crimson} />
                 </PressableScale>
             </PressableScale>
         </ScaleDecorator>
@@ -392,7 +392,7 @@ export default function ListModal() {
                         hitSlop={HITSLOP_10}
                         haptic="selection"
                         accessibilityRole="button"
-                        accessibilityLabel="Set list to public"
+                        accessibilityLabel="Set stack to public"
                     >
                         <Globe size={14} color={!isPrivate ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, !isPrivate && s.toggleTextActive]}>PUBLIC</Text>
@@ -403,7 +403,7 @@ export default function ListModal() {
                         hitSlop={HITSLOP_10}
                         haptic="selection"
                         accessibilityRole="button"
-                        accessibilityLabel="Set list to private"
+                        accessibilityLabel="Set stack to private"
                     >
                         <Lock size={14} color={isPrivate ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, isPrivate && s.toggleTextActive]}>PRIVATE</Text>
@@ -411,7 +411,7 @@ export default function ListModal() {
                 </View>
             </View>
 
-            {/* Ranking Toggle (Auteur Only) */}
+            {/* Ranking Toggle — available to every rank; a ranked stack is a thesis. */}
             <View style={s.sec}>
                 <Text style={s.label}>FORMAT</Text>
                 <View style={s.toggleRow}>
@@ -421,7 +421,7 @@ export default function ListModal() {
                         hitSlop={HITSLOP_10}
                         haptic="selection"
                         accessibilityRole="button"
-                        accessibilityLabel="Set list to unranked"
+                        accessibilityLabel="Set stack to unranked"
                     >
                         <List size={14} color={!isRanked ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, !isRanked && s.toggleTextActive]}>UNRANKED</Text>
@@ -435,7 +435,7 @@ export default function ListModal() {
                         hitSlop={HITSLOP_10}
                         haptic="selection"
                         accessibilityRole="button"
-                        accessibilityLabel="Set list to ranked"
+                        accessibilityLabel="Set stack to ranked"
                     >
                         <ListOrdered size={14} color={isRanked ? colors.ink : colors.fog} />
                         <Text style={[s.toggleText, isRanked && s.toggleTextActive]}>RANKED</Text>
@@ -452,10 +452,10 @@ export default function ListModal() {
                     hitSlop={HITSLOP_V15}
                     pressedScale={0.97}
                     accessibilityRole="button"
-                    accessibilityLabel={editList ? "Save changes" : "Create list"}
+                    accessibilityLabel={editList ? "Save changes" : "Create stack"}
                 >
                     <Text style={s.submitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
-                        {saving ? 'SAVING...' : (editList ? 'SAVE CHANGES' : 'CREATE LIST')}
+                        {saving ? 'SEALING...' : (editList ? 'SAVE CHANGES' : 'CREATE STACK')}
                     </Text>
                 </PressableScale>
                 <PressableScale style={s.cancelBtn} onPress={() => nav.back()} hitSlop={HITSLOP_15} haptic="light" accessibilityRole="button" accessibilityLabel="Cancel">
@@ -504,16 +504,16 @@ const s = StyleSheet.create({
         paddingHorizontal: 20, paddingBottom: 16,
         borderBottomWidth: 1, borderBottomColor: colors.ash,
     },
-    headerLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.sepia, marginBottom: 4 },
+    headerLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 3, color: colors.sepia, marginBottom: 4, includeFontPadding: false },
     headerTitle: { fontFamily: fonts.display, fontSize: 18, color: colors.parchment },
     closeBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, padding: 8 },
-    closeBtnText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog },
+    closeBtnText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
 
     sec: { paddingHorizontal: 20, marginTop: 20 },
-    label: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginBottom: 8 },
+    label: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 2, color: colors.sepia, marginBottom: 8, includeFontPadding: false },
     input: {
         backgroundColor: 'rgba(10,7,3,0.8)', borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
-        padding: 12, fontFamily: fonts.sub, fontSize: 14, color: colors.parchment,
+        padding: 12, fontFamily: fonts.body, fontSize: 14, color: colors.parchment,
     },
 
     // Search
@@ -521,7 +521,7 @@ const s = StyleSheet.create({
     searchInput: {
         backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
         paddingLeft: 36, paddingRight: 12, paddingVertical: 10,
-        fontFamily: fonts.sub, fontSize: 13, color: colors.parchment,
+        fontFamily: fonts.body, fontSize: 13, color: colors.parchment,
     },
     dropdown: {
         backgroundColor: colors.ink, borderWidth: 1, borderColor: colors.ash,
@@ -533,7 +533,7 @@ const s = StyleSheet.create({
     },
     dropPoster: { width: 28, height: 42, borderRadius: 2 },
     dropTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment },
-    dropMeta: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1, marginTop: 2 },
+    dropMeta: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 1, marginTop: 2, includeFontPadding: false },
 
     // Film list
     containerFlex: { flex: 1 },
@@ -547,7 +547,7 @@ const s = StyleSheet.create({
     removeBtn: { padding: 6 },
     filmRowMargin: { marginHorizontal: 20, marginBottom: 6 },
     filmRowActive: {
-        backgroundColor: 'rgba(139,105,20,0.2)',
+        backgroundColor: 'rgba(184,137,26,0.2)',
         borderColor: colors.sepia,
         elevation: 5,
         shadowColor: '#000',
@@ -586,15 +586,15 @@ const s = StyleSheet.create({
         paddingVertical: 10, borderWidth: 1, borderColor: colors.ash, borderRadius: 4,
     },
     toggleActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-    toggleText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+    toggleText: { fontFamily: fonts.sub, fontSize: 8.5, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
     toggleTextActive: { color: colors.ink },
 
     // Submit
     submitRow: { flexDirection: 'row', gap: 12, paddingHorizontal: 20, marginTop: 28 },
     submitBtn: { flex: 1, backgroundColor: colors.sepia, paddingVertical: 14, borderRadius: 4, alignItems: 'center' },
-    submitText: { fontFamily: fonts.ui, fontSize: 11, letterSpacing: 2, color: colors.ink, fontWeight: '600' },
+    submitText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, includeFontPadding: false },
     cancelBtn: { paddingVertical: 14, paddingHorizontal: 16, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
-    cancelText: { fontFamily: fonts.ui, fontSize: 11, color: colors.fog },
+    cancelText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, includeFontPadding: false },
 
     // Extracted
     scrollPad: { paddingBottom: 60 },
