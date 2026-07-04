@@ -6,7 +6,7 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Award, CheckCircle2, Edit3, MessageCircle, MoreHorizontal, Send, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Heart, CheckCircle2, Edit3, MessageCircle, MoreHorizontal, Send, Trash2 } from 'lucide-react-native';
 import { ActivityIndicator, Alert, Platform, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -630,7 +630,7 @@ export default function StackDetailScreen() {
               {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
               <Animated.View entering={FadeInDown.duration(600).delay(350)} style={s.actionBar}>
                 <PressableScale style={s.actionItem} onPress={handleCertify} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" accessibilityRole="button" accessibilityLabel={isCertified ? "Uncertify stack" : "Certify stack"}>
-                  <View pointerEvents="none"><Award size={16} color={isCertified ? colors.sepia : colors.fog} fill={isCertified ? colors.sepia : 'none'} /></View>
+                  <View pointerEvents="none"><Heart size={16} strokeWidth={2} color={isCertified ? colors.crimson : colors.fog} fill={isCertified ? colors.crimson : 'transparent'} /></View>
                   <Text style={[s.actionLabel, isCertified && s.actionLabelActive]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                     {certifyCount > 0 ? `${certifyCount} ` : ''}{isCertified ? 'CERTIFIED' : 'CERTIFY'}
                   </Text>
@@ -863,7 +863,7 @@ const s = StyleSheet.create({
 
   // Extracted
   loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  actionLabelActive: { color: colors.sepia },
+  actionLabelActive: { color: colors.crimson },
   sendBtnDisabled: { opacity: 0.3 },
   loungeEmptyWrap: { padding: 30, alignItems: 'center' },
   loungeEmptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog },

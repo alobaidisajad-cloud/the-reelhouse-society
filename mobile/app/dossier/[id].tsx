@@ -4,7 +4,7 @@ import { ContentActionSheet } from '@/src/components/moderation/ContentActionShe
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
 import { router, useLocalSearchParams } from 'expo-router';
-import { MoreHorizontal } from 'lucide-react-native';
+import { Heart, MoreHorizontal } from 'lucide-react-native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
@@ -356,7 +356,7 @@ export default function DossierReaderScreen() {
                         haptic="light"
                         pressedScale={0.95}
                     >
-                        <Text style={[styles.actionIcon, certified && styles.actionIconActive]}>✦</Text>
+                        <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} style={{ marginBottom: 4 }} />
                         <Text style={[styles.actionLabel, certified && styles.actionLabelActive]}>
                             {certified ? 'CERTIFIED' : 'CERTIFY'}
                         </Text>
@@ -422,7 +422,7 @@ export default function DossierReaderScreen() {
                     selectionColor={'rgba(218,165,32,0.3)'}
                 />
                 <PressableScale style={styles.postBtn} onPress={handlePostComment} disabled={!newComment.trim() || posting} haptic="medium" pressedScale={0.95}>
-                    <Text style={[styles.postBtnText, { opacity: newComment.trim() ? 1 : 0.5 }]}>POST</Text>
+                    <Text style={[styles.postBtnText, { opacity: newComment.trim() ? 1 : 0.5 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{posting ? 'FILING…' : 'FILE CRITIQUE'}</Text>
                 </PressableScale>
             </View>
 
@@ -612,7 +612,7 @@ const styles = StyleSheet.create({
         color: colors.fog,
     },
     actionLabelActive: {
-        color: colors.sepia,
+        color: colors.crimson,
     },
     endMark: {
         fontFamily: fonts.display,

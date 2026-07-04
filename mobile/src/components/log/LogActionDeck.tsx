@@ -83,8 +83,8 @@ export default function LogActionDeck({
         <View style={s.actionDeck}>
            {/* CERTIFY — wired to toggleEndorse */}
            <PressableScale style={s.deckBtn} onPress={onToggleEndorse} hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }} haptic="light" pressedScale={0.92}>
-              <Heart size={16} strokeWidth={2} color={endorsed ? colors.sepia : colors.fog} fill={endorsed ? colors.sepia : 'transparent'} />
-              <Text style={[s.deckLabel, endorsed && s.deckLabelActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
+              <Heart size={16} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
+              <Text style={[s.deckLabel, endorsed && s.deckLabelCertified]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
            </PressableScale>
 
            {/* CRITIQUE — scrolls to comment input */}

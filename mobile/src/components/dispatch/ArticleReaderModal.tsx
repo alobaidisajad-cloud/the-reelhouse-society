@@ -335,7 +335,7 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
                 <Text style={st.readerStatText}>{localViews} VIEWS</Text>
               </View>
               <View style={st.readerStatRow}>
-                <Sparkles size={10} color={certified ? colors.sepia : colors.fog} strokeWidth={1.5} />
+                <Sparkles size={10} color={certified ? colors.crimson : colors.fog} strokeWidth={1.5} />
                 <Text style={[st.readerStatText, certified && st.readerStatCertified]}>
                   {certifyCount} CERTIFIED
                 </Text>
@@ -355,7 +355,7 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
           {isDossier && (
             <View style={st.readerActions}>
               <PressableScale style={st.readerActionBtn} onPress={handleCertify} pressedScale={0.95} haptic>
-                <Heart size={14} color={certified ? colors.sepia : colors.fog} strokeWidth={1.5} fill={certified ? colors.sepia : 'transparent'} />
+                <Heart size={14} color={certified ? colors.crimson : colors.fog} strokeWidth={1.5} fill={certified ? colors.crimson : 'transparent'} />
                 <Text style={[st.readerActionText, certified && st.readerActionCertified]} numberOfLines={1}>
                   {certified ? 'CERTIFIED' : 'CERTIFY'} ({certifyCount})
                 </Text>

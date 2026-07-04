@@ -327,7 +327,7 @@ export const st = StyleSheet.create({
   },
   readerStatRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   readerStatText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
-  readerStatCertified: { color: colors.sepia },
+  readerStatCertified: { color: colors.crimson },
   readerSep: {
     height: 2, backgroundColor: 'rgba(184,137,26,0.3)',
     marginVertical: 28, width: 80, alignSelf: 'center',
@@ -343,7 +343,7 @@ export const st = StyleSheet.create({
   },
   readerActionBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 8, paddingHorizontal: 12 },
   readerActionText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
-  readerActionCertified: { color: colors.sepia },
+  readerActionCertified: { color: colors.crimson },
   wireReadFullBtn: {
     marginTop: 20, paddingVertical: 14,
     borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)',

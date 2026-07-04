@@ -122,6 +122,7 @@ export const s = StyleSheet.create({
   deckBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 18, gap: 6, backgroundColor: colors.ink, borderRadius: 1 },
   deckLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog },
   deckLabelActive: { color: colors.sepia },
+  deckLabelCertified: { color: colors.crimson },
 
   // Comments
   commentsSection: { paddingHorizontal: 16, marginTop: 16, paddingBottom: 40 },

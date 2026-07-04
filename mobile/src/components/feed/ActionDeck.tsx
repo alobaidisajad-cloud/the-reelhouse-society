@@ -152,7 +152,7 @@ export const ActionDeck = React.memo(function ActionDeck({
           <Animated.View style={animatedHeartStyle}>
             <Heart size={15} strokeWidth={2} color={endorsed ? colors.crimson : colors.fog} fill={endorsed ? colors.crimson : 'transparent'} />
           </Animated.View>
-          <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]}>{endorsed ? 'CERTIFIED' : 'CERT'}</Text>
+          <Text style={[s.actionLabel, endorsed && s.actionLabelCertified]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{endorsed ? 'CERTIFIED' : 'CERTIFY'}</Text>
         </PressableScale>
 
         <PressableScale style={s.actionBtn} onPress={handleCritique} accessibilityRole="button" accessibilityLabel="Write a critique">

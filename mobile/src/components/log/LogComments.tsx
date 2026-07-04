@@ -139,7 +139,7 @@ export default function LogComments({
           pressedScale={0.95}
           haptic="medium"
         >
-          <Text style={s.critiqueSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{posting ? 'FILING...' : 'SUBMIT CRITIQUE'}</Text>
+          <Text style={s.critiqueSubmitText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{posting ? 'FILING…' : 'FILE CRITIQUE'}</Text>
           <Sparkles size={10} color={colors.ink} strokeWidth={1.5} />
         </PressableScale>
       </View>
