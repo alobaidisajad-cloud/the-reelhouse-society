@@ -375,7 +375,7 @@ export const ArticleReaderModal = memo(function ArticleReaderModal({
                 }, 350);
               }} pressedScale={0.95} haptic>
                 <MessageSquare size={14} color={colors.fog} strokeWidth={1.5} />
-                <Text style={st.readerActionText} numberOfLines={1}>ANNOTATIONS</Text>
+                <Text style={st.readerActionText} numberOfLines={1}>CRITIQUES</Text>
               </PressableScale>
 
               {isAuthor && (

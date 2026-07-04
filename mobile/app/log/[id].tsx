@@ -365,7 +365,7 @@ export default function LogDetailScreen() {
                 comments: (old.comments || []).filter((c: LogComment) => c.id !== commentId)
             };
         });
-        reelToast.error('Failed to post comment.');
+        reelToast.error('Failed to file critique.');
       }
     } finally {
       setPosting(false);
@@ -408,7 +408,7 @@ export default function LogDetailScreen() {
                 comments: [...(old.comments || []), targetComment].sort((a: LogComment, b: LogComment) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
             };
         });
-        reelToast.error('Failed to delete comment.');
+        reelToast.error('Failed to delete critique.');
       }
     }
   }, [queryClient, id, user]);

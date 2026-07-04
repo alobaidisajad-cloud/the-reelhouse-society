@@ -74,7 +74,7 @@ const StackCommentRow = React.memo(({ c, currentUserId, onLongPress }: { c: List
     }}
     delayLongPress={400}
     pressedScale={0.98}
-    accessibilityLabel={`Comment by ${c.username}`}
+    accessibilityLabel={`Critique by ${c.username}`}
     accessibilityHint={c.user_id !== currentUserId ? "Long press to report or block" : undefined}
   >
     <View style={s.commentRow}>
@@ -638,7 +638,7 @@ export default function StackDetailScreen() {
 
                 <View style={s.actionDivider} />
 
-                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" accessibilityRole="button" accessibilityLabel="Toggle comments">
+                <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" accessibilityRole="button" accessibilityLabel="Toggle critiques">
                   <View pointerEvents="none"><MessageCircle size={14} color={showComments ? colors.sepia : colors.fog} /></View>
                   <Text style={[s.actionLabel, showComments && s.actionLabelActive]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>CRITIC</Text>
                 </PressableScale>
@@ -654,7 +654,7 @@ export default function StackDetailScreen() {
               {showComments && (
                 <Animated.View entering={FadeInDown.duration(300)} style={s.commentsPanel}>
                   {(queryComments || []).length === 0 && (
-                    <Text style={s.commentEmpty}>No remarks yet. Be the first to speak.</Text>
+                    <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
                   )}
                   {(queryComments || []).map(c => (
                     <StackCommentRow key={c.id} c={c} currentUserId={user?.id} onLongPress={(comment) => {
@@ -667,7 +667,7 @@ export default function StackDetailScreen() {
                       <TextInput
                         ref={commentInputRef}
                         style={s.commentInput}
-                        placeholder="Leave a remark..."
+                        placeholder="File a critique..."
                         placeholderTextColor={colors.ash}
                         value={commentText}
                         onChangeText={handleCommentTextChange}
@@ -678,9 +678,9 @@ export default function StackDetailScreen() {
                         cursorColor={colors.sepia}
                         disableFullscreenUI={true}
                         keyboardAppearance="dark"
-                        accessibilityLabel="Stack comment"
+                        accessibilityLabel="Stack critique"
                       />
-                      <PressableScale onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.commentSendBtn, (!commentText.trim()) && s.sendBtnDisabled]} haptic="light" accessibilityRole="button" accessibilityLabel="Submit comment">
+                      <PressableScale onPress={handleSubmitComment} disabled={submittingComment || !commentText.trim()} style={[s.commentSendBtn, (!commentText.trim()) && s.sendBtnDisabled]} haptic="light" accessibilityRole="button" accessibilityLabel="Submit critique">
                         <Send size={14} color={colors.sepia} />
                       </PressableScale>
                     </View>

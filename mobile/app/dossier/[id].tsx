@@ -53,7 +53,7 @@ export default function DossierReaderScreen() {
     const blockUser = useBlockStore((state) => state.blockUser);
     const muteUser = useBlockStore((state) => state.muteUser);
 
-    // Callback isolation: stabilize annotation input handler
+    // Callback isolation: stabilize critique input handler
     const handleNewCommentChange = useCallback((text: string) => {
         setNewComment(text);
     }, []);
@@ -213,11 +213,11 @@ export default function DossierReaderScreen() {
                     }
                 });
                 flushOfflineQueue();
-                reelToast.success('Annotation queued for offline transmission.');
+                reelToast.success('Critique queued for offline transmission.');
             } else {
                 setComments(prev => prev.filter(c => c.id !== tempId));
                 if (__DEV__) console.warn('[Dossier] Post comment error:', err);
-                reelToast.error('Failed to annotate.');
+                reelToast.error('Failed to file critique.');
             }
         } finally {
             setPosting(false);
@@ -248,7 +248,7 @@ export default function DossierReaderScreen() {
             } else {
                 if (removed) setComments(prev => [...prev, removed].sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
                 if (__DEV__) console.warn('[Dossier] Delete comment error:', err);
-                reelToast.error('Failed to delete annotation.');
+                reelToast.error('Failed to delete critique.');
             }
         }
     };
@@ -365,9 +365,9 @@ export default function DossierReaderScreen() {
 
                 <Text style={styles.endMark}>— ✦ —</Text>
 
-                {/* Annotations */}
+                {/* Critiques */}
                 <View style={styles.commentsSection}>
-                    <SectionDivider label={`ANNOTATIONS (${comments.length})`} />
+                    <SectionDivider label={`CRITIQUES (${comments.length})`} />
                     
                     {comments.map((c: DossierComment) => (
                         <PressableScale
@@ -381,7 +381,7 @@ export default function DossierReaderScreen() {
                           }}
                           delayLongPress={400}
                           pressedScale={0.98}
-                          accessibilityLabel={`Comment by ${c.username}`}
+                          accessibilityLabel={`Critique by ${c.username}`}
                           accessibilityHint={c.user_id !== user?.id ? "Long press to report or block" : undefined}
                         >
                         <View style={styles.commentItem}>
@@ -411,14 +411,14 @@ export default function DossierReaderScreen() {
             <View style={[styles.inputRow, { paddingBottom: 12 }]}>
                 <TextInput
                     style={styles.input}
-                    placeholder="Add an annotation..."
+                    placeholder="File a critique..."
                     placeholderTextColor={colors.fog}
                     value={newComment}
                     onChangeText={handleNewCommentChange}
                     multiline
                     maxLength={500}
                     keyboardAppearance="dark"
-                    accessibilityLabel="Dossier annotation"
+                    accessibilityLabel="Dossier critique"
                     selectionColor={'rgba(218,165,32,0.3)'}
                 />
                 <PressableScale style={styles.postBtn} onPress={handlePostComment} disabled={!newComment.trim() || posting} haptic="medium" pressedScale={0.95}>
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         marginTop: 40,
     },
-    // Annotations
+    // Critiques
     commentsSection: { marginTop: 40 },
     emptyComments: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog, textAlign: 'center', marginTop: 24 },
     commentItem: { paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
