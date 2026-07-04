@@ -211,7 +211,7 @@ export default function NotificationsModal() {
         </PressableScale>
         <View style={s.titleBlock}>
           <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>The Notices</Text>
-          <Text style={s.eyebrow} numberOfLines={1}>◈ FROM THE FRONT DESK ◈</Text>
+          <Text style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>◈ FROM THE FRONT DESK ◈</Text>
         </View>
         <PressableScale 
            style={s.markReadBtn} 
