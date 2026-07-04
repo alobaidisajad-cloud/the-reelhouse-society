@@ -158,7 +158,7 @@ export const TopNavBar = memo(function TopNavBar() {
               onPress={onNotifPress}
               size={19}
               badge={true}
-              accessibilityLabel="Notifications"
+              accessibilityLabel="Notices"
             />
           </View>
         </View>

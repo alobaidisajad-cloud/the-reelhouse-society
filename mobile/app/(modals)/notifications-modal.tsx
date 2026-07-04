@@ -59,7 +59,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         onPress={handlePress}
         haptic="light"
         pressedScale={0.96}
-        accessibilityLabel={`Notification: ${item.message}`}
+        accessibilityLabel={`Notice: ${item.message}`}
       >
         {/* Action icon */}
         <View style={[s.iconCircle, { borderColor: typeInfo.color }]}>
@@ -89,7 +89,7 @@ const NotificationItem = React.memo(function NotificationItem({ item, index }: {
         <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_20} onPress={() => {
             TactileEngine.warn();
             useNotificationStore.getState().dismiss(item.id);
-        }} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss notification">
+        }} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss notice">
           <X size={12} color={colors.fog} />
         </PressableScale>
       </PressableScale>
@@ -122,7 +122,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         onPress={handlePress}
         haptic="light"
         pressedScale={0.96}
-        accessibilityLabel={`Grouped notification: ${item.message}`}
+        accessibilityLabel={`Notice: ${item.message}`}
       >
         {/* Count badge */}
         <View style={s.groupBadge}>
@@ -145,7 +145,7 @@ const GroupedNotificationItem = React.memo(function GroupedNotificationItem({ it
         ) : null}
 
         {/* Dismiss button */}
-        <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_20} onPress={handleDismiss} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss grouped notification">
+        <PressableScale style={s.dismissBtn} hitSlop={HITSLOP_20} onPress={handleDismiss} haptic="light" pressedScale={0.9} accessibilityRole="button" accessibilityLabel="Dismiss grouped notice">
           <X size={12} color={colors.fog} />
         </PressableScale>
       </PressableScale>
@@ -206,10 +206,13 @@ export default function NotificationsModal() {
       <View style={s.dragHandleWrap}><View style={s.dragHandle} /></View>
 
       <View style={s.header}>
-        <PressableScale style={s.closeBtn} onPress={() => { nav.back(); }} hitSlop={HITSLOP_15} haptic="selection" pressedScale={0.95} accessibilityLabel="Close notifications">
+        <PressableScale style={s.closeBtn} onPress={() => { nav.back(); }} hitSlop={HITSLOP_15} haptic="selection" pressedScale={0.95} accessibilityLabel="Close notices">
           <Text style={s.closeText} adjustsFontSizeToFit numberOfLines={1} minimumFontScale={0.75}>CLOSE</Text>
         </PressableScale>
-        <Text style={s.title}>Dispatches</Text>
+        <View style={s.titleBlock}>
+          <Text style={s.title} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>The Notices</Text>
+          <Text style={s.eyebrow} numberOfLines={1}>◈ FROM THE FRONT DESK ◈</Text>
+        </View>
         <PressableScale 
            style={s.markReadBtn} 
            onPress={handleMarkAllRead}
@@ -247,7 +250,7 @@ export default function NotificationsModal() {
           loading && notifications.length === 0 ? (
             <View style={s.loadingWrap}>
               <ActivityIndicator size="small" color={colors.sepia} />
-              <Text style={s.loadingText}>TUNING FREQUENCY…</Text>
+              <Text style={s.loadingText}>GATHERING NOTICES…</Text>
             </View>
           ) : null
         }
@@ -264,8 +267,8 @@ export default function NotificationsModal() {
           loading ? null : (
             <EmptyState
               icon={<Bell size={28} color={colors.sepia} strokeWidth={1} />}
-              title="No New Transmissions"
-              subtitle="Your frequency is silent."
+              title="The board is clear."
+              subtitle="No notices posted to your attention."
             />
           )
         }
@@ -285,10 +288,12 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
   },
   closeBtn: { width: 80 },
-  closeText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, color: colors.fog },
+  closeText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog, includeFontPadding: false },
+  titleBlock: { flex: 1, alignItems: 'center' },
   title: { fontFamily: fonts.display, fontSize: 18, color: colors.bone },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 6, letterSpacing: 2.5, color: colors.sepia, opacity: 0.7, marginTop: 3, includeFontPadding: false },
   markReadBtn: { width: 80, alignItems: 'flex-end' },
-  markReadText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, color: colors.sepia },
+  markReadText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
 
   listContent: { paddingBottom: 40, flexGrow: 1 },
   
@@ -298,18 +303,19 @@ const s = StyleSheet.create({
     backgroundColor: colors.ink, gap: 10,
   },
   itemUnread: {
-    backgroundColor: 'rgba(196,150,26,0.06)',
-    borderLeftWidth: 3, borderLeftColor: colors.bloodReel,
+    backgroundColor: 'rgba(184,137,26,0.06)',
+    borderLeftWidth: 3, borderLeftColor: colors.sepia,
   },
+  // A squared wire-stamp, not a circle — a slip posted to your desk.
   iconCircle: {
-    width: 30, height: 30, borderRadius: 15,
+    width: 30, height: 30, borderRadius: 3,
     borderWidth: 1, alignItems: 'center', justifyContent: 'center',
     backgroundColor: 'rgba(11,10,8,0.6)',
   },
   itemContent: { flex: 1 },
   itemMessage: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20 },
   itemUser: { fontFamily: fonts.sub, color: colors.parchment },
-  itemTime: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1, color: colors.fog, marginTop: 4 },
+  itemTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog, marginTop: 4, includeFontPadding: false },
   miniPoster: {
     width: 24, height: 36, borderRadius: 2,
     backgroundColor: colors.soot,
@@ -321,16 +327,16 @@ const s = StyleSheet.create({
   dismissBtn: { padding: 8 },
 
   groupBadge: {
-    width: 30, height: 30, borderRadius: 15,
+    width: 30, height: 30, borderRadius: 3,
     backgroundColor: colors.sepia,
     alignItems: 'center', justifyContent: 'center',
   },
   groupCount: {
-    fontFamily: fonts.uiBold, fontSize: 12, color: '#fff',
+    fontFamily: fonts.sub, fontSize: 12, color: colors.ink, includeFontPadding: false,
   },
 
   loadingWrap: { alignItems: 'center', paddingVertical: 20, gap: 8 },
-  loadingText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog },
+  loadingText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
 
   // Footer loading indicator for pagination
   footerLoadingWrap: { alignItems: 'center', paddingVertical: 16 },
