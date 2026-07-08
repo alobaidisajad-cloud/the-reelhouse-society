@@ -78,15 +78,17 @@ export type DispatchLog = z.infer<typeof DispatchLogSchema>;
 export const DossierRowSchema = z.object({
   id: z.string(),
   title: z.string().default('Untitled'),
-  // These columns are always present in DOSSIER_SELECT_COLUMNS but may be NULL.
-  // Keeping them required-but-nullable means a column rename produces a parse
-  // failure (row dropped) rather than a silent `undefined` → blank card.
-  excerpt: z.string().nullable(),
-  full_content: z.string().nullable(),
-  author_username: z.string().nullable(),
+  // .nullish() (accepts undefined) so a remote column rename yields `undefined`
+  // and the field simply defaults — the dossier still renders — instead of the
+  // whole row being dropped. Paired with the select('*') read in content.ts
+  // (which can't error on a renamed/missing column), this makes the dispatch
+  // read fully rename-immune. Core identity fields below stay required.
+  excerpt: z.string().nullable().default(null),
+  full_content: z.string().nullable().default(null),
+  author_username: z.string().nullable().default(null),
   user_id: z.string(),
-  views: z.number().nullable(),
-  certify_count: z.number().nullable(),
+  views: z.number().nullable().default(null),
+  certify_count: z.number().nullable().default(null),
   created_at: z.string(),
 });
 

@@ -106,7 +106,10 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
           (signal) => withAbortSignal(
             supabase
               .from('dispatch_dossiers')
-              .select('id, title, excerpt, author_username, user_id, views, certify_count, created_at')
+              // select('*') — never error on a renamed/missing column (dispatch_dossiers
+              // has a history of remote column renames; see dossier.schema.ts). The Zod
+              // boundary + mappers default any absent field, so the read stays rename-immune.
+              .select('*')
               .eq('is_published', true)
               .order('created_at', { ascending: false })
               .limit(20),
@@ -360,7 +363,8 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
     try {
       const { data, error } = await supabase
         .from('dispatch_dossiers')
-        .select('id, title, excerpt, author_username, user_id, views, certify_count, created_at')
+        // select('*') — rename-immune, same as fetchDossiers.
+        .select('*')
         .eq('is_published', true)
         .lt('created_at', oldest.raw_created_at)
         .order('created_at', { ascending: false })
