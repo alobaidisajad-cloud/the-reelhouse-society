@@ -150,11 +150,37 @@ export async function flushOfflineQueue() {
     }
     isFlushing = true;
     try {
+    // ── Fast-path: empty queue → skip everything ──
+    // Avoids the expensive SecureStore round-trip (getSession) and Sentry noise
+    // for unauthenticated users who have nothing to flush.
+    if (readQueue().length === 0) return;
+
     // Verify active session before executing any mutations.
     // Prevents cross-user mutation execution after unclean logout (crash, force-kill).
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
-        logger.warn('[OfflineSync] No active session — aborting flush to prevent cross-user execution.');
+        logger.debug('[OfflineSync] No active session — aborting flush.');
+        // If queue has mutations but no session, the user logged out uncleanly
+        // (crash, force-kill). Dead-letter orphans so they don't fire warnings
+        // on every foreground indefinitely. The 24h stale threshold
+        // in the main loop can't help because execution never reaches it here.
+        const orphanQueue = readQueue();
+        if (orphanQueue.length > 0) {
+            logger.debug(`[OfflineSync] Dead-lettering ${orphanQueue.length} orphaned mutation(s) — no session to execute them.`);
+            try {
+                const existing = storage.getString(QUEUE_KEY + '_dead_letter');
+                let prev: QueuedMutation[] = existing ? JSON.parse(existing) : [];
+                const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+                prev = prev.filter(m => m.timestamp > sevenDaysAgo);
+                const tagged = orphanQueue.map(m => ({
+                    ...m,
+                    payload: { ...m.payload, _failReason: 'no_session_orphan', _failedAt: new Date().toISOString() }
+                }));
+                storage.set(QUEUE_KEY + '_dead_letter', JSON.stringify([...prev, ...tagged].slice(-50)));
+            } catch { /* dead-letter write failure — non-critical */ }
+            writeQueue([]);
+            useOfflineQueueStore.setState({ pending: 0 });
+        }
         return;
     }
     const authenticatedUserId = session.user.id;

@@ -85,6 +85,7 @@ jest.mock('../../utils/logger', () => ({
 jest.mock('../../utils/offlineQueue', () => ({
   enqueueMutation: jest.fn(),
   flushOfflineQueue: jest.fn(),
+  clearOfflineQueue: jest.fn(),
 }));
 
 jest.mock('expo-secure-store', () => ({

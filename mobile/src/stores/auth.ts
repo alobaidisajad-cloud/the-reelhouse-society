@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { PROFILE_SELECT_COLUMNS, ProfileService } from '../services/ProfileWriteService';
 import { User } from '../types';
 import { logger } from '../utils/logger';
+import { clearOfflineQueue } from '../utils/offlineQueue';
 import reelToast from '../utils/reelToast';
 import { isRetryable, withRetry } from '../utils/withRetry';
 import { hydrateFollowing } from './domain/socialSlice';
@@ -274,7 +275,7 @@ export const useAuthStore = create<AuthState>()((set, get) => ({
     if (previousUserId) storage.delete(`ironvault_user_cache_${previousUserId}`);
     storage.delete('last_user_id');
     storage.delete('ironvault_user_cache'); // clean up legacy
-    storage.delete('reelhouse-offline-mutations');
+    clearOfflineQueue();
     storage.delete('REELHOUSE_QUERY_CACHE');
     storage.delete('nitrate_memory_feed');
 

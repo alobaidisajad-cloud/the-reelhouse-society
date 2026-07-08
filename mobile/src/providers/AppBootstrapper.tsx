@@ -198,7 +198,7 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
 
     // ── Background Syncing Engines ──
     const unsubscribeNet = NetInfo.addEventListener(state => {
-      if (state.isConnected && state.isInternetReachable) {
+      if (state.isConnected && state.isInternetReachable && useAuthStore.getState().isAuthenticated) {
         flushOfflineQueue();
       }
     });
@@ -212,7 +212,9 @@ export default function AppBootstrapper({ children }: { children: React.ReactNod
         lastBackgroundedAt = Date.now();
       }
       if (nextAppState === 'active') {
-        flushOfflineQueue();
+        if (useAuthStore.getState().isAuthenticated) {
+          flushOfflineQueue();
+        }
 
         // Reconcile notification count if backgrounded for >5 seconds.
         // iOS suspends Supabase Realtime WebSocket after ~30s of background;
