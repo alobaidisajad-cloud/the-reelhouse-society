@@ -1166,6 +1166,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           const r = payload.new as ReactionRow;
           if (!r?.message_id) return;
           const myId = useAuthStore.getState().user?.id;
+          // Own reaction is already applied optimistically in toggleReaction —
+          // ignore the realtime echo of it so the count can't double.
+          if (r.user_id === myId) return;
           const mine = r.user_id === myId;
           set(s => ({
             currentMessages: s.currentMessages.map(m =>
@@ -1181,6 +1184,9 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
           const r = payload.old as ReactionRow;
           if (!r?.message_id) return;
           const myId = useAuthStore.getState().user?.id;
+          // Own un-react is already applied optimistically — ignore the echo so
+          // it can't double-decrement.
+          if (r.user_id === myId) return;
           const mine = r.user_id === myId;
           set(s => ({
             currentMessages: s.currentMessages.map(m =>

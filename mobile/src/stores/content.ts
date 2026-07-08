@@ -6,6 +6,7 @@
 import * as Crypto from 'expo-crypto';
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { captureError } from '../lib/sentry';
 import { applyPendingToDossierRow, buildDossierFromPendingCreate, parseDossierPendingState } from '../utils/dossierReconciliation';
 import { DossierRowSchema, type ValidatedDossierRow } from '../schemas/dossier.schema';
 import { sanitizeInput } from '../utils/sanitizeInput';
@@ -192,7 +193,11 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
       } catch (err) {
         if (fetchGeneration !== currentGen) return;
         if (__DEV__) console.error('[Dispatch] fetchDossiers failed:', err);
-        
+        // Surface the real Postgres/PostgREST error (code + message) to Sentry so
+        // schema/RLS drift on dispatch_dossiers is observable instead of hidden
+        // behind the generic "transmission" toast.
+        captureError(err, { where: 'content.fetchDossiers' });
+
         const { pendingDeletes, pendingUpdates, pendingCreatesMap, pendingCertifies, pendingViews } = parseDossierPendingState();
 
         set(state => {

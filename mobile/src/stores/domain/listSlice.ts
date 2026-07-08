@@ -194,7 +194,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                     film_id: f.id,
                     film_title: f.title ?? 'Unknown',
                     poster_path: f.poster_path ?? f.poster ?? null,
-                    position: idx,
+                    rank_position: idx,
                 }));
                 const { error: itemsError } = await supabase.from('list_items').insert(items);
                 if (itemsError) {
@@ -254,7 +254,7 @@ export const createListSlice: StateCreator<ListSlice, [], [], ListSlice> = (set,
                         film_id: f.id,
                         film_title: f.title ?? 'Unknown',
                         poster_path: f.poster_path ?? f.poster ?? null,
-                        position: idx,
+                        rank_position: idx,
                     })).sort((a, b) => a.film_id - b.film_id);
                     // UPSERT new/updated items first to prevent data loss if connection drops
                     const { error: itemsError } = await supabase.from('list_items').upsert(items, { onConflict: 'list_id,film_id' });
