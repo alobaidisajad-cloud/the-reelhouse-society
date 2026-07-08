@@ -238,7 +238,10 @@ export const useDispatchStore = create<DispatchState>((set, get) => ({
 
         set({ loading: false });
         inflightFetch = null;
-        throw err;
+        // Graceful degrade: don't re-throw. The pending/offline dossiers are already
+        // reconciled above and the real error is captured to Sentry, so the Dispatch
+        // shows a clean (pending-or-empty) state instead of an error toast — the
+        // correct look at launch, and safe for a one-shot build.
       }
       if (fetchGeneration === currentGen) {
         set({ loading: false });

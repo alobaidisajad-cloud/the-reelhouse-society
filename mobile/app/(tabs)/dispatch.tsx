@@ -195,6 +195,24 @@ export default function DispatchScreen() {
         </Text>
       </Animated.View>
 
+      {/* Writer's entry — surfaced under the masthead so auteurs can file a
+          dossier without scrolling past the whole gazette (was buried in the
+          Auteur Dossiers section at the very bottom of the list). */}
+      {canWrite && (
+        <View style={st.writerBarWrap}>
+          <PressableScale
+            style={st.writerBarBtn}
+            onPress={() => (router.push as any)('/dispatch/compose' as any)}
+            haptic
+          >
+            <View style={st.writerBarBtnInner}>
+              <Pen size={10} color={colors.parchment} strokeWidth={1.5} />
+              <Text style={st.writerBarBtnText} numberOfLines={1}>FILE NEW DOSSIER</Text>
+            </View>
+          </PressableScale>
+        </View>
+      )}
+
       <OrnamentalDivider />
 
       {/* ── THE FRONT PAGE (nightly transmission hero) ── */}
@@ -249,21 +267,6 @@ export default function DispatchScreen() {
           title="Auteur Dossiers"
           sub="Original cinematic essays filed by our premium members."
         />
-
-        {canWrite && (
-          <View style={st.writerBarWrap}>
-            <PressableScale
-              style={st.writerBarBtn}
-              onPress={() => (router.push as any)('/dispatch/compose' as any)}
-              haptic
-            >
-              <View style={st.writerBarBtnInner}>
-                <Pen size={10} color={colors.parchment} strokeWidth={1.5} />
-                <Text style={st.writerBarBtnText} numberOfLines={1}>FILE NEW DOSSIER</Text>
-              </View>
-            </PressableScale>
-          </View>
-        )}
 
         {loading && dossiers.length === 0 && (
           /* Skeleton shimmer */
