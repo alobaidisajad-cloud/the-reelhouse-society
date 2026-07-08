@@ -137,10 +137,11 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
   const frontStyle = useAnimatedStyle(() => {
     if (reducedMotion) {
-      return { opacity: 1 - flip.value, transform: [] };
+      return { opacity: 1 - flip.value, transform: [], zIndex: flip.value < 0.5 ? 2 : 1 };
     }
     return {
-      opacity: 1,
+      opacity: flip.value < 0.5 ? 1 : 0,
+      zIndex: flip.value < 0.5 ? 2 : 1,
       transform: [
         { perspective: 1000 },
         { rotateY: `${interpolate(flip.value, [0, 1], [0, 180])}deg` },
@@ -150,13 +151,14 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
 
   const backStyle = useAnimatedStyle(() => {
     if (reducedMotion) {
-      return { opacity: flip.value, transform: [] };
+      return { opacity: flip.value, transform: [], zIndex: flip.value >= 0.5 ? 2 : 1 };
     }
     return {
-      opacity: 1,
+      opacity: flip.value >= 0.5 ? 1 : 0,
+      zIndex: flip.value >= 0.5 ? 2 : 1,
       transform: [
         { perspective: 1000 },
-        { rotateY: `${interpolate(flip.value, [0, 1], [180, 360])}deg` },
+        { rotateY: `${interpolate(flip.value, [0, 1], [-180, 0])}deg` },
       ],
     };
   });
@@ -182,7 +184,7 @@ export const ActivityCard = React.memo(function ActivityCard({ item, index, onFi
       <View style={[s.card, isPremium && s.cardPremium, isAuteur && s.cardAuteur]} shouldRasterizeIOS>
         {/* ── FRONT of the card ── */}
         <Animated.View
-          style={frontStyle}
+          style={backMounted ? frontStyle : undefined}
           pointerEvents={flipped ? 'none' : 'auto'}
           accessibilityElementsHidden={flipped}
           importantForAccessibility={flipped ? 'no-hide-descendants' : 'auto'}

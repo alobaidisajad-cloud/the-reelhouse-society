@@ -197,8 +197,8 @@ export default function LogForm({ flow, user }: LogFormProps) {
                 </View>
             </View>
 
-            {/* Editorial Desk (Archivist+) — follows the manuscript, styles the review */}
-            {isPremium && review.length > 0 && (
+            {/* Editorial Desk (Archivist+) — always visible for premium, like the Auteur toolkit below */}
+            {isPremium && (
                 <Animated.View entering={FadeInDown.duration(200)}>
                     <EditorialDesk
                         dropCap={dropCap}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { StyleSheet, ViewStyle } from 'react-native';
-import Animated, { useAnimatedStyle, withTiming, withDelay, SharedValue, Easing } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useDerivedValue, withTiming, withDelay, SharedValue, Easing } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors } from '@/src/theme/theme';
 
@@ -27,8 +27,26 @@ export const CinematicScrollbar: React.FC<CinematicScrollbarProps> = ({
 }) => {
   const insets = useSafeAreaInsets();
 
-  const animatedStyle = useAnimatedStyle(() => {
-    // If layout is not ready, or content fits on screen, hide scrollbar
+  // Layer 1: Appearance (opacity and width-pulse).
+  // Runs only when `isScrolling` changes, never per-frame.
+  const thumbOpacity = useDerivedValue(() => {
+    if (scrollHeight.value <= 0 || viewHeight.value <= 0 || scrollHeight.value <= viewHeight.value) {
+      return 0;
+    }
+    return isScrolling.value
+      ? withTiming(1, { duration: 150, easing: Easing.inOut(Easing.ease) })
+      : withDelay(600, withTiming(0, { duration: 300, easing: Easing.inOut(Easing.ease) }));
+  });
+
+  const thumbScaleX = useDerivedValue(() => {
+    return isScrolling.value
+      ? withTiming(1, { duration: 150, easing: Easing.out(Easing.ease) })
+      : withDelay(150, withTiming(0.6, { duration: 200, easing: Easing.inOut(Easing.ease) }));
+  });
+
+  // Layer 2: Geometry (layout properties).
+  // Runs only when layout dimensions change, zero layout mutations during scroll.
+  const geometryStyle = useAnimatedStyle(() => {
     if (scrollHeight.value <= 0 || viewHeight.value <= 0 || scrollHeight.value <= viewHeight.value) {
       return { opacity: 0 };
     }
@@ -40,7 +58,30 @@ export const CinematicScrollbar: React.FC<CinematicScrollbarProps> = ({
     if (trackHeight <= 0) return { opacity: 0 };
 
     const heightRatio = trackHeight / scrollHeight.value;
-    const baseHeight = Math.max(heightRatio * trackHeight, 36); // Base thumb height
+    const baseHeight = Math.max(heightRatio * trackHeight, 36);
+
+    return {
+      top: viewY?.value ?? 0,
+      height: baseHeight,
+      right: Math.max(insets.right, 4),
+    };
+  });
+
+  // Layer 3: Motion (position and overscroll).
+  // Pure math returning pure GPU properties (transform and opacity) every frame.
+  const motionStyle = useAnimatedStyle(() => {
+    if (scrollHeight.value <= 0 || viewHeight.value <= 0 || scrollHeight.value <= viewHeight.value) {
+      return { opacity: 0 };
+    }
+
+    const trackTop = topInset ?? 0;
+    const trackBottom = bottomInset ?? 0;
+    const trackHeight = viewHeight.value - trackTop - trackBottom;
+
+    if (trackHeight <= 0) return { opacity: 0 };
+
+    const heightRatio = trackHeight / scrollHeight.value;
+    const baseHeight = Math.max(heightRatio * trackHeight, 36);
 
     const maxScroll = scrollHeight.value - viewHeight.value;
     const maxThumbScroll = trackHeight - baseHeight;
@@ -65,22 +106,13 @@ export const CinematicScrollbar: React.FC<CinematicScrollbarProps> = ({
       translateY = maxTranslateY + (baseHeight - finalHeight) / 2;
     }
 
-    const scaleX = isScrolling.value
-      ? withTiming(1, { duration: 150, easing: Easing.out(Easing.ease) })
-      : withDelay(150, withTiming(0.6, { duration: 200, easing: Easing.inOut(Easing.ease) }));
-
     return {
-      top: viewY?.value ?? 0,
-      height: baseHeight, // Static height during scroll (avoids layout recalculations)
+      opacity: thumbOpacity.value,
       transform: [
         { translateY },
         { scaleY },
-        { scaleX }
-      ],
-      right: Math.max(insets.right, 4),
-      opacity: isScrolling.value
-        ? withTiming(1, { duration: 150, easing: Easing.inOut(Easing.ease) })
-        : withDelay(600, withTiming(0, { duration: 300, easing: Easing.inOut(Easing.ease) }))
+        { scaleX: thumbScaleX.value }
+      ]
     };
   });
 
@@ -89,7 +121,8 @@ export const CinematicScrollbar: React.FC<CinematicScrollbarProps> = ({
       style={[
         styles.track,
         style,
-        animatedStyle
+        geometryStyle,
+        motionStyle
       ]} 
       pointerEvents="none"
     />
