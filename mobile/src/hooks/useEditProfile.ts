@@ -3,7 +3,7 @@ import { Alert } from 'react-native';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useAuthStore } from '@/src/stores/auth';
+import { useAuthStore, storage } from '@/src/stores/auth';
 import { ProfileService } from '@/src/services/ProfileWriteService';
 import { useRouter } from 'expo-router';
 import { validateUsername } from '@/src/utils/validateUsername';
@@ -88,7 +88,7 @@ export function buildProfileUpdates(input: ProfileUpdateInput): Record<string, a
 }
 
 export function useEditProfile() {
-  const { user, updateUser } = useAuthStore();
+  const { user } = useAuthStore();
   const router = useRouter();
 
   const form = useForm<ProfileFormData>({
@@ -244,11 +244,17 @@ export function useEditProfile() {
       }
       
       // Update local auth store
-      updateUser({ 
-        ...user, 
-        ...updates,
-        display_name: updates.display_name ?? user.display_name 
-      } as any);
+      useAuthStore.setState((state) => {
+        const updatedUser = state.user ? {
+          ...state.user, 
+          ...updates,
+          display_name: updates.display_name ?? state.user.display_name 
+        } as any : null;
+        if (updatedUser) {
+          storage.set(`ironvault_user_cache_${updatedUser.id}`, JSON.stringify(updatedUser));
+        }
+        return { user: updatedUser };
+      });
       router.back();
     } catch (err: unknown) {
       console.error('Failed to update profile:', err);
