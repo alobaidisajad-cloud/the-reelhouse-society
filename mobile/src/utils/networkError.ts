@@ -29,6 +29,21 @@ export function isNetworkError(e: unknown): boolean {
 }
 
 /**
+ * Returns true for an authorization / row-level-security rejection — a permanent
+ * "you're not allowed" (distinct from connectivity or a transient blip). PostgREST
+ * returns HTTP 403 with Postgres SQLSTATE 42501 when an RLS policy blocks a write,
+ * e.g. a member who limits who may certify/annotate their content. Callers use this
+ * to show a specific, honest message instead of a generic failure.
+ */
+export function isForbiddenError(e: unknown): boolean {
+    if (typeof e !== 'object' || e === null) return false;
+    const status = 'status' in e ? Number((e as any).status) : NaN;
+    const code = 'code' in e ? String((e as any).code) : '';
+    const msg = 'message' in e ? String((e as any).message).toLowerCase() : '';
+    return status === 403 || code === '42501' || msg.includes('row-level security');
+}
+
+/**
  * Retryable Postgres SQLSTATEs — the server reached the DB but the statement
  * failed transiently and is safe to retry: serialization failure, deadlock,
  * lock-not-available, resource limits, and cannot-connect-now.

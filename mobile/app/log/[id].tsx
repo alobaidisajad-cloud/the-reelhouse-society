@@ -29,7 +29,7 @@ import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
 import { tmdb } from '@/src/lib/tmdb';
 import { LogService } from '@/src/services/LogService';
 import { colors } from '@/src/theme/theme';
-import { isNetworkError } from '@/src/utils/networkError';
+import { isNetworkError, isForbiddenError } from '@/src/utils/networkError';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
 import { isArchivistPlusTier, isAuteurPlusTier, resolveTier } from '@/src/utils/tier';
@@ -373,7 +373,7 @@ export default function LogDetailScreen() {
                 comments: (old.comments || []).filter((c: LogComment) => c.id !== commentId)
             };
         });
-        reelToast.error('Failed to file critique.');
+        reelToast.error(isForbiddenError(error) ? 'This member limits who may annotate their critiques.' : 'Failed to file critique.');
       }
     } finally {
       setPosting(false);
