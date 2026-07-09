@@ -299,6 +299,10 @@ jest.mock('react-native-reanimated', () => {
     measure: jest.fn(() => ({ x: 0, y: 0, width: 0, height: 0, pageX: 0, pageY: 0 })),
     scrollTo: jest.fn(),
     useReducedMotion: jest.fn(() => false),
+    useAnimatedKeyboard: jest.fn(() => ({ height: { value: 0 }, state: { value: 0 } })),
+    useAnimatedProps: jest.fn((fn: any) => fn()),
+    useAnimatedReaction: jest.fn(),
+    withDecay: jest.fn((_c: any, cb?: any) => { if (cb) cb(true); return 0; }),
   };
 });
 
