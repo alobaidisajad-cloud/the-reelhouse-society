@@ -6,7 +6,7 @@ import { BlurView } from 'expo-blur';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ArrowLeft, Heart, CheckCircle2, Edit3, MessageCircle, MoreHorizontal, Send, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Heart, CheckCircle2, Edit3, KeyRound, MessageCircle, MoreHorizontal, Send, Trash2, User } from 'lucide-react-native';
 import { ActivityIndicator, Alert, Platform, RefreshControl, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp, interpolate, useAnimatedKeyboard, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,6 +24,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
 import TactileEngine from '@/src/utils/TactileEngine';
+import { formatDateMonthYear, timeAgo } from '@/src/utils/timeAgo';
 import { z } from 'zod';
 
 const blurhash = 'L87n_O~q00_300E1t7Rj00%#RjV@';
@@ -58,13 +59,16 @@ interface ListComment {
   id: string;
   user_id: string;
   username: string;
+  avatar_url?: string | null;
   content: string;
   created_at: string;
 }
 
-// ── Memoized Comment Row ──
- 
-const StackCommentRow = React.memo(({ c, currentUserId, onLongPress }: { c: ListComment; currentUserId?: string; onLongPress?: (comment: ListComment) => void }) => (
+// ── Memoized Comment Row — real face, tappable name, timestamped ──
+// No dead ends: avatar + username navigate to the critic's profile;
+// the row keeps long-press for report/block so the two never fight.
+
+const StackCommentRow = React.memo(({ c, currentUserId, onLongPress, onPressProfile }: { c: ListComment; currentUserId?: string; onLongPress?: (comment: ListComment) => void; onPressProfile?: (username: string) => void }) => (
   <PressableScale
     onLongPress={() => {
       if (c.user_id !== currentUserId && onLongPress) {
@@ -78,39 +82,58 @@ const StackCommentRow = React.memo(({ c, currentUserId, onLongPress }: { c: List
     accessibilityHint={c.user_id !== currentUserId ? "Long press to report or block" : undefined}
   >
     <View style={s.commentRow}>
-      <Text style={s.commentUser} numberOfLines={1}>@{c.username}</Text>
-      <Text style={s.commentBody}>{c.content}</Text>
+      <PressableScale onPress={() => onPressProfile?.(c.username)} haptic="light" accessibilityRole="link" accessibilityLabel={`View profile of @${c.username}`}>
+        <View style={s.commentAvatar}>
+          {c.avatar_url ? (
+            <Image source={{ uri: c.avatar_url }} style={s.commentAvatarImg} contentFit="cover" cachePolicy="memory-disk" recyclingKey={c.id} />
+          ) : (
+            <User size={11} color={colors.fog} strokeWidth={1.5} />
+          )}
+        </View>
+      </PressableScale>
+      <View style={s.commentBodyWrap}>
+        <View style={s.commentHead}>
+          <PressableScale onPress={() => onPressProfile?.(c.username)} haptic="light" style={s.commentUserPress} accessibilityRole="link" accessibilityLabel={`View profile of @${c.username}`}>
+            <Text style={s.commentUser} numberOfLines={1}>@{c.username.toUpperCase()}</Text>
+          </PressableScale>
+          <Text style={s.commentTime} numberOfLines={1}>{timeAgo(c.created_at)}</Text>
+        </View>
+        <Text style={s.commentBody}>{c.content}</Text>
+      </View>
     </View>
   </PressableScale>
 ));
 
  
-const StackDetailFilmCard = React.memo(({ 
-  item, 
-  index, 
-  isLogged, 
-  isRanked, 
+const StackDetailFilmCard = React.memo(({
+  item,
+  index,
+  isLogged,
+  isRanked,
   onPress,
   itemWidth,
   itemHeight,
-}: { 
-  item: FilmItem; 
-  index: number; 
-  isLogged: boolean; 
-  isRanked: boolean; 
+}: {
+  item: FilmItem;
+  index: number;
+  isLogged: boolean;
+  isRanked: boolean;
   onPress: (id: number) => void;
   itemWidth: number;
   itemHeight: number;
 }) => {
+  // The podium touch: in a ranked stack, only #1 earns metal — a brass
+  // numeral and a hairline brass frame. Everyone else stays parchment.
+  const isFirst = isRanked && index === 0;
   return (
     <Animated.View entering={index < 15 ? FadeInUp.duration(400).delay(index * 30) : undefined} style={[s.filmItem, { width: itemWidth }]}>
-      <PressableScale 
-        style={[s.filmCard, { width: itemWidth, height: itemHeight }]} 
+      <PressableScale
+        style={[s.filmCard, { width: itemWidth, height: itemHeight }, isFirst && s.filmCardFirst]}
         onPress={() => onPress(item.id)}
       >
         {item.poster_path ? (
-          <Image 
-            source={{ uri: tmdb.poster(item.poster_path, 'w342')! }} 
+          <Image
+            source={{ uri: tmdb.poster(item.poster_path, 'w342')! }}
             style={StyleSheet.absoluteFillObject}
             contentFit="cover"
             cachePolicy="memory-disk"
@@ -125,16 +148,16 @@ const StackDetailFilmCard = React.memo(({
         )}
         {isLogged && (
           <View style={s.loggedBadge}>
-            <CheckCircle2 size={12} color={colors.parchment} />
+            <CheckCircle2 size={12} color={colors.sepia} />
           </View>
         )}
         {isRanked && (
           <View style={s.rankBadgeWrap}>
-            <LinearGradient 
-              colors={['transparent', 'rgba(10,7,3,0.8)', 'rgba(5,4,2,0.95)']} 
-              style={StyleSheet.absoluteFillObject} 
+            <LinearGradient
+              colors={['transparent', 'rgba(10,7,3,0.8)', 'rgba(5,4,2,0.95)']}
+              style={StyleSheet.absoluteFillObject}
             />
-            <Text style={s.rankNumber} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{index + 1}</Text>
+            <Text style={[s.rankNumber, isFirst && s.rankNumberFirst]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.4}>{index + 1}</Text>
           </View>
         )}
       </PressableScale>
@@ -266,6 +289,10 @@ export default function StackDetailScreen() {
   const [commentActionSheetVisible, setCommentActionSheetVisible] = useState(false);
   const [commentReportSheetVisible, setCommentReportSheetVisible] = useState(false);
   const [selectedComment, setSelectedComment] = useState<ListComment | null>(null);
+  // Long epigraphs (descriptions run up to 1,000 chars) clamp to 4 lines behind
+  // a READ MORE fold. The toggle shows on a deterministic length threshold —
+  // no platform-dependent line measurement, so it behaves identically everywhere.
+  const [descExpanded, setDescExpanded] = useState(false);
 
   const blockUser = useBlockStore(s => s.blockUser);
   const muteUser = useBlockStore(s => s.muteUser);
@@ -351,6 +378,7 @@ export default function StackDetailScreen() {
                 list_id: id,
                 user_id: p.user_id,
                 username: useAuthStore.getState().user?.username || 'anonymous',
+                avatar_url: useAuthStore.getState().user?.avatar_url ?? null,
                 content: p.content,
                 created_at: new Date().toISOString()
             });
@@ -370,6 +398,7 @@ export default function StackDetailScreen() {
                 list_id: id,
                 user_id: p.user_id,
                 username: useAuthStore.getState().user?.username || 'anonymous',
+                avatar_url: useAuthStore.getState().user?.avatar_url ?? null,
                 content: p.content,
                 created_at: new Date().toISOString()
             };
@@ -397,11 +426,12 @@ export default function StackDetailScreen() {
     const content = commentText.trim();
     const tempId = `temp_${Date.now()}`;
     
-    // Optimistic Update
+    // Optimistic Update — with the member's own face, never a ghost.
     const optimisticComment: ListComment = {
       id: tempId,
       user_id: user.id,
       username: user.username || 'anon',
+      avatar_url: user.avatar_url ?? null,
       content,
       created_at: new Date().toISOString()
     };
@@ -492,6 +522,14 @@ export default function StackDetailScreen() {
     (router.push as any)(`/film/${filmId}` as any);
   }, [router]);
 
+  // No dead ends: curator + critics navigate to their dossiers. Placeholder
+  // identities (offline-stitched rows) are guarded — they go nowhere quietly.
+  const handlePressProfile = useCallback((username?: string) => {
+    if (!username || username === 'anonymous' || username === 'unknown' || username === 'anon') return;
+    TactileEngine.selection();
+    (router.push as any)(`/user/${username}` as any);
+  }, [router]);
+
   const renderItem = useCallback(({ item, index }: { item: FilmItem; index: number }) => {
     return (
       <StackDetailFilmCard 
@@ -521,7 +559,9 @@ export default function StackDetailScreen() {
     );
   }
 
-  if (isError || !list) {
+  // CLASSIFIED covers both failure to retrieve AND a private stack reached by
+  // direct link by anyone but its curator (defense-in-depth beside the RLS gate).
+  if (isError || !list || (list.isPrivate && !isOwner)) {
     return (
       <View style={s.container}>
         <View style={[s.navBar, { zIndex: 10, paddingTop: insets.top, height: Math.max(insets.top + 50, 70) }]}>
@@ -531,11 +571,14 @@ export default function StackDetailScreen() {
         </View>
         <View style={s.loadingCenter}>
           <Text style={s.title}>CLASSIFIED</Text>
-          <Text style={[s.desc, { textAlign: 'center', marginTop: 12 }]}>This stack could not be retrieved.{'\n'}It may be private or incinerated.</Text>
+          <Text style={[s.desc, { textAlign: 'center', marginTop: 12 }]}>This stack could not be retrieved.{'\n'}It may be sealed or incinerated.</Text>
         </View>
       </View>
     );
   }
+
+  const estDate = list.createdAt && !isNaN(Date.parse(list.createdAt)) ? formatDateMonthYear(list.createdAt) : null;
+  const descNeedsFold = (list.description?.length ?? 0) > 240;
 
 
 
@@ -558,7 +601,7 @@ export default function StackDetailScreen() {
                 <Edit3 size={18} color={colors.fog} />
               </PressableScale>
               <PressableScale style={s.actionBtn} onPress={handleDelete} hitSlop={{top: 15, bottom: 15, left: 15, right: 15}} haptic="medium" accessibilityLabel="Delete stack">
-                <Trash2 size={18} color="rgba(231,76,60,0.8)" />
+                <Trash2 size={18} color={colors.crimson} />
               </PressableScale>
             </View>
           )}
@@ -605,27 +648,46 @@ export default function StackDetailScreen() {
             {/* Content Overlaid on Header */}
             <View style={[s.headerContentWrap, { marginTop: HEADER_HEIGHT - 120 }]}>
 
+              <Animated.Text entering={FadeInDown.duration(600).delay(80)} style={s.eyebrow} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                ✦&nbsp; FROM THE STACKS &nbsp;✦
+              </Animated.Text>
+
               <Animated.Text entering={FadeInDown.duration(600).delay(100)} style={s.title} numberOfLines={3} adjustsFontSizeToFit minimumFontScale={0.7}>
                 {list.title.toUpperCase()}
               </Animated.Text>
-              
+
+              {/* Colophon — curator (tappable) · reel count · curation date · chips.
+                  flexWrap lets long names push the chips to a second line, never cramping. */}
               <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.metaRow}>
-                <View style={s.curatorDot} />
-                <Text style={[s.metaText, { flexShrink: 1, marginRight: 8 }]} numberOfLines={1}>@{list.user.toUpperCase()}</Text>
-                <Text style={s.metaText}>·  {list.films.length} ENTRIES</Text>
+                <View style={s.metaDiamond} />
+                <PressableScale onPress={() => handlePressProfile(list.user)} haptic="light" style={{ flexShrink: 1 }} accessibilityRole="link" accessibilityLabel={`View curator @${list.user}`}>
+                  <Text style={s.metaCurator} numberOfLines={1}>@{list.user.toUpperCase()}</Text>
+                </PressableScale>
+                <Text style={s.metaText}>· {list.films.length} {list.films.length === 1 ? 'REEL' : 'REELS'}</Text>
+                {estDate && <Text style={s.metaText}>· EST. {estDate.toUpperCase()}</Text>}
                 {list.isRanked && (
-                  <>
-                    <Text style={s.metaText}>  ·  </Text>
-                    <Text style={[s.metaText, { color: colors.sepia }]}>✦ RANKED</Text>
-                  </>
+                  <View style={s.metaChip}><Text style={s.metaChipText}>✦ RANKED</Text></View>
+                )}
+                {list.isPrivate && isOwner && (
+                  <View style={s.metaChip}>
+                    <KeyRound size={8} color={colors.sepia} strokeWidth={2} />
+                    <Text style={s.metaChipText}>SEALED</Text>
+                  </View>
                 )}
               </Animated.View>
-              
-              {list.description && (
-                <Animated.Text entering={FadeInDown.duration(600).delay(300)} style={s.desc}>
-                  {list.description}
-                </Animated.Text>
-              )}
+
+              {list.description ? (
+                <Animated.View entering={FadeInDown.duration(600).delay(300)} style={s.descWrap}>
+                  <Text style={s.desc} numberOfLines={descExpanded ? undefined : 4}>
+                    {list.description}
+                  </Text>
+                  {descNeedsFold && (
+                    <PressableScale onPress={() => { TactileEngine.selection(); setDescExpanded(p => !p); }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={descExpanded ? 'Collapse description' : 'Expand description'}>
+                      <Text style={s.descToggle}>{descExpanded ? 'FOLD ▴' : 'READ MORE ▾'}</Text>
+                    </PressableScale>
+                  )}
+                </Animated.View>
+              ) : null}
 
               {/* ── ACTION BAR: Certify · Critic · Share to Lounge ── */}
               <Animated.View entering={FadeInDown.duration(600).delay(350)} style={s.actionBar}>
@@ -640,7 +702,7 @@ export default function StackDetailScreen() {
 
                 <PressableScale style={s.actionItem} onPress={handleToggleComments} hitSlop={{top: 10, bottom: 10, left: 10, right: 10}} haptic="selection" accessibilityRole="button" accessibilityLabel="Toggle critiques">
                   <View pointerEvents="none"><MessageCircle size={14} color={showComments ? colors.sepia : colors.fog} /></View>
-                  <Text style={[s.actionLabel, showComments && s.actionLabelActive]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>CRITIC</Text>
+                  <Text style={[s.actionLabel, showComments && s.actionLabelOpen]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>CRITIQUES</Text>
                 </PressableScale>
 
                 <View style={s.actionDivider} />
@@ -657,7 +719,7 @@ export default function StackDetailScreen() {
                     <Text style={s.commentEmpty}>No critiques yet. Be the first to speak.</Text>
                   )}
                   {(queryComments || []).map(c => (
-                    <StackCommentRow key={c.id} c={c} currentUserId={user?.id} onLongPress={(comment) => {
+                    <StackCommentRow key={c.id} c={c} currentUserId={user?.id} onPressProfile={handlePressProfile} onLongPress={(comment) => {
                       setSelectedComment(comment);
                       setCommentActionSheetVisible(true);
                     }} />
@@ -674,7 +736,7 @@ export default function StackDetailScreen() {
                         returnKeyType="send"
                         onSubmitEditing={handleSubmitComment}
                         maxLength={500}
-                        selectionColor={'rgba(218,165,32,0.3)'}
+                        selectionColor={colors.selection}
                         cursorColor={colors.sepia}
                         disableFullscreenUI={true}
                         keyboardAppearance="dark"
@@ -690,7 +752,7 @@ export default function StackDetailScreen() {
 
               <View style={s.trackRow}>
                 <Text style={s.trackLabel}>INDEXED REELS</Text>
-                <View style={s.trackLine} />
+                <LinearGradient colors={[colors.sepiaBorder, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.trackLine} />
               </View>
             </View>
           </>
@@ -698,8 +760,8 @@ export default function StackDetailScreen() {
         renderItem={renderItem as any}
         ListEmptyComponent={
           <View style={s.emptyState}>
-            <Text style={s.emptyTitle}>Archive Empty</Text>
-            <Text style={s.emptySubtitle}>No films have been added to this collection.</Text>
+            <Text style={s.emptyTitle}>An Empty Stack</Text>
+            <Text style={s.emptySubtitle}>No reels have been indexed to this collection yet.</Text>
           </View>
         }
       />
@@ -800,74 +862,80 @@ const s = StyleSheet.create({
   parallaxHeader: { position: 'absolute', top: 0, left: 0, right: 0, zIndex: -1 },
   headerContentWrap: { paddingHorizontal: 16, paddingBottom: 24 },
   
-  refCode: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 4, color: colors.sepia, marginBottom: 8 },
+  eyebrow: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3.5, color: colors.sepia, marginBottom: 8, textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 4 },
   title: { fontFamily: fonts.display, fontSize: 36, color: colors.parchment, lineHeight: 40, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 6 },
-  metaRow: { flexDirection: 'row', alignItems: 'center', marginTop: 16, marginBottom: 16 },
-  curatorDot: { width: 4, height: 4, borderRadius: 2, backgroundColor: colors.sepia, marginRight: 8 },
-  metaText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
-  desc: { fontFamily: fonts.sub, fontSize: 14, color: colors.bone, lineHeight: 22, opacity: 0.9, marginBottom: 24 },
+  // Colophon — wraps so long curator names push chips to a second line, never cramping.
+  metaRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 7, rowGap: 6, marginTop: 16, marginBottom: 16 },
+  metaDiamond: { width: 5, height: 5, backgroundColor: colors.sepia, transform: [{ rotate: '45deg' }] },
+  metaCurator: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.parchment, textDecorationLine: 'underline', textDecorationColor: colors.sepiaBorder },
+  metaText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.fog },
+  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', borderRadius: 3, paddingHorizontal: 6, paddingVertical: 2 },
+  metaChipText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.sepia, includeFontPadding: false },
+  // The epigraph — prose wears Courier italic, folded past four lines.
+  descWrap: { marginBottom: 24 },
+  desc: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.bone, lineHeight: 21, opacity: 0.9 },
+  descToggle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia, marginTop: 8 },
   
   // ── Action Bar ──
   actionBar: {
     flexDirection: 'row', alignItems: 'center',
-    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,105,20,0.2)',
-    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.2)',
+    borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
+    borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.25)',
     paddingVertical: 10, marginBottom: 16,
   },
   actionItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
-  actionLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.fog },
-  actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(139,105,20,0.15)' },
+  actionLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+  actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
 
-  // ── Comments Panel ──
+  // ── Critiques Panel ──
   commentsPanel: {
     backgroundColor: 'rgba(10,7,3,0.8)',
-    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(139,105,20,0.15)',
+    borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(184,137,26,0.2)',
     borderRadius: 6, padding: 12, marginBottom: 16,
   },
-  commentEmpty: { fontFamily: fonts.body, fontSize: 12, color: colors.fog, textAlign: 'center', paddingVertical: 8, opacity: 0.7 },
-  commentRow: { flexDirection: 'row', gap: 6, marginBottom: 8, alignItems: 'baseline' },
-  commentUser: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5, color: colors.sepia, flexShrink: 1, maxWidth: '40%' },
-  commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, flex: 1 },
-  commentInputRow: { flexDirection: 'row', gap: 8, marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(139,105,20,0.1)', paddingTop: 8 },
-  commentInput: { flex: 1, backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.15)', borderRadius: 4, paddingHorizontal: 10, paddingVertical: 8, fontFamily: fonts.body, fontSize: 12, color: colors.bone },
-  commentSendBtn: { padding: 8, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
-
-  // ── Share to Lounge Modal ──
-  loungeOverlay: { ...StyleSheet.absoluteFillObject, zIndex: 200, backgroundColor: 'rgba(5,3,1,0.85)', justifyContent: 'flex-end' },
-  loungeSheet: { backgroundColor: colors.ink, borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.2)', borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '60%', overflow: 'hidden' },
-  loungeHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.15)' },
-  loungeTitle: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia },
-  loungeClose: { fontSize: 16, color: colors.fog, padding: 4 },
-  loungeRow: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.06)' },
-  loungeAvatar: { width: 32, height: 32, borderRadius: 8, backgroundColor: 'rgba(139,105,20,0.1)', borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', overflow: 'hidden', alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  loungeName: { flex: 1, fontFamily: fonts.sub, fontSize: 14, color: colors.parchment },
-  loungeSendIcon: { width: 28, height: 28, borderRadius: 14, borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', backgroundColor: 'rgba(139,105,20,0.08)', alignItems: 'center', justifyContent: 'center' },
+  commentEmpty: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 12, color: colors.fog, textAlign: 'center', paddingVertical: 8, opacity: 0.7 },
+  commentRow: { flexDirection: 'row', gap: 8, marginBottom: 10, alignItems: 'flex-start' },
+  commentAvatar: {
+    width: 24, height: 24, borderRadius: 12, backgroundColor: colors.soot,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', overflow: 'hidden',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  commentAvatarImg: { width: '100%', height: '100%' },
+  commentBodyWrap: { flex: 1 },
+  commentHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
+  commentUserPress: { flexShrink: 1 },
+  commentUser: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.5, color: colors.sepia },
+  commentTime: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 0.5, color: colors.ash, includeFontPadding: false },
+  commentBody: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, lineHeight: 18, marginTop: 2 },
+  commentInputRow: { flexDirection: 'row', gap: 8, marginTop: 8, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.15)', paddingTop: 8 },
+  commentInput: { flex: 1, backgroundColor: 'rgba(10,7,3,0.6)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4, paddingHorizontal: 10, paddingVertical: 8, fontFamily: fonts.body, fontSize: 12, color: colors.bone },
+  commentSendBtn: { padding: 8, borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)', borderRadius: 4, justifyContent: 'center', alignItems: 'center' },
 
   trackRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginTop: 12, marginBottom: 20 },
-  trackLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.sepia },
-  trackLine: { flex: 1, height: 1, backgroundColor: 'rgba(139,105,20,0.2)' },
+  trackLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
+  trackLine: { flex: 1, height: 1 },
   
   filmItem: { marginBottom: 24, marginHorizontal: 4 },
   filmCard: { borderRadius: 2, overflow: 'hidden', backgroundColor: colors.soot, borderWidth: StyleSheet.hairlineWidth, borderColor: 'rgba(255,255,255,0.1)' },
+  // The podium frame — only #1 of a ranked stack earns the brass hairline.
+  filmCardFirst: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.45)' },
   posterPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 8 },
   placeholderText: { fontFamily: fonts.sub, fontSize: 10, color: colors.ash, textAlign: 'center' },
-  loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(0,0,0,0.6)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)' },
+  loggedBadge: { position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: 11, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(10,7,3,0.75)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.5)' },
   filmTitle: { fontFamily: fonts.sub, fontSize: 11, color: colors.fog, marginTop: 6, textAlign: 'center', paddingHorizontal: 2 },
-  
+
   rankBadgeWrap: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 40, justifyContent: 'flex-end', paddingBottom: 6, paddingLeft: 8, paddingRight: 8 },
   rankNumber: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 28, textShadowColor: 'rgba(0,0,0,0.8)', textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 4 },
+  rankNumberFirst: { color: colors.sepia },
   
   emptyState: { alignItems: 'center', paddingVertical: 40, paddingHorizontal: 20 },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.sepia, marginBottom: 8 },
-  emptySubtitle: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, textAlign: 'center' },
+  emptySubtitle: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 13, color: colors.fog, textAlign: 'center' },
 
-  // Extracted
   loadingCenter: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   actionLabelActive: { color: colors.crimson },
+  actionLabelOpen: { color: colors.sepia },
   sendBtnDisabled: { opacity: 0.3 },
-  loungeEmptyWrap: { padding: 30, alignItems: 'center' },
-  loungeEmptyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog },
-  loungeAvatarImg: { width: '100%', height: '100%' },
 });
 
 

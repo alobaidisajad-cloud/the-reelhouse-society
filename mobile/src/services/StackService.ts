@@ -38,8 +38,8 @@ const StackCommentRowSchema = z.object({
   content: z.string(),
   created_at: z.string(),
   profiles: z.union([
-    z.object({ username: z.string() }),
-    z.array(z.object({ username: z.string() })),
+    z.object({ username: z.string(), avatar_url: z.string().nullable().optional() }),
+    z.array(z.object({ username: z.string(), avatar_url: z.string().nullable().optional() })),
   ]),
 });
 
@@ -108,7 +108,7 @@ export const StackService = {
   async getStackComments(stackId: string) {
     const { data, error } = await supabase
       .from('list_comments')
-      .select('id, list_id, user_id, content, created_at, profiles!inner(username)')
+      .select('id, list_id, user_id, content, created_at, profiles!inner(username, avatar_url)')
       .eq('list_id', stackId)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -129,12 +129,13 @@ export const StackService = {
           content: c.content,
           created_at: c.created_at,
           username: profile?.username || 'unknown',
+          avatar_url: profile?.avatar_url ?? null,
         });
       } else {
         logger.warn(`[StackService.getStackComments] row failed schema validation: ${parsed.error.message}`);
       }
       return acc;
-    }, [] as { id: string; list_id: string; user_id: string; content: string; created_at: string; username: string }[]);
+    }, [] as { id: string; list_id: string; user_id: string; content: string; created_at: string; username: string; avatar_url: string | null }[]);
 
     return formatted.reverse();
   },
@@ -153,7 +154,7 @@ export const StackService = {
     const { data, error } = await supabase
       .from('list_comments')
       .insert([dbPayload])
-      .select('id, list_id, user_id, content, created_at, profiles(username)')
+      .select('id, list_id, user_id, content, created_at, profiles(username, avatar_url)')
       .maybeSingle();
 
     if (error) throw error;
@@ -173,6 +174,7 @@ export const StackService = {
       content: data.content,
       created_at: data.created_at,
       username: profile?.username || 'unknown',
+      avatar_url: (profile as { avatar_url?: string | null } | undefined)?.avatar_url ?? null,
     };
   }
 };
