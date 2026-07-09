@@ -278,9 +278,8 @@ export function PrivacySection({ control, saving }: { control: Control<SettingsF
             render={({ field }) => (
               <>
                 {[
-                  { value: 'public', label: 'Public — Visible to everyone' },
-                  { value: 'followers', label: 'Followers Only — Only your followers can see' },
-                  { value: 'private', label: 'Private — Only you can see your activity' },
+                  { value: 'public', label: 'Public — Anyone can see your activity' },
+                  { value: 'private', label: 'Private — Only your approved followers can see' },
                 ].map(opt => <RadioOption key={opt.value} selected={field.value === opt.value} label={opt.label} onPress={() => field.onChange(opt.value)} disabled={saving} />)}
               </>
             )}

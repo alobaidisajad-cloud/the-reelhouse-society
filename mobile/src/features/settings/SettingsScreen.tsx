@@ -148,7 +148,7 @@ export function SettingsScreen() {
   const { control, handleSubmit, reset, setValue, formState: { isDirty, dirtyFields } } = useForm<SettingsFormData>({
     resolver: zodResolver(SettingsSchema),
     defaultValues: {
-      socialVisibility: (currentPrefs?.social_visibility || (user?.is_social_private ? 'private' : 'public')) as 'public' | 'followers' | 'private',
+      socialVisibility: (user?.is_social_private ? 'private' : 'public') as 'public' | 'private',
       privacyEndorsements: (currentPrefs?.privacy_endorsements || 'everyone') as 'everyone' | 'followers' | 'nobody',
       privacyAnnotations: (currentPrefs?.privacy_annotations || 'everyone') as 'everyone' | 'followers' | 'nobody',
       notifFollows: currentPrefs?.notif_follows ?? true,
@@ -162,7 +162,7 @@ export function SettingsScreen() {
   // Sync from Supabase gracefully if no local edits
   useEffect(() => {
     if (!isDirty) {
-      const visibility = (currentPrefs?.social_visibility || (user?.is_social_private ? 'private' : 'public')) as 'public' | 'followers' | 'private';
+      const visibility = (user?.is_social_private ? 'private' : 'public') as 'public' | 'private';
       reset({
         socialVisibility: visibility,
         privacyEndorsements: (currentPrefs?.privacy_endorsements || 'everyone') as 'everyone' | 'followers' | 'nobody',

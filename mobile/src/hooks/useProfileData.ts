@@ -276,7 +276,15 @@ export function useProfileData({
 
       const currentIsFollowing = useSocialStore.getState().isFollowing(username);
       if (typedProfile.is_social_private && !isSelf && !currentIsFollowing) {
+        // Sealed profile: show the member and their REAL stats (the counts RPC is
+        // SECURITY DEFINER, so it's privacy-safe), but never fetch the content
+        // itself. This is what stops a private profile reading "0 films" — we
+        // simply never asked for the counts before. The tabs stay locked.
         dispatch({ type: 'SET_USER', payload: typedProfile });
+        try {
+          const lockedCounts = await ProfileDataService.fetchCounts(typedProfile, false, signal);
+          if (!signal.aborted && isMounted.current) dispatch({ type: 'SET_COUNTS', payload: lockedCounts });
+        } catch { /* non-fatal: the sealed profile still renders without counts */ }
         return;
       }
 
