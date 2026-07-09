@@ -211,7 +211,10 @@ export const LogService = {
     const safePayload = LogCommentPayloadSchema.parse(payload);
     // COMP-1: sanitize at the service boundary so the ONLINE path matches the
     // offline mutationExecutor (`sanitizeInput(body, 'logComment')`) - one choke point.
-    const sanitized = { ...safePayload, body: sanitizeInput(safePayload.body, 'logComment') };
+    // log_comments.username is NOT NULL and no trigger populates it — inject the
+    // current user's username (denormalized column; display uses the profiles join).
+    const username = useAuthStore.getState().user?.username ?? 'anonymous';
+    const sanitized = { ...safePayload, username, body: sanitizeInput(safePayload.body, 'logComment') };
 
     const { data: commentData, error } = await supabase
       .from('log_comments')

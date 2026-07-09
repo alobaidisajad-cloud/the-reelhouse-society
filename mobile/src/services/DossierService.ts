@@ -1,4 +1,5 @@
 import { supabase } from '@/src/lib/supabase';
+import { useAuthStore } from '@/src/stores/auth';
 import {
     DossierCommentSchema,
     type DossierComment,
@@ -28,9 +29,12 @@ export const DossierService = {
 
   async addComment(payload: unknown) {
     const safePayload = CommentPayloadSchema.parse(payload);
+    // dossier_comments.username is NOT NULL and no trigger populates it — inject the
+    // current user's username (denormalized column; display uses the profiles join).
+    const username = useAuthStore.getState().user?.username ?? 'anonymous';
     const { data, error } = await supabase
       .from('dossier_comments')
-      .insert(safePayload)
+      .insert({ ...safePayload, username })
       .select('id, user_id, body, created_at, profiles!inner(username, avatar_url)')
       .maybeSingle();
       

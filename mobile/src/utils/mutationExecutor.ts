@@ -15,6 +15,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../stores/auth';
 import { InteractionService } from '../services/InteractionService';
 import { logger } from './logger';
 import type { QueuedMutation } from './offlineQueue';
@@ -230,11 +231,14 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
 
     add_log_comment: async (p: any) => {
         const { id, log_id, user_id, body } = p;
+        // log_comments.username is NOT NULL and no trigger populates it. Supply the
+        // author's username (denormalized column; display uses the profiles join).
+        const username = (p.username as string) || useAuthStore.getState().user?.username || 'anonymous';
         // Sanitize comment body — strips zero-width chars, control chars,
         // and enforces MAX_LENGTHS.logComment (2000) before database write.
         const cleanBody = sanitizeInput(body as string, 'logComment');
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const result = throwIfError(await supabase.from('log_comments').upsert([{ id, log_id, user_id, body: cleanBody }], { onConflict: 'id' }).select('id').maybeSingle());
+        const result = throwIfError(await supabase.from('log_comments').upsert([{ id, log_id, user_id, username, body: cleanBody }], { onConflict: 'id' }).select('id').maybeSingle());
         return {};
     },
 
@@ -322,7 +326,7 @@ const handlers: Record<QueuedMutation['type'], MutationHandler> = {
         const dbPayload = {
             list_id,
             user_id,
-            body: sanitizeInput(content as string, 'listComment')
+            content: sanitizeInput(content as string, 'listComment')
         };
         throwIfError(await supabase.from('list_comments').insert([dbPayload]).select('id, list_id').maybeSingle());
 

@@ -101,7 +101,7 @@ describe('StackService', () => {
     describe('getStackComments', () => {
         it('returns mapped comments with username', async () => {
             const rawComments = [
-                { id: 'c1', list_id: 's1', user_id: 'u1', body: 'Great list!', created_at: '2024-01-01', profiles: { username: 'filmfan' } },
+                { id: 'c1', list_id: 's1', user_id: 'u1', content: 'Great list!', created_at: '2024-01-01', profiles: { username: 'filmfan' } },
             ];
             (supabase.from as jest.Mock).mockReturnValue(chain({ data: rawComments, error: null }));
             const result = await StackService.getStackComments('s1');
@@ -111,7 +111,7 @@ describe('StackService', () => {
 
         it('handles profiles as array (Supabase join variant)', async () => {
             const rawComments = [
-                { id: 'c1', list_id: 's1', user_id: 'u1', body: 'Nice!', created_at: '2024-01-01', profiles: [{ username: 'arrayuser' }] },
+                { id: 'c1', list_id: 's1', user_id: 'u1', content: 'Nice!', created_at: '2024-01-01', profiles: [{ username: 'arrayuser' }] },
             ];
             (supabase.from as jest.Mock).mockReturnValue(chain({ data: rawComments, error: null }));
             const result = await StackService.getStackComments('s1');
@@ -127,7 +127,7 @@ describe('StackService', () => {
 
     describe('addStackComment', () => {
         it('validates payload with Zod then inserts', async () => {
-            const c = chain({ data: { id: 'new-c', list_id: 's1', user_id: 'u1', body: 'Comment', created_at: '2024-01-01' }, error: null });
+            const c = chain({ data: { id: 'new-c', list_id: 's1', user_id: 'u1', content: 'Comment', created_at: '2024-01-01' }, error: null });
             // Second call for list owner lookup + notification
             const listChain = chain({ data: { user_id: 'owner1', title: 'My Stack' }, error: null });
             const notifChain = chain({ error: null });

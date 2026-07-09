@@ -35,7 +35,7 @@ const StackCommentRowSchema = z.object({
   id: z.string(),
   list_id: z.string(),
   user_id: z.string(),
-  body: z.string(),
+  content: z.string(),
   created_at: z.string(),
   profiles: z.union([
     z.object({ username: z.string() }),
@@ -108,7 +108,7 @@ export const StackService = {
   async getStackComments(stackId: string) {
     const { data, error } = await supabase
       .from('list_comments')
-      .select('id, list_id, user_id, body, created_at, profiles!inner(username)')
+      .select('id, list_id, user_id, content, created_at, profiles!inner(username)')
       .eq('list_id', stackId)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -126,7 +126,7 @@ export const StackService = {
           id: c.id,
           list_id: c.list_id,
           user_id: c.user_id,
-          content: c.body,
+          content: c.content,
           created_at: c.created_at,
           username: profile?.username || 'unknown',
         });
@@ -142,19 +142,18 @@ export const StackService = {
   async addStackComment(payload: unknown) {
     const safePayload = CommentPayloadSchema.parse(payload);
     
-    // Remap API 'content' → DB column 'body' at service boundary.
-    // CommentPayloadSchema uses 'content' (matches UI's ListComment.content),
-    // but the list_comments table column is 'body' (confirmed by read path L94).
+    // list_comments' text column is 'content' (verified against the live schema),
+    // matching the UI/API shape — no remap needed, just sanitize.
     // COMP-1: sanitize at the service boundary so the ONLINE path matches the
     // offline mutationExecutor (`sanitizeInput(content, 'listComment')`).
     const { content, ...rest } = safePayload;
-    const dbPayload = { ...rest, body: sanitizeInput(content, 'listComment') };
+    const dbPayload = { ...rest, content: sanitizeInput(content, 'listComment') };
     
     // Add the comment and fetch joined profile in a single query
     const { data, error } = await supabase
       .from('list_comments')
       .insert([dbPayload])
-      .select('id, list_id, user_id, body, created_at, profiles(username)')
+      .select('id, list_id, user_id, content, created_at, profiles(username)')
       .maybeSingle();
 
     if (error) throw error;
@@ -171,7 +170,7 @@ export const StackService = {
       id: data.id,
       list_id: data.list_id,
       user_id: data.user_id,
-      content: data.body,
+      content: data.content,
       created_at: data.created_at,
       username: profile?.username || 'unknown',
     };
