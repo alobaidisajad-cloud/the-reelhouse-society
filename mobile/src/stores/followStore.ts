@@ -24,6 +24,11 @@ export interface SocialState {
     /** O(1) lookup index — mirrors endorsement/watchlist index pattern */
     _followingIndex: Set<string>;
     _requestedIndex: Set<string>;
+    /** Incoming follow requests awaiting your approval ("At the Door"). Drives the
+     *  Notices banner + the profile door badge. Source of truth is the DB; this is
+     *  the cached live count, refreshed on app focus and when the panel resolves one. */
+    pendingRequestCount: number;
+    setPendingRequestCount: (n: number) => void;
     setFollowing: (usernames: string[]) => void;
     setRequested: (usernames: string[]) => void;
     addFollowing: (username: string) => void;
@@ -41,6 +46,9 @@ export const useSocialStore = create<SocialState>()((set, get) => ({
     requested: [],
     _followingIndex: new Set<string>(),
     _requestedIndex: new Set<string>(),
+    pendingRequestCount: 0,
+
+    setPendingRequestCount: (n) => set({ pendingRequestCount: Math.max(0, Math.floor(n) || 0) }),
 
     setFollowing: (usernames) => {
         set({ following: usernames, _followingIndex: new Set(usernames.map(u => (u || '').toLowerCase())) });
@@ -154,8 +162,9 @@ export const useSocialStore = create<SocialState>()((set, get) => ({
 
 // Register cleanup handler for centralized logout
 registerStoreReset(() => {
-    useSocialStore.setState({ 
+    useSocialStore.setState({
         following: [], _followingIndex: new Set(),
-        requested: [], _requestedIndex: new Set()
+        requested: [], _requestedIndex: new Set(),
+        pendingRequestCount: 0
     });
 });

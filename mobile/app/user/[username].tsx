@@ -73,6 +73,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
+import FollowRequestsPanel from '@/src/components/profile/FollowRequestsPanel';
+import { useSocialStore } from '@/src/stores/followStore';
+import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
 import { GoldDivider, SectionLabel, StatCard } from '@/src/components/profile/ProfileHelpers';
 import { ProfilePosterCard } from '@/src/components/profile/ProfilePosterCard';
 import { useBlockStore } from '@/src/stores/blockStore';
@@ -206,6 +209,10 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
   // ── Moderation State ──
   const [actionSheetVisible, setActionSheetVisible] = useState(false);
   const [reportSheetVisible, setReportSheetVisible] = useState(false);
+  const [doorOpen, setDoorOpen] = useState(false);
+  const pendingRequestCount = useSocialStore(s => s.pendingRequestCount);
+  // Keep the door badge fresh whenever we land on our own profile.
+  useEffect(() => { if (isSelf) refreshFollowRequestCount(); }, [isSelf]);
   const isBlocked = useBlockStore((state) => state.isBlocked(targetUser?.id ?? ''));
   const isMuted = useBlockStore((state) => state.isMuted(targetUser?.id ?? ''));
   const blockStore = useBlockStore();
@@ -1002,6 +1009,17 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
           {isSelf && (
             <View style={s.accountSection}>
               <SectionDivider label="ACCOUNT & SETTINGS" />
+              {targetUser.is_social_private && (
+                <PressableScale style={s.accountRow} onPress={() => setDoorOpen(true)} haptic accessibilityRole="button" accessibilityLabel={`At the door, ${pendingRequestCount} awaiting entry`}>
+                  <KeyRound size={13} color={colors.sepia} strokeWidth={1.5} />
+                  <Text style={s.accountRowText}>AT THE DOOR</Text>
+                  {pendingRequestCount > 0 && (
+                    <View style={s.doorCountBadge}>
+                      <Text style={s.doorCountText}>{pendingRequestCount > 99 ? '99+' : pendingRequestCount}</Text>
+                    </View>
+                  )}
+                </PressableScale>
+              )}
               <PressableScale style={s.accountRow} onPress={navToMembership} haptic>
                 <Crown size={13} color={colors.sepia} strokeWidth={1.5} />
                 <Text style={s.accountRowText}>THE SOCIETY RANKS</Text>
@@ -1012,6 +1030,8 @@ export default function UserProfileScreen({ usernameOverride, isRootTab = false 
               </PressableScale>
             </View>
           )}
+
+          {isSelf && <FollowRequestsPanel visible={doorOpen} onClose={() => setDoorOpen(false)} />}
         </View>
         )}
       </CinematicScrollView>

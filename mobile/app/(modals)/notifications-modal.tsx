@@ -5,15 +5,18 @@ import React, { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, InteractionManager, Platform, RefreshControl, StyleSheet, Text, View } from 'react-native';
 
 import { AppNotification, useNotificationStore } from '@/src/stores/notificationStore';
+import { useSocialStore } from '@/src/stores/followStore';
 import { colors, fonts, SEPIA_HASH } from '@/src/theme/theme';
 import { DisplayItem, GroupedDisplayItem, groupNotifications } from '@/src/utils/groupNotifications';
 import * as Notifications from 'expo-notifications';
 
 import { EmptyState } from '@/src/components/EmptyStates';
 import PressableScale from '@/src/components/PressableScale';
+import FollowRequestsPanel from '@/src/components/profile/FollowRequestsPanel';
+import { refreshFollowRequestCount } from '@/src/hooks/useFollowRequests';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { timeAgo } from '@/src/utils/timeAgo';
-import { Award, Bell, Heart, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
+import { Award, Bell, ChevronRight, Heart, KeyRound, MessageCircle, Star, UserPlus, X } from 'lucide-react-native';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
 // ── Hoisted Constants (P2-HITSLOP FIX) ──
@@ -160,15 +163,22 @@ export default function NotificationsModal() {
   // FIX #4: Single-source derived value instead of double .every() computation
   const allRead = useNotificationStore(s => s._unreadCount) === 0;
 
+  // ── At the Door: follow requests live in their own stateful panel, not the
+  // notice stream. We surface a pinned banner here and suppress the individual
+  // follow_request notices so a request can never be orphaned by a dismiss.
+  const pendingCount = useSocialStore(s => s.pendingRequestCount);
+  const [doorOpen, setDoorOpen] = useState(false);
+
   // Pure view-layer grouping transformation — recomputes only when notifications[] changes
-  const displayItems = useMemo(() => groupNotifications(notifications), [notifications]);
+  const displayItems = useMemo(() => groupNotifications(notifications.filter(n => n.type !== 'follow_request')), [notifications]);
 
   // Pull-to-refresh state (local — not persisted)
   const [refreshing, setRefreshing] = useState(false);
 
   // Fetch existing notifications from server on mount
-  React.useEffect(() => { 
-    fetchNotifications(); 
+  React.useEffect(() => {
+    fetchNotifications();
+    refreshFollowRequestCount();
     // Optimistically clear the iOS springboard badge instantly
     if (Platform.OS === 'ios') {
       Notifications.setBadgeCountAsync(0);
@@ -226,6 +236,24 @@ export default function NotificationsModal() {
         </PressableScale>
       </View>
 
+      {pendingCount > 0 && (
+        <PressableScale
+          style={s.doorBanner}
+          onPress={() => { TactileEngine.selection(); setDoorOpen(true); }}
+          haptic="medium"
+          pressedScale={0.98}
+          accessibilityRole="button"
+          accessibilityLabel={`At the door: ${pendingCount} awaiting entry`}
+        >
+          <View style={s.doorIcon}><KeyRound size={16} color={colors.sepia} strokeWidth={1.5} /></View>
+          <View style={s.doorTextWrap}>
+            <Text style={s.doorTitle}>AT THE DOOR</Text>
+            <Text style={s.doorSub}>{pendingCount > 999 ? '999+' : pendingCount} awaiting entry</Text>
+          </View>
+          <ChevronRight size={18} color={colors.sepia} strokeWidth={2} />
+        </PressableScale>
+      )}
+
       <FlashList
         data={displayItems}
         estimatedItemSize={80}
@@ -274,6 +302,8 @@ export default function NotificationsModal() {
         }
         renderItem={renderNotification}
       />
+
+      <FollowRequestsPanel visible={doorOpen} onClose={() => setDoorOpen(false)} />
     </View>
   );
 }
@@ -294,6 +324,22 @@ const s = StyleSheet.create({
   eyebrow: { fontFamily: fonts.sub, fontSize: 6, letterSpacing: 2.5, color: colors.sepia, opacity: 0.7, marginTop: 3, includeFontPadding: false },
   markReadBtn: { width: 80, alignItems: 'flex-end' },
   markReadText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
+
+  // ── At the Door banner ──
+  doorBanner: {
+    flexDirection: 'row', alignItems: 'center', gap: 11,
+    marginHorizontal: 16, marginTop: 12, marginBottom: 2, padding: 13,
+    backgroundColor: 'rgba(184,137,26,0.08)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.35)',
+    borderLeftWidth: 3, borderLeftColor: colors.sepia, borderRadius: 4,
+  },
+  doorIcon: {
+    width: 32, height: 32, borderRadius: 3, borderWidth: 1, borderColor: colors.sepia,
+    backgroundColor: 'rgba(11,10,8,0.6)', alignItems: 'center', justifyContent: 'center',
+  },
+  doorTextWrap: { flex: 1 },
+  doorTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.sepia, includeFontPadding: false },
+  doorSub: { fontFamily: fonts.body, fontSize: 12, color: colors.bone, marginTop: 2 },
 
   listContent: { paddingBottom: 40, flexGrow: 1 },
   

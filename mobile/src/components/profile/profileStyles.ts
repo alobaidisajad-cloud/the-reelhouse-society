@@ -282,6 +282,8 @@ export const s = StyleSheet.create({
     flexDirection: 'row' as const, alignItems: 'center' as const, gap: 8,
   },
   accountRowText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.bone },
+  doorCountBadge: { marginLeft: 'auto' as const, minWidth: 22, paddingHorizontal: 7, height: 20, borderRadius: 10, backgroundColor: colors.sepia, alignItems: 'center' as const, justifyContent: 'center' as const },
+  doorCountText: { fontFamily: fonts.sub, fontSize: 10, color: colors.ink, includeFontPadding: false },
 
   // ── Early Return States ──
   centeredFull: { justifyContent: 'center' as const, alignItems: 'center' as const },

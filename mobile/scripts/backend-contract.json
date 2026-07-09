@@ -1,10 +1,13 @@
 {
   "_note": "The set of database RPCs and edge functions this app depends on. Auto-verified by __tests__/backendContract.test.ts on every CI run: if the app adds/removes a backend dependency, that test fails and this file must be updated CONSCIOUSLY. When you update it, make sure any NEW entry actually EXISTS and is DEPLOYED on the live DB (run: node scripts/check-backend-live.mjs). This is the guard against the repo<->production drift found on 2026-06-26. Reconciled with live on 2026-06-26.",
   "rpcs": [
+    "accept_follow_request",
     "approve_lounge_member",
     "bulk_dismiss_reports",
     "create_lounge",
     "decline_lounge_member",
+    "decline_all_follow_requests",
+    "decline_follow_request",
     "delete_list_cascade",
     "get_community_feed_auth_cursor",
     "get_featured_critique",
