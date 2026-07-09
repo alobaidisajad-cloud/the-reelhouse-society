@@ -7,6 +7,39 @@ import { ActivityIndicator, Modal, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 
+// YouTube throws "Error 153 / video player configuration error" when its /embed
+// URL is loaded as the top document (no valid referrer/origin). The fix is to
+// serve a tiny HTML page — with a real baseUrl below — that hosts the embed in an
+// <iframe>, which gives YouTube the origin its embed validation requires.
+const buildEmbedHtml = (videoId: string) => `<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; background: #000; overflow: hidden; }
+  iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+</style>
+</head>
+<body>
+  <iframe
+    src="https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&controls=1&playsinline=1&iv_load_policy=3&fs=1&color=white"
+    allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+    allowfullscreen>
+  </iframe>
+</body>
+</html>`;
+
+// Stops playback immediately by navigating the embed frame away — the parent
+// document (baseUrl youtube.com) may re-point its own iframe even cross-origin.
+const STOP_PLAYBACK_JS = `
+  (function(){ try {
+    var f = document.querySelectorAll('iframe');
+    for (var i=0;i<f.length;i++){ f[i].src = 'about:blank'; }
+  } catch(e){} })();
+  true;
+`;
+
 export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClose }: { visible: boolean; videoId: string; onClose: () => void }) {
     const insets = useSafeAreaInsets();
     const [shouldRender, setShouldRender] = useState(visible);
@@ -15,27 +48,15 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
     useEffect(() => {
         const wv = webviewRef.current;
         let timer: ReturnType<typeof setTimeout>;
-        
         if (visible) {
             setShouldRender(true);
         } else {
-            wv?.injectJavaScript(`
-                var v = document.querySelectorAll('video');
-                for(var i=0; i<v.length; i++) { v[i].pause(); }
-                window.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-                true;
-            `);
+            wv?.injectJavaScript(STOP_PLAYBACK_JS);
             timer = setTimeout(() => setShouldRender(false), 300);
         }
-
         return () => {
             if (timer) clearTimeout(timer);
-            wv?.injectJavaScript(`
-                var v = document.querySelectorAll('video');
-                for(var i=0; i<v.length; i++) { v[i].pause(); }
-                window.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-                true;
-            `);
+            wv?.injectJavaScript(STOP_PLAYBACK_JS);
         };
     }, [visible]);
 
@@ -52,23 +73,35 @@ export const TrailerModal = memo(function TrailerModal({ visible, videoId, onClo
                 <View style={s.videoWrap}>
                     {/* Nitrate Projector Overlay: Tints the raw YouTube feed sepia */}
                     <View style={{ position: 'absolute', zIndex: 2, top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none' }}>
-                        <LinearGradient 
-                            colors={['rgba(184,137,26,0.25)', 'transparent', 'rgba(184,137,26,0.15)']} 
-                            style={StyleSheet.absoluteFillObject} 
+                        <LinearGradient
+                            colors={['rgba(184,137,26,0.25)', 'transparent', 'rgba(184,137,26,0.15)']}
+                            style={StyleSheet.absoluteFillObject}
                         />
                     </View>
                     <WebView
                         ref={webviewRef}
-                        source={{ uri: `https://www.youtube.com/embed/${videoId}?autoplay=1&modestbranding=1&rel=0&controls=1&showinfo=0&fs=1&playsinline=1&iv_load_policy=3&enablejsapi=1` }}
+                        source={{ html: buildEmbedHtml(videoId), baseUrl: 'https://www.youtube.com' }}
                         style={s.webview}
-                        originWhitelist={['https://www.youtube.com', 'https://www.google.com']}
+                        // Load gating is enforced in onShouldStartLoadWithRequest below; the
+                        // html source needs a permissive originWhitelist to render at all.
+                        originWhitelist={['*']}
                         onShouldStartLoadWithRequest={(request) => {
-                            // Security: Only allow YouTube embed and Google OAuth domains
-                            return request.url.startsWith('https://www.youtube.com/') ||
-                                   request.url.startsWith('https://www.google.com/');
+                            const u = request.url;
+                            // Allow the local html render + navigating the frame to blank on close,
+                            // and only real YouTube / Google (OAuth) navigations otherwise.
+                            return (
+                                u === 'about:blank' ||
+                                u.startsWith('about:') ||
+                                u.startsWith('data:') ||
+                                u.startsWith('https://www.youtube.com/') ||
+                                u.startsWith('https://www.youtube-nocookie.com/') ||
+                                u.startsWith('https://www.google.com/')
+                            );
                         }}
                         allowsInlineMediaPlayback
                         mediaPlaybackRequiresUserAction={false}
+                        javaScriptEnabled
+                        domStorageEnabled
                         allowsBackForwardNavigationGestures={false}
                         bounces={false}
                         scrollEnabled={false}
