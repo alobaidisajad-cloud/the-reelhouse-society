@@ -501,7 +501,7 @@ const st = StyleSheet.create({
     paddingVertical: 0,
   },
   searchClear: { padding: 4, marginLeft: 4 },
-  searchClearText: { fontFamily: fonts.ui, fontSize: 10, color: colors.fog },
+  searchClearText: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog },
 
   createStackBtn: {
     marginHorizontal: 16, marginBottom: 16,

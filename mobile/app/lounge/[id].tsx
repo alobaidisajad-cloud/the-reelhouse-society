@@ -681,7 +681,7 @@ const s = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: colors.sepia,
     paddingHorizontal: 9, paddingVertical: 5, borderRadius: 12,
   },
-  doorBadgeText: { fontFamily: fonts.uiBold, fontSize: 11, color: colors.ink },
+  doorBadgeText: { fontFamily: fonts.sub, fontSize: 11, color: colors.ink },
 
   // ── Transcript ──
   list: { paddingHorizontal: 18, paddingTop: 16, paddingBottom: 24 },
@@ -729,7 +729,7 @@ const s = StyleSheet.create({
     borderRadius: 13, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash, backgroundColor: colors.soot,
   },
   reactionChipMine: { borderColor: 'rgba(184,137,26,0.55)', backgroundColor: 'rgba(184,137,26,0.12)' },
-  reactionChipCount: { fontFamily: fonts.uiMedium, fontSize: 11, color: colors.bone },
+  reactionChipCount: { fontFamily: fonts.sub, fontSize: 11, color: colors.bone },
   reactionChipCountMine: { color: colors.flicker },
 
   // ── Shared clipping ──

@@ -192,8 +192,8 @@ export const s = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.65)', borderBottomLeftRadius: 4, borderBottomRightRadius: 4,
     overflow: 'hidden' as const, flexWrap: 'wrap' as const,
   },
-  posterRating: { fontFamily: fonts.uiBold, fontSize: 9, color: colors.sepia },
-  posterTimeAgo: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1, color: colors.fog },
+  posterRating: { fontFamily: fonts.sub, fontSize: 9, color: colors.sepia },
+  posterTimeAgo: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.fog },
 
   // ── Tier Borders (Shadows Purged) ──
   auteurGlow: {
@@ -319,11 +319,11 @@ export const s = StyleSheet.create({
   posterRatingRow: { flexDirection: 'row' as const, gap: 2 },
   posterCardWrap: { aspectRatio: 2 / 3, position: 'relative' as const },
   statusBadgeAbandoned: { borderColor: 'rgba(139,30,30,0.4)' },
-  formatBadgeText: { fontSize: 7, fontFamily: fonts.uiBold, letterSpacing: 1 },
+  formatBadgeText: { fontSize: 7, fontFamily: fonts.sub, letterSpacing: 1 },
 
   // ── Half-Life ──
   halfLifeContent: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 2 },
-  halfLifeText: { fontSize: 7, fontFamily: fonts.ui },
+  halfLifeText: { fontSize: 7, fontFamily: fonts.sub },
 
   // ── Watchlist ──
   watchlistControlRow: { flexDirection: 'row' as const, gap: 8, marginBottom: 16, alignItems: 'center' as const },

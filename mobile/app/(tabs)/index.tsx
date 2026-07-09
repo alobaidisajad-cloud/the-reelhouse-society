@@ -403,7 +403,7 @@ const s = StyleSheet.create({
   // Rhythm: every section-to-section gap on the page resolves to 36px.
   heroSection: { alignItems: 'center', paddingHorizontal: 16, marginBottom: 36, marginTop: 10 },
   heroEyebrow: {
-    fontFamily: fonts.mono, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.6, marginBottom: 6, fontWeight: '700',
+    fontFamily: fonts.sub, fontSize: 11, letterSpacing: 12, color: colors.sepia, opacity: 0.6, marginBottom: 6,
     // Sits over the feature backdrop — soft dark shadow keeps it legible on a bright still.
     textShadowColor: 'rgba(0,0,0,0.7)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 6,
   },
@@ -440,7 +440,7 @@ const s = StyleSheet.create({
   lobbyFooterRule: { width: 60, height: StyleSheet.hairlineWidth, backgroundColor: colors.sepia, opacity: 0.3 },
   lobbyFooterBusterWrap: { marginTop: 10 },
   lobbyFooterLogo: { width: 32, height: 32, opacity: 0.4, marginVertical: 18 },
-  lobbyFooterText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 7, color: colors.sepia, opacity: 0.45, marginBottom: 6 },
+  lobbyFooterText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 7, color: colors.sepia, opacity: 0.45, marginBottom: 6 },
   lobbyFooterSub: { fontFamily: fonts.sub, fontSize: 10, color: colors.fog, opacity: 0.45, fontStyle: 'italic', marginBottom: 10 },
   lobbyFooterWhisper: { fontFamily: fonts.bodyItalic, fontSize: 9, color: colors.fog, opacity: 0.3, fontStyle: 'italic', marginBottom: 18, letterSpacing: 1 },
 });
