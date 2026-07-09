@@ -30,6 +30,7 @@ function chain(resolveValue: { data?: unknown; error: unknown; count?: number } 
     c.delete = jest.fn().mockImplementation(self);
     c.select = jest.fn().mockImplementation(self);
     c.eq = jest.fn().mockImplementation(self);
+    c.in = jest.fn().mockImplementation(self);
     c.not = jest.fn().mockImplementation(self);
     c.order = jest.fn().mockImplementation(self);
     c.limit = jest.fn().mockImplementation(self);
@@ -41,6 +42,9 @@ function chain(resolveValue: { data?: unknown; error: unknown; count?: number } 
 
 beforeEach(() => {
     jest.clearAllMocks();
+    // Drain any unconsumed mockReturnValueOnce values so chains can't leak
+    // between tests (clearAllMocks does not clear the once-queue).
+    (supabase.from as jest.Mock).mockReset();
 });
 
 // ════════════════════════════════════════════════════════════════════
@@ -87,13 +91,23 @@ describe('LogService', () => {
             const comments = [
                 { id: 'c1', log_id: 'log-1', user_id: 'u1', body: 'Great!', created_at: '2024-01-01' },
             ];
-            const c = chain({ data: comments, error: null });
-            (supabase.from as jest.Mock).mockReturnValue(c);
+            const profiles = [
+                { id: 'u1', username: 'filmfan', avatar_url: null, display_name: null },
+            ];
+            const commentsChain = chain({ data: comments, error: null });
+            const profilesChain = chain({ data: profiles, error: null });
+            (supabase.from as jest.Mock)
+                .mockReturnValueOnce(commentsChain)   // log_comments query
+                .mockReturnValueOnce(profilesChain);  // profiles DataLoader join
 
             const result = await LogService.getLogComments('log-1');
             expect(supabase.from).toHaveBeenCalledWith('log_comments');
-            expect(c.order).toHaveBeenCalledWith('created_at', { ascending: true });
-            expect(result).toEqual(comments);
+            expect(commentsChain.order).toHaveBeenCalledWith('created_at', { ascending: true });
+            // getLogComments attaches the author profile to each comment for display.
+            expect(result).toEqual(comments.map(cm => ({
+                ...cm,
+                profiles: { username: 'filmfan', avatar_url: null, display_name: null },
+            })));
         });
 
         it('throws on error', async () => {

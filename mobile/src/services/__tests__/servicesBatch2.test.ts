@@ -35,7 +35,12 @@ function chain(resolveValue: { data?: unknown; error: unknown; count?: number } 
     return c;
 }
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+    jest.clearAllMocks();
+    // Drain any unconsumed mockReturnValueOnce values — clearAllMocks does NOT
+    // clear the once-queue, so leftover chains would leak into later tests.
+    (supabase.from as jest.Mock).mockReset();
+});
 
 // ════════════════════════════════════════════════════════════════════
 // STACK SERVICE
@@ -127,15 +132,10 @@ describe('StackService', () => {
 
     describe('addStackComment', () => {
         it('validates payload with Zod then inserts', async () => {
-            const c = chain({ data: { id: 'new-c', list_id: 's1', user_id: 'u1', content: 'Comment', created_at: '2024-01-01' }, error: null });
-            // Second call for list owner lookup + notification
-            const listChain = chain({ data: { user_id: 'owner1', title: 'My Stack' }, error: null });
-            const notifChain = chain({ error: null });
-
-            (supabase.from as jest.Mock)
-                .mockReturnValueOnce(c)
-                .mockReturnValueOnce(listChain)
-                .mockReturnValueOnce(notifChain);
+            // addStackComment now performs a single insert; the list-owner
+            // notification is emitted by the tr_notify_list_comment DB trigger.
+            const c = chain({ data: { id: 'new-c', list_id: 's1', user_id: 'u1', content: 'Comment', created_at: '2024-01-01', profiles: { username: 'testuser' } }, error: null });
+            (supabase.from as jest.Mock).mockReturnValue(c);
 
             await StackService.addStackComment({
                 list_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
