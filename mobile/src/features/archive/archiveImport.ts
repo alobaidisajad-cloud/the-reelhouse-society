@@ -567,8 +567,8 @@ function isHeaderRow(cells: string[]): boolean {
 export function parseListCSV(text: string, fileName: string): ParsedListFile {
   const rawRows = parseCSVRows(text).filter(row => row.some(cell => cell.length > 0));
 
-  // Extract list name from filename: "best-of-2024.csv" → "Best Of 2024"
-  const name = fileName
+  // Fallback list name from filename: "best-of-2024.csv" → "Best Of 2024"
+  let name = fileName
     .replace(/\.csv$/i, '')
     .replace(/[-_]+/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase());
@@ -585,14 +585,22 @@ export function parseListCSV(text: string, fileName: string): ParsedListFile {
   const headers = rawRows[headerIdx];
   const mapping = resolveHeaders(headers);
 
-  // Description: from the film table's own column, else from the metadata
-  // block above (its first data row), matching how these exports carry it.
+  // Two-section format: the metadata block above the film table carries the
+  // list's EXACT original name (punctuation, casing — better than the slugified
+  // filename) and its description. Prefer both when present.
   let description = '';
   if (headerIdx > 0) {
     const metaMapping = resolveHeaders(rawRows[0]);
-    if (metaMapping?.description && rawRows.length > 1) {
-      const metaIdx = rawRows[0].indexOf(metaMapping.description);
-      description = rawRows[1]?.[metaIdx] ?? '';
+    if (metaMapping) {
+      if (metaMapping.title) {
+        const nameIdx = rawRows[0].indexOf(metaMapping.title);
+        const exactName = rawRows[1]?.[nameIdx]?.trim();
+        if (exactName) name = exactName;
+      }
+      if (metaMapping.description) {
+        const metaIdx = rawRows[0].indexOf(metaMapping.description);
+        description = rawRows[1]?.[metaIdx] ?? '';
+      }
     }
   }
 

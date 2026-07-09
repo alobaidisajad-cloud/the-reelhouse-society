@@ -69,19 +69,22 @@ describe('parseListCSV', () => {
     expect(list.entries.map(e => e.title)).toEqual(['First', 'Second', 'Third']);
   });
 
-  it('two-section format: anchors on the film table, no garbage entries, keeps description', () => {
+  it('two-section format: anchors on the film table, no garbage entries, keeps exact name + description', () => {
     const csv = [
       'Date,Name,Tags,URL,Description',
-      '2024-01-01,My Favourite Noirs,noir,https://example.com/list,"Shadows and cigarettes."',
+      '2024-01-01,"Noir & Neon: After Dark!",noir,https://example.com/list,"Shadows and cigarettes."',
       'Position,Name,Year,URL,Description',
       '1,Double Indemnity,1944,https://example.com/f1,',
       '2,Out of the Past,1947,https://example.com/f2,',
     ].join('\n');
-    const list = parseListCSV(csv, 'my-favourite-noirs.csv');
+    const list = parseListCSV(csv, 'noir-neon-after-dark.csv');
     // The list's own name and the embedded header row must NOT become films.
     expect(list.entries.map(e => e.title)).toEqual(['Double Indemnity', 'Out of the Past']);
     // Year comes from the film table, not lost to the metadata header.
     expect(list.entries[0].year).toBe('1944');
+    // EXACT original name from the metadata block — punctuation and casing
+    // intact, not the slugified filename ("Noir Neon After Dark").
+    expect(list.name).toBe('Noir & Neon: After Dark!');
     expect(list.description).toBe('Shadows and cigarettes.');
   });
 
