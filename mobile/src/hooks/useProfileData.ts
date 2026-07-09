@@ -45,7 +45,7 @@ export interface ProfileState {
   listsCursor: string | null;
   hasMoreLists: boolean;
   isLoadingMore: Record<string, boolean>;
-  counts: { logs: number; ledger: number; watchlist: number; vault: number; lists: number };
+  counts: { logs: number; ledger: number; watchlist: number; vault: number; lists: number; followers?: number; following?: number };
   tabDataLoaded: Record<string, boolean>;
   serverStreak: number | null;
   activeFilters: {
@@ -283,7 +283,12 @@ export function useProfileData({
         dispatch({ type: 'SET_USER', payload: typedProfile });
         try {
           const lockedCounts = await ProfileDataService.fetchCounts(typedProfile, false, signal);
-          if (!signal.aborted && isMounted.current) dispatch({ type: 'SET_COUNTS', payload: lockedCounts });
+          if (!signal.aborted && isMounted.current) {
+            if (lockedCounts.followers != null) typedProfile.followers_count = lockedCounts.followers;
+            if (lockedCounts.following != null) typedProfile.following_count = lockedCounts.following;
+            dispatch({ type: 'SET_USER', payload: { ...typedProfile } });
+            dispatch({ type: 'SET_COUNTS', payload: lockedCounts });
+          }
         } catch { /* non-fatal: the sealed profile still renders without counts */ }
         return;
       }
@@ -304,6 +309,11 @@ export function useProfileData({
         ]);
         if (signal.aborted || !isMounted.current) return;
 
+        // Heal the displayed follower/following counts with the live RPC values —
+        // the profile row's denormalized columns drift (three maintainers). Optimistic
+        // follow still bumps these fields, so the count ticks instantly on follow.
+        if (countsResult.followers != null) typedProfile.followers_count = countsResult.followers;
+        if (countsResult.following != null) typedProfile.following_count = countsResult.following;
         // T2-01: Single dispatch replaces 3 separate setState calls
         dispatch({ type: 'USER_DATA_LOADED', user: typedProfile, counts: countsResult, serverStreak: analyticsSummary?.current_streak ?? null });
 
@@ -320,6 +330,9 @@ export function useProfileData({
         ProfileDataService.fetchOtherUserLogs(typedProfile.id, 50, undefined, signal, undefined),
       ]);
       if (signal.aborted || !isMounted.current) return;
+      // Heal follower/following display with the live RPC values (see self path).
+      if (countsResult.followers != null) typedProfile.followers_count = countsResult.followers;
+      if (countsResult.following != null) typedProfile.following_count = countsResult.following;
       // T2-01: Single dispatch replaces 5 separate setState calls
       dispatch({
         type: 'USER_DATA_LOADED',

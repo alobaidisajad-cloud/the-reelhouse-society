@@ -178,6 +178,10 @@ export const ProfileDataService = {
           watchlist: counts.watchlist_count ?? counts.watch_count ?? 0,
           vault: isArchivistPlusTier(targetUser) ? (counts.vault_count ?? 0) : 0,
           lists: counts.lists_count ?? 0,
+          // Live follower/following counts (added to the RPC in the counts migration).
+          // Undefined until that migration lands — callers fall back to the profile row.
+          followers: typeof counts.followers_count === 'number' ? counts.followers_count : undefined,
+          following: typeof counts.following_count === 'number' ? counts.following_count : undefined,
         };
       }
       // RPC not deployed — fallback to parallel queries
@@ -216,9 +220,11 @@ export const ProfileDataService = {
         watchlist: watchCount.count ?? 0,
         vault: vaultCount.count ?? 0,
         lists: listsCount.count ?? 0,
+        followers: undefined as number | undefined,
+        following: undefined as number | undefined,
       };
     } catch {
-      return { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0 };
+      return { logs: 0, ledger: 0, watchlist: 0, vault: 0, lists: 0, followers: undefined as number | undefined, following: undefined as number | undefined };
     }
   },
 
