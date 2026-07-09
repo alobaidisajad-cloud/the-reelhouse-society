@@ -160,22 +160,10 @@ export const StackService = {
     if (error) throw error;
     if (!data) throw new Error('Failed to add stack comment');
 
-    // Send notification to list owner
-    try {
-      const { data: listInfo } = await supabase.from('lists').select('user_id, title').eq('id', safePayload.list_id).maybeSingle();
-      if (listInfo && listInfo.user_id !== safePayload.user_id) {
-        await supabase.from('notifications').insert({
-          user_id: listInfo.user_id,
-          from_user_id: safePayload.user_id,
-          type: 'comment',
-          message: `Someone commented on your stack "${listInfo.title}"`,
-          metadata: { list_id: safePayload.list_id, user_id: safePayload.user_id },
-        });
-      }
-    } catch (err) {
-      // Swallowed: Notification failure must not revert the core comment insertion.
-      logger.warn('[StackService.addStackComment] Failed to send notification:', err);
-    }
+    // SVC-1: the DB trigger tr_notify_list_comment already emits the correct
+    // notification on the list_comments INSERT above. The prior manual insert here
+    // targeted a non-existent `metadata` column (and duplicated the trigger), so it
+    // always failed silently — removed to match the offline mutationExecutor path.
 
     // Remap db shape back to UI shape for perfect optimistic updates
     const profile = Array.isArray(data.profiles) ? data.profiles[0] : data.profiles;
