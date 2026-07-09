@@ -16,7 +16,13 @@
 --
 -- Idempotent: CREATE OR REPLACE, same 2-arg signature as the hardened version.
 -- No effect on the mobile app build (server-side only, currently uncalled).
+--
+-- NOTE: both the old 3-arg (UUID, UUID, JSONB) and the 2-arg (UUID, JSONB)
+-- overloads currently coexist in the DB, so the function name is ambiguous.
+-- Drop the stale 3-arg overload first, then a COMMENT can target the 2-arg one.
 -- ═══════════════════════════════════════════════════════════════════════
+
+DROP FUNCTION IF EXISTS public.replace_list_items(UUID, UUID, JSONB);
 
 CREATE OR REPLACE FUNCTION public.replace_list_items(
   p_list_id UUID,
@@ -56,5 +62,5 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 GRANT EXECUTE ON FUNCTION public.replace_list_items(UUID, JSONB) TO authenticated;
 
-COMMENT ON FUNCTION public.replace_list_items IS
+COMMENT ON FUNCTION public.replace_list_items(UUID, JSONB) IS
   'Atomically replaces all films in a list (auth.uid()-gated, ownership-checked). Uses rank_position. Prevents the delete->insert data-loss window during list edits.';
