@@ -72,4 +72,11 @@ export const st = StyleSheet.create({
   endMarkLine: { flex: 1, height: 1, backgroundColor: colors.sepia },
   linkDragHandleRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   linkDragHandleIcon: { opacity: 0.4 },
+
+  // The save-seal ceremony — a stamped "DOSSIER AMENDED" beat on success.
+  sealOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(10,7,3,0.82)', justifyContent: 'center', alignItems: 'center', zIndex: 100 },
+  sealStamp: { alignItems: 'center', paddingVertical: 26, paddingHorizontal: 34, borderWidth: 2, borderColor: colors.bloodReel, borderRadius: 6, backgroundColor: 'rgba(20,8,5,0.4)', transform: [{ rotate: '-4deg' }] },
+  sealRing: { width: 52, height: 52, borderRadius: 26, borderWidth: 2, borderColor: colors.crimson, alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
+  sealTitle: { fontFamily: fonts.sub, fontSize: 15, letterSpacing: 4, color: colors.parchment },
+  sealSub: { fontFamily: fonts.body, fontStyle: 'italic', fontSize: 11, color: colors.bone, opacity: 0.7, marginTop: 6, letterSpacing: 0.5 },
 });

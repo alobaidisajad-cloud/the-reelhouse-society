@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Alert } from 'react-native';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +10,7 @@ import { validateUsername } from '@/src/utils/validateUsername';
 import { queryClient } from '@/src/lib/queryClient';
 import { useLoungeStore } from '@/src/stores/lounge';
 import { captureError } from '@/src/lib/sentry';
+import TactileEngine from '@/src/utils/TactileEngine';
 
 // Zod schema for the form
 const editProfileSchema = z.object({
@@ -111,6 +112,11 @@ export function useEditProfile() {
   const [showCropModal, setShowCropModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState<string | Error | null>(null);
+  // The one-beat "DOSSIER AMENDED" seal shown on a successful save before we
+  // return to the profile — the confirmation the silent router.back() lacked.
+  const [sealed, setSealed] = useState(false);
+  const sealTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => () => { if (sealTimerRef.current) clearTimeout(sealTimerRef.current); }, []);
 
   useEffect(() => {
     if (user) {
@@ -227,14 +233,16 @@ export function useEditProfile() {
             }
           });
 
-          // 5. Hard flush caches where manual iteration is impractical
-          queryClient.removeQueries({ queryKey: ['universalSearch'] });
-          queryClient.removeQueries({ queryKey: ['user', user.id] });
-          
         } catch (syncErr) {
           if (__DEV__) console.warn('[useEditProfile] Avatar sync failed non-fatally:', syncErr);
         }
       }
+
+      // Hard flush caches where manual iteration is impractical. This runs on
+      // EVERY save (not just avatar changes) so search results and any ['user']
+      // consumers reflect renamed handles, new display names, and edited bios.
+      queryClient.removeQueries({ queryKey: ['universalSearch'] });
+      queryClient.removeQueries({ queryKey: ['user', user.id] });
 
       // Fire-and-forget: asynchronous garbage collection
       if (finalAvatarUrl !== undefined) {
@@ -255,7 +263,16 @@ export function useEditProfile() {
         }
         return { user: updatedUser };
       });
-      router.back();
+
+      // Seal the dossier: a one-beat "AMENDED" stamp + success haptic, then
+      // return. This is the confirmation the old silent router.back() lacked —
+      // and, paired with the profile's focus-refetch, the edit is guaranteed
+      // to be reflected the moment the member lands back on their dossier.
+      TactileEngine.success();
+      setSaving(false);
+      setSealed(true);
+      sealTimerRef.current = setTimeout(() => { router.back(); }, 750);
+      return;
     } catch (err: unknown) {
       console.error('Failed to update profile:', err);
       if (!__DEV__) captureError(err instanceof Error ? err : new Error(String(err)), { context: 'update_profile' });
@@ -298,6 +315,7 @@ export function useEditProfile() {
     handleAddLink: () => append({ title: '', url: '' }),
     handleRemoveLink: (index: number) => remove(index),
     saving,
+    sealed,
     submitError,
     handleSave,
     handleBack,

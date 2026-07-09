@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useIsFocused } from '@react-navigation/native';
 import TactileEngine from '@/src/utils/TactileEngine';
 import { useAuthStore } from '@/src/stores/auth';
 import { useProfileData, ProfileTab } from '@/src/hooks/useProfileData';
@@ -121,6 +122,7 @@ export function useProfileController(usernameOverride?: string) {
       const targetPrefsStr = `${data.targetUser.preferences?.accent_color}|${data.targetUser.preferences?.default_tab}|${data.targetUser.preferences?.hide_stats}|${JSON.stringify(data.targetUser.preferences?.favorites || [])}|${JSON.stringify(data.targetUser.preferences?.programmes || [])}`;
 
       if (
+        user.username !== data.targetUser.username ||
         user.display_name !== data.targetUser.display_name ||
         user.bio !== data.targetUser.bio ||
         user.avatar_url !== data.targetUser.avatar_url ||
@@ -131,10 +133,11 @@ export function useProfileController(usernameOverride?: string) {
         userSocialStr !== targetSocialStr ||
         userPrefsStr !== targetPrefsStr
       ) {
-        data.setTargetUser(prev => prev ? { 
-          ...prev, 
-          display_name: user.display_name, 
-          bio: user.bio, 
+        data.setTargetUser(prev => prev ? {
+          ...prev,
+          username: user.username,
+          display_name: user.display_name,
+          bio: user.bio,
           avatar_url: user.avatar_url,
           is_social_private: user.is_social_private,
           persona: user.persona,
@@ -147,6 +150,24 @@ export function useProfileController(usernameOverride?: string) {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSelf, user, data.targetUser?.username, targetUserHash]);
+
+  // ── Self-profile freshness ──────────────────────────────────────────
+  // Re-read our own dossier from the DB whenever this screen regains focus
+  // (e.g. returning from Edit Profile), so saved edits are ALWAYS reflected —
+  // a source-of-truth read, not a fragile in-memory hand-off. It's silent
+  // stale-while-revalidate: fetchUserData() doesn't toggle the loading
+  // spinner, so there is no flash. Gated to isSelf to avoid re-fetching other
+  // members' profiles on every focus. The very first focus is skipped because
+  // the mount effect in useProfileData already performs the initial fetch.
+  const isFocused = useIsFocused();
+  const didInitialFocusRef = useRef(false);
+  const fetchUserDataRef = useRef(data.fetchUserData);
+  fetchUserDataRef.current = data.fetchUserData;
+  useEffect(() => {
+    if (!isFocused) return;
+    if (!didInitialFocusRef.current) { didInitialFocusRef.current = true; return; }
+    if (isSelf) fetchUserDataRef.current();
+  }, [isFocused, isSelf]);
 
   // Prevent ghost filter resets on background re-renders
   const prevTabRef = useRef<ProfileTab | null>(null);

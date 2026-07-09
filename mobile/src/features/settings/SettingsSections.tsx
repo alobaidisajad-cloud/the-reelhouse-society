@@ -23,12 +23,12 @@ const HITSLOP_10 = { top: 10, bottom: 10, left: 10, right: 10 } as const;
 export const SectionCard = ({ children, danger }: { children: React.ReactNode; danger?: boolean }) => (
   <View style={[st.sectionCard, danger && st.sectionCardDanger]}>
     <LinearGradient
-      colors={danger ? ['transparent', 'rgba(162,36,36,0.2)', 'transparent'] : ['transparent', 'rgba(139,105,20,0.2)', 'transparent']}
+      colors={danger ? ['transparent', 'rgba(162,36,36,0.2)', 'transparent'] : ['transparent', 'rgba(184,137,26,0.2)', 'transparent']}
       start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }}
       style={st.sectionTopLine}
     />
     <LinearGradient
-      colors={danger ? ['rgba(162,36,36,0.05)', 'transparent'] : ['rgba(139,105,20,0.03)', 'transparent']}
+      colors={danger ? ['rgba(162,36,36,0.05)', 'transparent'] : ['rgba(184,137,26,0.03)', 'transparent']}
       style={StyleSheet.absoluteFillObject}
     />
     {children}
@@ -49,7 +49,7 @@ export const Toggle = ({ active, onToggle, disabled }: { active: boolean; onTogg
     value={active}
     disabled={disabled}
     onValueChange={() => { TactileEngine.selection(); onToggle(); }}
-    trackColor={{ false: 'rgba(139,105,20,0.12)', true: colors.sepia }}
+    trackColor={{ false: 'rgba(184,137,26,0.12)', true: colors.sepia }}
     thumbColor={active ? colors.parchment : colors.fog}
   />
 );
@@ -393,54 +393,54 @@ const st = StyleSheet.create({
   sectionCard: { backgroundColor: '#110D0A', borderWidth: 1, borderColor: '#30261A', borderRadius: 6, marginHorizontal: 16, marginBottom: 16, overflow: 'hidden' },
   sectionCardDanger: { borderColor: 'rgba(162,36,36,0.5)', backgroundColor: 'rgba(162,36,36,0.03)' },
   sectionTopLine: { position: 'absolute', top: 0, left: 0, right: 0, height: 1, zIndex: 10 },
-  sectionHeaderWrap: { padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.15)' },
+  sectionHeaderWrap: { padding: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.15)' },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHeaderIcon: { marginTop: -1 },
-  sectionHeaderText: { fontFamily: fonts.uiMedium, fontSize: 10, color: colors.sepia, letterSpacing: 2.5 },
+  sectionHeaderText: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, letterSpacing: 2.5 },
   sectionHeaderTextDanger: { color: colors.bloodReel },
-  fieldWrap: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)' },
-  fieldLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 8, textTransform: 'uppercase' },
+  fieldWrap: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
+  fieldLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 8, textTransform: 'uppercase' },
   fieldBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 20, marginBottom: 16, paddingHorizontal: 16 },
-  microNote: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.6, textAlign: 'center', padding: 16, paddingBottom: 20, borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.1)' },
+  microNote: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 2, color: colors.fog, opacity: 0.6, textAlign: 'center', padding: 16, paddingBottom: 20, borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.1)' },
   rankRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   rankDisplay: { fontFamily: fonts.display, fontSize: 18, color: colors.bone },
   rankCinephile: { color: colors.bone },
   rankArchivist: { color: colors.sepia, ...effects.textShadowDeep },
   rankAuteur: { color: colors.bloodReel, fontWeight: 'bold' },
-  activeBadge: { borderWidth: 1, borderColor: 'green', backgroundColor: 'rgba(0,255,0,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
-  activeBadgeText: { fontFamily: fonts.uiBold, fontSize: 8, color: 'green', letterSpacing: 1 },
+  activeBadge: { borderWidth: 1, borderColor: 'rgba(184,137,26,0.4)', backgroundColor: 'rgba(184,137,26,0.1)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 2 },
+  activeBadgeText: { fontFamily: fonts.sub, fontSize: 8, color: colors.sepia, letterSpacing: 1 },
   primaryBtn: { backgroundColor: colors.sepia, paddingVertical: 14, marginHorizontal: 16, borderRadius: 2, alignItems: 'center', ...effects.glowSepia },
-  primaryBtnText: { fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2.5, color: colors.ink, fontWeight: '700' },
-  dividerSpaced: { height: 1, backgroundColor: 'rgba(139,105,20,0.15)', marginVertical: 16 },
+  primaryBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.ink, fontWeight: '700' },
+  dividerSpaced: { height: 1, backgroundColor: 'rgba(184,137,26,0.15)', marginVertical: 16 },
   readonlyField: { backgroundColor: colors.soot, borderWidth: 1, borderColor: '#30261A', padding: 12, borderRadius: 2 },
-  readonlyText: { fontFamily: fonts.mono, fontSize: 13, color: colors.fog },
-  actionBtnSpaced: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: 'rgba(139,105,20,0.03)' },
-  actionBtnTextFlex: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.bone, flex: 1, marginLeft: 10 },
+  readonlyText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog },
+  actionBtnSpaced: { flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: 'rgba(184,137,26,0.03)' },
+  actionBtnTextFlex: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.bone, flex: 1, marginLeft: 10 },
   passwordPanel: { padding: 16, backgroundColor: '#0A0806', borderTopWidth: 1, borderTopColor: '#30261A', gap: 16 },
-  oauthBanner: { backgroundColor: 'rgba(139,105,20,0.05)', padding: 16, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(139,105,20,0.1)' },
-  fieldInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.mono, fontSize: 14, padding: 12, borderRadius: 2 },
+  oauthBanner: { backgroundColor: 'rgba(184,137,26,0.05)', padding: 16, borderRadius: 2, borderWidth: 1, borderColor: 'rgba(184,137,26,0.1)' },
+  fieldInput: { backgroundColor: colors.ink, borderWidth: 1, borderColor: '#30261A', color: colors.parchment, fontFamily: fonts.body, fontSize: 14, padding: 12, borderRadius: 2 },
   saveFieldBtn: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.sepia, paddingVertical: 12, alignItems: 'center', borderRadius: 2, marginTop: 8 },
-  saveFieldBtnText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia },
+  saveFieldBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia },
   disabledBtn: { opacity: 0.5 },
-  privacyGroup: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)' },
-  privacyGroupLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 12 },
+  privacyGroup: { padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
+  privacyGroupLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, marginBottom: 12 },
   radioOption: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10 },
   radioOptionActive: {},
   radioDot: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: colors.ash, backgroundColor: 'transparent' },
   radioDotActive: { borderColor: colors.sepia, backgroundColor: colors.sepia },
   radioLabel: { fontFamily: fonts.body, fontSize: 13, color: colors.bone },
   radioLabelActive: { color: colors.parchment },
-  notifRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)' },
+  notifRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
   notifRowLast: { borderBottomWidth: 0 },
   notifTextWrap: { flex: 1, paddingRight: 16 },
-  notifLabel: { fontFamily: fonts.uiMedium, fontSize: 12, color: colors.bone, marginBottom: 4 },
+  notifLabel: { fontFamily: fonts.sub, fontSize: 12, color: colors.bone, marginBottom: 4 },
   notifDesc: { fontFamily: fonts.body, fontSize: 12, color: colors.fog },
   pushSection: { backgroundColor: '#0A0806', padding: 16, borderTopWidth: 1, borderTopColor: '#30261A' },
   pushTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 6 },
-  pushTitle: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 2, color: colors.sepia },
+  pushTitle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia },
   pushDesc: { fontFamily: fonts.bodyItalic, fontSize: 11, color: colors.fog, lineHeight: 16 },
-  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(139,105,20,0.1)' },
+  actionBtn: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 16, borderBottomWidth: 1, borderBottomColor: 'rgba(184,137,26,0.1)' },
   actionBtnDanger: { borderBottomColor: 'transparent' },
-  actionBtnText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.5, color: colors.bone },
+  actionBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5, color: colors.bone },
   actionBtnTextDanger: { color: colors.bloodReel },
 });

@@ -40,7 +40,7 @@ const st = StyleSheet.create({
   sectionHeaderWrap: { marginBottom: 18, paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: colors.sepiaFaint },
   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   sectionHeaderIcon: { opacity: 0.7 },
-  sectionHeaderText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
+  sectionHeaderText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.sepia },
   sectionHeaderTextDanger: { color: colors.bloodReel },
 });
 

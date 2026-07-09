@@ -4,12 +4,12 @@ import {
   ActivityIndicator, InteractionManager, Platform
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Animated, { FadeInDown, useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
+import Animated, { FadeInDown, FadeIn, useAnimatedStyle, useAnimatedKeyboard } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FormProvider } from 'react-hook-form';
 import { ControlledInput, ControlledBioInput, ControlledUsernameInput } from '@/src/components/ControlledInput';
 import { useAmbientGlow } from '@/src/hooks/useAmbientGlow';
-import { ChevronLeft, User, Camera, Link2, Film, Sparkles } from 'lucide-react-native';
+import { ChevronLeft, User, Camera, Link2, Film, Sparkles, Stamp } from 'lucide-react-native';
 
 import { useEditProfile } from '@/src/hooks/useEditProfile';
 import { formatDateMonthYear } from '@/src/utils/timeAgo';
@@ -38,7 +38,7 @@ export function EditProfileScreen() {
     showCropModal, setShowCropModal,
     handleRemoveAvatar,
     fields, handleAddLink, handleRemoveLink,
-    saving, submitError,
+    saving, sealed, submitError,
     handleSave, handleBack
   } = useEditProfile();
 
@@ -229,6 +229,19 @@ export function EditProfileScreen() {
           </ScrollView>
         </FormProvider>
       </Animated.View>
+
+      {/* The save-seal ceremony — one stamped beat before returning to the dossier. */}
+      {sealed && (
+        <View style={st.sealOverlay} accessibilityLiveRegion="polite">
+          <Animated.View entering={FadeIn.duration(220)} style={st.sealStamp}>
+            <View style={st.sealRing}>
+              <Stamp size={24} color={colors.crimson} strokeWidth={1.5} />
+            </View>
+            <Text style={st.sealTitle}>DOSSIER AMENDED</Text>
+            <Text style={st.sealSub}>the record now reflects your hand</Text>
+          </Animated.View>
+        </View>
+      )}
 
       {/* Decouple modal from keyboard avoidance view to prevent UI jump */}
       {showCropModal && (

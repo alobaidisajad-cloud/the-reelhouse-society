@@ -42,7 +42,6 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number, fallback: T): Promise<
 
 const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedSparkles = Animated.createAnimatedComponent(Sparkles);
-const HITSLOP_10 = { top: 10, bottom: 10, left: 10, right: 10 } as const;
 const HITSLOP_15 = { top: 15, bottom: 15, left: 15, right: 15 } as const;
 
 export function SettingsScreen() {
@@ -369,9 +368,30 @@ export function SettingsScreen() {
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={st.container}>
         <Animated.View style={[st.ambientGlow, glowStyle]}>
-          <LinearGradient colors={['rgba(139,105,20,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
+          <LinearGradient colors={['rgba(184,137,26,0.15)', 'transparent', 'transparent']} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFillObject} />
         </Animated.View>
         <View style={[st.navBar, { paddingTop: insets.top + 12 }]}>
+          <PressableScale
+            onPress={() => {
+              if (saving) return;
+              if (isDirty) {
+                Alert.alert('Discard Changes?', 'You have unsaved modifications in your dossier.', [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Discard', style: 'destructive', onPress: () => nav.back() }
+                ]);
+              } else {
+                nav.back();
+              }
+            }}
+            style={st.navBackBtn}
+            hitSlop={HITSLOP_15}
+            haptic="light"
+            accessibilityLabel="Go back"
+            accessibilityRole="button"
+            disabled={saving}
+          >
+            <ChevronLeft color={colors.bone} size={22} />
+          </PressableScale>
           <PressableScale onPress={handleSave} disabled={saving || !isDirty} hitSlop={HITSLOP_15} haptic="medium" pressedScale={0.95} accessibilityRole="button" accessibilityLabel="Save settings">
             {saving ? <AnimatedSparkles size={12} color={colors.sepia} style={spinStyle} /> : <Text style={[st.navSaveText, !isDirty && st.disabledBtn]}>SAVE</Text>}
           </PressableScale>
@@ -379,33 +399,13 @@ export function SettingsScreen() {
 
         <ScrollView contentContainerStyle={st.scrollContent} showsVerticalScrollIndicator={false}>
           <AnimatedView entering={FadeInDown.duration(600)} style={st.hero}>
-            <View style={st.header}>
-              <PressableScale
-                onPress={() => {
-                  if (saving) return;
-                  if (isDirty) {
-                    Alert.alert('Discard Changes?', 'You have unsaved modifications in your dossier.', [
-                      { text: 'Cancel', style: 'cancel' },
-                      { text: 'Discard', style: 'destructive', onPress: () => nav.back() }
-                    ]);
-                  } else {
-                    nav.back();
-                  }
-                }}
-                style={st.backBtn}
-                hitSlop={HITSLOP_10}
-                accessibilityLabel="Go back"
-                accessibilityRole="button"
-                disabled={saving}
-              >
-                <ChevronLeft color={colors.parchment} size={28} strokeWidth={2.5} />
-              </PressableScale>
-              <Text style={st.title}>Dossier Settings</Text>
-            </View>
+            <View style={st.heroRuleTop} />
             <View style={st.heroEyebrowRow}>
               <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
+              <Text style={st.heroEyebrow}>EST. 1924</Text>
+              <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
             </View>
-            <Text style={st.heroEst}>EST. 1924</Text>
+            <Text style={st.heroTitle}>Dossier Settings</Text>
             <Text style={st.heroDesc}>Configure your presence within The Society.</Text>
             <View style={st.heroRuleBottom} />
           </AnimatedView>

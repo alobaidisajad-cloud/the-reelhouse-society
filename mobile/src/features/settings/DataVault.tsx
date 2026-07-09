@@ -400,7 +400,7 @@ const s = StyleSheet.create({
   // ── Import ──
   importSection: { marginBottom: 12 },
   subLabel: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5,
     color: colors.sepia, marginBottom: 10,
   },
   importDesc: {
@@ -410,7 +410,7 @@ const s = StyleSheet.create({
 
   // ── Upload Zone ──
   uploadZone: {
-    borderWidth: 2, borderStyle: 'dashed', borderColor: 'rgba(139,105,20,0.25)',
+    borderWidth: 2, borderStyle: 'dashed', borderColor: 'rgba(184,137,26,0.25)',
     borderRadius: 6, paddingVertical: 24, paddingHorizontal: 20,
     alignItems: 'center', backgroundColor: 'rgba(10,7,3,0.4)',
   },
@@ -418,12 +418,12 @@ const s = StyleSheet.create({
     fontFamily: fonts.display, fontSize: 14, color: colors.parchment, marginBottom: 4,
   },
   uploadHint: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.fog,
   },
 
   // ── Progress ──
   progressCard: {
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)', borderRadius: 6,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 6,
     padding: 16, backgroundColor: 'rgba(10,7,3,0.6)',
   },
   progressHeader: {
@@ -431,14 +431,14 @@ const s = StyleSheet.create({
     alignItems: 'center', marginBottom: 10,
   },
   progressPhase: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, color: colors.sepia,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, color: colors.sepia,
   },
   progressCount: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog,
   },
   progressTrack: {
     width: '100%', height: 4, borderRadius: 2,
-    backgroundColor: 'rgba(139,105,20,0.1)', overflow: 'hidden',
+    backgroundColor: 'rgba(184,137,26,0.1)', overflow: 'hidden',
   },
   progressBar: {
     height: '100%', borderRadius: 2,
@@ -451,7 +451,7 @@ const s = StyleSheet.create({
 
   // ── Result Card ──
   resultCard: {
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)', borderRadius: 6,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)', borderRadius: 6,
     padding: 16, backgroundColor: 'rgba(10,7,3,0.6)',
   },
   resultHeader: {
@@ -468,13 +468,13 @@ const s = StyleSheet.create({
   statCell: {
     flex: 1, minWidth: '45%',
     alignItems: 'center', paddingVertical: 10,
-    backgroundColor: 'rgba(139,105,20,0.05)', borderRadius: 4,
+    backgroundColor: 'rgba(184,137,26,0.05)', borderRadius: 4,
   },
   statValue: {
     fontFamily: fonts.display, fontSize: 20, color: colors.parchment,
   },
   statLabel: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5, color: colors.fog, marginTop: 2,
+    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5, color: colors.fog, marginTop: 2,
   },
 
   // ── Skipped / Errors ──
@@ -483,7 +483,7 @@ const s = StyleSheet.create({
     marginTop: 10,
   },
   skippedText: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1, color: colors.fog,
   },
   errorScroll: { marginTop: 8 },
   errorLine: {
@@ -495,28 +495,28 @@ const s = StyleSheet.create({
   importAnotherBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingVertical: 10, paddingHorizontal: 14,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.08)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.08)',
     borderRadius: 3, marginTop: 12,
   },
   importAnotherText: {
-    fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog,
   },
 
   // ── Export Action ──
   actionBtn: {
     flexDirection: 'row', alignItems: 'center', gap: 8,
     paddingVertical: 10, paddingHorizontal: 14,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.08)',
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.08)',
     borderRadius: 3,
   },
   actionBtnText: {
-    fontFamily: fonts.ui, fontSize: 10, letterSpacing: 1.2, color: colors.fog,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.2, color: colors.fog,
   },
 
   // ── Divider ──
   divider: {
     height: 1, marginVertical: 14,
-    backgroundColor: 'rgba(139,105,20,0.15)',
+    backgroundColor: 'rgba(184,137,26,0.15)',
   },
   exportSpacer: { height: 8 },
 });
