@@ -34,6 +34,7 @@ export function useFollowRequests(enabled: boolean) {
 
   const cursorRef = useRef<string | null>(null);
   const hasMoreRef = useRef(true);
+  const loadingMoreRef = useRef(false);
   const [hasMore, setHasMore] = useState(true);
   const isMounted = useRef(true);
   const reqSeq = useRef(0); // guards against out-of-order responses when searching
@@ -46,13 +47,20 @@ export function useFollowRequests(enabled: boolean) {
 
   const load = useCallback(async (mode: 'initial' | 'refresh' | 'more', searchTerm: string) => {
     if (!myId) return;
-    const seq = ++reqSeq.current;
     if (mode === 'more') {
-      if (!hasMoreRef.current || loadingMore) return;
+      // Ref-based in-flight guard: keeping `loadingMore` STATE out of this
+      // callback's deps keeps `load`'s identity stable — otherwise the first
+      // loadMore would regenerate `load`, re-fire the reset effect, wipe the
+      // list back to page 1 mid-scroll, and strand `loadingMore` as true
+      // (killing all future pagination).
+      if (!hasMoreRef.current || loadingMoreRef.current) return;
+      loadingMoreRef.current = true;
       setLoadingMore(true);
-    } else if (mode === 'refresh') {
+    }
+    const seq = ++reqSeq.current;
+    if (mode === 'refresh') {
       setRefreshing(true);
-    } else {
+    } else if (mode === 'initial') {
       setLoading(true);
     }
     try {
@@ -70,11 +78,16 @@ export function useFollowRequests(enabled: boolean) {
         return page.items;
       });
     } finally {
-      if (isMounted.current && seq === reqSeq.current) {
-        setLoading(false); setLoadingMore(false); setRefreshing(false);
+      if (mode === 'more') {
+        // Always release the pagination lock, even if a newer request
+        // superseded this one — a stale 'more' must never wedge the list.
+        loadingMoreRef.current = false;
+        if (isMounted.current) setLoadingMore(false);
+      } else if (isMounted.current && seq === reqSeq.current) {
+        setLoading(false); setRefreshing(false);
       }
     }
-  }, [myId, loadingMore]);
+  }, [myId]);
 
   // Open / search changes → reset + reload (debounced for search).
   useEffect(() => {
