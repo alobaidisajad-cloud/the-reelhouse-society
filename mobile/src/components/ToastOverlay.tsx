@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   actionLabel: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 2,
     textTransform: 'uppercase',

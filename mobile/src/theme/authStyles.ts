@@ -119,7 +119,7 @@ export const loginStyles = StyleSheet.create({
     position: 'absolute',
     left: 4,
     top: 10,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.body,
     fontSize: 16,
     color: colors.sepia,
     zIndex: 2,
@@ -132,7 +132,7 @@ export const loginStyles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     fontSize: 16,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.body,
     color: colors.parchment,
   },
   inputFocused: {
@@ -240,7 +240,7 @@ export const loginStyles = StyleSheet.create({
     marginBottom: 10,
   },
   footerText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 8,
     letterSpacing: 0.5,
     color: colors.fog,

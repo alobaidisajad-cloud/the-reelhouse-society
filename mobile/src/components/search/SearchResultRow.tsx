@@ -14,7 +14,7 @@ const TYPE_GLYPH: Record<string, string> = {
 const TYPE_COLOR: Record<string, { bg: string; border: string }> = {
   film:     { bg: 'rgba(196,150,26,0.12)', border: 'rgba(196,150,26,0.25)' },
   actor:    { bg: 'rgba(218,165,32,0.10)', border: 'rgba(218,165,32,0.25)' },
-  director: { bg: 'rgba(139,105,20,0.10)', border: 'rgba(139,105,20,0.25)' },
+  director: { bg: 'rgba(184,137,26,0.10)', border: 'rgba(184,137,26,0.25)' },
   user:     { bg: 'rgba(200,185,154,0.08)', border: 'rgba(200,185,154,0.20)' },
   log:      { bg: 'rgba(107,96,85,0.10)',   border: 'rgba(107,96,85,0.25)' },
   list:     { bg: 'rgba(107,26,10,0.08)',    border: 'rgba(107,26,10,0.20)' },
@@ -84,7 +84,7 @@ export const SearchResultRow = React.memo(({ item, index, onPress }: { item: SR;
               st.rolePill,
               isAuteurPlusTier(item.role) 
                 ? { color: '#D4A520', backgroundColor: 'rgba(212,165,32,0.12)' }
-                : { color: colors.sepia, backgroundColor: 'rgba(139,105,20,0.10)' },
+                : { color: colors.sepia, backgroundColor: 'rgba(184,137,26,0.10)' },
             ]}>
               {isAuteurPlusTier(item.role) ? '★ AUTEUR' : '✦ ARCHIVIST'}
             </Text>
@@ -104,7 +104,7 @@ const st = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingVertical: 11, paddingHorizontal: 16,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(139,105,20,0.05)',
+    borderBottomColor: 'rgba(184,137,26,0.05)',
   },
 
   badge: {
@@ -117,7 +117,7 @@ const st = StyleSheet.create({
   rowImg: {
     width: 38, height: 56, borderRadius: 2, overflow: 'hidden',
     backgroundColor: colors.soot, alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.12)', marginRight: 12,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.12)', marginRight: 12,
   },
   rowImgRound: { width: 42, height: 42, borderRadius: 21 },
   img: { width: '100%', height: '100%' },
@@ -126,15 +126,15 @@ const st = StyleSheet.create({
   rowText: { flex: 1 },
   rowTitle: { fontFamily: fonts.display, fontSize: 14, color: colors.parchment, lineHeight: 17, marginBottom: 2 },
   rowSubRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rowSub: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.2, color: colors.sepia },
-  rowRating: { fontFamily: fonts.ui, fontSize: 7, color: colors.sepia, opacity: 0.7, letterSpacing: 1 },
-  rowExtra: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, opacity: 0.5 },
+  rowSub: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.2, color: colors.sepia },
+  rowRating: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, opacity: 0.7, letterSpacing: 1 },
+  rowExtra: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, opacity: 0.5 },
   rowExcerpt: {
     fontFamily: fonts.body, fontSize: 11, color: colors.bone, opacity: 0.45,
     fontStyle: 'italic', marginTop: 2, lineHeight: 14,
   },
   rolePill: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.2,
+    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.2,
     color: colors.fog, paddingHorizontal: 5, paddingVertical: 1.5,
     borderRadius: 2, alignSelf: 'flex-start', overflow: 'hidden', marginTop: 3,
   },

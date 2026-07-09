@@ -92,7 +92,7 @@ const s = StyleSheet.create({
     textAlign: 'center',
   },
   debug: {
-    fontFamily: fonts.mono,
+    fontFamily: fonts.body,
     fontSize: 9,
     color: colors.bloodReel,
     opacity: 0.8,
@@ -109,8 +109,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 30,
   },
   retryText: {
-    fontFamily: fonts.mono,
-    fontWeight: '700',
+    fontFamily: fonts.sub,
     fontSize: 10,
     letterSpacing: 3,
     color: colors.sepia,

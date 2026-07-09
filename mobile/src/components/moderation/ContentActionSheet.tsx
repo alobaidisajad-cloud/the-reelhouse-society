@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   optionText: {
-    fontFamily: fonts.uiMedium,
+    fontFamily: fonts.sub,
     fontSize: 12,
     letterSpacing: 2,
     color: colors.parchment,

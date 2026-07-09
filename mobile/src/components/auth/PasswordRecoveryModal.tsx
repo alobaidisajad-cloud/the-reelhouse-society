@@ -233,7 +233,7 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     fontSize: 16,
-    fontFamily: fonts.mono,
+    fontFamily: fonts.body,
     color: colors.parchment,
   },
   inputFocused: {

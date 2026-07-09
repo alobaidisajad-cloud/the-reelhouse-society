@@ -36,7 +36,7 @@ export function RatingLegend() {
 
 const s = StyleSheet.create({
     container: { padding: 20, backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash, borderRadius: 4 },
-    title: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 16, textAlign: 'center' },
+    title: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 16, textAlign: 'center' },
     row: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
     reelsWrap: { flexDirection: 'row', gap: 2, minWidth: 70 },
     reel: { fontSize: 12 },

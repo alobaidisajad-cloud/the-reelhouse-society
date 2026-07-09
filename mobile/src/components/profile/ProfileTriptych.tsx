@@ -497,7 +497,7 @@ const s = StyleSheet.create({
         marginBottom: 4,
     },
     resultYear: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 10,
         letterSpacing: 2,
         color: colors.sepia,
@@ -505,7 +505,7 @@ const s = StyleSheet.create({
     noResults: {
         textAlign: 'center',
         paddingTop: 40,
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 12,
         color: colors.fog,
         letterSpacing: 2,

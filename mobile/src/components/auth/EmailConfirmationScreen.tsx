@@ -142,7 +142,7 @@ const s = StyleSheet.create({
     marginBottom: 20, alignSelf: 'stretch',
   },
   confirmEmailText: {
-    fontFamily: fonts.mono, fontSize: 12, letterSpacing: 0.8,
+    fontFamily: fonts.body, fontSize: 12, letterSpacing: 0.8,
     color: colors.flicker, textAlign: 'center',
   },
   confirmInstructions: {

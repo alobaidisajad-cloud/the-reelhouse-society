@@ -116,7 +116,7 @@ const ds = StyleSheet.create({
     dialWrap: { alignItems: 'center', justifyContent: 'center' },
     dialCenter: { alignItems: 'center', marginBottom: 24 },
     dialValue: { fontFamily: fonts.display, fontSize: 36, lineHeight: 40 },
-    dialLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 2 },
+    dialLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog, marginTop: 2 },
 });
 
 const s = StyleSheet.create({
@@ -126,7 +126,7 @@ const s = StyleSheet.create({
         width: '100%', alignItems: 'center', padding: 32,
         backgroundColor: 'rgba(8,6,4,0.98)', borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)', borderRadius: 4,
     },
-    rankLabel: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 3, color: colors.fog, marginBottom: 8 },
+    rankLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog, marginBottom: 8 },
     rankValue: { fontFamily: fonts.display, fontSize: 28, marginBottom: 20 },
     progressTrack: { width: '100%', height: 4, backgroundColor: 'rgba(184,137,26,0.15)', borderRadius: 2, overflow: 'hidden' },
     progressFill: { height: '100%', borderRadius: 2 },
@@ -137,7 +137,7 @@ const s = StyleSheet.create({
     },
     certCornerTL: { position: 'absolute', top: 10, left: 12, fontFamily: fonts.display, fontSize: 32, color: colors.sepia, opacity: 0.15 },
     certCornerBR: { position: 'absolute', bottom: 10, right: 12, fontFamily: fonts.display, fontSize: 32, color: colors.sepia, opacity: 0.15 },
-    certSociety: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 12 },
+    certSociety: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.sepia, marginBottom: 12 },
     certTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, marginBottom: 12 },
     certBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 20, maxWidth: 300, marginBottom: 20 },
     certBadge: { borderWidth: 1, paddingHorizontal: 24, paddingVertical: 8, transform: [{ rotate: '-5deg' }] },
@@ -148,5 +148,5 @@ const s = StyleSheet.create({
         paddingVertical: 14, paddingHorizontal: 32, borderWidth: 1,
         borderColor: 'rgba(184,137,26,0.3)', borderRadius: 4, backgroundColor: 'rgba(10,7,3,0.5)',
     },
-    exportText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 3, color: colors.fog },
+    exportText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 3, color: colors.fog },
 });

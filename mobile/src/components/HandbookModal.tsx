@@ -48,10 +48,10 @@ const s = StyleSheet.create({
     },
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 20 },
     title: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment },
-    closeText: { fontFamily: fonts.ui, fontSize: 20, color: colors.fog },
+    closeText: { fontFamily: fonts.sub, fontSize: 20, color: colors.fog },
     scrollContent: { paddingHorizontal: 20 },
     section: { marginBottom: 24, paddingBottom: 20, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
-    sectionTitle: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 8 },
+    sectionTitle: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginBottom: 8 },
     sectionBody: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, lineHeight: 22 },
     footerPad: { height: 40 },
 });

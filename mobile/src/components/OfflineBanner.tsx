@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
     },
     text: {
         color: colors.parchment,
-        fontFamily: fonts.mono,
+        fontFamily: fonts.sub,
         fontSize: 10,
         letterSpacing: 2,
     }

@@ -129,7 +129,7 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
                 <SvgText
                     x={center} y={center * 0.63}
                     textAnchor="middle"
-                    fontFamily={fonts.ui} fontSize={size * 0.058}
+                    fontFamily={fonts.sub} fontSize={size * 0.058}
                     letterSpacing={1.5} fill={colors.sepia} opacity={0.85}
                 >
                     {stamp.label.length > 14 ? stamp.label.slice(0, 14) : stamp.label}
@@ -139,7 +139,7 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
                     <SvgText
                         x={center} y={center * 0.78}
                         textAnchor="middle"
-                        fontFamily={fonts.ui} fontSize={size * 0.058}
+                        fontFamily={fonts.sub} fontSize={size * 0.058}
                         letterSpacing={1.5} fill={colors.sepia} opacity={0.85}
                     >
                         {stamp.label.slice(14).trim()}
@@ -149,7 +149,7 @@ const PassportStamp = memo(function PassportStamp({ stamp, earned, index, size }
                 <SvgText
                     x={center} y={center * 1.37}
                     textAnchor="middle"
-                    fontFamily={fonts.ui} fontSize={size * 0.05}
+                    fontFamily={fonts.sub} fontSize={size * 0.05}
                     letterSpacing={1} fill={colors.sepia} opacity={0.6}
                 >
                     {stamp.sub}
@@ -237,13 +237,13 @@ const s = StyleSheet.create({
     bottomRight: { bottom: 12, right: 12, borderBottomWidth: 1, borderRightWidth: 1, borderBottomColor: 'rgba(184,137,26,0.4)', borderRightColor: 'rgba(184,137,26,0.4)' },
     // Header
     header: { alignItems: 'center', marginBottom: 24, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.2)', paddingBottom: 20 },
-    societyLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4, color: colors.sepia, marginBottom: 8, opacity: 0.8 },
+    societyLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 4, color: colors.sepia, marginBottom: 8, opacity: 0.8 },
     title: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, lineHeight: 32, marginBottom: 10 },
-    counter: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 3, color: colors.fog },
+    counter: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.fog },
     // Stamps
     stampsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, paddingVertical: 8 },
     stampWrap: { alignItems: 'center', justifyContent: 'center' },
     // Footer
     footer: { alignItems: 'center', marginTop: 24, paddingTop: 16, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.2)' },
-    footerText: { fontFamily: fonts.ui, fontSize: 7, letterSpacing: 3, color: colors.fog, opacity: 0.5, textAlign: 'center' },
+    footerText: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 3, color: colors.fog, opacity: 0.5, textAlign: 'center' },
 });

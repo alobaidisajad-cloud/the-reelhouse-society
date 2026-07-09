@@ -457,7 +457,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 8,
     right: 12,
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 9,
     letterSpacing: 0.5,
   },
@@ -470,7 +470,7 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   blockLabel: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.sub,
     fontSize: 12,
     color: colors.bone,
   },
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
     opacity: 0.4,
   },
   submitText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 12,
     letterSpacing: 3,
     color: colors.parchment,

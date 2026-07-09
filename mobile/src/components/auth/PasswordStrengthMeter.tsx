@@ -73,6 +73,6 @@ const s = StyleSheet.create({
   strengthLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, marginLeft: 8, minWidth: 80 },
   checksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '48%' as import('react-native').DimensionValue },
-  checkIcon: { fontFamily: fonts.ui, fontSize: 11 },
-  checkLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5 },
+  checkIcon: { fontFamily: fonts.sub, fontSize: 11 },
+  checkLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.5 },
 });

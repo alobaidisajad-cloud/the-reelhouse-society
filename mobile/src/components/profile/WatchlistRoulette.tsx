@@ -229,5 +229,5 @@ const s = StyleSheet.create({
     rerollText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
     // Close
     closeBtn: { position: 'absolute', top: 12, right: 12, width: 32, height: 32, alignItems: 'center', justifyContent: 'center' },
-    closeBtnText: { fontFamily: fonts.ui, fontSize: 18, color: colors.fog },
+    closeBtnText: { fontFamily: fonts.sub, fontSize: 18, color: colors.fog },
 });
