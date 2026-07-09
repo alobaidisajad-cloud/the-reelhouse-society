@@ -34,6 +34,7 @@ export interface ImportResult {
   logs: number;
   reviews: number;
   watchlist: number;
+  vault: number;
   lists: number;
   skipped: number;
   errors: string[];
@@ -109,11 +110,12 @@ const HEADER_MAP: Record<string, string[]> = {
 // ═══════════════════════════════════════════════════════════════
 
 /**
- * Parses CSV text into an array of record objects.
+ * Tokenizes CSV text into raw rows (arrays of cells).
  * Handles: quoted fields, embedded commas, multiline reviews,
  * escaped quotes (""), BOM markers, and mixed line endings.
+ * Exported for tests.
  */
-function parseCSV(text: string): Record<string, string>[] {
+export function parseCSVRows(text: string): string[][] {
   // Strip BOM if present
   const cleaned = text.charCodeAt(0) === 0xFEFF ? text.slice(1) : text;
   const rows: string[][] = [];
@@ -175,6 +177,15 @@ function parseCSV(text: string): Record<string, string>[] {
     rows.push(current);
   }
 
+  return rows;
+}
+
+/**
+ * Parses CSV text into an array of record objects keyed by the first row's
+ * headers. Exported for tests.
+ */
+export function parseCSV(text: string): Record<string, string>[] {
+  const rows = parseCSVRows(text);
   if (rows.length < 2) return [];
 
   const headers = rows[0];
@@ -237,20 +248,32 @@ function getField(row: Record<string, string>, mapping: HeaderMapping, field: st
  * Detects if a set of ratings is on a 1–10 scale by checking the max value.
  * If detected, forces the 1–10 conversion path.
  */
-function detectRatingScale(ratings: number[]): 'half-five' | 'ten' | 'hundred' {
+export function detectRatingScale(ratings: number[]): 'half-five' | 'ten' | 'hundred' {
   const max = Math.max(...ratings.filter(r => r > 0));
   if (max > 10) return 'hundred';
   if (max > 5) return 'ten';
   return 'half-five';
 }
 
-function normalizeRatingWithScale(raw: number, scale: 'half-five' | 'ten' | 'hundred'): number {
+/**
+ * Clamps any rating into the DB's hard CHECK range [0, 5]. Without this, a
+ * single out-of-range value (e.g. a 200 on a "hundred" scale → 10, or a corrupt
+ * JSON rating of 9) violates logs_rating_check and kills its whole insert batch.
+ * Exported for tests.
+ */
+export function clampRating(raw: unknown): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return 0;
+  return Math.min(5, n);
+}
+
+export function normalizeRatingWithScale(raw: number, scale: 'half-five' | 'ten' | 'hundred'): number {
   if (!raw || raw <= 0) return 0;
   switch (scale) {
-    case 'ten':     return Math.round((raw / 2) * 2) / 2;
-    case 'hundred': return Math.round((raw / 20) * 2) / 2;
+    case 'ten':     return clampRating(Math.round((raw / 2) * 2) / 2);
+    case 'hundred': return clampRating(Math.round((raw / 20) * 2) / 2);
     case 'half-five':
-    default:        return Math.round(raw * 2) / 2;
+    default:        return clampRating(Math.round(raw * 2) / 2);
   }
 }
 
@@ -261,17 +284,21 @@ function normalizeRatingWithScale(raw: number, scale: 'half-five' | 'ten' | 'hun
 /**
  * Normalizes date strings to YYYY-MM-DD (the logs.watched_date column is DATE).
  * Handles: YYYY-MM-DD, MM/DD/YYYY, DD/MM/YYYY, ISO timestamps.
+ * Future dates are clamped to today — a native log can't be created in the
+ * future, so imports must not be either. Exported for tests.
  */
-function normalizeDate(raw: string): string {
-  if (!raw) return new Date().toISOString().slice(0, 10);
+export function normalizeDate(raw: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  if (!raw) return today;
 
   const trimmed = raw.trim();
+  const clamp = (d: string) => (d > today ? today : d);
 
   // Already YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return clamp(trimmed);
 
   // ISO timestamp — extract date part
-  if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) return trimmed.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}T/.test(trimmed)) return clamp(trimmed.slice(0, 10));
 
   // MM/DD/YYYY or DD/MM/YYYY
   const slashMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
@@ -280,16 +307,43 @@ function normalizeDate(raw: string): string {
     const numA = parseInt(a, 10);
     const numB = parseInt(b, 10);
     // If first number > 12, it must be DD/MM/YYYY
-    if (numA > 12) return `${yr}-${String(numB).padStart(2, '0')}-${String(numA).padStart(2, '0')}`;
+    if (numA > 12) return clamp(`${yr}-${String(numB).padStart(2, '0')}-${String(numA).padStart(2, '0')}`);
     // Default to MM/DD/YYYY (US format, most common in exports)
-    return `${yr}-${String(numA).padStart(2, '0')}-${String(numB).padStart(2, '0')}`;
+    return clamp(`${yr}-${String(numA).padStart(2, '0')}-${String(numB).padStart(2, '0')}`);
   }
 
   // Fallback — try native Date parsing
   const parsed = new Date(trimmed);
-  if (!isNaN(parsed.getTime())) return parsed.toISOString().slice(0, 10);
+  if (!isNaN(parsed.getTime())) return clamp(parsed.toISOString().slice(0, 10));
 
-  return new Date().toISOString().slice(0, 10);
+  return today;
+}
+
+/**
+ * Native-parity timestamps for an imported row: a film watched in 2019 was
+ * *logged* in 2019, so created_at/updated_at are backdated to the watch date
+ * (noon UTC — timezone-safe for a DATE), clamped to now. This is also what
+ * keeps a large import from flooding the community feed (which orders by
+ * created_at) with hundreds of "just now" entries. Exported for tests.
+ */
+export function backdatedTimestamps(watchedDate: string): { created_at: string; updated_at: string } {
+  const nowIso = new Date().toISOString();
+  let ts = `${normalizeDate(watchedDate)}T12:00:00.000Z`;
+  if (ts > nowIso) ts = nowIso;
+  return { created_at: ts, updated_at: ts };
+}
+
+/**
+ * Validates a timestamp coming from an archive (ReelHouse JSON export) for
+ * passthrough. Returns the ISO string if parseable and not in the future,
+ * else null (caller falls back to backdating). Exported for tests.
+ */
+export function importableTimestamp(raw: unknown): string | null {
+  if (typeof raw !== 'string' || !raw) return null;
+  const parsed = new Date(raw);
+  if (isNaN(parsed.getTime())) return null;
+  const iso = parsed.toISOString();
+  return iso > new Date().toISOString() ? null : iso;
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -483,14 +537,35 @@ function parseWatchlistCSV(text: string): ParsedWatchlistEntry[] {
   return rows.map(row => ({
     title:     getField(row, mapping, 'title'),
     year:      getField(row, mapping, 'year'),
-    addedDate: getField(row, mapping, 'watchedDate') || getField(row, mapping, 'uri'),
+    addedDate: getField(row, mapping, 'watchedDate'),
   })).filter(e => e.title.length > 0);
 }
 
-function parseListCSV(text: string, fileName: string): ParsedListFile {
-  const rows = parseCSV(text);
-  const headers = Object.keys(rows[0] ?? {});
-  const mapping = resolveHeaders(headers);
+/**
+ * True when a raw CSV row *is* a header row: at least 3 of its cells are
+ * literal known column names, one of them a title synonym. The real film-table
+ * header of a two-section list export ("Position,Name,Year,URL,Description")
+ * matches 5; a genuine film row would need three cells that are literally
+ * header words to false-positive — effectively impossible.
+ */
+const ALL_HEADER_SYNONYMS = new Set(Object.values(HEADER_MAP).flat());
+function isHeaderRow(cells: string[]): boolean {
+  const lowered = cells.map(c => c.toLowerCase().trim());
+  if (!lowered.some(c => HEADER_MAP.title.includes(c))) return false;
+  return lowered.filter(c => ALL_HEADER_SYNONYMS.has(c)).length >= 3;
+}
+
+/**
+ * Parses a list CSV — including the common two-section format, where a
+ * metadata block about the list itself (name/description) precedes the actual
+ * film table with its own embedded header row. We anchor on the LAST
+ * header-looking row within the first few rows; single-section files resolve
+ * to row 0, byte-identical to the simple path. Entries honor an explicit
+ * position/rank column when present, so ranked stacks import with every film
+ * in its right placement. Exported for tests.
+ */
+export function parseListCSV(text: string, fileName: string): ParsedListFile {
+  const rawRows = parseCSVRows(text).filter(row => row.some(cell => cell.length > 0));
 
   // Extract list name from filename: "best-of-2024.csv" → "Best Of 2024"
   const name = fileName
@@ -498,25 +573,224 @@ function parseListCSV(text: string, fileName: string): ParsedListFile {
     .replace(/[-_]+/g, ' ')
     .replace(/\b\w/g, c => c.toUpperCase());
 
-  // Try to find a description in the first row's description field
-  let description = '';
-  if (mapping && rows.length > 0) {
-    description = getField(rows[0], mapping, 'description');
+  if (rawRows.length < 2) return { name, description: '', entries: [] };
+
+  // Anchor the film table on the last header row within the scan window.
+  const SCAN_WINDOW = Math.min(6, rawRows.length - 1);
+  let headerIdx = 0;
+  for (let i = 0; i <= SCAN_WINDOW; i++) {
+    if (isHeaderRow(rawRows[i])) headerIdx = i;
   }
 
-  const entries = mapping
-    ? rows.map(row => ({
-        title: getField(row, mapping, 'title'),
-        year:  getField(row, mapping, 'year'),
-      })).filter(e => e.title.length > 0)
-    : [];
+  const headers = rawRows[headerIdx];
+  const mapping = resolveHeaders(headers);
 
-  return { name, description, entries };
+  // Description: from the film table's own column, else from the metadata
+  // block above (its first data row), matching how these exports carry it.
+  let description = '';
+  if (headerIdx > 0) {
+    const metaMapping = resolveHeaders(rawRows[0]);
+    if (metaMapping?.description && rawRows.length > 1) {
+      const metaIdx = rawRows[0].indexOf(metaMapping.description);
+      description = rawRows[1]?.[metaIdx] ?? '';
+    }
+  }
+
+  if (!mapping) return { name, description, entries: [] };
+
+  const toRecord = (row: string[]): Record<string, string> => {
+    const obj: Record<string, string> = {};
+    headers.forEach((h, idx) => { obj[h] = row[idx] ?? ''; });
+    return obj;
+  };
+
+  const records = rawRows.slice(headerIdx + 1).map(toRecord);
+  if (!description) description = records.length > 0 ? getField(records[0], mapping, 'description') : '';
+
+  let entries = records
+    .map((row, idx) => ({
+      title: getField(row, mapping, 'title'),
+      year:  getField(row, mapping, 'year'),
+      _pos:  parseInt(getField(row, mapping, 'position'), 10),
+      _idx:  idx,
+    }))
+    .filter(e => e.title.length > 0);
+
+  // Honor an explicit position/rank column (stable; file order breaks ties).
+  if (mapping.position && entries.some(e => Number.isFinite(e._pos))) {
+    entries = entries.slice().sort((a, b) => {
+      const pa = Number.isFinite(a._pos) ? a._pos : a._idx + 1e9;
+      const pb = Number.isFinite(b._pos) ? b._pos : b._idx + 1e9;
+      return pa - pb || a._idx - b._idx;
+    });
+  }
+
+  return { name, description, entries: entries.map(({ title, year }) => ({ title, year })) };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  NATIVE-PARITY HELPERS — ordering, rewatch aggregation
+// ═══════════════════════════════════════════════════════════════
+
+/**
+ * Orders films from an archive for list-item placement: by rank_position when
+ * present (ReelHouse exports), else a legacy/third-party `position`, else
+ * original array order. Stable — every film lands in its right placement.
+ * Exported for tests.
+ */
+export function orderImportedFilms<T extends Record<string, unknown>>(films: T[]): T[] {
+  return films
+    .map((f, idx) => ({ f, idx }))
+    .sort((a, b) => {
+      const ra = Number(a.f.rank_position ?? a.f.position ?? NaN);
+      const rb = Number(b.f.rank_position ?? b.f.position ?? NaN);
+      const ka = Number.isFinite(ra) ? ra : a.idx + 1e9;
+      const kb = Number.isFinite(rb) ? rb : b.idx + 1e9;
+      return ka - kb || a.idx - b.idx;
+    })
+    .map(({ f }) => f);
+}
+
+/** One film aggregated from possibly-multiple diary rows (rewatches). */
+export interface AggregatedDiaryFilm {
+  title: string;
+  year: string;
+  /** The latest watch — becomes the current row (native rewatch semantics). */
+  latest: ParsedDiaryEntry;
+  /** Earlier watches, oldest→newest — archived into viewing_history. */
+  earlier: ParsedDiaryEntry[];
+  viewCount: number;
+  isRewatch: boolean;
+}
+
+/**
+ * Groups diary rows by film so rewatches import the way the app itself records
+ * them (see logOperations.applyRewatchMerge): ONE row per film holding the
+ * latest watch, earlier watches archived into viewing_history, view_count =
+ * number of watches. Without this, ignoreDuplicates silently discarded every
+ * watch after the first. Exported for tests.
+ */
+export function aggregateDiaryEntries(diary: ParsedDiaryEntry[]): AggregatedDiaryFilm[] {
+  const byFilm = new Map<string, ParsedDiaryEntry[]>();
+  for (const entry of diary) {
+    const key = cacheKey(entry.title, entry.year);
+    const arr = byFilm.get(key);
+    if (arr) arr.push(entry); else byFilm.set(key, [entry]);
+  }
+
+  const result: AggregatedDiaryFilm[] = [];
+  for (const watches of byFilm.values()) {
+    // Oldest → newest by normalized watch date (stable for same-day watches).
+    const sorted = watches
+      .map((w, idx) => ({ w, d: normalizeDate(w.watchedDate), idx }))
+      .sort((a, b) => (a.d < b.d ? -1 : a.d > b.d ? 1 : a.idx - b.idx))
+      .map(({ w }) => w);
+
+    const latest = sorted[sorted.length - 1];
+    const earlier = sorted.slice(0, -1);
+
+    // Native "empty keeps previous" merge: if the latest watch carries no
+    // rating/review, inherit the most recent earlier one that does.
+    let rating = latest.rating;
+    let review = latest.review;
+    for (let i = earlier.length - 1; i >= 0 && (rating <= 0 || review.length === 0); i--) {
+      if (rating <= 0 && earlier[i].rating > 0) rating = earlier[i].rating;
+      if (review.length === 0 && earlier[i].review.length > 0) review = earlier[i].review;
+    }
+
+    result.push({
+      title: latest.title,
+      year: latest.year,
+      latest: { ...latest, rating, review },
+      earlier,
+      viewCount: sorted.length,
+      isRewatch: sorted.length > 1 || sorted.some(w => w.isRewatch),
+    });
+  }
+  return result;
+}
+
+/**
+ * Archives earlier watches in the app's exact native viewing_history shape
+ * (camelCase entries, newest-first — mirrors logOperations.applyRewatchMerge).
+ * Exported for tests.
+ */
+export function buildViewingHistory(
+  earlier: ParsedDiaryEntry[],
+  ratingScale: 'half-five' | 'ten' | 'hundred',
+): Record<string, unknown>[] {
+  return earlier
+    .slice()
+    .reverse() // newest-first, matching [archivedEntry, ...oldHistory]
+    .map(w => ({
+      date: normalizeDate(w.watchedDate),
+      rating: normalizeRatingWithScale(w.rating, ratingScale),
+      review: sanitizeInput(w.review, 'review'),
+      isSpoiler: false,
+      watchedWith: '',
+      privateNotes: '',
+      physicalMedia: 'None',
+      status: 'watched',
+      abandonedReason: null,
+      isAutopsied: false,
+      autopsy: null,
+      altPoster: null,
+      editorialHeader: null,
+      dropCap: false,
+      pullQuote: '',
+      videoUrl: null,
+      format: 'digital',
+    }));
 }
 
 // ═══════════════════════════════════════════════════════════════
 //  DATABASE IMPORTERS — Batch upsert with error collection
 // ═══════════════════════════════════════════════════════════════
+
+/**
+ * Upserts a batch and returns the number of rows ACTUALLY written (with
+ * ignoreDuplicates, .select('id') returns only real inserts — honest counts).
+ * If the whole batch fails (e.g. one row violates a CHECK constraint), retries
+ * row-by-row so a single bad row can't sink its 49 neighbors; per-row errors
+ * are collected, capped so a filthy file can't flood the report.
+ */
+const MAX_COLLECTED_ERRORS = 20;
+async function upsertCounted(
+  table: string,
+  batch: Record<string, unknown>[],
+  onConflict: string,
+  ignoreDuplicates: boolean,
+  label: string,
+  errors: string[],
+): Promise<number> {
+  try {
+    const { data, error } = await supabase
+      .from(table)
+      .upsert(batch, { onConflict, ignoreDuplicates })
+      .select('id');
+    if (!error) return data?.length ?? 0;
+
+    // Batch rejected — isolate the poison row(s) instead of losing the batch.
+    let ok = 0;
+    for (const row of batch) {
+      const { data: single, error: rowErr } = await supabase
+        .from(table)
+        .upsert([row], { onConflict, ignoreDuplicates })
+        .select('id');
+      if (rowErr) {
+        if (errors.length < MAX_COLLECTED_ERRORS) errors.push(`${label}: ${rowErr.message}`);
+      } else {
+        ok += single?.length ?? 0;
+      }
+    }
+    return ok;
+  } catch (err: unknown) {
+    if (errors.length < MAX_COLLECTED_ERRORS) {
+      errors.push(`${label}: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+    return 0;
+  }
+}
 
 async function importLogs(
   diary: ParsedDiaryEntry[],
@@ -534,18 +808,22 @@ async function importLogs(
   const allRatings = diary.map(e => e.rating).filter(r => r > 0);
   const ratingScale = allRatings.length > 0 ? detectRatingScale(allRatings) : 'half-five';
 
+  // Native rewatch semantics: one row per film, latest watch current, earlier
+  // watches archived into viewing_history (see aggregateDiaryEntries).
+  const films = aggregateDiaryEntries(diary);
+
   // Build payloads
   const payloads: Record<string, unknown>[] = [];
-  for (const entry of diary) {
-    const key = cacheKey(entry.title, entry.year);
+  for (const agg of films) {
+    const key = cacheKey(agg.title, agg.year);
     const film = resolvedFilms.get(key);
     if (!film) {
-      skipped++;
+      skipped += agg.viewCount;
       continue;
     }
 
-    // Merge review from reviews.csv if diary review is shorter
-    let review = entry.review;
+    // Merge review from reviews.csv if the diary review is shorter
+    let review = agg.latest.review;
     const reviewFromFile = reviewMap.get(key);
     if (reviewFromFile && reviewFromFile.length > review.length) {
       review = reviewFromFile;
@@ -553,19 +831,25 @@ async function importLogs(
     if (review.length > 0) reviewCount++;
     review = sanitizeInput(review, 'review'); // FEAT-1
 
+    // Native-parity timeline: the row was created at the FIRST watch and last
+    // touched at the LATEST — exactly as if logged + rewatched in the app.
+    const firstWatch = agg.earlier.length > 0 ? agg.earlier[0].watchedDate : agg.latest.watchedDate;
+    const { created_at } = backdatedTimestamps(firstWatch);
+    const { created_at: updated_at } = backdatedTimestamps(agg.latest.watchedDate);
+
     payloads.push({
       user_id:          userId,
       film_id:          film.id,
       film_title:       film.title,
       poster_path:      film.poster_path,
       year:             film.year,
-      rating:           normalizeRatingWithScale(entry.rating, ratingScale),
+      rating:           normalizeRatingWithScale(agg.latest.rating, ratingScale),
       review:           review,
-      status:           entry.isRewatch ? 'rewatched' : 'watched',
-      watched_date:     normalizeDate(entry.watchedDate),
+      status:           agg.isRewatch ? 'rewatched' : 'watched',
+      watched_date:     normalizeDate(agg.latest.watchedDate),
       is_spoiler:       false,
-      view_count:       1,
-      viewing_history:  [],
+      view_count:       agg.viewCount,
+      viewing_history:  buildViewingHistory(agg.earlier, ratingScale),
       format:           'digital',
       watched_with:     null,
       private_notes:    null,
@@ -578,10 +862,12 @@ async function importLogs(
       drop_cap:         false,
       pull_quote:       '',
       video_url:        null,
+      created_at,
+      updated_at,
     });
   }
 
-  // Batch upsert
+  // Batch upsert — honest counts + per-row fallback on batch failure
   const total = payloads.length;
   for (let i = 0; i < total; i += BATCH_SIZE) {
     // Micro-batching event-loop yield to prevent UI freeze
@@ -592,21 +878,7 @@ async function importLogs(
       current: Math.min(i + BATCH_SIZE, total),
       total,
     });
-
-    try {
-      const { error } = await supabase
-        .from('logs')
-        .upsert(batch, { onConflict: 'user_id,film_id', ignoreDuplicates: true });
-
-      if (error) {
-        errors.push(`Log batch ${Math.floor(i / BATCH_SIZE) + 1}: ${error.message}`);
-      } else {
-        imported += batch.length;
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      errors.push(`Log batch ${Math.floor(i / BATCH_SIZE) + 1}: ${msg}`);
-    }
+    imported += await upsertCounted('logs', batch, 'user_id,film_id', true, 'Film log', errors);
   }
 
   return { imported, reviewCount, skipped, errors };
@@ -637,6 +909,8 @@ async function importWatchlist(
       film_title:  film.title,
       poster_path: film.poster_path,
       year:        film.year,
+      // Native parity: added when the source says it was added, not "now".
+      ...(entry.addedDate ? backdatedTimestamps(entry.addedDate) : {}),
     });
   }
 
@@ -650,21 +924,7 @@ async function importWatchlist(
       current: Math.min(i + BATCH_SIZE, total),
       total,
     });
-
-    try {
-      const { error } = await supabase
-        .from('watchlists')
-        .upsert(batch, { onConflict: 'user_id,film_id', ignoreDuplicates: true });
-
-      if (error) {
-        errors.push(`Watchlist batch: ${error.message}`);
-      } else {
-        imported += batch.length;
-      }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Unknown error';
-      errors.push(`Watchlist batch: ${msg}`);
-    }
+    imported += await upsertCounted('watchlists', batch, 'user_id,film_id', true, 'Watchlist', errors);
   }
 
   return { imported, skipped, errors };
@@ -689,43 +949,49 @@ async function importLists(
     });
 
     try {
+      // FEAT-1: list name/description come from untrusted files — sanitize with
+      // the same caps the in-app editor enforces (lossless for native content).
+      const safeTitle = sanitizeInput(list.name, 'listTitle') || 'Imported Stack';
+      const safeDescription = sanitizeInput(list.description, 'listDescription');
+
       // Idempotency: reuse list ID if one with the same title exists for this user
       const { data: existing } = await supabase
         .from('lists')
         .select('id')
         .eq('user_id', userId)
-        .eq('title', list.name)
+        .eq('title', safeTitle)
         .maybeSingle();
 
       const listId = existing?.id ?? Crypto.randomUUID();
       const { error: listErr } = await supabase.from('lists').upsert([{
         id:          listId,
         user_id:     userId,
-        title:       list.name,
-        description: list.description,
+        title:       safeTitle,
+        description: safeDescription,
         is_private:  false,
         is_ranked:   false,
       }], { onConflict: 'id' });
 
       if (listErr) {
-        errors.push(`List "${list.name}": ${listErr.message}`);
+        errors.push(`List "${safeTitle}": ${listErr.message}`);
         continue;
       }
 
-      // Resolve and insert list items with position order
+      // Resolve and insert list items in order — rank_position is the app's
+      // ordering column (0-based, matching listSlice), so every film lands in
+      // its right placement.
       const items: Record<string, unknown>[] = [];
-      for (let pos = 0; pos < list.entries.length; pos++) {
-        const entry = list.entries[pos];
+      for (const entry of list.entries) {
         const key = cacheKey(entry.title, entry.year);
         const film = resolvedFilms.get(key);
         if (!film) continue;
 
         items.push({
-          list_id:    listId,
-          film_id:    film.id,
-          film_title: film.title,
-          poster_path: film.poster_path,
-          position:   pos,
+          list_id:       listId,
+          film_id:       film.id,
+          film_title:    film.title,
+          poster_path:   film.poster_path,
+          rank_position: items.length,
         });
       }
 
@@ -734,12 +1000,7 @@ async function importLists(
           // Micro-batching event-loop yield to prevent UI freeze
           await new Promise(r => setTimeout(r, 0));
           const batch = items.slice(j, j + BATCH_SIZE);
-          const { error: itemsErr } = await supabase
-            .from('list_items')
-            .upsert(batch, { onConflict: 'list_id,film_id' });
-          if (itemsErr) {
-            errors.push(`List items "${list.name}": ${itemsErr.message}`);
-          }
+          await upsertCounted('list_items', batch, 'list_id,film_id', false, `List items "${safeTitle}"`, errors);
         }
       }
 
@@ -778,16 +1039,25 @@ export async function importArchiveJSON(
       const filmId = (log.filmId ?? log.film_id) as number | undefined;
       if (!filmId) { skipped++; continue; }
 
+      const watchedDate = normalizeDate(((log.watchedDate ?? log.watched_date ?? '') as string));
+      // Native-parity timeline: preserve the original created_at from the
+      // export (a migrated account keeps its true history); fall back to
+      // backdating from the watch date. Never in the future.
+      const originalCreated = importableTimestamp(log.createdAt ?? log.created_at);
+      const originalUpdated = importableTimestamp(log.updatedAt ?? log.updated_at);
+      const fallback = backdatedTimestamps(watchedDate);
+      const created_at = originalCreated ?? fallback.created_at;
+
       payloads.push({
         user_id:          userId,
         film_id:          filmId,
         film_title:       (log.title ?? log.film_title ?? 'Untitled') as string,
         poster_path:      (log.poster ?? log.poster_path ?? null) as string | null,
         year:             (log.year ?? null) as number | null,
-        rating:           (log.rating ?? 0) as number,
+        rating:           clampRating(log.rating), // hard DB CHECK is [0,5]
         review:           sanitizeInput((log.review ?? '') as string, 'review'), // FEAT-1
         status:           (log.status ?? 'watched') as string,
-        watched_date:     normalizeDate(((log.watchedDate ?? log.watched_date ?? '') as string)),
+        watched_date:     watchedDate,
         is_spoiler:       (log.isSpoiler ?? log.is_spoiler ?? false) as boolean,
         watched_with:     (log.watchedWith ?? log.watched_with ?? null) as string | null,
         // FEAT-1: sanitize the owner-private notes too (strip zero-width/control chars).
@@ -806,6 +1076,8 @@ export async function importArchiveJSON(
         format:           (log.format ?? 'digital') as string,
         view_count:       (log.viewCount ?? log.view_count ?? 1) as number,
         viewing_history:  (log.viewingHistory ?? log.viewing_history ?? []) as unknown[],
+        created_at,
+        updated_at:       originalUpdated ?? created_at,
       });
 
       const review = (log.review ?? '') as string;
@@ -821,16 +1093,7 @@ export async function importArchiveJSON(
         current: Math.min(i + BATCH_SIZE, payloads.length),
         total: payloads.length,
       });
-
-      try {
-        const { error } = await supabase
-          .from('logs')
-          .upsert(batch, { onConflict: 'user_id,film_id', ignoreDuplicates: true });
-        if (error) errors.push(`Log batch: ${error.message}`);
-        else logCount += batch.length;
-      } catch (err: unknown) {
-        errors.push(`Log batch: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
+      logCount += await upsertCounted('logs', batch, 'user_id,film_id', true, 'Film log', errors);
     }
   }
 
@@ -843,12 +1106,15 @@ export async function importArchiveJSON(
       const filmId = (item.filmId ?? item.film_id) as number | undefined;
       if (!filmId) { skipped++; continue; }
 
+      const originalCreated = importableTimestamp(item.createdAt ?? item.created_at);
       payloads.push({
         user_id:     userId,
         film_id:     filmId,
         film_title:  (item.title ?? item.film_title ?? 'Untitled') as string,
         poster_path: (item.poster ?? item.poster_path ?? null) as string | null,
         year:        (item.year ?? null) as number | null,
+        // Native parity: keep the original "added" date when the export has it.
+        ...(originalCreated ? { created_at: originalCreated, updated_at: originalCreated } : {}),
       });
     }
 
@@ -861,16 +1127,7 @@ export async function importArchiveJSON(
         current: Math.min(i + BATCH_SIZE, payloads.length),
         total: payloads.length,
       });
-
-      try {
-        const { error } = await supabase
-          .from('watchlists')
-          .upsert(batch, { onConflict: 'user_id,film_id', ignoreDuplicates: true });
-        if (error) errors.push(`Watchlist batch: ${error.message}`);
-        else watchlistCount += batch.length;
-      } catch (err: unknown) {
-        errors.push(`Watchlist batch: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
+      watchlistCount += await upsertCounted('watchlists', batch, 'user_id,film_id', true, 'Watchlist', errors);
     }
   }
 
@@ -884,6 +1141,8 @@ export async function importArchiveJSON(
       const filmId = (item.filmId ?? item.film_id) as number | undefined;
       if (!filmId) { skipped++; continue; }
 
+      const originalCreated = importableTimestamp(item.createdAt ?? item.created_at);
+      const rawNotes = (item.notes ?? null) as string | null;
       payloads.push({
         user_id:     userId,
         film_id:     filmId,
@@ -891,8 +1150,11 @@ export async function importArchiveJSON(
         poster_path: (item.poster ?? item.poster_path ?? null) as string | null,
         year:        (item.year ?? null) as number | null,
         formats:     (item.formats ?? []) as string[],
-        notes:       (item.notes ?? null) as string | null,
+        // FEAT-1: vault notes are untrusted text — same sanitizer as reviews
+        // ('review' cap = 5000, lossless for anything written in-app).
+        notes:       rawNotes ? sanitizeInput(rawNotes, 'review') : null,
         condition:   (item.condition ?? null) as string | null,
+        ...(originalCreated ? { created_at: originalCreated } : {}),
       });
     }
 
@@ -905,17 +1167,7 @@ export async function importArchiveJSON(
         current: Math.min(i + BATCH_SIZE, payloads.length),
         total: payloads.length,
       });
-
-      try {
-        const { error } = await supabase
-          .from('physical_archive')
-          .upsert(batch, { onConflict: 'user_id,film_id', ignoreDuplicates: true });
-        if (error) errors.push(`Vault batch: ${error.message}`);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        else vaultCount += batch.length;
-      } catch (err: unknown) {
-        errors.push(`Vault batch: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      }
+      vaultCount += await upsertCounted('physical_archive', batch, 'user_id,film_id', true, 'Vault', errors);
     }
   }
 
@@ -932,8 +1184,11 @@ export async function importArchiveJSON(
       });
 
       try {
-        const listTitle = (list.title ?? 'Untitled') as string;
-        
+        // FEAT-1: untrusted title/description — same caps as the in-app editor.
+        const listTitle = sanitizeInput((list.title ?? 'Untitled') as string, 'listTitle') || 'Imported Stack';
+        const listDescription = sanitizeInput((list.description ?? '') as string, 'listDescription');
+        const originalCreated = importableTimestamp(list.createdAt ?? list.created_at);
+
         // Idempotency: reuse list ID if one with the same title exists for this user
         const { data: existing } = await supabase
           .from('lists')
@@ -948,34 +1203,36 @@ export async function importArchiveJSON(
           id:          listId,
           user_id:     userId,
           title:       listTitle,
-          description: (list.description ?? '') as string,
+          description: listDescription,
           is_private:  (list.isPrivate ?? list.is_private ?? false) as boolean,
           is_ranked:   (list.isRanked ?? list.is_ranked ?? false) as boolean,
+          ...(originalCreated ? { created_at: originalCreated } : {}),
         }], { onConflict: 'id' });
 
         if (listErr) {
-          errors.push(`List "${list.title}": ${listErr.message}`);
+          errors.push(`List "${listTitle}": ${listErr.message}`);
           continue;
         }
 
-        const films = (list.films ?? []) as Record<string, unknown>[];
+        // Order films by rank_position (ReelHouse exports) / legacy position /
+        // array order, then write the app's real ordering column (0-based) —
+        // every film in its right placement, even from old bloated exports.
+        const films = orderImportedFilms((list.films ?? []) as Record<string, unknown>[]);
         if (films.length > 0) {
-          const items = films.map((f, pos) => ({
+          const items = films.map((f) => ({
             list_id:     listId,
             film_id:     (f.id ?? f.film_id) as number,
             film_title:  (f.title ?? f.film_title ?? 'Unknown') as string,
             poster_path: (f.poster ?? f.poster_path ?? null) as string | null,
-            position:    pos,
-          })).filter(item => item.film_id);
+            ...(importableTimestamp(f.created_at) ? { created_at: importableTimestamp(f.created_at) } : {}),
+          })).filter(item => item.film_id)
+             .map((item, pos) => ({ ...item, rank_position: pos }));
 
           for (let j = 0; j < items.length; j += BATCH_SIZE) {
             // Micro-batching event-loop yield to prevent UI freeze
             await new Promise(r => setTimeout(r, 0));
             const batch = items.slice(j, j + BATCH_SIZE);
-            const { error: itemErr } = await supabase
-              .from('list_items')
-              .upsert(batch, { onConflict: 'list_id,film_id' });
-            if (itemErr) errors.push(`List items: ${itemErr.message}`);
+            await upsertCounted('list_items', batch, 'list_id,film_id', false, `List items "${listTitle}"`, errors);
           }
         }
 
@@ -986,7 +1243,7 @@ export async function importArchiveJSON(
     }
   }
 
-  return { logs: logCount, reviews: reviewCount, watchlist: watchlistCount, lists: listCount, skipped, errors };
+  return { logs: logCount, reviews: reviewCount, watchlist: watchlistCount, vault: vaultCount, lists: listCount, skipped, errors };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1199,6 +1456,7 @@ async function importCSVArchive(
     logs: logResult.imported,
     reviews: logResult.reviewCount,
     watchlist: wlResult.imported,
+    vault: 0, // CSV archives don't carry physical-media data
     lists: listResult.imported,
     skipped: totalSkipped,
     errors: allErrors,

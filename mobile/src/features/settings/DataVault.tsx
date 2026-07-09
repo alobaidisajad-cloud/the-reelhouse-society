@@ -243,9 +243,15 @@ export default function DataVault() {
         logs: dbLogs || [],
         watchlist: dbWatchlist || [],
         vault: dbVault || [],
-        lists: (dbLists || []).map(list => ({
-          ...list,
-          films: list.list_items || []
+        // Strip the embedded list_items key (it used to ship TWICE — once raw,
+        // once as `films`, doubling every list's payload) and emit films in
+        // rank order so a re-import restores every placement exactly.
+        lists: (dbLists || []).map(({ list_items, ...rest }: any) => ({
+          ...rest,
+          films: [...(list_items || [])].sort((a: any, b: any) =>
+            (a.rank_position ?? 0) - (b.rank_position ?? 0) ||
+            String(a.created_at ?? '').localeCompare(String(b.created_at ?? ''))
+          )
         }))
       };
       await new Promise(resolve => setTimeout(resolve, 50)); // Yield to UI thread
@@ -325,17 +331,24 @@ export default function DataVault() {
         {importResult && (
           <View style={s.resultCard}>
             <View style={s.resultHeader}>
-              <CheckCircle size={16} color={colors.sepia} />
-              <Text style={s.resultTitle}>TRANSFER COMPLETE</Text>
+              {importResult.errors.length > 0 ? (
+                <AlertCircle size={16} color={colors.crimson} />
+              ) : (
+                <CheckCircle size={16} color={colors.sepia} />
+              )}
+              <Text style={s.resultTitle}>
+                {importResult.errors.length > 0 ? 'FILED WITH EXCEPTIONS' : 'TRANSFER COMPLETE'}
+              </Text>
             </View>
 
-            {/* Stats Grid — 2x2 */}
+            {/* Stats Grid — VAULT appears only when physical media transferred */}
             <View style={s.statsGrid}>
               {[
                 { label: 'FILM LOGS', value: importResult.logs },
                 { label: 'REVIEWS', value: importResult.reviews },
                 { label: 'WATCHLIST', value: importResult.watchlist },
                 { label: 'STACKS', value: importResult.lists },
+                ...(importResult.vault > 0 ? [{ label: 'VAULT', value: importResult.vault }] : []),
               ].map(stat => (
                 <View key={stat.label} style={s.statCell}>
                   <Text style={s.statValue}>{stat.value}</Text>
@@ -353,9 +366,12 @@ export default function DataVault() {
 
             {importResult.errors.length > 0 && (
               <View style={s.errorScroll}>
-                {importResult.errors.map((err, i) => (
+                {importResult.errors.slice(0, 8).map((err, i) => (
                   <Text key={i} style={s.errorLine}>{'\u2022'} {err}</Text>
                 ))}
+                {importResult.errors.length > 8 && (
+                  <Text style={s.errorLine}>{'\u2022'} \u2026and {importResult.errors.length - 8} more</Text>
+                )}
               </View>
             )}
 
