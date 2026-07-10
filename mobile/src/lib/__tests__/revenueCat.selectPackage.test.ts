@@ -79,3 +79,52 @@ describe('selectPackageForTier (LIB-1 regression)', () => {
     expect(selectPackageForTier([], 'auteur')).toBeNull();
   });
 });
+
+describe('selectPackageForTier — explicit billing period (the membership toggle)', () => {
+  const both = [
+    pkg('$rc_monthly', 'MONTHLY', 'archivist_monthly'),
+    pkg('$rc_annual', 'ANNUAL', 'archivist_annual'),
+    pkg('$rc_monthly', 'MONTHLY', 'auteur_monthly'),
+    pkg('$rc_annual', 'ANNUAL', 'auteur_annual'),
+    pkg('$rc_lifetime', 'LIFETIME', 'founding_lifetime'),
+  ];
+
+  it('explicit monthly resolves the MONTHLY product', () => {
+    expect(selectPackageForTier(both, 'archivist', 'monthly')?.product.identifier).toBe('archivist_monthly');
+    expect(selectPackageForTier(both, 'auteur', 'monthly')?.product.identifier).toBe('auteur_monthly');
+  });
+
+  it('explicit annual resolves the ANNUAL product', () => {
+    expect(selectPackageForTier(both, 'archivist', 'annual')?.product.identifier).toBe('archivist_annual');
+    expect(selectPackageForTier(both, 'auteur', 'annual')?.product.identifier).toBe('auteur_annual');
+  });
+
+  it('STRICT: explicit monthly on an annual-only store returns null — a member who chose monthly is never silently charged the yearly price', () => {
+    const annualOnly = [pkg('$rc_annual', 'ANNUAL', 'auteur_annual')];
+    expect(selectPackageForTier(annualOnly, 'auteur', 'monthly')).toBeNull();
+  });
+
+  it('STRICT: explicit annual on a monthly-only store returns null (no cross-period fallback either way)', () => {
+    const monthlyOnly = [pkg('$rc_monthly', 'MONTHLY', 'auteur_monthly')];
+    expect(selectPackageForTier(monthlyOnly, 'auteur', 'annual')).toBeNull();
+  });
+
+  it('LEGACY: omitted period keeps the lenient fallback — a monthly-only store still sells (useEntitlement path unchanged)', () => {
+    const monthlyOnly = [pkg('$rc_monthly', 'MONTHLY', 'auteur_monthly')];
+    expect(selectPackageForTier(monthlyOnly, 'auteur')?.product.identifier).toBe('auteur_monthly');
+  });
+
+  it('founding is always the lifetime product, whatever period is passed', () => {
+    expect(selectPackageForTier(both, 'founding', 'monthly')?.product.identifier).toBe('founding_lifetime');
+    expect(selectPackageForTier(both, 'founding', 'annual')?.product.identifier).toBe('founding_lifetime');
+  });
+
+  it('explicit period resolves CUSTOM-named packages via the tier+period identifier path', () => {
+    const custom = [
+      pkg('auteur_monthly', 'CUSTOM', 'rc_prod_x1'),
+      pkg('auteur_annual', 'CUSTOM', 'rc_prod_x2'),
+    ];
+    expect(selectPackageForTier(custom, 'auteur', 'monthly')?.identifier).toBe('auteur_monthly');
+    expect(selectPackageForTier(custom, 'auteur', 'annual')?.identifier).toBe('auteur_annual');
+  });
+});

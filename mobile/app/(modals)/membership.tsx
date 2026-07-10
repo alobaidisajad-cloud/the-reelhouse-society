@@ -17,7 +17,7 @@ import { colors, fonts } from '@/src/theme/theme';
 import PressableScale from '@/src/components/PressableScale';
 import reelToast from '@/src/utils/reelToast';
 import { ToastOverlay } from '@/src/components/ToastOverlay';
-import { restorePurchases as restoreIAP, purchaseTier, ReelHouseTier } from '@/src/lib/revenueCat';
+import { restorePurchases as restoreIAP, purchaseTier, ReelHouseTier, BillingPeriod } from '@/src/lib/revenueCat';
 import { safeOpenURL } from '@/src/utils/linking';
 import { supabase } from '@/src/lib/supabase';
 import { resolveTier, getTierWeight } from '@/src/utils/tier';
@@ -28,12 +28,45 @@ import { resolveTier, getTierWeight } from '@/src/utils/tier';
 import { TIERS } from '@/src/constants/membership';
 import { useMembershipPricing } from '@/src/hooks/useMembershipPricing';
 
+/**
+ * Formats the honest "≈ X / MO" equivalence under annual billing from the
+ * store's own numeric price + currency. Returns null on any failure — the UI
+ * then omits the line entirely rather than ever showing a wrong number.
+ */
+function fmtPerMonth(annualPrice?: number, currencyCode?: string): string | null {
+  if (typeof annualPrice !== 'number' || !isFinite(annualPrice) || annualPrice <= 0) return null;
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currencyCode || 'USD',
+    }).format(annualPrice / 12);
+  } catch {
+    return null;
+  }
+}
+
 export default function MembershipScreen() {
 
   const insets = useSafeAreaInsets();
   const { user, isAuthenticated } = useAuthStore();
   const pricing = useMembershipPricing(); // CONST-3: live store prices (falls back to static)
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // ── Billing choice: monthly or annual, the member's call ──────────────
+  // Annual is the default (best value, wears the SAVE 16% stamp). If live
+  // pricing resolves and NO tier carries a monthly product, the toggle hides
+  // itself and the register runs annual-only — a member can never pick a
+  // period the store can't honestly sell (see selectPackageForTier's strict
+  // mode for the second half of that guarantee).
+  const [billing, setBilling] = useState<BillingPeriod>('annual');
+  // ── Founding seat cap (declared here so the AppState effect below can refresh it) ──
+  const [foundingCount, setFoundingCount] = useState<number | null>(null);
+  const monthlyKnownAbsent =
+    Object.keys(pricing).length > 0 &&
+    !Object.values(pricing).some((p) => !!p?.monthly);
+  useEffect(() => {
+    if (monthlyKnownAbsent && billing === 'monthly') setBilling('annual');
+  }, [monthlyKnownAbsent, billing]);
   const scrollRef = useRef<ScrollView>(null);
   const [isRestoring, setIsRestoring] = useState(false);
   // Synchronous mutex prevents concurrent purchases.
@@ -44,7 +77,10 @@ export default function MembershipScreen() {
 
   const lastCheckoutRef = useRef<number>(0);
 
-  // P7-FIX #5: Refresh session tier when returning from external payment browser
+  // P7-FIX #5: Refresh session tier when returning from external payment browser.
+  // Also re-fetch the founding seat count on the same signal, so the certificate
+  // retires itself for someone who left the app open while seat 100 sold —
+  // without needing a revisit.
   useEffect(() => {
     const sub = AppState.addEventListener('change', (state) => {
       if (state === 'active') {
@@ -52,6 +88,13 @@ export default function MembershipScreen() {
         if (Date.now() - lastCheckoutRef.current > 10000) {
           useAuthStore.getState().restoreSession?.();
         }
+        supabase
+          .from('profiles')
+          .select('id', { count: 'exact', head: true })
+          .eq('is_founding', true)
+          .then(({ count, error }) => {
+            if (!error && count !== null) setFoundingCount(count);
+          });
       }
     });
     return () => sub.remove();
@@ -64,7 +107,6 @@ export default function MembershipScreen() {
   // ── Founding seat cap ─────────────────────────────────────────
   // Fetch once on mount. profiles RLS allows SELECT for everyone,
   // so a head-only count query works without an RPC.
-  const [foundingCount, setFoundingCount] = useState<number | null>(null);
   useEffect(() => {
     let mounted = true;
       supabase
@@ -104,7 +146,9 @@ export default function MembershipScreen() {
     TactileEngine.mutate();
     setIsRedirecting(true);
     try {
-      const entitlement = await purchaseTier(tier as ReelHouseTier);
+      // The member's explicit billing choice rides through to a STRICT package
+      // match — a monthly pick can never silently charge the annual price.
+      const entitlement = await purchaseTier(tier as ReelHouseTier, billing);
       if (entitlement?.isActive) {
         lastCheckoutRef.current = Date.now();
         reelToast.success(`Welcome to the ${tier.toUpperCase()} rank!`);
@@ -131,7 +175,9 @@ export default function MembershipScreen() {
       }
     } catch (err) {
       const msg = err instanceof Error && err.message.includes('No package found')
-        ? 'Subscriptions are being set up. Please try again shortly.'
+        ? (billing === 'monthly'
+            ? 'Monthly plans are being set up. Please try the annual plan.'
+            : 'Subscriptions are being set up. Please try again shortly.')
         : 'Checkout unavailable. Please check your App Store account.';
       reelToast.error(msg);
     } finally {
@@ -212,12 +258,43 @@ export default function MembershipScreen() {
 
         {/* ── Header ── */}
         <Animated.View entering={FadeInDown.duration(700)} style={st.header}>
-          <Text style={st.headerLabel}>ELEVATE YOUR DEVOTION</Text>
+          <Text style={st.headerLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>✦&nbsp; ELEVATE YOUR DEVOTION &nbsp;✦</Text>
           <Text style={st.headerTitle}>The ReelHouse{'\n'}Society</Text>
           <Text style={st.headerSub}>
             Ascend the ranks of The Society. Embrace the aesthetic. Wield the ultimate cinematic toolkit.
           </Text>
         </Animated.View>
+
+        {/* ── Billing choice — the member's call, annual wears the savings ── */}
+        {!monthlyKnownAbsent && (
+          <Animated.View entering={FadeInDown.duration(600).delay(100)} style={st.billingToggleWrap}>
+            <View style={st.billingToggle}>
+              {(['monthly', 'annual'] as const).map((p) => {
+                const active = billing === p;
+                return (
+                  <PressableScale
+                    key={p}
+                    style={[st.billingSeg, active && st.billingSegActive]}
+                    onPress={() => { if (billing !== p) { TactileEngine.selection(); setBilling(p); } }}
+                    hitSlop={{ top: 8, bottom: 8, left: 4, right: 4 }}
+                    haptic="selection"
+                    pressedScale={0.97}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: active }}
+                    accessibilityLabel={p === 'monthly' ? 'Pay monthly' : 'Pay annually, save 16 percent'}
+                  >
+                    <Text style={[st.billingSegText, active && st.billingSegTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                      {p === 'monthly' ? 'MONTHLY' : 'ANNUAL'}
+                    </Text>
+                    {p === 'annual' && (
+                      <Text style={[st.billingSave, active && st.billingSaveActive]} numberOfLines={1}>SAVE 16%</Text>
+                    )}
+                  </PressableScale>
+                );
+              })}
+            </View>
+          </Animated.View>
+        )}
 
         {/* ── Tiers Carousel (horizontal scroll like web mobile) ── */}
         <Animated.View entering={FadeInDown.duration(600).delay(150)}>
@@ -268,31 +345,41 @@ export default function MembershipScreen() {
                 <Text style={[st.tierName, tier.id === 'auteur' && st.tierNameAuteur]}>{tier.name}</Text>
                 <Text style={[st.tierLabel, { color: tier.labelColor, opacity: tier.id === 'cinephile' ? 0.6 : 1 }]}>{tier.label}</Text>
 
-                {/* Price */}
+                {/* Price — honest per billing mode: the big number is what the
+                    store will actually charge for the selected period, with the
+                    ≈/MO equivalence + renewal terms beneath. Live localized
+                    prices preferred; static copy as fallback. */}
                 {tier.price === 'Free' ? (
                   <View style={st.tierPriceWrap}>
                     <Text style={[st.priceAmount, st.priceAmountFree]}>Free</Text>
                     <Text style={st.pricePeriod}>{tier.pricePeriod}</Text>
                   </View>
                 ) : (() => {
-                  // CONST-3: prefer the live localized store price; fall back to static copy.
                   const rc = pricing[tier.id];
-                  const billing = rc?.annual ? `BILLED ANNUALLY (${rc.annual}/YR)` : tier.billing;
+                  const isMonthly = billing === 'monthly';
+                  const livePrice = isMonthly ? rc?.monthly : rc?.annual;
+                  const staticPrice = isMonthly ? tier.priceMonthly : tier.priceAnnual;
+                  // Annual mode carries the truthful per-month equivalence —
+                  // from the store's own numbers when available, static otherwise.
+                  const equivLive = !isMonthly ? fmtPerMonth(rc?.annualPrice, rc?.currencyCode) : null;
+                  const equiv = !isMonthly ? (equivLive ?? (tier.annualEquiv ? `$${tier.annualEquiv}` : null)) : null;
+                  const renewal = isMonthly ? 'AUTO-RENEWS MONTHLY · CANCEL ANYTIME' : 'AUTO-RENEWS YEARLY · CANCEL ANYTIME';
+                  const billingLine = equiv ? `≈ ${equiv} / MO · ${renewal}` : renewal;
                   return (
                     <>
                       <View style={st.tierPriceWrap}>
-                        {rc?.monthly ? (
+                        {livePrice ? (
                           // priceString already includes the localized currency symbol.
-                          <Text style={st.priceAmount}>{rc.monthly}</Text>
+                          <Text style={st.priceAmount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{livePrice}</Text>
                         ) : (
                           <>
                             <Text style={st.priceCurrency}>$</Text>
-                            <Text style={st.priceAmount}>{tier.price}</Text>
+                            <Text style={st.priceAmount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.5}>{staticPrice}</Text>
                           </>
                         )}
-                        <Text style={st.pricePeriod}>{tier.pricePeriod}</Text>
+                        <Text style={st.pricePeriod}>{isMonthly ? '/ MO' : '/ YR'}</Text>
                       </View>
-                      {billing && <Text style={st.priceBilling}>{billing}</Text>}
+                      <Text style={st.priceBilling} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>{billingLine}</Text>
                     </>
                   );
                 })()}
@@ -304,7 +391,7 @@ export default function MembershipScreen() {
                   )}
 
                   {tier.featuredFeature && (
-                    <View style={[st.featuredBox, { borderColor: tier.id === 'auteur' ? 'rgba(125,31,31,0.25)' : 'rgba(139,105,20,0.18)' }]}>
+                    <View style={[st.featuredBox, { borderColor: tier.id === 'auteur' ? colors.crimsonBorder : 'rgba(184,137,26,0.18)' }]}>
                       <View style={[st.featureDot, { backgroundColor: tier.dotColor, marginTop: 5 }]} />
                       <View style={st.featuredBoxFlex}>
                         <Text style={[st.featuredTitle, tier.id === 'auteur' && st.featuredTitleAuteur]}>{tier.featuredFeature.title}</Text>
@@ -327,14 +414,14 @@ export default function MembershipScreen() {
 
                 {/* CTA — Three states: current rank, included (lower tier), upgrade */}
                 {isAuthenticated && isCurrentTier(tier.id) ? (
-                  <View style={[st.currentRankBox, { borderColor: tier.id === 'auteur' ? '#7d1f1f' : tier.id === 'archivist' ? colors.sepia : 'rgba(139,105,20,0.3)' }]}>
-                    <Text style={[st.currentRankText, { color: tier.id === 'auteur' ? '#7d1f1f' : tier.id === 'archivist' ? colors.sepia : colors.sepia }]}>
+                  <View style={[st.currentRankBox, { borderColor: tier.id === 'auteur' ? colors.crimson : tier.id === 'archivist' ? colors.sepia : 'rgba(184,137,26,0.3)' }]}>
+                    <Text style={[st.currentRankText, { color: tier.id === 'auteur' ? colors.crimson : colors.sepia }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                       {tier.id === 'auteur' ? '\u2605 YOUR CURRENT RANK \u2605' : tier.id === 'archivist' ? '\u2726 YOUR CURRENT RANK \u2726' : 'YOUR CURRENT RANK'}
                     </Text>
                   </View>
                 ) : isAuthenticated && isLowerTier(tier.id) ? (
-                  <View style={[st.currentRankBox, { borderColor: 'rgba(139,105,20,0.15)' }]}>
-                    <Text style={[st.currentRankText, { color: colors.fog, opacity: 0.6 }]}>INCLUDED IN YOUR RANK</Text>
+                  <View style={[st.currentRankBox, { borderColor: 'rgba(184,137,26,0.15)' }]}>
+                    <Text style={[st.currentRankText, { color: colors.fog, opacity: 0.6 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>INCLUDED IN YOUR RANK</Text>
                   </View>
                 ) : (
                   <PressableScale
@@ -358,13 +445,16 @@ export default function MembershipScreen() {
                     accessibilityLabel={isRedirecting ? 'Processing purchase' : tier.cta}
                   >
                     {tier.ctaStyle === 'auteur' && (
-                      <LinearGradient colors={['#7d1f1f', '#a83232']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
+                      <LinearGradient colors={[colors.bloodReel, colors.crimson]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFillObject} />
                     )}
-                    <Text style={[
-                      st.tierCtaText,
-                      tier.ctaStyle === 'ghost' && { color: colors.fog },
-                      tier.ctaStyle === 'auteur' && { color: colors.parchment },
-                    ]}>
+                    <Text
+                      style={[
+                        st.tierCtaText,
+                        tier.ctaStyle === 'ghost' && { color: colors.fog },
+                        tier.ctaStyle === 'auteur' && { color: colors.parchment },
+                      ]}
+                      numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}
+                    >
                       {isRedirecting ? 'PROCESSING…' : tier.cta}
                     </Text>
                   </PressableScale>
@@ -377,11 +467,14 @@ export default function MembershipScreen() {
         {/* ── Founding Members Banner (Victory State or Checkout) ── */}
         {userRole === 'founding' ? (
           <Animated.View entering={FadeInDown.duration(600).delay(300)} style={[st.foundingBanner, { borderColor: colors.sepia }]}>
-            <View style={st.foundingTexture} />
+            <View style={[st.bracket, st.bracketTL]} />
+            <View style={[st.bracket, st.bracketTR]} />
+            <View style={[st.bracket, st.bracketBL]} />
+            <View style={[st.bracket, st.bracketBR]} />
             <View style={st.foundingSeal}>
               <Text style={st.foundingSealStar}>★</Text>
             </View>
-            <Text style={st.foundingTag}>FOUNDING MEMBER</Text>
+            <Text style={st.foundingTag} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>FOUNDING MEMBER</Text>
             <Text style={st.foundingTitle}>Seat Secured</Text>
             <Text style={st.foundingDesc}>
               You are one of the original 100. Your Auteur access is permanent. The ledger is sealed.
@@ -389,13 +482,17 @@ export default function MembershipScreen() {
           </Animated.View>
         ) : (foundingCount !== null && foundingCount < 100) && (
           <Animated.View entering={FadeInDown.duration(600).delay(300)} style={st.foundingBanner}>
-            {/* Art deco texture overlay */}
-            <View style={st.foundingTexture} />
+            {/* Certificate corner brackets — a pinned document for the first 100.
+                Self-retiring: this banner renders only while seats remain. */}
+            <View style={[st.bracket, st.bracketTL]} />
+            <View style={[st.bracket, st.bracketTR]} />
+            <View style={[st.bracket, st.bracketBL]} />
+            <View style={[st.bracket, st.bracketBR]} />
   
             <View style={st.foundingSeal}>
               <Text style={st.foundingSealStar}>★</Text>
             </View>
-            <Text style={st.foundingTag}>LIMITED OFFER {'\u00B7'} {100 - foundingCount} SEATS REMAINING</Text>
+            <Text style={st.foundingTag} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7}>LIMITED OFFER {'\u00B7'} {100 - foundingCount} {100 - foundingCount === 1 ? 'SEAT' : 'SEATS'} REMAINING</Text>
             <Text style={st.foundingTitle}>Founding Members</Text>
             <Text style={st.foundingDesc}>
               The first 100 members to join The Society receive{' '}
@@ -427,10 +524,10 @@ export default function MembershipScreen() {
 
         {/* ── Philosophy Section ── */}
         <Animated.View entering={FadeInDown.duration(600).delay(400)} style={st.philosophySection}>
-          <Text style={st.philosophyLabel}>OUR PHILOSOPHY</Text>
+          <Text style={st.philosophyLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>OUR PHILOSOPHY</Text>
           <Text style={st.philosophyTitle}>Built for the Love{'\n'}of Cinema.</Text>
           <Text style={st.philosophyBody}>
-            We believe that software should feel like a physical artifact{'\u2014'}a curated, brutalist space free from corporate bloat. By ascending within The Society, you preserve this aesthetic and command the most premium cinematic ledger ever forged.
+            Ascension here means one thing: depth.{'\n\n'}Every rank opens another door {'\u2014'} finer tools for your critiques, a grander home for your archive, a closer seat to the screen.{'\n\n'}The ranks are not upgrades. They are rooms of the house.
           </Text>
           <View style={st.philosophyDivider}>
             <View style={st.philosophyLine} />
@@ -519,20 +616,36 @@ const st = StyleSheet.create({
   // ── Header ──
   header: { alignItems: 'center', paddingHorizontal: 24, marginTop: 8, marginBottom: 24 },
   headerLabel: {
-    fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4,
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4,
     color: colors.sepia, marginBottom: 12,
-    textShadowColor: 'rgba(139,105,20,0.3)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20,
+    textShadowColor: 'rgba(184,137,26,0.3)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20,
   },
   headerTitle: {
     fontFamily: fonts.display, fontSize: 36, color: colors.parchment,
     textAlign: 'center', lineHeight: 40,
-    textShadowColor: 'rgba(139,105,20,0.15)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 40,
+    textShadowColor: 'rgba(184,137,26,0.15)', textShadowOffset: { width: 0, height: 4 }, textShadowRadius: 40,
   },
   headerSub: {
     fontFamily: fonts.body, fontSize: 14, color: colors.bone,
     textAlign: 'center', lineHeight: 22, marginTop: 16,
     paddingHorizontal: 16, opacity: 0.85,
   },
+
+  // ── Billing Toggle — the member's monthly/annual choice ──
+  billingToggleWrap: { alignItems: 'center', marginBottom: 4 },
+  billingToggle: {
+    flexDirection: 'row', borderWidth: 1, borderColor: 'rgba(184,137,26,0.35)',
+    borderRadius: 3, overflow: 'hidden', backgroundColor: 'rgba(10,7,3,0.8)',
+  },
+  billingSeg: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+    paddingVertical: 10, paddingHorizontal: 18, minWidth: 118,
+  },
+  billingSegActive: { backgroundColor: colors.sepia },
+  billingSegText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.fog, includeFontPadding: false },
+  billingSegTextActive: { color: colors.ink },
+  billingSave: { fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1, color: colors.flicker, includeFontPadding: false },
+  billingSaveActive: { color: colors.ink, opacity: 0.85 },
 
   // ── Tiers Carousel ──
   tiersScroll: { paddingVertical: 20 },
@@ -554,24 +667,24 @@ const st = StyleSheet.create({
     borderRadius: 2, paddingHorizontal: 14, paddingVertical: 5, overflow: 'hidden',
   },
   popularBadgeText: {
-    fontFamily: fonts.uiBold, fontSize: 8, letterSpacing: 2.5,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5,
     color: colors.ink, zIndex: 1,
   },
 
   // Tier name & label
   tierName: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, lineHeight: 28, marginBottom: 4 },
-  tierNameAuteur: { color: '#a83232' },
+  tierNameAuteur: { color: colors.crimson },
   tierCardOuter: { },
   tierCardOuterPopular: { paddingTop: 12 },
-  tierLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, marginBottom: 18 },
+  tierLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, marginBottom: 18 },
 
   // Price
   tierPriceWrap: { flexDirection: 'row', alignItems: 'baseline', gap: 2, marginBottom: 4 },
-  priceCurrency: { fontFamily: fonts.ui, fontSize: 14, color: colors.parchment, opacity: 0.7 },
+  priceCurrency: { fontFamily: fonts.sub, fontSize: 14, color: colors.parchment, opacity: 0.7 },
   priceAmount: { fontFamily: fonts.display, fontSize: 42, color: colors.parchment, lineHeight: 44 },
   priceAmountFree: { fontSize: 32, color: colors.bone, opacity: 0.8 },
-  pricePeriod: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1, marginLeft: 2 },
-  priceBilling: { fontFamily: fonts.ui, fontSize: 8, color: colors.fog, letterSpacing: 1, opacity: 0.6, marginBottom: 18 },
+  pricePeriod: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 1, marginLeft: 2 },
+  priceBilling: { fontFamily: fonts.sub, fontSize: 8, color: colors.fog, letterSpacing: 1, opacity: 0.6, marginBottom: 18 },
 
   // Features
   featuresWrap: { flex: 1, gap: 10, marginBottom: 20, marginTop: 4 },
@@ -582,10 +695,10 @@ const st = StyleSheet.create({
     backgroundColor: 'rgba(20,16,10,0.95)', flexDirection: 'row', gap: 8,
     alignItems: 'flex-start', marginBottom: 4,
   },
-  featuredTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment, fontWeight: 'bold', lineHeight: 17, marginBottom: 4 },
-  featuredTitleAuteur: { color: '#a83232' },
+  featuredTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.parchment, lineHeight: 17, marginBottom: 4 },
+  featuredTitleAuteur: { color: colors.crimson },
   featuredBoxFlex: { flex: 1 },
-  auteurStarDot: { fontSize: 8, color: '#7d1f1f', marginTop: 3 },
+  auteurStarDot: { fontSize: 8, color: colors.crimson, marginTop: 3 },
   foundingSealStar: { fontSize: 18, color: colors.sepia },
   foundingDescHighlight: { fontStyle: 'italic', color: colors.parchment },
   philosophyFlicker: { fontSize: 12, color: colors.flicker },
@@ -598,9 +711,9 @@ const st = StyleSheet.create({
   // Current Rank
   currentRankBox: {
     borderWidth: 1, borderRadius: 3, paddingVertical: 14,
-    backgroundColor: 'rgba(139,105,20,0.05)', alignItems: 'center',
+    backgroundColor: 'rgba(184,137,26,0.05)', alignItems: 'center',
   },
-  currentRankText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5 },
+  currentRankText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5 },
 
   // CTA Buttons
   tierCta: {
@@ -610,30 +723,32 @@ const st = StyleSheet.create({
   tierCtaGhost: { borderWidth: 1, borderColor: colors.ash },
   tierCtaPrimary: { backgroundColor: colors.sepia },
   tierCtaAuteur: { },
-  tierCtaText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.ink, zIndex: 1 },
+  tierCtaText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.ink, zIndex: 1 },
 
   // ── Founding Banner ──
   foundingBanner: {
     marginHorizontal: 16, marginTop: 20, marginBottom: 32,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.35)', borderRadius: 3,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.35)', borderRadius: 3,
     padding: 28, alignItems: 'center', overflow: 'hidden',
-    backgroundColor: 'rgba(139,105,20,0.03)',
+    backgroundColor: 'rgba(184,137,26,0.03)',
   },
-  foundingTexture: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    opacity: 0.15,
-  },
+  // Certificate corner brackets — the founding banner is a pinned document.
+  bracket: { position: 'absolute', width: 16, height: 16, borderColor: 'rgba(184,137,26,0.6)' },
+  bracketTL: { top: 6, left: 6, borderTopWidth: 1.5, borderLeftWidth: 1.5 },
+  bracketTR: { top: 6, right: 6, borderTopWidth: 1.5, borderRightWidth: 1.5 },
+  bracketBL: { bottom: 6, left: 6, borderBottomWidth: 1.5, borderLeftWidth: 1.5 },
+  bracketBR: { bottom: 6, right: 6, borderBottomWidth: 1.5, borderRightWidth: 1.5 },
   foundingSeal: {
     width: 48, height: 48, borderRadius: 24,
     borderWidth: 1.5, borderColor: colors.sepia,
-    backgroundColor: 'rgba(139,105,20,0.08)',
+    backgroundColor: 'rgba(184,137,26,0.08)',
     alignItems: 'center', justifyContent: 'center',
     marginBottom: 14,
   },
   foundingTag: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 4,
     color: colors.sepia, marginBottom: 8,
-    textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20,
+    textShadowColor: 'rgba(184,137,26,0.2)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 20,
   },
   foundingTitle: { fontFamily: fonts.display, fontSize: 28, color: colors.parchment, marginBottom: 12, lineHeight: 32 },
   foundingDesc: {
@@ -642,13 +757,13 @@ const st = StyleSheet.create({
     paddingHorizontal: 8, opacity: 0.9,
   },
   foundingPriceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 4, marginBottom: 6 },
-  foundingCurrency: { fontFamily: fonts.ui, fontSize: 14, color: colors.sepia },
+  foundingCurrency: { fontFamily: fonts.sub, fontSize: 14, color: colors.sepia },
   foundingAmount: {
     fontFamily: fonts.display, fontSize: 40, color: colors.flicker, lineHeight: 42,
-    textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 30,
+    textShadowColor: 'rgba(184,137,26,0.2)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 30,
   },
-  foundingPriceLabel: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog, letterSpacing: 1 },
-  foundingPriceSub: { fontFamily: fonts.ui, fontSize: 7, color: colors.sepia, letterSpacing: 1.2 },
+  foundingPriceLabel: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog, letterSpacing: 1 },
+  foundingPriceSub: { fontFamily: fonts.sub, fontSize: 7, color: colors.sepia, letterSpacing: 1.2 },
   foundingCompare: {
     fontFamily: fonts.sub, fontSize: 11, color: colors.fog,
     fontStyle: 'italic', textAlign: 'center', marginBottom: 20,
@@ -658,22 +773,22 @@ const st = StyleSheet.create({
     borderRadius: 3, paddingVertical: 14, paddingHorizontal: 28,
     overflow: 'hidden', alignItems: 'center',
   },
-  foundingBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2.5, color: colors.ink, zIndex: 1 },
+  foundingBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5, color: colors.ink, zIndex: 1 },
   foundingFooter: {
-    fontFamily: fonts.ui, fontSize: 7, letterSpacing: 1.5,
+    fontFamily: fonts.sub, fontSize: 7, letterSpacing: 1.5,
     color: colors.fog, marginTop: 16, opacity: 0.6,
   },
 
   // ── Philosophy Section ──
   philosophySection: {
     alignItems: 'center', paddingHorizontal: 24,
-    borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.15)',
+    borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.15)',
     paddingTop: 32, marginHorizontal: 16,
   },
   philosophyLabel: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 4,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 4,
     color: colors.sepia, marginBottom: 14,
-    textShadowColor: 'rgba(139,105,20,0.2)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 15,
+    textShadowColor: 'rgba(184,137,26,0.2)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 15,
   },
   philosophyTitle: { fontFamily: fonts.display, fontSize: 24, color: colors.parchment, textAlign: 'center', marginBottom: 14, lineHeight: 30 },
   philosophyBody: {
@@ -687,23 +802,23 @@ const st = StyleSheet.create({
   // ── Restore & Manage ──
   restoreSection: {
     alignItems: 'center', paddingVertical: 24, paddingHorizontal: 16,
-    borderTopWidth: 1, borderTopColor: 'rgba(139,105,20,0.08)',
+    borderTopWidth: 1, borderTopColor: 'rgba(184,137,26,0.08)',
     marginHorizontal: 16, marginTop: 8,
   },
   restoreBtn: {
     paddingVertical: 12, paddingHorizontal: 28,
-    borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)', borderRadius: 3,
+    borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)', borderRadius: 3,
     marginBottom: 12,
   },
   restoreBtnText: {
-    fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2,
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2,
     color: colors.sepia, textAlign: 'center',
   },
   manageBtn: {
     paddingVertical: 8, paddingHorizontal: 20,
   },
   manageBtnText: {
-    fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5,
+    fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5,
     color: colors.fog, textDecorationLine: 'underline', opacity: 0.7,
   },
 });

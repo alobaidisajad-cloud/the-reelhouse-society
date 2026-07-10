@@ -219,7 +219,16 @@ async function collectPurchasablePackages(): Promise<any[]> {
   }
 }
 
-export interface TierPricing { monthly?: string; annual?: string }
+export interface TierPricing {
+  monthly?: string;
+  annual?: string;
+  /** Numeric store prices + currency — power the honest "≈ $X.XX / MO" line
+   *  under annual billing. Optional: absent when the SDK doesn't expose them,
+   *  and the UI simply omits the equivalence line (never shows a wrong number). */
+  monthlyPrice?: number;
+  annualPrice?: number;
+  currencyCode?: string;
+}
 
 /**
  * CONST-3: resolve localized store prices per tier so the membership UI can
@@ -244,7 +253,14 @@ export async function getTierPricing(): Promise<Record<string, TierPricing>> {
       : productId.includes('monthly') || pType === 'MONTHLY' ? 'monthly'
       : undefined;
     if (!period) continue;
-    out[tierId] = { ...out[tierId], [period]: priceString };
+    const priceNum = typeof p?.product?.price === 'number' && isFinite(p.product.price) ? p.product.price : undefined;
+    const currencyCode = typeof p?.product?.currencyCode === 'string' ? p.product.currencyCode : undefined;
+    out[tierId] = {
+      ...out[tierId],
+      [period]: priceString,
+      ...(priceNum !== undefined ? { [`${period}Price`]: priceNum } : {}),
+      ...(currencyCode ? { currencyCode: out[tierId]?.currencyCode ?? currencyCode } : {}),
+    };
   }
   return out;
 }
@@ -262,30 +278,47 @@ export async function getTierPricing(): Promise<Record<string, TierPricing>> {
  *
  * Match order (most precise → most lenient); the final step preserves the
  * original package-identifier behavior so custom-named packages still resolve:
- *   1. Exact documented product id (`<tier>_annual` / `founding_lifetime`).
- *   2. Product for this tier with the desired billing period (annual/lifetime).
+ *   1. Exact documented product id (`<tier>_<period>` / `founding_lifetime`).
+ *   2. Product for this tier with the desired billing period.
  *   3. Custom package whose identifier encodes the tier + period.
  *   4. Any product for this tier (prefer selling a monthly over failing).
  *   5. Legacy: package identifier contains the tier name.
  *
+ * BILLING CHOICE: when `period` is passed EXPLICITLY (the membership toggle),
+ * resolution is STRICT — steps 4–5 are skipped, so a member who chose MONTHLY
+ * can never be silently sold the annual product (or vice-versa) on a store
+ * missing that period. No match → null → the caller shows an honest error.
+ * When `period` is omitted (legacy callers, e.g. useEntitlement), behavior is
+ * byte-identical to before: annual preferred, lenient fallback chain intact.
+ * Founding is always the lifetime product regardless of `period`.
+ *
  * Exported for unit testing — it is a pure function of its inputs.
  */
-export function selectPackageForTier(packages: any[], tier: ReelHouseTier): any | null {
+export type BillingPeriod = 'monthly' | 'annual';
+
+export function selectPackageForTier(packages: any[], tier: ReelHouseTier, period?: BillingPeriod): any | null {
   if (!packages?.length) return null;
   const t = tier.toLowerCase();
   const wantsLifetime = tier === 'founding';
-  const wantType = wantsLifetime ? 'LIFETIME' : 'ANNUAL';
-  const period = wantsLifetime ? 'lifetime' : 'annual';
-  const canonical = `${t}_${period}`;
+  const strict = !wantsLifetime && period !== undefined;
+  const resolvedPeriod = wantsLifetime ? 'lifetime' : (period ?? 'annual');
+  const wantType = wantsLifetime ? 'LIFETIME' : resolvedPeriod === 'annual' ? 'ANNUAL' : 'MONTHLY';
+  const canonical = `${t}_${resolvedPeriod}`;
 
   const productId = (p: any) => String(p?.product?.identifier ?? '').toLowerCase();
   const pkgId = (p: any) => String(p?.identifier ?? '').toLowerCase();
   const pType = (p: any) => String(p?.packageType ?? '').toUpperCase();
 
-  return (
+  const periodMatch =
     packages.find((p) => productId(p) === canonical) ??
     packages.find((p) => productId(p).startsWith(t) && pType(p) === wantType) ??
-    packages.find((p) => pkgId(p).includes(t) && (pkgId(p).includes(period) || pType(p) === wantType)) ??
+    packages.find((p) => pkgId(p).includes(t) && (pkgId(p).includes(resolvedPeriod) || pType(p) === wantType)) ??
+    null;
+
+  if (strict) return periodMatch;
+
+  return (
+    periodMatch ??
     packages.find((p) => productId(p).startsWith(t)) ??
     packages.find((p) => pkgId(p).includes(t)) ??
     null
@@ -293,13 +326,15 @@ export function selectPackageForTier(packages: any[], tier: ReelHouseTier): any 
 }
 
 /**
- * Helper to purchase by tier name without needing the full package object
+ * Helper to purchase by tier name without needing the full package object.
+ * Pass `period` to honor an explicit monthly/annual choice (strict — see
+ * selectPackageForTier); omit it for the legacy annual-preferred behavior.
  */
-export async function purchaseTier(tier: ReelHouseTier): Promise<EntitlementInfo | null> {
+export async function purchaseTier(tier: ReelHouseTier, period?: BillingPeriod): Promise<EntitlementInfo | null> {
   if (!isConfigured || !Purchases) return null;
   try {
     const packages = await collectPurchasablePackages();
-    const pkg = selectPackageForTier(packages, tier);
+    const pkg = selectPackageForTier(packages, tier, period);
     if (!pkg) throw new Error(`No package found for tier: ${tier}`);
     return await purchasePackage(pkg);
   } catch (err: any) {
