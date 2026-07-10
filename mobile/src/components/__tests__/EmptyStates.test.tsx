@@ -1,21 +1,12 @@
 /**
  * EmptyStates.test.tsx — Component Tests
  * ───────────────────────────────────────
- * FLAW-07: Tests all 7 empty state variants render correctly
- * with their expected titles and Buster moods.
+ * FLAW-07: Tests the empty-state base + the live preset variant.
+ * (Six orphaned sibling variants were deleted with the dead ledger route.)
  */
 import React from 'react';
 import { render } from '@testing-library/react-native';
-import {
-  EmptyState,
-  EmptyLedger,
-  EmptyWatchlist,
-  EmptyVault,
-  EmptyLists,
-  EmptyReviews,
-  EmptyFeed,
-  EmptyOffline,
-} from '../EmptyStates';
+import { EmptyState, EmptyOffline } from '../EmptyStates';
 
 // Mock Buster component
 jest.mock('../Buster', () => {
@@ -59,36 +50,6 @@ describe('EmptyStates', () => {
   });
 
   describe('Preset variants', () => {
-    it('EmptyLedger renders with correct title', () => {
-      const { getByText } = render(<EmptyLedger />);
-      expect(getByText('The Ledger Awaits')).toBeTruthy();
-    });
-
-    it('EmptyWatchlist renders with correct title', () => {
-      const { getByText } = render(<EmptyWatchlist />);
-      expect(getByText('The Queue Is Empty')).toBeTruthy();
-    });
-
-    it('EmptyVault renders with correct title', () => {
-      const { getByText } = render(<EmptyVault />);
-      expect(getByText('The Vault Is Sealed')).toBeTruthy();
-    });
-
-    it('EmptyLists renders with correct title', () => {
-      const { getByText } = render(<EmptyLists />);
-      expect(getByText('No Stacks Curated')).toBeTruthy();
-    });
-
-    it('EmptyReviews renders with correct title', () => {
-      const { getByText } = render(<EmptyReviews />);
-      expect(getByText("The Critic's Chair Is Empty")).toBeTruthy();
-    });
-
-    it('EmptyFeed renders with correct title', () => {
-      const { getByText } = render(<EmptyFeed />);
-      expect(getByText('The Foyer Is Quiet')).toBeTruthy();
-    });
-
     it('EmptyOffline renders with correct title', () => {
       const { getByText } = render(<EmptyOffline />);
       expect(getByText('Transmission Interrupted')).toBeTruthy();
