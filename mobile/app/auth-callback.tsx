@@ -230,7 +230,7 @@ const s = StyleSheet.create({
   stateWrap: { alignItems: 'center', maxWidth: 340 },
 
   eyebrow: {
-    fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4,
+    fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4,
     color: colors.sepia, marginBottom: 12,
   },
   title: {
@@ -250,7 +250,7 @@ const s = StyleSheet.create({
     alignItems: 'center', justifyContent: 'center', marginBottom: 20,
     ...effects.glowSepia,
   },
-  successIcon: { fontSize: 28, color: colors.sepia, fontFamily: fonts.uiBold },
+  successIcon: { fontSize: 28, color: colors.sepia, fontFamily: fonts.sub },
 
   // Error
   errorIconWrap: {
@@ -258,7 +258,7 @@ const s = StyleSheet.create({
     backgroundColor: 'rgba(107, 26, 10, 0.15)', borderWidth: 1.5, borderColor: colors.bloodReel,
     alignItems: 'center', justifyContent: 'center', marginBottom: 20,
   },
-  errorIcon: { fontSize: 28, color: colors.bloodReel, fontFamily: fonts.uiBold },
+  errorIcon: { fontSize: 28, color: colors.crimson, fontFamily: fonts.sub },
 
   retryBtn: {
     backgroundColor: colors.sepia, borderRadius: 3, paddingVertical: 14,
@@ -266,7 +266,7 @@ const s = StyleSheet.create({
     ...effects.glowSepia,
   },
   retryText: {
-    fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2.5,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5,
     color: colors.ink, fontWeight: '700', textAlign: 'center',
   },
   retryBtnSecondary: {
@@ -274,7 +274,7 @@ const s = StyleSheet.create({
     borderRadius: 3, paddingVertical: 14, paddingHorizontal: 32, alignItems: 'center',
   },
   retryTextSecondary: {
-    fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2.5,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5,
     color: colors.fog, fontWeight: '700', textAlign: 'center',
   },
   retryBtnTertiary: {
@@ -282,7 +282,7 @@ const s = StyleSheet.create({
     borderRadius: 3, paddingVertical: 14, paddingHorizontal: 32, alignItems: 'center',
   },
   retryTextTertiary: {
-    fontFamily: fonts.uiMedium, fontSize: 10, letterSpacing: 2.5,
+    fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2.5,
     color: colors.fog + '99', fontWeight: '700', textAlign: 'center',
   },
 });

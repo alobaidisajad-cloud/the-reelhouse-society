@@ -303,23 +303,23 @@ const st = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 16, paddingBottom: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(139,105,20,0.10)',
+    borderBottomColor: 'rgba(184,137,26,0.10)',
     backgroundColor: 'rgba(0,0,0,0.25)',
   },
   inputWrap: {
     flex: 1, flexDirection: 'row', alignItems: 'center', height: 42,
     backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 3, borderWidth: 1, borderColor: 'rgba(139,105,20,0.10)',
+    borderRadius: 3, borderWidth: 1, borderColor: 'rgba(184,137,26,0.10)',
   },
   input: { flex: 1, height: 42, fontFamily: fonts.body, fontSize: 14, color: colors.parchment },
   clearBtn: { padding: 10 },
   cancelWrap: { paddingLeft: 14 },
-  cancelText: { fontFamily: fonts.uiMedium, fontSize: 14, color: colors.sepia },
+  cancelText: { fontFamily: fonts.sub, fontSize: 14, color: colors.sepia },
 
   // Tabs
   tabsWrap: {
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: 'rgba(139,105,20,0.06)',
+    borderBottomColor: 'rgba(184,137,26,0.06)',
     backgroundColor: 'rgba(0,0,0,0.15)',
   },
   tabsContent: { paddingHorizontal: 12, paddingVertical: 10, gap: 5 },
@@ -327,29 +327,29 @@ const st = StyleSheet.create({
     flexDirection: 'row', alignItems: 'center', gap: 4,
     paddingVertical: 6, paddingHorizontal: 10,
     borderRadius: 3, borderWidth: 1,
-    borderColor: 'rgba(139,105,20,0.12)',
+    borderColor: 'rgba(184,137,26,0.12)',
     backgroundColor: 'rgba(255,255,255,0.02)',
   },
   tabActive: { backgroundColor: colors.sepia, borderColor: colors.sepia },
-  tabText: { fontFamily: fonts.uiMedium, fontSize: 8, letterSpacing: 1.2, color: colors.fog },
+  tabText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.fog },
   tabTextActive: { color: colors.ink },
   tabCountBg: {
-    backgroundColor: 'rgba(139,105,20,0.12)',
+    backgroundColor: 'rgba(184,137,26,0.12)',
     paddingHorizontal: 4, paddingVertical: 1, borderRadius: 6, minWidth: 16, alignItems: 'center',
   },
   tabCountBgActive: { backgroundColor: 'rgba(0,0,0,0.18)' },
-  tabCountNum: { fontFamily: fonts.ui, fontSize: 7, color: colors.fog },
+  tabCountNum: { fontFamily: fonts.sub, fontSize: 7, color: colors.fog },
   tabCountNumActive: { color: colors.ink },
 
   // Count bar
   countBar: { paddingHorizontal: 16, paddingTop: 10, paddingBottom: 4 },
-  countText: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2.5, color: colors.fog, opacity: 0.5 },
+  countText: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2.5, color: colors.fog, opacity: 0.5 },
 
   resultsWrap: { flex: 1 },
 
   // Center states
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 32, gap: 10 },
-  centerLabel: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.fog, textAlign: 'center' },
+  centerLabel: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog, textAlign: 'center' },
   emptyTitle: { fontFamily: fonts.display, fontSize: 20, color: colors.parchment, opacity: 0.5 },
   emptySub: {
     fontFamily: fonts.body, fontSize: 12, color: colors.bone, opacity: 0.35,

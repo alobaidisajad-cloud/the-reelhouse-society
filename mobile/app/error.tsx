@@ -87,12 +87,12 @@ const s = StyleSheet.create({
     width: 96,
     height: 96,
     borderRadius: 48,
-    backgroundColor: 'rgba(162, 36, 36, 0.1)',
+    backgroundColor: 'rgba(180,45,45,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 32,
     borderWidth: 1,
-    borderColor: 'rgba(162, 36, 36, 0.3)',
+    borderColor: 'rgba(180,45,45,0.3)',
   },
   title: {
     fontFamily: fonts.display,
@@ -122,7 +122,7 @@ const s = StyleSheet.create({
     width: '100%',
   },
   devErrorText: {
-    fontFamily: fonts.ui,
+    fontFamily: fonts.body,
     fontSize: 12,
     color: colors.danger,
     lineHeight: 18,
@@ -141,7 +141,7 @@ const s = StyleSheet.create({
     width: '100%',
   },
   primaryBtnText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 12,
     letterSpacing: 2,
     color: colors.ink,
@@ -158,7 +158,7 @@ const s = StyleSheet.create({
     width: '100%',
   },
   secondaryBtnText: {
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     fontSize: 12,
     letterSpacing: 2,
     color: colors.fog,

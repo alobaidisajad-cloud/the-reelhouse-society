@@ -242,7 +242,7 @@ const s = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash,
   },
   closeBtn: { width: 70 },
-  closeText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, color: colors.fog },
+  closeText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.fog },
   title: { fontFamily: fonts.display, fontSize: 18, color: colors.sepia },
 
   searchWrap: { padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash, backgroundColor: colors.soot },
@@ -251,23 +251,23 @@ const s = StyleSheet.create({
   searchInput: { flex: 1, height: 44, color: colors.parchment, fontFamily: fonts.body, fontSize: 14 },
 
   centerItem: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  savingText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginTop: 12 },
+  savingText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia, marginTop: 12 },
   
   resultRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
   poster: { width: 44, height: 66, borderRadius: 2, marginRight: 16, borderWidth: 1, borderColor: colors.ash },
   posterEmpty: { backgroundColor: colors.ash, alignItems: 'center', justifyContent: 'center' },
   resultInfo: { flex: 1 },
   resultTitle: { fontFamily: fonts.display, fontSize: 16, color: colors.bone, marginBottom: 4 },
-  resultYear: { fontFamily: fonts.ui, fontSize: 11, color: colors.fog },
+  resultYear: { fontFamily: fonts.sub, fontSize: 11, color: colors.fog },
 
   // Format Selection Sheet
   formatSheet: { padding: 16, borderTopWidth: 1, borderTopColor: colors.ash, backgroundColor: colors.soot },
-  formatTitle: { fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 3, color: colors.fog, marginBottom: 4 },
+  formatTitle: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 3, color: colors.fog, marginBottom: 4 },
   formatFilmName: { fontFamily: fonts.display, fontSize: 16, color: colors.sepia, marginBottom: 16 },
-  formatBtn: { backgroundColor: 'rgba(139,105,20,0.08)', borderWidth: 1, borderColor: colors.ash, borderRadius: 2, paddingVertical: 14, alignItems: 'center' as const, marginBottom: 8 },
-  formatBtnText: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 2, color: colors.parchment },
+  formatBtn: { backgroundColor: 'rgba(184,137,26,0.08)', borderWidth: 1, borderColor: colors.ash, borderRadius: 2, paddingVertical: 14, alignItems: 'center' as const, marginBottom: 8 },
+  formatBtnText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.parchment },
   formatCancelBtn: { paddingVertical: 12, alignItems: 'center' as const, marginTop: 4 },
-  formatCancelText: { fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.fog },
+  formatCancelText: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.fog },
 });
 
 

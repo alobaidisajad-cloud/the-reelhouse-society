@@ -394,9 +394,9 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 16, paddingTop: 12, paddingBottom: 20,
-        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(139,105,20,0.2)',
+        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.2)',
     },
-    title: { fontFamily: fonts.uiMedium, fontSize: 12, letterSpacing: 4, color: colors.sepia },
+    title: { fontFamily: fonts.sub, fontSize: 12, letterSpacing: 4, color: colors.sepia },
     closeBtn: { width: 40, height: 40, alignItems: 'flex-end', justifyContent: 'center' },
     center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
 
@@ -405,13 +405,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row', alignItems: 'center', gap: 8,
         marginHorizontal: 16, marginTop: 4, marginBottom: 4,
         paddingHorizontal: 14, paddingVertical: 10,
-        backgroundColor: 'rgba(139,105,20,0.08)',
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.2)',
+        backgroundColor: 'rgba(184,137,26,0.08)',
+        borderWidth: 1, borderColor: 'rgba(184,137,26,0.2)',
         borderRadius: 3,
     },
     shareBannerText: {
         flex: 1,
-        fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1.5,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1.5,
         color: colors.bone,
     },
 
@@ -423,19 +423,19 @@ const styles = StyleSheet.create({
     avatar: { width: 44, height: 44, borderRadius: 22 },
     avatarPlaceholder: {
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: 'rgba(139,105,20,0.15)', alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.3)',
+        backgroundColor: 'rgba(184,137,26,0.15)', alignItems: 'center', justifyContent: 'center',
+        borderWidth: 1, borderColor: 'rgba(184,137,26,0.3)',
     },
     userInfo: { marginLeft: 14, flex: 1 },
     username: { fontFamily: fonts.sub, fontSize: 15, color: colors.parchment, marginBottom: 2 },
-    role: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+    role: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
 
     // ── Lounge Row ──
     loungeIconWrap: {
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: 'rgba(139,105,20,0.1)',
+        backgroundColor: 'rgba(184,137,26,0.1)',
         alignItems: 'center', justifyContent: 'center',
-        borderWidth: 1, borderColor: 'rgba(139,105,20,0.25)',
+        borderWidth: 1, borderColor: 'rgba(184,137,26,0.25)',
     },
     shareChip: {
         flexDirection: 'row', alignItems: 'center', gap: 5,
@@ -445,11 +445,11 @@ const styles = StyleSheet.create({
         backgroundColor: 'rgba(25,23,20,0.8)',
     },
     shareChipDone: {
-        borderColor: 'rgba(139,105,20,0.3)',
-        backgroundColor: 'rgba(139,105,20,0.08)',
+        borderColor: 'rgba(184,137,26,0.3)',
+        backgroundColor: 'rgba(184,137,26,0.08)',
     },
     shareChipText: {
-        fontFamily: fonts.uiBold, fontSize: 9, letterSpacing: 1.5,
+        fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5,
         color: colors.bone,
     },
 
@@ -464,6 +464,6 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: colors.sepia, borderRadius: 3,
     },
     retryBtnText: {
-        fontFamily: fonts.ui, fontSize: 10, letterSpacing: 2, color: colors.sepia,
+        fontFamily: fonts.sub, fontSize: 10, letterSpacing: 2, color: colors.sepia,
     },
 });

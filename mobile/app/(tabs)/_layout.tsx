@@ -245,7 +245,6 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen name="lounge" options={{ href: null }} />
-      <Tabs.Screen name="ledger" options={{ href: null }} />
     </Tabs>
   );
 }

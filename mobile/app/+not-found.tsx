@@ -85,7 +85,7 @@ const s = StyleSheet.create({
   },
   backText: {
     fontSize: 10,
-    fontFamily: fonts.uiBold,
+    fontFamily: fonts.sub,
     color: colors.bone,
     letterSpacing: 2,
   },

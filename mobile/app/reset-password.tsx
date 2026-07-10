@@ -39,7 +39,7 @@ const CHECK_LABELS: [keyof ReturnType<typeof getChecks>, string][] = [
 
 function getStrength(passed: number) {
   const labels = ['', 'WEAK', 'FAIR', 'FAIR', 'STRONG', 'VERY STRONG'];
-  const clrs   = ['', colors.bloodReel, '#c4a000', '#c4a000', colors.sepia, '#4caf50'];
+  const clrs   = ['', colors.crimson, '#c4a000', '#c4a000', colors.sepia, colors.flicker];
   return { label: labels[passed], color: clrs[passed] };
 }
 
@@ -281,10 +281,10 @@ export default function ResetPasswordScreen() {
               <View style={s.checksGrid}>
                 {CHECK_LABELS.map(([key, label]) => (
                   <View key={key} style={s.checkRow}>
-                    <Text style={[s.checkIcon, { color: checks[key] ? '#4caf50' : colors.fog }]}>
+                    <Text style={[s.checkIcon, { color: checks[key] ? colors.sepia : colors.fog }]}>
                       {checks[key] ? '✓' : '○'}
                     </Text>
-                    <Text style={[s.checkLabel, { color: checks[key] ? '#4caf50' : colors.fog }]}>
+                    <Text style={[s.checkLabel, { color: checks[key] ? colors.sepia : colors.fog }]}>
                       {label}
                     </Text>
                   </View>
@@ -352,7 +352,7 @@ const s = StyleSheet.create({
 
   // Back
   backBtn: { position: 'absolute', left: 0, zIndex: 10, padding: 8 },
-  backText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+  backText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
 
   // Header
   header: { alignItems: 'center', marginBottom: 28 },
@@ -386,7 +386,7 @@ const s = StyleSheet.create({
 
   // Fields
   fieldGroup: { gap: 6 },
-  inputLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 2.5, color: colors.fog, textTransform: 'uppercase' },
+  inputLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2.5, color: colors.fog, textTransform: 'uppercase' },
   inputWrap: { position: 'relative' },
   input: {
     backgroundColor: colors.soot, borderWidth: 1, borderColor: colors.ash,
@@ -394,20 +394,20 @@ const s = StyleSheet.create({
     fontSize: 14, fontFamily: fonts.body, color: colors.parchment,
   },
   showBtn: { position: 'absolute', right: 14, top: 0, bottom: 0, justifyContent: 'center' },
-  showText: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
+  showText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.sepia },
 
   // Strength
   strengthWrap: { gap: 10 },
   strengthBarRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   strengthSegment: { flex: 1, height: 3, borderRadius: 2 },
-  strengthLabel: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 1.5, marginLeft: 8, minWidth: 80 },
+  strengthLabel: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.5, marginLeft: 8, minWidth: 80 },
   checksGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
   checkRow: { flexDirection: 'row', alignItems: 'center', gap: 4, width: '48%' as import('react-native').DimensionValue },
-  checkIcon: { fontFamily: fonts.ui, fontSize: 11 },
-  checkLabel: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 0.5 },
+  checkIcon: { fontFamily: fonts.sub, fontSize: 11 },
+  checkLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 0.5 },
 
   // Mismatch
-  mismatchText: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 1, color: colors.bloodReel, marginTop: 2 },
+  mismatchText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimson, marginTop: 2 },
 
   // Submit
   submitBtn: {
@@ -416,7 +416,7 @@ const s = StyleSheet.create({
     ...effects.glowSepia,
   },
   submitDisabled: { opacity: 0.4, shadowOpacity: 0 },
-  submitText: { fontFamily: fonts.uiMedium, fontSize: 11, letterSpacing: 2.5, color: colors.ink, fontWeight: '700' },
+  submitText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2.5, color: colors.ink },
   submitLoading: { flexDirection: 'row', alignItems: 'center', gap: 10 },
 
   // Success
@@ -424,16 +424,16 @@ const s = StyleSheet.create({
   successContent: { alignItems: 'center' },
   successIconWrap: {
     width: 64, height: 64, borderRadius: 32,
-    backgroundColor: 'rgba(76, 175, 80, 0.1)', borderWidth: 1, borderColor: '#4caf50',
+    backgroundColor: 'rgba(184,137,26,0.1)', borderWidth: 1, borderColor: colors.sepia,
     alignItems: 'center', justifyContent: 'center', marginBottom: 20,
   },
-  successIcon: { fontSize: 28, color: '#4caf50', fontFamily: fonts.uiBold },
-  successEyebrow: { fontFamily: fonts.ui, fontSize: 9, letterSpacing: 4, color: '#4caf50', marginBottom: 10 },
+  successIcon: { fontSize: 28, color: colors.sepia, fontFamily: fonts.sub },
+  successEyebrow: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 4, color: colors.sepia, marginBottom: 10 },
   successTitle: {
     fontFamily: fonts.display, fontSize: 26, color: colors.parchment,
     textAlign: 'center', lineHeight: 32, marginBottom: 16,
     ...effects.textShadowDeep,
   },
   successBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, textAlign: 'center', lineHeight: 22, marginBottom: 20 },
-  successRedirect: { fontFamily: fonts.ui, fontSize: 8, letterSpacing: 2, color: colors.fog },
+  successRedirect: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 2, color: colors.fog },
 });
