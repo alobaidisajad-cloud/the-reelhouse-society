@@ -26,6 +26,9 @@ interface ShareToLoungeProps {
     listFilmCount?: number;
     listCurator?: string;
     listTopPosters?: string[];
+    dossierId?: string;
+    dossierTitle?: string;
+    dossierAuthor?: string;
 }
 
 interface _LoungeMemberRow {
@@ -50,7 +53,8 @@ LoungeItem.displayName = 'LoungeItem';
 
 export default function ShareToLoungeModal({ 
     visible, onClose, filmTitle, filmId, posterPath, logId, ownerUsername,
-    listId, listTitle, listFilmCount, listCurator, listTopPosters 
+    listId, listTitle, listFilmCount, listCurator, listTopPosters,
+    dossierId, dossierTitle, dossierAuthor
 }: ShareToLoungeProps) {
     const { user } = useAuthStore();
     const allLounges = useLoungeStore(s => s.lounges);
@@ -76,7 +80,7 @@ export default function ShareToLoungeModal({
         setMessage('');
         setSelectedLounge(null);
         setSending(false);
-    }, [filmId, logId, listId]);
+    }, [filmId, logId, listId, dossierId]);
 
     useEffect(() => {
         if (!visible || !user) return;
@@ -88,8 +92,9 @@ export default function ShareToLoungeModal({
         if (!selectedLounge || !user) return;
         setSending(true);
 
-        let shareType: 'film_share' | 'log_share' | 'list_share' = 'film_share';
-        if (listId) shareType = 'list_share';
+        let shareType: 'film_share' | 'log_share' | 'list_share' | 'dossier_share' = 'film_share';
+        if (dossierId) shareType = 'dossier_share';
+        else if (listId) shareType = 'list_share';
         else if (logId) shareType = 'log_share';
 
         let metadata: any = {};
@@ -98,7 +103,14 @@ export default function ShareToLoungeModal({
         }
 
         let payload: any = {};
-        if (shareType === 'list_share') {
+        if (shareType === 'dossier_share') {
+            // film_title is the lounge card's title column — it carries the
+            // essay's headline; everything else rides the metadata jsonb.
+            payload = {
+                film_title: dossierTitle ?? null,
+                metadata: { dossier_id: dossierId, author_username: dossierAuthor }
+            };
+        } else if (shareType === 'list_share') {
             payload = {
                 listId: listId,
                 title: listTitle,
@@ -164,10 +176,12 @@ export default function ShareToLoungeModal({
                         </PressableScale>
                     </View>
 
-                    {listId ? (
-                        <Text style={s.filmLabel}>SHARING STACK: {listTitle?.toUpperCase()}</Text>
+                    {dossierId ? (
+                        <Text style={s.filmLabel} numberOfLines={1}>SHARING DOSSIER: {dossierTitle?.toUpperCase()}</Text>
+                    ) : listId ? (
+                        <Text style={s.filmLabel} numberOfLines={1}>SHARING STACK: {listTitle?.toUpperCase()}</Text>
                     ) : (
-                        <Text style={s.filmLabel}>SHARING: {filmTitle?.toUpperCase()}</Text>
+                        <Text style={s.filmLabel} numberOfLines={1}>SHARING: {filmTitle?.toUpperCase()}</Text>
                     )}
 
                     {(isFetching && lounges.length === 0) ? (

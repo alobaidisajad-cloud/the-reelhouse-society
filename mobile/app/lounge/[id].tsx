@@ -72,24 +72,65 @@ function renderBody(content: string) {
 }
 
 // ════════════════════════════════════════════════════════════
-// SHARED CONTENT CARD — Film/Log share clipping
+// SHARED CONTENT CARD — the clipping (film / record / stack / dossier)
+// Every clipping is a door: tap opens the thing itself.
 // ════════════════════════════════════════════════════════════
-const SharedCard = React.memo(({ msg }: { msg: LoungeMessage }) => {
-  if (!msg.film_title && !msg.film_id) return null;
-  const typeLabel = msg.type === 'film_share' ? 'FILM' : msg.type.toUpperCase().replace('_SHARE', '');
+const SHARE_LABELS: Record<string, string> = {
+  film_share: 'FILM',
+  log_share: 'RECORD',
+  list_share: 'STACK',
+  dossier_share: 'DOSSIER',
+};
+
+const SharedCard = React.memo(({ msg, onOpen, onLongPress }: {
+  msg: LoungeMessage;
+  onOpen: (msg: LoungeMessage) => void;
+  onLongPress: (msg: LoungeMessage) => void;
+}) => {
+  const meta = (msg.metadata ?? {}) as Record<string, unknown>;
+  // Stack shares carry their title in metadata, not the film_title column.
+  const title = msg.film_title || (typeof meta.title === 'string' ? meta.title : null);
+  if (!title && !msg.film_id) return null;
+
+  const typeLabel = SHARE_LABELS[msg.type] ?? msg.type.toUpperCase().replace('_SHARE', '');
   const posterUrl = msg.film_poster ? tmdb.poster(msg.film_poster, 'w342') : null;
 
+  // One quiet attribution line, when the payload carries one.
+  const byline =
+    msg.type === 'dossier_share' && typeof meta.author_username === 'string'
+      ? `BY @${meta.author_username.toUpperCase()}`
+      : msg.type === 'log_share' && typeof meta.owner_username === 'string'
+      ? `FILED BY @${meta.owner_username.toUpperCase()}`
+      : msg.type === 'list_share' && typeof meta.curator === 'string'
+      ? `${typeof meta.filmCount === 'number' ? `${meta.filmCount} REELS · ` : ''}@${meta.curator.toUpperCase()}`
+      : null;
+
   return (
-    <View style={s.sharedCard}>
-      {posterUrl && <Image source={{ uri: posterUrl }} style={s.sharedPoster} contentFit="cover" cachePolicy="memory-disk" />}
+    <PressableScale
+      style={s.sharedCard}
+      onPress={() => onOpen(msg)}
+      onLongPress={() => onLongPress(msg)}
+      haptic="selection"
+      pressedScale={0.98}
+      accessibilityRole="button"
+      accessibilityLabel={`Open shared ${typeLabel.toLowerCase()}${title ? `: ${title}` : ''}`}
+    >
+      {posterUrl ? (
+        <Image source={{ uri: posterUrl }} style={s.sharedPoster} contentFit="cover" cachePolicy="memory-disk" />
+      ) : msg.type === 'dossier_share' ? (
+        <View style={s.sharedGlyphSlot}>
+          <Text style={s.sharedGlyph}>§</Text>
+        </View>
+      ) : null}
       <View style={s.sharedInfo}>
         <View style={s.sharedTypeBadge}>
           <Sparkles size={7} color={colors.sepia} strokeWidth={2} />
           <Text style={s.sharedTypeText} numberOfLines={1}>{typeLabel}</Text>
         </View>
-        <Text style={s.sharedTitle} numberOfLines={2}>{msg.film_title}</Text>
+        <Text style={s.sharedTitle} numberOfLines={2}>{title}</Text>
+        {byline ? <Text style={s.sharedByline} numberOfLines={1}>{byline}</Text> : null}
       </View>
-    </View>
+    </PressableScale>
   );
 });
 SharedCard.displayName = 'SharedCard';
@@ -129,9 +170,10 @@ ReactionChips.displayName = 'ReactionChips';
 // ════════════════════════════════════════════════════════════
 // DISPATCH — one transcript entry (Editorial Salon, bubble-less)
 // ════════════════════════════════════════════════════════════
-const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, onReactToggle, onRetry }: {
+const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, onOpenShare, onReactToggle, onRetry }: {
   msg: LoungeMessage; isSelf: boolean; showAuthor: boolean; showDate: boolean;
   onLongPress: (msg: LoungeMessage) => void;
+  onOpenShare: (msg: LoungeMessage) => void;
   onReactToggle: (messageId: string, reaction: string) => void;
   onRetry: (messageId: string) => void;
 }) => {
@@ -185,7 +227,7 @@ const Dispatch = React.memo(({ msg, isSelf, showAuthor, showDate, onLongPress, o
                 </View>
               )}
               {Boolean(msg.content) && <Text style={s.bodyText}>{renderBody(msg.content)}</Text>}
-              {msg.type !== 'text' && <SharedCard msg={msg} />}
+              {msg.type !== 'text' && <SharedCard msg={msg} onOpen={onOpenShare} onLongPress={onLongPress} />}
             </PressableScale>
           )}
 
@@ -307,6 +349,24 @@ export default function LoungeRoomScreen() {
     : 'request';
 
   const handleLongPress = useCallback((msg: LoungeMessage) => setActionSheetMsg(msg), []);
+  // Clippings are doors — every shared card opens the thing it points to.
+  const handleOpenShare = useCallback((msg: LoungeMessage) => {
+    const meta = (msg.metadata ?? {}) as Record<string, unknown>;
+    switch (msg.type) {
+      case 'film_share':
+        if (msg.film_id) router.push(`/film/${msg.film_id}`);
+        break;
+      case 'log_share':
+        if (typeof meta.log_id === 'string') router.push(`/log/${meta.log_id}`);
+        break;
+      case 'list_share':
+        if (typeof meta.listId === 'string') router.push(`/stacks/${meta.listId}`);
+        break;
+      case 'dossier_share':
+        if (typeof meta.dossier_id === 'string') router.push(`/dossier/${meta.dossier_id}`);
+        break;
+    }
+  }, [router]);
   const handleReport = useCallback((msg: LoungeMessage) => {
     setSelectedMessage(msg); setActionSheetMsg(null); setReportSheetVisible(true);
   }, []);
@@ -453,6 +513,7 @@ export default function LoungeRoomScreen() {
                 showAuthor={showAuthor}
                 showDate={showDate}
                 onLongPress={handleLongPress}
+                onOpenShare={handleOpenShare}
                 onReactToggle={toggleReaction}
                 onRetry={retryMessage}
               />
@@ -738,10 +799,16 @@ const s = StyleSheet.create({
     marginTop: 10, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
   },
   sharedPoster: { width: 48, height: 72 },
+  sharedGlyphSlot: {
+    width: 48, alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center',
+    borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.ash,
+  },
+  sharedGlyph: { fontFamily: fonts.display, fontSize: 22, color: colors.sepia, includeFontPadding: false },
   sharedInfo: { padding: 10, flex: 1, justifyContent: 'center' },
   sharedTypeBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, marginBottom: 4 },
   sharedTypeText: { fontFamily: fonts.sub, fontSize: 7.5, letterSpacing: 1.5, color: colors.sepia, includeFontPadding: false },
   sharedTitle: { fontFamily: fonts.sub, fontSize: 13, color: colors.bone, lineHeight: 17 },
+  sharedByline: { fontFamily: fonts.sub, fontSize: 8, letterSpacing: 1.2, color: colors.fog, marginTop: 4 },
 
   emptyChat: { alignItems: 'center', justifyContent: 'center', paddingVertical: 80, gap: 10 },
 

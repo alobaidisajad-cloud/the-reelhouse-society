@@ -564,7 +564,7 @@ export const useLoungeStore = create<LoungeState>()((set, get) => ({
 
   sendMessage: async (loungeId: string, content: string, type = 'text', meta: LoungeMessageMeta = {}) => {
     const user = useAuthStore.getState().user;
-    const ALLOWED_TYPES = ['text', 'film_share', 'log_share', 'list_share', 'system'] as const;
+    const ALLOWED_TYPES = ['text', 'film_share', 'log_share', 'list_share', 'dossier_share', 'system'] as const;
     const safeType = (ALLOWED_TYPES as readonly string[]).includes(type) ? type : 'text';
     
     // Parity with the offline mutationExecutor path: strip zero-width/control

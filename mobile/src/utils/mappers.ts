@@ -86,6 +86,7 @@ export interface LoungeMessageRow {
   film_id?: number | null;
   film_title?: string | null;
   film_poster?: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
   profiles: { username: string; avatar_url?: string } | { username: string; avatar_url?: string }[] | null;
 }
@@ -97,13 +98,14 @@ export interface MappedLoungeMessage {
   username: string;
   avatar_url?: string;
   content: string;
-  type: 'text' | 'film_share' | 'system' | 'image';
+  type: 'text' | 'film_share' | 'log_share' | 'list_share' | 'dossier_share' | 'system';
   reply_to_id?: string | null;
   reply_to_username?: string | null;
   reply_to_content?: string | null;
   film_id?: number | null;
   film_title?: string | null;
   film_poster?: string | null;
+  metadata?: Record<string, unknown> | null;
   created_at: string;
 }
 
@@ -129,6 +131,7 @@ export function mapMessageRow(m: LoungeMessageRow): MappedLoungeMessage {
     film_id: m.film_id,
     film_title: m.film_title,
     film_poster: m.film_poster,
+    metadata: m.metadata,
     created_at: m.created_at,
   };
 }

@@ -3,9 +3,11 @@ import { CinematicScrollView } from '@/src/components/layout/CinematicScrollView
 import { ContentActionSheet } from '@/src/components/moderation/ContentActionSheet';
 import ReportSheet from '@/src/components/moderation/ReportSheet';
 import PressableScale from '@/src/components/PressableScale';
+import ShareToLoungeModal from '@/src/components/ShareToLoungeModal';
+import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Heart, MoreHorizontal } from 'lucide-react-native';
-import React, { useCallback, useEffect, useState } from 'react';
+import { Heart, MessageCircle, MoreHorizontal, Send } from 'lucide-react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
@@ -15,7 +17,7 @@ import { supabase } from '@/src/lib/supabase';
 import { useAuthStore } from '@/src/stores/auth';
 import { useBlockStore } from '@/src/stores/blockStore';
 import { useDispatchStore } from '@/src/stores/content';
-import { colors, fonts } from '@/src/theme/theme';
+import { colors, effects, fonts } from '@/src/theme/theme';
 import { DossierComment, DossierDetail } from '@/src/types';
 import { enqueueMutation, flushOfflineQueue, getOfflineQueue } from '@/src/utils/offlineQueue';
 import reelToast from '@/src/utils/reelToast';
@@ -27,6 +29,36 @@ import { z } from 'zod';
 // dossier until the prior RPC has actually resolved, so a fast second tap can't read
 // optimistic state that the first call hasn't confirmed yet.
 const _certifyPending = new Set<string>();
+
+const PAGE_SIZE = 30;
+
+// Average adult reading pace ≈ 220 wpm; floor at one minute.
+function readMinutes(text: string): number {
+    const words = text.trim().split(/\s+/).filter(Boolean).length;
+    return Math.max(1, Math.round(words / 220));
+}
+
+function formatCount(n: number): string {
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1).replace(/\.0$/, '')}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(n >= 10_000 ? 0 : 1).replace(/\.0$/, '')}K`;
+    return String(n);
+}
+
+type CritiqueRow = DossierComment & { avatar_url?: string | null };
+
+// dossier_comments has no FK to profiles, so faces arrive via one batched
+// lookup per page. Faces are decoration — a failure never blocks the words.
+async function attachFaces(rows: DossierComment[]): Promise<CritiqueRow[]> {
+    const ids = [...new Set(rows.map(r => r.user_id).filter(Boolean))];
+    if (ids.length === 0) return rows;
+    try {
+        const { data } = await supabase.from('profiles').select('id, avatar_url').in('id', ids);
+        const faces = new Map((data ?? []).map(p => [p.id as string, p.avatar_url as string | null]));
+        return rows.map(r => ({ ...r, avatar_url: faces.get(r.user_id) ?? null }));
+    } catch {
+        return rows;
+    }
+}
 
 export default function DossierReaderScreen() {
     const { id } = useLocalSearchParams<{ id: string }>();
@@ -41,9 +73,19 @@ export default function DossierReaderScreen() {
     const [dossier, setDossier] = useState<DossierDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [certified, setCertified] = useState(false);
-    const [comments, setComments] = useState<DossierComment[]>([]);
+    const [comments, setComments] = useState<CritiqueRow[]>([]);
+    const [commentTotal, setCommentTotal] = useState(0);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [shareVisible, setShareVisible] = useState(false);
     const [newComment, setNewComment] = useState('');
     const [posting, setPosting] = useState(false);
+
+    // Jump-to-critiques plumbing: the scroll handle + the section's measured y.
+    const scrollRef = useRef<Animated.ScrollView>(null);
+    const critiquesY = useRef(0);
+    // Ref (not state) guards the pagination lock so the callback identity never
+    // churns mid-flight — the lesson of the follow-requests deadlock.
+    const loadingMoreRef = useRef(false);
     const [actionSheetVisible, setActionSheetVisible] = useState(false);
     const [reportSheetVisible, setReportSheetVisible] = useState(false);
     const [commentActionSheetVisible, setCommentActionSheetVisible] = useState(false);
@@ -78,9 +120,10 @@ export default function DossierReaderScreen() {
                         .single(),
                     supabase
                         .from('dossier_comments')
-                        .select('id, user_id, username, body, created_at')
+                        .select('id, user_id, username, body, created_at', { count: 'exact' })
                         .eq('dossier_id', id)
-                        .order('created_at', { ascending: true }),
+                        .order('created_at', { ascending: false })
+                        .limit(PAGE_SIZE),
                     user
                         ? supabase
                             .from('dossier_certifications')
@@ -123,26 +166,31 @@ export default function DossierReaderScreen() {
                     });
                 }
 
-                // Comments (fetched in parallel above)
-                const commData = commRes.data;
+                // Comments (fetched in parallel above) — newest first, one page,
+                // total count riding the same round trip.
+                const commData = (commRes.data ?? []) as DossierComment[];
+                const serverTotal = commRes.count ?? commData.length;
 
-                // Offline Queue Stitching
+                // Offline Queue Stitching — queued critiques are ours and are the
+                // newest words in the room, so they sit at the top of the pile.
                 const queue = getOfflineQueue();
                 const pendingAdds = queue.filter(q => q.type === 'add_dossier_comment' && q.payload.dossier_id === id);
-                
-                let finalComments = commData || [];
+
+                const finalComments: CritiqueRow[] = await attachFaces(commData);
                 for (const pa of pendingAdds) {
                     const p = pa.payload;
-                    finalComments.push({
+                    finalComments.unshift({
                         id: `offline-${Date.now()}-${Math.random()}`,
                         user_id: p.user_id,
                         username: p.username || 'anonymous',
                         body: p.body,
-                        created_at: new Date().toISOString()
-                    } as unknown as DossierComment);
+                        created_at: new Date().toISOString(),
+                        avatar_url: user?.avatar_url ?? null,
+                    } as unknown as CritiqueRow);
                 }
-                
+
                 setComments(finalComments);
+                setCommentTotal(serverTotal + pendingAdds.length);
                 
                 // Certification (fetched in parallel above)
                 if (user) {
@@ -160,6 +208,54 @@ export default function DossierReaderScreen() {
 
         fetchDossier();
     }, [id, user]);
+
+    // Keyset pagination, unbounded: every earlier page is one tap away no
+    // matter how deep the pile grows. Cursor = oldest loaded created_at.
+    const loadEarlier = useCallback(async () => {
+        if (loadingMoreRef.current) return;
+        const oldest = comments[comments.length - 1];
+        if (!oldest) return;
+        loadingMoreRef.current = true;
+        setLoadingMore(true);
+        try {
+            const { data, error } = await supabase
+                .from('dossier_comments')
+                .select('id, user_id, username, body, created_at')
+                .eq('dossier_id', id)
+                .lt('created_at', oldest.created_at)
+                .order('created_at', { ascending: false })
+                .limit(PAGE_SIZE);
+            if (error) throw error;
+            const rows = await attachFaces((data ?? []) as DossierComment[]);
+            if (rows.length) {
+                setComments(prev => {
+                    const seen = new Set(prev.map(c => c.id));
+                    return [...prev, ...rows.filter(r => !seen.has(r.id))];
+                });
+            }
+        } catch (err: unknown) {
+            if (__DEV__) console.warn('[Dossier] Load earlier error:', err);
+            reelToast.error('Could not retrieve earlier critiques.');
+        } finally {
+            loadingMoreRef.current = false;
+            setLoadingMore(false);
+        }
+    }, [comments, id]);
+
+    // The CRITIQUES key scrolls to the section — it never summons the keyboard.
+    const handleJumpToCritiques = useCallback(() => {
+        TactileEngine.navigate();
+        scrollRef.current?.scrollTo({ y: Math.max(critiquesY.current - 12, 0), animated: true });
+    }, []);
+
+    const handleOpenShareLounge = useCallback(() => {
+        if (!user) return (router.push as any)('/login');
+        if (id.startsWith('seed')) {
+            reelToast.error('House specimens cannot be shared to lounges.');
+            return;
+        }
+        setShareVisible(true);
+    }, [user, id]);
 
     const handlePostComment = async () => {
         if (!user) return (router.push as any)('/login');
@@ -179,11 +275,13 @@ export default function DossierReaderScreen() {
             user_id: user.id,
             username: user.username,
             body: newComment.trim(),
-            created_at: new Date().toISOString()
-        } as unknown as DossierComment;
+            created_at: new Date().toISOString(),
+            avatar_url: user.avatar_url ?? null,
+        } as unknown as CritiqueRow;
 
-        // Optimistic UI update
-        setComments(prev => [...prev, tempComment]);
+        // Optimistic UI update — newest words sit at the top of the pile.
+        setComments(prev => [tempComment, ...prev]);
+        setCommentTotal(t => t + 1);
         setNewComment('');
 
         try {
@@ -197,7 +295,8 @@ export default function DossierReaderScreen() {
             if (error) throw error;
             if (data) {
                 TactileEngine.success();
-                setComments(prev => prev.map(c => c.id === tempId ? data : c));
+                // Keep the optimistic face — the server echo doesn't carry one.
+                setComments(prev => prev.map(c => c.id === tempId ? { ...data, avatar_url: tempComment.avatar_url } : c));
             }
         } catch (err: any) { 
             const errStr = (err.message || '').toLowerCase();
@@ -216,6 +315,7 @@ export default function DossierReaderScreen() {
                 reelToast.success('Critique queued for offline transmission.');
             } else {
                 setComments(prev => prev.filter(c => c.id !== tempId));
+                setCommentTotal(t => Math.max(t - 1, 0));
                 if (__DEV__) console.warn('[Dossier] Post comment error:', err);
                 reelToast.error('Failed to file critique.');
             }
@@ -230,6 +330,7 @@ export default function DossierReaderScreen() {
         
         const removed = comments.find(c => c.id === commentId);
         setComments(prev => prev.filter(c => c.id !== commentId));
+        setCommentTotal(t => Math.max(t - 1, 0));
         
         try {
             const { error } = await supabase.from('dossier_comments').delete()
@@ -246,7 +347,10 @@ export default function DossierReaderScreen() {
                 flushOfflineQueue();
                 reelToast.success('Deletion queued offline.');
             } else {
-                if (removed) setComments(prev => [...prev, removed].sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+                if (removed) {
+                    setComments(prev => [...prev, removed].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
+                    setCommentTotal(t => t + 1);
+                }
                 if (__DEV__) console.warn('[Dossier] Delete comment error:', err);
                 reelToast.error('Failed to delete critique.');
             }
@@ -313,7 +417,7 @@ export default function DossierReaderScreen() {
                 <PressableScale onPress={() => router.back()} style={styles.backBtn} hitSlop={{top:10,bottom:10,left:10,right:10}} haptic="selection" pressedScale={0.92}>
                     <Text style={styles.backIcon}>✕</Text>
                 </PressableScale>
-                <Text style={styles.navMark}>REELHOUSE DIGITAL DOSSIER</Text>
+                <Text style={styles.navMark}>FROM THE DISPATCH</Text>
                 {user?.id !== dossier?.user_id && (
                     <PressableScale
                         style={styles.moreBtn}
@@ -328,17 +432,31 @@ export default function DossierReaderScreen() {
                 )}
             </View>
 
-            <CinematicScrollView 
-                style={styles.paper} 
+            <CinematicScrollView
+                ref={scrollRef}
+                style={styles.paper}
                 contentContainerStyle={styles.paperContent}
             >
-                <Text style={styles.title}>{dossier.title}</Text>
-                
+                <Text style={[styles.title, effects.textGlowSepia]}>{dossier.title}</Text>
+
                 <View style={styles.bylineBlock}>
-                    <Text style={styles.bylineText}>FILED BY <Text style={styles.authorHighlight}>@{dossier.author_username}</Text></Text>
-                    {dossier.created_at && (
-                        <Text style={styles.dateText}>{new Date(dossier.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase()}</Text>
-                    )}
+                    <PressableScale
+                        style={styles.bylineAuthorBtn}
+                        onPress={() => (router.push as any)(`/user/${dossier.author_username}`)}
+                        haptic="selection"
+                        pressedScale={0.97}
+                        accessibilityRole="button"
+                        accessibilityLabel={`View @${dossier.author_username}'s dossier`}
+                    >
+                        <Text style={styles.bylineText} numberOfLines={1}>FILED BY <Text style={styles.authorHighlight}>@{dossier.author_username}</Text></Text>
+                    </PressableScale>
+                    <Text style={styles.dateText} numberOfLines={1}>
+                        {[
+                            dossier.created_at ? new Date(dossier.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase() : null,
+                            `${readMinutes(dossier.full_content || dossier.excerpt || '')} MIN`,
+                            (dossier.views ?? 0) > 0 ? `${formatCount(dossier.views ?? 0)} READINGS` : null,
+                        ].filter(Boolean).join(' · ')}
+                    </Text>
                 </View>
 
                 {/* Body Content */}
@@ -348,28 +466,42 @@ export default function DossierReaderScreen() {
                     </Markdown>
                 </View>
 
-                {/* Interactions */}
-                <View style={styles.actionBlock}>
-                    <PressableScale 
-                        style={styles.actionBtn} 
-                        onPress={handleCertify}
-                        haptic="light"
-                        pressedScale={0.95}
-                    >
-                        <Heart size={15} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} style={{ marginBottom: 4 }} />
-                        <Text style={[styles.actionLabel, certified && styles.actionLabelActive]}>
+                {/* ── ACTION BAR: Certify · Critiques · Share to Lounge ── */}
+                <View style={styles.actionBar}>
+                    <PressableScale style={styles.actionItem} onPress={handleCertify} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel={certified ? 'Uncertify dossier' : 'Certify dossier'}>
+                        <View pointerEvents="none"><Heart size={16} strokeWidth={2} color={certified ? colors.crimson : colors.fog} fill={certified ? colors.crimson : 'transparent'} /></View>
+                        <Text style={[styles.actionLabel, certified && styles.actionLabelActive]} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
                             {certified ? 'CERTIFIED' : 'CERTIFY'}
                         </Text>
+                    </PressableScale>
+
+                    <View style={styles.actionDivider} />
+
+                    <PressableScale style={styles.actionItem} onPress={handleJumpToCritiques} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Jump to critiques">
+                        <View pointerEvents="none"><MessageCircle size={14} color={colors.fog} /></View>
+                        <Text style={styles.actionLabel} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                            {commentTotal > 0 ? `CRITIQUES (${formatCount(commentTotal)})` : 'CRITIQUES'}
+                        </Text>
+                    </PressableScale>
+
+                    <View style={styles.actionDivider} />
+
+                    <PressableScale style={styles.actionItem} onPress={handleOpenShareLounge} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} haptic="selection" accessibilityRole="button" accessibilityLabel="Share to lounge">
+                        <View pointerEvents="none"><Send size={14} color={colors.fog} /></View>
+                        <Text style={styles.actionLabel} pointerEvents="none" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>LOUNGE</Text>
                     </PressableScale>
                 </View>
 
                 <Text style={styles.endMark}>— ✦ —</Text>
 
-                {/* Critiques */}
-                <View style={styles.commentsSection}>
-                    <SectionDivider label={`CRITIQUES (${comments.length})`} />
-                    
-                    {comments.map((c: DossierComment) => (
+                {/* Critiques — newest first, every earlier page one tap away */}
+                <View
+                    style={styles.commentsSection}
+                    onLayout={(e) => { critiquesY.current = e.nativeEvent.layout.y; }}
+                >
+                    <SectionDivider label={`CRITIQUES (${formatCount(commentTotal)})`} />
+
+                    {comments.map((c: CritiqueRow) => (
                         <PressableScale
                           key={c.id}
                           onLongPress={() => {
@@ -385,8 +517,13 @@ export default function DossierReaderScreen() {
                           accessibilityHint={c.user_id !== user?.id ? "Long press to report or block" : undefined}
                         >
                         <View style={styles.commentItem}>
-                        <PressableScale onPress={() => (router.push as any)(`/user/${c.username}`)} haptic="selection" pressedScale={0.98}>
-                            <Text style={styles.commUsername}>@{c.username}</Text>
+                        <PressableScale style={styles.commAuthorRow} onPress={() => (router.push as any)(`/user/${c.username}`)} haptic="selection" pressedScale={0.98}>
+                            <View style={styles.commAvatar}>
+                                {c.avatar_url
+                                    ? <Image source={{ uri: c.avatar_url }} style={styles.commAvatarImg} contentFit="cover" cachePolicy="memory-disk" />
+                                    : <Text style={styles.commAvatarLetter}>{c.username?.[0]?.toUpperCase()}</Text>}
+                            </View>
+                            <Text style={styles.commUsername} numberOfLines={1}>@{c.username}</Text>
                         </PressableScale>
                         <Text style={styles.commBody}>{c.body}</Text>
                         <View style={styles.commMetaRow}>
@@ -401,8 +538,24 @@ export default function DossierReaderScreen() {
                         </PressableScale>
                     ))}
 
+                    {commentTotal > comments.length && (
+                        <PressableScale
+                            style={styles.loadEarlierBtn}
+                            onPress={loadEarlier}
+                            disabled={loadingMore}
+                            haptic="selection"
+                            pressedScale={0.97}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Load ${commentTotal - comments.length} earlier critiques`}
+                        >
+                            <Text style={styles.loadEarlierText}>
+                                {loadingMore ? 'RETRIEVING…' : `✦ LOAD EARLIER · ${formatCount(commentTotal - comments.length)} MORE`}
+                            </Text>
+                        </PressableScale>
+                    )}
+
                     {comments.length === 0 && (
-                        <Text style={styles.emptyComments}>No critiques yet on this dossier.</Text>
+                        <Text style={styles.emptyComments}>No critiques filed yet — the first word is yours.</Text>
                     )}
                 </View>
             </CinematicScrollView>
@@ -419,7 +572,7 @@ export default function DossierReaderScreen() {
                     maxLength={500}
                     keyboardAppearance="dark"
                     accessibilityLabel="Dossier critique"
-                    selectionColor={'rgba(218,165,32,0.3)'}
+                    selectionColor={colors.selection}
                 />
                 <PressableScale style={styles.postBtn} onPress={handlePostComment} disabled={!newComment.trim() || posting} haptic="medium" pressedScale={0.95}>
                     <Text style={[styles.postBtnText, { opacity: newComment.trim() ? 1 : 0.5 }]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{posting ? 'FILING…' : 'FILE CRITIQUE'}</Text>
@@ -456,6 +609,15 @@ export default function DossierReaderScreen() {
                 targetUserId={dossier.user_id ?? ''}
                 targetUsername={dossier.author_username || 'unknown'}
                 onDismiss={() => setReportSheetVisible(false)}
+            />
+
+            {/* Share to Lounge */}
+            <ShareToLoungeModal
+                visible={shareVisible}
+                onClose={() => setShareVisible(false)}
+                dossierId={dossier.id}
+                dossierTitle={dossier.title}
+                dossierAuthor={dossier.author_username}
             />
 
             {/* Comment Moderation: Action Sheet & Report Sheet */}
@@ -523,10 +685,10 @@ const styles = StyleSheet.create({
     backIcon: {
         fontSize: 16,
         color: colors.fog,
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
     },
     navMark: {
-        fontFamily: fonts.uiBold,
+        fontFamily: fonts.sub,
         fontSize: 10,
         letterSpacing: 2,
         color: colors.sepia,
@@ -550,34 +712,38 @@ const styles = StyleSheet.create({
         paddingBottom: 60,
     },
     title: {
-        fontFamily: fonts.sub,
-        fontSize: 34,
+        fontFamily: fonts.display,
+        fontSize: 28,
         color: colors.parchment,
         marginBottom: 20,
-        lineHeight: 42,
+        lineHeight: 38,
     },
     bylineBlock: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        gap: 12,
         paddingBottom: 16,
         marginBottom: 24,
         borderBottomWidth: 1,
         borderBottomColor: 'rgba(139,105,20,0.15)',
         borderStyle: 'dashed',
     },
+    bylineAuthorBtn: {
+        flexShrink: 1,
+    },
     bylineText: {
-        fontFamily: fonts.uiMedium,
+        fontFamily: fonts.sub,
         fontSize: 10,
         letterSpacing: 1.5,
         color: colors.fog,
     },
     authorHighlight: {
         color: colors.sepia,
-        fontFamily: fonts.uiBold,
+        fontFamily: fonts.sub,
     },
     dateText: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.sub,
         fontSize: 9,
         letterSpacing: 1,
         color: colors.fog,
@@ -585,35 +751,17 @@ const styles = StyleSheet.create({
     markdownWrap: {
         marginBottom: 40,
     },
-    actionBlock: {
-        flexDirection: 'row',
-        gap: 20,
-        borderTopWidth: 1,
-        borderTopColor: 'rgba(139,105,20,0.1)',
-        paddingTop: 20,
-        marginTop: 20,
+    // ── Action Bar (the house trio: Certify · Critiques · Lounge) ──
+    actionBar: {
+        flexDirection: 'row', alignItems: 'center',
+        borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: 'rgba(184,137,26,0.25)',
+        borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: 'rgba(184,137,26,0.25)',
+        paddingVertical: 14, marginTop: 20,
     },
-    actionBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    actionIcon: {
-        fontSize: 12,
-        color: colors.fog,
-    },
-    actionIconActive: {
-        color: colors.sepia,
-    },
-    actionLabel: {
-        fontFamily: fonts.uiMedium,
-        fontSize: 10,
-        letterSpacing: 2,
-        color: colors.fog,
-    },
-    actionLabelActive: {
-        color: colors.crimson,
-    },
+    actionItem: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+    actionLabel: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1.5, color: colors.fog },
+    actionLabelActive: { color: colors.crimson },
+    actionDivider: { width: 1, height: 16, backgroundColor: 'rgba(184,137,26,0.2)' },
     endMark: {
         fontFamily: fonts.display,
         fontSize: 16,
@@ -625,11 +773,21 @@ const styles = StyleSheet.create({
     commentsSection: { marginTop: 40 },
     emptyComments: { fontFamily: fonts.body, fontSize: 12, fontStyle: 'italic', color: colors.fog, textAlign: 'center', marginTop: 24 },
     commentItem: { paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.ash },
-    commUsername: { fontFamily: fonts.uiBold, fontSize: 10, letterSpacing: 1, color: colors.sepia, marginBottom: 4 },
+    commAuthorRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6, alignSelf: 'flex-start' },
+    commAvatar: {
+        width: 22, height: 22, borderRadius: 11, overflow: 'hidden',
+        alignItems: 'center', justifyContent: 'center',
+        backgroundColor: colors.soot, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.ash,
+    },
+    commAvatarImg: { width: '100%', height: '100%' },
+    commAvatarLetter: { fontFamily: fonts.sub, fontSize: 10, color: colors.sepia, includeFontPadding: false },
+    commUsername: { fontFamily: fonts.sub, fontSize: 10, letterSpacing: 1, color: colors.sepia, flexShrink: 1 },
     commBody: { fontFamily: fonts.body, fontSize: 13, color: colors.bone, lineHeight: 18 },
     commMetaRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 },
-    commDate: { fontFamily: fonts.ui, fontSize: 9, color: colors.fog },
-    commDelete: { fontFamily: fonts.uiMedium, fontSize: 9, letterSpacing: 1, color: colors.bloodReel },
+    commDate: { fontFamily: fonts.sub, fontSize: 9, color: colors.fog },
+    commDelete: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 1, color: colors.crimson },
+    loadEarlierBtn: { paddingVertical: 16, alignItems: 'center' },
+    loadEarlierText: { fontFamily: fonts.sub, fontSize: 9, letterSpacing: 2, color: colors.sepia },
 
     // Input
     inputRow: {
@@ -644,7 +802,7 @@ const styles = StyleSheet.create({
         maxHeight: 100,
     },
     postBtn: { paddingHorizontal: 16, paddingVertical: 10, justifyContent: 'center' },
-    postBtnText: { fontFamily: fonts.uiBold, fontSize: 11, letterSpacing: 2, color: colors.sepia },
+    postBtnText: { fontFamily: fonts.sub, fontSize: 11, letterSpacing: 2, color: colors.sepia },
 });
 
 const markdownStyles = {
@@ -722,14 +880,14 @@ const markdownStyles = {
         textDecorationLine: 'underline' as const,
     },
     code_inline: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.body,
         backgroundColor: colors.sepiaSubtle,
         color: colors.parchmentBright,
         paddingHorizontal: 4,
         borderRadius: 4,
     },
     code_block: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.body,
         backgroundColor: colors.ink,
         color: colors.parchment,
         padding: 16,
@@ -739,7 +897,7 @@ const markdownStyles = {
         marginVertical: 16,
     },
     fence: {
-        fontFamily: fonts.ui,
+        fontFamily: fonts.body,
         backgroundColor: colors.ink,
         color: colors.parchment,
         padding: 16,

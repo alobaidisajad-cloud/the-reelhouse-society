@@ -9,7 +9,7 @@ export const LoungeMessagePayloadSchema = z.object({
   lounge_id: z.string().uuid(),
   user_id: z.string().uuid(),
   content: z.string().max(2000),
-  type: z.enum(['text', 'film_share', 'log_share', 'list_share', 'system']),
+  type: z.enum(['text', 'film_share', 'log_share', 'list_share', 'dossier_share', 'system']),
   film_id: z.number().nullable().optional(),
   film_title: z.string().nullable().optional(),
   film_poster: z.string().nullable().optional(),

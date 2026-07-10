@@ -26,7 +26,10 @@ export const MAX_LENGTHS = {
   username: 30,
   dossierTitle: 200,
   dossierExcerpt: 500,
-  dossierContent: 10000,
+  // Essays are longform by design: ~4,500 words (a 15–20 minute read). This is
+  // the sanitizer's memory/abuse fence, not an editorial limit — no genuine
+  // essayist should ever feel it.
+  dossierContent: 25000,
 } as const;
 
 export type FieldType = keyof typeof MAX_LENGTHS;
