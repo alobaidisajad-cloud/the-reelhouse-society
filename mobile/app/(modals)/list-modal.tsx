@@ -561,7 +561,7 @@ const s = StyleSheet.create({
     // Rank Styling
     rankWrap: { width: 36, alignItems: 'center', justifyContent: 'center', marginRight: 4, marginLeft: 2 },
     rankWrapActive: { transform: [{ scale: 1.1 }] },
-    rankText: { fontFamily: fonts.mono, fontSize: 13, color: colors.fog, opacity: 0.5, fontVariant: ['tabular-nums'], letterSpacing: 1 },
+    rankText: { fontFamily: fonts.body, fontSize: 13, color: colors.fog, opacity: 0.5, fontVariant: ['tabular-nums'], letterSpacing: 1 },
     rankTextActive: { color: colors.sepia, opacity: 1, textShadowColor: 'rgba(218,165,32,0.4)', textShadowOffset: { width: 0, height: 0 }, textShadowRadius: 6 },
 
     // Empty list state
